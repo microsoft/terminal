@@ -81,8 +81,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
         weak_ref<Windows::UI::Xaml::Automation::Peers::AutomationPeer> _parentProvider;
 
-        til::rectangle _controlBounds{};
-        til::rectangle _controlPadding{};
+        til::rect _controlBounds{};
+        til::rect _controlPadding{};
 
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };

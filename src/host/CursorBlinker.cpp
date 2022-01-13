@@ -8,6 +8,7 @@
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
 
 CursorBlinker::CursorBlinker() :
     _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
@@ -32,8 +33,8 @@ void CursorBlinker::UpdateSystemMetrics()
     // If animations are disabled, or the blink rate is infinite, blinking is not allowed.
     BOOL animationsEnabled = TRUE;
     SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
-    auto& blinkingState = ServiceLocator::LocateGlobals().getConsoleInformation().GetBlinkingState();
-    blinkingState.SetBlinkingAllowed(animationsEnabled && _uCaretBlinkTime != INFINITE);
+    auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    renderSettings.SetRenderMode(RenderSettings::Mode::BlinkAllowed, animationsEnabled && _uCaretBlinkTime != INFINITE);
 }
 
 void CursorBlinker::SettingsChanged()
@@ -69,7 +70,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
 {
     auto& buffer = ScreenInfo.GetTextBuffer();
     auto& cursor = buffer.GetCursor();
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
 
     if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
@@ -139,7 +140,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     }
 
 DoBlinkingRenditionAndScroll:
-    gci.GetBlinkingState().ToggleBlinkingRendition(ScreenInfo.GetRenderTarget());
+    gci.GetRenderSettings().ToggleBlinkRendition(ScreenInfo.GetRenderTarget());
 
 DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);

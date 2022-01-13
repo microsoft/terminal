@@ -152,7 +152,7 @@ namespace Microsoft::Console::Types
         const Viewport _getOptimizedBufferSize() const noexcept;
         const til::point _getDocumentEnd() const;
 
-        void _getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const;
+        void _getBoundingRect(const til::rect& textRect, _Inout_ std::vector<double>& coords) const;
 
         void _expandToEnclosingUnit(TextUnit unit);
 

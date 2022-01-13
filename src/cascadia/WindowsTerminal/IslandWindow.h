@@ -134,7 +134,7 @@ protected:
     bool _isQuakeWindow{ false };
 
     void _enterQuakeMode();
-    til::rectangle _getQuakeModeSize(HMONITOR hmon);
+    til::rect _getQuakeModeSize(HMONITOR hmon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 

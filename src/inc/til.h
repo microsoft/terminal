@@ -6,22 +6,15 @@
 #define _TIL_INLINEPREFIX __declspec(noinline) inline
 
 #include "til/at.h"
-#include "til/color.h"
-#include "til/math.h"
-#include "til/some.h"
-#include "til/size.h"
-#include "til/point.h"
-#include "til/operators.h"
-#include "til/rectangle.h"
-#include "til/rle.h"
 #include "til/bitmap.h"
-#include "til/u8u16convert.h"
-#include "til/spsc.h"
 #include "til/coalesce.h"
-#include "til/replace.h"
-#include "til/string.h"
-#include "til/pmr.h"
+#include "til/color.h"
 #include "til/enumset.h"
+#include "til/pmr.h"
+#include "til/replace.h"
+#include "til/rle.h"
+#include "til/string.h"
+#include "til/u8u16convert.h"
 
 // Use keywords on TraceLogging providers to specify the category
 // of event that we are emitting for filtering purposes.

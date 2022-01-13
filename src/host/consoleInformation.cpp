@@ -12,7 +12,6 @@
 #include "../types/inc/convert.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
-using Microsoft::Console::Render::BlinkingState;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
@@ -220,24 +219,6 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 }
 
 // Method Description:
-// - Get the colors of a particular text attribute, using our color table,
-//      and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the foreground and background color of.
-// Return Value:
-// - The color values of the attribute's foreground and background.
-std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
-{
-    _blinkingState.RecordBlinkingUsage(attr);
-    return attr.CalculateRgbColors(
-        GetColorTable(),
-        GetDefaultForegroundIndex(),
-        GetDefaultBackgroundIndex(),
-        IsScreenReversed(),
-        _blinkingState.IsBlinkingFaint());
-}
-
-// Method Description:
 // - Set the console's title, and trigger a renderer update of the title.
 //      This does not include the title prefix, such as "Mark", "Select", or "Scroll"
 // Arguments:
@@ -353,17 +334,6 @@ const std::wstring_view CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexcept
 {
     return _blinker;
-}
-
-// Method Description:
-// - return a reference to the console's blinking state.
-// Arguments:
-// - <none>
-// Return Value:
-// - a reference to the console's blinking state.
-BlinkingState& CONSOLE_INFORMATION::GetBlinkingState() const noexcept
-{
-    return _blinkingState;
 }
 
 // Method Description:
