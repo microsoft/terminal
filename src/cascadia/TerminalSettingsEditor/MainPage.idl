@@ -13,6 +13,13 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    runtimeclass Breadcrumb
+    {
+        IInspectable Tag;
+        String Label;
+        String ToString();
+    }
+
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
     {
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);

@@ -4,10 +4,26 @@
 #pragma once
 
 #include "MainPage.g.h"
+#include "Breadcrumb.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct Breadcrumb : BreadcrumbT<Breadcrumb>
+    {
+        Breadcrumb(IInspectable tag, winrt::hstring label) :
+            _Tag{ tag },
+            _Label{ label } {}
+
+        winrt::hstring ToString()
+        {
+            return _Label;
+        }
+
+        WINRT_PROPERTY(IInspectable, Tag);
+        WINRT_PROPERTY(winrt::hstring, Label);
+    };
+
     struct MainPage : MainPageT<MainPage>
     {
         MainPage() = delete;

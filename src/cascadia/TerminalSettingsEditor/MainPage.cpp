@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
-        _breadcrumbs = single_threaded_observable_vector<hstring>();
+        _breadcrumbs = single_threaded_observable_vector<IInspectable>();
     }
 
     // Method Description:
@@ -287,22 +287,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (clickedItemTag == launchTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(_settingsClone));
-            _breadcrumbs.Append(RS_(L"Nav_Launch/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Launch/Content"));
+            _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == interactionTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()));
-            _breadcrumbs.Append(RS_(L"Nav_Interaction/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Interaction/Content"));
+            _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == renderingTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
-            _breadcrumbs.Append(RS_(L"Nav_Rendering/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Rendering/Content"));
+            _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == actionsTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
-            _breadcrumbs.Append(RS_(L"Nav_Actions/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"));
+            _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == globalProfileTag)
         {
@@ -322,40 +326,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
                         _breadcrumbs.Clear();
-                        _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
+                        const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"));
+                        _breadcrumbs.Append(crumb);
                     }
                     else if (currentPage == L"Appearance")
                     {
                         contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
-                        _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
+                        const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Profile_Appearance/Header"));
+                        _breadcrumbs.Append(crumb);
                     }
                     else if (currentPage == L"Advanced")
                     {
                         contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
-                        _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
+                        const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Profile_Advanced/Header"));
+                        _breadcrumbs.Append(crumb);
                     }
                 }
             });
 
             contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
-            _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"));
+            _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == colorSchemesTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
-            _breadcrumbs.Append(RS_(L"Nav_ColorSchemes/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ColorSchemes/Content"));
+            _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
-            _breadcrumbs.Append(RS_(L"Nav_Appearance/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"));
+            _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == addProfileTag)
         {
             auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
             addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
             contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
-            _breadcrumbs.Append(RS_(L"Nav_AddNewProfile/Content"));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_AddNewProfile/Content"));
+            _breadcrumbs.Append(crumb);
         }
     }
 
@@ -396,23 +407,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
                     _breadcrumbs.Clear();
-                    _breadcrumbs.Append(profile.Name());
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name());
+                    _breadcrumbs.Append(crumb);
                 }
                 else if (currentPage == L"Appearance")
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
-                    _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), RS_(L"Profile_Appearance/Header"));
+                    _breadcrumbs.Append(crumb);
                 }
                 else if (currentPage == L"Advanced")
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
-                    _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), RS_(L"Profile_Advanced/Header"));
+                    _breadcrumbs.Append(crumb);
                 }
             }
         });
 
         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
-        _breadcrumbs.Append(profile.Name());
+        const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name());
+        _breadcrumbs.Append(crumb);
     }
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
@@ -446,9 +461,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         UpdateSettings(_settingsSource);
     }
 
-    void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& /*args*/)
+    void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args)
     {
-        _lastProfilesNavState.Profile().CurrentPage(L"Base");
+        const auto tag = args.Item().as<Breadcrumb>()->Tag();
+        if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
+        {
+            _Navigate(*profileViewModel);
+        }
+        else
+        {
+            _Navigate(tag.as<hstring>());
+        }
     }
 
     void MainPage::_InitializeProfilesList()
