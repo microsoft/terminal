@@ -43,7 +43,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(SMALL_RECT rect) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateSoftFont(gsl::span<const uint16_t> bitPattern, SIZE cellSize, size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
@@ -71,7 +71,6 @@ namespace Microsoft::Console::Render
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;
-        void SetIntenseIsBold(bool enable) noexcept override;
         void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
         [[nodiscard]] HRESULT SetWindowSize(SIZE pixels) noexcept override;
         void ToggleShaderEffects() noexcept override;

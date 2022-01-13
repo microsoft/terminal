@@ -136,6 +136,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      16-color attributes.
 // Arguments:
 // - textAttributes - Text attributes to use for the colors and character rendition
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
 // - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes: indicates if we should change the background color of
@@ -143,6 +144,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                        const RenderSettings& /*renderSettings*/,
                                                         const gsl::not_null<IRenderData*> /*pData*/,
                                                         const bool /*usingSoftFont*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept

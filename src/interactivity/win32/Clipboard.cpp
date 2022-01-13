@@ -207,9 +207,10 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
+    const auto& renderSettings = gci.GetRenderSettings();
 
-    const auto GetAttributeColors = [=, &gci](const auto& attr) {
-        return gci.LookupAttributeColors(attr);
+    const auto GetAttributeColors = [&](const auto& attr) {
+        return renderSettings.GetAttributeColors(attr);
     };
 
     bool includeCRLF, trimTrailingWhitespace;
@@ -277,7 +278,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
-            const auto bgColor = gci.LookupAttributeColors({}).second;
+            const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
 
             std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");

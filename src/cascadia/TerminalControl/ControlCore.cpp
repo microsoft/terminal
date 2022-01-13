@@ -122,7 +122,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto* const localPointerToThread = renderThread.get();
 
             // Now create the renderer and initialize the render thread.
-            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
+            const auto& renderSettings = _terminal->GetRenderSettings();
+            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
 
             _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
                 if (auto strongThis{ weakThis.get() })
@@ -281,7 +282,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
             _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
-            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
 
             _updateAntiAliasingMode();
 
@@ -677,7 +677,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
-            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
             _renderer->TriggerRedrawAll();
         }
     }
@@ -1109,7 +1108,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+        return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultBackground);
     }
 
     // Method Description:
@@ -1395,8 +1394,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         auto& renderTarget = *_renderer;
-        auto& blinkingState = _terminal->GetBlinkingState();
-        blinkingState.ToggleBlinkingRendition(renderTarget);
+        auto& renderSettings = _terminal->GetRenderSettings();
+        renderSettings.ToggleBlinkRendition(renderTarget);
     }
 
     void ControlCore::BlinkCursor()

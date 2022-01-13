@@ -20,6 +20,7 @@ Author(s):
 #include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
 #include "IRenderData.hpp"
+#include "RenderSettings.hpp"
 #include "../../buffer/out/LineRendition.hpp"
 
 #pragma warning(push)
@@ -76,7 +77,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintSelection(SMALL_RECT rect) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateSoftFont(gsl::span<const uint16_t> bitPattern, SIZE cellSize, size_t centeringHint) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDpi(int iDpi) noexcept = 0;
@@ -111,7 +112,6 @@ namespace Microsoft::Console::Render
         virtual void SetRetroTerminalEffect(bool enable) noexcept {}
         virtual void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept {}
         virtual void SetSoftwareRendering(bool enable) noexcept {}
-        virtual void SetIntenseIsBold(bool enable) noexcept {}
         virtual void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept {}
         virtual [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept { return E_NOTIMPL; }
         virtual void ToggleShaderEffects() noexcept {}

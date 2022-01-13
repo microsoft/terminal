@@ -370,10 +370,6 @@ void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
 {
 }
 
-void AtlasEngine::SetIntenseIsBold(bool enable) noexcept
-{
-}
-
 void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
 {
     _api.warningCallback = std::move(pfn);

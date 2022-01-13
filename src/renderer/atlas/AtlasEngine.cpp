@@ -562,10 +562,10 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const gsl::not_null<IRenderData*> pData, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, const gsl::not_null<IRenderData*> /*pData*/, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
 try
 {
-    const auto [fg, bg] = pData->GetAttributeColors(textAttributes);
+    const auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
 
     if (!isSettingDefaultBrushes)
     {

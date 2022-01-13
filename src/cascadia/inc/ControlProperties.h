@@ -11,6 +11,7 @@
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
     X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
+    X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
     X(bool, AdjustIndistinguishableColors, true)
 
@@ -24,7 +25,6 @@
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill)            \
     X(winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center) \
     X(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center)       \
-    X(bool, IntenseIsBold)                                                                                                                      \
     X(bool, RetroTerminalEffect, false)                                                                                                         \
     X(winrt::hstring, PixelShaderPath)
 

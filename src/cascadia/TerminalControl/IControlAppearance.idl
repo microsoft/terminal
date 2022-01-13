@@ -11,8 +11,7 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode { get; };
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment { get; };
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment { get; };
-        Boolean IntenseIsBold { get; };
-        // IntenseIsBright is in Core Appearance
+        // IntenseIsBold and IntenseIsBright are in Core Appearance
         Double Opacity { get; };
 
         // Experimental settings

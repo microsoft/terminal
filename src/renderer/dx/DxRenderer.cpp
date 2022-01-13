@@ -94,7 +94,6 @@ DxEngine::DxEngine() :
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _prevScale{ 1.0f },
-    _intenseIsBold{ true },
     _chainMode{ SwapChainMode::ForComposition },
     _customLayout{},
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
@@ -1036,17 +1035,6 @@ try
 }
 CATCH_LOG()
 
-void DxEngine::SetIntenseIsBold(bool enable) noexcept
-try
-{
-    if (_intenseIsBold != enable)
-    {
-        _intenseIsBold = enable;
-        LOG_IF_FAILED(InvalidateAll());
-    }
-}
-CATCH_LOG()
-
 HANDLE DxEngine::GetSwapChainHandle() noexcept
 {
     if (!_swapChainHandle)
@@ -1922,17 +1910,19 @@ CATCH_RETURN()
 // - Updates the default brush colors used for drawing
 // Arguments:
 // - textAttributes - Text attributes to use for the brush color
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
 // - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                     const gsl::not_null<IRenderData*> pData,
+                                                     const RenderSettings& renderSettings,
+                                                     const gsl::not_null<IRenderData*> /*pData*/,
                                                      const bool /*usingSoftFont*/,
                                                      const bool isSettingDefaultBrushes) noexcept
 {
-    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
+    const auto [colorForeground, colorBackground] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
 
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
     const bool usingTransparency = _defaultBackgroundIsTransparent;
@@ -1972,7 +1962,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
-        _drawingContext->useBoldFont = _intenseIsBold && textAttributes.IsBold();
+        _drawingContext->useBoldFont = textAttributes.IsBold() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold);
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 

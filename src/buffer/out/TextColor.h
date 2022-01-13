@@ -45,6 +45,13 @@ enum class ColorType : BYTE
     IsRgb = 0x3
 };
 
+enum class ColorAlias : size_t
+{
+    DefaultForeground,
+    DefaultBackground,
+    ENUM_COUNT // must be the last element in the enum class
+};
+
 struct TextColor
 {
 public:

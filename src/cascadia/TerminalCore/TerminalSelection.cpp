@@ -478,7 +478,9 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool sin
 
     const auto selectionRects = _GetSelectionRects();
 
-    const auto GetAttributeColors = std::bind(&Terminal::GetAttributeColors, this, std::placeholders::_1);
+    const auto GetAttributeColors = [&](const auto& attr) {
+        return _renderSettings.GetAttributeColors(attr);
+    };
 
     // GH#6740: Block selection should preserve the visual structure:
     // - CRLFs need to be added - so the lines structure is preserved
