@@ -37,7 +37,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     RETURN_IF_FAILED(VtEngine::StartPaint());
 
-    _trace.TraceLastText(_lastText);
+    _trace.TraceLastText(til::point{ _lastText });
 
     // Prep us to think that the cursor is not visible this frame. If it _is_
     // visible, then PaintCursor will be called, and we'll set this to true
@@ -57,16 +57,16 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        gsl::span<const til::rectangle> dirty;
+        gsl::span<const til::rect> dirty;
         RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
-        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0).to_small_rect());
 
         // If there's more than 1, union them all up with the 1 we already have.
         for (size_t i = 1; i < dirty.size(); ++i)
         {
-            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i).to_small_rect()));
         }
     }
 
@@ -237,7 +237,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
     const auto originalPos = _lastText;
-    _trace.TraceMoveCursor(_lastText, coord);
+    _trace.TraceMoveCursor(til::point{ _lastText }, til::point{ coord });
     bool performedSoftWrap = false;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
@@ -348,18 +348,18 @@ try
 {
     _trace.TraceScrollFrame(_scrollDelta);
 
-    if (_scrollDelta.x() != 0)
+    if (_scrollDelta.x != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
         return InvalidateAll();
     }
-    if (_scrollDelta.y() == 0)
+    if (_scrollDelta.y == 0)
     {
         // There's nothing to do here. Do nothing.
         return S_OK;
     }
 
-    const short dy = _scrollDelta.y<short>();
+    const short dy = _scrollDelta.narrow_y<short>();
     const short absDy = static_cast<short>(abs(dy));
 
     // Save the old wrap state here. We're going to clear it so that
@@ -411,7 +411,7 @@ try
     // position we think we left the cursor.
     //
     // See GH#5113
-    _trace.TraceLastText(_lastText);
+    _trace.TraceLastText(til::point{ _lastText });
     if (_wrappedRow.has_value())
     {
         _wrappedRow.value() += dy;
@@ -430,7 +430,7 @@ try
         // one frame, and the second line in another frame that included other
         // changes _above_ the wrapped line, that we maintain the wrap state in
         // the Terminal.
-        const til::rectangle lastCellOfWrappedRow{
+        const til::rect lastCellOfWrappedRow{
             til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
             til::size{ 1, 1 }
         };

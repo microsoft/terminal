@@ -335,11 +335,11 @@ void Terminal::_MoveByChar(SelectionDirection direction, COORD& pos)
     {
     case SelectionDirection::Left:
         _buffer->GetSize().DecrementInBounds(pos);
-        pos = _buffer->GetGlyphStart(pos);
+        pos = _buffer->GetGlyphStart(til::point{ pos }).to_win32_coord();
         break;
     case SelectionDirection::Right:
         _buffer->GetSize().IncrementInBounds(pos);
-        pos = _buffer->GetGlyphEnd(pos);
+        pos = _buffer->GetGlyphEnd(til::point{ pos }).to_win32_coord();
         break;
     case SelectionDirection::Up:
     {

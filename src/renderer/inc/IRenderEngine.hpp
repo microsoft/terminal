@@ -82,7 +82,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT UpdateDpi(int iDpi) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateViewport(SMALL_RECT srNewViewport) noexcept = 0;
         [[nodiscard]] virtual HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept = 0;
-        [[nodiscard]] virtual HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept = 0;
+        [[nodiscard]] virtual HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept = 0;
         [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* pFontSize) noexcept = 0;
         [[nodiscard]] virtual HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateTitle(std::wstring_view newTitle) noexcept = 0;

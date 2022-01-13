@@ -354,15 +354,10 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    SMALL_RECT r;
-    r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
-    r.Top = 0;
-    r.Left = 0;
-    r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
-
-    _dirtyArea = r;
+    _dirtyArea.bottom = std::max(0, _displayHeight);
+    _dirtyArea.right = std::max(0, _displayWidth);
 
     area = { &_dirtyArea,
              1 };

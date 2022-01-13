@@ -32,9 +32,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
-    _invalidMap(initialViewport.Dimensions(), false, &_pool),
+    _invalidMap(til::size{ initialViewport.Dimensions() }, false, &_pool),
     _lastText({ 0 }),
-    _scrollDelta({ 0, 0 }),
+    _scrollDelta(0, 0),
     _quickReturn(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
@@ -245,13 +245,13 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
         // buffer will have triggered it's own invalidations for what it knows is
         // invalid. Previously, we'd invalidate everything if the width changed,
         // because we couldn't be sure if lines were reflowed.
-        _invalidMap.resize(newView.Dimensions());
+        _invalidMap.resize(til::size{ newView.Dimensions() });
     }
     else
     {
         if (SUCCEEDED(hr))
         {
-            _invalidMap.resize(newView.Dimensions(), true); // resize while filling in new space with repaint requests.
+            _invalidMap.resize(til::size{ newView.Dimensions() }, true); // resize while filling in new space with repaint requests.
 
             // Viewport is smaller now - just update it all.
             if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())

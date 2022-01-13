@@ -2196,7 +2196,7 @@ void TextBufferTests::MoveByWord()
         Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
         auto pos{ test.startPos };
         const auto result = movingForwards ?
-                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
+                                _buffer->MoveToNextWord(pos, delimiters, til::point{ lastCharPos }) :
                                 _buffer->MoveToPreviousWord(pos, delimiters);
         const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
         VERIFY_ARE_EQUAL(expected, pos);
@@ -2250,7 +2250,7 @@ void TextBufferTests::GetGlyphBoundaries()
     {
         Log::Comment(test.name.c_str());
         auto target = test.start;
-        _buffer->Write(iter, target);
+        _buffer->Write(iter, target.to_win32_coord());
 
         auto start = _buffer->GetGlyphStart(target);
         auto end = _buffer->GetGlyphEnd(target, true);

@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdatePatternLocations();
         void SetHoveredCell(Core::Point terminalPosition);
         void ClearHoveredCell();
-        winrt::hstring GetHyperlink(const til::point position) const;
+        winrt::hstring GetHyperlink(const Core::Point position) const;
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
@@ -138,7 +138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
-        til::point CursorPosition() const;
+        Core::Point CursorPosition() const;
 
         bool HasSelection() const;
         bool CopyOnSelect() const;
