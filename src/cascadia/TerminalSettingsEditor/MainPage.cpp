@@ -279,10 +279,56 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::_Navigate(hstring clickedItemTag)
+    void MainPage::_PreNavigateHelper()
     {
         _profileViewModelChangedRevoker.revoke();
         _breadcrumbs.Clear();
+    }
+
+    void MainPage::_SetupProfileEventHandling(const Editor::ProfilePageNavigationState state)
+    {
+        // Add an event handler to navigate to Profiles_Appearance or Profiles_Advanced
+        // Some notes on this:
+        // - At first we tried putting another frame inside Profiles.xaml and having that
+        //   frame default to showing Profiles_Base. This allowed the logic for navigation
+        //   to Profiles_Advanced/Profiles_Appearance to live within Profiles.cpp.
+        // - However, the header for the SUI lives in MainPage.xaml (because that's where
+        //   the whole NavigationView is) and so the BreadcrumbBar needs to be in MainPage.xaml.
+        //   We decided that it's better for the owner of the BreadcrumbBar to also be responsible
+        //   for navigation, so the navigation to Profiles_Advanced/Profiles_Appearance from
+        //   Profiles_Base got moved here.
+        const auto profile = state.Profile();
+        _profileViewModelChangedRevoker = profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                const auto currentPage = profile.CurrentPage();
+                if (currentPage == L"Base")
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
+                    _breadcrumbs.Clear();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), RS_(L"Nav_ProfileDefaults/Content"));
+                    _breadcrumbs.Append(crumb);
+                }
+                else if (currentPage == L"Appearance")
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), RS_(L"Profile_Appearance/Header"));
+                    _breadcrumbs.Append(crumb);
+                }
+                else if (currentPage == L"Advanced")
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), RS_(L"Profile_Advanced/Header"));
+                    _breadcrumbs.Append(crumb);
+                }
+            }
+        });
+    }
+
+    void MainPage::_Navigate(hstring clickedItemTag)
+    {
+        _PreNavigateHelper();
 
         if (clickedItemTag == launchTag)
         {
@@ -315,34 +361,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto state{ winrt::make<ProfilePageNavigationState>(profileVM,
                                                                 _settingsClone.GlobalSettings().ColorSchemes(),
                                                                 *this) };
-            _lastProfilesNavState = state;
 
-            _profileViewModelChangedRevoker = state.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-                const auto settingName{ args.PropertyName() };
-                if (settingName == L"CurrentPage")
-                {
-                    const auto currentPage = state.Profile().CurrentPage();
-                    if (currentPage == L"Base")
-                    {
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
-                        _breadcrumbs.Clear();
-                        const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"));
-                        _breadcrumbs.Append(crumb);
-                    }
-                    else if (currentPage == L"Appearance")
-                    {
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
-                        const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Profile_Appearance/Header"));
-                        _breadcrumbs.Append(crumb);
-                    }
-                    else if (currentPage == L"Advanced")
-                    {
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
-                        const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Profile_Advanced/Header"));
-                        _breadcrumbs.Append(crumb);
-                    }
-                }
-            });
+            _SetupProfileEventHandling(state);
 
             contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"));
@@ -380,50 +400,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto state{ winrt::make<ProfilePageNavigationState>(profile,
                                                             _settingsClone.GlobalSettings().ColorSchemes(),
                                                             *this) };
-        _lastProfilesNavState = state;
 
-        _profileViewModelChangedRevoker.revoke();
-        _breadcrumbs.Clear();
+        _PreNavigateHelper();
 
         // Add an event handler for when the user wants to delete a profile.
         profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
 
-        // Add an event handler to navigate to Profiles_Appearance or Profiles_Advanced
-        // Some notes on this:
-        // - At first we tried putting another frame inside Profiles.xaml and having that
-        //   frame default to showing Profiles_Base. This allowed the logic for navigation
-        //   to Profiles_Advanced/Profiles_Appearance to live within Profiles.cpp.
-        // - However, the header for the SUI lives in MainPage.xaml (because that's where
-        //   the whole NavigationView is) and so the BreadcrumbBar needs to be in MainPage.xaml.
-        //   We decided that it's better for the owner of the BreadcrumbBar to also be responsible
-        //   for navigation, so the navigation to Profiles_Advanced/Profiles_Appearance from
-        //   Profiles_Base got moved here.
-        _profileViewModelChangedRevoker = profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-            const auto settingName{ args.PropertyName() };
-            if (settingName == L"CurrentPage")
-            {
-                const auto currentPage = state.Profile().CurrentPage();
-                if (currentPage == L"Base")
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
-                    _breadcrumbs.Clear();
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name());
-                    _breadcrumbs.Append(crumb);
-                }
-                else if (currentPage == L"Appearance")
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), RS_(L"Profile_Appearance/Header"));
-                    _breadcrumbs.Append(crumb);
-                }
-                else if (currentPage == L"Advanced")
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(profile), RS_(L"Profile_Advanced/Header"));
-                    _breadcrumbs.Append(crumb);
-                }
-            }
-        });
+        _SetupProfileEventHandling(state);
 
         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name());
