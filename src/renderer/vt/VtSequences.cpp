@@ -299,13 +299,6 @@ using namespace Microsoft::Console::Render;
     return _Write("\x1b[6n");
 }
 
-[[nodiscard]] HRESULT VtEngine::_ListenForDSR() noexcept
-{
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), !_pfnSetLookingForDSR);
-    _pfnSetLookingForDSR(true);
-    return S_OK;
-}
-
 // Method Description:
 // - Formats and writes a sequence to change the terminal's title string
 // Arguments:

@@ -379,6 +379,9 @@ public:
 
 #pragma endregion
 
+private:
+    void _SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) noexcept;
+
     IApiRoutines* m_pUsualRoutines;
     UINT& m_inputCodepage;
     UINT& m_outputCodepage;

@@ -412,6 +412,23 @@ HRESULT VtEngine::RequestCursor() noexcept
 }
 
 // Method Description:
+// - Sends a notification through to the `VtInputThread` that it should 
+//   watch for and capture the response from a DSR message we're about to send.
+//   This is typically `RequestCursor` at the time of writing this, but in theory
+//   could be another DSR as well.
+// Arguments: 
+// - <none>
+// Return Value:
+// - S_OK if all goes well. Invalid state error if no notification function is installed.
+//   (see `SetLookingForDSRCallback` to install one.)
+[[nodiscard]] HRESULT VtEngine::_ListenForDSR() noexcept
+{
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), !_pfnSetLookingForDSR);
+    _pfnSetLookingForDSR(true);
+    return S_OK;
+}
+
+// Method Description:
 // - Tell the vt renderer to begin a resize operation. During a resize
 //   operation, the vt renderer should _not_ request to be repainted during a
 //   text buffer circling event. Any callers of this method should make sure to
