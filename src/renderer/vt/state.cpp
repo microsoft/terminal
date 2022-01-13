@@ -91,7 +91,7 @@ try
     }
 #endif
 
-    // TODO: Replace me with REP
+    // TODO GH10001: Replace me with REP
     _buffer.append(n, c);
     return S_OK;
 }

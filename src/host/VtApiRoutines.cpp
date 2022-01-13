@@ -8,6 +8,20 @@
 
 using namespace Microsoft::Console::Interactivity;
 
+// When someone attempts to use the console APIs to do a "read back"
+// of the console buffer, we have to give them **something**.
+// These two structures are just some gaudy-colored replacement character
+// text to give them data but represent they've done something that cannot
+// be supported under VT passthrough mode.
+// ----
+// They can't be supported because in passthrough we maintain no internal
+// buffer to answer these questions, and there is no VT sequence that lets
+// us query the final terminal's buffer state. Even if a VT sequence did exist
+// (and we personally believe it shouldn't), there's a possibility that it would
+// read a massive amount of data and cause severe perf issues as applications coded
+// to this old API are likely leaning on it heavily and asking for this data in a 
+// loop via VT would be a nightmare of parsing and formatting and over-the-wire transmission.
+
 static constexpr CHAR_INFO s_readBackUnicode{
     { UNICODE_REPLACEMENT },
     FOREGROUND_INTENSITY | FOREGROUND_RED | BACKGROUND_GREEN
@@ -87,7 +101,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     const auto hr = m_pUsualRoutines->PeekConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
-    // TODO: we only need to do this in cooked read mode.
+    // TODO GH10001: we only need to do this in cooked read mode.
     if (waiter)
     {
         m_listeningForDSR = true;
@@ -106,7 +120,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     const auto hr = m_pUsualRoutines->PeekConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
-    // TODO: we only need to do this in cooked read mode.
+    // TODO GH10001: we only need to do this in cooked read mode.
     if (waiter)
     {
         m_listeningForDSR = true;
@@ -125,7 +139,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     const auto hr = m_pUsualRoutines->ReadConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
-    // TODO: we only need to do this in cooked read mode.
+    // TODO GH10001: we only need to do this in cooked read mode.
     if (waiter)
     {
         m_listeningForDSR = true;
@@ -144,7 +158,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     const auto hr = m_pUsualRoutines->ReadConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
-    // TODO: we only need to do this in cooked read mode.
+    // TODO GH10001: we only need to do this in cooked read mode.
     if (waiter)
     {
         m_listeningForDSR = true;
@@ -168,7 +182,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     const auto hr = m_pUsualRoutines->ReadConsoleAImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
-    // TODO: we only need to do this in cooked read mode.
+    // TODO GH10001: we only need to do this in cooked read mode.
     if (clientHandle)
     {
         m_listeningForDSR = true;
@@ -192,7 +206,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     const auto hr = m_pUsualRoutines->ReadConsoleWImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
-    // TODO: we only need to do this in cooked read mode.
+    // TODO GH10001: we only need to do this in cooked read mode.
     if (clientHandle)
     {
         m_listeningForDSR = true;
@@ -287,8 +301,8 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     (void)m_pVtEngine->_CursorPosition(startingCoordinate);
     const std::wstring_view sv{ &character, 1 };
 
-    // TODO: horrible. it'll WC2MB over and over...we should do that once then emit... and then rep...
-    // TODO: there's probably an optimization for if ((character & 0x7F) == character) --> call the UTF8 one.
+    // TODO GH10001: horrible. it'll WC2MB over and over...we should do that once then emit... and then rep...
+    // TODO GH10001: there's probably an optimization for if ((character & 0x7F) == character) --> call the UTF8 one.
     for (size_t i = 0; i < lengthToWrite; ++i)
     {
         (void)m_pVtEngine->WriteTerminalW(sv);
@@ -329,7 +343,7 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
                                              ULONG& size,
                                              bool& isVisible) noexcept
 {
-    // TODO: good luck capturing this out of the input buffer when it comes back in.
+    // TODO GH10001: good luck capturing this out of the input buffer when it comes back in.
     //m_pVtEngine->RequestCursor();
     return;
 }
@@ -347,7 +361,7 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
 void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
                                                      CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
-    // TODO: this is technically full of potentially incorrect data. do we care? should we store it in here with set?
+    // TODO GH10001: this is technically full of potentially incorrect data. do we care? should we store it in here with set?
     return m_pUsualRoutines->GetConsoleScreenBufferInfoExImpl(context, data);
 }
 
@@ -360,7 +374,7 @@ void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& c
     (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(data.wAttributes >> 4), false);
     //color table?
     // popup attributes... hold internally?
-    // TODO: popups are gonna erase the stuff behind them... deal with that somehow.
+    // TODO GH10001: popups are gonna erase the stuff behind them... deal with that somehow.
     (void)m_pVtEngine->_Flush();
     return S_OK;
 }
@@ -402,7 +416,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                     const char fillCharacter,
                                                                     const WORD fillAttribute) noexcept
 {
-    // Use DECCRA
+    // TODO GH10001: Use DECCRA
     return S_OK;
 }
 
@@ -414,7 +428,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                     const WORD fillAttribute,
                                                                     const bool enableCmdShim) noexcept
 {
-    // Use DECCRA
+    // TODO GH10001: Use DECCRA
     return S_OK;
 }
 
@@ -527,7 +541,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
 
     (void)m_pVtEngine->_Flush();
 
-    //TODO: trim to buffer size?
+    //TODO GH10001: trim to buffer size?
     writtenRectangle = requestRectangle;
     return S_OK;
 }
@@ -545,23 +559,6 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
         (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attr >> 4), false);
         (void)m_pVtEngine->WriteTerminalUtf8(std::string_view{ &s_readBackAscii.Char.AsciiChar, 1 });
     }
-
-#if 0 // discarded compression algorithm
-    const std::basic_string_view<decltype(attrs)::element_type> sv{ attrs.data(), attrs.size() };
-
-    for (size_t i = 0; i < attrs.size();)
-    {
-        const auto first = attrs[i];
-        // TODO: lhecker... inverse memchr()
-        const auto until = sv.find_first_not_of(first, i);
-        auto dist = until - first;
-        (void)m_pVtEngine->_SetGraphicsRendition16Color(first, true);
-        (void)m_pVtEngine->_SetGraphicsRendition16Color(first >> 4, false);
-        (void)m_pVtEngine->_WriteFill(dist, s_readBackAscii.Char.AsciiChar);
-        dist = dist ? dist : 1; // likely unnecessary but my brain has screwed up and made inf loops like this before...
-        i += dist;
-    }
-#endif
 
     (void)m_pVtEngine->_Flush();
 
@@ -604,7 +601,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
     std::fill_n(buffer.data(), buffer.size(), s_readBackAscii);
-    // TODO: do we need to constrict readRectangle to within the known buffer size... probably.
+    // TODO GH10001: do we need to constrict readRectangle to within the known buffer size... probably.
     return S_OK;
 }
 
@@ -614,7 +611,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
     std::fill_n(buffer.data(), buffer.size(), s_readBackUnicode);
-    // TODO: do we need to constrict readRectangle to within the known buffer size... probably.
+    // TODO GH10001: do we need to constrict readRectangle to within the known buffer size... probably.
     return S_OK;
 }
 
