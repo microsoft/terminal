@@ -197,7 +197,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     {
         _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
     }
-    if (_adjustIndistinguishableColors)
+    if (_adjustIndistinguishableColors && Feature_AdjustIndistinguishableText::IsEnabled())
     {
         _MakeAdjustedColorArray();
     }
@@ -1355,7 +1355,7 @@ void Terminal::ApplyScheme(const Scheme& colorScheme)
 
     _colorTable.at(TextColor::CURSOR_COLOR) = til::color{ colorScheme.CursorColor };
 
-    if (_adjustIndistinguishableColors)
+    if (_adjustIndistinguishableColors && Feature_AdjustIndistinguishableText::IsEnabled())
     {
         _MakeAdjustedColorArray();
     }
