@@ -473,6 +473,13 @@
     <value>Focus pane {0}</value>
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
+  <data name="ExportBufferToPathCommandKey" xml:space="preserve">
+    <value>Export text to {0}</value>
+    <comment>{0} will be replaced with a user-specified file path</comment>
+  </data>
+  <data name="ExportBufferCommandKey" xml:space="preserve">
+    <value>Export text</value>
+  </data>
   <data name="ClearAllCommandKey" xml:space="preserve">
     <value>Clear buffer</value>
     <comment>A command to clear the entirety of the Terminal output buffer</comment>
@@ -495,6 +502,21 @@
   </data>
   <data name="QuitCommandKey" xml:space="preserve">
     <value>Quit the Terminal</value>
+  </data>
+  <data name="SetOpacityParentCommandName" xml:space="preserve">
+    <value>Set background opacity...</value>
+  </data>
+  <data name="IncreaseOpacityCommandKey" xml:space="preserve">
+    <value>Increase background opacity by {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="DecreaseOpacityCommandKey" xml:space="preserve">
+    <value>Decrease background opacity by {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="AdjustOpacityCommandKey" xml:space="preserve">
+    <value>Set background opacity to {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
   </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
     <value>Restore the last closed pane or tab</value>

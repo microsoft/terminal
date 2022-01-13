@@ -256,7 +256,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTab(const TerminalTab& tab);
 
         void _SplitTab(TerminalTab& tab);
-        winrt::fire_and_forget _ExportTab(const TerminalTab& tab);
+        winrt::fire_and_forget _ExportTab(const TerminalTab& tab, winrt::hstring filepath);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
         void _CloseTabAtIndex(uint32_t index);
@@ -398,8 +398,9 @@ namespace winrt::TerminalApp::implementation
 
         void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
         void _EndPreview();
-        void _EndPreviewColorScheme();
+        void _RunRestorePreviews();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
+        void _PreviewAdjustOpacity(const Microsoft::Terminal::Settings::Model::AdjustOpacityArgs& args);
         winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 
@@ -413,6 +414,11 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
 
         winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
+
+        bool _maybeElevate(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                           const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,
+                           const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
         winrt::fire_and_forget _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;

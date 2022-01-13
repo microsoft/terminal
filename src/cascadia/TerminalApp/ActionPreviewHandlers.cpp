@@ -49,8 +49,9 @@ namespace winrt::TerminalApp::implementation
         switch (_lastPreviewedCommand.ActionAndArgs().Action())
         {
         case ShortcutAction::SetColorScheme:
+        case ShortcutAction::AdjustOpacity:
         {
-            _EndPreviewColorScheme();
+            _RunRestorePreviews();
             break;
         }
         }
@@ -58,14 +59,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Revert any changes from the preview on a SetColorScheme action. This
-    //   will remove the preview TerminalSettings we inserted into the control's
-    //   TerminalSettings graph, and update the control.
+    // - Revert any changes from the preview action. This will run the restore
+    //   function that the preview added to _restorePreviewFuncs
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_EndPreviewColorScheme()
+    void TerminalPage::_RunRestorePreviews()
     {
         // Apply the reverts in reverse order - If we had multiple previews
         // stacked on top of each other, then this will ensure the first one in
@@ -111,6 +111,27 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
+    {
+        // Clear the saved preview funcs because we don't need to add a restore each time
+        // the preview changes, we only need to be able to restore the last one.
+        _restorePreviewFuncs.clear();
+
+        _ApplyToActiveControls([&](const auto& control) {
+            // Stash a copy of the original opacity.
+            auto originalOpacity{ control.BackgroundOpacity() };
+
+            // Apply the new opacity
+            control.AdjustOpacity(args.Opacity(), args.Relative());
+
+            _restorePreviewFuncs.emplace_back([=]() {
+                // On dismiss:
+                // Don't adjust relatively, just set outright.
+                control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity * 100), false);
+            });
+        });
+    }
+
     // Method Description:
     // - Handler for the CommandPalette::PreviewAction event. The Command
     //   Palette will raise this even when an action is selected, but _not_
@@ -140,6 +161,11 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::SetColorScheme:
             {
                 _PreviewColorScheme(args.ActionAndArgs().Args().try_as<SetColorSchemeArgs>());
+                break;
+            }
+            case ShortcutAction::AdjustOpacity:
+            {
+                _PreviewAdjustOpacity(args.ActionAndArgs().Args().try_as<AdjustOpacityArgs>());
                 break;
             }
             }

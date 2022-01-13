@@ -37,8 +37,10 @@
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
+#include "ExportBufferArgs.g.cpp"
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
+#include "AdjustOpacityArgs.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -727,6 +729,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         Id())
         };
     }
+
+    winrt::hstring ExportBufferArgs::GenerateName() const
+    {
+        if (!Path().empty())
+        {
+            // "Export text to {path}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ExportBufferToPathCommandKey")),
+                            Path())
+            };
+        }
+        else
+        {
+            // "Export text"
+            return RS_(L"ExportBufferCommandKey");
+        }
+    }
+
     winrt::hstring ClearBufferArgs::GenerateName() const
     {
         // "Clear Buffer"
@@ -749,5 +769,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MultipleActionsArgs::GenerateName() const
     {
         return L"";
+    }
+
+    winrt::hstring AdjustOpacityArgs::GenerateName() const
+    {
+        if (Relative())
+        {
+            if (Opacity() >= 0)
+            {
+                // "Increase background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"IncreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+            else
+            {
+                // "Decrease background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"DecreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+        }
+        else
+        {
+            // "Set background opacity to {Opacity}%"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"AdjustOpacityCommandKey")),
+                            Opacity())
+            };
+        }
     }
 }

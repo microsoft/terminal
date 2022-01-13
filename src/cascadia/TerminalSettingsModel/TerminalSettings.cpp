@@ -155,6 +155,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     defaultSettings.ApplyColorScheme(scheme);
                 }
             }
+            // Elevate on NewTerminalArgs is an optional value, so the default
+            // value (null) doesn't override a profile's value. Note that
+            // elevate:false in an already elevated terminal does nothing - the
+            // profile will still be launched elevated.
+            if (newTerminalArgs.Elevate())
+            {
+                defaultSettings.Elevate(newTerminalArgs.Elevate().Value());
+            }
         }
 
         return settingsPair;
@@ -255,6 +263,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
         }
+
+        _Elevate = profile.Elevate();
     }
 
     // Method Description:

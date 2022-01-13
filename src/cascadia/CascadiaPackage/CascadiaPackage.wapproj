@@ -78,6 +78,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\host\exe\Host.EXE.vcxproj">
       <Project>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ElevateShim\elevate-shim.vcxproj" >
+      <Project>{416fd703-baa7-4f6e-9361-64f550ec8fca}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\host\proxy\Host.Proxy.vcxproj">
       <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
     </ProjectReference>

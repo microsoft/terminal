@@ -345,7 +345,13 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         duplicated->UnfocusedAppearance(*unfocusedAppearance);
     }
 
-    if (source.HasConnectionType())
+    // GH#12120: Check if the connection type isn't just the default value. If
+    // it is, then we should copy it. The only case this applies right now is
+    // for the Azure Cloud Shell, which is the only thing that has a non-{}
+    // guid. The user's version of this profile won't have connectionType set,
+    // because it inherits the setting from the parent. If we fail to copy it
+    // here, they won't actually get a Azure shell profile.
+    if (source.ConnectionType() != winrt::guid{})
     {
         duplicated->ConnectionType(source.ConnectionType());
     }
@@ -403,6 +409,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
 // - <none>
 void CascadiaSettings::_validateSettings()
 {
+    _validateCorrectDefaultShellPaths();
     _validateAllSchemesExist();
     _validateMediaResources();
     _validateKeybindings();
@@ -569,24 +576,16 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
         }
     }
 
-    if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
-    {
-        // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
-        // what we do is dependent on whether there was a commandline.
-        // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
-        // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
-        //   launch in the user's actual default profile.
-        // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
-        // TODO GH#10952: Detect the profile based on the commandline (add matching support)
-        return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-                   FindProfile(GlobalSettings().DefaultProfile()) :
-                   ProfileDefaults();
-    }
-    else
-    {
-        // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
-        return FindProfile(GlobalSettings().DefaultProfile());
-    }
+    // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
+    // what we do is dependent on whether there was a commandline.
+    // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
+    // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
+    //   launch in the user's actual default profile.
+    // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
+    // TODO GH#10952: Detect the profile based on the commandline (add matching support)
+    return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
+               FindProfile(GlobalSettings().DefaultProfile()) :
+               ProfileDefaults();
 }
 
 // The method does some crude command line matching for our console hand-off support.
