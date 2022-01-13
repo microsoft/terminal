@@ -85,31 +85,31 @@ public:
         }
         return _setConsoleScreenBufferInfoExResult;
     }
-    bool SetConsoleCursorPosition(const COORD position) override
+    bool SetCursorPosition(const COORD position) override
     {
-        Log::Comment(L"SetConsoleCursorPosition MOCK called...");
+        Log::Comment(L"SetCursorPosition MOCK called...");
 
-        if (_setConsoleCursorPositionResult)
+        if (_setCursorPositionResult)
         {
             VERIFY_ARE_EQUAL(_expectedCursorPos, position);
             _cursorPos = position;
         }
 
-        return _setConsoleCursorPositionResult;
+        return _setCursorPositionResult;
     }
 
-    bool SetConsoleWindowInfo(const bool absolute, const SMALL_RECT& window) override
+    bool SetWindowInfo(const bool absolute, const SMALL_RECT& window) override
     {
-        Log::Comment(L"SetConsoleWindowInfo MOCK called...");
+        Log::Comment(L"SetWindowInfo MOCK called...");
 
-        if (_setConsoleWindowInfoResult)
+        if (_setWindowInfoResult)
         {
             VERIFY_ARE_EQUAL(_expectedWindowAbsolute, absolute);
             VERIFY_ARE_EQUAL(_expectedConsoleWindow, window);
             _viewport = window;
         }
 
-        return _setConsoleWindowInfoResult;
+        return _setWindowInfoResult;
     }
 
     bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) override
@@ -152,94 +152,93 @@ public:
         return false;
     }
 
-    bool PrivateSetAutoWrapMode(const bool /*wrapAtEOL*/) override
+    bool SetAutoWrapMode(const bool /*wrapAtEOL*/) override
     {
-        Log::Comment(L"PrivateSetAutoWrapMode MOCK called...");
+        Log::Comment(L"SetAutoWrapMode MOCK called...");
 
         return false;
     }
 
-    bool PrivateShowCursor(const bool show) override
+    bool SetCursorVisibility(const bool visible) override
     {
-        Log::Comment(L"PrivateShowCursor MOCK called...");
+        Log::Comment(L"SetCursorVisibility MOCK called...");
 
-        if (_privateShowCursorResult)
+        if (_setCursorVisibilityResult)
         {
-            VERIFY_ARE_EQUAL(_expectedShowCursor, show);
+            VERIFY_ARE_EQUAL(_expectedCursorVisibility, visible);
         }
 
-        return _privateShowCursorResult;
+        return _setCursorVisibilityResult;
     }
 
-    bool PrivateAllowCursorBlinking(const bool enable) override
+    bool EnableCursorBlinking(const bool enable) override
     {
-        Log::Comment(L"PrivateAllowCursorBlinking MOCK called...");
+        Log::Comment(L"EnableCursorBlinking MOCK called...");
 
-        if (_privateAllowCursorBlinkingResult)
+        if (_enableCursorBlinkingResult)
         {
             VERIFY_ARE_EQUAL(_enable, enable);
         }
 
-        return _privateAllowCursorBlinkingResult;
+        return _enableCursorBlinkingResult;
     }
 
-    bool PrivateIsVtInputEnabled() const override
+    bool IsVtInputEnabled() const override
     {
         return false;
     }
 
-    bool PrivateGetTextAttributes(TextAttribute& attrs) const
+    bool GetTextAttributes(TextAttribute& attrs) const
     {
-        Log::Comment(L"PrivateGetTextAttributes MOCK called...");
+        Log::Comment(L"GetTextAttributes MOCK called...");
 
-        if (_privateGetTextAttributesResult)
+        if (_getTextAttributesResult)
         {
             attrs = _attribute;
         }
 
-        return _privateGetTextAttributesResult;
+        return _getTextAttributesResult;
     }
 
-    bool PrivateSetTextAttributes(const TextAttribute& attrs)
+    bool SetTextAttributes(const TextAttribute& attrs)
     {
-        Log::Comment(L"PrivateSetTextAttributes MOCK called...");
+        Log::Comment(L"SetTextAttributes MOCK called...");
 
-        if (_privateSetTextAttributesResult)
+        if (_setTextAttributesResult)
         {
             VERIFY_ARE_EQUAL(_expectedAttribute, attrs);
             _attribute = attrs;
         }
 
-        return _privateSetTextAttributesResult;
+        return _setTextAttributesResult;
     }
 
-    bool PrivateSetCurrentLineRendition(const LineRendition /*lineRendition*/)
+    bool SetCurrentLineRendition(const LineRendition /*lineRendition*/)
     {
-        Log::Comment(L"PrivateSetCurrentLineRendition MOCK called...");
+        Log::Comment(L"SetCurrentLineRendition MOCK called...");
 
         return false;
     }
 
-    bool PrivateResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
+    bool ResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
     {
-        Log::Comment(L"PrivateResetLineRenditionRange MOCK called...");
+        Log::Comment(L"ResetLineRenditionRange MOCK called...");
 
         return false;
     }
 
-    SHORT PrivateGetLineWidth(const size_t /*row*/) const
+    SHORT GetLineWidth(const size_t /*row*/) const
     {
-        Log::Comment(L"PrivateGetLineWidth MOCK called...");
+        Log::Comment(L"GetLineWidth MOCK called...");
 
         return _bufferSize.X;
     }
 
-    bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                   size_t& eventsWritten) override
+    bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override
     {
-        Log::Comment(L"PrivateWriteConsoleInputW MOCK called...");
+        Log::Comment(L"WriteInput MOCK called...");
 
-        if (_privateWriteConsoleInputWResult)
+        if (_writeInputResult)
         {
             // move all the input events we were given into local storage so we can test against them
             Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
@@ -256,72 +255,72 @@ public:
             eventsWritten = _events.size();
         }
 
-        return _privateWriteConsoleInputWResult;
+        return _writeInputResult;
     }
 
-    bool PrivateWriteConsoleControlInput(_In_ KeyEvent key) override
+    bool WriteControlInput(_In_ KeyEvent key) override
     {
-        Log::Comment(L"PrivateWriteConsoleControlInput MOCK called...");
+        Log::Comment(L"WriteControlInput MOCK called...");
 
-        if (_privateWriteConsoleControlInputResult)
+        if (_writeControlInputResult)
         {
             VERIFY_ARE_EQUAL('C', key.GetVirtualKeyCode());
             VERIFY_ARE_EQUAL(0x3, key.GetCharData());
             VERIFY_ARE_EQUAL(true, key.IsCtrlPressed());
         }
 
-        return _privateWriteConsoleControlInputResult;
+        return _writeControlInputResult;
     }
 
-    bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) override
+    bool SetScrollingRegion(const SMALL_RECT& scrollMargins) override
     {
-        Log::Comment(L"PrivateSetScrollingRegion MOCK called...");
+        Log::Comment(L"SetScrollingRegion MOCK called...");
 
-        if (_privateSetScrollingRegionResult)
+        if (_setScrollingRegionResult)
         {
             VERIFY_ARE_EQUAL(_expectedScrollRegion, scrollMargins);
         }
 
-        return _privateSetScrollingRegionResult;
+        return _setScrollingRegionResult;
     }
 
-    bool PrivateWarningBell() override
+    bool WarningBell() override
     {
-        Log::Comment(L"PrivateWarningBell MOCK called...");
+        Log::Comment(L"WarningBell MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    bool PrivateGetLineFeedMode() const override
+    bool GetLineFeedMode() const override
     {
-        Log::Comment(L"PrivateGetLineFeedMode MOCK called...");
-        return _privateGetLineFeedModeResult;
+        Log::Comment(L"GetLineFeedMode MOCK called...");
+        return _getLineFeedModeResult;
     }
 
-    bool PrivateLineFeed(const bool withReturn) override
+    bool LineFeed(const bool withReturn) override
     {
-        Log::Comment(L"PrivateLineFeed MOCK called...");
+        Log::Comment(L"LineFeed MOCK called...");
 
-        if (_privateLineFeedResult)
+        if (_lineFeedResult)
         {
             VERIFY_ARE_EQUAL(_expectedLineFeedWithReturn, withReturn);
         }
 
-        return _privateLineFeedResult;
+        return _lineFeedResult;
     }
 
-    bool PrivateReverseLineFeed() override
+    bool ReverseLineFeed() override
     {
-        Log::Comment(L"PrivateReverseLineFeed MOCK called...");
+        Log::Comment(L"ReverseLineFeed MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    bool SetConsoleTitleW(const std::wstring_view title)
+    bool SetWindowTitle(const std::wstring_view title)
     {
-        Log::Comment(L"SetConsoleTitleW MOCK called...");
+        Log::Comment(L"SetWindowTitle MOCK called...");
 
-        if (_setConsoleTitleWResult)
+        if (_setWindowTitleResult)
         {
             // Put into WEX strings for rich logging when they don't compare.
             VERIFY_ARE_EQUAL(String(_expectedWindowTitle.data(), gsl::narrow<int>(_expectedWindowTitle.size())),
@@ -330,27 +329,27 @@ public:
         return TRUE;
     }
 
-    bool PrivateUseAlternateScreenBuffer() override
+    bool UseAlternateScreenBuffer() override
     {
-        Log::Comment(L"PrivateUseAlternateScreenBuffer MOCK called...");
+        Log::Comment(L"UseAlternateScreenBuffer MOCK called...");
         return true;
     }
 
-    bool PrivateUseMainScreenBuffer() override
+    bool UseMainScreenBuffer() override
     {
-        Log::Comment(L"PrivateUseMainScreenBuffer MOCK called...");
+        Log::Comment(L"UseMainScreenBuffer MOCK called...");
         return true;
     }
 
-    bool PrivateEraseAll() override
+    bool EraseAll() override
     {
-        Log::Comment(L"PrivateEraseAll MOCK called...");
+        Log::Comment(L"EraseAll MOCK called...");
         return TRUE;
     }
 
-    bool PrivateClearBuffer() override
+    bool ClearBuffer() override
     {
-        Log::Comment(L"PrivateClearBuffer MOCK called...");
+        Log::Comment(L"ClearBuffer MOCK called...");
         return TRUE;
     }
 
@@ -370,16 +369,16 @@ public:
         return _setCursorStyleResult;
     }
 
-    bool PrivateRefreshWindow() override
+    bool RefreshWindow() override
     {
-        Log::Comment(L"PrivateRefreshWindow MOCK called...");
+        Log::Comment(L"RefreshWindow MOCK called...");
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
 
-    bool PrivateSuppressResizeRepaint() override
+    bool SuppressResizeRepaint() override
     {
-        Log::Comment(L"PrivateSuppressResizeRepaint MOCK called...");
+        Log::Comment(L"SuppressResizeRepaint MOCK called...");
         VERIFY_IS_TRUE(false, L"AdaptDispatch should never be calling this function.");
         return FALSE;
     }
@@ -460,31 +459,31 @@ public:
         Log::Comment(L"SetColorAliasIndex MOCK called...");
     }
 
-    bool PrivateFillRegion(const COORD /*startPosition*/,
-                           const size_t /*fillLength*/,
-                           const wchar_t /*fillChar*/,
-                           const bool /*standardFillAttrs*/) noexcept override
+    bool FillRegion(const COORD /*startPosition*/,
+                    const size_t /*fillLength*/,
+                    const wchar_t /*fillChar*/,
+                    const bool /*standardFillAttrs*/) noexcept override
     {
-        Log::Comment(L"PrivateFillRegion MOCK called...");
+        Log::Comment(L"FillRegion MOCK called...");
 
         return TRUE;
     }
 
-    bool PrivateScrollRegion(const SMALL_RECT /*scrollRect*/,
-                             const std::optional<SMALL_RECT> /*clipRect*/,
-                             const COORD /*destinationOrigin*/,
-                             const bool /*standardFillAttrs*/) noexcept override
+    bool ScrollRegion(const SMALL_RECT /*scrollRect*/,
+                      const std::optional<SMALL_RECT> /*clipRect*/,
+                      const COORD /*destinationOrigin*/,
+                      const bool /*standardFillAttrs*/) noexcept override
     {
-        Log::Comment(L"PrivateScrollRegion MOCK called...");
+        Log::Comment(L"ScrollRegion MOCK called...");
 
         return TRUE;
     }
 
-    bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
-                               const SIZE cellSize,
-                               const size_t /*centeringHint*/) noexcept override
+    bool UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+                        const SIZE cellSize,
+                        const size_t /*centeringHint*/) noexcept override
     {
-        Log::Comment(L"PrivateUpdateSoftFont MOCK called...");
+        Log::Comment(L"UpdateSoftFont MOCK called...");
 
         Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
         VERIFY_ARE_EQUAL(_expectedCellSize.cx, cellSize.cx);
@@ -522,13 +521,13 @@ public:
         Log::Comment(L"Resetting mock data state.");
 
         // APIs succeed by default
-        _setConsoleCursorPositionResult = TRUE;
+        _setCursorPositionResult = TRUE;
         _getConsoleScreenBufferInfoExResult = TRUE;
-        _privateGetTextAttributesResult = TRUE;
-        _privateSetTextAttributesResult = TRUE;
-        _privateWriteConsoleInputWResult = TRUE;
-        _privateWriteConsoleControlInputResult = TRUE;
-        _setConsoleWindowInfoResult = TRUE;
+        _getTextAttributesResult = TRUE;
+        _setTextAttributesResult = TRUE;
+        _writeInputResult = TRUE;
+        _writeControlInputResult = TRUE;
+        _setWindowInfoResult = TRUE;
         _moveToBottomResult = true;
 
         _bufferSize.X = 100;
@@ -618,16 +617,16 @@ public:
         }
     }
 
-    bool PrivateAddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) const
+    bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) const
     {
-        Log::Comment(L"PrivateAddHyperlink MOCK called...");
+        Log::Comment(L"AddHyperlink MOCK called...");
 
         return TRUE;
     }
 
-    bool PrivateEndHyperlink() const
+    bool EndHyperlink() const
     {
-        Log::Comment(L"PrivateEndHyperlink MOCK called...");
+        Log::Comment(L"EndHyperlink MOCK called...");
 
         return TRUE;
     }
@@ -678,17 +677,17 @@ public:
     unsigned int _expectedOutputCP = 0;
     bool _isPty = false;
 
-    bool _privateShowCursorResult = false;
-    bool _expectedShowCursor = false;
+    bool _setCursorVisibilityResult = false;
+    bool _expectedCursorVisibility = false;
 
     bool _getConsoleScreenBufferInfoExResult = false;
-    bool _setConsoleCursorPositionResult = false;
-    bool _privateGetTextAttributesResult = false;
-    bool _privateSetTextAttributesResult = false;
-    bool _privateWriteConsoleInputWResult = false;
-    bool _privateWriteConsoleControlInputResult = false;
+    bool _setCursorPositionResult = false;
+    bool _getTextAttributesResult = false;
+    bool _setTextAttributesResult = false;
+    bool _writeInputResult = false;
+    bool _writeControlInputResult = false;
 
-    bool _setConsoleWindowInfoResult = false;
+    bool _setWindowInfoResult = false;
     bool _expectedWindowAbsolute = false;
     bool _setConsoleScreenBufferInfoExResult = false;
 
@@ -700,15 +699,15 @@ public:
     bool _setParserModeResult = false;
     StateMachine::Mode _expectedParserMode;
     bool _expectedParserModeEnabled = false;
-    bool _privateAllowCursorBlinkingResult = false;
+    bool _enableCursorBlinkingResult = false;
     bool _enable = false; // for cursor blinking
-    bool _privateSetScrollingRegionResult = false;
-    bool _privateGetLineFeedModeResult = false;
-    bool _privateLineFeedResult = false;
+    bool _setScrollingRegionResult = false;
+    bool _getLineFeedModeResult = false;
+    bool _lineFeedResult = false;
     bool _expectedLineFeedWithReturn = false;
-    bool _privateReverseLineFeedResult = false;
+    bool _reverseLineFeedResult = false;
 
-    bool _setConsoleTitleWResult = false;
+    bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
     bool _setCursorStyleResult = false;
     CursorType _expectedCursorStyle;
@@ -920,10 +919,10 @@ public:
         VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(100));
 
         // error cases
-        // SetConsoleCursorPosition throws failure. Parameters are otherwise normal.
-        Log::Comment(L"Test 4: When SetConsoleCursorPosition throws a failure, call fails and cursor doesn't move.");
+        // SetCursorPosition throws failure. Parameters are otherwise normal.
+        Log::Comment(L"Test 4: When SetCursorPosition throws a failure, call fails and cursor doesn't move.");
         _testGetSet->PrepData(direction);
-        _testGetSet->_setConsoleCursorPositionResult = FALSE;
+        _testGetSet->_setCursorPositionResult = FALSE;
 
         VERIFY_IS_FALSE((_pDispatch.get()->*(moveFunc))(0));
         VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
@@ -982,7 +981,7 @@ public:
         Log::Comment(L"Test 5: SetCursor API returns false. No move, return false.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _testGetSet->_setConsoleCursorPositionResult = FALSE;
+        _testGetSet->_setCursorPositionResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->CursorPosition(1, 1));
     }
@@ -1071,7 +1070,7 @@ public:
         Log::Comment(L"Test 5: SetCursor API returns false. No move, return false.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        _testGetSet->_setConsoleCursorPositionResult = FALSE;
+        _testGetSet->_setCursorPositionResult = FALSE;
 
         sVal = 1;
 
@@ -1134,13 +1133,13 @@ public:
         Log::Comment(L"Test 1: Verify successful API call modifies visibility state.");
         _testGetSet->PrepData();
         _testGetSet->_cursorVisible = fStart;
-        _testGetSet->_privateShowCursorResult = true;
-        _testGetSet->_expectedShowCursor = fEnd;
+        _testGetSet->_setCursorVisibilityResult = true;
+        _testGetSet->_expectedCursorVisibility = fEnd;
         VERIFY_IS_TRUE(_pDispatch.get()->CursorVisibility(fEnd));
 
         Log::Comment(L"Test 3: When we fail to set updated cursor information, the dispatch should fail.");
         _testGetSet->PrepData();
-        _testGetSet->_privateShowCursorResult = false;
+        _testGetSet->_setCursorVisibilityResult = false;
         VERIFY_IS_FALSE(_pDispatch.get()->CursorVisibility(fEnd));
     }
 
@@ -1160,14 +1159,14 @@ public:
         Log::Comment(L"Test 2: Gracefully fail when getting attribute data fails.");
 
         _testGetSet->PrepData();
-        _testGetSet->_privateGetTextAttributesResult = FALSE;
+        _testGetSet->_getTextAttributesResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 3: Gracefully fail when setting attribute data fails.");
 
         _testGetSet->PrepData();
-        _testGetSet->_privateSetTextAttributesResult = FALSE;
+        _testGetSet->_setTextAttributesResult = FALSE;
         // Need at least one option in order for the call to be able to fail.
         rgOptions[0] = (DispatchTypes::GraphicsOptions)0;
         cOptions = 1;
@@ -1815,9 +1814,9 @@ public:
         PCWSTR pwszExpectedResponse = L"\x1b[?1;0c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        _testGetSet->_writeInputResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->DeviceAttributes());
     }
@@ -1833,9 +1832,9 @@ public:
         PCWSTR pwszExpectedResponse = L"\x1b[>0;10;1c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        _testGetSet->_writeInputResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->SecondaryDeviceAttributes());
     }
@@ -1851,9 +1850,9 @@ public:
         PCWSTR pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        _testGetSet->_writeInputResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->TertiaryDeviceAttributes());
     }
@@ -1876,9 +1875,9 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
 
-        Log::Comment(L"Test 4: Verify failure when WriteConsoleInput doesn't work.");
+        Log::Comment(L"Test 4: Verify failure when WriteInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        _testGetSet->_writeInputResult = FALSE;
         VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
     }
 
@@ -2058,14 +2057,14 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: enable blinking = true");
-        _testGetSet->_privateAllowCursorBlinkingResult = TRUE;
+        _testGetSet->_enableCursorBlinkingResult = TRUE;
         _testGetSet->_enable = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->EnableCursorBlinking(true));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: enable blinking = false");
-        _testGetSet->_privateAllowCursorBlinkingResult = TRUE;
+        _testGetSet->_enableCursorBlinkingResult = TRUE;
         _testGetSet->_enable = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->EnableCursorBlinking(false));
@@ -2084,8 +2083,8 @@ public:
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
-        _testGetSet->_setConsoleCursorPositionResult = true;
+        _testGetSet->_setScrollingRegionResult = TRUE;
+        _testGetSet->_setCursorPositionResult = true;
         _testGetSet->_moveToBottomResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
@@ -2093,30 +2092,30 @@ public:
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 0);
         _testGetSet->_expectedScrollRegion.Bottom = _testGetSet->_viewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 0);
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds is invalid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 3);
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
@@ -2127,7 +2126,7 @@ public:
 
         Log::Comment(L"Test 7: Verify setting margins to (1, height) clears them");
         // First set,
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
@@ -2138,7 +2137,7 @@ public:
 
         Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
         // First set,
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
@@ -2150,19 +2149,19 @@ public:
         Log::Comment(L"Test 9: Verify having top and bottom margin the same is invalid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 4, 4);
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds is invalid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, sScreenHeight + 1, sScreenHeight + 10);
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds is invalid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight + 1);
-        _testGetSet->_privateSetScrollingRegionResult = TRUE;
+        _testGetSet->_setScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
     }
 
@@ -2171,7 +2170,7 @@ public:
         Log::Comment(L"Starting test...");
 
         // All test cases need the LineFeed call to succeed.
-        _testGetSet->_privateLineFeedResult = TRUE;
+        _testGetSet->_lineFeedResult = TRUE;
 
         Log::Comment(L"Test 1: Line feed without carriage return.");
         _testGetSet->_expectedLineFeedWithReturn = false;
@@ -2182,12 +2181,12 @@ public:
         VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::WithReturn));
 
         Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
-        _testGetSet->_privateGetLineFeedModeResult = false;
+        _testGetSet->_getLineFeedModeResult = false;
         _testGetSet->_expectedLineFeedWithReturn = false;
         VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
 
         Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
-        _testGetSet->_privateGetLineFeedModeResult = true;
+        _testGetSet->_getLineFeedModeResult = true;
         _testGetSet->_expectedLineFeedWithReturn = true;
         VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
     }
@@ -2197,13 +2196,13 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: set title to be non-null");
-        _testGetSet->_setConsoleTitleWResult = TRUE;
+        _testGetSet->_setWindowTitleResult = TRUE;
         _testGetSet->_expectedWindowTitle = L"Foo bar";
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetWindowTitle(_testGetSet->_expectedWindowTitle));
 
         Log::Comment(L"Test 2: set title to be null");
-        _testGetSet->_setConsoleTitleWResult = FALSE;
+        _testGetSet->_setWindowTitleResult = FALSE;
         _testGetSet->_expectedWindowTitle = {};
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetWindowTitle({}));

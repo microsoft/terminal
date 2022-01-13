@@ -145,7 +145,7 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 
 void PtySignalInputThread::_DoClearBuffer()
 {
-    _pConApi->PrivateClearBuffer();
+    _pConApi->ClearBuffer();
 }
 
 // Method Description:

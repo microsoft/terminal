@@ -129,12 +129,12 @@ bool ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BU
 }
 
 // Routine Description:
-// - Connects the SetConsoleCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
+// - Connects the SetCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - position - new cursor position to set like the public API call.
 // Return Value:
-// - true if successful (see DoSrvSetConsoleCursorPosition). false otherwise.
-bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::SetCursorPosition(const COORD position)
 {
     auto& info = _io.GetActiveOutputBuffer();
     const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
@@ -147,7 +147,7 @@ bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
 // - attrs: Receives the TextAttribute value.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateGetTextAttributes(TextAttribute& attrs) const
+bool ConhostInternalGetSet::GetTextAttributes(TextAttribute& attrs) const
 {
     attrs = _io.GetActiveOutputBuffer().GetAttributes();
     return true;
@@ -160,7 +160,7 @@ bool ConhostInternalGetSet::PrivateGetTextAttributes(TextAttribute& attrs) const
 // - attrs: The new TextAttribute to use
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
+bool ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 {
     _io.GetActiveOutputBuffer().SetAttributes(attrs);
     return true;
@@ -173,7 +173,7 @@ bool ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
 // - lineRendition: The new LineRendition attribute to use
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition lineRendition)
+bool ConhostInternalGetSet::SetCurrentLineRendition(const LineRendition lineRendition)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.SetCurrentLineRendition(lineRendition);
@@ -188,7 +188,7 @@ bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition l
 // - endRow: The row number following the last line to be modified
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow)
+bool ConhostInternalGetSet::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.ResetLineRenditionRange(startRow, endRow);
@@ -202,7 +202,7 @@ bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow
 // - row: The row number of the line to measure
 // Return Value:
 // - the number of cells that will fit on the line
-SHORT ConhostInternalGetSet::PrivateGetLineWidth(const size_t row) const
+SHORT ConhostInternalGetSet::GetLineWidth(const size_t row) const
 {
     const auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     return textBuffer.GetLineWidth(row);
@@ -216,8 +216,7 @@ SHORT ConhostInternalGetSet::PrivateGetLineWidth(const size_t row) const
 // - eventsWritten - on output, the number of events written
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                      size_t& eventsWritten)
+bool ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
 try
 {
     eventsWritten = _io.GetActiveInputBuffer()->Write(events);
@@ -226,13 +225,13 @@ try
 CATCH_RETURN_FALSE()
 
 // Routine Description:
-// - Connects the SetConsoleWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
+// - Connects the SetWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - absolute - Should the window be moved to an absolute position? If false, the movement is relative to the current pos.
 // - window - Info about how to move the viewport
 // Return Value:
 // - true if successful (see DoSrvSetConsoleWindowInfo). false otherwise.
-bool ConhostInternalGetSet::SetConsoleWindowInfo(const bool absolute, const SMALL_RECT& window)
+bool ConhostInternalGetSet::SetWindowInfo(const bool absolute, const SMALL_RECT& window)
 {
     return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
 }
@@ -259,7 +258,7 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
     // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return !(IsConsolePty() && PrivateIsVtInputEnabled());
+    return !(IsConsolePty() && IsVtInputEnabled());
 }
 
 // Routine Description:
@@ -320,7 +319,7 @@ bool ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const
 // - wrapAtEOL - set to true to wrap, false to overwrite the last character.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
+bool ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 {
     auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
     WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
@@ -330,13 +329,13 @@ bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
 // Routine Description:
 // - Makes the cursor visible or hidden. Does not modify blinking state.
 // Arguments:
-// - show - set to true to make the cursor visible, false to hide.
+// - visible - set to true to make the cursor visible, false to hide.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
+bool ConhostInternalGetSet::SetCursorVisibility(const bool visible) noexcept
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
-    textBuffer.GetCursor().SetIsVisible(show);
+    textBuffer.GetCursor().SetIsVisible(visible);
     return true;
 }
 
@@ -346,7 +345,7 @@ bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
 // - fEnable - set to true to enable blinking, false to disable
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
+bool ConhostInternalGetSet::EnableCursorBlinking(const bool fEnable)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.GetCursor().SetBlinkingAllowed(fEnable);
@@ -375,7 +374,7 @@ bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 //     left and right margins in the future.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins)
+bool ConhostInternalGetSet::SetScrollingRegion(const SMALL_RECT& scrollMargins)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
@@ -391,7 +390,7 @@ bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMa
 // - None
 // Return Value:
 // - true if a line feed also produces a carriage return. false otherwise.
-bool ConhostInternalGetSet::PrivateGetLineFeedMode() const
+bool ConhostInternalGetSet::GetLineFeedMode() const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.IsReturnOnNewlineAutomatic();
@@ -403,7 +402,7 @@ bool ConhostInternalGetSet::PrivateGetLineFeedMode() const
 // - withReturn - Set to true if a carriage return should be performed as well.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateLineFeed(const bool withReturn)
+bool ConhostInternalGetSet::LineFeed(const bool withReturn)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto& textBuffer = screenInfo.GetTextBuffer();
@@ -433,7 +432,7 @@ bool ConhostInternalGetSet::PrivateLineFeed(const bool withReturn)
 // - Sends a notify message to play the "SystemHand" sound event.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateWarningBell()
+bool ConhostInternalGetSet::WarningBell()
 {
     return _io.GetActiveOutputBuffer().SendNotifyBeep();
 }
@@ -442,7 +441,7 @@ bool ConhostInternalGetSet::PrivateWarningBell()
 // - Performs a "Reverse line feed", essentially, the opposite of '\n'.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateReverseLineFeed()
+bool ConhostInternalGetSet::ReverseLineFeed()
 {
     auto success = true;
 
@@ -487,7 +486,7 @@ bool ConhostInternalGetSet::PrivateReverseLineFeed()
             coordDestination.Y = viewport.Top + 1;
 
             // Note the revealed lines are filled with the standard erase attributes.
-            success = PrivateScrollRegion(srScroll, srScroll, coordDestination, true);
+            success = ScrollRegion(srScroll, srScroll, coordDestination, true);
         }
     }
     return success;
@@ -499,7 +498,7 @@ bool ConhostInternalGetSet::PrivateReverseLineFeed()
 // - title - The null-terminated string to set as the window title
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetConsoleTitleW(std::wstring_view title)
+bool ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
     return true;
@@ -511,7 +510,7 @@ bool ConhostInternalGetSet::SetConsoleTitleW(std::wstring_view title)
 //     If there is an already existing alternate, it is discarded.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
+bool ConhostInternalGetSet::UseAlternateScreenBuffer()
 {
     return NT_SUCCESS(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
 }
@@ -521,7 +520,7 @@ bool ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
 //     buffer. From the main screen buffer, does nothing. The alternate is discarded.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
+bool ConhostInternalGetSet::UseMainScreenBuffer()
 {
     _io.GetActiveOutputBuffer().UseMainScreenBuffer();
     return true;
@@ -532,7 +531,7 @@ bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
 //      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateEraseAll()
+bool ConhostInternalGetSet::EraseAll()
 {
     return SUCCEEDED(_io.GetActiveOutputBuffer().VtEraseAll());
 }
@@ -543,7 +542,7 @@ bool ConhostInternalGetSet::PrivateEraseAll()
 //     See SCREEN_INFORMATION::ClearBuffer's description for details.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateClearBuffer()
+bool ConhostInternalGetSet::ClearBuffer()
 {
     return SUCCEEDED(_io.GetActiveOutputBuffer().ClearBuffer());
 }
@@ -582,7 +581,7 @@ bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 // - <none>
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateRefreshWindow()
+bool ConhostInternalGetSet::RefreshWindow()
 {
     auto& g = ServiceLocator::LocateGlobals();
     if (&_io.GetActiveOutputBuffer() == &g.getConsoleInformation().GetActiveOutputBuffer())
@@ -604,7 +603,7 @@ bool ConhostInternalGetSet::PrivateRefreshWindow()
 // - key - The keyevent to send to the console.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
+bool ConhostInternalGetSet::WriteControlInput(const KeyEvent key)
 {
     HandleGenericKeyEvent(key, false);
     return true;
@@ -641,7 +640,7 @@ bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
 // - <none>
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSuppressResizeRepaint()
+bool ConhostInternalGetSet::SuppressResizeRepaint()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return SUCCEEDED(gci.GetVtIo()->SuppressResizeRepaint());
@@ -718,7 +717,7 @@ void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
         }
 
         // Note the revealed lines are filled with the standard erase attributes.
-        LOG_IF_WIN32_BOOL_FALSE((BOOL)PrivateScrollRegion(srScroll, srScroll, coordDestination, true));
+        LOG_IF_WIN32_BOOL_FALSE((BOOL)ScrollRegion(srScroll, srScroll, coordDestination, true));
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
@@ -810,10 +809,10 @@ void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const siz
 //                       If false, fill with the default attributes.
 // Return value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
-                                              const size_t fillLength,
-                                              const wchar_t fillChar,
-                                              const bool standardFillAttrs) noexcept
+bool ConhostInternalGetSet::FillRegion(const COORD startPosition,
+                                       const size_t fillLength,
+                                       const wchar_t fillChar,
+                                       const bool standardFillAttrs) noexcept
 try
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
@@ -861,10 +860,10 @@ CATCH_RETURN_FALSE()
 //                       If false, fill with the default attributes.
 // Return value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
-                                                const std::optional<SMALL_RECT> clipRect,
-                                                const COORD destinationOrigin,
-                                                const bool standardFillAttrs) noexcept
+bool ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
+                                         const std::optional<SMALL_RECT> clipRect,
+                                         const COORD destinationOrigin,
+                                         const bool standardFillAttrs) noexcept
 try
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
@@ -880,20 +879,20 @@ try
         fillAttrs.SetStandardErase();
     }
 
-    ScrollRegion(screenInfo, scrollRect, clipRect, destinationOrigin, UNICODE_SPACE, fillAttrs);
+    ::ScrollRegion(screenInfo, scrollRect, clipRect, destinationOrigin, UNICODE_SPACE, fillAttrs);
     return true;
 }
 CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Checks if the InputBuffer is willing to accept VT Input directly
-//   PrivateIsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
+//   IsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
 //    but it is not represented as a function call on our public API surface.
 // Arguments:
 // - <none>
 // Return value:
 // - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
-bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
+bool ConhostInternalGetSet::IsVtInputEnabled() const
 {
     return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
 }
@@ -905,7 +904,7 @@ bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
 // - The hyperlink URI
 // Return Value:
 // - true
-bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
+bool ConhostInternalGetSet::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto attr = screenInfo.GetAttributes();
@@ -916,7 +915,7 @@ bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri, con
     return true;
 }
 
-bool ConhostInternalGetSet::PrivateEndHyperlink() const
+bool ConhostInternalGetSet::EndHyperlink() const
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto attr = screenInfo.GetAttributes();
@@ -933,9 +932,9 @@ bool ConhostInternalGetSet::PrivateEndHyperlink() const
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                                  const SIZE cellSize,
-                                                  const size_t centeringHint) noexcept
+bool ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                           const SIZE cellSize,
+                                           const size_t centeringHint) noexcept
 try
 {
     auto* pRender = ServiceLocator::LocateGlobals().pRender;

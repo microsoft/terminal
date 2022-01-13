@@ -76,7 +76,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
     TextAttribute attr;
-    bool success = _pConApi->PrivateGetTextAttributes(attr);
+    bool success = _pConApi->GetTextAttributes(attr);
 
     if (success)
     {
@@ -258,7 +258,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
                 break;
             }
         }
-        success = _pConApi->PrivateSetTextAttributes(attr);
+        success = _pConApi->SetTextAttributes(attr);
     }
 
     return success;
@@ -277,7 +277,7 @@ bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
     bool success = true;
     TextAttribute currentAttributes;
 
-    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+    success = _pConApi->GetTextAttributes(currentAttributes);
 
     if (success)
     {
@@ -299,11 +299,11 @@ bool AdaptDispatch::PopGraphicsRendition()
     bool success = true;
     TextAttribute currentAttributes;
 
-    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+    success = _pConApi->GetTextAttributes(currentAttributes);
 
     if (success)
     {
-        success = _pConApi->PrivateSetTextAttributes(_sgrStack.Pop(currentAttributes));
+        success = _pConApi->SetTextAttributes(_sgrStack.Pop(currentAttributes));
     }
 
     return success;

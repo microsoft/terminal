@@ -303,7 +303,7 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
 void ConptyRoundtripTests::_clearConpty()
 {
     // Taken verbatim from implementation in PtySignalInputThread::_DoClearBuffer
-    _pConApi->PrivateClearBuffer();
+    _pConApi->ClearBuffer();
 }
 
 [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size newSize)

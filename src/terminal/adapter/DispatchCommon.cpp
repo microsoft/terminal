@@ -50,7 +50,7 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
                 csbiex.dwSize.Y = sRows;
             }
 
-            // SetConsoleWindowInfo expect inclusive rects
+            // SetWindowInfo expect inclusive rects
             const auto sri = newViewport.ToInclusive();
 
             // SetConsoleScreenBufferInfoEx however expects exclusive rects
@@ -60,7 +60,7 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
             success = conApi.SetConsoleScreenBufferInfoEx(csbiex);
             if (success)
             {
-                success = conApi.SetConsoleWindowInfo(true, sri);
+                success = conApi.SetWindowInfo(true, sri);
             }
         }
     }
@@ -75,7 +75,7 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
 // True if handled successfully. False otherwise.
 bool DispatchCommon::s_RefreshWindow(ConGetSet& conApi)
 {
-    return conApi.PrivateRefreshWindow();
+    return conApi.RefreshWindow();
 }
 
 // Routine Description:
@@ -89,5 +89,5 @@ bool DispatchCommon::s_RefreshWindow(ConGetSet& conApi)
 // True if handled successfully. False otherwise.
 bool DispatchCommon::s_SuppressResizeRepaint(ConGetSet& conApi)
 {
-    return conApi.PrivateSuppressResizeRepaint();
+    return conApi.SuppressResizeRepaint();
 }

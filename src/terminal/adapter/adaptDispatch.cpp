@@ -247,7 +247,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 
         // Finally, attempt to set the adjusted cursor position back into the console.
         const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
-        success = _pConApi->SetConsoleCursorPosition(newPos);
+        success = _pConApi->SetCursorPosition(newPos);
     }
 
     return success;
@@ -329,7 +329,7 @@ bool AdaptDispatch::CursorSaveState()
     bool success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
 
     TextAttribute attributes;
-    success = success && (_pConApi->PrivateGetTextAttributes(attributes));
+    success = success && (_pConApi->GetTextAttributes(attributes));
 
     if (success)
     {
@@ -383,7 +383,7 @@ bool AdaptDispatch::CursorRestoreState()
     _isOriginModeRelative = savedCursorState.IsOriginModeRelative;
 
     // Restore text attributes.
-    success = (_pConApi->PrivateSetTextAttributes(savedCursorState.Attributes)) && success;
+    success = (_pConApi->SetTextAttributes(savedCursorState.Attributes)) && success;
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
@@ -410,7 +410,7 @@ bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 {
     // This uses a private API instead of the public one, because the public API
     //      will set the cursor shape back to legacy.
-    return _pConApi->PrivateShowCursor(fIsVisible);
+    return _pConApi->SetCursorVisibility(fIsVisible);
 }
 
 // Routine Description:
@@ -439,7 +439,7 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
     // Rectangle to cut out of the existing buffer. This is inclusive.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = _pConApi->PrivateGetLineWidth(cursor.Y) - 1;
+    srScroll.Right = _pConApi->GetLineWidth(cursor.Y) - 1;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -463,7 +463,7 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
     if (success)
     {
         // Note the revealed characters are filled with the standard erase attributes.
-        success = _pConApi->PrivateScrollRegion(srScroll, srScroll, coordDestination, true);
+        success = _pConApi->ScrollRegion(srScroll, srScroll, coordDestination, true);
     }
 
     return success;
@@ -538,12 +538,12 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
         // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = _pConApi->PrivateGetLineWidth(lineId) - coordStartPosition.X;
+        nLength = _pConApi->GetLineWidth(lineId) - coordStartPosition.X;
         break;
     }
 
     // Note that the region is filled with the standard erase attributes.
-    return _pConApi->PrivateFillRegion(coordStartPosition, nLength, L' ', true);
+    return _pConApi->FillRegion(coordStartPosition, nLength, L' ', true);
 }
 
 // Routine Description:
@@ -571,7 +571,7 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
         const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
 
         // Note that the region is filled with the standard erase attributes.
-        success = _pConApi->PrivateFillRegion(startPosition, eraseLength, L' ', true);
+        success = _pConApi->FillRegion(startPosition, eraseLength, L' ', true);
     }
     return success;
 }
@@ -635,12 +635,12 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         if (eraseType == DispatchTypes::EraseType::FromBeginning)
         {
             const auto endRow = csbiex.dwCursorPosition.Y;
-            _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, endRow);
+            _pConApi->ResetLineRenditionRange(csbiex.srWindow.Top, endRow);
         }
         if (eraseType == DispatchTypes::EraseType::ToEnd)
         {
             const auto startRow = csbiex.dwCursorPosition.Y + (csbiex.dwCursorPosition.X > 0 ? 1 : 0);
-            _pConApi->PrivateResetLineRenditionRange(startRow, csbiex.srWindow.Bottom);
+            _pConApi->ResetLineRenditionRange(startRow, csbiex.srWindow.Bottom);
         }
 
         // What we need to erase is grouped into 3 types:
@@ -727,7 +727,7 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    return _pConApi->PrivateSetCurrentLineRendition(rendition);
+    return _pConApi->SetCurrentLineRendition(rendition);
 }
 
 // Routine Description:
@@ -930,7 +930,7 @@ bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
     // could collide with eachother.
-    success = _pConApi->PrivateWriteConsoleInputW(inEvents, eventsWritten);
+    success = _pConApi->WriteInput(inEvents, eventsWritten);
 
     return success;
 }
@@ -979,7 +979,7 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection scrollDirection, const
             coordDestination.Y = srScreen.Top + dist * (scrollDirection == ScrollDirection::Up ? -1 : 1);
 
             // Note the revealed lines are filled with the standard erase attributes.
-            success = _pConApi->PrivateScrollRegion(srScreen, srScreen, coordDestination, true);
+            success = _pConApi->ScrollRegion(srScreen, srScreen, coordDestination, true);
         }
     }
 
@@ -1204,7 +1204,7 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 {
-    return _pConApi->PrivateAllowCursorBlinking(enable);
+    return _pConApi->EnableCursorBlinking(enable);
 }
 
 // Routine Description:
@@ -1298,7 +1298,7 @@ bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
 {
-    return _pConApi->PrivateSetAutoWrapMode(wrapAtEOL);
+    return _pConApi->SetAutoWrapMode(wrapAtEOL);
 }
 
 // Routine Description:
@@ -1365,7 +1365,7 @@ bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
                 }
                 _scrollMargins.Top = actualTop;
                 _scrollMargins.Bottom = actualBottom;
-                success = _pConApi->PrivateSetScrollingRegion(_scrollMargins);
+                success = _pConApi->SetScrollingRegion(_scrollMargins);
             }
         }
     }
@@ -1399,7 +1399,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const size_t topMargin,
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::WarningBell()
 {
-    return _pConApi->PrivateWarningBell();
+    return _pConApi->WarningBell();
 }
 
 // Routine Description:
@@ -1426,11 +1426,11 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        return _pConApi->PrivateLineFeed(_pConApi->PrivateGetLineFeedMode());
+        return _pConApi->LineFeed(_pConApi->GetLineFeedMode());
     case DispatchTypes::LineFeedType::WithoutReturn:
-        return _pConApi->PrivateLineFeed(false);
+        return _pConApi->LineFeed(false);
     case DispatchTypes::LineFeedType::WithReturn:
-        return _pConApi->PrivateLineFeed(true);
+        return _pConApi->LineFeed(true);
     default:
         return false;
     }
@@ -1445,7 +1445,7 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::ReverseLineFeed()
 {
-    return _pConApi->PrivateReverseLineFeed();
+    return _pConApi->ReverseLineFeed();
 }
 
 // Routine Description:
@@ -1456,7 +1456,7 @@ bool AdaptDispatch::ReverseLineFeed()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
-    return _pConApi->SetConsoleTitleW(title);
+    return _pConApi->SetWindowTitle(title);
 }
 
 // - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
@@ -1471,7 +1471,7 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
     bool success = CursorSaveState();
     if (success)
     {
-        success = _pConApi->PrivateUseAlternateScreenBuffer();
+        success = _pConApi->UseAlternateScreenBuffer();
         if (success)
         {
             _usingAltBuffer = true;
@@ -1489,7 +1489,7 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseMainScreenBuffer()
 {
-    bool success = _pConApi->PrivateUseMainScreenBuffer();
+    bool success = _pConApi->UseMainScreenBuffer();
     if (success)
     {
         _usingAltBuffer = false;
@@ -1554,7 +1554,7 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
             }
         }
 
-        success = _pConApi->SetConsoleCursorPosition({ column, row });
+        success = _pConApi->SetCursorPosition({ column, row });
     }
     return success;
 }
@@ -1588,7 +1588,7 @@ bool AdaptDispatch::BackwardsTab(const size_t numTabs)
             }
         }
 
-        success = _pConApi->SetConsoleCursorPosition({ column, row });
+        success = _pConApi->SetCursorPosition({ column, row });
     }
     return success;
 }
@@ -1907,7 +1907,7 @@ bool AdaptDispatch::HardReset()
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
     {
-        success = _pConApi->PrivateUseMainScreenBuffer();
+        success = _pConApi->UseMainScreenBuffer();
         _usingAltBuffer = !success;
     }
 
@@ -1933,7 +1933,7 @@ bool AdaptDispatch::HardReset()
     _ResetTabStops();
 
     // Clear the soft font in the renderer and delete the font buffer.
-    success = _pConApi->PrivateUpdateSoftFont({}, {}, false) && success;
+    success = _pConApi->UpdateSoftFont({}, {}, false) && success;
     _fontBuffer = nullptr;
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
@@ -1969,15 +1969,15 @@ bool AdaptDispatch::ScreenAlignmentPattern()
         // Fill the screen with the letter E using the default attributes.
         auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
         const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
-        success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
+        success = _pConApi->FillRegion(fillPosition, fillLength, L'E', false);
         // Reset the line rendition for all of these rows.
-        success = success && _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, csbiex.srWindow.Bottom);
+        success = success && _pConApi->ResetLineRenditionRange(csbiex.srWindow.Top, csbiex.srWindow.Bottom);
         // Reset the meta/extended attributes (but leave the colors unchanged).
         TextAttribute attr;
-        if (_pConApi->PrivateGetTextAttributes(attr))
+        if (_pConApi->GetTextAttributes(attr))
         {
             attr.SetStandardErase();
-            success = success && _pConApi->PrivateSetTextAttributes(attr);
+            success = success && _pConApi->SetTextAttributes(attr);
         }
         // Reset the origin mode to absolute.
         success = success && SetOriginMode(false);
@@ -2028,16 +2028,16 @@ bool AdaptDispatch::_EraseScrollback()
 
         // Typically a scroll operation should fill with standard erase attributes, but in
         // this case we need to use the default attributes, hence standardFillAttrs is false.
-        success = _pConApi->PrivateScrollRegion(scroll, std::nullopt, destination, false);
+        success = _pConApi->ScrollRegion(scroll, std::nullopt, destination, false);
         if (success)
         {
             // Clear everything after the viewport.
             const DWORD totalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - height);
             const COORD coordBelowStartPosition = { 0, height };
             // Again we need to use the default attributes, hence standardFillAttrs is false.
-            success = _pConApi->PrivateFillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
+            success = _pConApi->FillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
             // Also reset the line rendition for all of the cleared rows.
-            success = success && _pConApi->PrivateResetLineRenditionRange(height, csbiex.dwSize.Y);
+            success = success && _pConApi->ResetLineRenditionRange(height, csbiex.dwSize.Y);
 
             if (success)
             {
@@ -2045,16 +2045,16 @@ bool AdaptDispatch::_EraseScrollback()
                 SMALL_RECT newViewport;
                 newViewport.Left = screen.Left;
                 newViewport.Top = 0;
-                // SetConsoleWindowInfo uses an inclusive rect, while GetConsolescreenBufferInfo is exclusive
+                // SetWindowInfo uses an inclusive rect, while GetConsolescreenBufferInfo is exclusive
                 newViewport.Right = screen.Right - 1;
                 newViewport.Bottom = height - 1;
-                success = _pConApi->SetConsoleWindowInfo(true, newViewport);
+                success = _pConApi->SetWindowInfo(true, newViewport);
 
                 if (success)
                 {
                     // Move the cursor to the same relative location.
                     const COORD newcursor = { cursor.X, cursor.Y - screen.Top };
-                    success = _pConApi->SetConsoleCursorPosition(newcursor);
+                    success = _pConApi->SetCursorPosition(newcursor);
                 }
             }
         }
@@ -2075,7 +2075,7 @@ bool AdaptDispatch::_EraseScrollback()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseAll()
 {
-    return _pConApi->PrivateEraseAll();
+    return _pConApi->EraseAll();
 }
 
 // Routine Description:
@@ -2224,7 +2224,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     bool success = _pConApi->SetCursorStyle(actualType);
     if (success)
     {
-        success = _pConApi->PrivateAllowCursorBlinking(fEnableBlinking);
+        success = _pConApi->EnableCursorBlinking(fEnableBlinking);
     }
 
     // If we're a conpty, always return false, so that this cursor state will be
@@ -2339,7 +2339,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 // - true
 bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
-    return _pConApi->PrivateAddHyperlink(uri, params);
+    return _pConApi->AddHyperlink(uri, params);
 }
 
 // Method Description:
@@ -2348,7 +2348,7 @@ bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
 // - true
 bool AdaptDispatch::EndHyperlink()
 {
-    return _pConApi->PrivateEndHyperlink();
+    return _pConApi->EndHyperlink();
 }
 
 // Method Description:
@@ -2437,7 +2437,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber
             const auto bitPattern = _fontBuffer->GetBitPattern();
             const auto cellSize = _fontBuffer->GetCellSize();
             const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
+            _pConApi->UpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
         }
         return true;
     };
@@ -2505,7 +2505,7 @@ void AdaptDispatch::_ReportSGRSetting() const
     response.append(L"\033P1$r0"sv);
 
     TextAttribute attr;
-    if (_pConApi->PrivateGetTextAttributes(attr))
+    if (_pConApi->GetTextAttributes(attr))
     {
         // For each boolean attribute that is set, we add the appropriate
         // parameter value to the response string.

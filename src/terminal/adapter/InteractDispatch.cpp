@@ -33,7 +33,7 @@ InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
 bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
     size_t written = 0;
-    return _pConApi->PrivateWriteConsoleInputW(inputEvents, written);
+    return _pConApi->WriteInput(inputEvents, written);
 }
 
 // Method Description:
@@ -47,7 +47,7 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 // True if handled successfully. False otherwise.
 bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
 {
-    return _pConApi->PrivateWriteConsoleControlInput(event);
+    return _pConApi->WriteControlInput(event);
 }
 
 // Method Description:
@@ -191,7 +191,7 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
                     coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
 
                     // Finally, attempt to set the adjusted cursor position back into the console.
-                    success = _pConApi->SetConsoleCursorPosition(coordCursor);
+                    success = _pConApi->SetCursorPosition(coordCursor);
                 }
             }
         }
@@ -208,5 +208,5 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
 // - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
 bool InteractDispatch::IsVtInputEnabled() const
 {
-    return _pConApi->PrivateIsVtInputEnabled();
+    return _pConApi->IsVtInputEnabled();
 }
