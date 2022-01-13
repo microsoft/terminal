@@ -187,6 +187,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     // We want to nudge the foreground color to make it more perceivable only for the
     // default color pairs within the color table
     if (GetRenderMode(Mode::DistinguishableColors) &&
+        Feature_AdjustIndistinguishableText::IsEnabled() &&
         !dimFg &&
         (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
         (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))

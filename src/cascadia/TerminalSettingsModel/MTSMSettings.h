@@ -96,4 +96,4 @@ Author(s):
     X(hstring, ColorSchemeName, "colorScheme", L"Campbell")                                                                                                        \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", false)
+    X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", true)
