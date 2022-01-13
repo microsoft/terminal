@@ -50,8 +50,7 @@ Terminal::Terminal() :
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
     _trimBlockSelection{ false },
-    _intenseIsBright{ true },
-    _adjustIndistinguishableColors{ true }
+    _intenseIsBright{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));

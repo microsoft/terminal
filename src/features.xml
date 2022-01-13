@@ -82,4 +82,10 @@
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_AdjustIndistinguishableText</name>
+        <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
+        <stage>AlwaysDisabled</stage>
+    </feature>
 </featureStaging>
