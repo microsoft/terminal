@@ -59,7 +59,6 @@ try
     Globals.uiWindowsCP = GetACP();
 
     Globals.pFontDefaultList = new RenderFontDefaults();
-    Globals.api = new ApiRoutines();
 
     FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
 
