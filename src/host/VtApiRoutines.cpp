@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Interactivity;
 // us query the final terminal's buffer state. Even if a VT sequence did exist
 // (and we personally believe it shouldn't), there's a possibility that it would
 // read a massive amount of data and cause severe perf issues as applications coded
-// to this old API are likely leaning on it heavily and asking for this data in a 
+// to this old API are likely leaning on it heavily and asking for this data in a
 // loop via VT would be a nightmare of parsing and formatting and over-the-wire transmission.
 
 static constexpr CHAR_INFO s_readBackUnicode{

@@ -412,11 +412,11 @@ HRESULT VtEngine::RequestCursor() noexcept
 }
 
 // Method Description:
-// - Sends a notification through to the `VtInputThread` that it should 
+// - Sends a notification through to the `VtInputThread` that it should
 //   watch for and capture the response from a DSR message we're about to send.
 //   This is typically `RequestCursor` at the time of writing this, but in theory
 //   could be another DSR as well.
-// Arguments: 
+// Arguments:
 // - <none>
 // Return Value:
 // - S_OK if all goes well. Invalid state error if no notification function is installed.
