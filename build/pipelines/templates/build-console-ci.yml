@@ -2,8 +2,6 @@ parameters:
   configuration: 'Release'
   platform: ''
   additionalBuildArguments: ''
-  minimumExpectedTestsExecutedCount: 10  # Sanity check for minimum expected tests to be reported
-  rerunPassesRequiredToAvoidFailure: 5
 
 jobs:
 - job: Build${{ parameters.platform }}${{ parameters.configuration }}
@@ -28,21 +26,3 @@ jobs:
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
     condition: and(succeededOrFailed(), not(eq(variables['Build.Reason'], 'PullRequest')))
-
-- template: helix-runtests-job.yml
-  parameters:
-    name: 'RunTestsInHelix'
-    dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
-    condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
-    testSuite: 'DevTestSuite'
-    platform: ${{ parameters.platform }}
-    configuration: ${{ parameters.configuration }}
-    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
-    
-- template: helix-processtestresults-job.yml
-  parameters:
-    dependsOn:
-    - RunTestsInHelix
-    condition: and(succeededOrFailed(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
-    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
-    minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}

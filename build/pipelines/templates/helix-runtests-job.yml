@@ -19,6 +19,7 @@ parameters:
 
 jobs:
 - job: ${{ parameters.name }}
+  displayName: Submit Helix ${{ parameters.configuration }} ${{ parameters.platform }}
   dependsOn: ${{ parameters.dependsOn }}
   condition: ${{ parameters.condition }}
   pool:
