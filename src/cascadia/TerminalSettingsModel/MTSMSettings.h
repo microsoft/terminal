@@ -95,5 +95,4 @@ Author(s):
     X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
     X(hstring, ColorSchemeName, "colorScheme", L"Campbell")                                                                                                        \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
-    X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", true)
+    X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)

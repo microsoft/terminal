@@ -99,6 +99,5 @@ namespace Microsoft.Terminal.Core
         UInt32 CursorHeight;
         Boolean IntenseIsBold;
         Boolean IntenseIsBright;
-        Boolean AdjustIndistinguishableColors;
     };
 }
