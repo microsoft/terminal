@@ -77,7 +77,6 @@ class CONSOLE_INFORMATION :
 {
 public:
     CONSOLE_INFORMATION();
-    ~CONSOLE_INFORMATION();
     CONSOLE_INFORMATION(const CONSOLE_INFORMATION& c) = delete;
     CONSOLE_INFORMATION& operator=(const CONSOLE_INFORMATION& c) = delete;
 
@@ -103,11 +102,10 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    void LockConsole();
-    bool TryLockConsole();
-    void UnlockConsole();
-    bool IsConsoleLocked() const;
-    ULONG GetCSRecursionCount();
+    static void LockConsole();
+    static void UnlockConsole();
+    static bool IsConsoleLocked();
+    static ULONG GetCSRecursionCount();
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
 
@@ -144,7 +142,6 @@ public:
     RenderData renderData;
 
 private:
-    CRITICAL_SECTION _csConsoleLock; // serialize input and output using this
     std::wstring _Title;
     std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _TitleAndPrefix;

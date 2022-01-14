@@ -11,6 +11,8 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
 
+#include <til/ticket_lock.h>
+
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
@@ -43,42 +45,52 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
 {
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-    InitializeCriticalSection(&_csConsoleLock);
 }
 
-CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
-{
-    DeleteCriticalSection(&_csConsoleLock);
-}
+// Access to thread-local variables is thread-safe, because each thread
+// gets its own copy of this variable with a default value of 0.
+//
+// Whenever we want to acquire the lock we increment recursionCount and on
+// each release we decrement it again. We can then make the lock safe for
+// reentrancy by only acquiring/releasing the lock if the recursionCount is 0.
+// In a sense, recursionCount is counting the actual function
+// call recursion depth of the caller. This works as long as
+// the caller makes sure to properly call Unlock() once for each Lock().
+static thread_local ULONG recursionCount = 0;
+static til::ticket_lock lock;
 
-bool CONSOLE_INFORMATION::IsConsoleLocked() const
+bool CONSOLE_INFORMATION::IsConsoleLocked()
 {
-    // The critical section structure's OwningThread field contains the ThreadId despite having the HANDLE type.
-    // This requires us to hard cast the ID to compare.
-    return _csConsoleLock.OwningThread == (HANDLE)GetCurrentThreadId();
+    return recursionCount != 0;
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::LockConsole()
 {
-    EnterCriticalSection(&_csConsoleLock);
-}
-
-#pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-bool CONSOLE_INFORMATION::TryLockConsole()
-{
-    return !!TryEnterCriticalSection(&_csConsoleLock);
+    // See description of recursionCount a few lines above.
+    const auto rc = ++recursionCount;
+    FAIL_FAST_IF(rc == 0);
+    if (rc == 1)
+    {
+        lock.lock();
+    }
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::UnlockConsole()
 {
-    LeaveCriticalSection(&_csConsoleLock);
+    // See description of recursionCount a few lines above.
+    const auto rc = --recursionCount;
+    FAIL_FAST_IF(rc == ULONG_MAX);
+    if (rc == 0)
+    {
+        lock.unlock();
+    }
 }
 
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 {
-    return _csConsoleLock.RecursionCount;
+    return recursionCount;
 }
 
 // Routine Description:
