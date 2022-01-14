@@ -65,7 +65,7 @@ This workflow affords us several benefits:
 - The only inbox component we have to change is `conhost.exe`, the one we already regularly update from open source on a regular basis. There is no change to the `kernelbase.dll` console initialization routines, `conclnt.lib` communication protocol, nor the `condrv.sys` driver.
 - We should be able to make this change quickly, relatively easily, and the code delta should be relatively small
     - This makes it easy to squeeze in early in the development of the solution and get it into the Windows OS product as soon as possible for self-hosting, validation, and potentially shipping in the OS before the remainder of the solution has shaken out
-    - This also makes it potentially possible to backport this portion of the code change to popular in-market versions of Windows 10. For instance, WSL2 has just backported to 1903 and 1909. The less churn and risk, the easier it is to sell backporting.
+    - This also makes it potentially possible to backport this portion of the code change to popular in-market versions of Windows 10. For instance, WSL2 has just backported to 1903 and 1909. The less churn and risk, the easier it is to sell a backport.
 
 *Potential future:*
 - ~~If no updated console exists, potentially check for registration of a terminal UX that is willing to use the inbox ConPTY bits, start it, and transition to being a PTY instead.~~ 
@@ -164,7 +164,7 @@ The user experience for this feature overall should be:
 1. Using the established settings, the console system transparently starts, delegates itself to the updated console, switches itself into ConPTY mode, and a copy of Windows Terminal launches with the first tab open to host the command-line client application.
     - **NOTE:** I'm not precluding 3rd party registrations of either the delegation updated console nor the delegation terminal. It is our intention to allow either or both of these pieces to be replaced to the user's desires. The example is for brevity of our golden path and motivation for this scenario.
 1. The user is able to interact with the command-line client application as they would with the original console host.
-    - The user receives the additional benefit that short-running executions of a command-line application may not "blink in and disappear" as they do today when a user runs something like `ipconfig` from the runbox. The Terminal's default states tend to leave the tab open and say that the client has exited. This would allow a Run Dialog `ipconfig` user an improved experience over the default console host state of disappearing quickly.
+    - The user receives the additional benefit that short-running executions of a command-line application may not "blink in and disappear" as they do today when a user runs something like `ipconfig` from the run dialog. The Terminal's default states tend to leave the tab open and say that the client has exited. This would allow a Run Dialog `ipconfig` user an improved experience over the default console host state of disappearing quickly.
 1. If any portion of the delegation fails, we will progressively degrade back to a `conhost` style Win32+GDI UX and nothing will be different from before.
 
 The settings experience includes:
@@ -192,7 +192,7 @@ The settings experience includes:
 
 Concerns:
 - State separation policy for Windows. I believe `HKCU\Console` is already specified as a part of the "user state" that should be mutable and carried forward on OS Swap, especially as we have been improving the OS swap experience.
-- Ability for MSIs/elevated scripts to stomp the Delegation keys
+- Ability for installers/elevated scripts to stomp the Delegation keys
     - This was a long time problem for default app registrations and was limited in our OS. Are we about to run down the same path?
     - What is the alternative here? To use a protocol handler? To store this configuration state data with other protected state in a registry area that is mutable, but only ACL'd to the `SYSTEM` user like some other things in the Settings control panel?
         - **V1 NOTE:** We set ourselves up for some future ACL thing with the subkey, but we otherwise haven't enforced anything at this time.
@@ -227,7 +227,7 @@ Another layer of this is where either `conhost.exe` or the delegated `OpenConsol
 
 ### Compatibility
 
-One particular scenario that this could break is an application that makes use of spelunking the process tree when a command-line application starts to identify the hosting terminal application window by HWND to inject input, extract output, or otherwise hook and bind to hosting services. As the default application UI that will launch may not have the `conhost.exe` name (for spelunking via searching processes) and the HWND located may either be the ConPTY fakeout HWND or an HWND belonging to a completely different UI, these applications might not work.
+One particular scenario that this could break is an application that makes use of spelunking the process tree when a command-line application starts to identify the hosting terminal application window by HWND to inject input, extract output, or otherwise hook and bind to hosting services. As the default application UI that will launch may not have the `conhost.exe` name (for spelunking via searching processes) and the HWND located may either be the ConPTY fake HWND or an HWND belonging to a completely different UI, these applications might not work.
 
 Two considerations here:
 
@@ -259,7 +259,7 @@ COM doesn't inherently expose a way for us to pass handles directly between proc
 ## Future considerations
 
 * We additionally would like to leave the door open to distributing updated `OpenConsole.exe`s in their own app package as a dependency that others could rely on.
-    * This was one of the original management requests when we were open sourcing the console product as well as the Terminal back in spring of 2019. For the sake of ongoing servicing and maintainability, it was requested that we reach a point where our dependencies could be serviced potentially independently of the product as a whole static unit. We didn't achieve that goal initially, but this design would enable us to do something like this.
+    * This was one of the original management requests when we were opening the source of the console product as well as the Terminal back in spring of 2019. For the sake of ongoing servicing and maintainability, it was requested that we reach a point where our dependencies could be serviced potentially independently of the product as a whole static unit. We didn't achieve that goal initially, but this design would enable us to do something like this.
     * One negative to this scenario is that dependency resolution and the installation of dependent packages through APPX is currently lacking in several ways. It's difficult/impossible to do in environments where the store or the internet is unavailable. And it's a problem often enough that the Windows Terminal package embeds the VC runtimes inside itself instead of relying on the dependency resolution of the app platform.
 
 ## Resources
