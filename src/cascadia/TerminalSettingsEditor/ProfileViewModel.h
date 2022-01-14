@@ -74,9 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteUnfocusedAppearance();
         bool AtlasEngineAvailable() const noexcept;
 
-        ProfileSubPage CurrentPage();
-        void CurrentPage(const ProfileSubPage newPage);
-
+        VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, _profile, AntialiasingMode);
@@ -119,7 +117,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
-        ProfileSubPage _currentPage;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;

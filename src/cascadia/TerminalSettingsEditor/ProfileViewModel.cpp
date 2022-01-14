@@ -136,17 +136,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _defaultAppearanceViewModel.IsDefault(true);
     }
 
-    ProfileSubPage ProfileViewModel::CurrentPage()
-    {
-        return _currentPage;
-    }
-
-    void ProfileViewModel::CurrentPage(const ProfileSubPage newPage)
-    {
-        _currentPage = newPage;
-        _NotifyChanges(L"CurrentPage");
-    }
-
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
         return Model::TerminalSettings::CreateWithProfile(_appSettings, _profile, nullptr).DefaultSettings();
