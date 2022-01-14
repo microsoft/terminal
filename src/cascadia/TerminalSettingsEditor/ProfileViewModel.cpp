@@ -70,7 +70,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
-    ProfilesPivots ProfileViewModel::_LastActivePivot{ ProfilesPivots::General };
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
@@ -137,12 +136,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _defaultAppearanceViewModel.IsDefault(true);
     }
 
-    winrt::hstring ProfileViewModel::CurrentPage()
+    ProfileSubPage ProfileViewModel::CurrentPage()
     {
         return _currentPage;
     }
 
-    void ProfileViewModel::CurrentPage(const winrt::hstring newPage)
+    void ProfileViewModel::CurrentPage(const ProfileSubPage newPage)
     {
         _currentPage = newPage;
         _NotifyChanges(L"CurrentPage");

@@ -44,12 +44,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::Appearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _Profile.CurrentPage(L"Appearance");
+        _Profile.CurrentPage(ProfileSubPage::Appearance);
     }
 
     void Profiles_Base::Advanced_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _Profile.CurrentPage(L"Advanced");
+        _Profile.CurrentPage(ProfileSubPage::Advanced);
     }
 
     void Profiles_Base::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)

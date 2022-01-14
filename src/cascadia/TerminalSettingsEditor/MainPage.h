@@ -11,17 +11,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Breadcrumb : BreadcrumbT<Breadcrumb>
     {
-        Breadcrumb(IInspectable tag, winrt::hstring label) :
+        Breadcrumb(IInspectable tag, winrt::hstring label, BreadcrumbSubPage subPage) :
             _Tag{ tag },
-            _Label{ label } {}
-
-        winrt::hstring ToString()
-        {
-            return _Label;
-        }
+            _Label{ label },
+            _SubPage{ subPage } {}
 
         WINRT_PROPERTY(IInspectable, Tag);
         WINRT_PROPERTY(winrt::hstring, Label);
+        WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
     };
 
     struct MainPage : MainPageT<MainPage>
@@ -64,8 +61,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState state);
 
         void _PreNavigateHelper();
-        void _Navigate(hstring clickedItemTag, std::optional<hstring> label);
-        void _Navigate(const Editor::ProfileViewModel& profile, std::optional<hstring> label);
+        void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
+        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
 

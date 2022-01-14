@@ -13,11 +13,18 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    enum BreadcrumbSubPage
+    {
+        None = 0,
+        Profile_Appearance,
+        Profile_Advanced
+    };
+
     runtimeclass Breadcrumb
     {
         IInspectable Tag;
         String Label;
-        String ToString();
+        BreadcrumbSubPage SubPage;
     }
 
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow

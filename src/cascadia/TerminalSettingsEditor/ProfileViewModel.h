@@ -19,9 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
 
-        static ProfilesPivots LastActivePivot() noexcept { return _LastActivePivot; };
-        static void LastActivePivot(Editor::ProfilesPivots val) noexcept { _LastActivePivot = val; };
-
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
@@ -77,8 +74,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteUnfocusedAppearance();
         bool AtlasEngineAvailable() const noexcept;
 
-        winrt::hstring CurrentPage();
-        void CurrentPage(const winrt::hstring newPage);
+        ProfileSubPage CurrentPage();
+        void CurrentPage(const ProfileSubPage newPage);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
@@ -122,11 +119,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
-        winrt::hstring _currentPage;
+        ProfileSubPage _currentPage;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-        static ProfilesPivots _LastActivePivot;
 
         static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
 
