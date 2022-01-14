@@ -74,7 +74,6 @@ namespace TerminalCoreUnitTests
         void DetectURLs(bool) {}
 
         WINRT_PROPERTY(bool, IntenseIsBright, true);
-        WINRT_PROPERTY(bool, AdjustIndistinguishableColors, true);
 
     private:
         int32_t _historySize;
