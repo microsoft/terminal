@@ -76,9 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Deduce information about the currently selected item
         IInspectable lastBreadcrumb;
-        const auto size = _breadcrumbs.Size();
-        //if (const auto size = _breadcrumbs.Size() > 0)
-        if (size > 0)
+        if (const auto size = _breadcrumbs.Size() > 0)
         {
             lastBreadcrumb = _breadcrumbs.GetAt(size-1);
         }
