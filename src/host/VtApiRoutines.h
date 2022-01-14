@@ -379,9 +379,6 @@ public:
 
 #pragma endregion
 
-private:
-    void _SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) noexcept;
-
     IApiRoutines* m_pUsualRoutines;
     UINT& m_inputCodepage;
     UINT& m_outputCodepage;
@@ -389,4 +386,7 @@ private:
     ULONG m_outputMode;
     bool m_listeningForDSR;
     Microsoft::Console::Render::Xterm256Engine* m_pVtEngine;
+
+private:
+    void _SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) noexcept;
 };
