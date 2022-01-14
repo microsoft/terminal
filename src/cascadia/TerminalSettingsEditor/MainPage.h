@@ -64,8 +64,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState state);
 
         void _PreNavigateHelper();
-        void _Navigate(hstring clickedItemTag);
-        void _Navigate(const Editor::ProfileViewModel& profile);
+        void _Navigate(hstring clickedItemTag, std::optional<hstring> label);
+        void _Navigate(const Editor::ProfileViewModel& profile, std::optional<hstring> label);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
 
