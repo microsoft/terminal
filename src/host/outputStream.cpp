@@ -294,16 +294,24 @@ bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTermi
 }
 
 // Routine Description:
-// - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
+// - Sets the various render modes.
 // Arguments:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// - mode - the render mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetScreenMode). false otherwise.
-bool ConhostInternalGetSet::PrivateSetScreenMode(const bool reverseMode)
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
 {
-    return NT_SUCCESS(DoSrvPrivateSetScreenMode(reverseMode));
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderSettings = g.getConsoleInformation().GetRenderSettings();
+    renderSettings.SetRenderMode(mode, enabled);
+
+    if (g.pRender)
+    {
+        g.pRender->TriggerRedrawAll();
+    }
+
+    return true;
 }
 
 // Routine Description:
@@ -603,7 +611,6 @@ try
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-
     return gci.GetColorTableEntry(tableIndex);
 }
 catch (...)
@@ -624,19 +631,7 @@ try
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-
     gci.SetColorTableEntry(tableIndex, color);
-
-    // If we're setting the default foreground or background colors
-    // we need to make sure the index is correctly set as well.
-    if (tableIndex == TextColor::DEFAULT_FOREGROUND)
-    {
-        gci.SetDefaultForegroundIndex(TextColor::DEFAULT_FOREGROUND);
-    }
-    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
-    {
-        gci.SetDefaultBackgroundIndex(TextColor::DEFAULT_BACKGROUND);
-    }
 
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
@@ -645,9 +640,26 @@ try
         g.pRender->TriggerRedrawAll();
     }
 
-    return true;
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    return !gci.IsInVtIoMode();
 }
 CATCH_RETURN_FALSE()
+
+// Routine Description:
+// - Sets the position in the color table for the given color alias.
+// Arguments:
+// - alias: the color alias to update.
+// - tableIndex: the new position of the alias in the color table.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
+{
+    auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    renderSettings.SetColorAliasIndex(alias, tableIndex);
+}
 
 // Routine Description:
 // - Connects the PrivateFillRegion call directly into our Driver Message servicing

@@ -1333,7 +1333,7 @@ namespace TerminalAppLocalTests
             Log::Comment(L"Emulate committing the SetColorScheme action");
 
             SetColorSchemeArgs args{ L"Vintage" };
-            page->_EndPreviewColorScheme();
+            page->_EndPreview();
             page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
         });
 
@@ -1395,7 +1395,7 @@ namespace TerminalAppLocalTests
 
         TestOnUIThread([&page]() {
             Log::Comment(L"Emulate dismissing the SetColorScheme action");
-            page->_EndPreviewColorScheme();
+            page->_EndPreview();
         });
 
         TestOnUIThread([&page]() {
@@ -1469,7 +1469,7 @@ namespace TerminalAppLocalTests
             Log::Comment(L"Emulate committing the SetColorScheme action");
 
             SetColorSchemeArgs args{ L"One Half Light" };
-            page->_EndPreviewColorScheme();
+            page->_EndPreview();
             page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
         });
 

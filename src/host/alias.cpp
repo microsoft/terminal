@@ -1213,7 +1213,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 // - LineCount - aliases can contain multiple commands.  $T is the command separator
 // Return Value:
 // - None. It will just maintain the source as the target if we can't match an alias.
-void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
+void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PCWCH pwchSource,
                                       _In_ size_t cbSource,
                                       _Out_writes_bytes_(cbTargetWritten) PWCHAR pwchTarget,
                                       _In_ const size_t cbTargetSize,

@@ -192,25 +192,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             originTag = profile.Origin();
         }
 
-        if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
+        // We will display arrows for all origins, and informative tooltips for Fragments and Generated
+        if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
         {
-            // EXPERIMENTAL FEATURE
-            // We will display arrows for all origins, and informative tooltips for Fragments and Generated
-            if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
-            {
-                // from a fragment extension or generated profile
-                return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
-            }
-            return RS_(L"SettingContainer_OverrideMessageBaseLayer");
-        }
-
-        // STABLE FEATURE
-        // We will only display arrows and informative tooltips for Fragments
-        if (originTag == Model::OriginTag::Fragment)
-        {
-            // from a fragment extension
+            // from a fragment extension or generated profile
             return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
         }
-        return {}; // no tooltip
+        return RS_(L"SettingContainer_OverrideMessageBaseLayer");
     }
 }

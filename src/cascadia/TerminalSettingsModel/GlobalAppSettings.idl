@@ -18,13 +18,14 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Int64> Y;
     };
 
+    [flags]
     enum LaunchMode
     {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
-        FocusMode,
-        MaximizedFocusMode,
+        DefaultMode = 0,
+        MaximizedMode = 1,
+        FullscreenMode = 2,
+        FocusMode = 4,
+        MaximizedFocusMode = 5
     };
 
     enum WindowingMode

@@ -9,6 +9,15 @@ namespace WindowsTerminal.UIA.Tests.Common
 {
     public static class PgoManager
     {
+        private static string TrimExtension(string str)
+        {
+            if (str.EndsWith(".exe") || str.EndsWith(".dll"))
+            {
+                return str.Substring(0, str.Length - 4);
+            }
+            return str;
+        }
+
         public static void PgoSweepIfInstrumented(TestContext context, string assemblyName)
         {
 #if PGO_INSTRUMENT
@@ -18,7 +27,7 @@ namespace WindowsTerminal.UIA.Tests.Common
             {
                 var startInfo = new ProcessStartInfo() {
                     FileName = Path.GetFullPath(Path.Combine(context.TestDeploymentDir, "pgosweep.exe")),
-                    Arguments = $"{assemblyName} {assemblyName}-{pgcFileName}.pgc",
+                    Arguments = $"{assemblyName} {TrimExtension(assemblyName)}!{pgcFileName}.pgc",
                     UseShellExecute = false,
                     RedirectStandardOutput = true
                 };

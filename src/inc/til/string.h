@@ -169,7 +169,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // and 5x or more for long strings (128 characters or more).
     // See: https://github.com/microsoft/STL/issues/2289
     template<typename T, typename Traits>
-    bool equals(const std::basic_string_view<T, Traits>& str1, const std::basic_string_view<T, Traits>& str2) noexcept
+    bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
     {
         return lhs.size() == rhs.size() && __builtin_memcmp(lhs.data(), rhs.data(), lhs.size() * sizeof(T)) == 0;
     }

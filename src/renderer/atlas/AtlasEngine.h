@@ -43,13 +43,13 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(SMALL_RECT rect) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateSoftFont(gsl::span<const uint16_t> bitPattern, SIZE cellSize, size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(SMALL_RECT srNewViewport) noexcept override;
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept override;
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
         [[nodiscard]] HRESULT UpdateTitle(std::wstring_view newTitle) noexcept override;
@@ -71,7 +71,6 @@ namespace Microsoft::Console::Render
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;
-        void SetIntenseIsBold(bool enable) noexcept override;
         void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
         [[nodiscard]] HRESULT SetWindowSize(SIZE pixels) noexcept override;
         void ToggleShaderEffects() noexcept override;
@@ -359,7 +358,9 @@ namespace Microsoft::Console::Render
 
             bool is_inline() const noexcept
             {
-                return (__builtin_bit_cast(uintptr_t, allocated) & 1) != 0;
+                // VSO-1430353: __builtin_bitcast crashes the compiler under /permissive-. (BODGY)
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+                return (reinterpret_cast<uintptr_t>(allocated) & 1) != 0;
             }
 
             const T* data() const noexcept
@@ -739,7 +740,7 @@ namespace Microsoft::Console::Render
             u32 selectionColor = 0x7fffffff;
 
             // dirtyRect is a computed value based on invalidatedRows.
-            til::rectangle dirtyRect;
+            til::rect dirtyRect;
             // These "invalidation" fields are reset in EndPaint()
             u16r invalidatedCursorArea = invalidatedAreaNone;
             u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"

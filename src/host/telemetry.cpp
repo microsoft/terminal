@@ -356,6 +356,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
 void Telemetry::WriteFinalTraceLog()
 {
     const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& renderSettings = gci.GetRenderSettings();
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
@@ -419,7 +420,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingBool(gci.GetQuickEdit(), "QuickEdit"),
                                     TraceLoggingValue(gci.GetWindowAlpha(), "WindowAlpha"),
                                     TraceLoggingBool(gci.GetWrapText(), "WrapText"),
-                                    TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable().data(), 16, "ColorTable"),
+                                    TraceLoggingUInt32Array((UINT32 const*)renderSettings.GetColorTable().data(), 16, "ColorTable"),
                                     TraceLoggingValue(gci.CP, "CodePageInput"),
                                     TraceLoggingValue(gci.OutputCP, "CodePageOutput"),
                                     TraceLoggingValue(gci.GetFontSize().X, "FontSizeX"),
@@ -453,7 +454,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingValue(gci.GetShowWindow(), "ShowWindow"),
                                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            static_assert(sizeof(UINT32) == sizeof(gci.GetColorTable()[0]), "gci.Get16ColorTable()");
+            static_assert(sizeof(UINT32) == sizeof(renderSettings.GetColorTable()[0]), "gci.Get16ColorTable()");
 
             // I could use the TraceLoggingUIntArray, but then we would have to know the order of the enums on the backend.
             // So just log each enum count separately with its string representation which makes it more human readable.

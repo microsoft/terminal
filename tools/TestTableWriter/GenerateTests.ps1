@@ -10,7 +10,7 @@
 [CmdletBinding()]
 Param(
     [Parameter(Position=0, ValueFromPipeline=$true)]
-    [string]$TestPath = "UiaTests.csv"
+    [string]$TestPath = "$PSScriptRoot/../../tools/TestTableWriter/UiaTests.csv"
 )
 
 # 0. Generate a comment telling people to not modify these tests in the .cpp
@@ -24,7 +24,7 @@ $result = "// Copyright (c) Microsoft Corporation.
 # 1. Define a few helpful variables to make life easier.
 $result += "
 // Define a few helpful variables
-constexpr til::rectangle bufferSize{ 0, 0, 80, 300 };
+constexpr til::rect bufferSize{ 0, 0, 80, 300 };
 constexpr short midX{ 40 };
 constexpr short midY{ 150 };
 constexpr short midPopulatedY{ 75 };
@@ -77,7 +77,7 @@ foreach ($var in $vars)
     # i. Contains "segment" --> define point at the beginning of a text segment
     if ($segmentHeuristic)
     {
-        $result += "constexpr til::point {0}{{ {1}, {2}.y() }};" -f $var, $var.Substring(0, 8), $var.Substring(9, $var.Length - $var.IndexOf("L") - 1);
+        $result += "constexpr til::point {0}{{ {1}, {2}.y }};" -f $var, $var.Substring(0, 8), $var.Substring(9, $var.Length - $var.IndexOf("L") - 1);
     }
     # ii. Contains number --> requires movement
     elseif ($movementHeuristic)
@@ -125,7 +125,7 @@ foreach ($var in $vars)
     elseif ($leftHeuristic)
     {
         $standardVar = $var.Split("Left")[0]
-        $result += "constexpr til::point {0}{{ bufferSize.left(), {1}.y() }};" -f $var, $standardVar;
+        $result += "constexpr til::point {0}{{ bufferSize.left, {1}.y }};" -f $var, $standardVar;
     }
     $result += "`n";
 }
@@ -182,4 +182,4 @@ foreach ($test in $tests)
 }
 $result += "};`n`n"
 
-$result > "..\..\src\interactivity\win32\ut_interactivity_win32\GeneratedUiaTextRangeMovementTests.g.cpp";
+$result > "$PSScriptRoot/../../src/interactivity/win32/ut_interactivity_win32/GeneratedUiaTextRangeMovementTests.g.cpp";

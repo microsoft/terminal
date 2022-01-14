@@ -15,13 +15,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs)
     {
-        static constexpr auto initialHash = til::hasher{}.finalize();
-        const auto action = actionAndArgs.Action();
         til::hasher hasher;
+
+        // action will be hashed last.
+        // This allows us to first seed a til::hasher
+        // with the return value of IActionArgs::Hash().
+        const auto action = actionAndArgs.Action();
 
         if (const auto args = actionAndArgs.Args())
         {
-            hasher = til::hasher{ gsl::narrow_cast<size_t>(args.Hash(initialHash)) };
+            hasher = til::hasher{ gsl::narrow_cast<size_t>(args.Hash()) };
         }
         else
         {
@@ -29,16 +32,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             // Args are not defined.
             // Check if the ShortcutAction supports args.
-            switch (actionAndArgs.Action())
+            switch (action)
             {
-#define ON_ALL_ACTIONS_WITH_ARGS(action)                                          \
-    case ShortcutAction::action:                                                  \
-    {                                                                             \
-        /* If it does, hash the default values for the args. */                   \
-        static const auto cachedHash = gsl::narrow_cast<size_t>(                  \
-            winrt::make_self<implementation::action##Args>()->Hash(initialHash)); \
-        hash = cachedHash;                                                        \
-        break;                                                                    \
+#define ON_ALL_ACTIONS_WITH_ARGS(action)                               \
+    case ShortcutAction::action:                                       \
+    {                                                                  \
+        /* If it does, hash the default values for the args. */        \
+        static const auto cachedHash = gsl::narrow_cast<size_t>(       \
+            winrt::make_self<implementation::action##Args>()->Hash()); \
+        hash = cachedHash;                                             \
+        break;                                                         \
     }
                 ALL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS

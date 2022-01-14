@@ -57,6 +57,7 @@
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <telemetry/ProjectTelemetry.h>
 
+#include <ShlObj_core.h>
 #include <WinUser.h>
 
 #include "til.h"

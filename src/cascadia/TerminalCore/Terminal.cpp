@@ -6,7 +6,6 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 
@@ -40,8 +39,6 @@ static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& i
 Terminal::Terminal() :
     _mutableViewport{ Viewport::Empty() },
     _title{},
-    _colorTable{},
-    _screenReversed{ false },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
@@ -50,9 +47,7 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false },
-    _intenseIsBright{ true },
-    _adjustIndistinguishableColors{ true }
+    _trimBlockSelection{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -78,11 +73,8 @@ Terminal::Terminal() :
 
     _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
 
-    _InitializeColorTable();
-
-    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = RGB(255, 255, 255);
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = ARGB(0, 0, 0, 0);
-    _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
+    _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, RGB(255, 255, 255));
+    _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
@@ -137,12 +129,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
+        _tabColor = settings.TabColor().Value();
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
+        _startingTabColor = settings.StartingTabColor().Value();
     }
 
     if (_pfnTabColorChanged)
@@ -180,29 +172,22 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 // - appearance: an ICoreAppearance with new settings values for us to use.
 void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
-    _intenseIsBright = appearance.IntenseIsBright();
-    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
+    _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
+    _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
+    _renderSettings.SetRenderMode(RenderSettings::Mode::DistinguishableColors, appearance.AdjustIndistinguishableColors());
 
-    // Set the default background as transparent to prevent the
-    // DX layer from overwriting the background image or acrylic effect
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
     const til::color newForegroundColor{ appearance.DefaultForeground() };
-    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = newForegroundColor;
+    _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
     const til::color newCursorColor{ appearance.CursorColor() };
-    _colorTable.at(TextColor::CURSOR_COLOR) = newCursorColor;
-
-    _intenseIsBright = appearance.IntenseIsBright();
-    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
+    _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
 
     for (int i = 0; i < 16; i++)
     {
-        _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
+        _renderSettings.SetColorTableEntry(i, til::color{ appearance.GetColorTableEntry(i) });
     }
-    if (_adjustIndistinguishableColors)
-    {
-        _MakeAdjustedColorArray();
-    }
+    _renderSettings.MakeAdjustedColorArray();
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
@@ -516,8 +501,8 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         const auto end = result->stop;
         std::wstring uri;
 
-        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
-        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start.to_win32_coord()));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end.to_win32_coord()));
         for (auto iter = startIter; iter != endIter; ++iter)
         {
             uri += iter->Chars();
@@ -546,7 +531,7 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 // - The interval representing the start and end coordinates
 std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
 {
-    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
+    const auto results = _patternIntervalTree.findOverlapping(til::point{ position.X + 1, position.Y }, til::point{ position });
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -716,8 +701,8 @@ void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, si
 {
     const auto vis = _VisibleStartIndex();
     auto invalidate = [=](const PointTree::interval& interval) {
-        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
-        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x), gsl::narrow<SHORT>(interval.start.y + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x), gsl::narrow<SHORT>(interval.stop.y + vis) };
         _InvalidateFromCoords(startCoord, endCoord);
     };
     tree.visit_all(invalidate);
@@ -739,18 +724,18 @@ void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
         const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
 
         // invalidate the first line
-        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        SMALL_RECT region{ start.X, start.Y, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(start.Y) };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
 
         if ((end.Y - start.Y) > 1)
         {
             // invalidate the lines in between the first and last line
-            region = til::rectangle(0, start.Y + 1, rowSize - 1, end.Y - 1);
+            region = SMALL_RECT{ 0, start.Y + 1, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(end.Y - 1) };
             _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
-        region = til::rectangle(0, end.Y, end.X, end.Y);
+        region = SMALL_RECT{ 0, end.Y, end.X, end.Y };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
@@ -1105,7 +1090,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        COORD delta{ 0, -rowsPushedOffTopOfBuffer };
+        COORD delta{ 0, gsl::narrow_cast<short>(-rowsPushedOffTopOfBuffer) };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
@@ -1220,17 +1205,6 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
-void Terminal::_InitializeColorTable()
-try
-{
-    const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
-    // First set up the basic 256 colors
-    Utils::InitializeColorTable(tableView);
-    // Then make sure all the values have an alpha of 255
-    Utils::SetColorTableAlpha(tableView, 0xff);
-}
-CATCH_LOG()
-
 // Method Description:
 // - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor
@@ -1283,11 +1257,6 @@ const std::optional<til::color> Terminal::GetTabColor() const noexcept
     return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
 }
 
-BlinkingState& Terminal::GetBlinkingState() const noexcept
-{
-    return _blinkingState;
-}
-
 // Method Description:
 // - Gets the internal taskbar state value
 // Return Value:
@@ -1310,62 +1279,54 @@ Scheme Terminal::GetColorScheme() const noexcept
 {
     Scheme s;
 
-    s.Foreground = til::color{ _colorTable.at(TextColor::DEFAULT_FOREGROUND) };
-    // Don't leak the implementation detail that our _defaultBg is stored
-    // internally without alpha.
-    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
+    s.Foreground = til::color{ _renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
+    s.Background = til::color{ _renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
 
     // SelectionBackground is stored in the ControlAppearance
-    s.CursorColor = til::color{ _colorTable.at(TextColor::CURSOR_COLOR) };
+    s.CursorColor = til::color{ _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
 
-    s.Black = til::color{ _colorTable[0] };
-    s.Red = til::color{ _colorTable[1] };
-    s.Green = til::color{ _colorTable[2] };
-    s.Yellow = til::color{ _colorTable[3] };
-    s.Blue = til::color{ _colorTable[4] };
-    s.Purple = til::color{ _colorTable[5] };
-    s.Cyan = til::color{ _colorTable[6] };
-    s.White = til::color{ _colorTable[7] };
-    s.BrightBlack = til::color{ _colorTable[8] };
-    s.BrightRed = til::color{ _colorTable[9] };
-    s.BrightGreen = til::color{ _colorTable[10] };
-    s.BrightYellow = til::color{ _colorTable[11] };
-    s.BrightBlue = til::color{ _colorTable[12] };
-    s.BrightPurple = til::color{ _colorTable[13] };
-    s.BrightCyan = til::color{ _colorTable[14] };
-    s.BrightWhite = til::color{ _colorTable[15] };
+    s.Black = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_BLACK) };
+    s.Red = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_RED) };
+    s.Green = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_GREEN) };
+    s.Yellow = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_YELLOW) };
+    s.Blue = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_BLUE) };
+    s.Purple = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_MAGENTA) };
+    s.Cyan = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_CYAN) };
+    s.White = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_WHITE) };
+    s.BrightBlack = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLACK) };
+    s.BrightRed = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED) };
+    s.BrightGreen = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN) };
+    s.BrightYellow = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW) };
+    s.BrightBlue = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLUE) };
+    s.BrightPurple = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_MAGENTA) };
+    s.BrightCyan = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_CYAN) };
+    s.BrightWhite = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_WHITE) };
     return s;
 }
 
 void Terminal::ApplyScheme(const Scheme& colorScheme)
 {
-    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = til::color{ colorScheme.Foreground };
-    // Set the default background as transparent to prevent the
-    // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ colorScheme.Background };
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, til::color{ colorScheme.Foreground });
+    _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, til::color{ colorScheme.Background });
 
-    _colorTable[0] = til::color{ colorScheme.Black };
-    _colorTable[1] = til::color{ colorScheme.Red };
-    _colorTable[2] = til::color{ colorScheme.Green };
-    _colorTable[3] = til::color{ colorScheme.Yellow };
-    _colorTable[4] = til::color{ colorScheme.Blue };
-    _colorTable[5] = til::color{ colorScheme.Purple };
-    _colorTable[6] = til::color{ colorScheme.Cyan };
-    _colorTable[7] = til::color{ colorScheme.White };
-    _colorTable[8] = til::color{ colorScheme.BrightBlack };
-    _colorTable[9] = til::color{ colorScheme.BrightRed };
-    _colorTable[10] = til::color{ colorScheme.BrightGreen };
-    _colorTable[11] = til::color{ colorScheme.BrightYellow };
-    _colorTable[12] = til::color{ colorScheme.BrightBlue };
-    _colorTable[13] = til::color{ colorScheme.BrightPurple };
-    _colorTable[14] = til::color{ colorScheme.BrightCyan };
-    _colorTable[15] = til::color{ colorScheme.BrightWhite };
+    _renderSettings.SetColorTableEntry(TextColor::DARK_BLACK, til::color{ colorScheme.Black });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_RED, til::color{ colorScheme.Red });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_GREEN, til::color{ colorScheme.Green });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_YELLOW, til::color{ colorScheme.Yellow });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_BLUE, til::color{ colorScheme.Blue });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_MAGENTA, til::color{ colorScheme.Purple });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_CYAN, til::color{ colorScheme.Cyan });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_WHITE, til::color{ colorScheme.White });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLACK, til::color{ colorScheme.BrightBlack });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_RED, til::color{ colorScheme.BrightRed });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_GREEN, til::color{ colorScheme.BrightGreen });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_YELLOW, til::color{ colorScheme.BrightYellow });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLUE, til::color{ colorScheme.BrightBlue });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_MAGENTA, til::color{ colorScheme.BrightPurple });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_CYAN, til::color{ colorScheme.BrightCyan });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_WHITE, til::color{ colorScheme.BrightWhite });
 
-    _colorTable.at(TextColor::CURSOR_COLOR) = til::color{ colorScheme.CursorColor };
+    _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
 
-    if (_adjustIndistinguishableColors)
-    {
-        _MakeAdjustedColorArray();
-    }
+    _renderSettings.MakeAdjustedColorArray();
 }

@@ -27,6 +27,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(FirstWindowPreference, FirstWindowPreference, Model::FirstWindowPreference, L"Globals_FirstWindowPreference", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, Model::LaunchMode, L"Globals_LaunchMode", L"Content");
+        // More options were added to the JSON mapper when the enum was made into [Flags]
+        // but we want to preserve the previous set of options in the UI.
+        _LaunchModeList.RemoveAt(7); // maximizedFullscreenFocus
+        _LaunchModeList.RemoveAt(6); // fullscreenFocus
+        _LaunchModeList.RemoveAt(3); // maximizedFullscreen
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, Model::WindowingMode, L"Globals_WindowingBehavior", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(Theme, ElementTheme, winrt::Windows::UI::Xaml::ElementTheme, L"Globals_Theme", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");

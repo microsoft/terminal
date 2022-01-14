@@ -220,7 +220,7 @@ void InputBuffer::FlushAllButKeys()
     _storage.erase(newEnd, _storage.end());
 }
 
-void InputBuffer::SetTerminalConnection(_In_ ITerminalOutputConnection* const pTtyConnection)
+void InputBuffer::SetTerminalConnection(_In_ Render::VtEngine* const pTtyConnection)
 {
     this->_pTtyConnection = pTtyConnection;
 }
