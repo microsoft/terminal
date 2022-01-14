@@ -84,7 +84,7 @@ stages:
     dependsOn: [Build_x64]
     condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
     jobs:
-      - template: ./templates/console-helix-ci-job.yml
+      - template: ./templates/console-ci-helix-job.yml
         parameters:
           platform: x64
 
