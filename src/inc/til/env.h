@@ -503,5 +503,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             result.append(L"\0", 1);
             return result;
         }
+
+        // TODO: should we be a bunch of goofs and make a "watcher" here that sets up its own
+        //       quiet little HWND and message pump watching for the WM_SETTINGCHANGE?
     };
 };
