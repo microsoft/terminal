@@ -50,10 +50,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             static constexpr std::wstring_view program_files_x86{ L"ProgramFiles(x86)" };
             static constexpr std::wstring_view program_files_arm64{ L"ProgramFiles(Arm)" };
             static constexpr std::wstring_view program_w6432{ L"ProgramW6432" };
-            static constexpr std::wstring_view common_program_files{ L"ProgramW6432" };
-            static constexpr std::wstring_view common_program_files_x86{ L"ProgramW6432" };
-            static constexpr std::wstring_view common_program_files_arm64{ L"ProgramW6432" };
-            static constexpr std::wstring_view common_program_w6432{ L"ProgramW6432" };
+            static constexpr std::wstring_view common_program_files{ L"CommonProgramFiles" };
+            static constexpr std::wstring_view common_program_files_x86{ L"CommonProgramFiles(x86)" };
+            static constexpr std::wstring_view common_program_files_arm64{ L"CommonProgramFiles(Arm)" };
+            static constexpr std::wstring_view common_program_w6432{ L"CommonProgramW6432" };
 
             const std::map<std::wstring, std::wstring_view> program_files_map{
                 { L"ProgramFilesDir", program_files },
@@ -100,7 +100,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                                                                                                   ::SetLastError(ERROR_SUCCESS);
 
-                                                                                                  DWORD length = valueLength;
+                                                                                                  DWORD length = static_cast<DWORD>(valueLength);
 
                                                                                                   auto result = ::GetComputerNameW(value, &length);
                                                                                                   *valueLengthNeededWithNul = length;
@@ -117,7 +117,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
             HRESULT TryGetComputerNameW(string_type& result) WI_NOEXCEPT
             {
-                const auto hr = wiltmp::TryGetComputerNameW<string_type, initialBufferLength>(result);
+                const auto hr = wiltmp::GetComputerNameW<string_type, initialBufferLength>(result);
                 RETURN_HR_IF(hr, FAILED(hr) && (hr != HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND)));
                 return S_OK;
             }
@@ -144,7 +144,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             /** Looks up a registry value from 'key' and fails if it is not found. */
             template<typename string_type, size_t initialBufferLength = 256>
-            inline HRESULT RegQueryValueExW(HANDLE key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
+            inline HRESULT RegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
             {
                 return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result,
                                                                                               [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
@@ -153,14 +153,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                                                                                   // length will receive the number of bytes including trailing null byte. Convert to a number of wchar_t's.
                                                                                                   // AdaptFixedSizeToAllocatedResult will then resize buffer to valueLengthNeededWithNull.
                                                                                                   // We're rounding up to prevent infinite loops if the data isn't a REG_SZ and length isn't divisible by 2.
-                                                                                                  *valueLengthNeededWithNull = (length + sizeof(wchar_t) - 1) / sizeof(wchar_t);
+                                                                                                  *valueLengthNeededWithNul = (length + sizeof(wchar_t) - 1) / sizeof(wchar_t);
                                                                                                   return status == ERROR_MORE_DATA ? S_OK : HRESULT_FROM_WIN32(status);
                                                                                               });
             }
 
             /** Looks up a registry value from 'key' and returns null if it is not found. */
             template<typename string_type, size_t initialBufferLength = 256>
-            HRESULT TryRegQueryValueExW(HANDLE key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
+            HRESULT TryRegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
             {
                 const auto hr = wiltmp::TryRegQueryValueExW<string_type, initialBufferLength>(key, valueName, result);
                 RETURN_HR_IF(hr, FAILED(hr) && (hr != HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND)));
@@ -170,7 +170,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef WIL_ENABLE_EXCEPTIONS
             /** Looks up a registry value from 'key' and fails if it is not found. */
             template<typename string_type = wil::unique_cotaskmem_string, size_t initialBufferLength = 256>
-            string_type RegQueryValueExW(HANDLE key, PCWSTR valueName)
+            string_type RegQueryValueExW(HKEY key, PCWSTR valueName)
             {
                 string_type result;
                 THROW_IF_FAILED((wiltmp::RegQueryValueExW<string_type, initialBufferLength>(key, valueName, result)));
@@ -179,7 +179,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             /** Looks up a registry value from 'key' and returns null if it is not found. */
             template<typename string_type = wil::unique_cotaskmem_string, size_t initialBufferLength = 256>
-            string_type TryRegQueryValueExW(HANDLE key, PCWSTR valueName)
+            string_type TryRegQueryValueExW(HKEY key, PCWSTR valueName)
             {
                 string_type result;
                 THROW_IF_FAILED((wiltmp::TryRegQueryValueExW<string_type, initialBufferLength>(key, valueName, result)));
@@ -192,12 +192,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             template<typename string_type, size_t stackBufferLength = 256>
             HRESULT GetShortPathNameW(PCWSTR file, string_type& path)
             {
-                wil::assign_null_to_opt_param(filePart);
                 const auto hr = wil::AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path,
                                                                                                      [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) -> HRESULT {
                                                                                                          // Note that GetShortPathNameW() is not limited to MAX_PATH
                                                                                                          // but it does take a fixed size buffer.
-                                                                                                         *valueLengthNeededWithNull = ::GetShortPathNameW(file, static_cast<DWORD>(valueLength), value);
+                                                                                                         *valueLengthNeededWithNull = ::GetShortPathNameW(file, value, static_cast<DWORD>(valueLength));
                                                                                                          RETURN_LAST_ERROR_IF(*valueLengthNeededWithNull == 0);
                                                                                                          WI_ASSERT((*value != L'\0') == (*valueLengthNeededWithNull < valueLength));
                                                                                                          if (*valueLengthNeededWithNull < valueLength)
@@ -235,7 +234,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             if (auto value = wil::TryGetEnvironmentVariableW(variable.c_str()))
             {
-                insert_or_assign(variable, value.get());
+                save_to_map(variable, value.get());
             }
         }
 
@@ -243,7 +242,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             if (auto value = til::details::wiltmp::TryGetComputerNameW())
             {
-                insert_or_assign(std::wstring{ til::details::vars::computer_name }, value.get());
+                save_to_map(std::wstring{ til::details::vars::computer_name }, value.get());
             }
         }
 
@@ -256,17 +255,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             DWORD accountNameSize = 0, userDomainSize = 0;
             SID_NAME_USE sidNameUse;
             SetLastError(ERROR_SUCCESS);
-            if (LookupAccountSidLocalW(user.get()->User.Sid, nullptr, &accountNameSize, nullptr, &userDomainSize, &sidNameUse) || GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+            if (LookupAccountSidW(nullptr, user.get()->User.Sid, nullptr, &accountNameSize, nullptr, &userDomainSize, &sidNameUse) || GetLastError() == ERROR_INSUFFICIENT_BUFFER)
             {
                 std::wstring accountName, userDomain;
                 accountName.resize(accountNameSize);
                 userDomain.resize(userDomainSize);
 
                 SetLastError(ERROR_SUCCESS);
-                if (LookupAccountSidLocalW(user.get()->User.Sid, accountName.data(), &accountNameSize, userDomain.data(), &userDomainSize, &sidNameUse))
+                if (LookupAccountSidW(nullptr, user.get()->User.Sid, accountName.data(), &accountNameSize, userDomain.data(), &userDomainSize, &sidNameUse))
                 {
-                    insert_or_assign(std::wstring{ til::details::vars::user_name }, accountName);
-                    insert_or_assign(std::wstring{ til::details::vars::user_domain }, userDomain);
+                    save_to_map(std::wstring{ til::details::vars::user_name }, accountName);
+                    save_to_map(std::wstring{ til::details::vars::user_domain }, userDomain);
                 }
             }
         }
@@ -277,10 +276,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             wil::unique_hkey key;
             if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, til::details::vars::reg::program_files_root.data(), 0, KEY_READ, &key) == ERROR_SUCCESS)
             {
-                for (auto& pair : til::details::vars::program_files_map)
+                for (auto& [keyName, varName] : til::details::vars::program_files_map)
                 {
-                    auto value = til::details::wiltmp::RegQueryValueExW<std::wstring, 256>(key.get(), pair.first.c_str());
-                    set_user_environment_var(std::wstring{ pair.second }, value);
+                    auto value = til::details::wiltmp::RegQueryValueExW<std::wstring, 256>(key.get(), keyName.c_str());
+                    set_user_environment_var(std::wstring{ varName }, value);
                 }
             }
         }
@@ -291,23 +290,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (RegOpenKeyExW(rootKey, subkey.data(), 0, KEY_READ, &key) == ERROR_SUCCESS)
             {
                 DWORD maxValueNameSize = 0, maxValueDataSize = 0;
-                if (RegQueryInfoKeyW(key.get(), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &maxValueNameSize, &maxValueDataSize, nullptr, nullptr))
+                if (RegQueryInfoKeyW(key.get(), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &maxValueNameSize, &maxValueDataSize, nullptr, nullptr) == ERROR_SUCCESS)
                 {
+                    maxValueNameSize++; // the query does not include the terminating null, but needs that space to enum
                     std::wstring valueName;
                     std::basic_string<BYTE> valueData;
                     valueName.resize(maxValueNameSize);
                     valueData.resize(maxValueDataSize);
 
-                    DWORD valueNameSize = maxValueNameSize;
-                    DWORD valueDataSize = maxValueDataSize;
-
-                    DWORD index = 0;
-                    DWORD type = 0;
-
                     for (DWORD pass = 0; pass < 2; ++pass)
                     {
-                        while (!RegEnumValueW(key.get(), index, valueName.data(), &valueNameSize, nullptr, &type, valueData.data(), &valueDataSize))
+                        DWORD valueNameSize = maxValueNameSize;
+                        DWORD valueDataSize = maxValueDataSize;
+
+                        DWORD index = 0;
+                        DWORD type = 0;
+
+                        while (true)
                         {
+                            DWORD result = RegEnumValueW(key.get(), index, valueName.data(), &valueNameSize, nullptr, &type, valueData.data(), &valueDataSize);
+                            if (result != ERROR_SUCCESS)
+                            {
+                                break;
+                            }
                             valueName.resize(valueNameSize);
                             valueData.resize(valueDataSize);
 
@@ -320,7 +325,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                         reinterpret_cast<wchar_t*>(valueData.data()), valueData.size() / sizeof(wchar_t)
                                     };
                                 }
-                                // TODO: This one is supposed to be using some of the vars we just expanded from the first one.
                                 else if (pass == 1 && (type == REG_EXPAND_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
                                     data = {
@@ -329,9 +333,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                     data = expand_environment_strings(data.data());
                                 }
 
+                                // Because Registry data may or may not be null terminated... check if we've managed
+                                // to store an extra null in the wstring by telling it to create itself from pointer and size.
+                                // If we did, pull it off.
                                 if (!data.empty())
                                 {
-                                    if (is_path_var(data))
+                                    if (data.back() == L'\0')
+                                    {
+                                        data = data.substr(0, data.size() - 1);
+                                    }
+                                }
+
+                                if (!data.empty())
+                                {
+                                    if (is_path_var(valueName))
                                     {
                                         concat_var(valueName, std::wstring{ data });
                                     }
@@ -348,6 +363,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             valueDataSize = maxValueDataSize;
                             index++;
                         }
+                        index = 0;
                     }
                 }
             }
@@ -363,7 +379,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             value = expand_environment_strings(value);
             value = check_for_temp(value);
-            insert_or_assign(var, value);
+            save_to_map(var, value);
         }
 
         void concat_var(std::wstring var, std::wstring value)
@@ -371,17 +387,27 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // I wanted contains() but this isn't C++20... yet.
             if (find(var) != end())
             {
-                auto existing = at(var);
+                std::wstring existing = at(var);
+                // If it doesn't already trail with a ;, add one.
+                // Otherwise, just take advantage of the one it has.
                 if (existing.back() != L';')
                 {
                     existing.append(L";");
                 }
                 existing.append(value);
-                insert_or_assign(var, existing);
+                save_to_map(var, existing);
             }
             else
             {
-                insert(var, value);
+                save_to_map(var, value);
+            }
+        }
+
+        void save_to_map(std::wstring var, std::wstring value)
+        {
+            if (!var.empty() && !value.empty())
+            {
+                insert_or_assign(var, value);
             }
         }
 
@@ -408,9 +434,40 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !_wcsicmp(input.data(), path.data()) || !_wcsicmp(input.data(), libpath.data()) || !_wcsicmp(input.data(), os2libpath.data());
         }
 
+        void parse(wchar_t* block)
+        {
+            for (wchar_t const* lastCh{ block }; *lastCh != '\0'; ++lastCh)
+            {
+                // Copy current entry into temporary map.
+                const size_t cchEntry{ ::wcslen(lastCh) };
+                const std::wstring_view entry{ lastCh, cchEntry };
+
+                // Every entry is of the form "name=value\0".
+                const auto pos = entry.find_first_of(L"=", 0, 1);
+                THROW_HR_IF(E_UNEXPECTED, pos == std::wstring::npos);
+
+                std::wstring name{ entry.substr(0, pos) }; // portion before '='
+                std::wstring value{ entry.substr(pos + 1) }; // portion after '='
+
+                // Don't replace entries that already exist.
+                try_emplace(std::move(name), std::move(value));
+                lastCh += cchEntry;
+            }
+        }
+
     public:
+        env()
+        {
+        }
+
+        env(wchar_t* block)
+        {
+            parse(block);
+        }
+
         void regenerate()
         {
+            // Generally replicates the behavior of shell32!RegenerateUserEnvironment
             get(std::wstring{ til::details::vars::system_root });
             get(std::wstring{ til::details::vars::system_drive });
             get(std::wstring{ til::details::vars::all_users_profile });
@@ -431,6 +488,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_env_var_root);
             get_vars_from_registry(HKEY_CURRENT_USER, til::details::vars::reg::user_volatile_env_var_root);
             get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(til::details::vars::reg::user_volatile_session_env_var_root_pattern, NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
+        }
+
+        std::wstring to_string()
+        {
+            std::wstring result;
+            for (const auto& [name, value] : *this)
+            {
+                result += name;
+                result += L"=";
+                result += value;
+                result.append(L"\0", 1); // Override string's natural propensity to stop at \0
+            }
+            result.append(L"\0", 1);
+            return result;
         }
     };
 };
