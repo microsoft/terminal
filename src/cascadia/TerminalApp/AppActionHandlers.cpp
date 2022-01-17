@@ -923,7 +923,10 @@ namespace winrt::TerminalApp::implementation
 
             // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
             _ExportTab(*activeTab, L"");
-            args.Handled(true);
+            if (args)
+            {
+                args.Handled(true);
+            }
         }
     }
 
