@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "BaseWindow.h"
 #include <winrt/TerminalApp.h>
-#include "../../cascadia/inc/cppwinrt_utils.h"
 
 void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
 
@@ -63,8 +62,8 @@ public:
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
-    DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
-    DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
+    WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
+    WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
@@ -74,6 +73,7 @@ public:
     WINRT_CALLBACK(NotifyNotificationIconMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
     WINRT_CALLBACK(NotifyReAddNotificationIcon, winrt::delegate<void()>);
     WINRT_CALLBACK(ShouldExitFullscreen, winrt::delegate<void()>);
+    WINRT_CALLBACK(MaximizeChanged, winrt::delegate<void(bool)>);
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
 
@@ -134,7 +134,7 @@ protected:
     bool _isQuakeWindow{ false };
 
     void _enterQuakeMode();
-    til::rectangle _getQuakeModeSize(HMONITOR hmon);
+    til::rect _getQuakeModeSize(HMONITOR hmon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 

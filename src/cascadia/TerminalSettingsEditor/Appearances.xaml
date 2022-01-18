@@ -158,7 +158,8 @@
             <local:SettingContainer x:Uid="Profile_AdjustIndistinguishableColors"
                                     ClearSettingValue="{x:Bind Appearance.ClearAdjustIndistinguishableColors}"
                                     HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind ShowIndistinguishableColorsItem}">
                 <ToggleSwitch IsOn="{x:Bind Appearance.AdjustIndistinguishableColors, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>

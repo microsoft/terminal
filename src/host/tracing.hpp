@@ -40,7 +40,7 @@ class Tracing
 public:
     ~Tracing();
 
-    static Tracing s_TraceApiCall(const NTSTATUS& result, PCSTR traceName);
+    static Tracing s_TraceApiCall(const NTSTATUS result, PCSTR traceName);
 
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a);
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet);

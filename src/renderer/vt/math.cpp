@@ -17,7 +17,7 @@ using namespace Microsoft::Console::Types;
 //          This is an Inclusive rect.
 // Return Value:
 // - S_OK.
-[[nodiscard]] HRESULT VtEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT VtEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     area = _invalidMap.runs();
     return S_OK;

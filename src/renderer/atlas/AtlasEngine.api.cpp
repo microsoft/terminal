@@ -232,7 +232,7 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT AtlasEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     area = gsl::span{ &_api.dirtyRect, 1 };
     return S_OK;
@@ -367,10 +367,6 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha
 }
 
 void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
-{
-}
-
-void AtlasEngine::SetIntenseIsBold(bool enable) noexcept
 {
 }
 

@@ -898,7 +898,7 @@ namespace fuzz
 
         _Type operator->() const throw()
         {
-            return (this->m_fFuzzed) ? this->m_t : m_tInit;
+            return (this->m_fFuzzed) ? this->m_t : CFuzzType<_Type, _Args...>::m_tInit;
         }
 
         // This operator makes it possible to invoke the fuzzing map
@@ -909,7 +909,7 @@ namespace fuzz
         // the logic of the fuzz map).
         __inline void operator()() throw()
         {
-            GetValueFromMap();
+            CFuzzType<_Type, _Args...>::GetValueFromMap();
         }
     };
 
@@ -960,7 +960,7 @@ namespace fuzz
         __inline virtual _Type** operator&() throw()
         {
             m_ftEffectiveTraits |= TRAIT_TRANSFER_ALLOCATION;
-            return (this->m_fFuzzed) ? &(this->m_t) : &m_tInit;
+            return (this->m_fFuzzed) ? &(this->m_t) : &CFuzzType<_Type, _Args...>::m_tInit;
         }
 
     private:
@@ -1087,7 +1087,7 @@ namespace fuzz
                     int iLow = iHigh - (r.range.iHigh - r.range.iLow);
                     if (iLow <= wRandom && wRandom < iHigh)
                     {
-                        this->m_t |= CallFuzzMapFunction(r.fte.pfnFuzz, this->m_tInit, m_tArgs);
+                        this->m_t |= CallFuzzMapFunction(r.fte.pfnFuzz, this->m_tInit, CFuzzType<_Type, _Args...>::m_tArgs);
                     }
                 }
             }

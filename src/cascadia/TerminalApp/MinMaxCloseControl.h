@@ -7,7 +7,6 @@
 #pragma once
 
 #include "MinMaxCloseControl.g.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
 #include <ThrottledFunc.h>
 
 namespace winrt::TerminalApp::implementation
@@ -40,7 +39,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct MinMaxCloseControl : MinMaxCloseControlT<MinMaxCloseControl, implementation::MinMaxCloseControl>
-    {
-    };
+    BASIC_FACTORY(MinMaxCloseControl);
 }

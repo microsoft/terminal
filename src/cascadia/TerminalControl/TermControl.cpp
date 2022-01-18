@@ -450,7 +450,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_InitializeBackgroundBrush()
     {
         auto settings{ _core.Settings() };
-        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
+        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
         if (settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
@@ -732,8 +732,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _cursorTimer.emplace(std::move(cursorTimer));
             // As of GH#6586, don't start the cursor timer immediately, and
             // don't show the cursor initially. We'll show the cursor and start
-            // the timer when the control is first focused. cursorTimer.Start();
-            _core.CursorOn(false);
+            // the timer when the control is first focused.
+            //
+            // As of GH#11411, turn on the cursor if we've already been marked
+            // as focused. We suspect that it's possible for the Focused event
+            // to fire before the LayoutUpdated. In that case, the
+            // _GotFocusHandler would mark us _focused, but find that a
+            // _cursorTimer doesn't exist, and it would never turn on the
+            // cursor. To mitigate, we'll initialize the cursor's 'on' state
+            // with `_focused` here.
+            _core.CursorOn(_focused);
         }
         else
         {
@@ -1129,7 +1137,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto contactRect = point.Properties().ContactRect();
             auto anchor = til::point{ til::math::rounding, contactRect.X, contactRect.Y };
-            _interactivity.TouchPressed(anchor);
+            _interactivity.TouchPressed(anchor.to_core_point());
         }
         else
         {
@@ -1138,7 +1146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           TermControl::GetPointerUpdateKind(point),
                                           point.Timestamp(),
                                           ControlKeyStates{ args.KeyModifiers() },
-                                          _toTerminalOrigin(cursorPosition));
+                                          _toTerminalOrigin(cursorPosition).to_core_point());
         }
 
         args.Handled(true);
@@ -1177,7 +1185,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         TermControl::GetPointerUpdateKind(point),
                                         ControlKeyStates(args.KeyModifiers()),
                                         _focused,
-                                        pixelPosition,
+                                        pixelPosition.to_core_point(),
                                         _pointerPressedInBounds);
 
             // GH#9109 - Only start an auto-scroll when the drag actually
@@ -1219,7 +1227,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto contactRect = point.Properties().ContactRect();
             til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
 
-            _interactivity.TouchMoved(newTouchPoint, _focused);
+            _interactivity.TouchMoved(newTouchPoint.to_core_point(), _focused);
         }
 
         args.Handled(true);
@@ -1255,7 +1263,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _interactivity.PointerReleased(TermControl::GetPressedMouseButtons(point),
                                            TermControl::GetPointerUpdateKind(point),
                                            ControlKeyStates(args.KeyModifiers()),
-                                           pixelPosition);
+                                           pixelPosition.to_core_point());
         }
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
@@ -1295,7 +1303,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                 point.Properties().MouseWheelDelta(),
-                                                _toTerminalOrigin(point.Position()),
+                                                _toTerminalOrigin(point.Position()).to_core_point(),
                                                 TermControl::GetPressedMouseButtons(point));
         if (result)
         {
@@ -1326,7 +1334,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
         WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
 
-        return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
+        return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location).to_core_point(), state);
     }
 
     // Method Description:
@@ -1696,7 +1704,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _interactivity.SetEndSelectionPoint(_toTerminalOrigin(cursorPosition));
+        _interactivity.SetEndSelectionPoint(_toTerminalOrigin(cursorPosition).to_core_point());
     }
 
     // Method Description:
@@ -1993,7 +2001,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
-
             return GetProposedDimensions(_core.Settings(), dpi, minSize);
         }
     }
@@ -2150,7 +2157,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;
 
         // Convert it to pixels
-        const til::point relativeToMarginInPixels{ relativeToMarginInDIPs * SwapChainPanel().CompositionScaleX() };
+        const auto scale = SwapChainPanel().CompositionScaleX();
+        const til::point relativeToMarginInPixels{
+            til::math::flooring,
+            relativeToMarginInDIPs.x * scale,
+            relativeToMarginInDIPs.y * scale,
+        };
 
         return relativeToMarginInPixels;
     }
@@ -2189,10 +2201,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const til::point cursorPos = _core.CursorPosition();
-        Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x()),
-                                         ::base::ClampedNumeric<float>(cursorPos.y()) };
-        eventArgs.CurrentPosition(p);
+        const auto cursorPos = _core.CursorPosition();
+        eventArgs.CurrentPosition({ static_cast<float>(cursorPos.X), static_cast<float>(cursorPos.Y) });
     }
 
     // Method Description:
@@ -2590,13 +2600,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto uriText = _core.HoveredUriText();
                 if (!uriText.empty())
                 {
+                    const auto panel = SwapChainPanel();
+                    const auto scale = panel.CompositionScaleX();
+                    const auto offset = panel.ActualOffset();
+
                     // Update the tooltip with the URI
                     HoveredUri().Text(uriText);
 
                     // Set the border thickness so it covers the entire cell
                     const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                    const auto htInDips = charSizeInPixels.Height / scale;
+                    const auto wtInDips = charSizeInPixels.Width / scale;
                     const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
                     HyperlinkTooltipBorder().BorderThickness(newThickness);
 
@@ -2605,14 +2619,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const til::point startPos{ lastHoveredCell.Value() };
                     const til::size fontSize{ til::math::rounding, _core.FontSize() };
                     const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                    const til::point posInDIPs{ til::math::flooring, posInPixels.x / scale, posInPixels.y / scale };
                     const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
                     // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
-                                            (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(),
-                                           (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
                 }
             }
         }
@@ -2699,5 +2711,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
     {
         _core.ColorScheme(scheme);
+    }
+
+    void TermControl::AdjustOpacity(const int32_t& opacity, const bool& relative)
+    {
+        _core.AdjustOpacity(opacity, relative);
+    }
+
+    // - You'd think this should just be "Opacity", but UIElement already
+    //   defines an "Opacity", which we're actually not setting at all. We're
+    //   not overriding or changing _that_ value. Callers that want the opacity
+    //   set by the settings should call this instead.
+    double TermControl::BackgroundOpacity() const
+    {
+        return _core.Opacity();
     }
 }

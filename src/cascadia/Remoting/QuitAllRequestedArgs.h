@@ -14,7 +14,6 @@ Abstract:
 #pragma once
 
 #include "QuitAllRequestedArgs.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {

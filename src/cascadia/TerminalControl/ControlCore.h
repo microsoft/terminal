@@ -20,7 +20,6 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
-#include "cppwinrt_utils.h"
 
 #include <til/ticket_lock.h>
 
@@ -89,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdatePatternLocations();
         void SetHoveredCell(Core::Point terminalPosition);
         void ClearHoveredCell();
-        winrt::hstring GetHyperlink(const til::point position) const;
+        winrt::hstring GetHyperlink(const Core::Point position) const;
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
@@ -139,7 +138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
-        til::point CursorPosition() const;
+        Core::Point CursorPosition() const;
 
         bool HasSelection() const;
         bool CopyOnSelect() const;
@@ -166,6 +165,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring ReadEntireBuffer() const;
 
         static bool IsVintageOpacityAvailable() noexcept;
+
+        void AdjustOpacity(const int32_t& opacity, const bool& relative);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
@@ -270,6 +271,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
+        void _setOpacity(const double opacity);
 
         bool _isBackgroundTransparent();
 

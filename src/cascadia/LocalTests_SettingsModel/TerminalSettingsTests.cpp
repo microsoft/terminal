@@ -359,17 +359,9 @@ namespace SettingsModelLocalTests
             const auto profile{ settings->GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
-            {
-                // This action specified a command but no profile; it gets reassigned to the base profile
-                VERIFY_ARE_EQUAL(settings->ProfileDefaults(), profile);
-                VERIFY_ARE_EQUAL(29, termSettings.HistorySize());
-            }
-            else
-            {
-                VERIFY_ARE_EQUAL(guid0, profile.Guid());
-                VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-            }
+            // This action specified a command but no profile; it gets reassigned to the base profile
+            VERIFY_ARE_EQUAL(settings->ProfileDefaults(), profile);
+            VERIFY_ARE_EQUAL(29, termSettings.HistorySize());
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
         }
         {
@@ -732,11 +724,11 @@ namespace SettingsModelLocalTests
         const auto terminalSettings4 = createTerminalSettings(activeProfiles.GetAt(4), colorSchemes);
         const auto terminalSettings5 = createTerminalSettings(activeProfiles.GetAt(5), colorSchemes);
 
-        VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1->CursorColor()); // default
-        VERIFY_ARE_EQUAL(ARGB(0, 0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
-        VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
-        VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
+        VERIFY_ARE_EQUAL(RGB(0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
+        VERIFY_ARE_EQUAL(RGB(0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
+        VERIFY_ARE_EQUAL(RGB(0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5->CursorColor()); // default
     }
 

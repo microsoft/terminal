@@ -8,7 +8,7 @@ namespace ColorTool.ConsoleTargets
 {
     class TerminalSchemeConsoleTarget : IConsoleTarget
     {
-        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
+        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode, bool compactColortable)
         {
             Console.WriteLine("Copy and paste the following text into the schemes array of your Windows Terminal settings.json file to add this color scheme. (Don't forget to add a comma separator after the previous scheme.)");
             Console.WriteLine("{");
@@ -47,6 +47,10 @@ namespace ColorTool.ConsoleTargets
             if (colorScheme.ConsoleAttributes.Background.HasValue)
             {
                 writeColorItem(colorScheme.ConsoleAttributes.Background.Value, "background", false);
+            }
+            if (colorScheme.ConsoleAttributes.Cursor.HasValue)
+            {
+                writeColorItem(colorScheme.ConsoleAttributes.Cursor.Value, "cursorColor", false);
             }
             for (int i = 0; i < colors.Length; i++)
             {

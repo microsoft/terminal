@@ -82,7 +82,7 @@ void RenderTracing::TraceString(const std::string_view& instr) const
 #endif UNIT_TESTING
 }
 
-void RenderTracing::TraceInvalidate(const til::rectangle invalidRect) const
+void RenderTracing::TraceInvalidate(const til::rect& invalidRect) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -100,7 +100,7 @@ void RenderTracing::TraceInvalidate(const til::rectangle invalidRect) const
 #endif UNIT_TESTING
 }
 
-void RenderTracing::TraceInvalidateAll(const til::rectangle viewport) const
+void RenderTracing::TraceInvalidateAll(const til::rect& viewport) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -151,7 +151,7 @@ void RenderTracing::TraceInvalidateScroll(const til::point scroll) const
 
 void RenderTracing::TraceStartPaint(const bool quickReturn,
                                     const til::pmr::bitmap& invalidMap,
-                                    const til::rectangle lastViewport,
+                                    const til::rect& lastViewport,
                                     const til::point scrollDelt,
                                     const bool cursorMoved,
                                     const std::optional<short>& wrappedRow) const

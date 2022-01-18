@@ -22,7 +22,7 @@
 // Return Value:
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(SCREEN_INFORMATION& siContext,
-                     _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
+                     _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
                      const size_t cbContext,
                      const UINT uiOutputCodepage,
                      const bool requiresVtQuirk) :

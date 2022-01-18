@@ -39,24 +39,17 @@ namespace SettingsModelLocalTests
         TEST_METHOD(KeyChords);
         TEST_METHOD(ManyKeysSameAction);
         TEST_METHOD(LayerKeybindings);
+        TEST_METHOD(HashDeduplication);
         TEST_METHOD(UnbindKeybindings);
-
         TEST_METHOD(LayerScancodeKeybindings);
-
         TEST_METHOD(TestExplicitUnbind);
-
         TEST_METHOD(TestArbitraryArgs);
         TEST_METHOD(TestSplitPaneArgs);
-
         TEST_METHOD(TestStringOverload);
-
         TEST_METHOD(TestSetTabColorArgs);
-
         TEST_METHOD(TestScrollArgs);
-
         TEST_METHOD(TestToggleCommandPaletteArgs);
         TEST_METHOD(TestMoveTabArgs);
-
         TEST_METHOD(TestGetKeyBindingForAction);
         TEST_METHOD(KeybindingsWithoutVkey);
     };
@@ -171,6 +164,14 @@ namespace SettingsModelLocalTests
 
         actionMap->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
+    }
+
+    void KeyBindingsTests::HashDeduplication()
+    {
+        const auto actionMap = winrt::make_self<implementation::ActionMap>();
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"));
+        actionMap->LayerJson(VerifyParseSucceeded(R"([ { "command": "splitPane", "keys": ["ctrl+c"] } ])"));
+        VERIFY_ARE_EQUAL(1u, actionMap->_ActionMap.size());
     }
 
     void KeyBindingsTests::UnbindKeybindings()

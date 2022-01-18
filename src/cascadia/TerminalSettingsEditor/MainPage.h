@@ -26,8 +26,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
         uint64_t GetHostingWindow() const noexcept;
 
-        bool ShowBaseLayerMenuItem() const noexcept;
-
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
 
     private:
@@ -46,7 +44,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(const Editor::ProfileViewModel& profile);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
-        winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState _lastProfilesNavState{ nullptr };
     };
 }
 

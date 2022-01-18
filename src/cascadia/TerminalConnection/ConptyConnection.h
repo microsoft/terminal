@@ -5,7 +5,6 @@
 
 #include "ConptyConnection.g.h"
 #include "ConnectionStateHolder.h"
-#include "../inc/cppwinrt_utils.h"
 
 #include <conpty-static.h>
 
@@ -93,7 +92,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct ConptyConnection : ConptyConnectionT<ConptyConnection, implementation::ConptyConnection>
-    {
-    };
+    BASIC_FACTORY(ConptyConnection);
 }

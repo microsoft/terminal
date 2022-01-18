@@ -11,10 +11,10 @@
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
-#include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
 
 #include "ControlInteractivity.h"
+#include "ControlSettings.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -57,6 +57,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool BracketedPasteEnabled() const noexcept;
+
+        double BackgroundOpacity() const;
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -107,6 +109,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
+
+        void AdjustOpacity(const int32_t& opacity, const bool& relative);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

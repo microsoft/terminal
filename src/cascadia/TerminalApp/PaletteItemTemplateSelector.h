@@ -4,7 +4,6 @@
 #pragma once
 
 #include "PaletteItemTemplateSelector.g.h"
-#include "inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {

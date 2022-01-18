@@ -39,5 +39,7 @@ namespace Microsoft.Terminal.Settings.Model
         String Commandline { set; };
         String StartingDirectory { set; };
         String EnvironmentVariables { set; };
+
+        Boolean Elevate;
     };
 }

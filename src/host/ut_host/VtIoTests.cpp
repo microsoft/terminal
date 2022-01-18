@@ -290,11 +290,6 @@ public:
     {
     }
 
-    const TextAttribute GetDefaultBrushColors() noexcept override
-    {
-        return TextAttribute{};
-    }
-
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& /*attr*/) const noexcept override
     {
         return std::make_pair(COLORREF{}, COLORREF{});
@@ -330,17 +325,7 @@ public:
         return 12ul;
     }
 
-    COLORREF GetCursorColor() const noexcept override
-    {
-        return COLORREF{};
-    }
-
     bool IsCursorDoubleWidth() const override
-    {
-        return false;
-    }
-
-    bool IsScreenReversed() const noexcept override
     {
         return false;
     }
@@ -423,7 +408,7 @@ void VtIoTests::RendererDtorAndThread()
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
         // Sleep for a hot sec to make sure the thread starts before we enable painting
         // If you don't, the thread might wait on the paint enabled event AFTER
@@ -449,7 +434,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();

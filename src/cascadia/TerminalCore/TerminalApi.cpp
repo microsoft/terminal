@@ -6,6 +6,7 @@
 #include "../src/inc/unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -371,7 +372,7 @@ CATCH_RETURN_FALSE()
 COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const noexcept
 try
 {
-    return _colorTable.at(tableIndex);
+    return _renderSettings.GetColorTableEntry(tableIndex);
 }
 catch (...)
 {
@@ -389,9 +390,9 @@ catch (...)
 bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
 try
 {
-    _colorTable.at(tableIndex) = color;
+    _renderSettings.SetColorTableEntry(tableIndex, color);
 
-    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
+    if (tableIndex == _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground))
     {
         _pfnBackgroundColorChanged(color);
     }
@@ -401,6 +402,18 @@ try
     return true;
 }
 CATCH_RETURN_FALSE()
+
+// Method Description:
+// - Sets the position in the color table for the given color alias.
+// Arguments:
+// - alias: the color alias to update.
+// - tableIndex: the new position of the alias in the color table.
+// Return Value:
+// - <none>
+void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
+{
+    _renderSettings.SetColorAliasIndex(alias, tableIndex);
+}
 
 // Method Description:
 // - Sets the cursor style to the given style.
@@ -463,10 +476,10 @@ try
 }
 CATCH_RETURN_FALSE()
 
-bool Terminal::SetScreenMode(const bool reverseMode) noexcept
+bool Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled) noexcept
 try
 {
-    _screenReversed = reverseMode;
+    _renderSettings.SetRenderMode(mode, enabled);
 
     // Repaint everything - the colors will have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
