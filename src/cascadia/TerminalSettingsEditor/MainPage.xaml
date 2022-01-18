@@ -44,7 +44,7 @@
                          TabFocusNavigation="Cycle">
         <muxc:NavigationView.Header>
             <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
-                                Margin="-40,0,0,16"
+                                Margin="-40,-40,0,16"
                                 ItemClicked="BreadcrumbBar_ItemClicked"
                                 ItemsSource="{x:Bind Breadcrumbs}">
                 <muxc:BreadcrumbBar.ItemTemplate>
@@ -131,7 +131,7 @@
             </muxc:NavigationViewItem>
         </muxc:NavigationView.PaneFooter>
 
-        <Grid>
+        <Grid Margin="0,-30,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
