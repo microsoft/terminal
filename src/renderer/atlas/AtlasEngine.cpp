@@ -1453,7 +1453,7 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t b
         // We should apply the column color and flags from each column (instead
         // of copying them from the x1) so that ligatures can appear in multiple
         // colors with different line styles.
-        data[i].flags = valueData->flags | _api.bufferLineMetadata[x1 + i].flags;
-        data[i].color = _api.bufferLineMetadata[x1 + i].colors;
+        data[i].flags = valueData->flags | _api.bufferLineMetadata[static_cast<size_t>(x1) + i].flags;
+        data[i].color = _api.bufferLineMetadata[static_cast<size_t>(x1) + i].colors;
     }
 }
