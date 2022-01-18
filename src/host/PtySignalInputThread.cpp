@@ -170,7 +170,6 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();
-            return false;
         }
         else
         {
@@ -180,7 +179,6 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     else if (dwRead != cbBuffer)
     {
         _Shutdown();
-        return false;
     }
 
     return true;
