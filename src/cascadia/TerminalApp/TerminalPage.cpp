@@ -302,6 +302,12 @@ namespace winrt::TerminalApp::implementation
                settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
     }
 
+    // Method Description:
+    // - This is a bit of trickiness: If we're running unelevated, and the user passed in only --elevate actions, the we don't _actually_ want to restore the layouts here. We're not _actually_ about to create the window. We're simply going to toss the commandlines
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     bool TerminalPage::ShouldActuallySpawnPersistedLayouts() const
     {
         if (!_startupActions || IsElevated())
