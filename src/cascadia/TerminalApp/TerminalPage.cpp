@@ -303,34 +303,95 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This is a bit of trickiness: If we're running unelevated, and the user passed in only --elevate actions, the we don't _actually_ want to restore the layouts here. We're not _actually_ about to create the window. We're simply going to toss the commandlines
+    // - This is a bit of trickiness: If we're running unelevated, and the user
+    //   passed in only --elevate actions, the we don't _actually_ want to
+    //   restore the layouts here. We're not _actually_ about to create the
+    //   window. We're simply going to toss the commandlines
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    bool TerminalPage::ShouldActuallySpawnPersistedLayouts() const
+    bool TerminalPage::ShouldImmediatelyHandoffToElevated(CascadiaSettings& settings) const
     {
         if (!_startupActions || IsElevated())
         {
             // there arent startup actions, or we're elevated. In that case, go for it.
-            return true;
+            return false;
         }
 
         // Check that there's at least one action that's not just an elevated newTab action.
         for (const auto& action : _startupActions)
         {
+            NewTerminalArgs newTerminalArgs{ nullptr };
+
             if (action.Action() == ShortcutAction::NewTab)
             {
                 const auto& args{ action.Args().try_as<NewTabArgs>() };
-                if (args && args.TerminalArgs().Elevate())
+                if (args)
                 {
-                    continue;
+                    newTerminalArgs = args.TerminalArgs();
+                }
+                else
+                {
+                    // This was a nt action that didn't have any args. The default
+                    // profile may want to be elevated, so don't just early return.
                 }
             }
+            else if (action.Action() == ShortcutAction::SplitPane)
+            {
+                const auto& args{ action.Args().try_as<SplitPaneArgs>() };
+                if (args)
+                {
+                    newTerminalArgs = args.TerminalArgs();
+                }
+                else
+                {
+                    // This was a nt action that didn't have any args. The default
+                    // profile may want to be elevated, so don't just early return.
+                }
+            }
+            else
+            {
+                // This was not a new tab or split pane action.
+                // This doesn't affect the outcome
+                continue;
+            }
 
-            return true;
+            // It's possible that newTerminalArgs is null here.
+            // GetProfileForArgs should be resillient to that.
+            const auto profile{ settings.GetProfileForArgs(newTerminalArgs) };
+            if (profile.Elevate())
+            {
+                continue;
+            }
+
+            // The profile didn't want to be elevated, and we aren't elevated.
+            // We're going to open at least one tab, so return false.
+            return false;
         }
-        return false;
+        return true;
+    }
+
+    void TerminalPage::HandoffToElevated(CascadiaSettings& settings)
+    {
+        if (!_startupActions)
+        {
+            return;
+        }
+
+        _settings = settings;
+        _HookupKeyBindings(_settings.ActionMap());
+
+        // Hookup our event handlers to the ShortcutActionDispatch
+        _RegisterActionCallbacks();
+
+        for (const auto& action : _startupActions)
+        {
+            if (action.Action() == ShortcutAction::NewTab || action.Action() == ShortcutAction::SplitPane)
+            {
+                _actionDispatch->DoAction(action);
+            }
+        }
     }
 
     // Method Description;

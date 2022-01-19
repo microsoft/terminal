@@ -214,6 +214,15 @@ void AppHost::_HandleCommandlineArgs()
             }
         }
 
+        // TODO!
+        if (_logic.ShouldImmediatelyHandoffToElevated())
+        {
+            // DebugBreak();
+            _shouldCreateWindow = false;
+            _logic.HandoffToElevated();
+            return;
+        }
+
         // After handling the initial args, hookup the callback for handling
         // future commandline invocations. When our peasant is told to execute a
         // commandline (in the future), it'll trigger this callback, that we'll
@@ -233,8 +242,9 @@ void AppHost::_HandleCommandlineArgs()
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_logic.ShouldUsePersistedLayout() &&
                 layouts &&
-                layouts.Size() > 0 &&
-                _logic.ShouldActuallySpawnPersistedLayouts())
+                layouts.Size() > 0 /* &&
+                _logic.ShouldImmediatelyHandoffToElevated()*/
+            )
             {
                 uint32_t startIdx = 0;
                 // We want to create a window for every saved layout.
