@@ -115,6 +115,15 @@
                                   IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
                     </StackPanel>
                 </local:SettingContainer>
+
+                <!--  AtlasEngine  -->
+                <local:SettingContainer x:Uid="Profile_UseAtlasEngine"
+                                        ClearSettingValue="{x:Bind Profile.ClearUseAtlasEngine}"
+                                        HasSettingValue="{x:Bind Profile.HasUseAtlasEngine, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}"
+                                        Visibility="{x:Bind Profile.AtlasEngineAvailable}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}" />
+                </local:SettingContainer>
             </StackPanel>
         </ScrollViewer>
     </Grid>

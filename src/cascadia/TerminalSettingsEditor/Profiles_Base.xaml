@@ -17,20 +17,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <Style x:Key="ProfilesBaseToggleButtonStyle"
-                   TargetType="ToggleButton">
-                <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
-                <Setter Property="MinWidth" Value="{ThemeResource FlyoutThemeMinWidth}" />
-                <Setter Property="MinHeight" Value="64" />
-                <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
-                <Setter Property="Padding" Value="16,0,8,0" />
-                <Setter Property="Margin" Value="0,4,8,0" />
-                <Setter Property="HorizontalAlignment" Value="Stretch" />
-                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-                <Setter Property="VerticalAlignment" Value="Stretch" />
-                <Setter Property="HorizontalContentAlignment" Value="Left" />
-            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -148,13 +134,13 @@
                 </local:SettingContainer>
 
                 <ToggleButton Click="Appearance_Click"
-                              Style="{StaticResource ProfilesBaseToggleButtonStyle}">
+                              Style="{StaticResource ToggleButtonStyle}">
                     <TextBlock HorizontalAlignment="Left"
                                VerticalAlignment="Center"
                                Text="Appearance" />
                 </ToggleButton>
                 <ToggleButton Click="Advanced_Click"
-                              Style="{StaticResource ProfilesBaseToggleButtonStyle}">
+                              Style="{StaticResource ToggleButtonStyle}">
                     <ContentPresenter HorizontalAlignment="Left">
                         <TextBlock HorizontalAlignment="Left"
                                    Text="Advanced" />

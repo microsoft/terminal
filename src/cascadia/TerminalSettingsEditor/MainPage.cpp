@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto size = _breadcrumbs.Size();
         if (size > 0)
         {
-            lastBreadcrumb = _breadcrumbs.GetAt(size-1);
+            lastBreadcrumb = _breadcrumbs.GetAt(size - 1);
         }
 
         auto menuItems{ SettingsNav().MenuItems() };
@@ -426,8 +426,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
 
-        // If we were given a label, make sure we're on the correct sub-page
-        if (subPage == BreadcrumbSubPage::Profile_Appearance)
+        // Set the profile's 'CurrentPage' to the correct one, if this requires further navigation, the
+        // event handler will do it
+        if (subPage == BreadcrumbSubPage::None)
+        {
+            profile.CurrentPage(ProfileSubPage::Base);
+        }
+        else if (subPage == BreadcrumbSubPage::Profile_Appearance)
         {
             profile.CurrentPage(ProfileSubPage::Appearance);
         }
