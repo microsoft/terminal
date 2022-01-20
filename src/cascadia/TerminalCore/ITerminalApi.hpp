@@ -26,15 +26,15 @@ namespace Microsoft::Terminal::Core
         virtual void SetTextAttributes(const TextAttribute& attrs) noexcept = 0;
 
         virtual Microsoft::Console::Types::Viewport GetBufferSize() noexcept = 0;
-        virtual bool SetCursorPosition(short x, short y) noexcept = 0;
-        virtual COORD GetCursorPosition() noexcept = 0;
+        virtual bool SetCursorPosition(til::point pos) noexcept = 0;
+        virtual til::point GetCursorPosition() noexcept = 0;
         virtual bool SetCursorVisibility(const bool visible) noexcept = 0;
         virtual bool CursorLineFeed(const bool withReturn) noexcept = 0;
         virtual bool EnableCursorBlinking(const bool enable) noexcept = 0;
 
-        virtual bool DeleteCharacter(const size_t count) noexcept = 0;
-        virtual bool InsertCharacter(const size_t count) noexcept = 0;
-        virtual bool EraseCharacters(const size_t numChars) noexcept = 0;
+        virtual bool DeleteCharacter(const til::CoordType count) noexcept = 0;
+        virtual bool InsertCharacter(const til::CoordType count) noexcept = 0;
+        virtual bool EraseCharacters(const til::CoordType numChars) noexcept = 0;
         virtual bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
         virtual bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
 

@@ -31,23 +31,23 @@ class ViewportTests
         VERIFY_ARE_EQUAL(0, v.BottomExclusive());
         VERIFY_ARE_EQUAL(0, v.Height());
         VERIFY_ARE_EQUAL(0, v.Width());
-        VERIFY_ARE_EQUAL(COORD({ 0 }), v.Origin());
-        VERIFY_ARE_EQUAL(COORD({ 0 }), v.Dimensions());
+        VERIFY_ARE_EQUAL(til::point({ 0 }), v.Origin());
+        VERIFY_ARE_EQUAL(til::point({ 0 }), v.Dimensions());
     }
 
     TEST_METHOD(CreateFromInclusive)
     {
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 3;
         rect.Bottom = 5;
         rect.Left = 10;
         rect.Right = 20;
 
-        COORD origin;
+        til::point origin;
         origin.X = rect.Left;
         origin.Y = rect.Top;
 
-        COORD dimensions;
+        til::point dimensions;
         dimensions.X = rect.Right - rect.Left + 1;
         dimensions.Y = rect.Bottom - rect.Top + 1;
 
@@ -67,17 +67,17 @@ class ViewportTests
 
     TEST_METHOD(CreateFromExclusive)
     {
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 3;
         rect.Bottom = 5;
         rect.Left = 10;
         rect.Right = 20;
 
-        COORD origin;
+        til::point origin;
         origin.X = rect.Left;
         origin.Y = rect.Top;
 
-        COORD dimensions;
+        til::point dimensions;
         dimensions.X = rect.Right - rect.Left;
         dimensions.Y = rect.Bottom - rect.Top;
 
@@ -97,17 +97,17 @@ class ViewportTests
 
     TEST_METHOD(CreateFromDimensionsWidthHeight)
     {
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 3;
         rect.Bottom = 5;
         rect.Left = 10;
         rect.Right = 20;
 
-        COORD origin;
+        til::point origin;
         origin.X = rect.Left;
         origin.Y = rect.Top;
 
-        COORD dimensions;
+        til::point dimensions;
         dimensions.X = rect.Right - rect.Left + 1;
         dimensions.Y = rect.Bottom - rect.Top + 1;
 
@@ -127,17 +127,17 @@ class ViewportTests
 
     TEST_METHOD(CreateFromDimensions)
     {
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 3;
         rect.Bottom = 5;
         rect.Left = 10;
         rect.Right = 20;
 
-        COORD origin;
+        til::point origin;
         origin.X = rect.Left;
         origin.Y = rect.Top;
 
-        COORD dimensions;
+        til::point dimensions;
         dimensions.X = rect.Right - rect.Left + 1;
         dimensions.Y = rect.Bottom - rect.Top + 1;
 
@@ -157,17 +157,17 @@ class ViewportTests
 
     TEST_METHOD(CreateFromDimensionsNoOrigin)
     {
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 0;
         rect.Left = 0;
         rect.Bottom = 5;
         rect.Right = 20;
 
-        COORD origin;
+        til::point origin;
         origin.X = rect.Left;
         origin.Y = rect.Top;
 
-        COORD dimensions;
+        til::point dimensions;
         dimensions.X = rect.Right - rect.Left + 1;
         dimensions.Y = rect.Bottom - rect.Top + 1;
 
@@ -187,7 +187,7 @@ class ViewportTests
 
     TEST_METHOD(CreateFromCoord)
     {
-        COORD origin;
+        til::point origin;
         origin.X = 12;
         origin.Y = 24;
 
@@ -203,24 +203,24 @@ class ViewportTests
         VERIFY_ARE_EQUAL(1, v.Width());
         VERIFY_ARE_EQUAL(origin, v.Origin());
         // clang-format off
-        VERIFY_ARE_EQUAL(COORD({ 1, 1, }), v.Dimensions());
+        VERIFY_ARE_EQUAL(til::point({ 1, 1, }), v.Dimensions());
         // clang-format on
     }
 
     TEST_METHOD(ToRect)
     {
-        COORD origin;
+        til::point origin;
         origin.X = 2;
         origin.Y = 4;
 
-        COORD dimensions;
+        til::point dimensions;
         dimensions.X = 10;
         dimensions.Y = 20;
 
         const auto v = Viewport::FromDimensions(origin, dimensions);
 
         const RECT rc = v.ToRect();
-        const SMALL_RECT exclusive = v.ToExclusive();
+        const auto exclusive = v.ToExclusive();
 
         VERIFY_ARE_EQUAL(exclusive.Left, v.Left());
         VERIFY_ARE_EQUAL(rc.left, v.Left());
@@ -237,7 +237,7 @@ class ViewportTests
 
     TEST_METHOD(IsInBoundsCoord)
     {
-        SMALL_RECT r;
+        til::inclusive_rect r;
         r.Top = 3;
         r.Bottom = 5;
         r.Left = 10;
@@ -245,7 +245,7 @@ class ViewportTests
 
         const auto v = Viewport::FromInclusive(r);
 
-        COORD c;
+        til::point c;
         c.X = r.Left;
         c.Y = r.Top;
         VERIFY_IS_TRUE(v.IsInBounds(c), L"Top left corner in bounds.");
@@ -296,7 +296,7 @@ class ViewportTests
 
     TEST_METHOD(IsInBoundsViewport)
     {
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 3;
         rect.Bottom = 5;
         rect.Left = 10;
@@ -347,7 +347,7 @@ class ViewportTests
 
     TEST_METHOD(ClampCoord)
     {
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 3;
         rect.Bottom = 5;
         rect.Left = 10;
@@ -355,7 +355,7 @@ class ViewportTests
 
         const auto view = Viewport::FromInclusive(rect);
 
-        COORD pos;
+        til::point pos;
         pos.X = rect.Left;
         pos.Y = rect.Top;
 
@@ -381,7 +381,7 @@ class ViewportTests
         view.Clamp(pos);
         VERIFY_ARE_EQUAL(before, pos, L"Verify clamp did nothing for position in top right corner.");
 
-        COORD expected;
+        til::point expected;
         expected.X = rect.Right;
         expected.Y = rect.Top;
 
@@ -439,7 +439,7 @@ class ViewportTests
     TEST_METHOD(ClampViewport)
     {
         // Create the rectangle/view we will clamp to.
-        SMALL_RECT rect;
+        til::inclusive_rect rect;
         rect.Top = 3;
         rect.Bottom = 5;
         rect.Left = 10;
@@ -448,7 +448,7 @@ class ViewportTests
         const auto view = Viewport::FromInclusive(rect);
 
         Log::Comment(L"Make a rectangle that is larger than and fully encompasses our clamping rectangle.");
-        SMALL_RECT testRect;
+        til::inclusive_rect testRect;
         testRect.Top = rect.Top - 3;
         testRect.Bottom = rect.Bottom + 3;
         testRect.Left = rect.Left - 3;
@@ -477,7 +477,7 @@ class ViewportTests
         testView = Viewport::FromInclusive(testRect);
 
         Log::Comment(L"We expect it to be pulled back so each coordinate is in bounds, but the rectangle is still invalid (since left will be > right).");
-        SMALL_RECT expected;
+        til::inclusive_rect expected;
         expected.Top = rect.Bottom;
         expected.Bottom = rect.Top;
         expected.Left = rect.Right;
@@ -492,15 +492,15 @@ class ViewportTests
     {
         bool success = false;
 
-        SMALL_RECT edges;
+        til::inclusive_rect edges;
         edges.Left = 10;
         edges.Right = 19;
         edges.Top = 20;
         edges.Bottom = 29;
 
         const auto v = Viewport::FromInclusive(edges);
-        COORD original;
-        COORD screen;
+        til::point original;
+        til::point screen;
 
         // #1 coord inside region
         original.X = screen.X = 15;
@@ -537,15 +537,15 @@ class ViewportTests
     {
         bool success = false;
 
-        SMALL_RECT edges;
+        til::inclusive_rect edges;
         edges.Left = 10;
         edges.Right = 19;
         edges.Top = 20;
         edges.Bottom = 29;
 
         const auto v = Viewport::FromInclusive(edges);
-        COORD original;
-        COORD screen;
+        til::point original;
+        til::point screen;
 
         // #1 coord inside region
         original.X = screen.X = 15;
@@ -582,15 +582,15 @@ class ViewportTests
     {
         bool success = false;
 
-        SMALL_RECT edges;
+        til::inclusive_rect edges;
         edges.Left = 10;
         edges.Right = 19;
         edges.Top = 20;
         edges.Bottom = 29;
 
         const auto v = Viewport::FromInclusive(edges);
-        COORD original;
-        COORD screen;
+        til::point original;
+        til::point screen;
 
         // #1 coord inside region
         original.X = screen.X = 15;
@@ -627,15 +627,15 @@ class ViewportTests
     {
         bool success = false;
 
-        SMALL_RECT edges;
+        til::inclusive_rect edges;
         edges.Left = 10;
         edges.Right = 19;
         edges.Top = 20;
         edges.Bottom = 29;
 
         const auto v = Viewport::FromInclusive(edges);
-        COORD original;
-        COORD screen;
+        til::point original;
+        til::point screen;
 
         // #1 coord inside region
         original.X = screen.X = 15;
@@ -674,8 +674,8 @@ class ViewportTests
 
         do
         {
-            s = (SHORT)rand() % SHORT_MAX;
-        } while (s == 0i16);
+            s = rand() % SHORT_MAX;
+        } while (s == 0);
 
         return s;
     }
@@ -684,11 +684,11 @@ class ViewportTests
     {
         const UINT cTestLoopInstances = 100;
 
-        const SHORT sRowWidth = 20;
+        const til::CoordType sRowWidth = 20;
         VERIFY_IS_TRUE(sRowWidth > 0);
 
         // 20x20 box
-        SMALL_RECT srectEdges;
+        til::inclusive_rect srectEdges;
         srectEdges.Top = srectEdges.Left = 0;
         srectEdges.Bottom = srectEdges.Right = sRowWidth - 1;
 
@@ -697,13 +697,13 @@ class ViewportTests
         // repeat test
         for (UINT i = 0; i < cTestLoopInstances; i++)
         {
-            COORD coordPos;
+            til::point coordPos;
             coordPos.X = RandomShort() % 20;
             coordPos.Y = RandomShort() % 20;
 
-            SHORT sAddAmount = RandomShort() % (sRowWidth * sRowWidth);
+            auto sAddAmount = RandomShort() % (sRowWidth * sRowWidth);
 
-            COORD coordFinal;
+            til::point coordFinal;
             coordFinal.X = (coordPos.X + sAddAmount) % sRowWidth;
             coordFinal.Y = coordPos.Y + ((coordPos.X + sAddAmount) / sRowWidth);
 
@@ -731,7 +731,7 @@ class ViewportTests
 
     TEST_METHOD(CompareInBounds)
     {
-        SMALL_RECT edges;
+        til::inclusive_rect edges;
         edges.Left = 10;
         edges.Right = 19;
         edges.Top = 20;
@@ -739,7 +739,7 @@ class ViewportTests
 
         const auto v = Viewport::FromInclusive(edges);
 
-        COORD first, second;
+        til::point first, second;
         first.X = 12;
         first.Y = 24;
         second = first;
@@ -760,7 +760,7 @@ class ViewportTests
 
     TEST_METHOD(Offset)
     {
-        SMALL_RECT edges;
+        til::inclusive_rect edges;
         edges.Top = 0;
         edges.Left = 0;
         edges.Right = 10;
@@ -769,8 +769,8 @@ class ViewportTests
         const auto original = Viewport::FromInclusive(edges);
 
         Log::Comment(L"Move down and to the right first.");
-        COORD adjust = { 7, 2 };
-        SMALL_RECT expectedEdges;
+        til::point adjust{ 7, 2 };
+        til::inclusive_rect expectedEdges;
         expectedEdges.Top = edges.Top + adjust.Y;
         expectedEdges.Bottom = edges.Bottom + adjust.Y;
         expectedEdges.Left = edges.Left + adjust.X;
@@ -803,21 +803,21 @@ class ViewportTests
 
     TEST_METHOD(Union)
     {
-        SMALL_RECT srOne;
+        til::inclusive_rect srOne;
         srOne.Left = 4;
         srOne.Right = 10;
         srOne.Top = 6;
         srOne.Bottom = 14;
         const auto one = Viewport::FromInclusive(srOne);
 
-        SMALL_RECT srTwo;
+        til::inclusive_rect srTwo;
         srTwo.Left = 5;
         srTwo.Right = 13;
         srTwo.Top = 2;
         srTwo.Bottom = 10;
         const auto two = Viewport::FromInclusive(srTwo);
 
-        SMALL_RECT srExpected;
+        til::inclusive_rect srExpected;
         srExpected.Left = srOne.Left < srTwo.Left ? srOne.Left : srTwo.Left;
         srExpected.Right = srOne.Right > srTwo.Right ? srOne.Right : srTwo.Right;
         srExpected.Top = srOne.Top < srTwo.Top ? srOne.Top : srTwo.Top;
@@ -831,21 +831,21 @@ class ViewportTests
 
     TEST_METHOD(Intersect)
     {
-        SMALL_RECT srOne;
+        til::inclusive_rect srOne;
         srOne.Left = 4;
         srOne.Right = 10;
         srOne.Top = 6;
         srOne.Bottom = 14;
         const auto one = Viewport::FromInclusive(srOne);
 
-        SMALL_RECT srTwo;
+        til::inclusive_rect srTwo;
         srTwo.Left = 5;
         srTwo.Right = 13;
         srTwo.Top = 2;
         srTwo.Bottom = 10;
         const auto two = Viewport::FromInclusive(srTwo);
 
-        SMALL_RECT srExpected;
+        til::inclusive_rect srExpected;
         srExpected.Left = srOne.Left > srTwo.Left ? srOne.Left : srTwo.Left;
         srExpected.Right = srOne.Right < srTwo.Right ? srOne.Right : srTwo.Right;
         srExpected.Top = srOne.Top > srTwo.Top ? srOne.Top : srTwo.Top;
@@ -859,14 +859,14 @@ class ViewportTests
 
     TEST_METHOD(SubtractFour)
     {
-        SMALL_RECT srOriginal;
+        til::inclusive_rect srOriginal;
         srOriginal.Top = 0;
         srOriginal.Left = 0;
         srOriginal.Bottom = 10;
         srOriginal.Right = 10;
         const auto original = Viewport::FromInclusive(srOriginal);
 
-        SMALL_RECT srRemove;
+        til::inclusive_rect srRemove;
         srRemove.Top = 3;
         srRemove.Left = 3;
         srRemove.Bottom = 6;
@@ -874,7 +874,7 @@ class ViewportTests
         const auto remove = Viewport::FromInclusive(srRemove);
 
         std::vector<Viewport> expected;
-        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // til::inclusive_rect constructed as: Left, Top, Right, Bottom
         // Top View
         expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
         // Bottom View
@@ -898,14 +898,14 @@ class ViewportTests
 
     TEST_METHOD(SubtractThree)
     {
-        SMALL_RECT srOriginal;
+        til::inclusive_rect srOriginal;
         srOriginal.Top = 0;
         srOriginal.Left = 0;
         srOriginal.Bottom = 10;
         srOriginal.Right = 10;
         const auto original = Viewport::FromInclusive(srOriginal);
 
-        SMALL_RECT srRemove;
+        til::inclusive_rect srRemove;
         srRemove.Top = 3;
         srRemove.Left = 3;
         srRemove.Bottom = 6;
@@ -913,7 +913,7 @@ class ViewportTests
         const auto remove = Viewport::FromInclusive(srRemove);
 
         std::vector<Viewport> expected;
-        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // til::inclusive_rect constructed as: Left, Top, Right, Bottom
         // Top View
         expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
         // Bottom View
@@ -935,14 +935,14 @@ class ViewportTests
 
     TEST_METHOD(SubtractTwo)
     {
-        SMALL_RECT srOriginal;
+        til::inclusive_rect srOriginal;
         srOriginal.Top = 0;
         srOriginal.Left = 0;
         srOriginal.Bottom = 10;
         srOriginal.Right = 10;
         const auto original = Viewport::FromInclusive(srOriginal);
 
-        SMALL_RECT srRemove;
+        til::inclusive_rect srRemove;
         srRemove.Top = 3;
         srRemove.Left = 3;
         srRemove.Bottom = 15;
@@ -950,7 +950,7 @@ class ViewportTests
         const auto remove = Viewport::FromInclusive(srRemove);
 
         std::vector<Viewport> expected;
-        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // til::inclusive_rect constructed as: Left, Top, Right, Bottom
         // Top View
         expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
         // Left View
@@ -970,14 +970,14 @@ class ViewportTests
 
     TEST_METHOD(SubtractOne)
     {
-        SMALL_RECT srOriginal;
+        til::inclusive_rect srOriginal;
         srOriginal.Top = 0;
         srOriginal.Left = 0;
         srOriginal.Bottom = 10;
         srOriginal.Right = 10;
         const auto original = Viewport::FromInclusive(srOriginal);
 
-        SMALL_RECT srRemove;
+        til::inclusive_rect srRemove;
         srRemove.Top = 3;
         srRemove.Left = -12;
         srRemove.Bottom = 15;
@@ -985,7 +985,7 @@ class ViewportTests
         const auto remove = Viewport::FromInclusive(srRemove);
 
         std::vector<Viewport> expected;
-        // SMALL_RECT constructed as: Left, Top, Right, Bottom
+        // til::inclusive_rect constructed as: Left, Top, Right, Bottom
         // Top View
         expected.emplace_back(Viewport::FromInclusive({ srOriginal.Left, srOriginal.Top, srOriginal.Right, srRemove.Top - 1 }));
 
@@ -1005,14 +1005,14 @@ class ViewportTests
 
     TEST_METHOD(SubtractZero)
     {
-        SMALL_RECT srOriginal;
+        til::inclusive_rect srOriginal;
         srOriginal.Top = 0;
         srOriginal.Left = 0;
         srOriginal.Bottom = 10;
         srOriginal.Right = 10;
         const auto original = Viewport::FromInclusive(srOriginal);
 
-        SMALL_RECT srRemove;
+        til::inclusive_rect srRemove;
         srRemove.Top = 12;
         srRemove.Left = 12;
         srRemove.Bottom = 15;
@@ -1036,7 +1036,7 @@ class ViewportTests
 
     TEST_METHOD(SubtractSame)
     {
-        SMALL_RECT srOriginal;
+        til::inclusive_rect srOriginal;
         srOriginal.Top = 0;
         srOriginal.Left = 0;
         srOriginal.Bottom = 10;

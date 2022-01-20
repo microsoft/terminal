@@ -34,15 +34,15 @@ namespace Microsoft::Console::Render
 
     public:
         virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) = 0;
-        virtual void TriggerRedraw(const COORD* const pcoord) = 0;
-        virtual void TriggerRedrawCursor(const COORD* const pcoord) = 0;
+        virtual void TriggerRedraw(const til::point* const pcoord) = 0;
+        virtual void TriggerRedrawCursor(const til::point* const pcoord) = 0;
 
         virtual void TriggerRedrawAll() = 0;
         virtual void TriggerTeardown() noexcept = 0;
 
         virtual void TriggerSelection() = 0;
         virtual void TriggerScroll() = 0;
-        virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
+        virtual void TriggerScroll(const til::point* const pcoordDelta) = 0;
         virtual void TriggerCircling() = 0;
         virtual void TriggerTitleChange() = 0;
     };

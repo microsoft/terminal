@@ -50,8 +50,8 @@ class InputRecordConversionTests
         for (size_t i = 0; i < INPUT_RECORD_COUNT; ++i)
         {
             inRecords[i].EventType = MOUSE_EVENT;
-            inRecords[i].Event.MouseEvent.dwMousePosition.X = static_cast<SHORT>(i);
-            inRecords[i].Event.MouseEvent.dwMousePosition.Y = static_cast<SHORT>(i * 2);
+            inRecords[i].Event.MouseEvent.dwMousePosition.X = i;
+            inRecords[i].Event.MouseEvent.dwMousePosition.Y = i * 2;
             inEvents.push_back(IInputEvent::Create(inRecords[i]));
         }
 

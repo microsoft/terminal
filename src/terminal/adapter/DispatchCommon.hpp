@@ -23,8 +23,8 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         static bool s_ResizeWindow(ConGetSet& conApi,
-                                   const size_t width,
-                                   const size_t height);
+                                   const til::CoordType width,
+                                   const til::CoordType height);
 
         static bool s_RefreshWindow(ConGetSet& conApi);
 

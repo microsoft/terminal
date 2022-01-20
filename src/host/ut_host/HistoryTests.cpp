@@ -145,7 +145,7 @@ class HistoryTests
 
         Log::Comment(L"Retrieve items/order.");
         std::vector<std::wstring> commandsStored;
-        for (SHORT i = 0; i < (SHORT)history->GetNumberOfCommands(); i++)
+        for (SHORT i = 0; i < history->GetNumberOfCommands(); i++)
         {
             commandsStored.emplace_back(history->GetNth(i));
         }
@@ -153,7 +153,7 @@ class HistoryTests
         Log::Comment(L"Reallocate larger and ensure items and order are preserved.");
         history->Realloc(_manyHistoryItems.size());
         VERIFY_ARE_EQUAL(s_BufferSize, history->GetNumberOfCommands());
-        for (SHORT i = 0; i < (SHORT)commandsStored.size(); i++)
+        for (SHORT i = 0; i < commandsStored.size(); i++)
         {
             VERIFY_ARE_EQUAL(String(commandsStored[i].data()), String(history->GetNth(i).data()));
         }
@@ -179,7 +179,7 @@ class HistoryTests
 
         Log::Comment(L"Retrieve items/order.");
         std::vector<std::wstring> commandsStored;
-        for (SHORT i = 0; i < (SHORT)history->GetNumberOfCommands(); i++)
+        for (SHORT i = 0; i < history->GetNumberOfCommands(); i++)
         {
             commandsStored.emplace_back(history->GetNth(i));
         }

@@ -6,14 +6,6 @@
 #include "OutputCellRect.hpp"
 
 // Routine Description:
-// - Constructs an empty in-memory region for holding output buffer cell data.
-OutputCellRect::OutputCellRect() noexcept :
-    _rows(0),
-    _cols(0)
-{
-}
-
-// Routine Description:
 // - Constructs an in-memory region for holding a copy of output buffer cell data.
 // - NOTE: This creatively skips the constructors for every cell. You must fill
 //   every single cell in this rectangle before iterating/reading for it to be valid.
@@ -21,14 +13,10 @@ OutputCellRect::OutputCellRect() noexcept :
 // Arguments:
 // - rows - Rows in the rectangle (height)
 // - cols - Columns in the rectangle (width)
-OutputCellRect::OutputCellRect(const size_t rows, const size_t cols) :
-    _rows(rows),
-    _cols(cols)
+OutputCellRect::OutputCellRect(const til::size size) :
+    _size(size)
 {
-    size_t totalCells;
-    THROW_IF_FAILED(SizeTMult(rows, cols, &totalCells));
-
-    _storage.resize(totalCells);
+    _storage.resize(size.area<size_t>());
 }
 
 // Routine Description:
@@ -37,9 +25,9 @@ OutputCellRect::OutputCellRect(const size_t rows, const size_t cols) :
 // - row - The Y position or row index in the buffer.
 // Return Value:
 // - Read/write span of OutputCells
-gsl::span<OutputCell> OutputCellRect::GetRow(const size_t row)
+gsl::span<OutputCell> OutputCellRect::GetRow(const til::CoordType row)
 {
-    return gsl::span<OutputCell>(_FindRowOffset(row), _cols);
+    return gsl::span<OutputCell>(_FindRowOffset(row), _size.width);
 }
 
 // Routine Description:
@@ -48,9 +36,9 @@ gsl::span<OutputCell> OutputCellRect::GetRow(const size_t row)
 // - row - The Y position or row index in the buffer.
 // Return Value:
 // - Read-only iterator of OutputCells
-OutputCellIterator OutputCellRect::GetRowIter(const size_t row) const
+OutputCellIterator OutputCellRect::GetRowIter(const til::CoordType row) const
 {
-    const gsl::span<const OutputCell> view(_FindRowOffset(row), _cols);
+    const gsl::span<const OutputCell> view(_FindRowOffset(row), _size.width);
 
     return OutputCellIterator(view);
 }
@@ -62,9 +50,9 @@ OutputCellIterator OutputCellRect::GetRowIter(const size_t row) const
 // - row - The Y position or row index in the buffer.
 // Return Value:
 // - Pointer to the location in the rectangle that represents the start of the requested row.
-OutputCell* OutputCellRect::_FindRowOffset(const size_t row)
+OutputCell* OutputCellRect::_FindRowOffset(const til::CoordType row)
 {
-    return &_storage.at(row * _cols);
+    return &_storage.at(row * _size.width);
 }
 
 // Routine Description:
@@ -74,25 +62,25 @@ OutputCell* OutputCellRect::_FindRowOffset(const size_t row)
 // - row - The Y position or row index in the buffer.
 // Return Value:
 // - Pointer to the location in the rectangle that represents the start of the requested row.
-const OutputCell* OutputCellRect::_FindRowOffset(const size_t row) const
+const OutputCell* OutputCellRect::_FindRowOffset(const til::CoordType row) const
 {
-    return &_storage.at(row * _cols);
+    return &_storage.at(row * _size.width);
 }
 
 // Routine Description:
 // - Gets the height of the rectangle
 // Return Value:
 // - Height
-size_t OutputCellRect::Height() const noexcept
+til::CoordType OutputCellRect::Height() const noexcept
 {
-    return _rows;
+    return _size.height;
 }
 
 // Routine Description:
 // - Gets the width of the rectangle
 // Return Value:
 // - Width
-size_t OutputCellRect::Width() const noexcept
+til::CoordType OutputCellRect::Width() const noexcept
 {
-    return _cols;
+    return _size.width;
 }

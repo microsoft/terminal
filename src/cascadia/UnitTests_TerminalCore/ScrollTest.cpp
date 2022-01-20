@@ -30,7 +30,7 @@ namespace
     public:
         ~MockScrollRenderTarget() override{};
 
-        std::optional<COORD> TriggerScrollDelta() const
+        std::optional<til::point> TriggerScrollDelta() const
         {
             return _triggerScrollDelta;
         }
@@ -41,13 +41,13 @@ namespace
         }
 
         virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport&){};
-        virtual void TriggerRedraw(const COORD* const){};
-        virtual void TriggerRedrawCursor(const COORD* const){};
+        virtual void TriggerRedraw(const til::point* const){};
+        virtual void TriggerRedrawCursor(const til::point* const){};
         virtual void TriggerRedrawAll(){};
         virtual void TriggerTeardown() noexcept {};
         virtual void TriggerSelection(){};
         virtual void TriggerScroll(){};
-        virtual void TriggerScroll(const COORD* const delta)
+        virtual void TriggerScroll(const til::point* const delta)
         {
             _triggerScrollDelta = { *delta };
         };
@@ -55,7 +55,7 @@ namespace
         void TriggerTitleChange(){};
 
     private:
-        std::optional<COORD> _triggerScrollDelta;
+        std::optional<til::point> _triggerScrollDelta;
     };
 
     struct ScrollBarNotification
@@ -77,11 +77,11 @@ class TerminalCoreUnitTests::ScrollTest final
     // !!! DANGER: Many tests in this class expect the Terminal buffer
     // to be 80x32. If you change these, you'll probably inadvertently break a
     // bunch of tests !!!
-    static const SHORT TerminalViewWidth = 80;
-    static const SHORT TerminalViewHeight = 32;
+    static const til::CoordType TerminalViewWidth = 80;
+    static const til::CoordType TerminalViewHeight = 32;
     // For TestNotifyScrolling, it's important that this value is ~=9000.
     // Something smaller like 100 won't cause the test to fail.
-    static const SHORT TerminalHistoryLength = 9001;
+    static const til::CoordType TerminalHistoryLength = 9001;
 
     TEST_CLASS(ScrollTest);
 
@@ -182,7 +182,7 @@ void ScrollTest::TestNotifyScrolling()
             VERIFY_IS_TRUE(_renderTarget->TriggerScrollDelta().has_value(),
                            fmt::format(L"Expected a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
 
-            COORD expectedDelta;
+            til::point expectedDelta;
             expectedDelta.X = 0;
             expectedDelta.Y = -1;
             VERIFY_ARE_EQUAL(expectedDelta, _renderTarget->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());

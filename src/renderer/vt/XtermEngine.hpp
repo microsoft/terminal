@@ -44,12 +44,12 @@ namespace Microsoft::Console::Render
                                                            const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                              const COORD coord,
+                                              const til::point coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT InvalidateScroll(til::point pcoordDelta) noexcept override;
 
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
@@ -59,7 +59,7 @@ namespace Microsoft::Console::Render
         bool _lastCursorIsVisible;
         bool _nextCursorIsVisible;
 
-        [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
+        [[nodiscard]] HRESULT _MoveCursor(const til::point coord) noexcept override;
 
         [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 

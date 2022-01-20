@@ -143,8 +143,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool HasSelection() const;
         bool CopyOnSelect() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(til::point const& position);
-        void SetEndSelectionPoint(til::point const& position);
+        void SetSelectionAnchor(const til::point position);
+        void SetEndSelectionPoint(const til::point position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
@@ -226,7 +226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isReadOnly{ false };
 
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
+        std::optional<interval_tree::IntervalTree<til::point, til::CoordType>::interval> _lastHoveredInterval{ std::nullopt };
 
         // These members represent the size of the surface that we should be
         // rendering to.

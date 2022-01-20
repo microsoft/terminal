@@ -37,8 +37,8 @@ void StoreKeyInfo(_In_ PMSG msg)
     if (i != CONSOLE_MAX_KEY_INFO)
     {
         ConsoleKeyInfo[i].hWnd = msg->hwnd;
-        ConsoleKeyInfo[i].wVirtualKeyCode = LOWORD(msg->wParam);
-        ConsoleKeyInfo[i].wVirtualScanCode = (BYTE)(HIWORD(msg->lParam));
+        ConsoleKeyInfo[i].wVirtualKeyCode = static_cast<WORD>(msg->wParam & 0xffff);
+        ConsoleKeyInfo[i].wVirtualScanCode = static_cast<BYTE>(msg->lParam >> 16 & 0xff);
     }
     else
     {

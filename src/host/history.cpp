@@ -405,6 +405,11 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     return nullptr;
 }
 
+const std::vector<std::wstring>& CommandHistory::GetCommands() const noexcept
+{
+    return _commands;
+}
+
 size_t CommandHistory::GetNumberOfCommands() const
 {
     return _commands.size();

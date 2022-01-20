@@ -497,7 +497,7 @@ class ApiRoutinesTests
     void ValidateScreen(SCREEN_INFORMATION& si,
                         const CHAR_INFO background,
                         const CHAR_INFO fill,
-                        const COORD delta,
+                        const til::point delta,
                         const std::optional<Viewport> clip)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -531,7 +531,7 @@ class ApiRoutinesTests
                                const CHAR_INFO fill,
                                const CHAR_INFO scroll,
                                const Viewport scrollArea,
-                               const COORD destPoint,
+                               const til::point destPoint,
                                const std::optional<Viewport> clip)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -539,7 +539,7 @@ class ApiRoutinesTests
         auto bufferSize = activeSi.GetBufferSize();
 
         // Find the delta by comparing the scroll area to the destination point
-        COORD delta;
+        til::point delta;
         delta.X = destPoint.X - scrollArea.Left();
         delta.Y = destPoint.Y - scrollArea.Top();
 
@@ -647,12 +647,12 @@ class ApiRoutinesTests
         // By default, we're going to use a nullopt clip rectangle.
         // If this instance of the test is checking clipping, we'll assign a clip value
         // prior to each call variation.
-        std::optional<SMALL_RECT> clipRectangle = std::nullopt;
+        std::optional<til::inclusive_rect> clipRectangle = std::nullopt;
         std::optional<Viewport> clipViewport = std::nullopt;
         const auto bufferSize = si.GetBufferSize();
 
-        SMALL_RECT scroll = bufferSize.ToInclusive();
-        COORD destination{ 0, -2 }; // scroll up.
+        auto scroll = bufferSize.ToInclusive();
+        til::point destination{ 0, -2 }; // scroll up.
 
         Log::Comment(L"Fill screen with green Zs. Scroll all up by two, backfilling with red As. Confirm every cell.");
         si.GetActiveBuffer().ClearTextData(); // Clean out screen
@@ -666,8 +666,8 @@ class ApiRoutinesTests
         if (checkClipped)
         {
             // for scrolling up and down, we're going to clip to only modify the left half of the buffer
-            COORD clipRectDimensions = bufferSize.Dimensions();
-            clipRectDimensions.X /= 2;
+            auto clipRectDimensions = bufferSize.Dimensions();
+            clipRectDimensions.width /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();
@@ -690,8 +690,8 @@ class ApiRoutinesTests
         if (checkClipped)
         {
             // for scrolling left and right, we're going to clip to only modify the top half of the buffer
-            COORD clipRectDimensions = bufferSize.Dimensions();
-            clipRectDimensions.Y /= 2;
+            auto clipRectDimensions = bufferSize.Dimensions();
+            clipRectDimensions.height /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();
@@ -759,8 +759,8 @@ class ApiRoutinesTests
         if (checkClipped)
         {
             // for scrolling up and down, we're going to clip to only modify the left half of the buffer
-            COORD clipRectDimensions = bufferSize.Dimensions();
-            clipRectDimensions.X /= 2;
+            auto clipRectDimensions = bufferSize.Dimensions();
+            clipRectDimensions.width /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();

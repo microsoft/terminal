@@ -149,8 +149,8 @@ VtIo::VtIo() :
         if (IsValidHandle(_hOutput.get()))
         {
             Viewport initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                                gci.GetWindowSize().X,
-                                                                gci.GetWindowSize().Y);
+                                                                gci.GetWindowSize().width,
+                                                                gci.GetWindowSize().height);
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
@@ -322,7 +322,7 @@ bool VtIo::IsUsingVt() const
 // Return Value:
 // - S_OK if we successfully inherited the cursor or did nothing, else an
 //      appropriate HRESULT
-[[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
+[[nodiscard]] HRESULT VtIo::SetCursorPosition(const til::point coordCursor)
 {
     HRESULT hr = S_OK;
     if (_lookingForCursorPosition)

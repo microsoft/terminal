@@ -36,7 +36,7 @@ namespace Microsoft::Console::Types
 
         virtual void SetIsFullscreen(const bool fFullscreenEnabled) = 0;
 
-        virtual void ChangeViewport(const SMALL_RECT NewWindow) = 0;
+        virtual void ChangeViewport(const til::inclusive_rect NewWindow) = 0;
 
         virtual void CaptureMouse() = 0;
         virtual BOOL ReleaseMouse() = 0;
@@ -57,7 +57,7 @@ namespace Microsoft::Console::Types
 
         virtual BOOL PostUpdateWindowSize() const = 0;
 
-        virtual void UpdateWindowSize(const COORD coordSizeInChars) = 0;
+        virtual void UpdateWindowSize(const til::size coordSizeInChars) = 0;
         virtual void UpdateWindowText() = 0;
 
         virtual void HorizontalScroll(const WORD wScrollCommand,

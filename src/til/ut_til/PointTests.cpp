@@ -48,7 +48,7 @@ class PointTests
     {
         COORD coord{ -5, 10 };
 
-        const til::point pt{ coord };
+        const til::point pt = til::wrap_coord(coord);
         VERIFY_ARE_EQUAL(coord.X, pt.x);
         VERIFY_ARE_EQUAL(coord.Y, pt.y);
     }
@@ -516,18 +516,6 @@ class PointTests
 
             VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
-    }
-
-    TEST_METHOD(XCast)
-    {
-        const til::point pt{ 5, 10 };
-        VERIFY_ARE_EQUAL(static_cast<SHORT>(pt.x), pt.narrow_x<SHORT>());
-    }
-
-    TEST_METHOD(YCast)
-    {
-        const til::point pt{ 5, 10 };
-        VERIFY_ARE_EQUAL(static_cast<SHORT>(pt.x), pt.narrow_x<SHORT>());
     }
 
     TEST_METHOD(CastToPoint)

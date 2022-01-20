@@ -37,7 +37,7 @@ enum class CursorX
     XCENTER
 };
 
-enum class CursorDirection : size_t
+enum class CursorDirection : Microsoft::Console::VirtualTerminal::VTInt
 {
     UP = 0,
     DOWN = 1,
@@ -47,7 +47,7 @@ enum class CursorDirection : size_t
     PREVLINE = 5
 };
 
-enum class AbsolutePosition : size_t
+enum class AbsolutePosition : Microsoft::Console::VirtualTerminal::VTInt
 {
     CursorHorizontal = 0,
     VerticalLine = 1,
@@ -64,9 +64,9 @@ public:
 
         if (_getConsoleScreenBufferInfoExResult)
         {
-            sbiex.dwSize = _bufferSize;
-            sbiex.srWindow = _viewport;
-            sbiex.dwCursorPosition = _cursorPos;
+            sbiex.dwSize = til::unwrap_coord(_bufferSize);
+            sbiex.srWindow = til::unwrap_small_rect(_viewport);
+            sbiex.dwCursorPosition = til::unwrap_coord(_cursorPos);
             sbiex.wAttributes = _attribute.GetLegacyAttributes();
         }
 
@@ -78,14 +78,14 @@ public:
 
         if (_setConsoleScreenBufferInfoExResult)
         {
-            VERIFY_ARE_EQUAL(_expectedCursorPos, sbiex.dwCursorPosition);
-            VERIFY_ARE_EQUAL(_expectedScreenBufferSize, sbiex.dwSize);
-            VERIFY_ARE_EQUAL(_expectedScreenBufferViewport, sbiex.srWindow);
+            VERIFY_ARE_EQUAL(_expectedCursorPos, til::wrap_coord(sbiex.dwCursorPosition));
+            VERIFY_ARE_EQUAL(_expectedScreenBufferSize, til::wrap_coord(sbiex.dwSize));
+            VERIFY_ARE_EQUAL(_expectedScreenBufferViewport, til::wrap_small_rect(sbiex.srWindow));
             VERIFY_ARE_EQUAL(_expectedAttribute, TextAttribute{ sbiex.wAttributes });
         }
         return _setConsoleScreenBufferInfoExResult;
     }
-    bool SetConsoleCursorPosition(const COORD position) override
+    bool SetConsoleCursorPosition(const til::point position) override
     {
         Log::Comment(L"SetConsoleCursorPosition MOCK called...");
 
@@ -98,7 +98,7 @@ public:
         return _setConsoleCursorPositionResult;
     }
 
-    bool SetConsoleWindowInfo(const bool absolute, const SMALL_RECT& window) override
+    bool SetConsoleWindowInfo(const bool absolute, const til::inclusive_rect window) override
     {
         Log::Comment(L"SetConsoleWindowInfo MOCK called...");
 
@@ -220,14 +220,14 @@ public:
         return false;
     }
 
-    bool PrivateResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
+    bool PrivateResetLineRenditionRange(const til::CoordType /*startRow*/, const til::CoordType /*endRow*/)
     {
         Log::Comment(L"PrivateResetLineRenditionRange MOCK called...");
 
         return false;
     }
 
-    SHORT PrivateGetLineWidth(const size_t /*row*/) const
+    til::CoordType PrivateGetLineWidth(const til::CoordType /*row*/) const
     {
         Log::Comment(L"PrivateGetLineWidth MOCK called...");
 
@@ -273,7 +273,7 @@ public:
         return _privateWriteConsoleControlInputResult;
     }
 
-    bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) override
+    bool PrivateSetScrollingRegion(const til::inclusive_rect scrollMargins) override
     {
         Log::Comment(L"PrivateSetScrollingRegion MOCK called...");
 
@@ -410,13 +410,13 @@ public:
         return _isPty;
     }
 
-    bool DeleteLines(const size_t /*count*/) override
+    bool DeleteLines(const til::CoordType /*count*/) override
     {
         Log::Comment(L"DeleteLines MOCK called...");
         return TRUE;
     }
 
-    bool InsertLines(const size_t /*count*/) override
+    bool InsertLines(const til::CoordType /*count*/) override
     {
         Log::Comment(L"InsertLines MOCK called...");
         return TRUE;
@@ -455,12 +455,7 @@ public:
         return _setColorTableEntryResult;
     }
 
-    void SetColorAliasIndex(const ColorAlias /*alias*/, const size_t /*tableIndex*/) noexcept override
-    {
-        Log::Comment(L"SetColorAliasIndex MOCK called...");
-    }
-
-    bool PrivateFillRegion(const COORD /*startPosition*/,
+    bool PrivateFillRegion(const til::point /*startPosition*/,
                            const size_t /*fillLength*/,
                            const wchar_t /*fillChar*/,
                            const bool /*standardFillAttrs*/) noexcept override
@@ -470,9 +465,9 @@ public:
         return TRUE;
     }
 
-    bool PrivateScrollRegion(const SMALL_RECT /*scrollRect*/,
-                             const std::optional<SMALL_RECT> /*clipRect*/,
-                             const COORD /*destinationOrigin*/,
+    bool PrivateScrollRegion(const til::inclusive_rect /*scrollRect*/,
+                             const std::optional<til::inclusive_rect> /*clipRect*/,
+                             const til::point /*destinationOrigin*/,
                              const bool /*standardFillAttrs*/) noexcept override
     {
         Log::Comment(L"PrivateScrollRegion MOCK called...");
@@ -481,14 +476,13 @@ public:
     }
 
     bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
-                               const SIZE cellSize,
+                               const til::size cellSize,
                                const size_t /*centeringHint*/) noexcept override
     {
         Log::Comment(L"PrivateUpdateSoftFont MOCK called...");
 
-        Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
-        VERIFY_ARE_EQUAL(_expectedCellSize.cx, cellSize.cx);
-        VERIFY_ARE_EQUAL(_expectedCellSize.cy, cellSize.cy);
+        Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.width, cellSize.height));
+        VERIFY_ARE_EQUAL(_expectedCellSize, cellSize);
 
         return TRUE;
     }
@@ -632,7 +626,7 @@ public:
         return TRUE;
     }
 
-    void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
+    void _SetMarginsHelper(til::inclusive_rect* rect, til::CoordType top, til::CoordType bottom)
     {
         rect->Top = top;
         rect->Bottom = bottom;
@@ -663,15 +657,15 @@ public:
         });
     }
 
-    COORD _bufferSize = { 0, 0 };
-    SMALL_RECT _viewport = { 0, 0, 0, 0 };
-    SMALL_RECT _expectedConsoleWindow = { 0, 0, 0, 0 };
-    COORD _cursorPos = { 0, 0 };
-    SMALL_RECT _expectedScrollRegion = { 0, 0, 0, 0 };
+    til::point _bufferSize;
+    til::inclusive_rect _viewport;
+    til::inclusive_rect _expectedConsoleWindow;
+    til::point _cursorPos;
+    til::inclusive_rect _expectedScrollRegion;
 
     bool _cursorVisible = false;
 
-    COORD _expectedCursorPos = { 0, 0 };
+    til::point _expectedCursorPos;
 
     TextAttribute _attribute = {};
     TextAttribute _expectedAttribute = {};
@@ -692,8 +686,8 @@ public:
     bool _expectedWindowAbsolute = false;
     bool _setConsoleScreenBufferInfoExResult = false;
 
-    COORD _expectedScreenBufferSize = { 0, 0 };
-    SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
+    til::point _expectedScreenBufferSize;
+    til::inclusive_rect _expectedScreenBufferViewport{ 0, 0, 0, 0 };
     bool _setInputModeResult = false;
     TerminalInput::Mode _expectedInputMode;
     bool _expectedInputModeEnabled = false;
@@ -721,7 +715,7 @@ public:
     size_t _expectedColorTableIndex = SIZE_MAX;
     COLORREF _expectedColorValue = INVALID_COLOR;
 
-    SIZE _expectedCellSize = {};
+    til::size _expectedCellSize;
 
 private:
     HANDLE _hCon;
@@ -781,7 +775,7 @@ public:
         Log::Comment(L"Starting test...");
 
         // Used to switch between the various function options.
-        typedef bool (AdaptDispatch::*CursorMoveFunc)(size_t);
+        typedef bool (AdaptDispatch::*CursorMoveFunc)(int);
         CursorMoveFunc moveFunc = nullptr;
 
         // Modify variables based on directionality of this test
@@ -943,8 +937,8 @@ public:
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        short sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) / 2;
-        short sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) / 2;
+        auto sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) / 2;
+        auto sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) / 2;
 
         // The X coordinate is unaffected by the viewport.
         _testGetSet->_expectedCursorPos.X = sCol - 1;
@@ -996,11 +990,11 @@ public:
         Log::Comment(L"Starting test...");
 
         //// Used to switch between the various function options.
-        typedef bool (AdaptDispatch::*CursorMoveFunc)(size_t);
+        typedef bool (AdaptDispatch::*CursorMoveFunc)(int);
         CursorMoveFunc moveFunc = nullptr;
-        SHORT sRangeEnd = 0;
-        SHORT sRangeStart = 0;
-        SHORT* psCursorExpected = nullptr;
+        auto sRangeEnd = 0;
+        auto sRangeStart = 0;
+        til::CoordType* psCursorExpected = nullptr;
 
         // Modify variables based on directionality of this test
         AbsolutePosition direction;
@@ -1036,7 +1030,7 @@ public:
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        short sVal = (sRangeEnd - sRangeStart) / 2;
+        auto sVal = (sRangeEnd - sRangeStart) / 2;
 
         *psCursorExpected = sRangeStart + (sVal - 1);
 
@@ -1082,7 +1076,7 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        COORD coordExpected = { 0 };
+        til::point coordExpected;
 
         Log::Comment(L"Test 1: Restore with no saved data should move to top-left corner, the null/default position.");
 
@@ -1754,7 +1748,7 @@ public:
             _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
             // start with the cursor position in the buffer.
-            COORD coordCursorExpected = _testGetSet->_cursorPos;
+            auto coordCursorExpected = _testGetSet->_cursorPos;
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
             coordCursorExpected.Y -= _testGetSet->_viewport.Top;
@@ -2075,12 +2069,12 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        SMALL_RECT srTestMargins = { 0 };
+        til::inclusive_rect srTestMargins;
         _testGetSet->_bufferSize = { 100, 600 };
         _testGetSet->_viewport.Right = 8;
         _testGetSet->_viewport.Bottom = 8;
         _testGetSet->_getConsoleScreenBufferInfoExResult = TRUE;
-        SHORT sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
+        auto sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
@@ -2381,7 +2375,7 @@ public:
         using FontSet = DispatchTypes::DrcsFontSet;
         using FontUsage = DispatchTypes::DrcsFontUsage;
 
-        const auto decdld = [=](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
+        const auto decdld = [=](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = std::wstring_view{}) {
             const auto ec = DispatchTypes::DrcsEraseControl::AllChars;
             const auto css = DispatchTypes::DrcsCharsetSize::Size94;
             const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);

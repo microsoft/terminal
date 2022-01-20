@@ -31,14 +31,14 @@ Revision History:
 
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
-size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
-                                   _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
-                                   const size_t ulCurrentPosition);
+til::CoordType RetrieveTotalNumberOfSpaces(const til::CoordType sOriginalCursorPositionX,
+                                           _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
+                                           const size_t ulCurrentPosition);
 
 // Routine Description:
 // - This routine returns the number of screen spaces the specified character takes up.
-size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
-                              _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
-                              _In_ size_t ulCurrentPosition);
+til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositionX,
+                                      _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
+                                      _In_ size_t ulCurrentPosition);
 
 VOID UnblockWriteConsole(const DWORD dwReason);

@@ -70,7 +70,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // - S_OK, E_INVALIDARG or similar HRESULT error.
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
                                                                    const gsl::span<const WORD> attrs,
-                                                                   const COORD target,
+                                                                   const til::point target,
                                                                    size_t& used) noexcept
 {
     // Set used to 0 from the beginning in case we exit early.
@@ -110,7 +110,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // - S_OK, E_INVALIDARG or similar HRESULT error.
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                                     const std::wstring_view chars,
-                                                                    const COORD target,
+                                                                    const til::point target,
                                                                     size_t& used) noexcept
 {
     // Set used to 0 from the beginning in case we exit early.
@@ -153,7 +153,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // - S_OK, E_INVALIDARG or similar HRESULT error.
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                                     const std::string_view chars,
-                                                                    const COORD target,
+                                                                    const til::point target,
                                                                     size_t& used) noexcept
 {
     // Set used to 0 from the beginning in case we exit early.
@@ -195,7 +195,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 [[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
                                                                   const WORD attribute,
                                                                   const size_t lengthToWrite,
-                                                                  const COORD startingCoordinate,
+                                                                  const til::point startingCoordinate,
                                                                   size_t& cellsModified) noexcept
 {
     // Set modified cells to 0 from the beginning.
@@ -253,7 +253,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 [[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                                    const wchar_t character,
                                                                    const size_t lengthToWrite,
-                                                                   const COORD startingCoordinate,
+                                                                   const til::point startingCoordinate,
                                                                    size_t& cellsModified,
                                                                    const bool enablePowershellShim) noexcept
 {
@@ -307,7 +307,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
             const til::size currentBufferDimensions{ screenInfo.GetBufferSize().Dimensions() };
 
             const bool wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
-            const bool startedAtOrigin = startingCoordinate == COORD{ 0, 0 };
+            const bool startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
             const bool wroteSpaces = character == UNICODE_SPACE;
 
             if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
@@ -334,7 +334,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 [[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                                    const char character,
                                                                    const size_t lengthToWrite,
-                                                                   const COORD startingCoordinate,
+                                                                   const til::point startingCoordinate,
                                                                    size_t& cellsModified) noexcept
 try
 {

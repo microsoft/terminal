@@ -38,8 +38,8 @@ namespace Microsoft::Console::VirtualTerminal
                                         const VTParameter parameter1,
                                         const VTParameter parameter2) = 0;
 
-        virtual bool MoveCursor(const size_t row,
-                                const size_t col) = 0;
+        virtual bool MoveCursor(const til::CoordType row,
+                                const til::CoordType col) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
     };

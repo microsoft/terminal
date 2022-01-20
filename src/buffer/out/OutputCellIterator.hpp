@@ -48,7 +48,7 @@ public:
 
     operator bool() const noexcept;
 
-    ptrdiff_t GetCellDistance(OutputCellIterator other) const noexcept;
+    til::CoordType GetCellDistance(OutputCellIterator other) const noexcept;
     ptrdiff_t GetInputDistance(OutputCellIterator other) const noexcept;
     friend ptrdiff_t operator-(OutputCellIterator one, OutputCellIterator two) = delete;
 
@@ -120,6 +120,6 @@ private:
     OutputCellView _currentView;
 
     size_t _pos;
-    size_t _distance;
+    til::CoordType _distance;
     size_t _fillLimit;
 };

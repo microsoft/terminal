@@ -166,7 +166,7 @@ namespace Microsoft.Terminal.Wpf
             /// <summary>
             ///     Retains the current size (ignores the cx and cy parameters).
             /// </summary>
-            SWP_NOSIZE = 0x0001,
+            SWP_NOTilSize = 0x0001,
 
             /// <summary>
             ///     Retains the current Z order (ignores the hWndInsertAfter parameter).
@@ -186,13 +186,13 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalSendOutput(IntPtr terminal, string lpdata);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalTriggerResize(IntPtr terminal, short width, short height, out COORD dimensions);
+        public static extern uint TerminalTriggerResize(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TilSize windowSize, out TilSize dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalTriggerResizeWithDimension(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] COORD dimensions, out SIZE dimensionsInPixels);
+        public static extern uint TerminalTriggerResizeWithDimension(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TilSize dimensions, out TilSize dimensionsInPixels);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalCalculateResize(IntPtr terminal, short width, short height, out COORD dimensions);
+        public static extern uint TerminalCalculateResize(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TilSize windowSize, out TilSize dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalDpiChanged(IntPtr terminal, int newDpi);
@@ -207,10 +207,10 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalUserScroll(IntPtr terminal, int viewTop);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalStartSelection(IntPtr terminal, COORD cursorPosition, bool altPressed);
+        public static extern uint TerminalStartSelection(IntPtr terminal, TilPoint cursorPosition, bool altPressed);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalMoveSelection(IntPtr terminal, COORD cursorPosition);
+        public static extern uint TerminalMoveSelection(IntPtr terminal, TilPoint cursorPosition);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalClearSelection(IntPtr terminal);
@@ -272,7 +272,7 @@ namespace Microsoft.Terminal.Wpf
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct COORD
+        public struct TilPoint
         {
             /// <summary>
             ///  The x-coordinate of the point.
@@ -286,17 +286,17 @@ namespace Microsoft.Terminal.Wpf
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct SIZE
+        public struct TilSize
         {
             /// <summary>
             ///  The x size.
             /// </summary>
-            public int cx;
+            public int width;
 
             /// <summary>
             /// The y size.
             /// </summary>
-            public int cy;
+            public int height;
         }
     }
 #pragma warning restore SA1600 // Elements should be documented

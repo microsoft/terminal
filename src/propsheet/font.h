@@ -52,8 +52,8 @@ Revision History:
 typedef struct _FONT_INFO
 {
     HFONT hFont;
-    COORD Size; // font size obtained
-    COORD SizeWant; // 0;0 if Raster font
+    til::point Size; // font size obtained
+    til::point SizeWant; // 0;0 if Raster font
     LONG Weight;
     LPTSTR FaceName;
     BYTE Family;
@@ -74,7 +74,6 @@ typedef struct tagFACENODE
 
 #define TM_IS_TT_FONT(x) (((x)&TMPF_TRUETYPE) == TMPF_TRUETYPE)
 #define IS_BOLD(w) ((w) >= FW_SEMIBOLD)
-#define SIZE_EQUAL(s1, s2) (((s1).X == (s2).X) && ((s1).Y == (s2).Y))
 #define POINTS_PER_INCH 72
 #define MIN_PIXEL_HEIGHT 5
 #define MAX_PIXEL_HEIGHT 72
@@ -95,7 +94,7 @@ EnumerateFonts(DWORD Flags);
 int FindCreateFont(
     __in DWORD Family,
     __in_ecount(LF_FACESIZE) LPWSTR ptszFace,
-    __in COORD Size,
+    __in til::point Size,
     __in LONG Weight,
     __in UINT CodePage);
 

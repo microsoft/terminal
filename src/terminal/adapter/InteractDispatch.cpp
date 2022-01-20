@@ -136,10 +136,10 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // True if we successfully moved the cursor to the given location.
 // False otherwise, including if given invalid coordinates (either component being 0)
 //  or if any API calls failed.
-bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
+bool InteractDispatch::MoveCursor(const til::CoordType row, const til::CoordType col)
 {
-    size_t rowFixed = row;
-    size_t colFixed = col;
+    auto rowFixed = row;
+    auto colFixed = col;
 
     bool success = true;
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
@@ -172,27 +172,20 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
 
         if (success)
         {
-            COORD coordCursor = csbiex.dwCursorPosition;
+            til::point coordCursor{colFixed, rowFixed};
 
-            // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
-            success = SUCCEEDED(SizeTToShort(rowFixed, &coordCursor.Y)) &&
-                      SUCCEEDED(SizeTToShort(colFixed, &coordCursor.X));
+            // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
+            success = SUCCEEDED(IntAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
+                        SUCCEEDED(IntAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
 
             if (success)
             {
-                // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-                success = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
-                          SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+                // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
+                coordCursor.Y = std::clamp<til::CoordType>(coordCursor.Y, csbiex.srWindow.Top, csbiex.srWindow.Bottom - 1);
+                coordCursor.X = std::clamp<til::CoordType>(coordCursor.X, csbiex.srWindow.Left, csbiex.srWindow.Right - 1);
 
-                if (success)
-                {
-                    // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-                    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
-                    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
-
-                    // Finally, attempt to set the adjusted cursor position back into the console.
-                    success = _pConApi->SetConsoleCursorPosition(coordCursor);
-                }
+                // Finally, attempt to set the adjusted cursor position back into the console.
+                success = _pConApi->SetConsoleCursorPosition(coordCursor);
             }
         }
     }

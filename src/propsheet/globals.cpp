@@ -35,7 +35,7 @@ BOOL fChangeCodePage = FALSE;
 
 WCHAR DefaultFaceName[LF_FACESIZE];
 WCHAR DefaultTTFaceName[LF_FACESIZE];
-COORD DefaultFontSize;
+til::point DefaultFontSize;
 BYTE DefaultFontFamily;
 ULONG DefaultFontIndex = 0;
 ULONG g_currentFontIndex = 0;

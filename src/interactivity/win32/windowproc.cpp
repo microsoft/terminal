@@ -192,16 +192,16 @@ using namespace Microsoft::Console::Types;
         // GetProposedFont can fail if there's no render engine yet.
         // This can happen if we're headless.
         // Just assume that the font is 1x1 in that case.
-        const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({ 1, 1 });
+        const auto coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : til::size{ 1, 1 };
 
         // Then from that font size, we need to calculate the client area.
         // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
 
         // Retrieve the additional parameters we need for the math call based on the current window & buffer properties.
         const Viewport viewport = ScreenInfo.GetViewport();
-        COORD coordWindowInChars = viewport.Dimensions();
+        auto coordWindowInChars = viewport.Dimensions();
 
-        const COORD coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
+        const auto coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
 
         // Now call the math calculation for our proposed size.
         RECT rectProposed = { 0 };
@@ -650,7 +650,7 @@ using namespace Microsoft::Console::Types;
 
         if (isMouseWheel || isMouseHWheel)
         {
-            short wheelDelta = (short)HIWORD(wParam);
+            auto wheelDelta = HIWORD(wParam);
             bool hasShift = (wParam & MK_SHIFT) ? true : false;
 
             Scrolling::s_HandleMouseWheel(isMouseWheel,
@@ -840,8 +840,8 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     {
         // In lieu of actually painting right now, we're just going to aggregate this information in the renderer
         // and let it paint whenever it feels appropriate.
-        RECT const rcUpdate = ps.rcPaint;
-        ServiceLocator::LocateGlobals().pRender->TriggerSystemRedraw(&rcUpdate);
+        til::rect rc{ ps.rcPaint };
+        ServiceLocator::LocateGlobals().pRender->TriggerSystemRedraw(&rc);
     }
 
     LOG_IF_WIN32_BOOL_FALSE(EndPaint(hwnd, &ps));

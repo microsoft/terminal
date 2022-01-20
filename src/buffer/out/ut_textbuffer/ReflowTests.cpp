@@ -36,9 +36,9 @@ namespace
 
     struct TestBuffer
     {
-        COORD size;
+        til::size size;
         std::vector<TestRow> rows;
-        COORD cursor;
+        til::point cursor;
     };
 
     struct TestCase
@@ -737,7 +737,7 @@ class ReflowTests
     {
         auto buffer = std::make_unique<TextBuffer>(testBuffer.size, TextAttribute{ 0x7 }, 0, target);
 
-        size_t i{};
+        til::CoordType i = 0;
         for (const auto& testRow : testBuffer.rows)
         {
             auto& row{ buffer->GetRowByOffset(i) };
@@ -771,7 +771,7 @@ class ReflowTests
         return buffer;
     }
 
-    static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const COORD newSize)
+    static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const til::size newSize)
     {
         auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, target);
         TextBuffer::Reflow(originalBuffer, *buffer, std::nullopt, std::nullopt);
@@ -783,7 +783,7 @@ class ReflowTests
         VERIFY_ARE_EQUAL(testBuffer.cursor, buffer.GetCursor().GetPosition());
         VERIFY_ARE_EQUAL(testBuffer.size, buffer.GetSize().Dimensions());
 
-        size_t i{};
+        til::CoordType i = 0;
         for (const auto& testRow : testBuffer.rows)
         {
             NoThrowString indexString;
@@ -841,7 +841,7 @@ class ReflowTests
         for (size_t bufferIndex{ 1 }; bufferIndex < testCase.buffers.size(); ++bufferIndex)
         {
             const auto& testBuffer{ til::at(testCase.buffers, bufferIndex) };
-            Log::Comment(NoThrowString().Format(L"[%zu.%zu] Resizing to %dx%d", i, bufferIndex, testBuffer.size.X, testBuffer.size.Y));
+            Log::Comment(NoThrowString().Format(L"[%d.%d] Resizing to %dx%d", i, bufferIndex, testBuffer.size.width, testBuffer.size.height));
 
             auto newBuffer{ _textBufferByReflowingTextBuffer(*textBuffer, testBuffer.size) };
 

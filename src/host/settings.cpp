@@ -172,8 +172,8 @@ void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
 // - <none>
 void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
 {
-    const short width = consoleArgs.GetWidth();
-    const short height = consoleArgs.GetHeight();
+    const auto width = consoleArgs.GetWidth();
+    const auto height = consoleArgs.GetHeight();
 
     if (width > 0 && height > 0)
     {
@@ -197,8 +197,8 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _wPopupFillAttribute = pStateInfo->PopupAttributes;
     _dwScreenBufferSize = pStateInfo->ScreenBufferSize;
     _dwWindowSize = pStateInfo->WindowSize;
-    _dwWindowOrigin.X = (SHORT)pStateInfo->WindowPosX;
-    _dwWindowOrigin.Y = (SHORT)pStateInfo->WindowPosY;
+    _dwWindowOrigin.X = base::saturated_cast<short>(pStateInfo->WindowPosX);
+    _dwWindowOrigin.Y = base::saturated_cast<short>(pStateInfo->WindowPosY);
     _dwFontSize = pStateInfo->FontSize;
     _uFontFamily = pStateInfo->FontFamily;
     _uFontWeight = pStateInfo->FontWeight;
@@ -242,8 +242,8 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.PopupAttributes = _wPopupFillAttribute;
     csi.ScreenBufferSize = _dwScreenBufferSize;
     csi.WindowSize = _dwWindowSize;
-    csi.WindowPosX = (SHORT)_dwWindowOrigin.X;
-    csi.WindowPosY = (SHORT)_dwWindowOrigin.Y;
+    csi.WindowPosX = _dwWindowOrigin.X;
+    csi.WindowPosY = _dwWindowOrigin.Y;
     csi.FontSize = _dwFontSize;
     csi.FontFamily = _uFontFamily;
     csi.FontWeight = _uFontWeight;
@@ -294,12 +294,12 @@ void Settings::Validate()
     }
 
     // minimum screen buffer size 1x1
-    _dwScreenBufferSize.X = std::max(_dwScreenBufferSize.X, 1i16);
-    _dwScreenBufferSize.Y = std::max(_dwScreenBufferSize.Y, 1i16);
+    _dwScreenBufferSize.X = std::max<decltype(_dwScreenBufferSize.X)>(_dwScreenBufferSize.X, 1);
+    _dwScreenBufferSize.Y = std::max<decltype(_dwScreenBufferSize.Y)>(_dwScreenBufferSize.Y, 1);
 
     // minimum window size size 1x1
-    _dwWindowSize.X = std::max(_dwWindowSize.X, 1i16);
-    _dwWindowSize.Y = std::max(_dwWindowSize.Y, 1i16);
+    _dwWindowSize.X = std::max<decltype(_dwWindowSize.X)>(_dwWindowSize.X, 1);
+    _dwWindowSize.Y = std::max<decltype(_dwWindowSize.Y)>(_dwWindowSize.Y, 1);
 
     // if buffer size is less than window size, increase buffer size to meet window size
     _dwScreenBufferSize.X = std::max(_dwWindowSize.X, _dwScreenBufferSize.X);
@@ -558,44 +558,44 @@ void Settings::SetReserved(const WORD wReserved)
     _wReserved = wReserved;
 }
 
-COORD Settings::GetScreenBufferSize() const
+til::size Settings::GetScreenBufferSize() const
 {
-    return _dwScreenBufferSize;
+    return til::wrap_coord_size(_dwScreenBufferSize);
 }
-void Settings::SetScreenBufferSize(const COORD dwScreenBufferSize)
+void Settings::SetScreenBufferSize(const til::size dwScreenBufferSize)
 {
-    _dwScreenBufferSize = dwScreenBufferSize;
+    _dwScreenBufferSize = til::unwrap_coord_size(dwScreenBufferSize);
 }
 
-COORD Settings::GetWindowSize() const
+til::size Settings::GetWindowSize() const
 {
-    return _dwWindowSize;
+    return til::wrap_coord_size(_dwWindowSize);
 }
-void Settings::SetWindowSize(const COORD dwWindowSize)
+void Settings::SetWindowSize(const til::size dwWindowSize)
 {
-    _dwWindowSize = dwWindowSize;
+    _dwWindowSize = til::unwrap_coord_size(dwWindowSize);
 }
 
 bool Settings::IsWindowSizePixelsValid() const
 {
     return _fUseWindowSizePixels;
 }
-COORD Settings::GetWindowSizePixels() const
+til::size Settings::GetWindowSizePixels() const
 {
-    return _dwWindowSizePixels;
+    return til::wrap_coord_size(_dwWindowSizePixels);
 }
-void Settings::SetWindowSizePixels(const COORD dwWindowSizePixels)
+void Settings::SetWindowSizePixels(const til::size dwWindowSizePixels)
 {
-    _dwWindowSizePixels = dwWindowSizePixels;
+    _dwWindowSizePixels = til::unwrap_coord_size(dwWindowSizePixels);
 }
 
-COORD Settings::GetWindowOrigin() const
+til::point Settings::GetWindowOrigin() const
 {
-    return _dwWindowOrigin;
+    return til::wrap_coord(_dwWindowOrigin);
 }
-void Settings::SetWindowOrigin(const COORD dwWindowOrigin)
+void Settings::SetWindowOrigin(const til::point dwWindowOrigin)
 {
-    _dwWindowOrigin = dwWindowOrigin;
+    _dwWindowOrigin = til::unwrap_coord(dwWindowOrigin);
 }
 
 DWORD Settings::GetFont() const
@@ -607,13 +607,13 @@ void Settings::SetFont(const DWORD nFont)
     _nFont = nFont;
 }
 
-COORD Settings::GetFontSize() const
+til::size Settings::GetFontSize() const
 {
-    return _dwFontSize;
+    return til::wrap_coord_size(_dwFontSize);
 }
-void Settings::SetFontSize(const COORD dwFontSize)
+void Settings::SetFontSize(const til::size dwFontSize)
 {
-    _dwFontSize = dwFontSize;
+    _dwFontSize = til::unwrap_coord_size(dwFontSize);
 }
 
 UINT Settings::GetFontFamily() const

@@ -769,7 +769,7 @@ void OutputTests::ReadConsoleOutputWWithClipping()
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(expectedRegion, affected);
 
-    const auto affectedViewport = Viewport::FromInclusive(affected);
+    const auto affectedViewport = Viewport::FromInclusive(til::wrap_small_rect(affected));
     const auto filledBuffer = Viewport::FromDimensions({ 0, 0 }, affectedViewport.Dimensions());
 
     for (SHORT row = 0; row < regionDimensions.Y; row++)
@@ -865,7 +865,7 @@ void OutputTests::ReadConsoleOutputWNegativePositions()
     VERIFY_ARE_EQUAL(expectedRegion, affected);
 
     // Verify the data read affected only the expected area
-    const auto affectedViewport = Viewport::FromInclusive(affected);
+    const auto affectedViewport = Viewport::FromInclusive(til::wrap_small_rect(affected));
 
     // Because of the negative origin, the API will report that it filled starting at the 0 coordinate, but it believed
     // the original buffer's origin was at -3, -10. This means we have to read at that offset into the buffer we provided
@@ -955,7 +955,7 @@ void OutputTests::ReadConsoleOutputWPartialUserBuffer()
     expected.Top = regionOrigin.Y;
     expected.Bottom = regionDimensions.Y - 1;
 
-    const auto filledExpected = Viewport::FromInclusive(expected);
+    const auto filledExpected = Viewport::FromInclusive(til::wrap_small_rect(expected));
 
     // translate the expected region into the origin at 0,0 because that's what the API will report.
     expected.Right -= expected.Left;

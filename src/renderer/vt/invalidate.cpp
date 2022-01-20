@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Render;
 //      believes is dirty
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateSystem(const til::rect* const /*prcDirtyClient*/) noexcept
 {
     return S_OK;
 }
@@ -31,7 +31,7 @@ using namespace Microsoft::Console::Render;
 // - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
 {
     // Selection shouldn't be handled bt the VT Renderer Host, it should be
     //      handled by the client.
@@ -43,15 +43,14 @@ using namespace Microsoft::Console::Render;
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
-// - psrRegion - Character region (SMALL_RECT) that has been changed
+// - psrRegion - Character region (til::inclusive_rect) that has been changed
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT VtEngine::Invalidate(const til::rect* const rect) noexcept
 try
 {
-    const til::rect rect{ Viewport::FromExclusive(*psrRegion).ToInclusive() };
-    _trace.TraceInvalidate(rect);
-    _invalidMap.set(rect);
+    _trace.TraceInvalidate(*rect);
+    _invalidMap.set(*rect);
     return S_OK;
 }
 CATCH_RETURN();
@@ -62,7 +61,7 @@ CATCH_RETURN();
 // - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 {
     // If we just inherited the cursor, we're going to get an InvalidateCursor
     //      for both where the old cursor was, and where the new cursor is

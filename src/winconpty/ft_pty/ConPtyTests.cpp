@@ -11,7 +11,7 @@ using namespace WEX::TestExecution;
 class ConPtyTests
 {
     TEST_CLASS(ConPtyTests);
-    const COORD defaultSize = { 80, 30 };
+    const til::point defaultSize{ 80, 30 };
     TEST_METHOD(CreateConPtyNoPipes);
     TEST_METHOD(CreateConPtyBadSize);
     TEST_METHOD(GoodCreate);
@@ -22,7 +22,7 @@ class ConPtyTests
     TEST_METHOD(DiesOnClose);
 };
 
-static HRESULT _CreatePseudoConsole(const COORD size,
+static HRESULT _CreatePseudoConsole(const til::point size,
                                     const HANDLE hInput,
                                     const HANDLE hOutput,
                                     const DWORD dwFlags,
@@ -93,7 +93,7 @@ void ConPtyTests::CreateConPtyNoPipes()
 void ConPtyTests::CreateConPtyBadSize()
 {
     PseudoConsole pcon{};
-    COORD badSize = { 0, 0 };
+    til::point badSize;
     const HANDLE goodIn = (HANDLE)0x4;
     const HANDLE goodOut = (HANDLE)0x8;
     VERIFY_FAILED(_CreatePseudoConsole(badSize, goodIn, goodOut, 0, &pcon));

@@ -32,9 +32,9 @@ class TextBuffer;
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
+    ROW(const til::CoordType rowId, const til::CoordType rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
 
-    size_t size() const noexcept { return _rowWidth; }
+    til::CoordType size() const noexcept { return _rowWidth; }
 
     void SetWrapForced(const bool wrap) noexcept { _wrapForced = wrap; }
     bool WasWrapForced() const noexcept { return _wrapForced; }
@@ -51,19 +51,19 @@ public:
     LineRendition GetLineRendition() const noexcept { return _lineRendition; }
     void SetLineRendition(const LineRendition lineRendition) noexcept { _lineRendition = lineRendition; }
 
-    SHORT GetId() const noexcept { return _id; }
-    void SetId(const SHORT id) noexcept { _id = id; }
+    til::CoordType GetId() const noexcept { return _id; }
+    void SetId(const til::CoordType id) noexcept { _id = id; }
 
     bool Reset(const TextAttribute Attr);
-    [[nodiscard]] HRESULT Resize(const unsigned short width);
+    [[nodiscard]] HRESULT Resize(const til::CoordType width);
 
-    void ClearColumn(const size_t column);
+    void ClearColumn(const til::CoordType column);
     std::wstring GetText() const { return _charRow.GetText(); }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
 
-    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
+    OutputCellIterator WriteCells(OutputCellIterator it, const til::CoordType index, const std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
 
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
@@ -74,8 +74,8 @@ private:
     CharRow _charRow;
     ATTR_ROW _attrRow;
     LineRendition _lineRendition;
-    SHORT _id;
-    unsigned short _rowWidth;
+    til::CoordType _id;
+    til::CoordType _rowWidth;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line

@@ -39,16 +39,16 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintFrame();
 
-        void TriggerSystemRedraw(const RECT* const prcDirtyClient);
+        void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
-        void TriggerRedraw(const COORD* const pcoord) override;
-        void TriggerRedrawCursor(const COORD* const pcoord) override;
+        void TriggerRedraw(const til::point* const pcoord) override;
+        void TriggerRedrawCursor(const til::point* const pcoord) override;
         void TriggerRedrawAll() override;
         void TriggerTeardown() noexcept override;
 
         void TriggerSelection() override;
         void TriggerScroll() override;
-        void TriggerScroll(const COORD* const pcoordDelta) override;
+        void TriggerScroll(const til::point* const pcoordDelta) override;
 
         void TriggerCircling() override;
         void TriggerTitleChange() override;
@@ -58,7 +58,7 @@ namespace Microsoft::Console::Render
                                _Out_ FontInfo& FontInfo);
 
         void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                            const SIZE cellSize,
+                            const til::size cellSize,
                             const size_t centeringHint);
 
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
@@ -76,7 +76,7 @@ namespace Microsoft::Console::Render
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
-        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
+        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, til::CoordType>::interval>& newInterval);
 
     private:
         static IRenderEngine::GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
@@ -87,15 +87,15 @@ namespace Microsoft::Console::Render
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const COORD target, const bool lineWrapped);
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const COORD coordTarget);
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-        std::vector<SMALL_RECT> _GetSelectionRects() const;
+        std::vector<til::rect> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
@@ -107,10 +107,10 @@ namespace Microsoft::Console::Render
         std::unique_ptr<RenderThread> _pThread;
         static constexpr size_t _firstSoftFontChar = 0xEF20;
         size_t _lastSoftFontChar = 0;
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
+        std::optional<interval_tree::IntervalTree<til::point, til::CoordType>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
         std::vector<Cluster> _clusterBuffer;
-        std::vector<SMALL_RECT> _previousSelection;
+        std::vector<til::rect> _previousSelection;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
 

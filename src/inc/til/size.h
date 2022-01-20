@@ -152,18 +152,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(static_cast<int64_t>(width) * static_cast<int64_t>(height));
         }
 
-#ifdef _WINCONTYPES_
-        explicit constexpr size(const COORD other) noexcept :
-            width{ other.X }, height{ other.Y }
-        {
-        }
-
-        constexpr COORD to_win32_coord() const
-        {
-            return { gsl::narrow<short>(width), gsl::narrow<short>(height) };
-        }
-#endif
-
 #ifdef _WINDEF_
         explicit constexpr size(const SIZE other) noexcept :
             width{ other.cx }, height{ other.cy }
@@ -209,6 +197,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return wil::str_printf<std::wstring>(L"[W:%td, H:%td]", width, height);
         }
     };
+
+    constexpr size wrap_coord_size(const COORD rect) noexcept
+    {
+        return { rect.X, rect.Y };
+    }
+
+    constexpr COORD unwrap_coord_size(const size rect)
+    {
+        return {
+            gsl::narrow<short>(rect.width),
+            gsl::narrow<short>(rect.height),
+        };
+    }
 };
 
 #ifdef __WEX_COMMON_H__

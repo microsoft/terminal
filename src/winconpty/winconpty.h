@@ -28,19 +28,19 @@ typedef struct _PseudoConsole
 
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,
-                             const COORD size,
+                             const til::point size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
                              const DWORD dwFlags,
                              _Inout_ PseudoConsole* pPty);
 
-HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size);
+HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const til::point size);
 HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty);
 void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty);
 VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty);
 
 HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
-                                        _In_ COORD size,
+                                        _In_ til::point size,
                                         _In_ HANDLE hInput,
                                         _In_ HANDLE hOutput,
                                         _In_ DWORD dwFlags,

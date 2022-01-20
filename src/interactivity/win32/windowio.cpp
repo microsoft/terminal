@@ -116,7 +116,7 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(const COORD cMousePosition,
+bool HandleTerminalMouseEvent(const til::point cMousePosition,
                               const unsigned int uiButton,
                               const short sModifierKeystate,
                               const short sWheelDelta)
@@ -612,16 +612,16 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     //  results on systems with multiple monitors. Systems with multiple monitors
     //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the
     //  coordinates as unsigned quantities.
-    short x = GET_X_LPARAM(lParam);
-    short y = GET_Y_LPARAM(lParam);
+    auto x = GET_X_LPARAM(lParam);
+    auto y = GET_Y_LPARAM(lParam);
 
-    COORD MousePosition;
+    til::point MousePosition;
     // If it's a *WHEEL event, it's in screen coordinates, not window
     if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
     {
         POINT coords = { x, y };
         ScreenToClient(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &coords);
-        MousePosition = { (SHORT)coords.x, (SHORT)coords.y };
+        MousePosition = { coords.x, coords.y };
     }
     else
     {
@@ -629,9 +629,9 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     }
 
     // translate mouse position into characters, if necessary.
-    COORD ScreenFontSize = ScreenInfo.GetScreenFontSize();
-    MousePosition.X /= ScreenFontSize.X;
-    MousePosition.Y /= ScreenFontSize.Y;
+    auto ScreenFontSize = ScreenInfo.GetScreenFontSize();
+    MousePosition.X /= ScreenFontSize.width;
+    MousePosition.Y /= ScreenFontSize.height;
 
     const bool fShiftPressed = WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
 
@@ -683,31 +683,31 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     MousePosition.X += ScreenInfo.GetViewport().Left();
     MousePosition.Y += ScreenInfo.GetViewport().Top();
 
-    const COORD coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
+    const auto coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
 
     // make sure mouse position is clipped to screen buffer
     if (MousePosition.X < 0)
     {
         MousePosition.X = 0;
     }
-    else if (MousePosition.X >= coordScreenBufferSize.X)
+    else if (MousePosition.X >= coordScreenBufferSize.width)
     {
-        MousePosition.X = coordScreenBufferSize.X - 1;
+        MousePosition.X = coordScreenBufferSize.width - 1;
     }
     if (MousePosition.Y < 0)
     {
         MousePosition.Y = 0;
     }
-    else if (MousePosition.Y >= coordScreenBufferSize.Y)
+    else if (MousePosition.Y >= coordScreenBufferSize.height)
     {
-        MousePosition.Y = coordScreenBufferSize.Y - 1;
+        MousePosition.Y = coordScreenBufferSize.height - 1;
     }
 
     // Process the transparency mousewheel message before the others so that we can
     // process all the mouse events within the Selection and QuickEdit check
     if (Message == WM_MOUSEWHEEL)
     {
-        const short sKeyState = GET_KEYSTATE_WPARAM(wParam);
+        const auto sKeyState = GET_KEYSTATE_WPARAM(wParam);
 
         if (WI_IsFlagSet(sKeyState, MK_CONTROL))
         {
@@ -794,13 +794,13 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         else if (Message == WM_LBUTTONDBLCLK)
         {
             // on double-click, attempt to select a "word" beneath the cursor
-            const COORD selectionAnchor = pSelection->GetSelectionAnchor();
+            const auto selectionAnchor = pSelection->GetSelectionAnchor();
 
             if (MousePosition == selectionAnchor)
             {
                 try
                 {
-                    const std::pair<COORD, COORD> wordBounds = ScreenInfo.GetWordBoundary(MousePosition);
+                    const std::pair<til::point, til::point> wordBounds = ScreenInfo.GetWordBoundary(MousePosition);
                     MousePosition = wordBounds.second;
                     // update both ends of the selection since we may have adjusted the anchor in some circumstances.
                     pSelection->AdjustSelection(wordBounds.first, wordBounds.second);

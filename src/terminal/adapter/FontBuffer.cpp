@@ -34,6 +34,7 @@ bool FontBuffer::SetAttributes(const DispatchTypes::DrcsCellMatrix cellMatrix,
                                const DispatchTypes::DrcsFontSet fontSet,
                                const DispatchTypes::DrcsFontUsage fontUsage) noexcept
 {
+    const auto pendingCellHeight = base::saturated_cast<til::CoordType>(cellHeight.value_or(0));
     auto valid = true;
 
     if (valid)
@@ -130,8 +131,8 @@ bool FontBuffer::SetAttributes(const DispatchTypes::DrcsCellMatrix cellMatrix,
             // 0 width is treated as unknown (we'll try and estimate the expected
             // width), and the height parameter can still give us the height.
             _sizeDeclaredAsMatrix = false;
-            _declaredWidth = static_cast<size_t>(cellMatrix);
-            _declaredHeight = cellHeight.value_or(0);
+            _declaredWidth = static_cast<til::CoordType>(cellMatrix);
+            _declaredHeight = pendingCellHeight;
             valid = (_declaredWidth <= MAX_WIDTH && _declaredHeight <= MAX_HEIGHT);
             break;
         }
@@ -140,7 +141,7 @@ bool FontBuffer::SetAttributes(const DispatchTypes::DrcsCellMatrix cellMatrix,
     // Save the pending attributes, but don't update the current values until we
     // are sure we have a valid sequence that can replace the current buffer.
     _pendingCellMatrix = cellMatrix;
-    _pendingCellHeight = cellHeight.value_or(0);
+    _pendingCellHeight = pendingCellHeight;
     _pendingFontSet = fontSet;
     _pendingFontUsage = fontUsage;
 
@@ -158,10 +159,10 @@ bool FontBuffer::SetStartChar(const VTParameter startChar,
     switch (charsetSize)
     {
     case DispatchTypes::DrcsCharsetSize::Size94:
-        _startChar = startChar.value_or(1);
+        _startChar = base::saturated_cast<til::CoordType>(startChar.value_or(1));
         break;
     case DispatchTypes::DrcsCharsetSize::Size96:
-        _startChar = startChar.value_or(0);
+        _startChar = base::saturated_cast<til::CoordType>(startChar.value_or(0));
         break;
     default:
         return false;
@@ -227,7 +228,7 @@ til::size FontBuffer::GetCellSize() const noexcept
     return { gsl::narrow_cast<til::CoordType>(_fullWidth), gsl::narrow_cast<til::CoordType>(_fullHeight) };
 }
 
-size_t FontBuffer::GetTextCenteringHint() const noexcept
+til::CoordType FontBuffer::GetTextCenteringHint() const noexcept
 {
     return _textCenteringHint;
 }
@@ -309,7 +310,7 @@ void FontBuffer::_prepareNextCharacter()
     }
 }
 
-void FontBuffer::_addSixelValue(const size_t value) noexcept
+void FontBuffer::_addSixelValue(const til::CoordType value) noexcept
 {
     if (_currentChar < MAX_CHARS && _sixelColumn < _textWidth)
     {
@@ -319,7 +320,7 @@ void FontBuffer::_addSixelValue(const size_t value) noexcept
         const auto outputColumnBit = (0x8000 >> (_sixelColumn + _textOffset));
         auto outputIterator = _currentCharBuffer;
         auto inputValueMask = 1;
-        for (size_t i = 0; i < 6 && _sixelRow + i < _fullHeight; i++)
+        for (til::CoordType i = 0; i < 6 && _sixelRow + i < _fullHeight; i++)
         {
             *outputIterator |= (value & inputValueMask) ? outputColumnBit : 0;
             outputIterator++;
@@ -350,7 +351,7 @@ void FontBuffer::_endOfCharacter()
     _prepareNextCharacter();
 }
 
-std::tuple<size_t, size_t, size_t> FontBuffer::_calculateDimensions() const
+std::tuple<til::CoordType, til::CoordType, til::CoordType> FontBuffer::_calculateDimensions() const
 {
     // If the size is declared as a matrix, this is most likely a VT2xx font,
     // typically with a cell size of 10x10. However, in 132-column mode, the
@@ -398,7 +399,7 @@ std::tuple<size_t, size_t, size_t> FontBuffer::_calculateDimensions() const
     // estimate the size from the used sixel values. If comparing a sixel-based
     // height, though, we need to round up the target cell height to account for
     // the fact that our used height will always be a multiple of six.
-    const auto inRange = [=](const size_t cellWidth, const size_t cellHeight) {
+    const auto inRange = [=](const til::CoordType cellWidth, const til::CoordType cellHeight) {
         const auto sixelHeight = (cellHeight + 5) / 6 * 6;
         const auto heightInRange = _declaredHeight ? _declaredHeight <= cellHeight : _usedHeight <= sixelHeight;
         const auto widthInRange = _declaredWidth ? _declaredWidth <= cellWidth : _usedWidth <= cellWidth;
@@ -497,7 +498,7 @@ void FontBuffer::_packAndCenterBitPatterns()
     // cell height, but now that we know the true height, we need to pack the
     // buffer data so that each character occupies the exact number of scanlines
     // that are required.
-    for (auto srcLine = 0u, dstLine = 0u; srcLine < _buffer.size(); srcLine++)
+    for (auto srcLine = 0, dstLine = 0; srcLine < _buffer.size(); srcLine++)
     {
         if ((srcLine % MAX_HEIGHT) < _fullHeight)
         {
@@ -515,7 +516,7 @@ void FontBuffer::_fillUnusedCharacters()
     // with an error glyph (a reverse question mark). This includes every
     // character prior to the start char, or after the last char.
     const auto errorPattern = _generateErrorGlyph();
-    for (auto ch = 0u; ch < MAX_CHARS; ch++)
+    for (auto ch = 0; ch < MAX_CHARS; ch++)
     {
         if (ch < _startChar || ch > _lastChar)
         {

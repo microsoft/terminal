@@ -30,8 +30,8 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 // specific endpoint range
 HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
-                                             const COORD start,
-                                             const COORD end,
+                                             const til::point start,
+                                             const til::point end,
                                              bool blockRange,
                                              const std::wstring_view wordDelimiters) noexcept
 {

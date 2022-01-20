@@ -11,21 +11,14 @@
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-short CalcWindowSizeX(const SMALL_RECT& rect) noexcept
+til::CoordType CalcWindowSizeX(const til::inclusive_rect rect) noexcept
 {
     return rect.Right - rect.Left + 1;
 }
 
-short CalcWindowSizeY(const SMALL_RECT& rect) noexcept
+til::CoordType CalcWindowSizeY(const til::inclusive_rect rect) noexcept
 {
     return rect.Bottom - rect.Top + 1;
-}
-
-short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize) noexcept
-{
-    // TODO: MSFT 10229700 - Note, we want to likely enforce that this isn't negative.
-    // Pretty sure there's not a valid case for negative offsets here.
-    return (short)((sFontSizeY) - (ulSize));
 }
 
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwchEnd) noexcept
@@ -100,7 +93,7 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
     UINT cch = 0;
 
     // String Tables are broken up into 16 string segments.  Find the segment containing the string we are interested in.
-    HANDLE const hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR)((LONG_PTR)(((USHORT)wID >> 4) + 1)), wLangId);
+    HANDLE const hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR)((LONG_PTR)((wID >> 4) + 1)), wLangId);
     if (hResInfo != nullptr)
     {
         // Load that segment.
@@ -167,12 +160,12 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const COORD coordSecond) noexcept
+int Utils::s_CompareCoords(const til::size bufferSize, const til::point coordFirst, const til::point coordSecond) noexcept
 {
-    const short cRowWidth = bufferSize.X;
+    const auto cRowWidth = bufferSize.width;
 
     // Assert that our coordinates are within the expected boundaries
-    const short cRowHeight = bufferSize.Y;
+    const auto cRowHeight = bufferSize.height;
     FAIL_FAST_IF(!(coordFirst.X >= 0 && coordFirst.X < cRowWidth));
     FAIL_FAST_IF(!(coordSecond.X >= 0 && coordSecond.X < cRowWidth));
     FAIL_FAST_IF(!(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight));
@@ -209,11 +202,11 @@ int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noexcept
+int Utils::s_CompareCoords(const til::point coordFirst, const til::point coordSecond) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
-    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
+    const auto coordScreenBufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
     return s_CompareCoords(coordScreenBufferSize, coordFirst, coordSecond);
 }
 
@@ -225,7 +218,7 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noex
 // - coordCorner - One of the corners of the given rectangle
 // Return Value:
 // - The opposite corner of the one given.
-COORD Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner) noexcept
+til::point Utils::s_GetOppositeCorner(const til::inclusive_rect srRectangle, const til::point coordCorner) noexcept
 {
     // Assert we were given coordinates that are indeed one of the corners of the rectangle.
     FAIL_FAST_IF(!(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right));

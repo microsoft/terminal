@@ -25,7 +25,7 @@ class RenderData final :
 public:
 #pragma region BaseData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
-    COORD GetTextBufferEndPosition() const noexcept override;
+    til::point GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
 
@@ -36,7 +36,7 @@ public:
 #pragma endregion
 
 #pragma region IRenderData
-    COORD GetCursorPosition() const noexcept override;
+    til::point GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
@@ -53,7 +53,7 @@ public:
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
 
-    const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
+    const std::vector<size_t> GetPatternId(const til::point location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
@@ -61,10 +61,10 @@ public:
     const bool IsSelectionActive() const override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
-    void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const noexcept;
-    const COORD GetSelectionEnd() const noexcept;
-    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
+    void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
+    const til::point GetSelectionAnchor() const noexcept;
+    const til::point GetSelectionEnd() const noexcept;
+    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr);
     const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
 };

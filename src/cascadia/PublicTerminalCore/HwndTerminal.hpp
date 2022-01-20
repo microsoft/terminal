@@ -27,9 +27,9 @@ extern "C" {
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 __declspec(dllexport) void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data);
 __declspec(dllexport) void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
-__declspec(dllexport) HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensions, _Out_ SIZE* dimensionsInPixels);
-__declspec(dllexport) HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ til::size windowSize, _Out_ til::size* dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ til::size dimensions, _Out_ til::size* dimensionsInPixels);
+__declspec(dllexport) HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::size windowSize, _Out_ til::size* dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
 __declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
@@ -60,7 +60,7 @@ public:
     HRESULT Initialize();
     void Teardown() noexcept;
     void SendOutput(std::wstring_view data);
-    HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
+    HRESULT Refresh(const til::size windowSize, _Out_ til::size* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
     void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
     ::Microsoft::Console::Types::IUiaData* GetUiaData() const noexcept;
@@ -91,9 +91,9 @@ private:
     std::optional<til::point> _singleClickTouchdownPos;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
-    friend HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
-    friend HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensions, _Out_ SIZE* dimensionsInPixels);
-    friend HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
+    friend HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ til::size windowSize, _Out_ til::size* dimensions);
+    friend HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ til::size dimensions, _Out_ til::size* dimensionsInPixels);
+    friend HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::size windowSize, _Out_ til::size* dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
     friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
     friend void _stdcall TerminalClearSelection(void* terminal);
@@ -128,10 +128,10 @@ private:
     void _SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept;
 
     // Inherited via IControlAccessibilityInfo
-    COORD GetFontSize() const noexcept override;
-    RECT GetBounds() const noexcept override;
+    til::size GetFontSize() const noexcept override;
+    til::rect GetBounds() const noexcept override;
     double GetScaleFactor() const noexcept override;
-    void ChangeViewport(const SMALL_RECT NewWindow) override;
+    void ChangeViewport(const til::inclusive_rect NewWindow) override;
     HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept override;
-    RECT GetPadding() const noexcept override;
+    til::rect GetPadding() const noexcept override;
 };

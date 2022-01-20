@@ -63,7 +63,7 @@ Revision History:
 
 void MakeAltRasterFont(
     __in UINT CodePage,
-    __out COORD* AltFontSize,
+    __out til::point* AltFontSize,
     __out BYTE* AltFontFamily,
     __out ULONG* AltFontIndex,
     __out_ecount(LF_FACESIZE) LPTSTR AltFaceName);

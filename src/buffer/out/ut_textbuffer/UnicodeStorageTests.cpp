@@ -18,7 +18,7 @@ class UnicodeStorageTests
     TEST_METHOD(CanOverwriteEmoji)
     {
         UnicodeStorage storage;
-        const COORD coord{ 1, 3 };
+        const til::point coord{ 1, 3 };
         const std::vector<wchar_t> newMoon{ 0xD83C, 0xDF11 };
         const std::vector<wchar_t> fullMoon{ 0xD83C, 0xDF15 };
 

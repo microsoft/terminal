@@ -65,8 +65,8 @@ public:
     Terminal& operator=(const Terminal&) = default;
     Terminal& operator=(Terminal&&) = default;
 
-    void Create(COORD viewportSize,
-                SHORT scrollbackLines,
+    void Create(til::size viewportSize,
+                til::CoordType scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
@@ -85,10 +85,10 @@ public:
     [[nodiscard]] std::unique_lock<til::ticket_lock> LockForReading();
     [[nodiscard]] std::unique_lock<til::ticket_lock> LockForWriting();
 
-    short GetBufferHeight() const noexcept;
+    til::CoordType GetBufferHeight() const noexcept;
 
-    int ViewStartIndex() const noexcept;
-    int ViewEndIndex() const noexcept;
+    til::CoordType ViewStartIndex() const noexcept;
+    til::CoordType ViewEndIndex() const noexcept;
 
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
@@ -100,14 +100,14 @@ public:
     TextAttribute GetTextAttributes() const noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     Microsoft::Console::Types::Viewport GetBufferSize() noexcept override;
-    bool SetCursorPosition(short x, short y) noexcept override;
-    COORD GetCursorPosition() noexcept override;
+    bool SetCursorPosition(til::point pos) noexcept override;
+    til::point GetCursorPosition() noexcept override;
     bool SetCursorVisibility(const bool visible) noexcept override;
     bool EnableCursorBlinking(const bool enable) noexcept override;
     bool CursorLineFeed(const bool withReturn) noexcept override;
-    bool DeleteCharacter(const size_t count) noexcept override;
-    bool InsertCharacter(const size_t count) noexcept override;
-    bool EraseCharacters(const size_t numChars) noexcept override;
+    bool DeleteCharacter(const til::CoordType count) noexcept override;
+    bool InsertCharacter(const til::CoordType count) noexcept override;
+    bool EraseCharacters(const til::CoordType numChars) noexcept override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
     bool WarningBell() noexcept override;
@@ -142,24 +142,24 @@ public:
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
-    bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
+    bool SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
     bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
 
-    [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
+    [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() noexcept override;
 
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
 
-    std::wstring GetHyperlinkAtPosition(const COORD position);
-    uint16_t GetHyperlinkIdAtPosition(const COORD position);
-    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const COORD position);
+    std::wstring GetHyperlinkAtPosition(const til::point position);
+    uint16_t GetHyperlinkIdAtPosition(const til::point position);
+    std::optional<interval_tree::IntervalTree<til::point, til::CoordType>::interval> GetHyperlinkIntervalFromPosition(const til::point position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
-    COORD GetTextBufferEndPosition() const noexcept override;
+    til::point GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
 
@@ -169,7 +169,7 @@ public:
 
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
-    COORD GetCursorPosition() const noexcept override;
+    til::point GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
@@ -180,7 +180,7 @@ public:
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
-    const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
+    const std::vector<size_t> GetPatternId(const til::point location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
@@ -189,11 +189,11 @@ public:
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
-    void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const noexcept override;
-    const COORD GetSelectionEnd() const noexcept override;
+    void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
+    const til::point GetSelectionAnchor() const noexcept override;
+    const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
-    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
+    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute) override;
     const bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
@@ -239,9 +239,9 @@ public:
         Viewport,
         Buffer
     };
-    void MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode);
-    void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
+    void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
+    void SetSelectionAnchor(const til::point position);
+    void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode);
 
@@ -303,14 +303,14 @@ private:
     FontInfo _fontInfo{ DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false };
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
-    // the pivot is the COORD that remains selected when you extend a selection in any direction
+    // the pivot is the til::point that remains selected when you extend a selection in any direction
     //   this is particularly useful when a word selection is extended over its starting point
     //   see TerminalSelection.cpp for more information
     struct SelectionAnchors
     {
-        COORD start;
-        COORD end;
-        COORD pivot;
+        til::point start;
+        til::point end;
+        til::point pivot;
     };
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
@@ -322,7 +322,7 @@ private:
     //      encapsulated, such that a Terminal can have both a main and alt buffer.
     std::unique_ptr<TextBuffer> _buffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
-    SHORT _scrollbackLines;
+    til::CoordType _scrollbackLines;
 
     // _scrollOffset is the number of lines above the viewport that are currently visible
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
@@ -340,9 +340,9 @@ private:
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we should make this behavior controlled by a setting.
 
-    interval_tree::IntervalTree<til::point, size_t> _patternIntervalTree;
-    void _InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree);
-    void _InvalidateFromCoords(const COORD start, const COORD end);
+    interval_tree::IntervalTree<til::point, til::CoordType> _patternIntervalTree;
+    void _InvalidatePatternTree(interval_tree::IntervalTree<til::point, til::CoordType>& tree);
+    void _InvalidateFromCoords(const til::point start, const til::point end);
 
     // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
     struct KeyEventCodes
@@ -360,15 +360,15 @@ private:
     void _StoreKeyEvent(const WORD vkey, const WORD scanCode);
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
-    int _VisibleStartIndex() const noexcept;
-    int _VisibleEndIndex() const noexcept;
+    til::CoordType _VisibleStartIndex() const noexcept;
+    til::CoordType _VisibleEndIndex() const noexcept;
 
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
 
     void _WriteBuffer(const std::wstring_view& stringView);
 
-    void _AdjustCursorPosition(const COORD proposedPosition);
+    void _AdjustCursorPosition(const til::point proposedPosition);
 
     void _NotifyScrollEvent() noexcept;
 
@@ -376,14 +376,14 @@ private:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
-    std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
-    COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    void _MoveByChar(SelectionDirection direction, COORD& pos);
-    void _MoveByWord(SelectionDirection direction, COORD& pos);
-    void _MoveByViewport(SelectionDirection direction, COORD& pos);
-    void _MoveByBuffer(SelectionDirection direction, COORD& pos);
+    std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
+    std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
+    std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
+    til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    void _MoveByChar(SelectionDirection direction, til::point& pos);
+    void _MoveByWord(SelectionDirection direction, til::point& pos);
+    void _MoveByViewport(SelectionDirection direction, til::point& pos);
+    void _MoveByBuffer(SelectionDirection direction, til::point& pos);
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;

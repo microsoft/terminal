@@ -618,7 +618,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     InitializeFonts();
     g_currentFontIndex = FindCreateFont(gpStateInfo->FontFamily,
                                         gpStateInfo->FaceName,
-                                        gpStateInfo->FontSize,
+                                        til::wrap_coord(gpStateInfo->FontSize),
                                         gpStateInfo->FontWeight,
                                         gpStateInfo->CodePage);
 
@@ -753,12 +753,12 @@ void UnregisterClasses(HINSTANCE hModule)
 {
     g_currentFontIndex = FindCreateFont(gpStateInfo->FontFamily,
                                         gpStateInfo->FaceName,
-                                        gpStateInfo->FontSize,
+                                        til::wrap_coord(gpStateInfo->FontSize),
                                         gpStateInfo->FontWeight,
                                         gpStateInfo->CodePage);
 
     gpStateInfo->FontFamily = FontInfo[g_currentFontIndex].Family;
-    gpStateInfo->FontSize = FontInfo[g_currentFontIndex].Size;
+    gpStateInfo->FontSize = til::unwrap_coord(FontInfo[g_currentFontIndex].Size);
     gpStateInfo->FontWeight = FontInfo[g_currentFontIndex].Weight;
     return StringCchCopyW(gpStateInfo->FaceName, ARRAYSIZE(gpStateInfo->FaceName), FontInfo[g_currentFontIndex].FaceName);
 }

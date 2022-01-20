@@ -22,13 +22,13 @@ class DummyRenderTarget final : public Microsoft::Console::Render::IRenderTarget
 public:
     DummyRenderTarget() {}
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& /*region*/) override {}
-    void TriggerRedraw(const COORD* const /*pcoord*/) override {}
-    void TriggerRedrawCursor(const COORD* const /*pcoord*/) override {}
+    void TriggerRedraw(const til::point* const /*pcoord*/) override {}
+    void TriggerRedrawCursor(const til::point* const /*pcoord*/) override {}
     void TriggerRedrawAll() override {}
     void TriggerTeardown() noexcept override {}
     void TriggerSelection() override {}
     void TriggerScroll() override {}
-    void TriggerScroll(const COORD* const /*pcoordDelta*/) override {}
+    void TriggerScroll(const til::point* const /*pcoordDelta*/) override {}
     void TriggerCircling() override {}
     void TriggerTitleChange() override {}
 };

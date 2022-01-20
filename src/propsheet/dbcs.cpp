@@ -25,7 +25,7 @@ Revision History:
 
 void MakeAltRasterFont(
     __in UINT CodePage,
-    __out COORD* AltFontSize,
+    __out til::point* AltFontSize,
     __out BYTE* AltFontFamily,
     __out ULONG* AltFontIndex,
     __out_ecount(LF_FACESIZE) LPTSTR AltFaceName)
@@ -33,8 +33,8 @@ void MakeAltRasterFont(
     DWORD i;
     DWORD Find;
     ULONG FontIndex;
-    COORD FontSize = FontInfo[DefaultFontIndex].Size;
-    COORD FontDelta;
+    auto FontSize = FontInfo[DefaultFontIndex].Size;
+    til::point FontDelta;
     BOOL fDbcsCharSet = IS_ANY_DBCS_CHARSET(CodePageToCharSet(CodePage));
 
     FontIndex = 0;
@@ -44,8 +44,8 @@ void MakeAltRasterFont(
         if (!TM_IS_TT_FONT(FontInfo[i].Family) &&
             IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet) == fDbcsCharSet)
         {
-            FontDelta.X = (SHORT)abs(FontSize.X - FontInfo[i].Size.X);
-            FontDelta.Y = (SHORT)abs(FontSize.Y - FontInfo[i].Size.Y);
+            FontDelta.X = abs(gsl::narrow_cast<int>(FontSize.X - FontInfo[i].Size.X));
+            FontDelta.Y = abs(gsl::narrow_cast<int>(FontSize.Y - FontInfo[i].Size.Y));
             if (Find > (DWORD)(FontDelta.X + FontDelta.Y))
             {
                 Find = (DWORD)(FontDelta.X + FontDelta.Y);
@@ -63,8 +63,8 @@ void MakeAltRasterFont(
 }
 
 [[nodiscard]] NTSTATUS
-    InitializeDbcsMisc(
-        VOID)
+InitializeDbcsMisc(
+    VOID)
 {
     return TrueTypeFontList::s_Initialize();
 }
@@ -158,8 +158,8 @@ GetAltFaceName(
 }
 
 [[nodiscard]] NTSTATUS
-    DestroyDbcsMisc(
-        VOID)
+DestroyDbcsMisc(
+    VOID)
 {
     return TrueTypeFontList::s_Destroy();
 }

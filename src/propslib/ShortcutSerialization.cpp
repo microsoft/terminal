@@ -452,8 +452,8 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
             props.wPopupFillAttribute = pStateInfo->PopupAttributes;
             props.dwScreenBufferSize = pStateInfo->ScreenBufferSize;
             props.dwWindowSize = pStateInfo->WindowSize;
-            props.dwWindowOrigin.X = (SHORT)pStateInfo->WindowPosX;
-            props.dwWindowOrigin.Y = (SHORT)pStateInfo->WindowPosY;
+            props.dwWindowOrigin.X = base::saturated_cast<short>(pStateInfo->WindowPosX);
+            props.dwWindowOrigin.Y = base::saturated_cast<short>(pStateInfo->WindowPosY);
             props.nFont = 0;
             props.nInputBufferSize = 0;
             props.dwFontSize = pStateInfo->FontSize;

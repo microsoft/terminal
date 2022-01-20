@@ -120,7 +120,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventDcsPassThrough(const wchar_t wch);
         void _EventSosPmApcString(const wchar_t wch) noexcept;
 
-        void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
+        void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
 
         enum class VTStates
         {
@@ -171,7 +171,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _parameterLimitReached;
 
         std::wstring _oscString;
-        size_t _oscParameter;
+        int _oscParameter;
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
 

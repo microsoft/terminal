@@ -386,8 +386,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     {
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
-        const size_t firstParameter = parameters.at(0).value_or(0);
-        const til::point uiPos{ gsl::narrow_cast<til::CoordType>(parameters.at(1) - 1), gsl::narrow_cast<til::CoordType>(parameters.at(2) - 1) };
+        const auto firstParameter = parameters.at(0).value_or(0);
+        const til::point uiPos{ parameters.at(1) - 1, parameters.at(2) - 1 };
 
         modifierState = _GetSGRMouseModifierState(firstParameter);
         success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags, uiPos);
@@ -730,7 +730,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWO
 {
     INPUT_RECORD rgInput;
     rgInput.EventType = MOUSE_EVENT;
-    rgInput.Event.MouseEvent.dwMousePosition = uiPos.to_win32_coord();
+    rgInput.Event.MouseEvent.dwMousePosition = til::unwrap_coord(uiPos);
     rgInput.Event.MouseEvent.dwButtonState = buttonState;
     rgInput.Event.MouseEvent.dwControlKeyState = controlKeyState;
     rgInput.Event.MouseEvent.dwEventFlags = eventFlags;

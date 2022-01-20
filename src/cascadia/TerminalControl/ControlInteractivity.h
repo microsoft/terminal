@@ -123,11 +123,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         bool _selectionNeedsToBeCopied;
 
-        std::optional<COORD> _lastHoveredCell{ std::nullopt };
+        std::optional<til::point> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId{ 0 };
 
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
+        std::optional<interval_tree::IntervalTree<til::point, til::CoordType>::interval> _lastHoveredInterval{ std::nullopt };
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;

@@ -46,7 +46,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void SetIsFullscreen(const bool fFullscreenEnabled);
         void ToggleFullscreen();
 
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const til::inclusive_rect NewWindow);
 
         void VerticalScroll(const WORD wScrollCommand,
                             const WORD wAbsoluteChange);
@@ -60,7 +60,7 @@ namespace Microsoft::Console::Interactivity::Win32
                             int maxSize,
                             int viewportPosition);
 
-        void UpdateWindowSize(const COORD coordSizeInChars);
+        void UpdateWindowSize(const til::size coordSizeInChars);
         void UpdateWindowPosition(_In_ POINT const ptNewPos) const;
         void UpdateWindowText();
 
@@ -156,12 +156,12 @@ namespace Microsoft::Console::Interactivity::Win32
         UINT _dpiBeforeFullscreen;
 
         // math helpers
-        void _CalculateWindowRect(const COORD coordWindowInChars,
+        void _CalculateWindowRect(const til::size coordWindowInChars,
                                   _Inout_ RECT* const prectWindow) const;
-        static void s_CalculateWindowRect(const COORD coordWindowInChars,
+        static void s_CalculateWindowRect(const til::size coordWindowInChars,
                                           const int iDpi,
-                                          const COORD coordFontSize,
-                                          const COORD coordBufferSize,
+                                          const til::size coordFontSize,
+                                          const til::size coordBufferSize,
                                           _In_opt_ HWND const hWnd,
                                           _Inout_ RECT* const prectWindow);
 

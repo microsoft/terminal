@@ -29,7 +29,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         bool IsInFullscreen() const;
         void SetIsFullscreen(bool const fFullscreenEnabled);
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const til::inclusive_rect NewWindow);
 
         void CaptureMouse();
         BOOL ReleaseMouse();
@@ -49,7 +49,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const;
         BOOL PostUpdateWindowSize() const;
 
-        void UpdateWindowSize(COORD const coordSizeInChars);
+        void UpdateWindowSize(til::point coordSizeInChars);
         void UpdateWindowText();
 
         void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange);

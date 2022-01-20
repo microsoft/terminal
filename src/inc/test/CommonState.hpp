@@ -30,10 +30,10 @@ unit testing projects in the codebase without a bunch of overhead.
 class CommonState
 {
 public:
-    static const SHORT s_csWindowWidth = 80;
-    static const SHORT s_csWindowHeight = 80;
-    static const SHORT s_csBufferWidth = 80;
-    static const SHORT s_csBufferHeight = 300;
+    static const til::CoordType s_csWindowWidth = 80;
+    static const til::CoordType s_csWindowHeight = 80;
+    static const til::CoordType s_csBufferWidth = 80;
+    static const til::CoordType s_csBufferHeight = 300;
 
     CommonState() :
         m_heap(GetProcessHeap()),
@@ -66,9 +66,9 @@ public:
 
     void PrepareGlobalFont()
     {
-        COORD coordFontSize;
-        coordFontSize.X = 8;
-        coordFontSize.Y = 12;
+        til::size coordFontSize;
+        coordFontSize.width = 8;
+        coordFontSize.height = 12;
         m_pFontInfo = new FontInfo(L"Consolas", 0, 0, coordFontSize, 0);
     }
 
@@ -80,19 +80,19 @@ public:
         }
     }
 
-    void PrepareGlobalScreenBuffer(const short viewWidth = s_csWindowWidth,
-                                   const short viewHeight = s_csWindowHeight,
-                                   const short bufferWidth = s_csBufferWidth,
-                                   const short bufferHeight = s_csBufferHeight)
+    void PrepareGlobalScreenBuffer(const til::CoordType viewWidth = s_csWindowWidth,
+                                   const til::CoordType viewHeight = s_csWindowHeight,
+                                   const til::CoordType bufferWidth = s_csBufferWidth,
+                                   const til::CoordType bufferHeight = s_csBufferHeight)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        COORD coordWindowSize;
-        coordWindowSize.X = viewWidth;
-        coordWindowSize.Y = viewHeight;
+        til::size coordWindowSize;
+        coordWindowSize.width = viewWidth;
+        coordWindowSize.height = viewHeight;
 
-        COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        til::size coordScreenBufferSize;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -146,13 +146,13 @@ public:
     }
 
     void PrepareNewTextBufferInfo(const bool useDefaultAttributes = false,
-                                  const short bufferWidth = s_csBufferWidth,
-                                  const short bufferHeight = s_csBufferHeight)
+                                  const til::CoordType bufferWidth = s_csBufferWidth,
+                                  const til::CoordType bufferHeight = s_csBufferHeight)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        til::size coordScreenBufferSize;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -194,13 +194,13 @@ public:
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some assorted text that doesn't consume the whole row
-        const SHORT cRowsToFill = 4;
+        const til::CoordType cRowsToFill = 4;
 
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-        for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
+        for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
             ROW& row = textBuffer.GetRowByOffset(iRow);
             FillRow(&row);
@@ -213,13 +213,13 @@ public:
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some text that fills the whole row and has bisecting double byte characters
-        const SHORT cRowsToFill = s_csBufferHeight;
+        const auto cRowsToFill = s_csBufferHeight;
 
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-        for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
+        for (auto iRow = 0; iRow < cRowsToFill; iRow++)
         {
             ROW& row = textBuffer.GetRowByOffset(iRow);
             FillBisect(&row);

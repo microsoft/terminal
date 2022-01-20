@@ -41,7 +41,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
     }
 
     // UIA event notification
-    static COORD previousCursorLocation = { 0, 0 };
+    static til::point previousCursorLocation;
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
 
     if (pWindow != nullptr)
@@ -53,7 +53,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
 
         const auto& screenInfo = gci.GetActiveOutputBuffer();
         const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
-        const COORD currentCursorPosition = cursor.GetPosition();
+        const auto currentCursorPosition = cursor.GetPosition();
         if (currentCursorPosition != previousCursorLocation)
         {
             LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));

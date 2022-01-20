@@ -133,7 +133,7 @@ bool ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BU
 // - position - new cursor position to set like the public API call.
 // Return Value:
 // - true if successful (see DoSrvSetConsoleCursorPosition). false otherwise.
-bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
+bool ConhostInternalGetSet::SetConsoleCursorPosition(const til::point position)
 {
     auto& info = _io.GetActiveOutputBuffer();
     const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
@@ -187,7 +187,7 @@ bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition l
 // - endRow: The row number following the last line to be modified
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow)
+bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.ResetLineRenditionRange(startRow, endRow);
@@ -201,7 +201,7 @@ bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow
 // - row: The row number of the line to measure
 // Return Value:
 // - the number of cells that will fit on the line
-SHORT ConhostInternalGetSet::PrivateGetLineWidth(const size_t row) const
+til::CoordType ConhostInternalGetSet::PrivateGetLineWidth(const til::CoordType row) const
 {
     const auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     return textBuffer.GetLineWidth(row);
@@ -233,7 +233,7 @@ bool ConhostInternalGetSet::PrivateWriteConsoleInputW(std::deque<std::unique_ptr
 // - window - Info about how to move the viewport
 // Return Value:
 // - true if successful (see DoSrvSetConsoleWindowInfo). false otherwise.
-bool ConhostInternalGetSet::SetConsoleWindowInfo(const bool absolute, const SMALL_RECT& window)
+bool ConhostInternalGetSet::SetConsoleWindowInfo(const bool absolute, const til::inclusive_rect window)
 {
     return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
 }
@@ -372,7 +372,7 @@ bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 // - scrollMargins - The bounds of the region to be the scrolling region of the viewport.
 // Return Value:
 // - true if successful (see DoSrvPrivateSetScrollingRegion). false otherwise.
-bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins)
+bool ConhostInternalGetSet::PrivateSetScrollingRegion(const til::inclusive_rect scrollMargins)
 {
     return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_io.GetActiveOutputBuffer(), scrollMargins));
 }
@@ -575,13 +575,13 @@ bool ConhostInternalGetSet::IsConsolePty() const
     return isPty;
 }
 
-bool ConhostInternalGetSet::DeleteLines(const size_t count)
+bool ConhostInternalGetSet::DeleteLines(const til::CoordType count)
 {
     DoSrvPrivateDeleteLines(count);
     return true;
 }
 
-bool ConhostInternalGetSet::InsertLines(const size_t count)
+bool ConhostInternalGetSet::InsertLines(const til::CoordType count)
 {
     DoSrvPrivateInsertLines(count);
     return true;
@@ -675,7 +675,7 @@ void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const siz
 //                       If false, fill with the default attributes.
 // Return value:
 // - true if successful (see DoSrvPrivateScrollRegion). false otherwise.
-bool ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
+bool ConhostInternalGetSet::PrivateFillRegion(const til::point startPosition,
                                               const size_t fillLength,
                                               const wchar_t fillChar,
                                               const bool standardFillAttrs) noexcept
@@ -700,9 +700,9 @@ bool ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
 //                       If false, fill with the default attributes.
 // Return value:
 // - true if successful (see DoSrvPrivateScrollRegion). false otherwise.
-bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
-                                                const std::optional<SMALL_RECT> clipRect,
-                                                const COORD destinationOrigin,
+bool ConhostInternalGetSet::PrivateScrollRegion(const til::inclusive_rect scrollRect,
+                                                const std::optional<til::inclusive_rect> clipRect,
+                                                const til::point destinationOrigin,
                                                 const bool standardFillAttrs) noexcept
 {
     return SUCCEEDED(DoSrvPrivateScrollRegion(_io.GetActiveOutputBuffer(),
@@ -753,7 +753,7 @@ bool ConhostInternalGetSet::PrivateEndHyperlink() const
 // Return Value:
 // - true if successful (see DoSrvUpdateSoftFont). false otherwise.
 bool ConhostInternalGetSet::PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                                  const SIZE cellSize,
+                                                  const til::size cellSize,
                                                   const size_t centeringHint) noexcept
 {
     return SUCCEEDED(DoSrvUpdateSoftFont(bitPattern, cellSize, centeringHint));

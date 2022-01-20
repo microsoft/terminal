@@ -63,7 +63,7 @@ static bool _HandleIsValid(HANDLE h) noexcept
 }
 
 HRESULT _CreatePseudoConsole(const HANDLE hToken,
-                             const COORD size,
+                             const til::point size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
                              const DWORD dwFlags,
@@ -215,7 +215,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the resize message to the pty.
-HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size)
+HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const til::point size)
 {
     if (pPty == nullptr || size.X < 0 || size.Y < 0)
     {
@@ -224,8 +224,8 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 
     unsigned short signalPacket[3];
     signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;
-    signalPacket[1] = size.X;
-    signalPacket[2] = size.Y;
+    signalPacket[1] = base::saturated_cast<unsigned short>(size.X);
+    signalPacket[2] = base::saturated_cast<unsigned short>(size.Y);
 
     const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
@@ -348,7 +348,7 @@ VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
 //      does. Most *nix terminals and the Windows Console (after Windows 10
 //      Anniversary Update) will be able to handle such a message.
 
-extern "C" HRESULT WINAPI ConptyCreatePseudoConsole(_In_ COORD size,
+extern "C" HRESULT WINAPI ConptyCreatePseudoConsole(_In_ til::point size,
                                                     _In_ HANDLE hInput,
                                                     _In_ HANDLE hOutput,
                                                     _In_ DWORD dwFlags,
@@ -358,7 +358,7 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsole(_In_ COORD size,
 }
 
 extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
-                                                   _In_ COORD size,
+                                                   _In_ til::point size,
                                                    _In_ HANDLE hInput,
                                                    _In_ HANDLE hOutput,
                                                    _In_ DWORD dwFlags,
@@ -395,7 +395,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 
 // Function Description:
 // Resizes the given conpty to the specified size, in characters.
-extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
+extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ const til::point size)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;
     HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;

@@ -100,10 +100,10 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
         cursor.SetHasMoved(false);
 
         RECT rc;
-        rc.left = (position.X - viewport.Left()) * fontSize.X;
-        rc.top = (position.Y - viewport.Top()) * fontSize.Y;
-        rc.right = rc.left + fontSize.X;
-        rc.bottom = rc.top + fontSize.Y;
+        rc.left = (position.X - viewport.Left()) * fontSize.width;
+        rc.top = (position.Y - viewport.Top()) * fontSize.height;
+        rc.right = rc.left + fontSize.width;
+        rc.bottom = rc.top + fontSize.height;
 
         pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
 

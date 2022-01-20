@@ -18,7 +18,7 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-using PointTree = interval_tree::IntervalTree<til::point, size_t>;
+using PointTree = interval_tree::IntervalTree<til::point, til::CoordType>;
 
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
@@ -77,12 +77,12 @@ Terminal::Terminal() :
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
 
-void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
+void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, IRenderTarget& renderTarget)
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const COORD bufferSize{ viewportSize.X,
-                            Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const til::size bufferSize{ viewportSize.width,
+                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
@@ -96,8 +96,8 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(ICoreSettings settings,
                                   IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
-                              Utils::ClampToShortMax(settings.InitialRows(), 1) };
+    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
+                                  Utils::ClampToShortMax(settings.InitialRows(), 1) };
 
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
@@ -229,7 +229,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-[[nodiscard]] HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
+[[nodiscard]] HRESULT Terminal::UserResize(const til::size viewportSize) noexcept
 {
     const auto oldDimensions = _mutableViewport.Dimensions();
     if (viewportSize == oldDimensions)
@@ -237,15 +237,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         return S_FALSE;
     }
 
-    const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
-    const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
+    const auto dx = ::base::ClampSub(viewportSize.width, oldDimensions.width);
+    const auto newBufferHeight = ::base::ClampAdd(viewportSize.height, _scrollbackLines);
 
-    COORD bufferSize{ viewportSize.X, newBufferHeight };
+    til::size bufferSize{ viewportSize.width, newBufferHeight };
 
     // This will be used to determine where the viewport should be in the new buffer.
-    const short oldViewportTop = _mutableViewport.Top();
-    short newViewportTop = oldViewportTop;
-    short newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
+    const auto oldViewportTop = _mutableViewport.Top();
+    auto newViewportTop = oldViewportTop;
+    auto newVisibleTop = _VisibleStartIndex();
 
     // If the original buffer had _no_ scroll offset, then we should be at the
     // bottom in the new buffer as well. Track that case now.
@@ -287,7 +287,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         oldRows.mutableViewportTop = oldViewportTop;
         oldRows.visibleViewportTop = newVisibleTop;
 
-        const std::optional<short> oldViewStart{ oldViewportTop };
         RETURN_IF_FAILED(TextBuffer::Reflow(*_buffer.get(),
                                             *newTextBuffer.get(),
                                             _mutableViewport,
@@ -328,10 +327,10 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // * Where the bottom of the text in the new buffer is (and using that to
     //   calculate another proposed top location).
 
-    const COORD newCursorPos = newTextBuffer->GetCursor().GetPosition();
+    const auto newCursorPos = newTextBuffer->GetCursor().GetPosition();
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
-    COORD newLastChar = newCursorPos;
+    auto newLastChar = newCursorPos;
     try
     {
         newLastChar = newTextBuffer->GetLastNonSpaceCharacter();
@@ -341,11 +340,11 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
-    const short proposedTopFromLastLine = ::base::ClampAdd(::base::ClampSub(maxRow, viewportSize.Y), 1);
-    const short proposedTopFromScrollback = newViewportTop;
+    const til::CoordType proposedTopFromLastLine = ::base::ClampAdd(::base::ClampSub(maxRow, viewportSize.height), 1);
+    const auto proposedTopFromScrollback = newViewportTop;
 
-    short proposedTop = std::max(proposedTopFromLastLine,
-                                 proposedTopFromScrollback);
+    auto proposedTop = std::max(proposedTopFromLastLine,
+                                proposedTopFromScrollback);
 
     // If we're using the new location of the old top line to place the
     // viewport, we might need to make an adjustment to it.
@@ -391,15 +390,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     // Make sure the proposed viewport is within the bounds of the buffer.
     // First make sure the top is >=0
-    proposedTop = std::max(static_cast<short>(0), proposedTop);
+    proposedTop = std::max(0, proposedTop);
 
     // If the new bottom would be below the bottom of the buffer, then slide the
     // top up so that we'll still fit within the buffer.
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
-    if (proposedBottom > bufferSize.Y)
+    if (proposedBottom > bufferSize.height)
     {
-        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.Y));
+        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.height));
     }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
@@ -410,7 +409,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // Make sure that we don't scroll past the mutableViewport at the bottom of the buffer
     newVisibleTop = std::min(newVisibleTop, _mutableViewport.Top());
     // Make sure we don't scroll past the top of the scrollback
-    newVisibleTop = std::max<short>(newVisibleTop, 0);
+    newVisibleTop = std::max(newVisibleTop, 0);
 
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
@@ -485,7 +484,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // - Given a coord, get the URI at that location
 // Arguments:
 // - The position
-std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
+std::wstring Terminal::GetHyperlinkAtPosition(const til::point position)
 {
     auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
     if (attr.IsHyperlink())
@@ -501,8 +500,8 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         const auto end = result->stop;
         std::wstring uri;
 
-        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start.to_win32_coord()));
-        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end.to_win32_coord()));
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
         for (auto iter = startIter; iter != endIter; ++iter)
         {
             uri += iter->Chars();
@@ -518,7 +517,7 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 // - The position of the text
 // Return value:
 // - The hyperlink ID
-uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
+uint16_t Terminal::GetHyperlinkIdAtPosition(const til::point position)
 {
     return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
 }
@@ -529,9 +528,9 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 // - The position
 // Return value:
 // - The interval representing the start and end coordinates
-std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const til::point position)
 {
-    const auto results = _patternIntervalTree.findOverlapping(til::point{ position.X + 1, position.Y }, til::point{ position });
+    const auto results = _patternIntervalTree.findOverlapping(til::point{ position.X + 1, position.Y }, position);
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -646,7 +645,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const TerminalInput::MouseButtonState state)
+bool Terminal::SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const TerminalInput::MouseButtonState state)
 {
     // GH#6401: VT applications should be able to receive mouse events from outside the
     // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
@@ -697,12 +696,12 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 // - Invalidates the regions described in the given pattern tree for the rendering purposes
 // Arguments:
 // - The interval tree containing regions that need to be invalidated
-void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree)
+void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, til::CoordType>& tree)
 {
     const auto vis = _VisibleStartIndex();
     auto invalidate = [=](const PointTree::interval& interval) {
-        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x), gsl::narrow<SHORT>(interval.start.y + vis) };
-        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x), gsl::narrow<SHORT>(interval.stop.y + vis) };
+        til::point startCoord{ interval.start.X, interval.start.Y + vis };
+        til::point endCoord{ interval.stop.X, interval.stop.Y + vis };
         _InvalidateFromCoords(startCoord, endCoord);
     };
     tree.visit_all(invalidate);
@@ -712,30 +711,30 @@ void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, si
 // - Given start and end coords, invalidates all the regions between them
 // Arguments:
 // - The start and end coords
-void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
+void Terminal::_InvalidateFromCoords(const til::point start, const til::point end)
 {
     if (start.Y == end.Y)
     {
-        SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
+        til::inclusive_rect region{ start.X, start.Y, end.X, end.Y };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
     }
     else
     {
-        const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
+        const auto rowSize = _buffer->GetRowByOffset(0).size();
 
         // invalidate the first line
-        SMALL_RECT region{ start.X, start.Y, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(start.Y) };
+        til::inclusive_rect region{ start.X, start.Y, rowSize - 1, start.Y };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
 
         if ((end.Y - start.Y) > 1)
         {
             // invalidate the lines in between the first and last line
-            region = SMALL_RECT{ 0, start.Y + 1, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(end.Y - 1) };
+            region = til::inclusive_rect{ 0, start.Y + 1, rowSize - 1, end.Y - 1 };
             _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
-        region = SMALL_RECT{ 0, end.Y, end.X, end.Y };
+        region = til::inclusive_rect{ 0, end.Y, end.X, end.Y };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
@@ -885,36 +884,36 @@ Viewport Terminal::_GetMutableViewport() const noexcept
     return _mutableViewport;
 }
 
-short Terminal::GetBufferHeight() const noexcept
+til::CoordType Terminal::GetBufferHeight() const noexcept
 {
     return _mutableViewport.BottomExclusive();
 }
 
 // ViewStartIndex is also the length of the scrollback
-int Terminal::ViewStartIndex() const noexcept
+til::CoordType Terminal::ViewStartIndex() const noexcept
 {
     return _mutableViewport.Top();
 }
 
-int Terminal::ViewEndIndex() const noexcept
+til::CoordType Terminal::ViewEndIndex() const noexcept
 {
     return _mutableViewport.BottomInclusive();
 }
 
 // _VisibleStartIndex is the first visible line of the buffer
-int Terminal::_VisibleStartIndex() const noexcept
+til::CoordType Terminal::_VisibleStartIndex() const noexcept
 {
     return std::max(0, ViewStartIndex() - _scrollOffset);
 }
 
-int Terminal::_VisibleEndIndex() const noexcept
+til::CoordType Terminal::_VisibleEndIndex() const noexcept
 {
     return std::max(0, ViewEndIndex() - _scrollOffset);
 }
 
 Viewport Terminal::_GetVisibleViewport() const noexcept
 {
-    const COORD origin{ 0, gsl::narrow<short>(_VisibleStartIndex()) };
+    const til::point origin{ 0, _VisibleStartIndex() };
     return Viewport::FromDimensions(origin,
                                     _mutableViewport.Dimensions());
 }
@@ -938,8 +937,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     for (size_t i = 0; i < stringView.size(); i++)
     {
         const auto wch = stringView.at(i);
-        const COORD cursorPosBefore = cursor.GetPosition();
-        COORD proposedCursorPosition = cursorPosBefore;
+        const auto cursorPosBefore = cursor.GetPosition();
+        auto proposedCursorPosition = cursorPosBefore;
 
         // TODO: MSFT 21006766
         // This is not great but I need it demoable. Fix by making a buffer stream writer.
@@ -957,7 +956,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             // If "wch" was a surrogate character, we just consumed 2 code units above.
             // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
-            proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
+            proposedCursorPosition.X += cellDistance;
             i += inputDistance - 1;
         }
         else
@@ -991,7 +990,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     cursor.EndDeferDrawing();
 }
 
-void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
+void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
 {
 #pragma warning(suppress : 26496) // cpp core checks wants this const but it's modified below.
     auto proposedCursorPosition = proposedPosition;
@@ -1000,7 +999,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
-    SHORT rowsPushedOffTopOfBuffer = 0;
+    auto rowsPushedOffTopOfBuffer = 0;
     const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (proposedCursorPosition.Y >= bufferSize.Height())
     {
@@ -1051,7 +1050,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
         {
-            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
+            _mutableViewport = Viewport::FromDimensions({ 0, newViewTop },
                                                         _mutableViewport.Dimensions());
             updatedViewport = true;
         }
@@ -1090,7 +1089,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        COORD delta{ 0, gsl::narrow_cast<short>(-rowsPushedOffTopOfBuffer) };
+        til::point delta{ 0, -rowsPushedOffTopOfBuffer };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 

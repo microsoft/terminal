@@ -36,7 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual ~ConGetSet() = default;
         virtual bool GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
         virtual bool SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) = 0;
-        virtual bool SetConsoleCursorPosition(const COORD position) = 0;
+        virtual bool SetConsoleCursorPosition(const til::point position) = 0;
 
         virtual bool PrivateIsVtInputEnabled() const = 0;
 
@@ -44,13 +44,13 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateSetTextAttributes(const TextAttribute& attrs) = 0;
 
         virtual bool PrivateSetCurrentLineRendition(const LineRendition lineRendition) = 0;
-        virtual bool PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow) = 0;
-        virtual SHORT PrivateGetLineWidth(const size_t row) const = 0;
+        virtual bool PrivateResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow) = 0;
+        virtual til::CoordType PrivateGetLineWidth(const til::CoordType row) const = 0;
 
         virtual bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                                size_t& eventsWritten) = 0;
         virtual bool SetConsoleWindowInfo(const bool absolute,
-                                          const SMALL_RECT& window) = 0;
+                                          const til::inclusive_rect window) = 0;
 
         virtual bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) = 0;
         virtual bool SetParserMode(const StateMachine::Mode mode, const bool enabled) = 0;
@@ -62,7 +62,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateShowCursor(const bool show) = 0;
         virtual bool PrivateAllowCursorBlinking(const bool enable) = 0;
 
-        virtual bool PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins) = 0;
+        virtual bool PrivateSetScrollingRegion(const til::inclusive_rect scrollMargins) = 0;
         virtual bool PrivateWarningBell() = 0;
         virtual bool PrivateGetLineFeedMode() const = 0;
         virtual bool PrivateLineFeed(const bool withReturn) = 0;
@@ -84,8 +84,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateSuppressResizeRepaint() = 0;
         virtual bool IsConsolePty() const = 0;
 
-        virtual bool DeleteLines(const size_t count) = 0;
-        virtual bool InsertLines(const size_t count) = 0;
+        virtual bool DeleteLines(const til::CoordType count) = 0;
+        virtual bool InsertLines(const til::CoordType count) = 0;
 
         virtual bool MoveToBottom() const = 0;
 
@@ -93,21 +93,21 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) = 0;
         virtual void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) = 0;
 
-        virtual bool PrivateFillRegion(const COORD startPosition,
+        virtual bool PrivateFillRegion(const til::point startPosition,
                                        const size_t fillLength,
                                        const wchar_t fillChar,
                                        const bool standardFillAttrs) = 0;
 
-        virtual bool PrivateScrollRegion(const SMALL_RECT scrollRect,
-                                         const std::optional<SMALL_RECT> clipRect,
-                                         const COORD destinationOrigin,
+        virtual bool PrivateScrollRegion(const til::inclusive_rect scrollRect,
+                                         const std::optional<til::inclusive_rect> clipRect,
+                                         const til::point destinationOrigin,
                                          const bool standardFillAttrs) = 0;
 
         virtual bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const = 0;
         virtual bool PrivateEndHyperlink() const = 0;
 
         virtual bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                           const SIZE cellSize,
+                                           const til::size cellSize,
                                            const size_t centeringHint) = 0;
     };
 }

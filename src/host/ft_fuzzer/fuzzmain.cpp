@@ -132,7 +132,7 @@ extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data,
     auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
 
     const auto u16String{ til::u8u16(std::string_view{ reinterpret_cast<const char*>(data), size }) };
-    SHORT scrollY{};
+    til::CoordType scrollY{};
     size_t sizeInBytes{ u16String.size() * 2 };
     gci.LockConsole();
     auto u = wil::scope_exit([&]() { gci.UnlockConsole(); });

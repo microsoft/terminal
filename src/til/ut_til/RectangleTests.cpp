@@ -107,7 +107,7 @@ class RectangleTests
 
     TEST_METHOD(SmallRectConstruct)
     {
-        SMALL_RECT sr;
+        til::inclusive_rect sr;
         sr.Left = 5;
         sr.Top = 10;
         sr.Right = 14;
@@ -968,7 +968,7 @@ class RectangleTests
         Log::Comment(L"Typical situation.");
         {
             const til::rect rc{ 5, 10, 15, 20 };
-            const auto val = rc.to_small_rect();
+            const auto val = rc.to_inclusive_rect();
             VERIFY_ARE_EQUAL(5, val.Left);
             VERIFY_ARE_EQUAL(10, val.Top);
             VERIFY_ARE_EQUAL(14, val.Right);
@@ -984,7 +984,7 @@ class RectangleTests
             const til::rect rc{ l, t, r, b };
 
             auto fn = [&]() {
-                const auto val = rc.to_small_rect();
+                const auto val = rc.to_inclusive_rect();
             };
 
             VERIFY_THROWS(fn(), gsl::narrowing_error);
@@ -999,7 +999,7 @@ class RectangleTests
             const til::rect rc{ l, t, r, b };
 
             auto fn = [&]() {
-                const auto val = rc.to_small_rect();
+                const auto val = rc.to_inclusive_rect();
             };
 
             VERIFY_THROWS(fn(), gsl::narrowing_error);
@@ -1014,7 +1014,7 @@ class RectangleTests
             const til::rect rc{ l, t, r, b };
 
             auto fn = [&]() {
-                const auto val = rc.to_small_rect();
+                const auto val = rc.to_inclusive_rect();
             };
 
             VERIFY_THROWS(fn(), gsl::narrowing_error);
@@ -1029,7 +1029,7 @@ class RectangleTests
             const til::rect rc{ l, t, r, b };
 
             auto fn = [&]() {
-                const auto val = rc.to_small_rect();
+                const auto val = rc.to_inclusive_rect();
             };
 
             VERIFY_THROWS(fn(), gsl::narrowing_error);

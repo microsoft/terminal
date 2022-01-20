@@ -330,9 +330,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         VERIFY_ARE_EQUAL(mach._parameters.size(), 4u);
         VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324);
         VERIFY_IS_FALSE(mach._parameters.at(2).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8);
     }
 
     TEST_METHOD(TestCsiMaxParamCount)
@@ -390,7 +390,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         }
-        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345u);
+        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345);
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -568,7 +568,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -598,7 +598,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -781,9 +781,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         VERIFY_ARE_EQUAL(mach._parameters.size(), 4u);
         VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324);
         VERIFY_IS_FALSE(mach._parameters.at(2).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8);
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'\\');
@@ -1072,77 +1072,77 @@ public:
         *this = dispatch;
     }
 
-    bool CursorUp(_In_ size_t const uiDistance) noexcept override
+    bool CursorUp(_In_ til::CoordType const uiDistance) noexcept override
     {
         _cursorUp = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorDown(_In_ size_t const uiDistance) noexcept override
+    bool CursorDown(_In_ til::CoordType const uiDistance) noexcept override
     {
         _cursorDown = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorBackward(_In_ size_t const uiDistance) noexcept override
+    bool CursorBackward(_In_ til::CoordType const uiDistance) noexcept override
     {
         _cursorBackward = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorForward(_In_ size_t const uiDistance) noexcept override
+    bool CursorForward(_In_ til::CoordType const uiDistance) noexcept override
     {
         _cursorForward = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorNextLine(_In_ size_t const uiDistance) noexcept override
+    bool CursorNextLine(_In_ til::CoordType const uiDistance) noexcept override
     {
         _cursorNextLine = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorPrevLine(_In_ size_t const uiDistance) noexcept override
+    bool CursorPrevLine(_In_ til::CoordType const uiDistance) noexcept override
     {
         _cursorPreviousLine = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorHorizontalPositionAbsolute(_In_ size_t const uiPosition) noexcept override
+    bool CursorHorizontalPositionAbsolute(_In_ til::CoordType const uiPosition) noexcept override
     {
         _cursorHorizontalPositionAbsolute = true;
         _cursorDistance = uiPosition;
         return true;
     }
 
-    bool VerticalLinePositionAbsolute(_In_ size_t const uiPosition) noexcept override
+    bool VerticalLinePositionAbsolute(_In_ til::CoordType const uiPosition) noexcept override
     {
         _verticalLinePositionAbsolute = true;
         _cursorDistance = uiPosition;
         return true;
     }
 
-    bool HorizontalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    bool HorizontalPositionRelative(_In_ til::CoordType const uiDistance) noexcept override
     {
         _horizontalPositionRelative = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool VerticalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    bool VerticalPositionRelative(_In_ til::CoordType const uiDistance) noexcept override
     {
         _verticalPositionRelative = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorPosition(_In_ size_t const uiLine, _In_ size_t const uiColumn) noexcept override
+    bool CursorPosition(_In_ til::CoordType const uiLine, _In_ til::CoordType const uiColumn) noexcept override
     {
         _cursorPosition = true;
         _line = uiLine;
@@ -1178,14 +1178,14 @@ public:
         return true;
     }
 
-    bool InsertCharacter(_In_ size_t const uiCount) noexcept override
+    bool InsertCharacter(_In_ til::CoordType const uiCount) noexcept override
     {
         _insertCharacter = true;
         _cursorDistance = uiCount;
         return true;
     }
 
-    bool DeleteCharacter(_In_ size_t const uiCount) noexcept override
+    bool DeleteCharacter(_In_ til::CoordType const uiCount) noexcept override
     {
         _deleteCharacter = true;
         _cursorDistance = uiCount;
@@ -1316,7 +1316,7 @@ public:
         return _ModeParamsHelper(param, false);
     }
 
-    bool SetColumns(_In_ size_t const uiColumns) noexcept override
+    bool SetColumns(_In_ til::CoordType const uiColumns) noexcept override
     {
         _windowWidth = uiColumns;
         return true;
@@ -1395,7 +1395,7 @@ public:
         return true;
     }
 
-    bool ForwardTab(const size_t numTabs) noexcept override
+    bool ForwardTab(const til::CoordType numTabs) noexcept override
     {
         _forwardTab = true;
         _numTabs = numTabs;

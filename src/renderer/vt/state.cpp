@@ -16,7 +16,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
-const COORD VtEngine::INVALID_COORDS = { -1, -1 };
+const til::point VtEngine::INVALID_COORDS = { -1, -1 };
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -211,7 +211,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateViewport(const til::inclusive_rect srNewViewport) noexcept
 {
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
@@ -289,9 +289,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - pFontSize - receives the current X by Y size of the font.
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ til::size* const pFontSize) noexcept
 {
-    *pFontSize = COORD({ 1, 1 });
+    *pFontSize = til::size{ 1, 1 };
     return S_FALSE;
 }
 
@@ -349,7 +349,7 @@ bool VtEngine::_AllIsInvalid() const
 // - coordCursor: The cursor position to inherit from.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
+[[nodiscard]] HRESULT VtEngine::InheritCursor(const til::point coordCursor) noexcept
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;

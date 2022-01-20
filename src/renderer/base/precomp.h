@@ -22,7 +22,6 @@ Abstract:
 #include <wincon.h>
 
 #include "../../types/inc/viewport.hpp"
-#include "../../inc/operators.hpp"
 
 #ifndef _NTSTATUS_DEFINED
 #define _NTSTATUS_DEFINED

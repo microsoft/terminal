@@ -34,22 +34,14 @@ void TerminalDispatch::PrintString(const std::wstring_view string) noexcept
     _terminalApi.PrintString(string);
 }
 
-bool TerminalDispatch::CursorPosition(const size_t line,
-                                      const size_t column) noexcept
-try
+bool TerminalDispatch::CursorPosition(VTInt line,
+                                      VTInt column) noexcept
 {
-    SHORT x{ 0 };
-    SHORT y{ 0 };
+    RETURN_BOOL_IF_FALSE(SUCCEEDED(IntSub(line, 1, &line)) &&
+                         SUCCEEDED(IntSub(column, 1, &column)));
 
-    RETURN_BOOL_IF_FALSE(SUCCEEDED(SizeTToShort(column, &x)) &&
-                         SUCCEEDED(SizeTToShort(line, &y)));
-
-    RETURN_BOOL_IF_FALSE(SUCCEEDED(ShortSub(x, 1, &x)) &&
-                         SUCCEEDED(ShortSub(y, 1, &y)));
-
-    return _terminalApi.SetCursorPosition(x, y);
+    return _terminalApi.SetCursorPosition({ column, line });
 }
-CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::CursorVisibility(const bool isVisible) noexcept
 {
@@ -61,30 +53,30 @@ bool TerminalDispatch::EnableCursorBlinking(const bool enable) noexcept
     return _terminalApi.EnableCursorBlinking(enable);
 }
 
-bool TerminalDispatch::CursorForward(const size_t distance) noexcept
+bool TerminalDispatch::CursorForward(const VTInt distance) noexcept
 try
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    const COORD newCursorPos{ cursorPos.X + gsl::narrow<short>(distance), cursorPos.Y };
-    return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+    const til::point newCursorPos{ cursorPos.X + distance, cursorPos.Y };
+    return _terminalApi.SetCursorPosition(newCursorPos);
 }
 CATCH_LOG_RETURN_FALSE()
 
-bool TerminalDispatch::CursorBackward(const size_t distance) noexcept
+bool TerminalDispatch::CursorBackward(const VTInt distance) noexcept
 try
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    const COORD newCursorPos{ cursorPos.X - gsl::narrow<short>(distance), cursorPos.Y };
-    return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+    const til::point newCursorPos{ cursorPos.X - distance, cursorPos.Y };
+    return _terminalApi.SetCursorPosition(newCursorPos);
 }
 CATCH_LOG_RETURN_FALSE()
 
-bool TerminalDispatch::CursorUp(const size_t distance) noexcept
+bool TerminalDispatch::CursorUp(const VTInt distance) noexcept
 try
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    const COORD newCursorPos{ cursorPos.X, cursorPos.Y + gsl::narrow<short>(distance) };
-    return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+    const til::point newCursorPos{ cursorPos.X, cursorPos.Y + distance };
+    return _terminalApi.SetCursorPosition(newCursorPos);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -106,7 +98,7 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
-bool TerminalDispatch::EraseCharacters(const size_t numChars) noexcept
+bool TerminalDispatch::EraseCharacters(const VTInt numChars) noexcept
 try
 {
     return _terminalApi.EraseCharacters(numChars);
@@ -124,7 +116,7 @@ bool TerminalDispatch::CarriageReturn() noexcept
 try
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    return _terminalApi.SetCursorPosition(0, cursorPos.Y);
+    return _terminalApi.SetCursorPosition({ 0, cursorPos.Y });
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -137,7 +129,7 @@ CATCH_LOG_RETURN_FALSE()
 
 bool TerminalDispatch::HorizontalTabSet() noexcept
 {
-    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().width;
     const auto column = _terminalApi.GetCursorPosition().X;
 
     _InitTabStopsForWidth(width);
@@ -145,13 +137,13 @@ bool TerminalDispatch::HorizontalTabSet() noexcept
     return true;
 }
 
-bool TerminalDispatch::ForwardTab(const size_t numTabs) noexcept
+bool TerminalDispatch::ForwardTab(const VTInt numTabs) noexcept
 {
-    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().width;
     const auto cursorPosition = _terminalApi.GetCursorPosition();
     auto column = cursorPosition.X;
     const auto row = cursorPosition.Y;
-    auto tabsPerformed = 0u;
+    VTInt tabsPerformed = 0;
     _InitTabStopsForWidth(width);
     while (column + 1 < width && tabsPerformed < numTabs)
     {
@@ -162,16 +154,16 @@ bool TerminalDispatch::ForwardTab(const size_t numTabs) noexcept
         }
     }
 
-    return _terminalApi.SetCursorPosition(column, row);
+    return _terminalApi.SetCursorPosition({ column, row });
 }
 
-bool TerminalDispatch::BackwardsTab(const size_t numTabs) noexcept
+bool TerminalDispatch::BackwardsTab(const VTInt numTabs) noexcept
 {
-    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().width;
     const auto cursorPosition = _terminalApi.GetCursorPosition();
     auto column = cursorPosition.X;
     const auto row = cursorPosition.Y;
-    auto tabsPerformed = 0u;
+    VTInt tabsPerformed = 0;
     _InitTabStopsForWidth(width);
     while (column > 0 && tabsPerformed < numTabs)
     {
@@ -182,7 +174,7 @@ bool TerminalDispatch::BackwardsTab(const size_t numTabs) noexcept
         }
     }
 
-    return _terminalApi.SetCursorPosition(column, row);
+    return _terminalApi.SetCursorPosition({ column, row });
 }
 
 bool TerminalDispatch::TabClear(const DispatchTypes::TabClearType clearType) noexcept
@@ -286,7 +278,7 @@ CATCH_LOG_RETURN_FALSE()
 // - count, the number of characters to delete
 // Return Value:
 // True if handled successfully. False otherwise.
-bool TerminalDispatch::DeleteCharacter(const size_t count) noexcept
+bool TerminalDispatch::DeleteCharacter(const VTInt count) noexcept
 try
 {
     return _terminalApi.DeleteCharacter(count);
@@ -299,7 +291,7 @@ CATCH_LOG_RETURN_FALSE()
 // - count, the number of spaces to add
 // Return Value:
 // True if handled successfully, false otherwise
-bool TerminalDispatch::InsertCharacter(const size_t count) noexcept
+bool TerminalDispatch::InsertCharacter(const VTInt count) noexcept
 try
 {
     return _terminalApi.InsertCharacter(count);
@@ -623,7 +615,7 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
 
 bool TerminalDispatch::_ClearSingleTabStop() noexcept
 {
-    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto width = _terminalApi.GetBufferSize().Dimensions().width;
     const auto column = _terminalApi.GetCursorPosition().X;
 
     _InitTabStopsForWidth(width);

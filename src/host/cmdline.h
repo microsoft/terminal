@@ -88,7 +88,7 @@ public:
     void EndAllPopups();
 
     void DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept;
+    til::point DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept;
 
 protected:
     CommandLine();
@@ -104,17 +104,17 @@ protected:
     void _processHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection);
     void _setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData);
     void _setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData);
-    COORD _deletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorLeft(COOKED_READ_DATA& cookedReadData);
-    COORD _moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept;
+    til::point _deletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept;
+    til::point _moveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
+    til::point _moveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
+    til::point _moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexcept;
+    til::point _moveCursorLeft(COOKED_READ_DATA& cookedReadData);
+    til::point _moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept;
+    til::point _moveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept;
     void _insertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept;
     void _deleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexcept;
     void _fillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData);
+    til::point _cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData);
 
 #ifdef UNIT_TESTING
     friend class CommandLineTests;

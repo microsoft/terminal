@@ -23,7 +23,7 @@ class SCREEN_INFORMATION;
 void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept;
 void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable);
 
-[[nodiscard]] NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT& scrollMargins);
+[[nodiscard]] NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const til::inclusive_rect scrollMargins);
 [[nodiscard]] NTSTATUS DoSrvPrivateLineFeed(SCREEN_INFORMATION& screenInfo, const bool withReturn);
 [[nodiscard]] NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo);
 
@@ -43,7 +43,7 @@ void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
 void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                          const SIZE cellSize,
+                                          const til::size cellSize,
                                           const size_t centeringHint) noexcept;
 
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
@@ -55,19 +55,19 @@ void DoSrvGetConsoleOutputCodePage(unsigned int& codepage);
 
 void DoSrvIsConsolePty(bool& isPty);
 
-void DoSrvPrivateDeleteLines(const size_t count);
-void DoSrvPrivateInsertLines(const size_t count);
+void DoSrvPrivateDeleteLines(const til::CoordType count);
+void DoSrvPrivateInsertLines(const til::CoordType count);
 
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]] HRESULT DoSrvPrivateFillRegion(SCREEN_INFORMATION& screenInfo,
-                                             const COORD startPosition,
+                                             const til::point startPosition,
                                              const size_t fillLength,
                                              const wchar_t fillChar,
                                              const bool standardFillAttrs) noexcept;
 
 [[nodiscard]] HRESULT DoSrvPrivateScrollRegion(SCREEN_INFORMATION& screenInfo,
-                                               const SMALL_RECT scrollRect,
-                                               const std::optional<SMALL_RECT> clipRect,
-                                               const COORD destinationOrigin,
+                                               const til::inclusive_rect scrollRect,
+                                               const std::optional<til::inclusive_rect> clipRect,
+                                               const til::point destinationOrigin,
                                                const bool standardFillAttrs) noexcept;

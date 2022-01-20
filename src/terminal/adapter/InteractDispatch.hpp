@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                 const VTParameter parameter1,
                                 const VTParameter parameter2) override; // DTTERM_WindowManipulation
-        bool MoveCursor(const size_t row, const size_t col) override;
+        bool MoveCursor(const til::CoordType row, const til::CoordType col) override;
 
         bool IsVtInputEnabled() const override;
 

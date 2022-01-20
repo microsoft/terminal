@@ -95,7 +95,7 @@ class Microsoft::Console::Render::VtRendererTest
 
 Viewport VtRendererTest::SetUpViewport()
 {
-    SMALL_RECT view = {};
+    til::inclusive_rect view;
     view.Top = view.Left = 0;
     view.Bottom = 31;
     view.Right = 79;
@@ -230,7 +230,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating anything only invalidates that portion"));
-    SMALL_RECT invalid = { 1, 1, 2, 2 };
+    til::inclusive_rect invalid{ 1, 1, 2, 2 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
@@ -239,7 +239,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
-    COORD scrollDelta = { 0, 1 };
+    til::point scrollDelta{ 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
@@ -925,7 +925,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating anything only invalidates that portion"));
-    SMALL_RECT invalid = { 1, 1, 2, 2 };
+    til::inclusive_rect invalid{ 1, 1, 2, 2 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
@@ -934,7 +934,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
-    COORD scrollDelta = { 0, 1 };
+    til::point scrollDelta{ 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
@@ -1517,7 +1517,7 @@ void VtRendererTest::TestCursorVisibility()
     VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
     VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
 
-    COORD origin{ 0, 0 };
+    til::point origin{ 0, 0 };
 
     VERIFY_ARE_NOT_EQUAL(origin, engine->_lastText);
 

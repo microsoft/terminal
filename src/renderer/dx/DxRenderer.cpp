@@ -961,7 +961,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
+[[nodiscard]] HRESULT DxEngine::SetWindowSize(til::size Pixels) noexcept
 try
 {
     _sizeTarget = til::size{ Pixels };
@@ -1049,8 +1049,8 @@ HANDLE DxEngine::GetSwapChainHandle() noexcept
 void DxEngine::_InvalidateRectangle(const til::rect& rc)
 {
     const auto size = _invalidMap.size();
-    const auto topLeft = til::point{ 0, std::min(size.height, rc.top) };
-    const auto bottomRight = til::point{ size.width, std::min(size.height, rc.bottom) };
+    const til::point topLeft{ 0, std::min(size.height, rc.Top) };
+    const til::point bottomRight{ size.width, std::min(size.height, rc.Bottom) };
     _invalidMap.set(til::rect{ topLeft, bottomRight });
 }
 
@@ -1065,14 +1065,12 @@ bool DxEngine::_IsAllInvalid() const noexcept
 // - psrRegion - Character rectangle
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT DxEngine::Invalidate(const til::rect* const psrRegion) noexcept
 try
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
-
     if (!_allInvalid)
     {
-        _InvalidateRectangle(til::rect{ Viewport::FromExclusive(*psrRegion).ToInclusive() });
+        _InvalidateRectangle(*psrRegion);
     }
 
     return S_OK;
@@ -1085,7 +1083,7 @@ CATCH_RETURN()
 // - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 {
     return Invalidate(psrRegion);
 }
@@ -1096,16 +1094,14 @@ CATCH_RETURN()
 // - prcDirtyClient - pixel rectangle
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateSystem(const til::rect* const prcDirtyClient) noexcept
 try
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
-
     if (!_allInvalid)
     {
         // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
         // to cells.
-        _InvalidateRectangle(til::rect{ *prcDirtyClient }.scale_down(_fontRenderData->GlyphCell()));
+        _InvalidateRectangle(prcDirtyClient->scale_down(_fontRenderData->GlyphCell()));
     }
 
     return S_OK;
@@ -1118,7 +1114,7 @@ CATCH_RETURN();
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
 {
     if (!_allInvalid)
     {
@@ -1138,13 +1134,9 @@ CATCH_RETURN();
 //               - -Y is up, Y is down, -X is left, X is right.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateScroll(til::point deltaCells) noexcept
 try
 {
-    RETURN_HR_IF(E_INVALIDARG, !pcoordDelta);
-
-    const til::point deltaCells{ *pcoordDelta };
-
     if (!_allInvalid)
     {
         if (deltaCells != til::point{})
@@ -1667,7 +1659,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                                COORD const coord,
+                                                til::point const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
 try
@@ -1699,7 +1691,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLineSet const lines,
                                                      COLORREF const color,
                                                      size_t const cchLine,
-                                                     COORD const coordTarget) noexcept
+                                                     til::point coordTarget) noexcept
 try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
@@ -1815,7 +1807,7 @@ CATCH_RETURN()
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintSelection(const til::rect& rect) noexcept
 try
 {
     // If a clip rectangle is in place from drawing the text layer, remove it here.
@@ -1826,7 +1818,7 @@ try
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    const D2D1_RECT_F draw = til::rect{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_fontRenderData->GlyphCell()).to_d2d_rect();
+    const D2D1_RECT_F draw = rect.scale_up(_fontRenderData->GlyphCell()).to_d2d_rect();
 
     _d2dDeviceContext->FillRectangle(draw, _d2dBrushForeground.Get());
 
@@ -2013,16 +2005,16 @@ CATCH_RETURN();
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) const noexcept
 {
-    const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _fontRenderData->GlyphCell().width);
-    const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _fontRenderData->GlyphCell().height);
+    const auto widthInChars = viewInPixels.Width() / _fontRenderData->GlyphCell().width;
+    const auto heightInChars = viewInPixels.Height() / _fontRenderData->GlyphCell().height;
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
 [[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) const noexcept
 {
-    const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _fontRenderData->GlyphCell().width);
-    const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _fontRenderData->GlyphCell().height);
+    const auto widthInPixels = viewInCharacters.Width() * _fontRenderData->GlyphCell().width;
+    const auto heightInPixels = viewInCharacters.Height() * _fontRenderData->GlyphCell().height;
 
     return Viewport::FromDimensions(viewInCharacters.Origin(), { widthInPixels, heightInPixels });
 }
@@ -2067,7 +2059,7 @@ float DxEngine::GetScaling() const noexcept
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateViewport(const til::inclusive_rect /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
@@ -2108,12 +2100,10 @@ CATCH_RETURN();
 // - pFontSize - Filled with the font size.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT DxEngine::GetFontSize(_Out_ til::size* const pFontSize) noexcept
 try
 {
-    const auto size = _fontRenderData->GlyphCell();
-    pFontSize->X = size.narrow_width<short>();
-    pFontSize->Y = size.narrow_height<short>();
+    *pFontSize = _fontRenderData->GlyphCell();
     return S_OK;
 }
 CATCH_RETURN();

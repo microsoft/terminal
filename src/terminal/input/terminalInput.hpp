@@ -66,7 +66,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool isRightButtonDown;
         };
 
-        bool HandleMouse(const COORD position,
+        bool HandleMouse(const til::point position,
                          const unsigned int button,
                          const short modifierKeyState,
                          const short delta,
@@ -101,7 +101,7 @@ namespace Microsoft::Console::VirtualTerminal
         struct MouseInputState
         {
             bool inAlternateBuffer{ false };
-            COORD lastPos{ -1, -1 };
+            til::point lastPos{ -1, -1 };
             unsigned int lastButton{ 0 };
             int accumulatedDelta{ 0 };
         };
@@ -110,17 +110,17 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma endregion
 
 #pragma region MouseInput
-        static std::wstring _GenerateDefaultSequence(const COORD position,
+        static std::wstring _GenerateDefaultSequence(const til::point position,
                                                      const unsigned int button,
                                                      const bool isHover,
                                                      const short modifierKeyState,
                                                      const short delta);
-        static std::wstring _GenerateUtf8Sequence(const COORD position,
+        static std::wstring _GenerateUtf8Sequence(const til::point position,
                                                   const unsigned int button,
                                                   const bool isHover,
                                                   const short modifierKeyState,
                                                   const short delta);
-        static std::wstring _GenerateSGRSequence(const COORD position,
+        static std::wstring _GenerateSGRSequence(const til::point position,
                                                  const unsigned int button,
                                                  const bool isDown,
                                                  const bool isHover,

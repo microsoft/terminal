@@ -57,6 +57,7 @@ public:
                                       const gsl::span<wchar_t> buffer,
                                       size_t& commandSize);
 
+    const std::vector<std::wstring>& GetCommands() const noexcept;
     size_t GetNumberOfCommands() const;
     std::wstring_view GetNth(const SHORT index) const;
 

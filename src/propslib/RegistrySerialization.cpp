@@ -136,7 +136,7 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(const HKEY hKey, const _RegProper
         }
         case _RegPropertyType::Coordinate:
         {
-            PCOORD pcoordField = (PCOORD)pbField;
+            auto pcoordField = (COORD*)pbField;
             pcoordField->X = LOWORD(dwValue);
             pcoordField->Y = HIWORD(dwValue);
             break;

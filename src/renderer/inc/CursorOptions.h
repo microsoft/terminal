@@ -23,10 +23,10 @@ namespace Microsoft::Console::Render
     {
         // Character cell in the grid to draw at
         // This is relative to the top of the viewport, not the buffer
-        COORD coordCursor;
+        til::point coordCursor;
 
         // Left offset of the viewport, which may alter the horizontal position
-        SHORT viewportLeft;
+        til::CoordType viewportLeft;
 
         // Line rendition of the current row, which can affect the cursor width
         LineRendition lineRendition;

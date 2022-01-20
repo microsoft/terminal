@@ -103,12 +103,12 @@ using namespace Microsoft::Console::Render;
 
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
-    COORD const coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    const auto coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
     SIZE szGutter;
-    szGutter.cx = _szMemorySurface.cx % coordFontSize.X;
-    szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
+    szGutter.cx = _szMemorySurface.cx % coordFontSize.width;
+    szGutter.cy = _szMemorySurface.cy % coordFontSize.height;
 
     RECT rcScrollLimit = { 0 };
     RETURN_IF_FAILED(LongSub(_szMemorySurface.cx, szGutter.cx, &rcScrollLimit.right));
@@ -312,7 +312,7 @@ using namespace Microsoft::Console::Render;
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
 [[nodiscard]] HRESULT GdiEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                                 const COORD coord,
+                                                 const til::point coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept
 {
@@ -324,14 +324,14 @@ using namespace Microsoft::Console::Render;
         RETURN_HR_IF(S_OK, 0 == cchLine);
 
         POINT ptDraw = { 0 };
-        RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
+        RETURN_IF_FAILED(_ScaleByFont(coord, &ptDraw));
 
         const auto pPolyTextLine = &_pPolyText[_cPolyText];
 
         auto& polyString = _polyStrings.emplace_back();
         polyString.reserve(cchLine);
 
-        COORD const coordFontSize = _GetFontSize();
+        const auto coordFontSize = _GetFontSize();
 
         auto& polyWidth = _polyWidths.emplace_back();
         polyWidth.reserve(cchLine);
@@ -351,7 +351,7 @@ using namespace Microsoft::Console::Render;
             const auto text = cluster.GetText();
             polyString += text;
             polyString.back() &= softFontCharMask;
-            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X);
+            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns() * coordFontSize.width));
             cchCharWidths += polyWidth.back();
             polyWidth.append(text.size() - 1, 0);
         }
@@ -397,7 +397,7 @@ using namespace Microsoft::Console::Render;
 
         // If the line rendition is double height, we need to adjust the top or bottom
         // of the clipping rect to clip half the height of the rendered characters.
-        const auto halfHeight = coordFontSize.Y >> 1;
+        const auto halfHeight = coordFontSize.height >> 1;
         const auto topOffset = _currentLineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
         const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
 
@@ -408,13 +408,13 @@ using namespace Microsoft::Console::Render;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
         pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
-        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (SHORT)cchCharWidths;
-        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.Y - bottomOffset;
+        pPolyTextLine->rcl.right = gsl::narrow<LONG>(pPolyTextLine->rcl.left + cchCharWidths);
+        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.height - bottomOffset;
         pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
         {
-            pPolyTextLine->rcl.left += coordFontSize.X;
+            pPolyTextLine->rcl.left += coordFontSize.width;
         }
 
         _cPolyText++;
@@ -472,13 +472,13 @@ using namespace Microsoft::Console::Render;
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
     POINT ptTarget;
-    RETURN_IF_FAILED(_ScaleByFont(&coordTarget, &ptTarget));
+    RETURN_IF_FAILED(_ScaleByFont(coordTarget, &ptTarget));
     // Set the brush color as requested and save the previous brush to restore at the end.
     wil::unique_hbrush hbr(CreateSolidBrush(color));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
@@ -491,8 +491,8 @@ using namespace Microsoft::Console::Render;
     auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
-    const auto fontWidth = _GetFontSize().X;
-    const auto fontHeight = _GetFontSize().Y;
+    const auto fontWidth = _GetFontSize().width;
+    const auto fontHeight = _GetFontSize().height;
     const auto widthOfAllCells = fontWidth * gsl::narrow_cast<unsigned>(cchLine);
 
     const auto DrawLine = [=](const auto x, const auto y, const auto w, const auto h) {
@@ -569,20 +569,20 @@ using namespace Microsoft::Console::Render;
     }
     LOG_IF_FAILED(_FlushBufferLines());
 
-    COORD const coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    const auto coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
     // First set up a block cursor the size of the font.
     RECT rcBoundaries;
-    RETURN_IF_FAILED(LongMult(options.coordCursor.X, coordFontSize.X, &rcBoundaries.left));
-    RETURN_IF_FAILED(LongMult(options.coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.X, &rcBoundaries.right));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.Y, &rcBoundaries.bottom));
+    RETURN_IF_FAILED(LongMult(options.coordCursor.X, coordFontSize.width, &rcBoundaries.left));
+    RETURN_IF_FAILED(LongMult(options.coordCursor.Y, coordFontSize.height, &rcBoundaries.top));
+    RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.width, &rcBoundaries.right));
+    RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.height, &rcBoundaries.bottom));
 
     // If we're double-width cursor, make it an extra font wider.
     if (options.fIsDoubleWidth)
     {
-        RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.X, &rcBoundaries.right));
+        RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.width, &rcBoundaries.right));
     }
 
     // Make a set of RECTs to paint.
@@ -600,7 +600,7 @@ using namespace Microsoft::Console::Render;
         ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
         ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
-        ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+        ulHeight = MulDiv(coordFontSize.height, ulHeight, 100); // divide by 100 because percent.
 
         // Reduce the height of the top to be relative to the bottom by the height we want.
         RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
@@ -707,7 +707,7 @@ using namespace Microsoft::Console::Render;
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]] HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSelection(const til::rect& rect) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 

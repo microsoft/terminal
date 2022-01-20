@@ -362,8 +362,8 @@ DWORD GetRegistryValues(
                                                  nullptr);
     if (NT_SUCCESS(Status))
     {
-        pStateInfo->WindowPosX = (SHORT)LOWORD(dwValue);
-        pStateInfo->WindowPosY = (SHORT)HIWORD(dwValue);
+        pStateInfo->WindowPosX = LOWORD(dwValue);
+        pStateInfo->WindowPosY = HIWORD(dwValue);
         pStateInfo->AutoPosition = FALSE;
     }
 

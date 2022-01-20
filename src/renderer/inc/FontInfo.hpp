@@ -31,20 +31,20 @@ public:
     FontInfo(const std::wstring_view& faceName,
              const unsigned char family,
              const unsigned int weight,
-             const COORD coordSize,
+             const til::size coordSize,
              const unsigned int codePage,
              const bool fSetDefaultRasterFont = false) noexcept;
 
     bool operator==(const FontInfo& other) noexcept;
 
-    COORD GetSize() const noexcept;
-    COORD GetUnscaledSize() const noexcept;
+    til::size GetSize() const noexcept;
+    til::size GetUnscaledSize() const noexcept;
     void SetFromEngine(const std::wstring_view& faceName,
                        const unsigned char family,
                        const unsigned int weight,
                        const bool fSetDefaultRasterFont,
-                       const COORD coordSize,
-                       const COORD coordSizeUnscaled) noexcept;
+                       const til::size coordSize,
+                       const til::size coordSizeUnscaled) noexcept;
     bool GetFallback() const noexcept;
     void SetFallback(const bool didFallback) noexcept;
     void ValidateFont() noexcept;
@@ -52,7 +52,7 @@ public:
 private:
     void _ValidateCoordSize() noexcept;
 
-    COORD _coordSize;
-    COORD _coordSizeUnscaled;
+    til::size _coordSize;
+    til::size _coordSizeUnscaled;
     bool _didFallback;
 };

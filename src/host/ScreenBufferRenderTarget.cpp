@@ -21,7 +21,7 @@ void ScreenBufferRenderTarget::TriggerRedraw(const Microsoft::Console::Types::Vi
     }
 }
 
-void ScreenBufferRenderTarget::TriggerRedraw(const COORD* const pcoord)
+void ScreenBufferRenderTarget::TriggerRedraw(const til::point* const pcoord)
 {
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
     const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
@@ -31,7 +31,7 @@ void ScreenBufferRenderTarget::TriggerRedraw(const COORD* const pcoord)
     }
 }
 
-void ScreenBufferRenderTarget::TriggerRedrawCursor(const COORD* const pcoord)
+void ScreenBufferRenderTarget::TriggerRedrawCursor(const til::point* const pcoord)
 {
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
     const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
@@ -81,7 +81,7 @@ void ScreenBufferRenderTarget::TriggerScroll()
     }
 }
 
-void ScreenBufferRenderTarget::TriggerScroll(const COORD* const pcoordDelta)
+void ScreenBufferRenderTarget::TriggerScroll(const til::point* const pcoordDelta)
 {
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
     const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();

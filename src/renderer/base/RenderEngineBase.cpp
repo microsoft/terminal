@@ -37,7 +37,7 @@ HRESULT RenderEngineBase::UpdateTitle(const std::wstring_view newTitle) noexcept
 }
 
 HRESULT RenderEngineBase::UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
-                                         const SIZE /*cellSize*/,
+                                         const til::size /*cellSize*/,
                                          const size_t /*centeringHint*/) noexcept
 {
     return S_FALSE;

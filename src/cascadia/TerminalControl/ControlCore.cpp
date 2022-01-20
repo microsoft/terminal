@@ -245,8 +245,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // and react accordingly.
             _updateFont(true);
 
-            const COORD windowSize{ static_cast<short>(windowWidth),
-                                    static_cast<short>(windowHeight) };
+            const til::size windowSize{ til::math::flooring, windowWidth, windowHeight };
 
             // First set up the dx engine with the window size in pixels.
             // Then, using the font, get the number of characters that can fit.
@@ -423,7 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const short wheelDelta,
                                      const TerminalInput::MouseButtonState state)
     {
-        return _terminal->SendMouseEvent(viewportPos.to_win32_coord(), uiButton, states, wheelDelta, state);
+        return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
     }
 
     void ControlCore::UserScrollViewport(const int viewTop)
@@ -546,12 +545,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
-        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(til::point{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
-            newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition->to_win32_coord());
-            newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition->to_win32_coord());
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
         }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
@@ -581,7 +580,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }.to_win32_coord()) };
+        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }) };
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -589,7 +588,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(_lastHoveredCell->to_win32_coord()) };
+            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
         }
         return {};
     }
@@ -621,7 +620,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Initialize our font information.
         const auto fontFace = _settings->FontFace();
-        const short fontHeight = ::base::saturated_cast<short>(_settings->FontSize());
+        const auto fontHeight = _settings->FontSize();
         const auto fontWeight = _settings->FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
@@ -760,7 +759,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto actualNewSize = _actualFont.GetSize();
-        _FontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
+        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, initialUpdate);
     }
 
     // Method Description:
@@ -772,7 +771,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         try
         {
             // Make sure we have a non-zero font size
-            const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
+            const auto newSize = std::max(fontSize, 1);
             const auto fontFace = _settings->FontFace();
             const auto fontWeight = _settings->FontWeight();
             _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
@@ -808,7 +807,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - fontSizeDelta: The amount to increase or decrease the font size by.
     void ControlCore::AdjustFontSize(int fontSizeDelta)
     {
-        const auto newSize = _desiredFont.GetEngineSize().Y + fontSizeDelta;
+        const auto newSize = _desiredFont.GetEngineSize().height + fontSizeDelta;
         _setFontSize(newSize);
     }
 
@@ -844,20 +843,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_doResizeUnderLock(const double newWidth,
                                          const double newHeight)
     {
-        SIZE size;
-        size.cx = static_cast<long>(newWidth);
-        size.cy = static_cast<long>(newHeight);
+        til::size size{ til::math::flooring, newWidth, newHeight };
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
-        if (size.cx < _actualFont.GetSize().X || size.cy < _actualFont.GetSize().Y)
+        if (size.width < _actualFont.GetSize().width || size.height < _actualFont.GetSize().height)
         {
             return;
         }
 
         // Convert our new dimensions to characters
-        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto viewInPixels = Viewport::FromExclusive({ 0, 0, size.width, size.height });
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
         const auto currentVP = _terminal->GetViewport();
 
@@ -934,17 +930,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SetSelectionAnchor(til::point const& position)
+    void ControlCore::SetSelectionAnchor(const til::point position)
     {
         auto lock = _terminal->LockForWriting();
-        _terminal->SetSelectionAnchor(position.to_win32_coord());
+        _terminal->SetSelectionAnchor(position);
     }
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - position: the point in terminal coordinates (in cells, not pixels)
-    void ControlCore::SetEndSelectionPoint(til::point const& position)
+    void ControlCore::SetEndSelectionPoint(const til::point position)
     {
         if (!_terminal->IsSelectionActive())
         {
@@ -961,7 +957,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
 
         // save location (for rendering) + render
-        _terminal->SetSelectionEnd(terminalPosition.to_win32_coord());
+        _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
     }
 
@@ -1008,7 +1004,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // content, which is unexpected.
         const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
                                   TextBuffer::GenHTML(bufferData,
-                                                      _actualFont.GetUnscaledSize().Y,
+                                                      _actualFont.GetUnscaledSize().height,
                                                       _actualFont.GetFaceName(),
                                                       bgColor) :
                                   "";
@@ -1016,7 +1012,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // convert to RTF format
         const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
                                  TextBuffer::GenRTF(bufferData,
-                                                    _actualFont.GetUnscaledSize().Y,
+                                                    _actualFont.GetUnscaledSize().height,
                                                     _actualFont.GetFaceName(),
                                                     bgColor) :
                                  "";
@@ -1056,8 +1052,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto fontSize = _actualFont.GetSize();
         return {
-            ::base::saturated_cast<float>(fontSize.X),
-            ::base::saturated_cast<float>(fontSize.Y)
+            static_cast<float>(fontSize.width),
+            static_cast<float>(fontSize.height)
         };
     }
     winrt::hstring ControlCore::FontFaceName() const noexcept
@@ -1490,7 +1486,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If shift is pressed and there is a selection we extend it using
             // the selection mode (expand the "end" selection point)
-            _terminal->SetSelectionEnd(terminalPosition.to_win32_coord(), mode);
+            _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
         else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
@@ -1498,7 +1494,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
             // (expand both "start" and "end" selection points)
-            _terminal->MultiClickSelection(terminalPosition.to_win32_coord(), mode);
+            _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
 

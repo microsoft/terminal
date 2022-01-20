@@ -119,9 +119,8 @@ AddFaceNode(
     return pNew;
 }
 
-VOID
-    DestroyFaceNodes(
-        VOID)
+VOID DestroyFaceNodes(
+    VOID)
 {
     PFACENODE pNext, pTmp;
 
@@ -214,19 +213,19 @@ int AddFont(
     HFONT hFont;
     TEXTMETRIC tm;
     ULONG nFont;
-    COORD SizeToShow, SizeActual, SizeWant, SizeOriginal;
+    til::point SizeToShow, SizeActual, SizeWant, SizeOriginal;
     BYTE tmFamily;
     SIZE Size;
     BOOL fCreatingBoldFont = FALSE;
     LPTSTR ptszFace = pelf->elfLogFont.lfFaceName;
 
     /* get font info */
-    SizeWant.X = (SHORT)pelf->elfLogFont.lfWidth;
-    SizeWant.Y = (SHORT)pelf->elfLogFont.lfHeight;
+    SizeWant.X = pelf->elfLogFont.lfWidth;
+    SizeWant.Y = pelf->elfLogFont.lfHeight;
 
     /* save original size request so that we can use it unmodified when doing DPI calculations */
-    SizeOriginal.X = (SHORT)pelf->elfLogFont.lfWidth;
-    SizeOriginal.Y = (SHORT)pelf->elfLogFont.lfHeight;
+    SizeOriginal.X = pelf->elfLogFont.lfWidth;
+    SizeOriginal.Y = pelf->elfLogFont.lfHeight;
 
 CreateBoldFont:
     pelf->elfLogFont.lfQuality = DEFAULT_QUALITY;
@@ -243,8 +242,8 @@ CreateBoldFont:
     GetTextMetrics(hDC, &tm);
 
     GetTextExtentPoint32(hDC, TEXT("0"), 1, &Size);
-    SizeActual.X = (SHORT)Size.cx;
-    SizeActual.Y = (SHORT)(tm.tmHeight + tm.tmExternalLeading);
+    SizeActual.X = Size.cx;
+    SizeActual.Y = (tm.tmHeight + tm.tmExternalLeading);
     DBGFONTS2(("    actual size %d,%d\n", SizeActual.X, SizeActual.Y));
     tmFamily = tm.tmPitchAndFamily;
     if (TM_IS_TT_FONT(tmFamily) && (SizeWant.Y >= 0))
@@ -279,7 +278,7 @@ CreateBoldFont:
      */
     for (nFont = 0; nFont < NumberOfFonts; ++nFont)
     {
-        COORD SizeShown;
+        til::point SizeShown;
 
         if (FontInfo[nFont].hFont == nullptr)
         {
@@ -322,7 +321,7 @@ CreateBoldFont:
         // Note that we're relying on pntm->tmWeight below because some fonts (e.g. Iosevka Extralight) show up as bold
         // via GetTextMetrics. pntm->tmWeight doesn't have this issue. However, on the second pass through (see
         // :CreateBoldFont) we should use what's in tm.tmWeight
-        if (SIZE_EQUAL(SizeShown, SizeToShow) &&
+        if (SizeShown == SizeToShow &&
             FontInfo[nFont].Family == tmFamily &&
             FontInfo[nFont].Weight == ((fCreatingBoldFont) ? tm.tmWeight : pntm->tmWeight) &&
             0 == lstrcmp(FontInfo[nFont].FaceName, ptszFace))
@@ -435,16 +434,14 @@ CreateBoldFont:
     return FE_FONTOK; // and continue enumeration
 }
 
-VOID
-    InitializeFonts(
-        VOID)
+VOID InitializeFonts(
+    VOID)
 {
     LOG_IF_FAILED(EnumerateFonts(EF_DEFFACE)); // Just the Default font
 }
 
-VOID
-    DestroyFonts(
-        VOID)
+VOID DestroyFonts(
+    VOID)
 {
     ULONG FontIndex;
 
@@ -963,8 +960,8 @@ EnumerateFonts(
         GetTextMetrics(hDC, &tm);
         GetTextFace(hDC, LF_FACESIZE, DefaultFaceName);
 
-        DefaultFontSize.X = (SHORT)(tm.tmMaxCharWidth);
-        DefaultFontSize.Y = (SHORT)(tm.tmHeight + tm.tmExternalLeading);
+        DefaultFontSize.X = (tm.tmMaxCharWidth);
+        DefaultFontSize.Y = (tm.tmHeight + tm.tmExternalLeading);
         DefaultFontFamily = tm.tmPitchAndFamily;
 
         if (IS_ANY_DBCS_CHARSET(tm.tmCharSet))

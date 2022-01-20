@@ -34,12 +34,12 @@ void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
 {
 }
 
-void ConsoleWindow::ChangeViewport(const SMALL_RECT NewWindow)
+void ConsoleWindow::ChangeViewport(const til::inclusive_rect NewWindow)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
-    COORD const FontSize = ScreenInfo.GetScreenFontSize();
+    const auto FontSize = ScreenInfo.GetScreenFontSize();
 
     Selection* pSelection = &Selection::Instance();
     pSelection->HideSelection();
@@ -109,7 +109,7 @@ BOOL ConsoleWindow::PostUpdateWindowSize() const
     return FALSE;
 }
 
-void ConsoleWindow::UpdateWindowSize(COORD const /*coordSizeInChars*/)
+void ConsoleWindow::UpdateWindowSize(til::point /*coordSizeInChars*/)
 {
 }
 

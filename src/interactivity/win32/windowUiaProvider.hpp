@@ -75,7 +75,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         RECT GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const til::inclusive_rect NewWindow);
 
     protected:
         // this is used to prevent the object from

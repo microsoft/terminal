@@ -107,9 +107,9 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         _currentPosition = cchInitialData;
 
         OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-        OriginalCursorPosition().X -= (SHORT)_currentPosition;
+        OriginalCursorPosition().x -= gsl::narrow<til::CoordType>(_currentPosition);
 
-        const SHORT sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
+        const auto sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
         while (OriginalCursorPosition().X < 0)
         {
             OriginalCursorPosition().X += sScreenBufferSizeX;
@@ -164,17 +164,17 @@ SCREEN_INFORMATION& COOKED_READ_DATA::ScreenInfo() noexcept
     return _screenInfo;
 }
 
-const COORD& COOKED_READ_DATA::OriginalCursorPosition() const noexcept
+til::point COOKED_READ_DATA::OriginalCursorPosition() const noexcept
 {
     return _originalCursorPosition;
 }
 
-COORD& COOKED_READ_DATA::OriginalCursorPosition() noexcept
+til::point& COOKED_READ_DATA::OriginalCursorPosition() noexcept
 {
     return _originalCursorPosition;
 }
 
-COORD& COOKED_READ_DATA::BeforeDialogCursorPosition() noexcept
+til::point& COOKED_READ_DATA::BeforeDialogCursorPosition() noexcept
 {
     return _beforeDialogCursorPosition;
 }
@@ -482,7 +482,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     size_t NumSpaces = 0;
-    SHORT ScrollY = 0;
+    auto ScrollY = 0;
     size_t NumToWrite;
     WCHAR wch = wchOrig;
     bool fStartFromDelim;
@@ -578,7 +578,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     else
     {
         bool CallWrite = true;
-        const SHORT sScreenBufferSizeX = _screenInfo.GetBufferSize().Width();
+        const auto sScreenBufferSizeX = _screenInfo.GetBufferSize().Width();
 
         // processing in the middle of the line is more complex:
 
@@ -702,11 +702,11 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
         if (_echoInput && CallWrite)
         {
-            COORD CursorPosition;
+            til::point CursorPosition;
 
             // save cursor position
             CursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-            CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
+            CursorPosition.X = CursorPosition.X + gsl::narrow_cast<til::CoordType>(NumSpaces);
 
             // clear the current command line from the screen
             // clang-format off
@@ -840,7 +840,7 @@ size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
     if (IsEchoInput())
     {
         size_t NumSpaces = 0;
-        SHORT ScrollY = 0;
+        auto ScrollY = 0;
 
         FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(ScreenInfo(),
                                                       _backupLimit,

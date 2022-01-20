@@ -368,7 +368,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     RECT rcDisplay = pWddmConEngine->GetDisplaySize();
 
                     // Get font to adjust char to pixels.
-                    COORD coordFont = { 0 };
+                    til::point coordFont;
                     LOG_IF_FAILED(pWddmConEngine->GetFontSize(&coordFont));
 
                     rcDisplay.right *= coordFont.X;
