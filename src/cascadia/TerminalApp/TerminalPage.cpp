@@ -1970,7 +1970,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
+            bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste() &&
+                                 !eventArgs.BracketedPasteEnabled();
             if (warnMultiLine)
             {
                 const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
@@ -1985,18 +1987,6 @@ namespace winrt::TerminalApp::implementation
             if (warnMultiLine || warnLargeText)
             {
                 co_await winrt::resume_foreground(Dispatcher());
-
-                if (warnMultiLine)
-                {
-                    const auto focusedTab = _GetFocusedTabImpl();
-                    // Do not warn about multi line pasting if the current tab has bracketed paste enabled.
-                    warnMultiLine = warnMultiLine && !focusedTab->GetActiveTerminalControl().BracketedPasteEnabled();
-                    if (!warnLargeText && !warnMultiLine)
-                    {
-                        eventArgs.HandleClipboardData(text);
-                        co_return;
-                    }
-                }
 
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
