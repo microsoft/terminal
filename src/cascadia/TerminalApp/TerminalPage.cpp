@@ -1746,7 +1746,30 @@ namespace winrt::TerminalApp::implementation
                                   std::shared_ptr<Pane> newPane)
     {
         const auto focusedTab{ _GetFocusedTabImpl() };
-        _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
+
+        // Clever hack for a crash in startup, with multiple sub-commands. Say
+        // you have the following commandline:
+        //
+        //   wtd nt -p "elevated cmd" ; sp -p "elevated cmd" ; sp -p "Command Prompt"
+        //
+        // Where "elevated cmd" is an elevated profile.
+        //
+        // In that scenario, we won't dump off the commandline immediately to an
+        // elevated window, because it's got the final unelevated split in it.
+        // However, when we get to that command, there won't be a tab yet. So
+        // we'd crash right about here.
+        //
+        // Instead, let's just promote this first split to be a tab instead.
+        // Crash avoided, and we don't need to worry about inserting a new-tab
+        // command in at the start.
+        if (!focusedTab && _tabs.Size() == 0)
+        {
+            _CreateNewTabFromPane(newPane);
+        }
+        else
+        {
+            _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
+        }
     }
 
     // Method Description:
