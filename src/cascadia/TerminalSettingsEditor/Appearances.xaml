@@ -65,7 +65,7 @@
                                     HasSettingValue="{x:Bind Appearance.HasFontFace, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontFaceOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <StackPanel>
+                <StackPanel Margin="0,8,0,0">
                     <!--
                         Binding the ItemsSource to a separate variable that switches between the
                         two font lists causes a crash within the ComboBox code.
