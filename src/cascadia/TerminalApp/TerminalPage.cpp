@@ -372,6 +372,22 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Method Description:
+    // - Escape hatch for immediately dispatching requests to elevated windows
+    //   when first launched. At this point in startup, the window doesn't exist
+    //   yet, XAML hasn't been started, but we need to dispatch these actions.
+    //   We can't just go through ProcessStartupActions, because that processes
+    //   the actions async using the XAL dispatcher (which doesn't exist yet)
+    // - DON'T CALL THIS if you haven't already checked
+    //   ShouldImmediatelyHandoffToElevated. If you're thinking about calling
+    //   this outside of the one place it's used, that's probably the wrong
+    //   solution.
+    // Arguments:
+    // - settings: the settings we should use for dispatching these actions. At
+    //   this point in startup, we hadn't otherwise been initialized with these,
+    //   so use them now.
+    // Return Value:
+    // - <none>
     void TerminalPage::HandoffToElevated(CascadiaSettings& settings)
     {
         if (!_startupActions)
@@ -379,14 +395,14 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        // Hookup our event handlers to the ShortcutActionDispatch
         _settings = settings;
         _HookupKeyBindings(_settings.ActionMap());
-
-        // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
 
         for (const auto& action : _startupActions)
         {
+            // only process new tabs and split panes. They're all going to the elevated window anyways.
             if (action.Action() == ShortcutAction::NewTab || action.Action() == ShortcutAction::SplitPane)
             {
                 _actionDispatch->DoAction(action);

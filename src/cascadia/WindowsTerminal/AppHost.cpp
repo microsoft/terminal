@@ -214,10 +214,15 @@ void AppHost::_HandleCommandlineArgs()
             }
         }
 
-        // TODO!
+        // This is a fix for GH#12190 andhopefully GH#12169.
+        //
+        // If the commandline we were provided is going to result in us only
+        // opening elevated terminal instances, then we need to not even create
+        // the window at all here. In that case, we're going through this
+        // special escape hatch to dispatch all the calls to elevate-shim, and
+        // then we're going to exit immediately.
         if (_logic.ShouldImmediatelyHandoffToElevated())
         {
-            // DebugBreak();
             _shouldCreateWindow = false;
             _logic.HandoffToElevated();
             return;
