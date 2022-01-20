@@ -1991,6 +1991,11 @@ namespace winrt::TerminalApp::implementation
                     const auto focusedTab = _GetFocusedTabImpl();
                     // Do not warn about multi line pasting if the current tab has bracketed paste enabled.
                     warnMultiLine = warnMultiLine && !focusedTab->GetActiveTerminalControl().BracketedPasteEnabled();
+                    if (!warnLargeText && !warnMultiLine)
+                    {
+                        eventArgs.HandleClipboardData(text);
+                        co_return;
+                    }
                 }
 
                 // We have to initialize the dialog here to be able to change the text of the text block within it
