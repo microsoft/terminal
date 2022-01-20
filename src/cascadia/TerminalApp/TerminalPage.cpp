@@ -358,7 +358,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // It's possible that newTerminalArgs is null here.
-            // GetProfileForArgs should be resillient to that.
+            // GetProfileForArgs should be resilient to that.
             const auto profile{ settings.GetProfileForArgs(newTerminalArgs) };
             if (profile.Elevate())
             {
@@ -377,7 +377,7 @@ namespace winrt::TerminalApp::implementation
     //   when first launched. At this point in startup, the window doesn't exist
     //   yet, XAML hasn't been started, but we need to dispatch these actions.
     //   We can't just go through ProcessStartupActions, because that processes
-    //   the actions async using the XAL dispatcher (which doesn't exist yet)
+    //   the actions async using the XAML dispatcher (which doesn't exist yet)
     // - DON'T CALL THIS if you haven't already checked
     //   ShouldImmediatelyHandoffToElevated. If you're thinking about calling
     //   this outside of the one place it's used, that's probably the wrong

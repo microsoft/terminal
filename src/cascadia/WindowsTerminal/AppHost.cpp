@@ -214,7 +214,7 @@ void AppHost::_HandleCommandlineArgs()
             }
         }
 
-        // This is a fix for GH#12190 andhopefully GH#12169.
+        // This is a fix for GH#12190 and hopefully GH#12169.
         //
         // If the commandline we were provided is going to result in us only
         // opening elevated terminal instances, then we need to not even create
