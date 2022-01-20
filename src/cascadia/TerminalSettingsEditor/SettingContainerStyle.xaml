@@ -36,10 +36,10 @@
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
-    <Style x:Key="SettingContainerHeaderStyle"
+    <Style x:Key="StackPanelInExpanderStyle"
            TargetType="StackPanel">
-        <Setter Property="Orientation" Value="Horizontal" />
-        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Padding" Value="0,12,0,12" />
     </Style>
 
     <Style x:Key="SettingContainerResetButtonStyle"
@@ -73,7 +73,6 @@
     <Style x:Key="SettingsPageItemHeaderStyle"
            BasedOn="{StaticResource BodyTextBlockStyle}"
            TargetType="TextBlock">
-        <Setter Property="Margin" Value="0,12,0,0" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
     </Style>
@@ -81,7 +80,7 @@
     <Style x:Key="SettingsPageItemDescriptionStyle"
            BasedOn="{StaticResource CaptionTextBlockStyle}"
            TargetType="TextBlock">
-        <Setter Property="Margin" Value="0,0,24,12" />
+        <Setter Property="Margin" Value="0,0,24,0" />
         <Setter Property="LineHeight" Value="16" />
         <Setter Property="Foreground" Value="{ThemeResource SubgroupHeaderBrush}" />
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
@@ -98,10 +97,11 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel>
+                        <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
                             <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
                                        Text="{TemplateBinding Header}" />
-                            <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                            <TextBlock x:Name="HelpTextBlock"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                        Text="{TemplateBinding HelpText}" />
                         </StackPanel>
                         <ContentPresenter Grid.Column="1"
@@ -129,10 +129,11 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel>
+                                <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
                                     <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
                                                Text="{TemplateBinding Header}" />
-                                    <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                    <TextBlock x:Name="HelpTextBlock"
+                                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                                Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"

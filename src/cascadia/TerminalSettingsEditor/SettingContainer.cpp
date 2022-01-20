@@ -145,6 +145,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         }
+
+        if (HelpText().empty())
+        {
+            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            {
+                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
+                {
+                    textBlock.Visibility(Visibility::Collapsed);
+                }
+            }
+        }
     }
 
     // Method Description:
