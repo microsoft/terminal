@@ -247,9 +247,7 @@ void AppHost::_HandleCommandlineArgs()
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_logic.ShouldUsePersistedLayout() &&
                 layouts &&
-                layouts.Size() > 0 /* &&
-                _logic.ShouldImmediatelyHandoffToElevated()*/
-            )
+                layouts.Size() > 0)
             {
                 uint32_t startIdx = 0;
                 // We want to create a window for every saved layout.
