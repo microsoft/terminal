@@ -132,6 +132,10 @@
                     <ToggleSwitch IsOn="{x:Bind Profile.Hidden, Mode=TwoWay}" />
                 </local:SettingContainer>
 
+                <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           Margin="0,48,0,0"/>
+
                 <ToggleButton Click="Appearance_Click"
                               Style="{StaticResource ToggleButtonStyle}">
                     <TextBlock HorizontalAlignment="Left"
