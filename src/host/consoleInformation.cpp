@@ -240,6 +240,20 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 {
     _Title = std::wstring{ newTitle.begin(), newTitle.end() };
+
+    // Sanitize the input if we're in pty mode. No control chars - this string
+    //      will get emitted back to the TTY in a VT sequence, and we don't want
+    //      to embed control characters in that string. Note that we can't use
+    //      IsInVtIoMode for this test, because the VT I/O thread won't have
+    //      been created when the title is first set during startup.
+    if (ServiceLocator::LocateGlobals().launchArgs.InConptyMode())
+    {
+        _Title.erase(std::remove_if(_Title.begin(), _Title.end(), [](auto ch) {
+                         return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                     }),
+                     _Title.end());
+    }
+
     _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;
