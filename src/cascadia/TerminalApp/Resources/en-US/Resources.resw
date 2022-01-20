@@ -405,6 +405,9 @@
   <data name="NewWindowRun.Text" xml:space="preserve">
     <value>Shift+Click to open a new window</value>
   </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl+Click to open as administrator</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
