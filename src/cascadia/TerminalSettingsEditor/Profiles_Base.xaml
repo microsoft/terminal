@@ -33,8 +33,7 @@
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <ScrollViewer Grid.Row="1"
                       ViewChanging="ViewChanging">
-            <StackPanel Margin="13,0,0,0"
-                        Style="{StaticResource PivotStackStyle}">
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
 
                 <!--  Name  -->
                 <!--
