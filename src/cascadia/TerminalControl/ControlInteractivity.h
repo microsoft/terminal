@@ -52,27 +52,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                            const til::point pixelPosition);
-        void TouchPressed(const til::point contactPoint);
+                            const Core::Point pixelPosition);
+        void TouchPressed(const Core::Point contactPoint);
 
         void PointerMoved(Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
-                          const til::point pixelPosition,
+                          const Core::Point pixelPosition,
                           const bool pointerPressedInBounds);
-        void TouchMoved(const til::point newTouchPoint,
+        void TouchMoved(const Core::Point newTouchPoint,
                         const bool focused);
 
         void PointerReleased(Control::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                             const til::point pixelPosition);
+                             const Core::Point pixelPosition);
         void TouchReleased();
 
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const int32_t delta,
-                        const til::point pixelPosition,
+                        const Core::Point pixelPosition,
                         const Control::MouseButtonState state);
 
         void UpdateScrollbar(const double newValue);
@@ -82,7 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool CopySelectionToClipboard(bool singleLine,
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void RequestPasteTextFromClipboard();
-        void SetEndSelectionPoint(const til::point pixelPosition);
+        void SetEndSelectionPoint(const Core::Point pixelPosition);
         bool ManglePathsForWsl();
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
-        std::optional<til::point> _touchAnchor;
+        std::optional<Core::Point> _touchAnchor;
 
         using Timestamp = uint64_t;
 
@@ -114,9 +114,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Timestamp _multiClickTimer;
         unsigned int _multiClickCounter;
         Timestamp _lastMouseClickTimestamp;
-        std::optional<til::point> _lastMouseClickPos;
-        std::optional<til::point> _singleClickTouchdownPos;
-        std::optional<til::point> _lastMouseClickPosNoSelection;
+        std::optional<Core::Point> _lastMouseClickPos;
+        std::optional<Core::Point> _singleClickTouchdownPos;
+        std::optional<Core::Point> _lastMouseClickPosNoSelection;
         // This field tracks whether the selection has changed meaningfully
         // since it was last copied. It's generally used to prevent copyOnSelect
         // from firing when the pointer _just happens_ to be released over the
@@ -129,20 +129,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
-        unsigned int _numberOfClicks(til::point clickPos, Timestamp clickTime);
+        unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
 
         void _mouseTransparencyHandler(const double mouseDelta);
         void _mouseZoomHandler(const double mouseDelta);
         void _mouseScrollHandler(const double mouseDelta,
-                                 const til::point terminalPosition,
+                                 const Core::Point terminalPosition,
                                  const bool isLeftButtonPressed);
 
         void _hyperlinkHandler(const std::wstring_view uri);
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
-        til::point _getTerminalPosition(const til::point& pixelPosition);
+        til::point _getTerminalPosition(const til::point pixelPosition);
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
                                    const unsigned int pointerUpdateKind,

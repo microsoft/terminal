@@ -203,19 +203,6 @@ ULONG RenderData::GetCursorPixelWidth() const noexcept
     return ServiceLocator::LocateGlobals().cursorPixelWidth;
 }
 
-// Method Description:
-// - Get the color of the cursor. If the color is INVALID_COLOR, the cursor
-//      should be drawn by inverting the color of the cursor.
-// Arguments:
-// - <none>
-// Return Value:
-// - the color of the cursor.
-COLORREF RenderData::GetCursorColor() const noexcept
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetColorTableEntry(TextColor::CURSOR_COLOR);
-}
-
 // Routine Description:
 // - Retrieves overlays to be drawn on top of the main screen buffer area.
 // - Overlays are drawn from first to last
@@ -341,7 +328,9 @@ const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) con
 {
     return {};
 }
+#pragma endregion
 
+#pragma region IUiaData
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.
@@ -349,12 +338,10 @@ const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) con
 // - ARGB color values for the foreground and background
 std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupAttributeColors(attr);
+    const auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    return renderSettings.GetAttributeColors(attr);
 }
-#pragma endregion
 
-#pragma region IUiaData
 // Routine Description:
 // - Determines whether the selection area is empty.
 // Arguments:
@@ -456,17 +443,5 @@ const COORD RenderData::GetSelectionEnd() const noexcept
 void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
 {
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
-}
-
-// Method Description:
-// - Returns true if the screen is globally inverted
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the screen is globally inverted
-bool RenderData::IsScreenReversed() const noexcept
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.IsScreenReversed();
 }
 #pragma endregion

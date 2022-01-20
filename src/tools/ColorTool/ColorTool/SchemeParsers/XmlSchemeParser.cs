@@ -37,6 +37,7 @@ namespace ColorTool.SchemeParsers
 
         private const string ForegroundKey = "Foreground Color";
         private const string BackgroundKey = "Background Color";
+        private const string CursorKey = "Cursor Color";
         private const string RedKey = "Red Component";
         private const string GreenKey = "Green Component";
         private const string BlueKey = "Blue Component";
@@ -53,7 +54,7 @@ namespace ColorTool.SchemeParsers
             XmlNodeList children = root.ChildNodes;
 
             uint[] colorTable = new uint[ColorTableSize];
-            uint? fgColor = null, bgColor = null;
+            uint? fgColor = null, bgColor = null, cursorColor = null;
             int colorsFound = 0;
             bool success = false;
             foreach (var tableEntry in children.OfType<XmlNode>().Where(_ => _.Name == "key"))
@@ -65,6 +66,7 @@ namespace ColorTool.SchemeParsers
                 if (!success) { break; }
                 else if (tableEntry.InnerText == ForegroundKey) { fgColor = rgb; }
                 else if (tableEntry.InnerText == BackgroundKey) { bgColor = rgb; }
+                else if (tableEntry.InnerText == CursorKey) { cursorColor = rgb; }
                 else if (-1 != (index = Array.IndexOf(PListColorNames, tableEntry.InnerText)))
                 { colorTable[index] = rgb; colorsFound++; }
             }
@@ -81,7 +83,7 @@ namespace ColorTool.SchemeParsers
                 return null;
             }
 
-            var consoleAttributes = new ConsoleAttributes(bgColor, fgColor, null, null);
+            var consoleAttributes = new ConsoleAttributes(bgColor, fgColor, null, null, cursorColor);
             return new ColorScheme(ExtractSchemeName(schemeName), colorTable, consoleAttributes);
         }
 

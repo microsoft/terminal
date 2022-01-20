@@ -29,6 +29,7 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
     ..\CodepointWidthDetector.cpp \
+    ..\ColorFix.cpp \
     ..\IInputEvent.cpp \
     ..\FocusEvent.cpp \
     ..\GlyphWidth.cpp \

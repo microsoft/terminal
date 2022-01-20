@@ -186,6 +186,11 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
                 InvalidateRect(hWndOld, nullptr, TRUE);
             }
 
+            // update color value fields to reflect the new color
+            UpdateItem(hDlg, IDD_COLOR_RED, GetRValue(AttrToRGB(ColorArray[iColor])));
+            UpdateItem(hDlg, IDD_COLOR_GREEN, GetGValue(AttrToRGB(ColorArray[iColor])));
+            UpdateItem(hDlg, IDD_COLOR_BLUE, GetBValue(AttrToRGB(ColorArray[iColor])));
+
             return TRUE;
 
         case IDD_COLOR_RED:

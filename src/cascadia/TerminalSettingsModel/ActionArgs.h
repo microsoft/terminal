@@ -18,6 +18,9 @@
 #include "SendInputArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
+#include "SetFocusModeArgs.g.h"
+#include "SetFullScreenArgs.g.h"
+#include "SetMaximizedArgs.g.h"
 #include "SetColorSchemeArgs.g.h"
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
@@ -36,8 +39,10 @@
 #include "RenameWindowArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
+#include "ExportBufferArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
+#include "AdjustOpacityArgs.g.h"
 
 #include "JsonUtils.h"
 #include "HashUtils.h"
@@ -120,6 +125,22 @@ private:                                                                        
     X(SettingsTarget, Target, "target", false, SettingsTarget::SettingsFile)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define SET_FOCUS_MODE_ARGS(X) \
+    X(bool, IsFocusMode, "isFocusMode", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_MAXIMIZED_ARGS(X) \
+    X(bool, IsMaximized, "isMaximized", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_FULL_SCREEN_ARGS(X) \
+    X(bool, IsFullScreen, "isFullScreen", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_MAXIMIZED_ARGS(X) \
+    X(bool, IsMaximized, "isMaximized", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
 #define SET_COLOR_SCHEME_ARGS(X) \
     X(winrt::hstring, SchemeName, "colorScheme", args->SchemeName().empty(), L"")
 
@@ -192,8 +213,17 @@ private:                                                                        
     X(uint32_t, Id, "id", false, 0u)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define EXPORT_BUFFER_ARGS(X) \
+    X(winrt::hstring, Path, "path", false, L"")
+
+////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
     X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
+
+////////////////////////////////////////////////////////////////////////////////
+#define ADJUST_OPACITY_ARGS(X)               \
+    X(int32_t, Opacity, "opacity", false, 0) \
+    X(bool, Relative, "relative", false, true)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -228,6 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(winrt::hstring, Profile, L"");
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
+        ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -237,6 +268,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view ProfileKey{ "profile" };
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
+        static constexpr std::string_view ElevateKey{ "elevate" };
 
     public:
         hstring GenerateName() const;
@@ -254,7 +286,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_ProfileIndex == _ProfileIndex &&
                        otherAsUs->_Profile == _Profile &&
                        otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
-                       otherAsUs->_ColorScheme == _ColorScheme;
+                       otherAsUs->_ColorScheme == _ColorScheme &&
+                       otherAsUs->_Elevate == _Elevate;
             }
             return false;
         };
@@ -270,6 +303,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
+            JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
             return *args;
         }
         static Json::Value ToJson(const Model::NewTerminalArgs& val)
@@ -288,6 +322,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, TabColorKey, args->_TabColor);
             JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
+            JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
             return json;
         }
         Model::NewTerminalArgs Copy() const
@@ -301,6 +336,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Profile = _Profile;
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
             copy->_ColorScheme = _ColorScheme;
+            copy->_Elevate = _Elevate;
             return *copy;
         }
         size_t Hash() const
@@ -319,6 +355,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(Profile());
             h.write(SuppressApplicationTitle());
             h.write(ColorScheme());
+            h.write(Elevate());
         }
     };
 }
@@ -549,6 +586,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS);
 
+    ACTION_ARGS_STRUCT(SetFocusModeArgs, SET_FOCUS_MODE_ARGS);
+
+    ACTION_ARGS_STRUCT(SetFullScreenArgs, SET_FULL_SCREEN_ARGS);
+
+    ACTION_ARGS_STRUCT(SetMaximizedArgs, SET_MAXIMIZED_ARGS);
+
     ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS);
 
     ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS);
@@ -598,6 +641,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 
     ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS);
+
+    ACTION_ARGS_STRUCT(ExportBufferArgs, EXPORT_BUFFER_ARGS);
 
     ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS);
 
@@ -651,6 +696,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return h.finalize();
         }
     };
+
+    ACTION_ARGS_STRUCT(AdjustOpacityArgs, ADJUST_OPACITY_ARGS);
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -662,8 +710,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(MovePaneArgs);
     BASIC_FACTORY(SetTabColorArgs);
+    BASIC_FACTORY(RenameTabArgs);
     BASIC_FACTORY(SwapPaneArgs);
     BASIC_FACTORY(SplitPaneArgs);
+    BASIC_FACTORY(SetFocusModeArgs);
+    BASIC_FACTORY(SetFullScreenArgs);
+    BASIC_FACTORY(SetMaximizedArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(RenameWindowArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
@@ -677,6 +729,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(FocusPaneArgs);
     BASIC_FACTORY(PrevTabArgs);
     BASIC_FACTORY(NextTabArgs);
+    BASIC_FACTORY(ExportBufferArgs);
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
+    BASIC_FACTORY(AdjustOpacityArgs);
 }

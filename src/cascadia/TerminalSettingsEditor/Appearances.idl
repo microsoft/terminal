@@ -56,6 +56,8 @@ namespace Microsoft.Terminal.Settings.Editor
         ProfileViewModel SourceProfile;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
+        Boolean ShowIndistinguishableColorsItem { get; };
+
         Boolean UsingMonospaceFont { get; };
         Boolean ShowAllFonts;
 

@@ -128,6 +128,8 @@ jobs:
       resourceFilePath: >-
         src\cascadia\TerminalApp\Resources\en-US\Resources.resw
 
+        src\cascadia\TerminalApp\Resources\en-US\ContextMenu.resw
+
         src\cascadia\TerminalControl\Resources\en-US\Resources.resw
 
         src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
@@ -135,8 +137,6 @@ jobs:
         src\cascadia\TerminalSettingsModel\Resources\en-US\Resources.resw
 
         src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
-
-        src\cascadia\WindowsTerminalUniversal\Resources\en-US\Resources.resw
 
         src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
       appendRelativeDir: true
@@ -164,7 +164,7 @@ jobs:
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
         clean: true
@@ -300,11 +300,6 @@ jobs:
       inputs:
         filePath: build\scripts\Create-AppxBundle.ps1
         arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-    - task: PowerShell@2
-      displayName: Create WindowsTerminalUniversal*.msixbundle
-      inputs:
-        filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName WindowsTerminalUniversal -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalUniversal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:

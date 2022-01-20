@@ -327,6 +327,14 @@ void AppHost::Initialize()
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
     _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
     _logic.SystemMenuChangeRequested({ this, &AppHost::_SystemMenuChangeRequested });
+    _logic.ChangeMaximizeRequested({ this, &AppHost::_ChangeMaximizeRequested });
+
+    _window->MaximizeChanged([this](bool newMaximize) {
+        if (_logic)
+        {
+            _logic.Maximized(newMaximize);
+        }
+    });
 
     _logic.Create();
 
@@ -524,10 +532,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
-    const til::size nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
-    const til::rectangle nonClientFrame = _window->GetNonClientFrame(dpix);
-    adjustedWidth = islandWidth + nonClientSize.width<long>();
-    adjustedHeight = islandHeight + nonClientSize.height<long>();
+    const til::size nonClientSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
+    const til::rect nonClientFrame{ _window->GetNonClientFrame(dpix) };
+    adjustedWidth = islandWidth + nonClientSize.width;
+    adjustedHeight = islandHeight + nonClientSize.height;
 
     til::size dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                           Utils::ClampToShortMax(adjustedHeight, 1) };
@@ -546,7 +554,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     // for the top here - the IslandWindow includes the titlebar in
     // nonClientFrame.top, so adjusting for that would actually place the
     // titlebar _off_ the monitor.
-    til::point origin{ (proposedRect.left + nonClientFrame.left<LONG>()),
+    til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
     if (_logic.IsQuakeWindow())
@@ -556,12 +564,12 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
         const til::size availableSpace = desktopDimensions + nonClientSize;
 
         origin = til::point{
-            ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (nonClientSize.width() / 2)),
+            ::base::ClampSub(nearestMonitorInfo.rcWork.left, (nonClientSize.width / 2)),
             (nearestMonitorInfo.rcWork.top)
         };
         dimensions = til::size{
-            availableSpace.width(),
-            availableSpace.height() / 2
+            availableSpace.width,
+            availableSpace.height / 2
         };
         launchMode = LaunchMode::FocusMode;
     }
@@ -569,18 +577,18 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     {
         // Move our proposed location into the center of that specific monitor.
         origin = til::point{
-            (nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2))),
-            (nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2)))
+            (nearestMonitorInfo.rcWork.left + ((desktopDimensions.width / 2) - (dimensions.width / 2))),
+            (nearestMonitorInfo.rcWork.top + ((desktopDimensions.height / 2) - (dimensions.height / 2)))
         };
     }
 
-    const til::rectangle newRect{ origin, dimensions };
+    const til::rect newRect{ origin, dimensions };
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
-                                  newRect.left<int>(),
-                                  newRect.top<int>(),
-                                  newRect.width<int>(),
-                                  newRect.height<int>(),
+                                  newRect.left,
+                                  newRect.top,
+                                  newRect.width(),
+                                  newRect.height(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
 
     // Refresh the dpi of HWND because the dpi where the window will launch may be different
@@ -640,6 +648,29 @@ void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&
     _window->FullscreenChanged(_logic.Fullscreen());
 }
 
+void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspectable&,
+                                       const winrt::Windows::Foundation::IInspectable&)
+{
+    if (const auto handle = _window->GetHandle())
+    {
+        // Shamelessly copied from TitlebarControl::_OnMaximizeOrRestore
+        // since there doesn't seem to be another way to handle this
+        POINT point1 = {};
+        ::GetCursorPos(&point1);
+        const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+        WINDOWPLACEMENT placement = { sizeof(placement) };
+        ::GetWindowPlacement(handle, &placement);
+        if (placement.showCmd == SW_SHOWNORMAL)
+        {
+            ::PostMessage(handle, WM_SYSCOMMAND, SC_MAXIMIZE, lParam);
+        }
+        else if (placement.showCmd == SW_SHOWMAXIMIZED)
+        {
+            ::PostMessage(handle, WM_SYSCOMMAND, SC_RESTORE, lParam);
+        }
+    }
+}
+
 void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
                                   const winrt::Windows::Foundation::IInspectable&)
 {
@@ -674,7 +705,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
     if (_logic)
     {
         // Find all the elements that are underneath the mouse
-        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord, _logic.GetRoot());
+        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _logic.GetRoot());
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
@@ -685,7 +716,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
                     // Translate the event to the coordinate space of the control
                     // we're attempting to dispatch it to
                     const auto transform = e.TransformToVisual(nullptr);
-                    const til::point controlOrigin{ til::math::flooring, transform.TransformPoint(til::point{ 0, 0 }) };
+                    const til::point controlOrigin{ til::math::flooring, transform.TransformPoint({}) };
 
                     const til::point offsetPoint = coord - controlOrigin;
 
@@ -693,7 +724,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
                     const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
                     const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
 
-                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
+                    if (control.OnMouseWheel(offsetPoint.to_winrt_point(), delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.

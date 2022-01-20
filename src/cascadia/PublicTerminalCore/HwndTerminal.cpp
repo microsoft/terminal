@@ -214,7 +214,8 @@ HRESULT HwndTerminal::Initialize()
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
     auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
     auto* const localPointerToThread = renderThread.get();
-    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
+    const auto& renderSettings = _terminal->GetRenderSettings();
+    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
     RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
@@ -549,11 +550,11 @@ try
 
     if (multiClickMapper == 3)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Line);
+        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Line);
     }
     else if (multiClickMapper == 2)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Word);
+        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Word);
     }
     else
     {
@@ -582,19 +583,25 @@ try
 
     RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.area() == 0); // either dimension = 0, area == 0
 
-    if (this->_singleClickTouchdownPos)
+    // This is a copy of ControlInteractivity::PointerMoved
+    if (_singleClickTouchdownPos)
     {
-        const auto& touchdownPoint{ *this->_singleClickTouchdownPos };
-        const auto distance{ std::sqrtf(std::powf(cursorPosition.x<float>() - touchdownPoint.x<float>(), 2) + std::powf(cursorPosition.y<float>() - touchdownPoint.y<float>(), 2)) };
-        if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
+        const auto touchdownPoint = *_singleClickTouchdownPos;
+        const auto dx = cursorPosition.x - touchdownPoint.x;
+        const auto dy = cursorPosition.y - touchdownPoint.y;
+        const auto w = fontSize.width;
+        const auto distanceSquared = dx * dx + dy * dy;
+        const auto maxDistanceSquared = w * w / 16; // (w / 4)^2
+
+        if (distanceSquared >= maxDistanceSquared)
         {
-            _terminal->SetSelectionAnchor(touchdownPoint / fontSize);
+            _terminal->SetSelectionAnchor((touchdownPoint / fontSize).to_win32_coord());
             // stop tracking the touchdown point
             _singleClickTouchdownPos = std::nullopt;
         }
     }
 
-    this->_terminal->SetSelectionEnd(cursorPosition / fontSize);
+    this->_terminal->SetSelectionEnd((cursorPosition / fontSize).to_win32_coord());
     this->_renderer->TriggerSelection();
 
     return S_OK;
@@ -696,9 +703,9 @@ try
         wheelDelta = HIWORD(wParam);
 
         // If it's a *WHEEL event, it's in screen coordinates, not window (?!)
-        POINT coordsToTransform = cursorPosition;
+        POINT coordsToTransform = cursorPosition.to_win32_point();
         ScreenToClient(_hwnd.get(), &coordsToTransform);
-        cursorPosition = coordsToTransform;
+        cursorPosition = til::point{ coordsToTransform };
     }
 
     const TerminalInput::MouseButtonState state{
@@ -707,7 +714,7 @@ try
         WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
     };
 
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    return _terminal->SendMouseEvent((cursorPosition / fontSize).to_win32_coord(), uMsg, getControlKeyState(), wheelDelta, state);
 }
 catch (...)
 {

@@ -48,6 +48,8 @@ private:
                            const winrt::Windows::Foundation::IInspectable& arg);
     void _FullscreenChanged(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Windows::Foundation::IInspectable& arg);
+    void _ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                  const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,

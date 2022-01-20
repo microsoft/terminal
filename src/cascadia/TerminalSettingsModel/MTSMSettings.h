@@ -75,7 +75,8 @@ Author(s):
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
     X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)                                                                                              \
-    X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)
+    X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
+    X(bool, Elevate, "elevate", false)
 
 #define MTSM_FONT_SETTINGS(X)                                                          \
     X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \

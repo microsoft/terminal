@@ -5,10 +5,9 @@
 // https://github.com/Maximus5/ConEmu/blob/master/src/ConEmu/ColorFix.cpp
 // and then adjusted to fit our style guidelines
 
-#include "pch.h"
+#include "precomp.h"
 
-#include <Windows.h>
-#include "ColorFix.hpp"
+#include "inc/ColorFix.hpp"
 
 static constexpr double gMinThreshold = 12.0;
 static constexpr double gExpThreshold = 20.0;
@@ -23,7 +22,7 @@ static constexpr double rad180 = 3.141592653589793238;
 static constexpr double rad275 = 4.799655442984406336;
 static constexpr double rad360 = 6.283185307179586476;
 
-ColorFix::ColorFix(COLORREF color)
+ColorFix::ColorFix(COLORREF color) noexcept
 {
     rgb = color;
     _ToLab();
@@ -31,7 +30,7 @@ ColorFix::ColorFix(COLORREF color)
 
 // Method Description:
 // - Helper function to calculate HPrime
-double ColorFix::_GetHPrimeFn(double x, double y)
+double ColorFix::_GetHPrimeFn(double x, double y) noexcept
 {
     if (x == 0 && y == 0)
     {
@@ -49,7 +48,7 @@ double ColorFix::_GetHPrimeFn(double x, double y)
 // - x2: the second color
 // Return Value:
 // - The DeltaE value between x1 and x2
-double ColorFix::_GetDeltaE(ColorFix x1, ColorFix x2)
+double ColorFix::_GetDeltaE(ColorFix x1, ColorFix x2) noexcept
 {
     constexpr double kSubL = 1;
     constexpr double kSubC = 1;
@@ -125,7 +124,7 @@ double ColorFix::_GetDeltaE(ColorFix x1, ColorFix x2)
 // - Populates our L, A, B values, based on our r, g, b values
 // - Converts a color in rgb format to a color in lab format
 // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
-void ColorFix::_ToLab()
+void ColorFix::_ToLab() noexcept
 {
     double var_R = r / 255.0;
     double var_G = g / 255.0;
@@ -171,9 +170,9 @@ void ColorFix::_ToRGB()
     var_X = (pow(var_X, 3) > 0.008856) ? pow(var_X, 3) : (var_X - 16. / 116.) / 7.787;
     var_Z = (pow(var_Z, 3) > 0.008856) ? pow(var_Z, 3) : (var_Z - 16. / 116.) / 7.787;
 
-    double X = 95.047 * var_X; //ref_X =  95.047     (Observer= 2 degrees, Illuminant= D65)
-    double Y = 100.000 * var_Y; //ref_Y = 100.000
-    double Z = 108.883 * var_Z; //ref_Z = 108.883
+    const double X = 95.047 * var_X; //ref_X =  95.047     (Observer= 2 degrees, Illuminant= D65)
+    const double Y = 100.000 * var_Y; //ref_Y = 100.000
+    const double Z = 108.883 * var_Z; //ref_Z = 108.883
 
     var_X = X / 100.; //X from 0 to  95.047      (Observer = 2 degrees, Illuminant = D65)
     var_Y = Y / 100.; //Y from 0 to 100.000
@@ -202,7 +201,7 @@ void ColorFix::_ToRGB()
 // - The foreground color after performing any necessary changes to make it more perceivable
 COLORREF ColorFix::GetPerceivableColor(COLORREF fg, COLORREF bg)
 {
-    ColorFix backLab(bg);
+    const ColorFix backLab(bg);
     ColorFix frontLab(fg);
     const double de1 = _GetDeltaE(frontLab, backLab);
     if (de1 < gMinThreshold)

@@ -155,6 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateMediaResources();
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
+        void _validateCorrectDefaultShellPaths() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
 
         // user settings
