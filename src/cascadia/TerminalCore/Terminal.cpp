@@ -989,6 +989,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     }
 
     cursor.EndDeferDrawing();
+    _NotifyTerminalCursorPositionChanged();
 }
 
 void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
