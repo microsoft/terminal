@@ -127,7 +127,7 @@
                             <Grid MinHeight="64">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
                                     <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
@@ -138,6 +138,7 @@
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
                                            Margin="0,0,-16,0"
+                                           MaxWidth="250"
                                            HorizontalAlignment="Right"
                                            VerticalAlignment="Center"
                                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
