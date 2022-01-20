@@ -302,6 +302,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // ProfileViewModel, because the navigation menu item for this profile is the globalProfileTag.
         // See MainPage::UpdateSettings for why this matters
         const auto breadcrumbTag = profile.IsBaseLayer() ? box_value(globalProfileTag) : box_value(profile);
+        const auto breadcrumbText = profile.IsBaseLayer() ? RS_(L"Nav_ProfileDefaults/Content") : profile.Name();
         _profileViewModelChangedRevoker = profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
             if (settingName == L"CurrentPage")
@@ -311,7 +312,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
                     _breadcrumbs.Clear();
-                    const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Nav_ProfileDefaults/Content"), BreadcrumbSubPage::None);
+                    const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None);
                     _breadcrumbs.Append(crumb);
                 }
                 else if (currentPage == ProfileSubPage::Appearance)
