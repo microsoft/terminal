@@ -11,6 +11,13 @@
 #include <wil/win32_helpers.h>
 #include <shellapi.h>
 
+#include <winrt/Windows.ApplicationModel.h>
+
+// This file does't need all of til, but it does need:
+#define _TIL_INLINEPREFIX __declspec(noinline) inline
+#include "til/string.h"
+#include "../WinRTUtils/inc/WtExeUtils.h"
+
 // BODGY
 //
 // If we try to do this in the Terminal itself, then there's a bunch of weird
@@ -30,10 +37,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR pCmdLine, int)
     // All of the args passed to us (something like `new-tab -p {guid}`) are in
     // pCmdLine
 
-    // Get the path to WindowsTerminal.exe, which should live next to us.
-    std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-    // Swap elevate-shim.exe for WindowsTerminal.exe
-    module.replace_filename(L"WindowsTerminal.exe");
+    // Use GetWtExePath which should find the right packaged version of wt.exe
+    std::filesystem::path module{ GetWtExePath() };
 
     // Go!
 
