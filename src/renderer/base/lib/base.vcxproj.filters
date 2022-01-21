@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -42,7 +42,7 @@
     <ClCompile Include="..\RenderEngineBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\BlinkingState.cpp">
+    <ClCompile Include="..\RenderSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,19 +77,16 @@
     <ClInclude Include="..\..\inc\IRenderEngine.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\IRenderer.hpp">
-      <Filter>Header Files\inc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\RenderEngineBase.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\BlinkingState.hpp">
-      <Filter>Header Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\Cluster.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\IRenderTarget.hpp">
+      <Filter>Header Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\RenderSettings.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
   </ItemGroup>

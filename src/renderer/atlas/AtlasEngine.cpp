@@ -377,11 +377,11 @@ try
         }
     }
 
-    _api.dirtyRect = til::rectangle{
-        static_cast<ptrdiff_t>(0),
-        static_cast<ptrdiff_t>(_api.invalidatedRows.x),
-        static_cast<ptrdiff_t>(_api.cellCount.x),
-        static_cast<ptrdiff_t>(_api.invalidatedRows.y),
+    _api.dirtyRect = til::rect{
+        0,
+        _api.invalidatedRows.x,
+        _api.cellCount.x,
+        _api.invalidatedRows.y,
     };
 
     return S_OK;
@@ -562,10 +562,10 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const gsl::not_null<IRenderData*> pData, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, const gsl::not_null<IRenderData*> /*pData*/, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
 try
 {
-    const auto [fg, bg] = pData->GetAttributeColors(textAttributes);
+    const auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
 
     if (!isSettingDefaultBrushes)
     {

@@ -15,7 +15,11 @@ Abstract:
 #include "../adapter/termDispatch.hpp"
 #include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
-#include "../../inc/ITerminalOutputConnection.hpp"
+
+namespace Microsoft::Console::Render
+{
+    class VtEngine;
+}
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -56,7 +60,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool DispatchControlCharsFromEscape() const noexcept override;
         bool DispatchIntermediatesFromEscape() const noexcept override;
 
-        void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
+        void SetTerminalConnection(Microsoft::Console::Render::VtEngine* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);
 
         const ITermDispatch& Dispatch() const noexcept;
@@ -64,7 +68,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         std::unique_ptr<ITermDispatch> _dispatch;
-        Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
+        Microsoft::Console::Render::VtEngine* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
 

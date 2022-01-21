@@ -37,11 +37,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
     {
-        _controlBounds = til::rectangle{ til::math::rounding, bounds };
+        _controlBounds = til::rect{ til::math::rounding, bounds };
     }
     void InteractivityAutomationPeer::SetControlPadding(const Core::Padding padding)
     {
-        _controlPadding = padding;
+        _controlPadding = til::rect{ til::math::rounding, padding };
     }
     void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
     {
@@ -143,12 +143,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region IControlAccessibilityInfo
     COORD InteractivityAutomationPeer::GetFontSize() const noexcept
     {
-        return til::size{ til::math::rounding, _interactivity->Core().FontSize() };
+        return til::size{ til::math::rounding, _interactivity->Core().FontSize() }.to_win32_coord();
     }
 
     RECT InteractivityAutomationPeer::GetBounds() const noexcept
     {
-        return _controlBounds;
+        return _controlBounds.to_win32_rect();
     }
 
     HRESULT InteractivityAutomationPeer::GetHostUiaProvider(IRawElementProviderSimple** provider)
@@ -161,7 +161,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     RECT InteractivityAutomationPeer::GetPadding() const noexcept
     {
-        return _controlPadding;
+        return _controlPadding.to_win32_rect();
     }
 
     double InteractivityAutomationPeer::GetScaleFactor() const noexcept

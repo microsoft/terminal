@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -56,3 +56,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 
 #include <til/mutex.h>
 #include <til/throttled_func.h>
+
+#include <cppwinrt_utils.h>

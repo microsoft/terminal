@@ -279,23 +279,22 @@ namespace winrt::TerminalApp::implementation
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
-            //
-            // We know at the start, that the root TerminalPage definitely isn't
-            // in focus nor fullscreen mode. So "Toggle" here will always work
-            // to "enable".
             const auto launchMode = this->GetLaunchMode();
-            if (IsQuakeWindow())
+            if (IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
             {
-                _root->ToggleFocusMode();
+                _root->SetFocusMode(true);
             }
-            else if (launchMode == LaunchMode::FullscreenMode)
+
+            // The IslandWindow handles (creating) the maximized state
+            // we just want to record it here on the page as well.
+            if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
             {
-                _root->ToggleFullscreen();
+                _root->Maximized(true);
             }
-            else if (launchMode == LaunchMode::FocusMode ||
-                     launchMode == LaunchMode::MaximizedFocusMode)
+
+            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode))
             {
-                _root->ToggleFocusMode();
+                _root->SetFullscreen(true);
             }
         });
         _root->Create();
@@ -662,6 +661,13 @@ namespace winrt::TerminalApp::implementation
         // commandline, then use that to override the value from the settings.
         const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
+        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        {
+            if (layout.LaunchMode())
+            {
+                return layout.LaunchMode().Value();
+            }
+        }
         return valueFromCommandlineArgs.has_value() ?
                    valueFromCommandlineArgs.value() :
                    valueFromSettings;
@@ -1441,6 +1447,14 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::Fullscreen() const
     {
         return _root ? _root->Fullscreen() : false;
+    }
+
+    void AppLogic::Maximized(bool newMaximized)
+    {
+        if (_root)
+        {
+            _root->Maximized(newMaximized);
+        }
     }
 
     bool AppLogic::AlwaysOnTop() const

@@ -36,7 +36,7 @@ winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<
     profile->Name(parent->Name());
     profile->Guid(parent->Guid());
     profile->Hidden(parent->Hidden());
-    profile->InsertParent(parent);
+    profile->AddLeastImportantParent(parent);
     return profile;
 }
 
@@ -219,6 +219,18 @@ Model::Profile CascadiaSettings::CreateNewProfile()
     return *newProfile;
 }
 
+template<typename T>
+static bool isProfilesDefaultsOrigin(const T& profile)
+{
+    return profile && profile.Origin() != winrt::Microsoft::Terminal::Settings::Model::OriginTag::ProfilesDefaults;
+}
+
+template<typename T>
+static bool isProfilesDefaultsOriginSub(const T& sub)
+{
+    return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
+}
+
 // Method Description:
 // - Duplicate a new profile based off another profile's settings
 // - This differs from Profile::Copy because it also copies over settings
@@ -249,14 +261,6 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     }
 
     const auto duplicated = _createNewProfile(newName);
-
-    static constexpr auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
-        return profile && profile.Origin() != OriginTag::ProfilesDefaults;
-    };
-
-    static constexpr auto isProfilesDefaultsOriginSub = [](const auto& sub) -> bool {
-        return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
-    };
 
 #define NEEDS_DUPLICATION(settingName) source.Has##settingName() || isProfilesDefaultsOrigin(source.settingName##OverrideSource())
 #define NEEDS_DUPLICATION_SUB(source, settingName) source.Has##settingName() || isProfilesDefaultsOriginSub(source.settingName##OverrideSource())
@@ -336,12 +340,18 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
         winrt::com_ptr<AppearanceConfig> defaultAppearance;
         defaultAppearance.copy_from(winrt::get_self<AppearanceConfig>(duplicated->DefaultAppearance()));
-        unfocusedAppearance->InsertParent(defaultAppearance);
+        unfocusedAppearance->AddLeastImportantParent(defaultAppearance);
 
         duplicated->UnfocusedAppearance(*unfocusedAppearance);
     }
 
-    if (source.HasConnectionType())
+    // GH#12120: Check if the connection type isn't just the default value. If
+    // it is, then we should copy it. The only case this applies right now is
+    // for the Azure Cloud Shell, which is the only thing that has a non-{}
+    // guid. The user's version of this profile won't have connectionType set,
+    // because it inherits the setting from the parent. If we fail to copy it
+    // here, they won't actually get a Azure shell profile.
+    if (source.ConnectionType() != winrt::guid{})
     {
         duplicated->ConnectionType(source.ConnectionType());
     }
@@ -399,6 +409,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
 // - <none>
 void CascadiaSettings::_validateSettings()
 {
+    _validateCorrectDefaultShellPaths();
     _validateAllSchemesExist();
     _validateMediaResources();
     _validateKeybindings();
@@ -565,24 +576,16 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
         }
     }
 
-    if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
-    {
-        // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
-        // what we do is dependent on whether there was a commandline.
-        // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
-        // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
-        //   launch in the user's actual default profile.
-        // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
-        // TODO GH#10952: Detect the profile based on the commandline (add matching support)
-        return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-                   FindProfile(GlobalSettings().DefaultProfile()) :
-                   ProfileDefaults();
-    }
-    else
-    {
-        // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
-        return FindProfile(GlobalSettings().DefaultProfile());
-    }
+    // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
+    // what we do is dependent on whether there was a commandline.
+    // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
+    // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
+    //   launch in the user's actual default profile.
+    // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
+    // TODO GH#10952: Detect the profile based on the commandline (add matching support)
+    return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
+               FindProfile(GlobalSettings().DefaultProfile()) :
+               ProfileDefaults();
 }
 
 // The method does some crude command line matching for our console hand-off support.

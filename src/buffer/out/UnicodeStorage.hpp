@@ -14,9 +14,11 @@ Author(s):
 
 #pragma once
 
-#include <vector>
 #include <unordered_map>
-#include <climits>
+#include <vector>
+
+#include <til/bit.h>
+#include <til/hash.h>
 
 // std::unordered_map needs help to know how to hash a COORD
 namespace std
@@ -33,10 +35,7 @@ namespace std
         // - the hashed coord
         constexpr size_t operator()(const COORD& coord) const noexcept
         {
-            size_t retVal = coord.Y;
-            const size_t xCoord = coord.X;
-            retVal |= xCoord << (sizeof(coord.Y) * CHAR_BIT);
-            return retVal;
+            return til::hash(til::bit_cast<uint32_t>(coord));
         }
     };
 }

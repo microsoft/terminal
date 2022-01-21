@@ -20,8 +20,11 @@ Revision History:
 
 #pragma once
 
+#include "inputReadHandleData.h"
 #include "../server/IWaitRoutine.h"
 #include "../server/WaitTerminationReason.h"
+
+class InputBuffer;
 
 class ReadData : public IWaitRoutine
 {

@@ -27,7 +27,7 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRe
     _runs{},
     _breakpoints{},
     _runIndex{ 0 },
-    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width()) },
+    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width) },
     _isEntireTextSimple{ false }
 {
     _localeName.resize(gsl::narrow_cast<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null

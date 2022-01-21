@@ -23,12 +23,12 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _ActionClear();
 }
 
-void StateMachine::SetParserMode(const Mode mode, const bool enabled)
+void StateMachine::SetParserMode(const Mode mode, const bool enabled) noexcept
 {
     _parserMode.set(mode, enabled);
 }
 
-bool StateMachine::GetParserMode(const Mode mode) const
+bool StateMachine::GetParserMode(const Mode mode) const noexcept
 {
     return _parserMode.test(mode);
 }

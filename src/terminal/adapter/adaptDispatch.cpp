@@ -11,6 +11,7 @@
 #include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
@@ -1270,7 +1271,7 @@ bool AdaptDispatch::SetScreenMode(const bool reverseMode)
         return false;
     }
 
-    return _pConApi->PrivateSetScreenMode(reverseMode);
+    return _pConApi->SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
 }
 
 // Routine Description:
@@ -2245,12 +2246,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return _pConApi->SetCursorColor(cursorColor);
+    return _pConApi->SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
 }
 
 // Routine Description:
@@ -2273,18 +2269,7 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetColorTableEntry(tableIndex, dwColor);
 }
 
 // Method Description:
@@ -2293,21 +2278,10 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetDefaultForeground(dwColor);
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return success;
+    _pConApi->SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
+    return _pConApi->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 }
 
 // Method Description:
@@ -2316,21 +2290,10 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(co
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetDefaultBackground(dwColor);
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return success;
+    _pConApi->SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
+    return _pConApi->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 }
 
 //Routine Description:
@@ -2474,7 +2437,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber
             const auto bitPattern = _fontBuffer->GetBitPattern();
             const auto cellSize = _fontBuffer->GetCellSize();
             const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize, centeringHint);
+            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
         }
         return true;
     };

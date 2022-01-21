@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "renderer.hpp"
 
 #pragma hdrstop
@@ -29,10 +28,12 @@ static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 // - pEngine - The output engine for targeting each rendering frame
 // Return Value:
 // - An instance of a Renderer.
-Renderer::Renderer(IRenderData* pData,
+Renderer::Renderer(const RenderSettings& renderSettings,
+                   IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
-                   std::unique_ptr<IRenderThread> thread) :
+                   std::unique_ptr<RenderThread> thread) :
+    _renderSettings(renderSettings),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
     _pThread{ std::move(thread) },
     _viewport{ pData->GetViewport() }
@@ -51,7 +52,7 @@ Renderer::Renderer(IRenderData* pData,
 // - <none>
 Renderer::~Renderer()
 {
-    // IRenderThread blocks until it has shut down.
+    // RenderThread blocks until it has shut down.
     _destructing = true;
     _pThread.reset();
 }
@@ -142,7 +143,7 @@ try
     });
 
     // A. Prep Colors
-    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), false, true));
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, {}, false, true));
 
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
@@ -355,17 +356,17 @@ void Renderer::TriggerSelection()
         // Restrict all previous selection rectangles to inside the current viewport bounds
         for (auto& sr : _previousSelection)
         {
-            // Make the exclusive SMALL_RECT into a til::rectangle.
-            til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
+            // Make the exclusive SMALL_RECT into a til::rect.
+            til::rect rc{ Viewport::FromExclusive(sr).ToInclusive() };
 
             // Make a viewport representing the coordinates that are currently presentable.
-            const til::rectangle viewport{ til::size{ _pData->GetViewport().Dimensions() } };
+            const til::rect viewport{ til::size{ _pData->GetViewport().Dimensions() } };
 
             // Intersect them so we only invalidate things that are still visible.
             rc &= viewport;
 
             // Convert back into the exclusive SMALL_RECT and store in the vector.
-            sr = Viewport::FromInclusive(rc).ToExclusive();
+            sr = Viewport::FromInclusive(rc.to_small_rect()).ToExclusive();
         }
 
         FOREACH_ENGINE(pEngine)
@@ -409,7 +410,7 @@ bool Renderer::_CheckViewportAndScroll()
         LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
     }
 
-    _ScrollPreviousSelection(coordDelta);
+    _ScrollPreviousSelection(til::point{ coordDelta });
     return true;
 }
 
@@ -444,7 +445,7 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
     }
 
-    _ScrollPreviousSelection(*pcoordDelta);
+    _ScrollPreviousSelection(til::point{ *pcoordDelta });
 
     _NotifyPaintFrame();
 }
@@ -666,7 +667,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
-    gsl::span<const til::rectangle> dirtyAreas;
+    gsl::span<const til::rect> dirtyAreas;
     LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
     // This is to make sure any transforms are reset when this paint is finished.
@@ -677,12 +678,12 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     for (const auto& dirtyRect : dirtyAreas)
     {
         // Shortcut: don't bother redrawing if the width is 0.
-        if (dirtyRect.left() == dirtyRect.right())
+        if (dirtyRect.left == dirtyRect.right)
         {
             continue;
         }
 
-        auto dirty = Viewport::FromInclusive(dirtyRect);
+        auto dirty = Viewport::FromInclusive(dirtyRect.to_small_rect());
 
         // Shift the origin of the dirty region to match the underlying buffer so we can
         // compare the two regions directly for intersection.
@@ -745,7 +746,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         const COORD target,
                                         const bool lineWrapped)
 {
-    auto globalInvert{ _pData->IsScreenReversed() };
+    auto globalInvert{ _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) };
 
     // If we have valid data, let's figure out how to draw it.
     if (it)
@@ -806,7 +807,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // We also accumulate clusters according to regex patterns
             do
             {
-                COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
+                COORD thisPoint{ gsl::narrow<SHORT>(screenPoint.X + cols), screenPoint.Y };
                 const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
                 const auto thisUsingSoftFont = s_IsSoftFontChar(it->Chars(), _firstSoftFontChar, _lastSoftFontChar);
                 const auto changedPatternOrFont = patternIds != thisPointPatterns || usingSoftFont != thisUsingSoftFont;
@@ -984,7 +985,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     if (lines.any())
     {
         // Get the current foreground color to render the lines.
-        const COLORREF rgb = _pData->GetAttributeColors(textAttribute).first;
+        const COLORREF rgb = _renderSettings.GetAttributeColors(textAttribute).first;
         // Draw the lines
         LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
     }
@@ -1032,7 +1033,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
             // The viewport X offset is saved in the options and handled with a transform.
             coordCursor.Y -= view.Top;
 
-            COLORREF cursorColor = _pData->GetCursorColor();
+            COLORREF cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
             bool useColor = cursorColor != INVALID_COLOR;
 
             // Build up the cursor parameters including position, color, and drawing options
@@ -1114,12 +1115,13 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv = Viewport::FromInclusive(srCaView);
 
-        gsl::span<const til::rectangle> dirtyAreas;
+        gsl::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(engine.GetDirtyArea(dirtyAreas));
 
-        for (SMALL_RECT srDirty : dirtyAreas)
+        for (const auto& rect : dirtyAreas)
         {
             // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
+            auto srDirty = rect.to_small_rect();
             srDirty.Bottom++;
             srDirty.Right++;
 
@@ -1174,7 +1176,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        gsl::span<const til::rectangle> dirtyAreas;
+        gsl::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
         // Get selection rectangles
@@ -1186,7 +1188,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
                 // Make a copy as `TrimToViewport` will manipulate it and
                 // can destroy it for the next dirtyRect to test against.
                 auto rectCopy = rect;
-                Viewport dirtyView = Viewport::FromInclusive(dirtyRect);
+                Viewport dirtyView = Viewport::FromInclusive(dirtyRect.to_small_rect());
                 if (dirtyView.TrimToViewport(&rectCopy))
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
@@ -1216,7 +1218,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, usingSoftFont, isSettingDefaultBrushes);
+    return pEngine->UpdateDrawingBrushes(textAttributes, _renderSettings, _pData, usingSoftFont, isSettingDefaultBrushes);
 }
 
 // Routine Description:
@@ -1281,13 +1283,13 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
         for (auto& sr : _previousSelection)
         {
             // Get a rectangle representing this piece of the selection.
-            til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
+            til::rect rc{ Viewport::FromExclusive(sr).ToInclusive() };
 
             // Offset the entire existing rectangle by the delta.
             rc += delta;
 
             // Store it back into the vector.
-            sr = Viewport::FromInclusive(rc).ToExclusive();
+            sr = Viewport::FromInclusive(rc.to_small_rect()).ToExclusive();
         }
     }
 }

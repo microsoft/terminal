@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -414,8 +414,26 @@
     <value>Toggle focus mode</value>
     <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
   </data>
+  <data name="EnableFocusModeCommandKey" xml:space="preserve">
+    <value>Enable focus mode</value>
+  </data>
+  <data name="DisableFocusModeCommandKey" xml:space="preserve">
+    <value>Disable focus mode</value>
+  </data>
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
     <value>Toggle fullscreen</value>
+  </data>
+  <data name="EnableFullScreenCommandKey" xml:space="preserve">
+    <value>Enable fullscreen</value>
+  </data>
+  <data name="DisableFullScreenCommandKey" xml:space="preserve">
+    <value>Disable fullscreen</value>
+  </data>
+  <data name="EnableMaximizedCommandKey" xml:space="preserve">
+    <value>Maximize window</value>
+  </data>
+  <data name="DisableMaximizedCommandKey" xml:space="preserve">
+    <value>Restore maximized window</value>
   </data>
   <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
     <value>Toggle pane split orientation</value>
@@ -455,6 +473,13 @@
     <value>Focus pane {0}</value>
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
+  <data name="ExportBufferToPathCommandKey" xml:space="preserve">
+    <value>Export text to {0}</value>
+    <comment>{0} will be replaced with a user-specified file path</comment>
+  </data>
+  <data name="ExportBufferCommandKey" xml:space="preserve">
+    <value>Export text</value>
+  </data>
   <data name="ClearAllCommandKey" xml:space="preserve">
     <value>Clear buffer</value>
     <comment>A command to clear the entirety of the Terminal output buffer</comment>
@@ -477,5 +502,23 @@
   </data>
   <data name="QuitCommandKey" xml:space="preserve">
     <value>Quit the Terminal</value>
+  </data>
+  <data name="SetOpacityParentCommandName" xml:space="preserve">
+    <value>Set background opacity...</value>
+  </data>
+  <data name="IncreaseOpacityCommandKey" xml:space="preserve">
+    <value>Increase background opacity by {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="DecreaseOpacityCommandKey" xml:space="preserve">
+    <value>Decrease background opacity by {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="AdjustOpacityCommandKey" xml:space="preserve">
+    <value>Set background opacity to {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="RestoreLastClosedCommandKey" xml:space="preserve">
+    <value>Restore the last closed pane or tab</value>
   </data>
 </root>

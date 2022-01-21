@@ -1,14 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-//
-// Declaration of the MainUserControl class.
-//
 
 #pragma once
 
-#include "winrt/Windows.UI.Xaml.h"
-#include "winrt/Windows.UI.Xaml.Markup.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
 #include "TitlebarControl.g.h"
 
 namespace winrt::TerminalApp::implementation
@@ -16,6 +10,12 @@ namespace winrt::TerminalApp::implementation
     struct TitlebarControl : TitlebarControlT<TitlebarControl>
     {
         TitlebarControl(uint64_t handle);
+
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        winrt::fire_and_forget ClickButton(CaptionButton button);
+        void ReleaseButtons();
+        double CaptionButtonWidth();
 
         IInspectable Content();
         void Content(IInspectable content);
@@ -36,7 +36,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TitlebarControl : TitlebarControlT<TitlebarControl, implementation::TitlebarControl>
-    {
-    };
+    BASIC_FACTORY(TitlebarControl);
 }

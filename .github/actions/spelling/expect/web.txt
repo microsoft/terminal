@@ -18,3 +18,12 @@ cppreference
 gfycat
 Guake
 azurewebsites
+askubuntu
+dostips
+viewtopic
+rosettacode
+Rexx
+tldp
+HOWTO
+uwspace
+uwaterloo

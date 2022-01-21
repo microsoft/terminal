@@ -34,7 +34,7 @@ using namespace Microsoft::Console::Types;
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn,
                            _invalidMap,
-                           _lastViewport.ToInclusive(),
+                           til::rect{ _lastViewport.ToInclusive() },
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
@@ -158,7 +158,7 @@ using namespace Microsoft::Console::Types;
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
-    _trace.TracePaintCursor(options.coordCursor);
+    _trace.TracePaintCursor(til::point{ options.coordCursor });
 
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));

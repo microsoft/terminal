@@ -49,8 +49,9 @@ namespace winrt::TerminalApp::implementation
         switch (_lastPreviewedCommand.ActionAndArgs().Action())
         {
         case ShortcutAction::SetColorScheme:
+        case ShortcutAction::AdjustOpacity:
         {
-            _EndPreviewColorScheme();
+            _RunRestorePreviews();
             break;
         }
         }
@@ -58,17 +59,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Revert any changes from the preview on a SetColorScheme action. This
-    //   will remove the preview TerminalSettings we inserted into the control's
-    //   TerminalSettings graph, and update the control.
+    // - Revert any changes from the preview action. This will run the restore
+    //   function that the preview added to _restorePreviewFuncs
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_EndPreviewColorScheme()
+    void TerminalPage::_RunRestorePreviews()
     {
-        for (const auto& f : _restorePreviewFuncs)
+        // Apply the reverts in reverse order - If we had multiple previews
+        // stacked on top of each other, then this will ensure the first one in
+        // is the last one out.
+        for (auto i{ _restorePreviewFuncs.rbegin() }; i < _restorePreviewFuncs.rend(); i++)
         {
+            auto f = *i;
             f();
         }
         _restorePreviewFuncs.clear();
@@ -90,62 +94,42 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
-            // Clear the saved preview funcs because we don't need to add a restore each time
-            // the preview color changes, we only need to be able to restore the last one.
-            _restorePreviewFuncs.clear();
-
             _ApplyToActiveControls([&](const auto& control) {
-                // Get the settings of the focused control and stash them
-                const auto& controlSettings = control.Settings().as<TerminalSettings>();
-                // Make sure to recurse up to the root - if you're doing
-                // this while you're currently previewing a SetColorScheme
-                // action, then the parent of the control's settings is _the
-                // last preview TerminalSettings we inserted! We don't want
-                // to save that one!
-                auto originalSettings = controlSettings.GetParent();
-                while (originalSettings.GetParent() != nullptr)
-                {
-                    originalSettings = originalSettings.GetParent();
-                }
-                // Create a new child for those settings
-                TerminalSettingsCreateResult fake{ originalSettings };
-                const auto& childStruct = TerminalSettings::CreateWithParent(fake);
-                // Modify the child to have the applied color scheme
-                childStruct.DefaultSettings().ApplyColorScheme(scheme);
+                // Stash a copy of the current scheme.
+                auto originalScheme{ control.ColorScheme() };
 
-                // Insert that new child as the parent of the control's settings
-                controlSettings.SetParent(childStruct.DefaultSettings());
-                control.UpdateSettings();
+                // Apply the new scheme.
+                control.ColorScheme(scheme.ToCoreScheme());
 
-                // Take a copy of the inputs, since they are pointers anyways.
+                // Each control will emplace a revert into the
+                // _restorePreviewFuncs for itself.
                 _restorePreviewFuncs.emplace_back([=]() {
-                    // Get the runtime settings of the focused control
-                    const auto& controlSettings{ control.Settings().as<TerminalSettings>() };
-
-                    // Get the control's root settings, the ones that we actually
-                    // assigned to it.
-                    auto parentSettings{ controlSettings.GetParent() };
-                    while (parentSettings.GetParent() != nullptr)
-                    {
-                        parentSettings = parentSettings.GetParent();
-                    }
-
-                    // If the root settings are the same as the ones we stashed,
-                    // then reset the parent of the runtime settings to the stashed
-                    // settings. This condition might be false if the settings
-                    // hot-reloaded while the palette was open. In that case, we
-                    // don't want to reset the settings to what they were _before_
-                    // the hot-reload.
-                    if (originalSettings == parentSettings)
-                    {
-                        // Set the original settings as the parent of the control's settings
-                        control.Settings().as<TerminalSettings>().SetParent(originalSettings);
-                    }
-
-                    control.UpdateSettings();
+                    // On dismiss, restore the original scheme.
+                    control.ColorScheme(originalScheme);
                 });
             });
         }
+    }
+
+    void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
+    {
+        // Clear the saved preview funcs because we don't need to add a restore each time
+        // the preview changes, we only need to be able to restore the last one.
+        _restorePreviewFuncs.clear();
+
+        _ApplyToActiveControls([&](const auto& control) {
+            // Stash a copy of the original opacity.
+            auto originalOpacity{ control.BackgroundOpacity() };
+
+            // Apply the new opacity
+            control.AdjustOpacity(args.Opacity(), args.Relative());
+
+            _restorePreviewFuncs.emplace_back([=]() {
+                // On dismiss:
+                // Don't adjust relatively, just set outright.
+                control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity * 100), false);
+            });
+        });
     }
 
     // Method Description:
@@ -177,6 +161,11 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::SetColorScheme:
             {
                 _PreviewColorScheme(args.ActionAndArgs().Args().try_as<SetColorSchemeArgs>());
+                break;
+            }
+            case ShortcutAction::AdjustOpacity:
+            {
+                _PreviewAdjustOpacity(args.ActionAndArgs().Args().try_as<AdjustOpacityArgs>());
                 break;
             }
             }

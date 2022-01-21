@@ -6,6 +6,7 @@
 #include "inc/colorTable.hpp"
 
 #include <wil/token_helpers.h>
+#include <til/string.h>
 
 using namespace Microsoft::Console;
 
@@ -590,4 +591,87 @@ bool Utils::IsElevated()
         }
     }();
     return isElevated;
+}
+
+// Function Description:
+// - Promotes a starting directory provided to a WSL invocation to a commandline argument.
+//   This is necessary because WSL has some modicum of support for linux-side directories (!) which
+//   CreateProcess never will.
+std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std::wstring_view commandLine,
+                                                                            std::wstring_view startingDirectory)
+{
+    do
+    {
+        if (startingDirectory.size() > 0 && commandLine.size() >= 3)
+        { // "wsl" is three characters; this is a safe bet. no point in doing it if there's no starting directory though!
+            // Find the first space, quote or the end of the string -- we'll look for wsl before that.
+            const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+            const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+            const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
+            const auto executableFilename{ executablePath.filename().wstring() };
+            if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
+            {
+                // We've got a WSL -- let's just make sure it's the right one.
+                if (executablePath.has_parent_path())
+                {
+                    std::wstring systemDirectory{};
+                    if (FAILED(wil::GetSystemDirectoryW(systemDirectory)))
+                    {
+                        break; // just bail out.
+                    }
+
+                    if (!til::equals_insensitive_ascii(executablePath.parent_path().c_str(), systemDirectory))
+                    {
+                        break; // it wasn't in system32!
+                    }
+                }
+                else
+                {
+                    // assume that unqualified WSL is the one in system32 (minor danger)
+                }
+
+                const auto arguments{ terminator == std::wstring_view::npos ? std::wstring_view{} : commandLine.substr(terminator + 1) };
+                if (arguments.find(L"--cd") != std::wstring_view::npos)
+                {
+                    break; // they've already got a --cd!
+                }
+
+                const auto tilde{ arguments.find_first_of(L'~') };
+                if (tilde != std::wstring_view::npos)
+                {
+                    if (tilde + 1 == arguments.size() || til::at(arguments, tilde + 1) == L' ')
+                    {
+                        // We want to suppress --cd if they have added a bare ~ to their commandline (they conflict).
+                        break;
+                    }
+                    // Tilde followed by non-space should be okay (like, wsl -d Debian ~/blah.sh)
+                }
+
+                // GH#11994 - If the path starts with //wsl$, then the user is
+                // likely passing a Windows-style path to the WSL filesystem,
+                // but with forward slashes instead of backslashes.
+                // Unfortunately, `wsl --cd` will try to treat this as a
+                // linux-relative path, which will fail to do the expected
+                // thing.
+                //
+                // In that case, manually mangle the startingDirectory to use
+                // backslashes as the path separator instead.
+                std::wstring mangledDirectory{ startingDirectory };
+                if (til::starts_with(mangledDirectory, L"//wsl$") || til::starts_with(mangledDirectory, L"//wsl.localhost"))
+                {
+                    mangledDirectory = std::filesystem::path{ startingDirectory }.make_preferred().wstring();
+                }
+
+                return {
+                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), mangledDirectory, arguments),
+                    std::wstring{}
+                };
+            }
+        }
+    } while (false);
+
+    return {
+        std::wstring{ commandLine },
+        std::wstring{ startingDirectory }
+    };
 }

@@ -25,7 +25,7 @@ class WriteData : public IWaitRoutine
 {
 public:
     WriteData(SCREEN_INFORMATION& siContext,
-              _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
+              _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
               const size_t cbContext,
               const UINT uiOutputCodepage,
               const bool requiresVtQuirk);

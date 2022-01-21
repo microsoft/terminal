@@ -8,6 +8,7 @@
 
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
+#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
 #pragma hdrstop
@@ -1075,7 +1076,7 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
 #pragma warning(suppress : 26496)
     auto copy{ target };
     const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
     if (target == bufferSize.Origin())
     {
         // can't expand left
@@ -1087,10 +1088,10 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
         // that it actually points to a space in the buffer
         copy = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
     }
-    else if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    else if (bufferSize.CompareInBounds(target, limit.to_win32_coord(), true) >= 0)
     {
         // if at/past the limit --> clamp to limit
-        copy = *limitOptional;
+        copy = limitOptional->to_win32_coord();
     }
 
     if (accessibilityMode)
@@ -1202,15 +1203,15 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 
     // Already at/past the limit. Can't move forward.
     const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
-    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    if (bufferSize.CompareInBounds(target, limit.to_win32_coord(), true) >= 0)
     {
         return target;
     }
 
     if (accessibilityMode)
     {
-        return _GetWordEndForAccessibility(target, wordDelimiters, limit);
+        return _GetWordEndForAccessibility(target, wordDelimiters, limit.to_win32_coord());
     }
     else
     {
@@ -1365,10 +1366,10 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
     // NOTE: _GetWordEnd...() returns the exclusive position of the "end of the word"
     //       This is also the inclusive start of the next word.
     const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
-    const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
+    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit.to_win32_coord()) };
 
-    if (bufferSize.CompareInBounds(copy, limit, true) >= 0)
+    if (bufferSize.CompareInBounds(copy, limit.to_win32_coord(), true) >= 0)
     {
         return false;
     }
@@ -1410,23 +1411,23 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 // - pos - The COORD for the first cell of the current glyph (inclusive)
 const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::point> limitOptional) const
 {
-    COORD resultPos = pos;
+    COORD resultPos = pos.to_win32_coord();
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (bufferSize.CompareInBounds(resultPos, limit.to_win32_coord(), true) > 0)
     {
-        resultPos = limit;
+        resultPos = limit.to_win32_coord();
     }
 
     // limit is exclusive, so we need to move back to be within valid bounds
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    if (resultPos != limit.to_win32_coord() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
 
-    return resultPos;
+    return til::point{ resultPos };
 }
 
 // Method Description:
@@ -1438,17 +1439,17 @@ const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<t
 // - pos - The COORD for the last cell of the current glyph (exclusive)
 const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
-    COORD resultPos = pos;
+    COORD resultPos = pos.to_win32_coord();
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (bufferSize.CompareInBounds(resultPos, limit.to_win32_coord(), true) > 0)
     {
-        resultPos = limit;
+        resultPos = limit.to_win32_coord();
     }
 
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    if (resultPos != limit.to_win32_coord() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
@@ -1458,7 +1459,7 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilit
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
-    return resultPos;
+    return til::point{ resultPos };
 }
 
 // Method Description:
@@ -1473,9 +1474,9 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilit
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
-    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit, true) };
+    const auto distanceToLimit{ bufferSize.CompareInBounds(pos.to_win32_coord(), limit.to_win32_coord(), true) };
     if (distanceToLimit >= 0)
     {
         // Corner Case: we're on/past the limit
@@ -1492,7 +1493,7 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
     }
 
     // Try to move forward, but if we hit the buffer boundary, we fail to move.
-    auto iter{ GetCellDataAt(pos, bufferSize) };
+    auto iter{ GetCellDataAt(pos.to_win32_coord(), bufferSize) };
     const bool success{ ++iter };
 
     // Move again if we're on a wide glyph
@@ -1501,7 +1502,7 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
         ++iter;
     }
 
-    pos = iter.Pos();
+    pos = til::point{ iter.Pos() };
     return success;
 }
 
@@ -1514,11 +1515,11 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
 // - pos - The COORD for the first cell of the previous glyph (inclusive)
 bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional) const
 {
-    COORD resultPos = pos;
+    COORD resultPos = pos.to_win32_coord();
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
-    if (bufferSize.CompareInBounds(pos, limit, true) > 0)
+    if (bufferSize.CompareInBounds(pos.to_win32_coord(), limit.to_win32_coord(), true) > 0)
     {
         // we're past the end
         // clamp us to the limit
@@ -1533,7 +1534,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
         bufferSize.DecrementInBounds(resultPos, true);
     }
 
-    pos = resultPos;
+    pos = til::point{ resultPos };
     return success;
 }
 
@@ -2447,7 +2448,7 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
         // assign _currentHyperlinkId if the custom id does not already exist
         std::wstring newId{ id };
         // hash the URL and add it to the custom ID - GH#7698
-        newId += L"%" + std::to_wstring(std::hash<std::wstring_view>{}(uri));
+        newId += L"%" + std::to_wstring(til::hash(uri));
         const auto result = _hyperlinkCustomIdMap.emplace(newId, _currentHyperlinkId);
         if (result.second)
         {
@@ -2585,16 +2586,17 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
             size_t prefixSize = 0;
-
-            for (const auto ch : i->prefix().str())
+            for (const std::vector<wchar_t> parsedGlyph : Utf16Parser::Parse(i->prefix().str()))
             {
-                prefixSize += IsGlyphFullWidth(ch) ? 2 : 1;
+                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
+                prefixSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto start = lenUpToThis + prefixSize;
             size_t matchSize = 0;
-            for (const auto ch : i->str())
+            for (const std::vector<wchar_t> parsedGlyph : Utf16Parser::Parse(i->str()))
             {
-                matchSize += IsGlyphFullWidth(ch) ? 2 : 1;
+                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
+                matchSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto end = start + matchSize;
             lenUpToThis = end;
