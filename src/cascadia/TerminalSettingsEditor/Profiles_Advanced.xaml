@@ -54,8 +54,8 @@
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
-                                       SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}" />
+                                       ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
+                                       SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  AltGr Aliasing  -->
@@ -95,8 +95,8 @@
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
-                                       SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}" />
+                                       ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
+                                       SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Bell Style  -->
@@ -107,11 +107,11 @@
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel>
                         <CheckBox x:Uid="Profile_BellStyleAudible"
-                                  IsChecked="{x:Bind IsBellStyleFlagSet(1), BindBack=SetBellStyleAudible, Mode=TwoWay}" />
+                                  IsChecked="{x:Bind Profile.IsBellStyleFlagSet(1), BindBack=Profile.SetBellStyleAudible, Mode=TwoWay}" />
                         <CheckBox x:Uid="Profile_BellStyleWindow"
-                                  IsChecked="{x:Bind IsBellStyleFlagSet(2), BindBack=SetBellStyleWindow, Mode=TwoWay}" />
+                                  IsChecked="{x:Bind Profile.IsBellStyleFlagSet(2), BindBack=Profile.SetBellStyleWindow, Mode=TwoWay}" />
                         <CheckBox x:Uid="Profile_BellStyleTaskbar"
-                                  IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
+                                  IsChecked="{x:Bind Profile.IsBellStyleFlagSet(4), BindBack=Profile.SetBellStyleTaskbar, Mode=TwoWay}" />
                     </StackPanel>
                 </local:SettingContainer>
 

@@ -126,8 +126,8 @@
                                             Style="{StaticResource ExpanderSettingContainerStyle}">
                         <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                           ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                           SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
+                                           ItemsSource="{x:Bind Profile.ScrollStateList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}" />
                     </local:SettingContainer>
                 </StackPanel>
                 <StackPanel>

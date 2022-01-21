@@ -21,7 +21,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, _Profile, ScrollState);
 
     private:
         Microsoft::Terminal::Control::TermControl _previewControl;

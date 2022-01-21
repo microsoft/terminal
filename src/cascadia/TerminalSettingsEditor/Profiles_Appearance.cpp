@@ -20,7 +20,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _previewControl{ Control::TermControl(Model::TerminalSettings{}, nullptr, make<PreviewConnection>()) }
     {
         InitializeComponent();
-        INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         _previewControl.IsEnabled(false);
         _previewControl.AllowFocusWhenDisabled(false);

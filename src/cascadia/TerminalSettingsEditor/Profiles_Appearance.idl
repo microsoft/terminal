@@ -10,9 +10,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Profiles_Appearance();
         ProfileViewModel Profile { get; };
 
-        IInspectable CurrentScrollState;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
-
         Windows.UI.Xaml.Controls.Slider OpacitySlider { get; };
     }
 }
