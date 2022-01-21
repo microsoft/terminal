@@ -1445,14 +1445,15 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t b
 
     const auto valueData = value.data();
     const auto coords = &valueData->coords[0];
-    const auto flags = valueData->flags | _api.bufferLineMetadata[x1].flags;
-    const auto color = _api.bufferLineMetadata[x1].colors;
     const auto data = _getCell(x1, _api.currentRow);
 
     for (u32 i = 0; i < cellCount; ++i)
     {
         data[i].tileIndex = coords[i];
-        data[i].flags = flags;
-        data[i].color = color;
+        // We should apply the column color and flags from each column (instead
+        // of copying them from the x1) so that ligatures can appear in multiple
+        // colors with different line styles.
+        data[i].flags = valueData->flags | _api.bufferLineMetadata[static_cast<size_t>(x1) + i].flags;
+        data[i].color = _api.bufferLineMetadata[static_cast<size_t>(x1) + i].colors;
     }
 }
