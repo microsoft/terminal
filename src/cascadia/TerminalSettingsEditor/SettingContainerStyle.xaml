@@ -138,6 +138,7 @@
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
                                            Margin="0,0,-16,0"
+                                           FontFamily="Segoe UI, Segoe MDL2 Assets"
                                            MaxWidth="250"
                                            HorizontalAlignment="Right"
                                            VerticalAlignment="Center"
