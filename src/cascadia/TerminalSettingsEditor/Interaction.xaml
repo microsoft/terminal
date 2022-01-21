@@ -28,7 +28,8 @@
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Copy On Select  -->
             <local:SettingContainer x:Uid="Globals_CopyOnSelect">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Copy Format  -->
@@ -42,12 +43,14 @@
 
             <!--  Trim Block Selection  -->
             <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Trim Paste  -->
             <local:SettingContainer x:Uid="Globals_TrimPaste">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimPaste, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimPaste, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Word Delimiters  -->
@@ -61,7 +64,8 @@
 
             <!--  Snap On Resize  -->
             <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Tab Switcher Mode  -->
@@ -75,12 +79,14 @@
 
             <!--  Focus Follow Mouse Mode  -->
             <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Detect URLs  -->
             <local:SettingContainer x:Uid="Globals_DetectURLs">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.DetectURLs, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.DetectURLs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>

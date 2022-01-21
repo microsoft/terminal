@@ -150,7 +150,8 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
                                     HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Adjust Indistinguishable Colors  -->
@@ -158,7 +159,8 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearAdjustIndistinguishableColors}"
                                     HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.AdjustIndistinguishableColors, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Appearance.AdjustIndistinguishableColors, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
 

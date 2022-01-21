@@ -376,9 +376,9 @@
 
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel MaxWidth="600"
+                    HorizontalAlignment="Left"
                     Spacing="8"
-                    Style="{StaticResource SettingsStackStyle}"
-                    HorizontalAlignment="Left">
+                    Style="{StaticResource SettingsStackStyle}">
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
                     Click="AddNew_Click">
