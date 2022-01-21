@@ -10,6 +10,7 @@
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
+#include "handle.h" // LockConsole
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
 
