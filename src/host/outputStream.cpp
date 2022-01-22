@@ -217,12 +217,10 @@ SHORT ConhostInternalGetSet::GetLineWidth(const size_t row) const
 // Return Value:
 // - true if successful. false otherwise.
 bool ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
-try
 {
     eventsWritten = _io.GetActiveInputBuffer()->Write(events);
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Connects the SetWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
@@ -332,7 +330,7 @@ bool ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 // - visible - set to true to make the cursor visible, false to hide.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetCursorVisibility(const bool visible) noexcept
+bool ConhostInternalGetSet::SetCursorVisibility(const bool visible)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.GetCursor().SetIsVisible(visible);
@@ -744,16 +742,11 @@ bool ConhostInternalGetSet::MoveToBottom() const
 // - tableIndex: the index of the color table to retrieve.
 // Return Value:
 // - the COLORREF value for the color at that index in the table.
-COLORREF ConhostInternalGetSet::GetColorTableEntry(const size_t tableIndex) const noexcept
-try
+COLORREF ConhostInternalGetSet::GetColorTableEntry(const size_t tableIndex) const
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     return gci.GetColorTableEntry(tableIndex);
-}
-catch (...)
-{
-    return INVALID_COLOR;
 }
 
 // Method Description:
@@ -764,8 +757,7 @@ catch (...)
 // - color: the new COLORREF to use as that color table value.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
-try
+bool ConhostInternalGetSet::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
@@ -784,7 +776,6 @@ try
     //      correct color.
     return !gci.IsInVtIoMode();
 }
-CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Sets the position in the color table for the given color alias.
@@ -793,7 +784,7 @@ CATCH_RETURN_FALSE()
 // - tableIndex: the new position of the alias in the color table.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
+void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex)
 {
     auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
     renderSettings.SetColorAliasIndex(alias, tableIndex);
@@ -812,8 +803,7 @@ void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const siz
 bool ConhostInternalGetSet::FillRegion(const COORD startPosition,
                                        const size_t fillLength,
                                        const wchar_t fillChar,
-                                       const bool standardFillAttrs) noexcept
-try
+                                       const bool standardFillAttrs)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
 
@@ -847,7 +837,6 @@ try
 
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Moves a block of data in the screen buffer, optionally limiting the effects
@@ -863,8 +852,7 @@ CATCH_RETURN_FALSE()
 bool ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
                                          const std::optional<SMALL_RECT> clipRect,
                                          const COORD destinationOrigin,
-                                         const bool standardFillAttrs) noexcept
-try
+                                         const bool standardFillAttrs)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
 
@@ -882,7 +870,6 @@ try
     ::ScrollRegion(screenInfo, scrollRect, clipRect, destinationOrigin, UNICODE_SPACE, fillAttrs);
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Checks if the InputBuffer is willing to accept VT Input directly
@@ -934,8 +921,7 @@ bool ConhostInternalGetSet::EndHyperlink() const
 // - true if successful. false otherwise.
 bool ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                                            const SIZE cellSize,
-                                           const size_t centeringHint) noexcept
-try
+                                           const size_t centeringHint)
 {
     auto* pRender = ServiceLocator::LocateGlobals().pRender;
     if (pRender)
@@ -944,4 +930,3 @@ try
     }
     return true;
 }
-CATCH_RETURN_FALSE();

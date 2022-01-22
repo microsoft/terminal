@@ -944,8 +944,7 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 // - True if at least one table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
                                                     std::vector<size_t>& tableIndexes,
-                                                    std::vector<DWORD>& rgbs) const noexcept
-try
+                                                    std::vector<DWORD>& rgbs) const
 {
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 2)
@@ -973,7 +972,6 @@ try
 
     return tableIndexes.size() > 0 && rgbs.size() > 0;
 }
-CATCH_LOG_RETURN_FALSE()
 
 #pragma warning(push)
 #pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
@@ -1040,8 +1038,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 // Return Value:
 // - True if at least one color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
-                                               std::vector<DWORD>& rgbs) const noexcept
-try
+                                               std::vector<DWORD>& rgbs) const
 {
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 1)
@@ -1067,7 +1064,6 @@ try
 
     return rgbs.size() > 0;
 }
-CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Sets us up to have another terminal acting as the tty instead of conhost.

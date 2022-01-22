@@ -276,19 +276,12 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
         // similar to TerminalInput::_SendInputSequence
         if (!string.empty())
         {
-            try
+            std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+            for (const auto& wch : string)
             {
-                std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-                for (const auto& wch : string)
-                {
-                    inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
-                }
-                return _pDispatch->WriteInput(inputEvents);
+                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
             }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-            }
+            return _pDispatch->WriteInput(inputEvents);
         }
     }
     return ActionPrintString(string);

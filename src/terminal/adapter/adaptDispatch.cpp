@@ -68,24 +68,20 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
 // - <none>
 void AdaptDispatch::PrintString(const std::wstring_view string)
 {
-    try
+    if (_termOutput.NeedToTranslate())
     {
-        if (_termOutput.NeedToTranslate())
+        std::wstring buffer;
+        buffer.reserve(string.size());
+        for (auto& wch : string)
         {
-            std::wstring buffer;
-            buffer.reserve(string.size());
-            for (auto& wch : string)
-            {
-                buffer.push_back(_termOutput.TranslateKey(wch));
-            }
-            _pDefaults->PrintString(buffer);
+            buffer.push_back(_termOutput.TranslateKey(wch));
         }
-        else
-        {
-            _pDefaults->PrintString(string);
-        }
+        _pDefaults->PrintString(buffer);
     }
-    CATCH_LOG();
+    else
+    {
+        _pDefaults->PrintString(string);
+    }
 }
 
 // Routine Description:
@@ -905,24 +901,17 @@ bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 {
     bool success = false;
     std::deque<std::unique_ptr<IInputEvent>> inEvents;
-    try
-    {
-        // generate a paired key down and key up event for every
-        // character to be sent into the console's input buffer
-        for (const auto& wch : reply)
-        {
-            // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-            KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
 
-            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-            keyEvent.SetKeyDown(false);
-            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        }
-    }
-    catch (...)
+    // generate a paired key down and key up event for every
+    // character to be sent into the console's input buffer
+    for (const auto& wch : reply)
     {
-        LOG_HR(wil::ResultFromCaughtException());
-        return false;
+        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
+        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
+
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        keyEvent.SetKeyDown(false);
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
     }
 
     size_t eventsWritten;

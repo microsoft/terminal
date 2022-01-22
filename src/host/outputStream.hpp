@@ -77,7 +77,7 @@ public:
 
     bool SetAutoWrapMode(const bool wrapAtEOL) override;
 
-    bool SetCursorVisibility(const bool visible) noexcept override;
+    bool SetCursorVisibility(const bool visible) override;
     bool EnableCursorBlinking(const bool enable) override;
 
     bool SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
@@ -116,19 +116,19 @@ public:
 
     bool MoveToBottom() const override;
 
-    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
-    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept override;
+    COLORREF GetColorTableEntry(const size_t tableIndex) const override;
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
+    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
 
     bool FillRegion(const COORD startPosition,
                     const size_t fillLength,
                     const wchar_t fillChar,
-                    const bool standardFillAttrs) noexcept override;
+                    const bool standardFillAttrs) override;
 
     bool ScrollRegion(const SMALL_RECT scrollRect,
                       const std::optional<SMALL_RECT> clipRect,
                       const COORD destinationOrigin,
-                      const bool standardFillAttrs) noexcept override;
+                      const bool standardFillAttrs) override;
 
     bool IsVtInputEnabled() const override;
 
@@ -137,7 +137,7 @@ public:
 
     bool UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                         const SIZE cellSize,
-                        const size_t centeringHint) noexcept override;
+                        const size_t centeringHint) override;
 
 private:
     void _modifyLines(const size_t count, const bool insert);
