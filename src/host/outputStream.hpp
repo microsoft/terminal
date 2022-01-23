@@ -54,88 +54,88 @@ class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
-    bool GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const override;
-    bool SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) override;
+    void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const override;
+    void SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) override;
 
-    bool SetCursorPosition(const COORD position) override;
+    void SetCursorPosition(const COORD position) override;
 
-    bool GetTextAttributes(TextAttribute& attrs) const override;
-    bool SetTextAttributes(const TextAttribute& attrs) override;
+    TextAttribute GetTextAttributes() const override;
+    void SetTextAttributes(const TextAttribute& attrs) override;
 
-    bool SetCurrentLineRendition(const LineRendition lineRendition) override;
-    bool ResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
+    void SetCurrentLineRendition(const LineRendition lineRendition) override;
+    void ResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
     SHORT GetLineWidth(const size_t row) const override;
 
-    bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
+    void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
 
-    bool SetWindowInfo(bool const absolute, const SMALL_RECT& window) override;
+    void SetWindowInfo(bool const absolute, const SMALL_RECT& window) override;
 
     bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
-    bool SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
+    void SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
     bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
-    bool SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
+    void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
 
-    bool SetAutoWrapMode(const bool wrapAtEOL) override;
+    void SetAutoWrapMode(const bool wrapAtEOL) override;
 
-    bool SetCursorVisibility(const bool visible) override;
+    void SetCursorVisibility(const bool visible) override;
     bool EnableCursorBlinking(const bool enable) override;
 
-    bool SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
+    void SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
 
-    bool WarningBell() override;
+    void WarningBell() override;
 
     bool GetLineFeedMode() const override;
-    bool LineFeed(const bool withReturn) override;
-    bool ReverseLineFeed() override;
+    void LineFeed(const bool withReturn) override;
+    void ReverseLineFeed() override;
 
-    bool SetWindowTitle(const std::wstring_view title) override;
+    void SetWindowTitle(const std::wstring_view title) override;
 
-    bool UseAlternateScreenBuffer() override;
+    void UseAlternateScreenBuffer() override;
 
-    bool UseMainScreenBuffer() override;
+    void UseMainScreenBuffer() override;
 
-    bool EraseAll() override;
-    bool ClearBuffer() override;
+    void EraseAll() override;
+    void ClearBuffer() override;
 
-    bool GetUserDefaultCursorStyle(CursorType& style) override;
-    bool SetCursorStyle(CursorType const style) override;
+    CursorType GetUserDefaultCursorStyle() const override;
+    void SetCursorStyle(CursorType const style) override;
 
-    bool RefreshWindow() override;
+    void RefreshWindow() override;
 
-    bool SuppressResizeRepaint() override;
+    void SuppressResizeRepaint() override;
 
-    bool WriteControlInput(const KeyEvent key) override;
+    void WriteControlInput(const KeyEvent key) override;
 
-    bool SetConsoleOutputCP(const unsigned int codepage) override;
-    bool GetConsoleOutputCP(unsigned int& codepage) override;
+    void SetConsoleOutputCP(const unsigned int codepage) override;
+    unsigned int GetConsoleOutputCP() const override;
 
     bool IsConsolePty() const override;
 
-    bool DeleteLines(const size_t count) override;
-    bool InsertLines(const size_t count) override;
+    void DeleteLines(const size_t count) override;
+    void InsertLines(const size_t count) override;
 
-    bool MoveToBottom() const override;
+    void MoveToBottom() override;
 
     COLORREF GetColorTableEntry(const size_t tableIndex) const override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
     void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
 
-    bool FillRegion(const COORD startPosition,
+    void FillRegion(const COORD startPosition,
                     const size_t fillLength,
                     const wchar_t fillChar,
                     const bool standardFillAttrs) override;
 
-    bool ScrollRegion(const SMALL_RECT scrollRect,
+    void ScrollRegion(const SMALL_RECT scrollRect,
                       const std::optional<SMALL_RECT> clipRect,
                       const COORD destinationOrigin,
                       const bool standardFillAttrs) override;
 
     bool IsVtInputEnabled() const override;
 
-    bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
-    bool EndHyperlink() const override;
+    void AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
+    void EndHyperlink() const override;
 
-    bool UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+    void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                         const SIZE cellSize,
                         const size_t centeringHint) override;
 

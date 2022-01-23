@@ -110,11 +110,10 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // Arguments:
 // - screenBufferInfo - Structure to hold screen buffer information like the public API call.
 // Return Value:
-// - true if successful (see DoSrvGetConsoleScreenBufferInfo). false otherwise.
-bool ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const
+// - <none>
+void ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const
 {
     ServiceLocator::LocateGlobals().api.GetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo);
-    return true;
 }
 
 // Routine Description:
@@ -122,10 +121,10 @@ bool ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_I
 // Arguments:
 // - screenBufferInfo - Structure containing screen buffer information like the public API call.
 // Return Value:
-// - true if successful (see DoSrvSetConsoleScreenBufferInfo). false otherwise.
-bool ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo)
+// - <none>
+void ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo)
 {
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo));
 }
 
 // Routine Description:
@@ -133,24 +132,23 @@ bool ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BU
 // Arguments:
 // - position - new cursor position to set like the public API call.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetCursorPosition(const COORD position)
+// - <none>
+void ConhostInternalGetSet::SetCursorPosition(const COORD position)
 {
     auto& info = _io.GetActiveOutputBuffer();
     const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
 }
 
 // Method Description:
 // - Retrieves the current TextAttribute of the active screen buffer.
 // Arguments:
-// - attrs: Receives the TextAttribute value.
+// - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::GetTextAttributes(TextAttribute& attrs) const
+// - the TextAttribute value.
+TextAttribute ConhostInternalGetSet::GetTextAttributes() const
 {
-    attrs = _io.GetActiveOutputBuffer().GetAttributes();
-    return true;
+    return _io.GetActiveOutputBuffer().GetAttributes();
 }
 
 // Method Description:
@@ -159,11 +157,10 @@ bool ConhostInternalGetSet::GetTextAttributes(TextAttribute& attrs) const
 // Arguments:
 // - attrs: The new TextAttribute to use
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
+// - <none>
+void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 {
     _io.GetActiveOutputBuffer().SetAttributes(attrs);
-    return true;
 }
 
 // Method Description:
@@ -172,12 +169,11 @@ bool ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 // Arguments:
 // - lineRendition: The new LineRendition attribute to use
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetCurrentLineRendition(const LineRendition lineRendition)
+// - <none>
+void ConhostInternalGetSet::SetCurrentLineRendition(const LineRendition lineRendition)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.SetCurrentLineRendition(lineRendition);
-    return true;
 }
 
 // Method Description:
@@ -187,12 +183,11 @@ bool ConhostInternalGetSet::SetCurrentLineRendition(const LineRendition lineRend
 // - startRow: The row number of first line to be modified
 // - endRow: The row number following the last line to be modified
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
+// - <none>
+void ConhostInternalGetSet::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.ResetLineRenditionRange(startRow, endRow);
-    return true;
 }
 
 // Method Description:
@@ -215,11 +210,10 @@ SHORT ConhostInternalGetSet::GetLineWidth(const size_t row) const
 //            buffer for the underlying attached process
 // - eventsWritten - on output, the number of events written
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
+// - <none>
+void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
 {
     eventsWritten = _io.GetActiveInputBuffer()->Write(events);
-    return true;
 }
 
 // Routine Description:
@@ -228,10 +222,10 @@ bool ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>&
 // - absolute - Should the window be moved to an absolute position? If false, the movement is relative to the current pos.
 // - window - Info about how to move the viewport
 // Return Value:
-// - true if successful (see DoSrvSetConsoleWindowInfo). false otherwise.
-bool ConhostInternalGetSet::SetWindowInfo(const bool absolute, const SMALL_RECT& window)
+// - <none>
+void ConhostInternalGetSet::SetWindowInfo(const bool absolute, const SMALL_RECT& window)
 {
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
 }
 
 // Routine Description:
@@ -267,12 +261,11 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
 // - mode - the parser mode to change.
 // - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
+// - <none>
+void ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
 {
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
     stateMachine.SetParserMode(mode, enabled);
-    return true;
 }
 
 // Routine Description:
@@ -295,8 +288,8 @@ bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTermi
 // - mode - the render mode to change.
 // - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
+// - <none>
+void ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderSettings = g.getConsoleInformation().GetRenderSettings();
@@ -306,8 +299,6 @@ bool ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const
     {
         g.pRender->TriggerRedrawAll();
     }
-
-    return true;
 }
 
 // Routine Description:
@@ -316,12 +307,11 @@ bool ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const
 // Arguments:
 // - wrapAtEOL - set to true to wrap, false to overwrite the last character.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
+// - <none>
+void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 {
     auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
     WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
-    return true;
 }
 
 // Routine Description:
@@ -329,12 +319,11 @@ bool ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 // Arguments:
 // - visible - set to true to make the cursor visible, false to hide.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetCursorVisibility(const bool visible)
+// - <none>
+void ConhostInternalGetSet::SetCursorVisibility(const bool visible)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.GetCursor().SetIsVisible(visible);
-    return true;
 }
 
 // Routine Description:
@@ -371,15 +360,14 @@ bool ConhostInternalGetSet::EnableCursorBlinking(const bool fEnable)
 //     will be disabled. NOTE: This is a rect in the case that we'll need the
 //     left and right margins in the future.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetScrollingRegion(const SMALL_RECT& scrollMargins)
+// - <none>
+void ConhostInternalGetSet::SetScrollingRegion(const SMALL_RECT& scrollMargins)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
     srScrollMargins.Top = scrollMargins.Top;
     srScrollMargins.Bottom = scrollMargins.Bottom;
     screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
-    return true;
 }
 
 // Method Description:
@@ -399,8 +387,8 @@ bool ConhostInternalGetSet::GetLineFeedMode() const
 // Arguments:
 // - withReturn - Set to true if a carriage return should be performed as well.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::LineFeed(const bool withReturn)
+// - <none>
+void ConhostInternalGetSet::LineFeed(const bool withReturn)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto& textBuffer = screenInfo.GetTextBuffer();
@@ -423,26 +411,24 @@ bool ConhostInternalGetSet::LineFeed(const bool withReturn)
         cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
     }
 
-    return AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr);
+    THROW_IF_NTSTATUS_FAILED(AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr));
 }
 
 // Routine Description:
 // - Sends a notify message to play the "SystemHand" sound event.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::WarningBell()
+// - <none>
+void ConhostInternalGetSet::WarningBell()
 {
-    return _io.GetActiveOutputBuffer().SendNotifyBeep();
+    _io.GetActiveOutputBuffer().SendNotifyBeep();
 }
 
 // Routine Description:
 // - Performs a "Reverse line feed", essentially, the opposite of '\n'.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::ReverseLineFeed()
+// - <none>
+void ConhostInternalGetSet::ReverseLineFeed()
 {
-    auto success = true;
-
     auto& screenInfo = _io.GetActiveOutputBuffer();
     const SMALL_RECT viewport = screenInfo.GetViewport().ToInclusive();
     const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
@@ -456,7 +442,7 @@ bool ConhostInternalGetSet::ReverseLineFeed()
     if (oldCursorPosition.Y > viewport.Top)
     {
         // Cursor is below the top line of the viewport
-        success = NT_SUCCESS(AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr));
+        THROW_IF_NTSTATUS_FAILED(AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr));
     }
     else
     {
@@ -484,10 +470,9 @@ bool ConhostInternalGetSet::ReverseLineFeed()
             coordDestination.Y = viewport.Top + 1;
 
             // Note the revealed lines are filled with the standard erase attributes.
-            success = ScrollRegion(srScroll, srScroll, coordDestination, true);
+            ScrollRegion(srScroll, srScroll, coordDestination, true);
         }
     }
-    return success;
 }
 
 // Routine Description:
@@ -495,11 +480,10 @@ bool ConhostInternalGetSet::ReverseLineFeed()
 // Arguments:
 // - title - The null-terminated string to set as the window title
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
+// - <none>
+void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
-    return true;
 }
 
 // Routine Description:
@@ -507,31 +491,30 @@ bool ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 //     screen buffer and an alternate. This creates a new alternate, and switches to it.
 //     If there is an already existing alternate, it is discarded.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::UseAlternateScreenBuffer()
+// - <none>
+void ConhostInternalGetSet::UseAlternateScreenBuffer()
 {
-    return NT_SUCCESS(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
+    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
 }
 
 // Routine Description:
 // - Swaps to the main screen buffer. From the alternate buffer, returns to the main screen
 //     buffer. From the main screen buffer, does nothing. The alternate is discarded.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::UseMainScreenBuffer()
+// - <none>
+void ConhostInternalGetSet::UseMainScreenBuffer()
 {
     _io.GetActiveOutputBuffer().UseMainScreenBuffer();
-    return true;
 }
 
 // Routine Description:
 // - Performs a VT-style erase all operation on the buffer.
 //      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::EraseAll()
+// - <none>
+void ConhostInternalGetSet::EraseAll()
 {
-    return SUCCEEDED(_io.GetActiveOutputBuffer().VtEraseAll());
+    THROW_IF_FAILED(_io.GetActiveOutputBuffer().VtEraseAll());
 }
 
 // Routine Description:
@@ -539,23 +522,22 @@ bool ConhostInternalGetSet::EraseAll()
 //     which is moved to the top line of the viewport.
 //     See SCREEN_INFORMATION::ClearBuffer's description for details.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::ClearBuffer()
+// - <none>
+void ConhostInternalGetSet::ClearBuffer()
 {
-    return SUCCEEDED(_io.GetActiveOutputBuffer().ClearBuffer());
+    THROW_IF_FAILED(_io.GetActiveOutputBuffer().ClearBuffer());
 }
 
 // Method Description:
 // - Retrieves the current user default cursor style.
 // Arguments:
-// - style - Structure to receive cursor style.
+// - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::GetUserDefaultCursorStyle(CursorType& style)
+// - the default cursor style.
+CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    style = gci.GetCursorType();
-    return true;
+    return gci.GetCursorType();
 }
 
 // Routine Description:
@@ -563,11 +545,10 @@ bool ConhostInternalGetSet::GetUserDefaultCursorStyle(CursorType& style)
 // Arguments:
 // - style: The style of cursor to change the cursor to.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
+// - <none>
+void ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 {
     _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetType(style);
-    return true;
 }
 
 // Routine Description:
@@ -578,15 +559,14 @@ bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 // Arguments:
 // - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::RefreshWindow()
+// - <none>
+void ConhostInternalGetSet::RefreshWindow()
 {
     auto& g = ServiceLocator::LocateGlobals();
     if (&_io.GetActiveOutputBuffer() == &g.getConsoleInformation().GetActiveOutputBuffer())
     {
         g.pRender->TriggerRedrawAll();
     }
-    return true;
 }
 
 // Routine Description:
@@ -600,11 +580,10 @@ bool ConhostInternalGetSet::RefreshWindow()
 // Arguments:
 // - key - The keyevent to send to the console.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::WriteControlInput(const KeyEvent key)
+// - <none>
+void ConhostInternalGetSet::WriteControlInput(const KeyEvent key)
 {
     HandleGenericKeyEvent(key, false);
-    return true;
 }
 
 // Routine Description:
@@ -612,23 +591,21 @@ bool ConhostInternalGetSet::WriteControlInput(const KeyEvent key)
 // Arguments:
 // - codepage - the new output codepage of the console.
 // Return Value:
-// - true if successful (see DoSrvSetConsoleOutputCodePage). false otherwise.
-bool ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
+// - <none>
+void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
 {
-    return SUCCEEDED(DoSrvSetConsoleOutputCodePage(codepage));
+    THROW_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
 }
 
 // Routine Description:
 // - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
-// - codepage - receives the outputCP of the console.
+// - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
+// - the outputCP of the console.
+unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    codepage = gci.OutputCP;
-    return true;
+    return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
 }
 
 // Routine Description:
@@ -637,17 +614,15 @@ bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
 // Arguments:
 // - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SuppressResizeRepaint()
+// - <none>
+void ConhostInternalGetSet::SuppressResizeRepaint()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return SUCCEEDED(gci.GetVtIo()->SuppressResizeRepaint());
+    THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
 }
 
 // Routine Description:
 // - Checks if the console host is acting as a pty.
-// - NOTE: This ONE method behaves differently! The rest of the methods on this
-//   interface return true if successful. This one just returns the result.
 // Arguments:
 // - <none>
 // Return Value:
@@ -661,20 +636,18 @@ bool ConhostInternalGetSet::IsConsolePty() const
 // - Deletes lines in the active screen buffer.
 // Parameters:
 // - count - the number of lines to delete
-bool ConhostInternalGetSet::DeleteLines(const size_t count)
+void ConhostInternalGetSet::DeleteLines(const size_t count)
 {
     _modifyLines(count, false);
-    return true;
 }
 
 // Routine Description:
 // - Inserts lines in the active screen buffer.
 // Parameters:
 // - count - the number of lines to insert
-bool ConhostInternalGetSet::InsertLines(const size_t count)
+void ConhostInternalGetSet::InsertLines(const size_t count)
 {
     _modifyLines(count, true);
-    return true;
 }
 
 // Routine Description:
@@ -715,11 +688,11 @@ void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
         }
 
         // Note the revealed lines are filled with the standard erase attributes.
-        LOG_IF_WIN32_BOOL_FALSE((BOOL)ScrollRegion(srScroll, srScroll, coordDestination, true));
+        ScrollRegion(srScroll, srScroll, coordDestination, true);
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
-        LOG_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition({ 0, cursorPosition.Y }, false));
+        THROW_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition({ 0, cursorPosition.Y }, false));
     }
 }
 
@@ -729,11 +702,10 @@ void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
 // Arguments:
 // - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::MoveToBottom() const
+// - <none>
+void ConhostInternalGetSet::MoveToBottom()
 {
     _io.GetActiveOutputBuffer().MoveToBottom();
-    return true;
 }
 
 // Method Description:
@@ -799,8 +771,8 @@ void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const siz
 // - standardFillAttrs - If true, fill with the standard erase attributes.
 //                       If false, fill with the default attributes.
 // Return value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::FillRegion(const COORD startPosition,
+// - <none>
+void ConhostInternalGetSet::FillRegion(const COORD startPosition,
                                        const size_t fillLength,
                                        const wchar_t fillChar,
                                        const bool standardFillAttrs)
@@ -809,7 +781,7 @@ bool ConhostInternalGetSet::FillRegion(const COORD startPosition,
 
     if (fillLength == 0)
     {
-        return true;
+        return;
     }
 
     // For most VT erasing operations, the standard requires that the
@@ -834,8 +806,6 @@ bool ConhostInternalGetSet::FillRegion(const COORD startPosition,
         bufferSize.MoveInBounds(fillLength - 1, endPosition);
         screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
     }
-
-    return true;
 }
 
 // Routine Description:
@@ -848,8 +818,8 @@ bool ConhostInternalGetSet::FillRegion(const COORD startPosition,
 // - standardFillAttrs - If true, fill with the standard erase attributes.
 //                       If false, fill with the default attributes.
 // Return value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
+// - <none>
+void ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
                                          const std::optional<SMALL_RECT> clipRect,
                                          const COORD destinationOrigin,
                                          const bool standardFillAttrs)
@@ -868,7 +838,6 @@ bool ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
     }
 
     ::ScrollRegion(screenInfo, scrollRect, clipRect, destinationOrigin, UNICODE_SPACE, fillAttrs);
-    return true;
 }
 
 // Routine Description:
@@ -890,8 +859,8 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 // Arguments:
 // - The hyperlink URI
 // Return Value:
-// - true
-bool ConhostInternalGetSet::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
+// - <none>
+void ConhostInternalGetSet::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto attr = screenInfo.GetAttributes();
@@ -899,16 +868,14 @@ bool ConhostInternalGetSet::AddHyperlink(const std::wstring_view uri, const std:
     attr.SetHyperlinkId(id);
     screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
     screenInfo.GetTextBuffer().AddHyperlinkToMap(uri, id);
-    return true;
 }
 
-bool ConhostInternalGetSet::EndHyperlink() const
+void ConhostInternalGetSet::EndHyperlink() const
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto attr = screenInfo.GetAttributes();
     attr.SetHyperlinkId(0);
     screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
-    return true;
 }
 
 // Routine Description:
@@ -918,8 +885,8 @@ bool ConhostInternalGetSet::EndHyperlink() const
 // - cellSize - The cell size for an individual glyph.
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+// - <none>
+void ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                                            const SIZE cellSize,
                                            const size_t centeringHint)
 {
@@ -928,5 +895,4 @@ bool ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPa
     {
         pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
     }
-    return true;
 }

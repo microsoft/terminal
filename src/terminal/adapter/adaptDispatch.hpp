@@ -171,25 +171,25 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const;
-        bool _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
+        void _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
                                     const DispatchTypes::EraseType eraseType,
                                     const size_t lineId) const;
-        bool _EraseScrollback();
-        bool _EraseAll();
-        bool _InsertDeleteHelper(const size_t count, const bool isInsert) const;
-        bool _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
+        void _EraseScrollback();
+        void _EraseAll();
+        void _InsertDeleteHelper(const size_t count, const bool isInsert) const;
+        void _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
 
-        bool _DoSetTopBottomScrollingMargins(const size_t topMargin,
+        void _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
-        bool _OperatingStatus() const;
-        bool _CursorPositionReport() const;
+        void _OperatingStatus() const;
+        void _CursorPositionReport() const;
 
-        bool _WriteResponse(const std::wstring_view reply) const;
+        void _WriteResponse(const std::wstring_view reply) const;
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
-        bool _ClearSingleTabStop();
-        bool _ClearAllTabStops() noexcept;
+        void _ClearSingleTabStop();
+        void _ClearAllTabStops() noexcept;
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
 
