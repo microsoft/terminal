@@ -494,6 +494,7 @@ CATCH_RETURN()
 
 void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 {
+    _api.hyperlinkHoveredId = hoveredId;
 }
 
 #pragma endregion
@@ -580,7 +581,7 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
         const auto strikethroughOffsetInPx = static_cast<double>(-metrics.strikethroughPosition) * designUnitsPerPx;
         const auto strikethroughThicknessInPx = static_cast<double>(metrics.strikethroughThickness) * designUnitsPerPx;
         const auto lineThickness = gsl::narrow<u16>(std::round(std::min(underlineThicknessInPx, strikethroughThicknessInPx)));
-        const auto underlinePos = gsl::narrow<u16>(std::round(baseline + underlineOffsetInPx - lineThickness / 2.0));
+        const auto underlinePos = gsl::narrow<u16>(std::ceil(baseline + underlineOffsetInPx - lineThickness / 2.0));
         const auto strikethroughPos = gsl::narrow<u16>(std::round(baseline + strikethroughOffsetInPx - lineThickness / 2.0));
 
         auto fontName = wil::make_process_heap_string(requestedFaceName);
