@@ -2,8 +2,6 @@ parameters:
   configuration: 'Release'
   platform: ''
   additionalBuildArguments: ''
-  minimumExpectedTestsExecutedCount: 10  # Sanity check for minimum expected tests to be reported
-  rerunPassesRequiredToAvoidFailure: 5
   artifactName: 'drop'
   testLogPath: '$(Build.BinariesDirectory)\$(BuildPlatform)\$(BuildConfiguration)\testsOnBuildMachine.wtl'
 

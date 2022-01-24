@@ -98,7 +98,7 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
 
-        void AdjustOpacity(Int32 Opacity, Boolean relative);
+        void AdjustOpacity(Double Opacity, Boolean relative);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 
