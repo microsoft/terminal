@@ -1798,26 +1798,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 [[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    // Sanitize the input if we're in pty mode. No control chars - this string
-    //      will get emitted back to the TTY in a VT sequence, and we don't want
-    //      to embed control characters in that string.
-    if (gci.IsInVtIoMode())
-    {
-        std::wstring sanitized{ title };
-        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](auto ch) {
-                            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
-                        }),
-                        sanitized.end());
-
-        gci.SetTitle({ sanitized });
-    }
-    else
-    {
-        // SetTitle will trigger the renderer to update the titlebar for us.
-        gci.SetTitle(title);
-    }
-
+    gci.SetTitle(title);
     return S_OK;
 }
 
