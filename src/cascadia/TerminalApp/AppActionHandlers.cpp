@@ -970,7 +970,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
             {
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    control.AdjustOpacity(realArgs.Opacity(), realArgs.Relative());
+                    control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
                 });
                 args.Handled(res);
             }
