@@ -310,8 +310,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <none>
     // Return Value:
-    // - <none>
-    bool TerminalPage::ShouldImmediatelyHandoffToElevated(CascadiaSettings& settings) const
+    // - true if we're not elevated but all relevant pane-spawning actions are elevated
+    bool TerminalPage::ShouldImmediatelyHandoffToElevated(const CascadiaSettings& settings) const
     {
         if (!_startupActions || IsElevated())
         {
@@ -388,7 +388,7 @@ namespace winrt::TerminalApp::implementation
     //   so use them now.
     // Return Value:
     // - <none>
-    void TerminalPage::HandoffToElevated(CascadiaSettings& settings)
+    void TerminalPage::HandoffToElevated(const CascadiaSettings& settings)
     {
         if (!_startupActions)
         {
