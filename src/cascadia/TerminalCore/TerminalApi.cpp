@@ -6,6 +6,7 @@
 #include "../src/inc/unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -68,14 +69,6 @@ COORD Terminal::GetCursorPosition() noexcept
     // TODO assert that the coord is > (0, 0) && <(view.W, view.H)
     return newPos;
 }
-
-bool Terminal::SetCursorColor(const COLORREF color) noexcept
-try
-{
-    _buffer->GetCursor().SetColor(color);
-    return true;
-}
-CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
@@ -371,6 +364,22 @@ try
 CATCH_RETURN_FALSE()
 
 // Method Description:
+// - Retrieves the value in the colortable at the specified index.
+// Arguments:
+// - tableIndex: the index of the color table to retrieve.
+// Return Value:
+// - the COLORREF value for the color at that index in the table.
+COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const noexcept
+try
+{
+    return _renderSettings.GetColorTableEntry(tableIndex);
+}
+catch (...)
+{
+    return INVALID_COLOR;
+}
+
+// Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
 //   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
@@ -381,13 +390,30 @@ CATCH_RETURN_FALSE()
 bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
 try
 {
-    _colorTable.at(tableIndex) = color;
+    _renderSettings.SetColorTableEntry(tableIndex, color);
+
+    if (tableIndex == _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground))
+    {
+        _pfnBackgroundColorChanged(color);
+    }
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
 CATCH_RETURN_FALSE()
+
+// Method Description:
+// - Sets the position in the color table for the given color alias.
+// Arguments:
+// - alias: the color alias to update.
+// - tableIndex: the new position of the alias in the color table.
+// Return Value:
+// - <none>
+void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
+{
+    _renderSettings.SetColorAliasIndex(alias, tableIndex);
+}
 
 // Method Description:
 // - Sets the cursor style to the given style.
@@ -442,46 +468,6 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     return true;
 }
 
-// Method Description:
-// - Updates the default foreground color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default foreground color
-// Return Value:
-// - true
-bool Terminal::SetDefaultForeground(const COLORREF color) noexcept
-try
-{
-    _defaultFg = color;
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
-}
-CATCH_RETURN_FALSE()
-
-// Method Description:
-// - Updates the default background color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default background color
-// Return Value:
-// - true
-bool Terminal::SetDefaultBackground(const COLORREF color) noexcept
-try
-{
-    _defaultBg = color;
-    _pfnBackgroundColorChanged(color);
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
-}
-CATCH_RETURN_FALSE()
-
-til::color Terminal::GetDefaultBackground() const noexcept
-{
-    return _defaultBg;
-}
-
 bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept
 try
 {
@@ -490,10 +476,10 @@ try
 }
 CATCH_RETURN_FALSE()
 
-bool Terminal::SetScreenMode(const bool reverseMode) noexcept
+bool Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled) noexcept
 try
 {
-    _screenReversed = reverseMode;
+    _renderSettings.SetRenderMode(mode, enabled);
 
     // Repaint everything - the colors will have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();

@@ -322,7 +322,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
 VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 {
     BOOL Ret;
-    IRenderer* Renderer;
+    Renderer* Renderer;
     CIS_EVENT ReplyEvent;
 
     Renderer = ServiceLocator::LocateGlobals().pRender;

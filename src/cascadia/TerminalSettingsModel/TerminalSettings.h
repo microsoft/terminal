@@ -17,7 +17,6 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "TerminalSettingsCreateResult.g.h"
 #include "IInheritable.h"
-#include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
@@ -64,12 +63,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                              const Model::NewTerminalArgs& newTerminalArgs,
                                                                              const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsCreateResult CreateWithParent(const Model::TerminalSettingsCreateResult& parent);
-
-        Model::TerminalSettings GetParent();
-
-        void SetParent(const Model::TerminalSettings& parent);
-
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
         // --------------------------- Core Settings ---------------------------
@@ -95,7 +88,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
@@ -112,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // passed to the terminal only upon creation.
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, AdjustIndistinguishableColors);
@@ -119,6 +112,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
+
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
         INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
@@ -146,6 +141,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 
@@ -155,7 +151,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
+
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, Elevate, false);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;

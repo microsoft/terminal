@@ -78,8 +78,10 @@
       <AdditionalIncludeDirectories>$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
+  <!-- If you don't include a '.' at the end of the $(IntermediateOutputPath),
+  mc.exe will get confused by the trailing slash. -->
   <Target Name="MessageCompile" Inputs="@(MessageCompile)" Outputs="$(IntermediateOutputPath)\%(MessageCompile.Filename).h" BeforeTargets="ClCompile">
-    <Exec Command="mc.exe /h $(IntermediateOutputPath) /r $(IntermediateOutputPath) @(MessageCompile)" />
+    <Exec Command="mc.exe /h &quot;$(IntermediateOutputPath).&quot; /r &quot;$(IntermediateOutputPath).&quot; @(MessageCompile)" />
   </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\common.build.post.props" />

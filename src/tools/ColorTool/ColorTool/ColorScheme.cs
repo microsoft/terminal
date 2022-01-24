@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (C) Microsoft.  All rights reserved.
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
@@ -38,6 +38,10 @@ namespace ColorTool
             );
 
         public Color this[int index] => UIntToColor(ColorTable[index]);
+
+        public Color Foreground => UIntToColor(ConsoleAttributes.Foreground.Value);
+        public Color Background => UIntToColor(ConsoleAttributes.Background.Value);
+        public Color Cursor => UIntToColor(ConsoleAttributes.Cursor.Value);
 
         private static Color UIntToColor(uint color)
         {

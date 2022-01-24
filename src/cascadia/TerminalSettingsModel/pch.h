@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -53,3 +53,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <til/mutex.h>
+#include <til/throttled_func.h>
+
+#include <cppwinrt_utils.h>

@@ -4,7 +4,6 @@
 #include "pch.h"
 #include <WexTestClass.h>
 
-#include <argb.h>
 #include <DefaultSettings.h>
 
 #include "../renderer/inc/DummyRenderTarget.hpp"

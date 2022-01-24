@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -37,6 +37,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto selected = Profiles().SelectedItem())
         {
             _State.RequestDuplicate(selected.try_as<Model::Profile>().Guid());
+        }
+    }
+
+    void AddProfile::ProfilesSelectionChanged(const IInspectable& /*sender*/,
+                                              const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    {
+        if (!_IsProfileSelected)
+        {
+            IsProfileSelected(true);
         }
     }
 }

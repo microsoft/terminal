@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 // This enumerates all the possible actions
 // that our notification icon context menu could do.
@@ -24,7 +23,7 @@ public:
     void ReAddNotificationIcon();
 
     void NotificationIconPressed();
-    void ShowContextMenu(const til::point& coord, const winrt::Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants);
+    void ShowContextMenu(const til::point coord, const winrt::Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants);
     void MenuItemSelected(const HMENU menu, const UINT menuItemIndex);
 
     WINRT_CALLBACK(SummonWindowRequested, winrt::delegate<void(winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs)>);

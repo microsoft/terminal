@@ -7,6 +7,7 @@
 
 using namespace Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
+using namespace ::Microsoft::Console::Render;
 using namespace ::Microsoft::Console::VirtualTerminal;
 
 // NOTE:
@@ -227,7 +228,7 @@ CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::SetCursorColor(const DWORD color) noexcept
 try
 {
-    return _terminalApi.SetCursorColor(color);
+    return _terminalApi.SetColorTableEntry(TextColor::CURSOR_COLOR, color);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -247,7 +248,8 @@ CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::SetDefaultForeground(const DWORD color) noexcept
 try
 {
-    return _terminalApi.SetDefaultForeground(color);
+    _terminalApi.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
+    return _terminalApi.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, color);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -260,7 +262,8 @@ CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::SetDefaultBackground(const DWORD color) noexcept
 try
 {
-    return _terminalApi.SetDefaultBackground(color);
+    _terminalApi.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
+    return _terminalApi.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, color);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -347,7 +350,7 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::SetScreenMode(const bool reverseMode) noexcept
 {
-    return _terminalApi.SetScreenMode(reverseMode);
+    return _terminalApi.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
 }
 
 // Method Description:

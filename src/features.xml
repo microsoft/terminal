@@ -65,18 +65,27 @@
     </feature>
 
     <feature>
-        <name>Feature_ShowProfileDefaultsInSettings</name>
-        <description>Whether to show the "defaults" page in the Terminal settings UI</description>
-        <id>10430</id>
-        <stage>AlwaysEnabled</stage>
-    </feature>
-
-    <feature>
         <name>Feature_PersistedWindowLayout</name>
         <description>Whether to allow the user to enable persisted window layout saving and loading</description>
         <id>766</id>
         <stage>AlwaysEnabled</stage>
         <!-- This feature will not ship to Stable until it is complete. -->
         <alwaysDisabledReleaseTokens />
+    </feature>
+
+    <feature>
+        <name>Feature_AtlasEngine</name>
+        <description>If enabled, AtlasEngine and the experimental.useAtlasEngine setting are compiled into the project</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>Release</brandingToken>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_AdjustIndistinguishableText</name>
+        <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
+        <stage>AlwaysDisabled</stage>
     </feature>
 </featureStaging>

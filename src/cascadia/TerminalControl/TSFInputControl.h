@@ -5,7 +5,6 @@
 #include "TSFInputControl.g.h"
 #include "CursorPositionEventArgs.g.h"
 #include "FontInfoEventArgs.g.h"
-#include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -46,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(CurrentCursorPosition, Control::TSFInputControl, Control::CursorPositionEventArgs);
         TYPED_EVENT(CurrentFontInfo, Control::TSFInputControl, Control::FontInfoEventArgs);
-        DECLARE_EVENT(CompositionCompleted, _compositionCompletedHandlers, Control::CompositionCompletedEventArgs);
+        WINRT_CALLBACK(CompositionCompleted, Control::CompositionCompletedEventArgs);
 
     private:
         void _layoutRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args);
@@ -89,7 +88,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 }
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct TSFInputControl : TSFInputControlT<TSFInputControl, implementation::TSFInputControl>
-    {
-    };
+    BASIC_FACTORY(TSFInputControl);
 }

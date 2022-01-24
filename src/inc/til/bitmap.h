@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "rect.h"
+
 #ifdef UNIT_TESTING
 class BitmapTests;
 #endif
@@ -15,13 +17,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         class _bitmap_const_iterator
         {
         public:
-            using iterator_category = typename std::input_iterator_tag;
-            using value_type = typename const til::rectangle;
-            using difference_type = typename ptrdiff_t;
-            using pointer = typename const til::rectangle*;
-            using reference = typename const til::rectangle&;
+            using iterator_category = std::input_iterator_tag;
+            using value_type = const til::rect;
+            using difference_type = ptrdiff_t;
+            using pointer = const til::rect*;
+            using reference = const til::rect&;
 
-            _bitmap_const_iterator(const dynamic_bitset<unsigned long long, Allocator>& values, til::rectangle rc, ptrdiff_t pos) :
+            _bitmap_const_iterator(const dynamic_bitset<unsigned long long, Allocator>& values, til::rect rc, ptrdiff_t pos) :
                 _values(values),
                 _rc(rc),
                 _pos(pos),
@@ -76,11 +78,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         private:
             const dynamic_bitset<unsigned long long, Allocator>& _values;
-            const til::rectangle _rc;
-            ptrdiff_t _pos;
-            ptrdiff_t _nextPos;
-            const ptrdiff_t _end;
-            til::rectangle _run;
+            const til::rect _rc;
+            size_t _pos;
+            size_t _nextPos;
+            const size_t _end;
+            til::rect _run;
 
             // Update _run to contain the next rectangle of consecutively set bits within this bitmap.
             // _calculateArea may be called repeatedly to yield all those rectangles.
@@ -92,23 +94,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // dynamic_bitset allows you to quickly find the next set bit using find_next(prev),
                 // where "prev" is the position _past_ which should be searched (i.e. excluding position "prev").
                 // If _pos is still 0, we thus need to use the counterpart find_first().
-                const auto nextPos = _pos == 0 ? _values.find_first() : _values.find_next(_pos - 1);
-                // If no next set bit can be found, npos is returned, which is SIZE_T_MAX.
-                // saturated_cast can ensure that this will be converted to PTRDIFF_T_MAX (which is greater than _end).
-                _nextPos = base::saturated_cast<ptrdiff_t>(nextPos);
+                _nextPos = _pos == 0 ? _values.find_first() : _values.find_next(_pos - 1);
 
                 // If we haven't reached the end yet...
                 if (_nextPos < _end)
                 {
                     // pos is now at the first on bit.
-                    const auto runStart = _rc.point_at(_nextPos);
+                    // If no next set bit can be found, npos is returned, which is SIZE_T_MAX.
+                    // saturated_cast can ensure that this will be converted to CoordType's max (which is greater than _end).
+                    const auto runStart = _rc.point_at(base::saturated_cast<CoordType>(_nextPos));
 
                     // We'll only count up until the end of this row.
                     // a run can be a max of one row tall.
-                    const ptrdiff_t rowEndIndex = _rc.index_of(til::point(_rc.right() - 1, runStart.y())) + 1;
+                    const size_t rowEndIndex = _rc.index_of<size_t>(til::point(_rc.right - 1, runStart.y)) + 1;
 
                     // Find the length for the rectangle.
-                    ptrdiff_t runLength = 0;
+                    size_t runLength = 0;
 
                     // We have at least 1 so start with a do/while.
                     do
@@ -119,7 +120,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // Keep going until we reach end of row, end of the buffer, or the next bit is off.
 
                     // Assemble and store that run.
-                    _run = til::rectangle{ runStart, til::size{ runLength, static_cast<ptrdiff_t>(1) } };
+                    _run = til::rect{ runStart, til::size{ base::saturated_cast<CoordType>(runLength), 1 } };
                 }
                 else
                 {
@@ -127,7 +128,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // ---> Mark the end of the iterator by updating the state with _end.
                     _pos = _end;
                     _nextPos = _end;
-                    _run = til::rectangle{};
+                    _run = til::rect{};
                 }
             }
         };
@@ -140,7 +141,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using const_iterator = details::_bitmap_const_iterator<allocator_type>;
 
         private:
-            using run_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<til::rectangle>;
+            using run_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<til::rect>;
 
         public:
             explicit bitmap(const allocator_type& allocator) noexcept :
@@ -255,15 +256,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             const_iterator begin() const
             {
-                return const_iterator(_bits, _sz, 0);
+                return const_iterator(_bits, til::rect{ _sz }, 0);
             }
 
             const_iterator end() const
             {
-                return const_iterator(_bits, _sz, _sz.area());
+                return const_iterator(_bits, til::rect{ _sz }, _sz.area());
             }
 
-            const gsl::span<const til::rectangle> runs() const
+            const gsl::span<const til::rect> runs() const
             {
                 // If we don't have cached runs, rebuild.
                 if (!_runs.has_value())
@@ -278,10 +279,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // optional fill the uncovered area with bits.
             void translate(const til::point delta, bool fill = false)
             {
-                if (delta.x() == 0)
+                if (delta.x == 0)
                 {
                     // fast path by using bit shifting
-                    translate_y(delta.y(), fill);
+                    translate_y(delta.y, fill);
                     return;
                 }
 
@@ -356,14 +357,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _bits.set(_rc.index_of(pt));
             }
 
-            void set(const til::rectangle rc)
+            void set(const til::rect& rc)
             {
                 THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
                 _runs.reset(); // reset cached runs on any non-const method
 
-                for (auto row = rc.top(); row < rc.bottom(); ++row)
+                for (auto row = rc.top; row < rc.bottom; ++row)
                 {
-                    _bits.set(_rc.index_of(til::point{ rc.left(), row }), rc.width(), true);
+                    _bits.set(_rc.index_of(til::point{ rc.left, row }), rc.width(), true);
                 }
             }
 
@@ -480,7 +481,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     return;
                 }
 
-                const auto bitShift = delta_y * _sz.width();
+                const auto bitShift = delta_y * _sz.width;
 
 #pragma warning(push)
                 // we can't depend on GSL here, so we use static_cast for explicit narrowing
@@ -530,10 +531,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             allocator_type _alloc;
             til::size _sz;
-            til::rectangle _rc;
+            til::rect _rc;
             dynamic_bitset<unsigned long long, allocator_type> _bits;
 
-            mutable std::optional<std::vector<til::rectangle, run_allocator_type>> _runs;
+            mutable std::optional<std::vector<til::rect, run_allocator_type>> _runs;
 
 #ifdef UNIT_TESTING
             friend class ::BitmapTests;

@@ -261,6 +261,13 @@ CATCH_RETURN();
     return S_OK;
 }
 
+// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
+// But UiaEngine is never the only engine running. Overriding this function prevents
+// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
+void UiaEngine::WaitUntilCanRender() noexcept
+{
+}
+
 // Routine Description:
 // - Used to perform longer running presentation steps outside the lock so the
 //      other threads can continue.
@@ -363,12 +370,14 @@ CATCH_RETURN();
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - textAttributes - <unused>
+// - renderSettings - <unused>
 // - pData - <unused>
 // - usingSoftFont - <unused>
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
+                                                      const RenderSettings& /*renderSettings*/,
                                                       const gsl::not_null<IRenderData*> /*pData*/,
                                                       const bool /*usingSoftFont*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
@@ -433,11 +442,11 @@ CATCH_RETURN();
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK.
-[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     // Magic static is only valid because any instance of this object has the same behavior.
     // Use member variable instead if this ever changes.
-    const static til::rectangle empty;
+    static constexpr til::rect empty;
     area = { &empty, 1 };
     return S_OK;
 }

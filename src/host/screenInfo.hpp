@@ -42,8 +42,6 @@ Revision History:
 #include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
-#include "../inc/ITerminalOutputConnection.hpp"
-
 #include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
 
@@ -189,8 +187,6 @@ public:
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
 
-    void SetCursorColor(const unsigned int Color, const bool setMain = false) noexcept;
-
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
@@ -224,7 +220,7 @@ public:
     [[nodiscard]] HRESULT VtEraseAll();
     [[nodiscard]] HRESULT ClearBuffer();
 
-    void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
 
     void UpdateBottom();
     void MoveToBottom();

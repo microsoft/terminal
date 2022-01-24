@@ -16,9 +16,11 @@ Author(s):
 #pragma once
 
 #include "../input/terminalInput.hpp"
+#include "../parser/stateMachine.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 #include "../../buffer/out/LineRendition.hpp"
 #include "../../buffer/out/TextAttribute.hpp"
+#include "../../renderer/inc/RenderSettings.hpp"
 #include "../../inc/conattrs.hpp"
 
 #include <deque>
@@ -28,6 +30,8 @@ namespace Microsoft::Console::VirtualTerminal
 {
     class ConGetSet
     {
+        using RenderSettings = Microsoft::Console::Render::RenderSettings;
+
     public:
         virtual ~ConGetSet() = default;
         virtual bool GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
@@ -49,9 +53,10 @@ namespace Microsoft::Console::VirtualTerminal
                                           const SMALL_RECT& window) = 0;
 
         virtual bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) = 0;
+        virtual bool SetParserMode(const StateMachine::Mode mode, const bool enabled) = 0;
+        virtual bool GetParserMode(const StateMachine::Mode mode) const = 0;
+        virtual bool SetRenderMode(const RenderSettings::Mode mode, const bool enabled) = 0;
 
-        virtual bool PrivateSetAnsiMode(const bool ansiMode) = 0;
-        virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;
         virtual bool PrivateSetAutoWrapMode(const bool wrapAtEOL) = 0;
 
         virtual bool PrivateShowCursor(const bool show) = 0;
@@ -70,7 +75,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateClearBuffer() = 0;
         virtual bool GetUserDefaultCursorStyle(CursorType& style) = 0;
         virtual bool SetCursorStyle(const CursorType style) = 0;
-        virtual bool SetCursorColor(const COLORREF color) = 0;
         virtual bool PrivateWriteConsoleControlInput(const KeyEvent key) = 0;
         virtual bool PrivateRefreshWindow() = 0;
 
@@ -85,10 +89,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool MoveToBottom() const = 0;
 
-        virtual bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const = 0;
-        virtual bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const = 0;
-        virtual bool PrivateSetDefaultForeground(const COLORREF value) const = 0;
-        virtual bool PrivateSetDefaultBackground(const COLORREF value) const = 0;
+        virtual COLORREF GetColorTableEntry(const size_t tableIndex) const = 0;
+        virtual bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) = 0;
+        virtual void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) = 0;
 
         virtual bool PrivateFillRegion(const COORD startPosition,
                                        const size_t fillLength,

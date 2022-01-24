@@ -11,7 +11,7 @@ jobs:
     vmImage: 'windows-2019'
   variables:
     artifactsPath: $(Build.SourcesDirectory)\Artifacts
-    pgoToolsPath: $(Build.SourcesDirectory)\tools\PGODatabase
+    pgoToolsPath: $(Build.SourcesDirectory)\build\PGO
     nuspecPath: $(pgoToolsPath)\NuSpecs
     nuspecFilename: PGO.nuspec
 
@@ -30,28 +30,22 @@ jobs:
     inputs:
       versionSpec: 5.8.0
 
-  - task: CopyFiles@2
-    displayName: 'Copy pgd files to NuGet build directory'
-    inputs:
-      sourceFolder: $(artifactsPath)\${{ parameters.pgoArtifact }}
-      contents: '**\*.pgd'
-      targetFolder: $(nuspecPath)\tools
-
-  - task: powershell@2
-    displayName: 'Generate NuSpec file'
-    inputs:
-      targetType: filePath
-      filePath: $(pgoToolsPath)\generate-nuspec.ps1
-      workingDirectory: $(pgoToolsPath)
-      arguments: $(nuspecPath)\$(nuspecFilename).template $(nuspecPath)\$(nuspecFilename)
-
+  # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
+  # This should be `task: NuGetCommand@2`
   - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
-    displayName: 'NuGet pack'
+    displayName: Restore NuGet packages for extraneous build actions
     inputs:
-      command: pack
-      packagesToPack: '$(nuspecPath)\$(nuspecFilename)'
-      basePath: '$(nuspecPath)'
-      packDestination: '$(Build.ArtifactStagingDirectory)'
+      command: restore
+      feedsToUse: config
+      configPath: NuGet.config
+      restoreSolution: build/packages.config
+      restoreDirectory: '$(Build.SourcesDirectory)\packages'
+
+  - task: MSBuild@1
+    displayName: 'Create PGO Nuget'
+    inputs:
+      solution: $(pgoToolsPath)\PGO.DB.proj
+      msbuildArguments: '/t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath)\${{ parameters.pgoArtifact }} /p:PGOOutputPath=$(Build.ArtifactStagingDirectory)'
 
   - task: PublishBuildArtifacts@1
     inputs:

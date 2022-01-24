@@ -38,6 +38,7 @@ stages:
       - template: ./templates/build-console-audit-job.yml
         parameters:
           platform: x64
+
   - stage: Build_x64
     displayName: Build x64
     dependsOn: []
@@ -61,6 +62,32 @@ stages:
       - template: ./templates/build-console-ci.yml
         parameters:
           platform: ARM64
+
+  - stage: Test_x64
+    displayName: Test x64
+    dependsOn: [Build_x64]
+    condition: succeeded()
+    jobs:
+      - template: ./templates/test-console-ci.yml
+        parameters:
+          platform: x64
+  - stage: Test_x86
+    displayName: Test x86
+    dependsOn: [Build_x86]
+    jobs:
+      - template: ./templates/test-console-ci.yml
+        parameters:
+          platform: x86
+
+  - stage: Helix_x64
+    displayName: Helix x64
+    dependsOn: [Build_x64]
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
+    jobs:
+      - template: ./templates/console-ci-helix-job.yml
+        parameters:
+          platform: x64
+
   - stage: Scripts
     displayName: Code Health Scripts
     dependsOn: []

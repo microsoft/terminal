@@ -52,8 +52,8 @@ namespace Microsoft::Console::VirtualTerminal
             AlternateScroll
         };
 
-        void SetInputMode(const Mode mode, const bool enabled);
-        bool GetInputMode(const Mode mode) const;
+        void SetInputMode(const Mode mode, const bool enabled) noexcept;
+        bool GetInputMode(const Mode mode) const noexcept;
         void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
 
 #pragma region MouseInput
@@ -127,8 +127,8 @@ namespace Microsoft::Console::VirtualTerminal
                                                  const short modifierKeyState,
                                                  const short delta);
 
-        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const;
-        bool _SendAlternateScroll(const short delta) const;
+        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
+        bool _SendAlternateScroll(const short delta) const noexcept;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion

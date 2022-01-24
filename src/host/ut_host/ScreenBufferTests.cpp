@@ -24,6 +24,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 
 class ScreenBufferTests
@@ -59,9 +60,10 @@ class ScreenBufferTests
     {
         // Set up some sane defaults
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.SetDefaultForegroundColor(INVALID_COLOR);
-        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
+        gci.CalculateDefaultColorIndices();
 
         m_state->PrepareNewTextBufferInfo();
         auto& currentBuffer = gci.GetActiveOutputBuffer();
@@ -359,12 +361,11 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     auto mainCursorPos = COORD{ 3, 5 };
     auto mainCursorVisible = false;
     auto mainCursorSize = 33u;
-    auto mainCursorColor = RGB(1, 2, 3);
     auto mainCursorType = CursorType::DoubleUnderscore;
     auto mainCursorBlinking = false;
     mainCursor.SetPosition(mainCursorPos);
     mainCursor.SetIsVisible(mainCursorVisible);
-    mainCursor.SetStyle(mainCursorSize, mainCursorColor, mainCursorType);
+    mainCursor.SetStyle(mainCursorSize, mainCursorType);
     mainCursor.SetBlinkingAllowed(mainCursorBlinking);
 
     Log::Comment(L"Switch to the alternate buffer.");
@@ -379,7 +380,6 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     VERIFY_ARE_EQUAL(mainCursorVisible, altCursor.IsVisible());
     Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
     VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
-    VERIFY_ARE_EQUAL(mainCursorColor, altCursor.GetColor());
     VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
     VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinkingAllowed());
 
@@ -387,12 +387,11 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     auto altCursorPos = COORD{ 5, 3 };
     auto altCursorVisible = true;
     auto altCursorSize = 66u;
-    auto altCursorColor = RGB(3, 2, 1);
     auto altCursorType = CursorType::EmptyBox;
     auto altCursorBlinking = true;
     altCursor.SetPosition(altCursorPos);
     altCursor.SetIsVisible(altCursorVisible);
-    altCursor.SetStyle(altCursorSize, altCursorColor, altCursorType);
+    altCursor.SetStyle(altCursorSize, altCursorType);
     altCursor.SetBlinkingAllowed(altCursorBlinking);
 
     Log::Comment(L"Switch back to the main buffer.");
@@ -406,7 +405,6 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     VERIFY_ARE_EQUAL(altCursorVisible, mainCursor.IsVisible());
     Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
     VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
-    VERIFY_ARE_EQUAL(altCursorColor, mainCursor.GetColor());
     VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
     VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinkingAllowed());
 }
@@ -1381,6 +1379,7 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -1388,8 +1387,9 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
 
     const COLORREF yellow = RGB(255, 255, 0);
     const COLORREF magenta = RGB(255, 0, 255);
-    gci.SetDefaultForegroundColor(yellow);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     const TextAttribute defaultAttrs = {};
     si.SetAttributes(defaultAttrs);
 
@@ -1433,7 +1433,7 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
                 const auto& attr = attrs[x];
                 VERIFY_ARE_EQUAL(false, attr.IsLegacy());
                 VERIFY_ARE_EQUAL(defaultAttrs, attr);
-                VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attr));
+                VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), renderSettings.GetAttributeColors(attr));
             }
         }
     }
@@ -1741,7 +1741,6 @@ void ScreenBufferTests::ResizeCursorUnchanged()
     // Get initial cursor values
     const CursorType initialType = initialCursor.GetType();
     const auto initialSize = initialCursor.GetSize();
-    const COLORREF initialColor = initialCursor.GetColor();
 
     // set our wrap mode accordingly - ResizeScreenBuffer will be smart enough
     //  to call the appropriate implementation
@@ -1756,10 +1755,8 @@ void ScreenBufferTests::ResizeCursorUnchanged()
     const auto& finalCursor = si.GetTextBuffer().GetCursor();
     const CursorType finalType = finalCursor.GetType();
     const auto finalSize = finalCursor.GetSize();
-    const COLORREF finalColor = finalCursor.GetColor();
 
     VERIFY_ARE_EQUAL(initialType, finalType);
-    VERIFY_ARE_EQUAL(initialColor, finalColor);
     VERIFY_ARE_EQUAL(initialSize, finalSize);
 }
 
@@ -2122,7 +2119,6 @@ void ScreenBufferTests::TestAltBufferCursorState()
         // Validate that the cursor state was copied appropriately into the
         //      alternate buffer
         VERIFY_ARE_EQUAL(mainCursor.GetSize(), altCursor.GetSize());
-        VERIFY_ARE_EQUAL(mainCursor.GetColor(), altCursor.GetColor());
         VERIFY_ARE_EQUAL(mainCursor.GetType(), altCursor.GetType());
     }
 }
@@ -2249,6 +2245,7 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -2259,8 +2256,9 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     COLORREF brightGreen = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     COLORREF darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
 
-    gci.SetDefaultForegroundColor(yellow);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
@@ -2335,12 +2333,12 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     VERIFY_ARE_EQUAL(expectedTwo, attrE);
     VERIFY_ARE_EQUAL(expectedSix, attrF);
 
-    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrA));
-    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, darkBlue), gci.LookupAttributeColors(attrB));
-    VERIFY_ARE_EQUAL(std::make_pair(yellow, darkBlue), gci.LookupAttributeColors(attrC));
-    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrD));
-    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, darkBlue), gci.LookupAttributeColors(attrE));
-    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, magenta), gci.LookupAttributeColors(attrF));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), renderSettings.GetAttributeColors(attrA));
+    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, darkBlue), renderSettings.GetAttributeColors(attrB));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, darkBlue), renderSettings.GetAttributeColors(attrC));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), renderSettings.GetAttributeColors(attrD));
+    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, darkBlue), renderSettings.GetAttributeColors(attrE));
+    VERIFY_ARE_EQUAL(std::make_pair(brightGreen, magenta), renderSettings.GetAttributeColors(attrF));
 }
 
 void ScreenBufferTests::SetDefaultsTogether()
@@ -2352,6 +2350,7 @@ void ScreenBufferTests::SetDefaultsTogether()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -2361,8 +2360,9 @@ void ScreenBufferTests::SetDefaultsTogether()
     COLORREF yellow = RGB(255, 255, 0);
     COLORREF color250 = gci.GetColorTableEntry(250);
 
-    gci.SetDefaultForegroundColor(yellow);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
@@ -2412,9 +2412,9 @@ void ScreenBufferTests::SetDefaultsTogether()
     VERIFY_ARE_EQUAL(expectedTwo, attrB);
     VERIFY_ARE_EQUAL(expectedDefaults, attrC);
 
-    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrA));
-    VERIFY_ARE_EQUAL(std::make_pair(yellow, color250), gci.LookupAttributeColors(attrB));
-    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), gci.LookupAttributeColors(attrC));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), renderSettings.GetAttributeColors(attrA));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, color250), renderSettings.GetAttributeColors(attrB));
+    VERIFY_ARE_EQUAL(std::make_pair(yellow, magenta), renderSettings.GetAttributeColors(attrC));
 }
 
 void ScreenBufferTests::ReverseResetWithDefaultBackground()
@@ -2425,6 +2425,7 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -2432,8 +2433,9 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultForegroundColor(INVALID_COLOR);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 3 X's:"));
@@ -2478,9 +2480,9 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     VERIFY_ARE_EQUAL(expectedReversed, attrB);
     VERIFY_ARE_EQUAL(expectedDefaults, attrC);
 
-    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrA).second);
-    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrB).first);
-    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrC).second);
+    VERIFY_ARE_EQUAL(magenta, renderSettings.GetAttributeColors(attrA).second);
+    VERIFY_ARE_EQUAL(magenta, renderSettings.GetAttributeColors(attrB).first);
+    VERIFY_ARE_EQUAL(magenta, renderSettings.GetAttributeColors(attrC).second);
 }
 
 void ScreenBufferTests::BackspaceDefaultAttrs()
@@ -2494,6 +2496,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -2501,7 +2504,8 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
@@ -2531,8 +2535,8 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     VERIFY_ARE_EQUAL(expectedDefaults, attrA);
     VERIFY_ARE_EQUAL(expectedDefaults, attrB);
 
-    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrA).second);
-    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrB).second);
+    VERIFY_ARE_EQUAL(magenta, renderSettings.GetAttributeColors(attrA).second);
+    VERIFY_ARE_EQUAL(magenta, renderSettings.GetAttributeColors(attrB).second);
 }
 
 void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
@@ -2557,6 +2561,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -2564,7 +2569,8 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
@@ -2573,7 +2579,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     if (writeSingly)
     {
-        wchar_t* str = L"X";
+        auto str = L"X";
         size_t seqCb = 2;
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
@@ -2582,7 +2588,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     }
     else
     {
-        wchar_t* str = L"XX\x08";
+        const auto str = L"XX\x08";
         size_t seqCb = 6;
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
     }
@@ -2608,8 +2614,8 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     VERIFY_ARE_EQUAL(expectedDefaults, attrA);
     VERIFY_ARE_EQUAL(expectedDefaults, attrB);
 
-    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrA).second);
-    VERIFY_ARE_EQUAL(magenta, gci.LookupAttributeColors(attrB).second);
+    VERIFY_ARE_EQUAL(magenta, renderSettings.GetAttributeColors(attrA).second);
+    VERIFY_ARE_EQUAL(magenta, renderSettings.GetAttributeColors(attrB).second);
 }
 
 void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
@@ -2622,6 +2628,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = si.GetTextBuffer().GetCursor();
+
     // Make sure we're in VT mode
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
@@ -2632,7 +2639,8 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
     TextAttribute expectedDefaults{};
 
@@ -2700,6 +2708,7 @@ void ScreenBufferTests::SetGlobalColorTable()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
     Cursor& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -2719,7 +2728,7 @@ void ScreenBufferTests::SetGlobalColorTable()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
@@ -2745,7 +2754,7 @@ void ScreenBufferTests::SetGlobalColorTable()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
@@ -2762,8 +2771,8 @@ void ScreenBufferTests::SetGlobalColorTable()
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrA).second);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrB).second);
+        VERIFY_ARE_EQUAL(testColor, renderSettings.GetAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(testColor, renderSettings.GetAttributeColors(attrB).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Switch back to the main buffer"));
@@ -2785,8 +2794,8 @@ void ScreenBufferTests::SetGlobalColorTable()
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrA).second);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrB).second);
+        VERIFY_ARE_EQUAL(testColor, renderSettings.GetAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(testColor, renderSettings.GetAttributeColors(attrB).second);
     }
 }
 
@@ -2806,6 +2815,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
     Cursor& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -2825,7 +2835,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
@@ -2851,7 +2861,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
-        VERIFY_ARE_EQUAL(originalRed, gci.LookupAttributeColors(attrA).second);
+        VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
     }
 
     Log::Comment(NoThrowString().Format(L"Change the value of red to RGB(0x11, 0x22, 0x33)"));
@@ -2870,7 +2880,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
         const auto attrB = attrs[1];
         // TODO MSFT:20105972 - attrA and attrB should both be the same color now
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(testColor, gci.LookupAttributeColors(attrB).second);
+        VERIFY_ARE_EQUAL(testColor, renderSettings.GetAttributeColors(attrB).second);
     }
 }
 
@@ -2889,15 +2899,15 @@ void ScreenBufferTests::SetDefaultForegroundColor()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
 
-    COLORREF originalColor = gci.GetDefaultForegroundColor();
-    COLORREF newColor = gci.GetDefaultForegroundColor();
+    COLORREF originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    COLORREF newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
     stateMachine.ProcessString(L"\x1b]10;rgb:33/66/99\x1b\\");
 
-    newColor = gci.GetDefaultForegroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
@@ -2905,7 +2915,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     testColor = RGB(0xff, 0xff, 0xff);
     stateMachine.ProcessString(L"\x1b]10;rgb:ff/ff/ff\x1b\\");
 
-    newColor = gci.GetDefaultForegroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Invalid syntax");
@@ -2913,7 +2923,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]10;99/66/33\x1b\\");
 
-    newColor = gci.GetDefaultForegroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);
@@ -2934,15 +2944,15 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
 
-    COLORREF originalColor = gci.GetDefaultBackgroundColor();
-    COLORREF newColor = gci.GetDefaultBackgroundColor();
+    COLORREF originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+    COLORREF newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
     stateMachine.ProcessString(L"\x1b]11;rgb:33/66/99\x1b\\");
 
-    newColor = gci.GetDefaultBackgroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
@@ -2950,7 +2960,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     testColor = RGB(0xff, 0xff, 0xff);
     stateMachine.ProcessString(L"\x1b]11;rgb:ff/ff/ff\x1b\\");
 
-    newColor = gci.GetDefaultBackgroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Invalid Syntax");
@@ -2958,7 +2968,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]11;99/66/33\x1b\\");
 
-    newColor = gci.GetDefaultBackgroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);
@@ -3202,6 +3212,7 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     VERIFY_SUCCESS_NTSTATUS(si.SetViewportOrigin(true, { 0, 1 }, true));
     cursor.SetPosition({ 0, si.GetViewport().BottomInclusive() });
@@ -3231,9 +3242,9 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
-        VERIFY_ARE_EQUAL(std::make_pair(darkRed, darkBlue), gci.LookupAttributeColors(attrA));
+        VERIFY_ARE_EQUAL(std::make_pair(darkRed, darkBlue), renderSettings.GetAttributeColors(attrA));
 
-        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), gci.LookupAttributeColors(attrB));
+        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), renderSettings.GetAttributeColors(attrB));
     }
 
     Log::Comment(NoThrowString().Format(L"Emulate scrolling up with the mouse"));
@@ -3264,11 +3275,11 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
         LOG_ATTR(attrA);
         LOG_ATTR(attrB);
         LOG_ATTR(attrC);
-        VERIFY_ARE_EQUAL(std::make_pair(darkRed, darkBlue), gci.LookupAttributeColors(attrA));
+        VERIFY_ARE_EQUAL(std::make_pair(darkRed, darkBlue), renderSettings.GetAttributeColors(attrA));
 
-        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), gci.LookupAttributeColors(attrB));
+        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), renderSettings.GetAttributeColors(attrB));
 
-        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), gci.LookupAttributeColors(attrC));
+        VERIFY_ARE_EQUAL(std::make_pair(darkWhite, darkBlack), renderSettings.GetAttributeColors(attrC));
     }
 }
 
@@ -4625,24 +4636,25 @@ void ScreenBufferTests::SetScreenMode()
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     const auto rgbForeground = RGB(12, 34, 56);
     const auto rgbBackground = RGB(78, 90, 12);
     const auto testAttr = TextAttribute{ rgbForeground, rgbBackground };
 
     Log::Comment(L"By default the screen mode is normal.");
-    VERIFY_IS_FALSE(gci.IsScreenReversed());
-    VERIFY_ARE_EQUAL(std::make_pair(rgbForeground, rgbBackground), gci.LookupAttributeColors(testAttr));
+    VERIFY_IS_FALSE(renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed));
+    VERIFY_ARE_EQUAL(std::make_pair(rgbForeground, rgbBackground), renderSettings.GetAttributeColors(testAttr));
 
     Log::Comment(L"When DECSCNM is set, background and foreground colors are switched.");
     stateMachine.ProcessString(L"\x1B[?5h");
-    VERIFY_IS_TRUE(gci.IsScreenReversed());
-    VERIFY_ARE_EQUAL(std::make_pair(rgbBackground, rgbForeground), gci.LookupAttributeColors(testAttr));
+    VERIFY_IS_TRUE(renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed));
+    VERIFY_ARE_EQUAL(std::make_pair(rgbBackground, rgbForeground), renderSettings.GetAttributeColors(testAttr));
 
     Log::Comment(L"When DECSCNM is reset, the colors are normal again.");
     stateMachine.ProcessString(L"\x1B[?5l");
-    VERIFY_IS_FALSE(gci.IsScreenReversed());
-    VERIFY_ARE_EQUAL(std::make_pair(rgbForeground, rgbBackground), gci.LookupAttributeColors(testAttr));
+    VERIFY_IS_FALSE(renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed));
+    VERIFY_ARE_EQUAL(std::make_pair(rgbForeground, rgbBackground), renderSettings.GetAttributeColors(testAttr));
 }
 
 void ScreenBufferTests::SetOriginMode()
@@ -5978,7 +5990,7 @@ void ScreenBufferTests::TestAddHyperlink()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with no custom id
-    stateMachine.ProcessString(L"\x1b]8;;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
@@ -5988,7 +6000,7 @@ void ScreenBufferTests::TestAddHyperlink()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -6001,7 +6013,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomId()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with a custom id
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -6013,7 +6025,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomId()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -6026,7 +6038,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with a custom id
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -6034,7 +6046,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
     const auto oldAttributes{ tbi.GetCurrentAttributes() };
 
     // Send any other text
-    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"other.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"other.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());

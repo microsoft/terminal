@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "../cascadia/inc/cppwinrt_utils.h"
-
 namespace ControlUnitTests
 {
     class MockConnection : public winrt::implements<MockConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>

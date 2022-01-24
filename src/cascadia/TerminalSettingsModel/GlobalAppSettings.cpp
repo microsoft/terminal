@@ -30,7 +30,7 @@ void GlobalAppSettings::_FinalizeInheritance()
 {
     for (const auto& parent : _parents)
     {
-        _actionMap->InsertParent(parent->_actionMap);
+        _actionMap->AddLeastImportantParent(parent->_actionMap);
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
         for (const auto& [k, v] : parent->_colorSchemes)
         {
@@ -68,7 +68,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 
     for (const auto& parent : _parents)
     {
-        globals->InsertParent(parent->Copy());
+        globals->AddLeastImportantParent(parent->Copy());
     }
     return globals;
 }

@@ -45,6 +45,13 @@ enum class ColorType : BYTE
     IsRgb = 0x3
 };
 
+enum class ColorAlias : size_t
+{
+    DefaultForeground,
+    DefaultBackground,
+    ENUM_COUNT // must be the last element in the enum class
+};
+
 struct TextColor
 {
 public:
@@ -64,6 +71,11 @@ public:
     static constexpr BYTE BRIGHT_MAGENTA = 13;
     static constexpr BYTE BRIGHT_CYAN = 14;
     static constexpr BYTE BRIGHT_WHITE = 15;
+
+    static constexpr size_t DEFAULT_FOREGROUND = 256;
+    static constexpr size_t DEFAULT_BACKGROUND = 257;
+    static constexpr size_t CURSOR_COLOR = 258;
+    static constexpr size_t TABLE_SIZE = 259;
 
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },
@@ -103,7 +115,7 @@ public:
     void SetIndex(const BYTE index, const bool isIndex256) noexcept;
     void SetDefault() noexcept;
 
-    COLORREF GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten = false) const noexcept;
+    COLORREF GetColor(const std::array<COLORREF, TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept

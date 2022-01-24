@@ -1248,35 +1248,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for changing the screen mode between normal and reverse.
-//    When in reverse screen mode, the background and foreground colors are switched.
-// Parameters:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate error code.
-[[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode)
-{
-    try
-    {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-        gci.SetScreenReversed(reverseMode);
-
-        if (g.pRender)
-        {
-            g.pRender->TriggerRedrawAll();
-        }
-
-        return STATUS_SUCCESS;
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-}
-
-// Routine Description:
 // - A private API call for setting the ENABLE_WRAP_AT_EOL_OUTPUT mode.
 //     This controls whether the cursor moves to the beginning of the next row
 //     when it reaches the end of the current row.
@@ -1497,12 +1468,6 @@ void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType)
 {
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetType(cursorType);
-}
-
-void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
-                         const COLORREF cursorColor)
-{
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetColor(cursorColor);
 }
 
 void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
@@ -1833,26 +1798,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 [[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    // Sanitize the input if we're in pty mode. No control chars - this string
-    //      will get emitted back to the TTY in a VT sequence, and we don't want
-    //      to embed control characters in that string.
-    if (gci.IsInVtIoMode())
-    {
-        std::wstring sanitized{ title };
-        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](auto ch) {
-                            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
-                        }),
-                        sanitized.end());
-
-        gci.SetTitle({ sanitized });
-    }
-    else
-    {
-        // SetTitle will trigger the renderer to update the titlebar for us.
-        gci.SetTitle(title);
-    }
-
+    gci.SetTitle(title);
     return S_OK;
 }
 
@@ -1961,115 +1907,6 @@ void DoSrvPrivateInsertLines(const size_t count)
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 {
     screenInfo.GetActiveBuffer().MoveToBottom();
-}
-
-// Method Description:
-// - Retrieve the color table value at the specified index.
-// Arguments:
-// - index: the index in the table to retrieve.
-// - value: receives the RGB value for the color at that index in the table.
-// Return Value:
-// - E_INVALIDARG if index is >= 256, else S_OK
-[[nodiscard]] HRESULT DoSrvPrivateGetColorTableEntry(const size_t index, COLORREF& value) noexcept
-{
-    RETURN_HR_IF(E_INVALIDARG, index >= 256);
-    try
-    {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-        value = gci.GetColorTableEntry(index);
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Method Description:
-// - Sets the color table value in index to the color specified in value.
-//      Can be used to set the 256-color table as well as the 16-color table.
-// Arguments:
-// - index: the index in the table to change.
-// - value: the new RGB value to use for that index in the color table.
-// Return Value:
-// - E_INVALIDARG if index is >= 256, else S_OK
-// Notes:
-//  Does not take a buffer parameter. The color table for a console and for
-//      terminals as well is global, not per-screen-buffer.
-[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept
-{
-    RETURN_HR_IF(E_INVALIDARG, index >= 256);
-    try
-    {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-        gci.SetColorTableEntry(index, value);
-
-        // Update the screen colors if we're not a pty
-        // No need to force a redraw in pty mode.
-        if (g.pRender && !gci.IsInVtIoMode())
-        {
-            g.pRender->TriggerRedrawAll();
-        }
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Method Description:
-// - Sets the default foreground color to the color specified in value.
-// Arguments:
-// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept
-{
-    try
-    {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-        gci.SetDefaultForegroundColor(value);
-
-        // Update the screen colors if we're not a pty
-        // No need to force a redraw in pty mode.
-        if (g.pRender && !gci.IsInVtIoMode())
-        {
-            g.pRender->TriggerRedrawAll();
-        }
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Method Description:
-// - Sets the default background color to the color specified in value.
-// Arguments:
-// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept
-{
-    try
-    {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-        gci.SetDefaultBackgroundColor(value);
-
-        // Update the screen colors if we're not a pty
-        // No need to force a redraw in pty mode.
-        if (g.pRender && !gci.IsInVtIoMode())
-        {
-            g.pRender->TriggerRedrawAll();
-        }
-
-        return S_OK;
-    }
-    CATCH_RETURN();
 }
 
 // Routine Description:

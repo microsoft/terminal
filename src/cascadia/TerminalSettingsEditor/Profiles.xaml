@@ -47,7 +47,7 @@
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
-                   Visibility="{x:Bind State.Profile.IsBaseLayer}" />
+                   Visibility="{x:Bind Profile.IsBaseLayer}" />
 
         <Pivot x:Name="ProfilesPivot"
                Grid.Row="1"
@@ -67,24 +67,24 @@
                         -->
                         <local:SettingContainer x:Uid="Profile_Name"
                                                 Margin="0,0,0,24"
-                                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
+                                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                             <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                                     Text="{x:Bind State.Profile.Name, Mode=TwoWay}" />
+                                     Text="{x:Bind Profile.Name, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  Commandline  -->
                         <local:SettingContainer x:Name="CommandlineContainer"
                                                 x:Uid="Profile_Commandline"
                                                 Margin="0,0,0,24"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearCommandline}"
-                                                HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
-                                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearCommandline}"
+                                                HasSettingValue="{x:Bind Profile.HasCommandline, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.CommandlineOverrideSource, Mode=OneWay}"
+                                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_CommandlineBox"
                                          IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
-                                         Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" />
+                                         Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_CommandlineBrowse"
                                         Click="Commandline_Click"
                                         Style="{StaticResource BrowseButtonStyle}" />
@@ -95,39 +95,39 @@
                         <local:SettingContainer x:Name="StartingDirectoryContainer"
                                                 x:Uid="Profile_StartingDirectory"
                                                 Margin="0"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearStartingDirectory}"
-                                                HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearStartingDirectory}"
+                                                HasSettingValue="{x:Bind Profile.HasStartingDirectory, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBox x:Uid="Profile_StartingDirectoryBox"
-                                             IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                             IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                              IsSpellCheckEnabled="False"
                                              Style="{StaticResource TextBoxSettingStyle}"
-                                             Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" />
+                                             Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
                                     <Button x:Name="StartingDirectoryBrowse"
                                             x:Uid="Profile_StartingDirectoryBrowse"
                                             Click="StartingDirectory_Click"
-                                            IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                            IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                             Style="{StaticResource BrowseButtonStyle}" />
                                 </StackPanel>
                                 <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
                                           x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                          IsChecked="{x:Bind State.Profile.UseParentProcessDirectory, Mode=TwoWay}" />
+                                          IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                             </StackPanel>
                         </local:SettingContainer>
 
                         <!--  Icon  -->
                         <local:SettingContainer x:Uid="Profile_Icon"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearIcon}"
-                                                HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearIcon}"
+                                                HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_IconBox"
                                          FontFamily="Segoe UI, Segoe MDL2 Assets"
                                          IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
-                                         Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" />
+                                         Text="{x:Bind Profile.Icon, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_IconBrowse"
                                         Click="Icon_Click"
                                         Style="{StaticResource BrowseButtonStyle}" />
@@ -136,24 +136,24 @@
 
                         <!--  Tab Title  -->
                         <local:SettingContainer x:Uid="Profile_TabTitle"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearTabTitle}"
-                                                HasSettingValue="{x:Bind State.Profile.HasTabTitle, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.TabTitleOverrideSource, Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearTabTitle}"
+                                                HasSettingValue="{x:Bind Profile.HasTabTitle, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.TabTitleOverrideSource, Mode=OneWay}">
                             <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                                     Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}" />
+                                     Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  Hidden  -->
                         <local:SettingContainer x:Uid="Profile_Hidden"
-                                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.Hidden, Mode=TwoWay}" />
+                                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                            <ToggleSwitch IsOn="{x:Bind Profile.Hidden, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  Delete Button  -->
                         <Button x:Name="DeleteButton"
                                 Margin="{StaticResource StandardControlMargin}"
                                 Style="{StaticResource DeleteButtonStyle}"
-                                Visibility="{x:Bind State.Profile.CanDeleteProfile}">
+                                Visibility="{x:Bind Profile.CanDeleteProfile}">
                             <Button.Resources>
                                 <ResourceDictionary>
                                     <ResourceDictionary.ThemeDictionaries>
@@ -238,8 +238,8 @@
                                 BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1" />
 
-                        <local:Appearances Appearance="{x:Bind State.Profile.DefaultAppearance, Mode=OneWay}"
-                                           SourceProfile="{x:Bind State.Profile, Mode=OneWay}" />
+                        <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
+                                           SourceProfile="{x:Bind Profile, Mode=OneWay}" />
 
                         <!--  Grouping: Transparency  -->
                         <StackPanel Style="{StaticResource PivotStackStyle}">
@@ -250,9 +250,9 @@
                             <local:SettingContainer x:Name="OpacityContainer"
                                                     x:Uid="Profile_Opacity"
                                                     Margin="0"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearOpacity}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasOpacity, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.OpacityOverrideSource, Mode=OneWay}">
+                                                    ClearSettingValue="{x:Bind Profile.ClearOpacity}"
+                                                    HasSettingValue="{x:Bind Profile.HasOpacity, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind Profile.OpacityOverrideSource, Mode=OneWay}">
                                 <StackPanel x:Name="OpacityControl">
                                     <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                         <Grid.ColumnDefinitions>
@@ -261,7 +261,7 @@
                                         </Grid.ColumnDefinitions>
                                         <Slider x:Name="OpacitySlider"
                                                 Grid.Column="0"
-                                                Value="{x:Bind local:Converters.PercentageToPercentageValue(State.Profile.Opacity), BindBack=State.Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
+                                                Value="{x:Bind local:Converters.PercentageToPercentageValue(Profile.Opacity), BindBack=Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
                                         <TextBlock Grid.Column="1"
                                                    Style="{StaticResource SliderValueLabelStyle}"
                                                    Text="{x:Bind local:Converters.AppendPercentageSign(OpacitySlider.Value), Mode=OneWay}" />
@@ -272,11 +272,11 @@
                             <!--  Use Acrylic  -->
                             <local:SettingContainer x:Uid="Profile_UseAcrylic"
                                                     Margin="0"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearUseAcrylic}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasUseAcrylic, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.UseAcrylicOverrideSource, Mode=OneWay}">
+                                                    ClearSettingValue="{x:Bind Profile.ClearUseAcrylic}"
+                                                    HasSettingValue="{x:Bind Profile.HasUseAcrylic, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind Profile.UseAcrylicOverrideSource, Mode=OneWay}">
                                 <ToggleSwitch x:Name="UseAcrylicToggleSwitch"
-                                              IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}" />
+                                              IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}" />
                             </local:SettingContainer>
 
                         </StackPanel>
@@ -289,9 +289,9 @@
                             <!--  Padding  -->
                             <local:SettingContainer x:Uid="Profile_Padding"
                                                     Margin="0"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearPadding}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasPadding, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.PaddingOverrideSource, Mode=OneWay}">
+                                                    ClearSettingValue="{x:Bind Profile.ClearPadding}"
+                                                    HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}">
                                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -299,7 +299,7 @@
                                     </Grid.ColumnDefinitions>
                                     <Slider x:Name="PaddingSlider"
                                             Grid.Column="0"
-                                            Value="{x:Bind local:Converters.MaxValueFromPaddingString(State.Profile.Padding), BindBack=State.Profile.SetPadding, Mode=TwoWay}" />
+                                            Value="{x:Bind local:Converters.MaxValueFromPaddingString(Profile.Padding), BindBack=Profile.SetPadding, Mode=TwoWay}" />
                                     <TextBlock Grid.Column="1"
                                                Style="{StaticResource SliderValueLabelStyle}"
                                                Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}" />
@@ -308,25 +308,25 @@
 
                             <!--  Scrollbar Visibility  -->
                             <local:SettingContainer x:Uid="Profile_ScrollbarVisibility"
-                                                    ClearSettingValue="{x:Bind State.Profile.ClearScrollState}"
-                                                    HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}">
+                                                    ClearSettingValue="{x:Bind Profile.ClearScrollState}"
+                                                    HasSettingValue="{x:Bind Profile.HasScrollState, Mode=OneWay}"
+                                                    SettingOverrideSource="{x:Bind Profile.ScrollStateOverrideSource, Mode=OneWay}">
                                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                                   ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
+                                                   ItemsSource="{x:Bind Profile.ScrollStateList, Mode=OneWay}"
+                                                   SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
                         </StackPanel>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal"
-                                        Visibility="{x:Bind State.Profile.EditableUnfocusedAppearance, Mode=OneWay}">
+                                        Visibility="{x:Bind Profile.EditableUnfocusedAppearance}">
                                 <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
                                            Style="{StaticResource TitleTextBlockStyle}" />
                                 <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
                                         Margin="32,0,0,0"
                                         Click="CreateUnfocusedAppearance_Click"
                                         Style="{StaticResource BaseButtonStyle}"
-                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.HasUnfocusedAppearance), Mode=OneWay}">
+                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
                                     <Button.Content>
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE710;" />
@@ -336,7 +336,7 @@
                                         Margin="32,0,0,0"
                                         Click="DeleteUnfocusedAppearance_Click"
                                         Style="{StaticResource BaseButtonStyle}"
-                                        Visibility="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}">
+                                        Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">
                                     <Button.Content>
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE74D;" />
@@ -391,9 +391,9 @@
                                     </Button.Resources>
                                 </Button>
                             </StackPanel>
-                            <local:Appearances Appearance="{x:Bind State.Profile.UnfocusedAppearance, Mode=OneWay}"
-                                               SourceProfile="{x:Bind State.Profile, Mode=OneWay}"
-                                               Visibility="{x:Bind State.Profile.ShowUnfocusedAppearance, Mode=OneWay}" />
+                            <local:Appearances Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
+                                               SourceProfile="{x:Bind Profile, Mode=OneWay}"
+                                               Visibility="{x:Bind Profile.ShowUnfocusedAppearance, Mode=OneWay}" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -406,76 +406,85 @@
                         <!--  Suppress Application Title  -->
                         <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
                                                 Margin="0"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearSuppressApplicationTitle}"
-                                                HasSettingValue="{x:Bind State.Profile.HasSuppressApplicationTitle, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}" />
+                                                ClearSettingValue="{x:Bind Profile.ClearSuppressApplicationTitle}"
+                                                HasSettingValue="{x:Bind Profile.HasSuppressApplicationTitle, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
+                            <ToggleSwitch IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  Antialiasing Mode  -->
                         <local:SettingContainer x:Uid="Profile_AntialiasingMode"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
-                                                HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"
+                                                HasSettingValue="{x:Bind Profile.HasAntialiasingMode, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
                             <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}" />
+                                               ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  AltGr Aliasing  -->
                         <local:SettingContainer x:Uid="Profile_AltGrAliasing"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearAltGrAliasing}"
-                                                HasSettingValue="{x:Bind State.Profile.HasAltGrAliasing, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}" />
+                                                ClearSettingValue="{x:Bind Profile.ClearAltGrAliasing}"
+                                                HasSettingValue="{x:Bind Profile.HasAltGrAliasing, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
+                            <ToggleSwitch IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  Snap On Input  -->
                         <local:SettingContainer x:Uid="Profile_SnapOnInput"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearSnapOnInput}"
-                                                HasSettingValue="{x:Bind State.Profile.HasSnapOnInput, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.SnapOnInputOverrideSource, Mode=OneWay}">
-                            <ToggleSwitch IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}" />
+                                                ClearSettingValue="{x:Bind Profile.ClearSnapOnInput}"
+                                                HasSettingValue="{x:Bind Profile.HasSnapOnInput, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.SnapOnInputOverrideSource, Mode=OneWay}">
+                            <ToggleSwitch IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  History Size  -->
                         <local:SettingContainer x:Uid="Profile_HistorySize"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearHistorySize}"
-                                                HasSettingValue="{x:Bind State.Profile.HasHistorySize, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.HistorySizeOverrideSource, Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearHistorySize}"
+                                                HasSettingValue="{x:Bind Profile.HasHistorySize, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.HistorySizeOverrideSource, Mode=OneWay}">
                             <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
                                             LargeChange="100"
                                             Minimum="0"
                                             SmallChange="10"
                                             Style="{StaticResource NumberBoxSettingStyle}"
-                                            Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}" />
+                                            Value="{x:Bind Profile.HistorySize, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  Close On Exit  -->
                         <local:SettingContainer x:Uid="Profile_CloseOnExit"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
-                                                HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearCloseOnExit}"
+                                                HasSettingValue="{x:Bind Profile.HasCloseOnExit, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}">
                             <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}" />
+                                               ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}" />
                         </local:SettingContainer>
 
                         <!--  Bell Style  -->
                         <local:SettingContainer x:Uid="Profile_BellStyle"
-                                                ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
-                                                HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}">
+                                                ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
+                                                HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}">
                             <StackPanel>
                                 <CheckBox x:Uid="Profile_BellStyleAudible"
-                                          IsChecked="{x:Bind IsBellStyleFlagSet(1), BindBack=SetBellStyleAudible, Mode=TwoWay}" />
+                                          IsChecked="{x:Bind Profile.IsBellStyleFlagSet(1), BindBack=Profile.SetBellStyleAudible, Mode=TwoWay}" />
                                 <CheckBox x:Uid="Profile_BellStyleWindow"
-                                          IsChecked="{x:Bind IsBellStyleFlagSet(2), BindBack=SetBellStyleWindow, Mode=TwoWay}" />
+                                          IsChecked="{x:Bind Profile.IsBellStyleFlagSet(2), BindBack=Profile.SetBellStyleWindow, Mode=TwoWay}" />
                                 <CheckBox x:Uid="Profile_BellStyleTaskbar"
-                                          IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
+                                          IsChecked="{x:Bind Profile.IsBellStyleFlagSet(4), BindBack=Profile.SetBellStyleTaskbar, Mode=TwoWay}" />
                             </StackPanel>
+                        </local:SettingContainer>
+
+                        <!--  AtlasEngine  -->
+                        <local:SettingContainer x:Uid="Profile_UseAtlasEngine"
+                                                ClearSettingValue="{x:Bind Profile.ClearUseAtlasEngine}"
+                                                HasSettingValue="{x:Bind Profile.HasUseAtlasEngine, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}"
+                                                Visibility="{x:Bind Profile.AtlasEngineAvailable}">
+                            <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}" />
                         </local:SettingContainer>
                     </StackPanel>
                 </ScrollViewer>

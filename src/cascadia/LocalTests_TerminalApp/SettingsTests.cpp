@@ -69,6 +69,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestIterableColorSchemeCommands);
 
+        TEST_METHOD(TestElevateArg);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1264,6 +1266,266 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"Vintage", realArgs.TerminalArgs().Profile());
+        }
+    }
+
+    void SettingsTests::TestElevateArg()
+    {
+        static constexpr std::wstring_view settingsJson{ LR"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "elevate": true,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "elevate": false,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "keybindings": [
+                { "keys": ["ctrl+a"], "command": { "action": "newTab", "profile": "profile0" } },
+                { "keys": ["ctrl+b"], "command": { "action": "newTab", "profile": "profile1" } },
+                { "keys": ["ctrl+c"], "command": { "action": "newTab", "profile": "profile2" } },
+
+                { "keys": ["ctrl+d"], "command": { "action": "newTab", "profile": "profile0", "elevate": false } },
+                { "keys": ["ctrl+e"], "command": { "action": "newTab", "profile": "profile1", "elevate": false } },
+                { "keys": ["ctrl+f"], "command": { "action": "newTab", "profile": "profile2", "elevate": false } },
+
+                { "keys": ["ctrl+g"], "command": { "action": "newTab", "profile": "profile0", "elevate": true } },
+                { "keys": ["ctrl+h"], "command": { "action": "newTab", "profile": "profile1", "elevate": true } },
+                { "keys": ["ctrl+i"], "command": { "action": "newTab", "profile": "profile2", "elevate": true } },
+            ]
+        })" };
+
+        const winrt::guid guid0{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}") };
+        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}") };
+        const winrt::guid guid2{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}") };
+
+        CascadiaSettings settings{ settingsJson, {} };
+
+        auto keymap = settings.GlobalSettings().ActionMap();
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
+
+        const auto profile2Guid = settings.ActiveProfiles().GetAt(2).Guid();
+        VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
+
+        VERIFY_ARE_EQUAL(9u, keymap.KeyBindings().Size());
+
+        {
+            Log::Comment(L"profile.elevate=omitted, action.elevate=nullopt: don't auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('A'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NULL(realArgs.TerminalArgs().Elevate());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+        }
+        {
+            Log::Comment(L"profile.elevate=true, action.elevate=nullopt: DO auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('B'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NULL(realArgs.TerminalArgs().Elevate());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+        }
+        {
+            Log::Comment(L"profile.elevate=false, action.elevate=nullopt: don't auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('C'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NULL(realArgs.TerminalArgs().Elevate());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+        }
+
+        {
+            Log::Comment(L"profile.elevate=omitted, action.elevate=false: don't auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Elevate().Value());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+        }
+        {
+            Log::Comment(L"profile.elevate=true, action.elevate=false: don't auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Elevate().Value());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+        }
+        {
+            Log::Comment(L"profile.elevate=false, action.elevate=false: don't auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Elevate().Value());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+        }
+
+        {
+            Log::Comment(L"profile.elevate=omitted, action.elevate=true: DO auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('G'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Elevate().Value());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+        }
+        {
+            Log::Comment(L"profile.elevate=true, action.elevate=true: DO auto elevate");
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('H'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Elevate().Value());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+        }
+        {
+            Log::Comment(L"profile.elevate=false, action.elevate=true: DO auto elevate");
+
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('I'), 0 };
+            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Elevate().Value());
+
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettings = termSettingsResult.DefaultSettings();
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
         }
     }
 
