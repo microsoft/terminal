@@ -93,6 +93,8 @@ namespace TerminalApp
         TaskbarState TaskbarState{ get; };
 
         Boolean ShouldUsePersistedLayout();
+        Boolean ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
         String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
         void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 

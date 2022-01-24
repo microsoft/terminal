@@ -42,6 +42,7 @@ libfuzzer
 liga
 lje
 Llast
+llvm
 Lmid
 locl
 lorem
