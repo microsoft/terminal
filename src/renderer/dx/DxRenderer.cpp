@@ -1705,7 +1705,7 @@ try
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto restoreBrushOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
+    _d2dBrushForeground->SetColor(_ColorFFromColorRef(color | 0xff000000));
 
     const D2D1_SIZE_F font = _fontRenderData->GlyphCell().to_d2d_size();
     const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
