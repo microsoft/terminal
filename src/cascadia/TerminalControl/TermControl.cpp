@@ -2713,7 +2713,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ColorScheme(scheme);
     }
 
-    void TermControl::AdjustOpacity(const int32_t& opacity, const bool& relative)
+    void TermControl::AdjustOpacity(const double opacity, const bool relative)
     {
         _core.AdjustOpacity(opacity, relative);
     }
