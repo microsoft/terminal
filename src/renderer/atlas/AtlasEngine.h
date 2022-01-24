@@ -649,6 +649,7 @@ namespace Microsoft::Console::Render
             bool isWindows10OrGreater = true;
 
 #ifndef NDEBUG
+            std::filesystem::path sourceDirectory;
             wil::unique_folder_change_reader_nothrow sourceCodeWatcher;
             std::atomic<int64_t> sourceCodeInvalidationTime{ INT64_MAX };
 #endif
