@@ -133,8 +133,8 @@
                 </local:SettingContainer>
 
                 <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
-                           Style="{StaticResource SubtitleTextBlockStyle}"
-                           Margin="0,48,0,0"/>
+                           Margin="0,48,0,0"
+                           Style="{StaticResource SubtitleTextBlockStyle}" />
 
                 <ToggleButton Click="Appearance_Click"
                               Style="{StaticResource ToggleButtonStyle}">

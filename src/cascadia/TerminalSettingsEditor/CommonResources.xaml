@@ -807,65 +807,65 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
-                                    <Grid x:Name="Grid"
+                    <Grid x:Name="Grid"
                           Padding="{TemplateBinding Padding}"
                           AutomationProperties.AccessibilityView="Raw"
                           Background="{TemplateBinding Background}"
                           BorderBrush="{TemplateBinding BorderBrush}"
                           BorderThickness="{TemplateBinding BorderThickness}"
                           CornerRadius="{TemplateBinding CornerRadius}">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <ContentPresenter x:Name="ContentPresenter"
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ContentPresenter x:Name="ContentPresenter"
                                           Grid.Column="0"
                                           HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
                                           ContentTransitions="{TemplateBinding ContentTransitions}" />
-                                        <FontIcon Margin="20,0,8,0"
+                        <FontIcon Margin="20,0,8,0"
                                   HorizontalAlignment="Right"
                                   FontSize="10"
                                   FontWeight="Black"
                                   Glyph="&#xE76C;" />
 
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStates">
-                                                <VisualState x:Name="Normal" />
-                                                <VisualState x:Name="PointerOver">
-                                                    <Storyboard>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
                                                                        Storyboard.TargetProperty="Background">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                            <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource ToggleButtonBackgroundPointerOver}" />
-                                                        </ObjectAnimationUsingKeyFrames>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
                                                                        Storyboard.TargetProperty="BorderBrush">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                            <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource ToggleButtonBorderBrushPointerOver}" />
-                                                        </ObjectAnimationUsingKeyFrames>
-                                                    </Storyboard>
-                                                </VisualState>
-                                                <VisualState x:Name="Pressed">
-                                                    <Storyboard>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
                                                                        Storyboard.TargetProperty="Background">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                            <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource ToggleButtonBackgroundPressed}" />
-                                                        </ObjectAnimationUsingKeyFrames>
-                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
                                                                        Storyboard.TargetProperty="BorderBrush">
-                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                            <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource ToggleButtonBorderBrushPressed}" />
-                                                        </ObjectAnimationUsingKeyFrames>
-                                                    </Storyboard>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                    </Grid>
-                                </ControlTemplate>
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
