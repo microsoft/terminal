@@ -13,6 +13,8 @@
 #include <Windows.ApplicationModel.h>
 #include <Windows.ApplicationModel.AppExtensions.h>
 
+#include "../inc/conint.h"
+
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation;
@@ -24,6 +26,9 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 
 #define DELEGATION_CONSOLE_KEY_NAME L"DelegationConsole"
 #define DELEGATION_TERMINAL_KEY_NAME L"DelegationTerminal"
+
+#define SYSTEM_DELEGATION_CONSOLE_KEY_NAME L"SystemDelegationConsole"
+#define SYSTEM_DELEGATION_TERMINAL_KEY_NAME L"SystemDelegationTerminal"
 
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
@@ -262,13 +267,41 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DelegationConfig::s_GetDefaultConsoleId(IID& iid) noexcept
 {
     iid = { 0 };
-    return s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
+
+    auto hr = s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
+
+    bool defApp = false;
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
+    {
+        if (FAILED(hr))
+        {
+            // If we can't find a user-defined delegation console/terminal, use the system-defined
+            // delegation console/terminal instead.
+            hr = s_Get(SYSTEM_DELEGATION_CONSOLE_KEY_NAME, iid);
+        }
+    }
+
+    return hr;
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_GetDefaultTerminalId(IID& iid) noexcept
 {
     iid = { 0 };
-    return s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
+
+    auto hr = s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
+
+    bool defApp = false;
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
+    {
+        if (FAILED(hr))
+        {
+            // If we can't find a user-defined delegation console/terminal, use the system-defined
+            // delegation console/terminal instead.
+            hr = s_Get(SYSTEM_DELEGATION_TERMINAL_KEY_NAME, iid);
+        }
+    }
+
+    return hr;
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_Get(PCWSTR value, IID& iid) noexcept
