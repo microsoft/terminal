@@ -12,6 +12,15 @@
       Background="Transparent"
       mc:Ignorable="d">
 
+    <Page.Resources>
+        <!--  Info Bar  -->
+        <Style x:Key="SettingsInfoBarStyle"
+               TargetType="mux:InfoBar">
+            <Setter Property="Margin" Value="-2" />
+            <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+        </Style>
+    </Page.Resources>
+
     <Grid x:Name="Root"
           Background="Transparent">
         <Grid.RowDefinitions>
@@ -30,7 +39,8 @@
                          IsIconVisible="True"
                          IsOpen="False"
                          Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
-                         Severity="Warning">
+                         Severity="Warning"
+                         Style="{StaticResource InfoBarStyle}">
                 <mux:InfoBar.ActionButton>
                     <Button x:Uid="InfoBarDismissButton"
                             Click="_KeyboardServiceWarningInfoDismissHandler" />
@@ -43,7 +53,8 @@
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
-                         Severity="Informational">
+                         Severity="Informational"
+                         Style="{StaticResource InfoBarStyle}">
                 <mux:InfoBar.ActionButton>
                     <Button x:Uid="InfoBarDismissButton"
                             Click="_CloseOnExitInfoDismissHandler" />
@@ -57,7 +68,8 @@
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
-                         Severity="Informational">
+                         Severity="Informational"
+                         Style="{StaticResource SettingsInfoBarStyle}">
                 <mux:InfoBar.ActionButton>
                     <HyperlinkButton x:Uid="SetAsDefaultTip_OpenSettingsLink"
                                      Click="_SetAsDefaultOpenSettingsHandler" />
