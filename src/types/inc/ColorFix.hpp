@@ -25,6 +25,9 @@ public:
 
     static COLORREF GetPerceivableColor(COLORREF fg, COLORREF bg);
 
+#pragma warning(push)
+    // CL will complain about the both nameless and anonymous struct.
+#pragma warning(disable : 4201)
     // RGB
     union
     {
@@ -40,6 +43,7 @@ public:
     {
         double L, A, B;
     };
+#pragma warning(pop)
 
 private:
     static double _GetHPrimeFn(double x, double y) noexcept;
