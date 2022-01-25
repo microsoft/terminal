@@ -292,7 +292,7 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
                                          const unsigned short sy)
 {
     // Largely taken from implementation in PtySignalInputThread::_InputThread
-    if (DispatchCommon::s_ResizeWindow(*_pConApi, sx, sy))
+    if (_pConApi->ResizeWindow(sx, sy))
     {
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();

@@ -2183,10 +2183,10 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        DispatchCommon::s_RefreshWindow(*_pConApi);
+        _pConApi->RefreshWindow();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-        DispatchCommon::s_ResizeWindow(*_pConApi, parameter2.value_or(0), parameter1.value_or(0));
+        _pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     default:
         return false;
