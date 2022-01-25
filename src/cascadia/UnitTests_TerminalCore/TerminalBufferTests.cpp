@@ -610,9 +610,10 @@ void TerminalBufferTests::TestCursorNotifications()
         callbackWasCalled = true;
         expectedCallbacks--;
         VERIFY_IS_GREATER_THAN_OR_EQUAL(expectedCallbacks, 0);
-        // VERIFY_IS_TRUE(expectedCallbacks >= 0);
     };
     term->_pfnCursorPositionChanged = cb;
+
+    // The exact number of callbacks here is fungible, if need be.
 
     expectedCallbacks = 1;
     callbackWasCalled = false;
@@ -620,13 +621,13 @@ void TerminalBufferTests::TestCursorNotifications()
     VERIFY_ARE_EQUAL(0, expectedCallbacks);
     VERIFY_IS_TRUE(callbackWasCalled);
 
-    expectedCallbacks = 3; // one for foo, one for the newline, one for bar
+    expectedCallbacks = 1;
     callbackWasCalled = false;
     term->Write(L"Foo\r\nBar");
     VERIFY_ARE_EQUAL(0, expectedCallbacks);
     VERIFY_IS_TRUE(callbackWasCalled);
 
-    expectedCallbacks = 6;
+    expectedCallbacks = 2; // One for each Write
     callbackWasCalled = false;
     term->Write(L"Foo\r\nBar");
     term->Write(L"Foo\r\nBar");

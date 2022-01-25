@@ -431,7 +431,21 @@ void Terminal::Write(std::wstring_view stringView)
 {
     auto lock = LockForWriting();
 
+    auto& cursor = _buffer->GetCursor();
+    const til::point cursorPosBefore{ cursor.GetPosition() };
+
     _stateMachine->ProcessString(stringView);
+
+    const til::point cursorPosAfter{ cursor.GetPosition() };
+
+    // Firing the CursorPositionChanged event is very expensive so we try not to
+    // do that when the cursor does not need to be redrawn. We don't do this
+    // inside _AdjustCursorPosition, only once we're done writing the whole run
+    // of output.
+    if (cursorPosBefore != cursorPosAfter)
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::WritePastedText(std::wstring_view stringView)
@@ -989,12 +1003,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     }
 
     cursor.EndDeferDrawing();
-
-    // Firing the CursorPositionChanged event is very expensive so we try not to
-    // do that when the cursor does not need to be redrawn. We don't do this
-    // inside _AdjustCursorPosition, only once we're done writing the whole run
-    // of output.
-    _NotifyTerminalCursorPositionChanged();
 }
 
 void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
