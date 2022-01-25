@@ -48,14 +48,15 @@
         <Setter Property="Height" Value="19" />
         <Setter Property="Width" Value="19" />
         <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
     <Style x:Key="SettingContainerFontIconStyle"
            TargetType="FontIcon">
         <Setter Property="Foreground" Value="{StaticResource SystemAccentColor}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
     </Style>
 
     <Style x:Key="NonExpanderGrid"
@@ -98,8 +99,15 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
-                            <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                       Text="{TemplateBinding Header}" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
+                                <Button x:Name="ResetButton"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    <FontIcon Glyph="&#xE845;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
                             <TextBlock x:Name="HelpTextBlock"
                                        Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                        Text="{TemplateBinding HelpText}" />
@@ -130,8 +138,15 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
-                                    <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                               Text="{TemplateBinding Header}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                                   Text="{TemplateBinding Header}" />
+                                        <Button x:Name="ResetButton"
+                                                Style="{StaticResource SettingContainerResetButtonStyle}">
+                                            <FontIcon Glyph="&#xE845;"
+                                                      Style="{StaticResource SettingContainerFontIconStyle}" />
+                                        </Button>
+                                    </StackPanel>
                                     <TextBlock x:Name="HelpTextBlock"
                                                Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                                Text="{TemplateBinding HelpText}" />
