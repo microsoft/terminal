@@ -616,20 +616,20 @@ void TerminalBufferTests::TestCursorNotifications()
 
     expectedCallbacks = 1;
     callbackWasCalled = false;
-    term->_WriteBuffer(L"Foo");
+    term->Write(L"Foo");
     VERIFY_ARE_EQUAL(0, expectedCallbacks);
     VERIFY_IS_TRUE(callbackWasCalled);
 
-    expectedCallbacks = 1;
+    expectedCallbacks = 3; // one for foo, one for the newline, one for bar
     callbackWasCalled = false;
-    term->_WriteBuffer(L"Foo\r\nBar");
+    term->Write(L"Foo\r\nBar");
     VERIFY_ARE_EQUAL(0, expectedCallbacks);
     VERIFY_IS_TRUE(callbackWasCalled);
 
-    expectedCallbacks = 2;
+    expectedCallbacks = 6;
     callbackWasCalled = false;
-    term->_WriteBuffer(L"Foo\r\nBar");
-    term->_WriteBuffer(L"Foo\r\nBar");
+    term->Write(L"Foo\r\nBar");
+    term->Write(L"Foo\r\nBar");
     VERIFY_ARE_EQUAL(0, expectedCallbacks);
     VERIFY_IS_TRUE(callbackWasCalled);
 }

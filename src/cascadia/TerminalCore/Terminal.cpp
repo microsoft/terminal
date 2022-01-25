@@ -989,6 +989,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     }
 
     cursor.EndDeferDrawing();
+
+    // Firing the CursorPositionChanged event is very expensive so we try not to
+    // do that when the cursor does not need to be redrawn. We don't do this
+    // inside _AdjustCursorPosition, only once we're done writing the whole run
+    // of output.
     _NotifyTerminalCursorPositionChanged();
 }
 
@@ -1093,13 +1098,6 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // method can't detect the delta on its own.
         COORD delta{ 0, gsl::narrow_cast<short>(-rowsPushedOffTopOfBuffer) };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
-    }
-
-    // Firing the CursorPositionChanged event is very expensive so we try not to do that when
-    // the cursor does not need to be redrawn.
-    if (!cursor.IsDeferDrawing())
-    {
-        _NotifyTerminalCursorPositionChanged();
     }
 }
 

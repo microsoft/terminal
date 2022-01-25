@@ -92,6 +92,10 @@ try
     }
     _AdjustCursorPosition(cursorPos);
 
+    // Send an updated cursor position event. See GH#12210 for why this is done
+    // here instead of in _AdjustCursorPosition
+    _NotifyTerminalCursorPositionChanged();
+
     return true;
 }
 CATCH_RETURN_FALSE()
