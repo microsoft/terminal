@@ -131,6 +131,31 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
     return pMessage;
 }
 
+// LsaGetLoginSessionData might also fit the bill here, but it looks like it does RPC with lsass.exe. Using user32 is cheaper.
+static bool _isInteractiveUserSession()
+{
+    DWORD sessionId{};
+    if (ProcessIdToSessionId(GetCurrentProcessId(), &sessionId) && sessionId == 0)
+    {
+        return false;
+    }
+
+    // don't call CloseWindowStation on GetProcessWindowStation handle or switch this to a unique_hwinsta
+    HWINSTA winsta{ GetProcessWindowStation() };
+    if (winsta)
+    {
+        USEROBJECTFLAGS flags{};
+        if (GetUserObjectInformationW(winsta, UOI_FLAGS, &flags, sizeof(flags), nullptr))
+        {
+            // An invisible window station suggests that we aren't interactive.
+            return WI_IsFlagSet(flags.dwFlags, WSF_VISIBLE);
+        }
+    }
+
+    // Assume that we are interactive if the flags can't be looked up or there's no window station
+    return true;
+}
+
 // Routine Description:
 // - Uses some information about current console state and
 //   the incoming process state and preferences to determine
@@ -151,6 +176,15 @@ static bool _shouldAttemptHandoff(const Globals& globals,
     return false;
 
 #else
+
+    // Service desktops and non-interactive sessions should not
+    // try to hand off -- they probably don't have any terminals
+    // installed, and we don't want to risk breaking a service if
+    // they *do*.
+    if (!_isInteractiveUserSession())
+    {
+        return false;
+    }
 
     // This console was started with a command line argument to
     // specifically block handoff to another console. We presume
@@ -341,6 +375,13 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             // Start it if it was successfully created.
             THROW_IF_FAILED(hostSignalThread->Start());
 
+            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                              "ConsoleHandoffSucceeded",
+                              TraceLoggingDescription("successfully handed off console connection"),
+                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
             // Unlock in case anything tries to spool down as we exit.
             UnlockConsole();
 
@@ -350,7 +391,21 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             // Exit process to clean up any outstanding things we have open.
             ExitProcess(S_OK);
         }
-        CATCH_LOG(); // Just log, don't do anything more. We'll move on to launching normally on failure.
+        catch (...)
+        {
+            const auto hr = wil::ResultFromCaughtException();
+
+            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                              "ConsoleHandoffFailed",
+                              TraceLoggingDescription("failed while attempting handoff"),
+                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
+                              TraceLoggingHResult(hr),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+            // Just log, don't do anything more. We'll move on to launching normally on failure.
+            LOG_CAUGHT_EXCEPTION();
+        }
     }
 
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,

@@ -357,8 +357,8 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    _dirtyArea.bottom = std::max(0, _displayHeight);
-    _dirtyArea.right = std::max(0, _displayWidth);
+    _dirtyArea.bottom = std::max<LONG>(0, _displayHeight);
+    _dirtyArea.right = std::max<LONG>(0, _displayWidth);
 
     area = { &_dirtyArea,
              1 };
