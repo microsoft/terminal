@@ -51,6 +51,8 @@ class TerminalCoreUnitTests::TerminalBufferTests final
 
     TEST_METHOD(TestGetReverseTab);
 
+    TEST_METHOD(TestCursorNotifications);
+
     TEST_METHOD_SETUP(MethodSetup)
     {
         // STEP 1: Set up the Terminal
@@ -591,4 +593,44 @@ void TerminalBufferTests::TestGetReverseTab()
                          coordCursorResult,
                          L"Cursor adjusted to last item in the sample list from position beyond end.");
     }
+}
+
+void TerminalBufferTests::TestCursorNotifications()
+{
+    // Test for GH#11170
+
+    // Suppress test exceptions. If they occur in the lambda, they'll just crash
+    // TAEF, which is annoying.
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    bool callbackWasCalled = false;
+    int expectedCallbacks = 0;
+    auto cb = [&expectedCallbacks, &callbackWasCalled]() mutable {
+        Log::Comment(L"Callback triggered");
+        callbackWasCalled = true;
+        expectedCallbacks--;
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(expectedCallbacks, 0);
+    };
+    term->_pfnCursorPositionChanged = cb;
+
+    // The exact number of callbacks here is fungible, if need be.
+
+    expectedCallbacks = 1;
+    callbackWasCalled = false;
+    term->Write(L"Foo");
+    VERIFY_ARE_EQUAL(0, expectedCallbacks);
+    VERIFY_IS_TRUE(callbackWasCalled);
+
+    expectedCallbacks = 1;
+    callbackWasCalled = false;
+    term->Write(L"Foo\r\nBar");
+    VERIFY_ARE_EQUAL(0, expectedCallbacks);
+    VERIFY_IS_TRUE(callbackWasCalled);
+
+    expectedCallbacks = 2; // One for each Write
+    callbackWasCalled = false;
+    term->Write(L"Foo\r\nBar");
+    term->Write(L"Foo\r\nBar");
+    VERIFY_ARE_EQUAL(0, expectedCallbacks);
+    VERIFY_IS_TRUE(callbackWasCalled);
 }
