@@ -1365,17 +1365,14 @@ void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInsp
 // - <none>
 void AppHost::_CreateNotificationIcon()
 {
-    if constexpr (Feature_NotificationIcon::IsEnabled())
-    {
-        _notificationIcon = std::make_unique<NotificationIcon>(_window->GetHandle());
+    _notificationIcon = std::make_unique<NotificationIcon>(_window->GetHandle());
 
-        // Hookup the handlers, save the tokens for revoking if settings change.
-        _ReAddNotificationIconToken = _window->NotifyReAddNotificationIcon([this]() { _notificationIcon->ReAddNotificationIcon(); });
-        _NotificationIconPressedToken = _window->NotifyNotificationIconPressed([this]() { _notificationIcon->NotificationIconPressed(); });
-        _ShowNotificationIconContextMenuToken = _window->NotifyShowNotificationIconContextMenu([this](til::point coord) { _notificationIcon->ShowContextMenu(coord, _windowManager.GetPeasantInfos()); });
-        _NotificationIconMenuItemSelectedToken = _window->NotifyNotificationIconMenuItemSelected([this](HMENU hm, UINT idx) { _notificationIcon->MenuItemSelected(hm, idx); });
-        _notificationIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
-    }
+    // Hookup the handlers, save the tokens for revoking if settings change.
+    _ReAddNotificationIconToken = _window->NotifyReAddNotificationIcon([this]() { _notificationIcon->ReAddNotificationIcon(); });
+    _NotificationIconPressedToken = _window->NotifyNotificationIconPressed([this]() { _notificationIcon->NotificationIconPressed(); });
+    _ShowNotificationIconContextMenuToken = _window->NotifyShowNotificationIconContextMenu([this](til::point coord) { _notificationIcon->ShowContextMenu(coord, _windowManager.GetPeasantInfos()); });
+    _NotificationIconMenuItemSelectedToken = _window->NotifyNotificationIconMenuItemSelected([this](HMENU hm, UINT idx) { _notificationIcon->MenuItemSelected(hm, idx); });
+    _notificationIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
 }
 
 // Method Description:
@@ -1386,54 +1383,45 @@ void AppHost::_CreateNotificationIcon()
 // - <none>
 void AppHost::_DestroyNotificationIcon()
 {
-    if constexpr (Feature_NotificationIcon::IsEnabled())
-    {
-        _window->NotifyReAddNotificationIcon(_ReAddNotificationIconToken);
-        _window->NotifyNotificationIconPressed(_NotificationIconPressedToken);
-        _window->NotifyShowNotificationIconContextMenu(_ShowNotificationIconContextMenuToken);
-        _window->NotifyNotificationIconMenuItemSelected(_NotificationIconMenuItemSelectedToken);
+    _window->NotifyReAddNotificationIcon(_ReAddNotificationIconToken);
+    _window->NotifyNotificationIconPressed(_NotificationIconPressedToken);
+    _window->NotifyShowNotificationIconContextMenu(_ShowNotificationIconContextMenuToken);
+    _window->NotifyNotificationIconMenuItemSelected(_NotificationIconMenuItemSelectedToken);
 
-        _notificationIcon->RemoveIconFromNotificationArea();
-        _notificationIcon = nullptr;
-    }
+    _notificationIcon->RemoveIconFromNotificationArea();
+    _notificationIcon = nullptr;
 }
 
 void AppHost::_ShowNotificationIconRequested()
 {
-    if constexpr (Feature_NotificationIcon::IsEnabled())
+    if (_windowManager.IsMonarch())
     {
-        if (_windowManager.IsMonarch())
+        if (!_notificationIcon)
         {
-            if (!_notificationIcon)
-            {
-                _CreateNotificationIcon();
-            }
+            _CreateNotificationIcon();
         }
-        else
-        {
-            _windowManager.RequestShowNotificationIcon();
-        }
+    }
+    else
+    {
+        _windowManager.RequestShowNotificationIcon();
     }
 }
 
 void AppHost::_HideNotificationIconRequested()
 {
-    if constexpr (Feature_NotificationIcon::IsEnabled())
+    if (_windowManager.IsMonarch())
     {
-        if (_windowManager.IsMonarch())
+        // Destroy it only if our settings allow it
+        if (_notificationIcon &&
+            !_logic.GetAlwaysShowNotificationIcon() &&
+            !_logic.GetMinimizeToNotificationArea())
         {
-            // Destroy it only if our settings allow it
-            if (_notificationIcon &&
-                !_logic.GetAlwaysShowNotificationIcon() &&
-                !_logic.GetMinimizeToNotificationArea())
-            {
-                _DestroyNotificationIcon();
-            }
+            _DestroyNotificationIcon();
         }
-        else
-        {
-            _windowManager.RequestHideNotificationIcon();
-        }
+    }
+    else
+    {
+        _windowManager.RequestHideNotificationIcon();
     }
 }
 

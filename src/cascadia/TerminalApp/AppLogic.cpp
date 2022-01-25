@@ -1587,38 +1587,24 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::GetMinimizeToNotificationArea()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            LoadSettings();
+        }
 
-            return _settings.GlobalSettings().MinimizeToNotificationArea();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().MinimizeToNotificationArea();
     }
 
     bool AppLogic::GetAlwaysShowNotificationIcon()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            LoadSettings();
+        }
 
-            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().AlwaysShowNotificationIcon();
     }
 
     bool AppLogic::GetShowTitleInTitlebar()

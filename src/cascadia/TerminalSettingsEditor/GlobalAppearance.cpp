@@ -199,8 +199,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool GlobalAppearance::FeatureNotificationIconEnabled() const noexcept
-    {
-        return Feature_NotificationIcon::IsEnabled();
-    }
 }
