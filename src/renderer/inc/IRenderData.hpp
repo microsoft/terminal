@@ -52,10 +52,7 @@ namespace Microsoft::Console::Render
         virtual ULONG GetCursorHeight() const noexcept = 0;
         virtual CursorType GetCursorStyle() const noexcept = 0;
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual COLORREF GetCursorColor() const noexcept = 0;
         virtual bool IsCursorDoubleWidth() const = 0;
-
-        virtual bool IsScreenReversed() const noexcept = 0;
 
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
 

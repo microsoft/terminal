@@ -87,7 +87,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
     THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
 }
 
-LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
+LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
 {
     RECT rcParent = GetWindowRect();
     // The size of the buttons doesn't change over the life of the application.
@@ -97,23 +97,23 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
     const auto buttonWidthInPixels{ buttonWidthInDips * GetCurrentDpiScale() };
 
     // make sure to account for the width of the window frame!
-    const til::rectangle nonClientFrame{ GetNonClientFrame(_currentDpi) };
-    const auto rightBorder{ rcParent.right - nonClientFrame.right<int>() };
+    const til::rect nonClientFrame{ GetNonClientFrame(_currentDpi) };
+    const auto rightBorder{ rcParent.right - nonClientFrame.right };
     // From the right to the left,
     // * are we in the close button?
     // * the maximize button?
     // * the minimize button?
     // If we're not, then we're in either the top resize border, or just
     // generally in the titlebar.
-    if ((rightBorder - pointer.x()) < (buttonWidthInPixels))
+    if ((rightBorder - pointer.x) < (buttonWidthInPixels))
     {
         return HTCLOSE;
     }
-    else if ((rightBorder - pointer.x()) < (buttonWidthInPixels * 2))
+    else if ((rightBorder - pointer.x) < (buttonWidthInPixels * 2))
     {
         return HTMAXBUTTON;
     }
-    else if ((rightBorder - pointer.x()) < (buttonWidthInPixels * 3))
+    else if ((rightBorder - pointer.x) < (buttonWidthInPixels * 3))
     {
         return HTMINBUTTON;
     }
@@ -123,7 +123,7 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
         // border. If we're not on the top border, then we're just generally in
         // the caption area.
         const auto resizeBorderHeight = _GetResizeHandleHeight();
-        const auto isOnResizeBorder = pointer.y() < rcParent.top + resizeBorderHeight;
+        const auto isOnResizeBorder = pointer.y < rcParent.top + resizeBorderHeight;
 
         return isOnResizeBorder ? HTTOP : HTCAPTION;
     }
@@ -294,15 +294,15 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
 //   This window is used to capture clicks on the non-client area.
 void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 {
-    const til::rectangle rect{ _GetDragAreaRect() };
+    const til::rect rect{ _GetDragAreaRect() };
     if (_IsTitlebarVisible() && rect.size().area() > 0)
     {
         SetWindowPos(_dragBarWindow.get(),
                      HWND_TOP,
-                     rect.left<int>(),
-                     rect.top<int>() + _GetTopBorderHeight(),
-                     rect.width<int>(),
-                     rect.height<int>(),
+                     rect.left,
+                     rect.top + _GetTopBorderHeight(),
+                     rect.width(),
+                     rect.height(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
         SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
     }
@@ -1087,13 +1087,13 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
-    const til::rectangle windowPos{ GetWindowRect() };
+    const til::rect windowPos{ GetWindowRect() };
     SetWindowPos(GetHandle(),
                  HWND_TOP,
-                 windowPos.left<int>(),
-                 windowPos.top<int>(),
-                 windowPos.width<int>(),
-                 windowPos.height<int>(),
+                 windowPos.left,
+                 windowPos.top,
+                 windowPos.width(),
+                 windowPos.height(),
                  SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 

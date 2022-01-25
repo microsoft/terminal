@@ -75,8 +75,8 @@ public:
     bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
     bool SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
     bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
+    bool SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
 
-    bool PrivateSetScreenMode(const bool reverseMode) override;
     bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 
     bool PrivateShowCursor(const bool show) noexcept override;
@@ -120,6 +120,7 @@ public:
 
     COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
+    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept override;
 
     bool PrivateFillRegion(const COORD startPosition,
                            const size_t fillLength,

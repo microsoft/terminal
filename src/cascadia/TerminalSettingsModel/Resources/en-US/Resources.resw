@@ -503,6 +503,21 @@
   <data name="QuitCommandKey" xml:space="preserve">
     <value>Quit the Terminal</value>
   </data>
+  <data name="SetOpacityParentCommandName" xml:space="preserve">
+    <value>Set background opacity...</value>
+  </data>
+  <data name="IncreaseOpacityCommandKey" xml:space="preserve">
+    <value>Increase background opacity by {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="DecreaseOpacityCommandKey" xml:space="preserve">
+    <value>Decrease background opacity by {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="AdjustOpacityCommandKey" xml:space="preserve">
+    <value>Set background opacity to {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
     <value>Restore the last closed pane or tab</value>
   </data>

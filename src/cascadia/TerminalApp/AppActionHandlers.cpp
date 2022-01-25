@@ -923,7 +923,10 @@ namespace winrt::TerminalApp::implementation
 
             // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
             _ExportTab(*activeTab, L"");
-            args.Handled(true);
+            if (args)
+            {
+                args.Handled(true);
+            }
         }
     }
 
@@ -955,6 +958,21 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleAdjustOpacity(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
+                });
+                args.Handled(res);
             }
         }
     }

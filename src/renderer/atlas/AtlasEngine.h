@@ -43,13 +43,13 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(SMALL_RECT rect) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateSoftFont(gsl::span<const uint16_t> bitPattern, SIZE cellSize, size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(SMALL_RECT srNewViewport) noexcept override;
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept override;
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
         [[nodiscard]] HRESULT UpdateTitle(std::wstring_view newTitle) noexcept override;
@@ -71,7 +71,6 @@ namespace Microsoft::Console::Render
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;
-        void SetIntenseIsBold(bool enable) noexcept override;
         void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
         [[nodiscard]] HRESULT SetWindowSize(SIZE pixels) noexcept override;
         void ToggleShaderEffects() noexcept override;
@@ -650,6 +649,7 @@ namespace Microsoft::Console::Render
             bool isWindows10OrGreater = true;
 
 #ifndef NDEBUG
+            std::filesystem::path sourceDirectory;
             wil::unique_folder_change_reader_nothrow sourceCodeWatcher;
             std::atomic<int64_t> sourceCodeInvalidationTime{ INT64_MAX };
 #endif
@@ -735,13 +735,16 @@ namespace Microsoft::Console::Render
             u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::Device
             u32x2 currentColor;
             AtlasKeyAttributes attributes{};
-            u16 currentRow = 0;
+            u16x2 lastPaintBufferLineCoord;
             CellFlags flags = CellFlags::None;
             // SetSelectionBackground()
             u32 selectionColor = 0x7fffffff;
+            // UpdateHyperlinkHoveredId()
+            u16 hyperlinkHoveredId = 0;
+            bool bufferLineWasHyperlinked = false;
 
             // dirtyRect is a computed value based on invalidatedRows.
-            til::rectangle dirtyRect;
+            til::rect dirtyRect;
             // These "invalidation" fields are reset in EndPaint()
             u16r invalidatedCursorArea = invalidatedAreaNone;
             u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"

@@ -29,6 +29,7 @@ namespace Microsoft::Console::Render
         virtual ~Xterm256Engine() override = default;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
                                                    const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;

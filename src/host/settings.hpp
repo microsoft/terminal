@@ -18,13 +18,11 @@ Revision History:
 --*/
 #pragma once
 
-#include "../buffer/out/TextAttribute.hpp"
-
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
 #include "ConsoleArguments.hpp"
-#include "../inc/conattrs.hpp"
+#include "../renderer/inc/RenderSettings.hpp"
 
 enum class UseDx : DWORD
 {
@@ -35,6 +33,8 @@ enum class UseDx : DWORD
 
 class Settings
 {
+    using RenderSettings = Microsoft::Console::Render::RenderSettings;
+
 public:
     Settings();
 
@@ -47,6 +47,9 @@ public:
 
     CONSOLE_STATE_INFO CreateConsoleStateInfo() const;
 
+    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
+    const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+
     DWORD GetVirtTermLevel() const;
     void SetVirtTermLevel(const DWORD dwVirtTermLevel);
 
@@ -58,9 +61,6 @@ public:
 
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
-
-    bool IsScreenReversed() const;
-    void SetScreenReversed(const bool fScreenReversed);
 
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
@@ -166,15 +166,9 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    // The first 16 items of the color table are the same as the 16-color palette.
-    inline const std::array<COLORREF, TextColor::TABLE_SIZE>& GetColorTable() const noexcept
-    {
-        return _colorTable;
-    }
-
-    void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
+    void SetColorTableEntry(const size_t index, const COLORREF color);
     COLORREF GetColorTableEntry(const size_t index) const;
-    void SetLegacyColorTableEntry(const size_t index, const COLORREF ColorValue);
+    void SetLegacyColorTableEntry(const size_t index, const COLORREF color);
     COLORREF GetLegacyColorTableEntry(const size_t index) const;
 
     CursorType GetCursorType() const noexcept;
@@ -184,10 +178,6 @@ public:
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
     void CalculateDefaultColorIndices() noexcept;
-    size_t GetDefaultForegroundIndex() const noexcept;
-    void SetDefaultForegroundIndex(const size_t index) noexcept;
-    size_t GetDefaultBackgroundIndex() const noexcept;
-    void SetDefaultBackgroundIndex(const size_t index) noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
@@ -196,6 +186,8 @@ public:
     bool GetCopyColor() const noexcept;
 
 private:
+    RenderSettings _renderSettings;
+
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;
     WORD _wFillAttribute;
@@ -235,11 +227,8 @@ private:
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
-    bool _fScreenReversed;
     UseDx _fUseDx;
     bool _fCopyColor;
-
-    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
@@ -248,9 +237,6 @@ private:
     CursorType _CursorType;
 
     bool _fInterceptCopyPaste;
-
-    size_t _defaultForegroundIndex;
-    size_t _defaultBackgroundIndex;
 
     bool _TerminalScrolling;
     friend class RegistrySerialization;

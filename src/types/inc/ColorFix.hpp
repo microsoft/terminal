@@ -21,10 +21,13 @@ Author(s):
 struct ColorFix
 {
 public:
-    ColorFix(COLORREF color);
+    ColorFix(COLORREF color) noexcept;
 
     static COLORREF GetPerceivableColor(COLORREF fg, COLORREF bg);
 
+#pragma warning(push)
+    // CL will complain about the both nameless and anonymous struct.
+#pragma warning(disable : 4201)
     // RGB
     union
     {
@@ -40,10 +43,11 @@ public:
     {
         double L, A, B;
     };
+#pragma warning(pop)
 
 private:
-    static double _GetHPrimeFn(double x, double y);
-    static double _GetDeltaE(ColorFix x1, ColorFix x2);
-    void _ToLab();
+    static double _GetHPrimeFn(double x, double y) noexcept;
+    static double _GetDeltaE(ColorFix x1, ColorFix x2) noexcept;
+    void _ToLab() noexcept;
     void _ToRGB();
 };

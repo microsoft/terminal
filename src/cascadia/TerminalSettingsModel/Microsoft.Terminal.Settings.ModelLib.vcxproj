@@ -198,6 +198,9 @@
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\internal\internal.vcxproj">
+      <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
+    </ProjectReference>
 
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to

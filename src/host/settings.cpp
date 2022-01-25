@@ -53,11 +53,8 @@ Settings::Settings() :
     _fUseWindowSizePixels(false),
     _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
     _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
-    _fScreenReversed(false),
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
-    _defaultForegroundIndex(TextColor::DARK_WHITE),
-    _defaultBackgroundIndex(TextColor::DARK_BLACK),
     _fUseDx(UseDx::Disabled),
     _fCopyColor(false)
 {
@@ -79,13 +76,6 @@ Settings::Settings() :
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
 
     _CursorType = CursorType::Legacy;
-
-    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
-    ::Microsoft::Console::Utils::InitializeColorTable(tableView);
-
-    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = INVALID_COLOR;
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = INVALID_COLOR;
-    _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
 }
 
 // Routine Description:
@@ -124,8 +114,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _colorTable.data(), 16 };
-    ::Microsoft::Console::Utils::InitializeColorTable(tableView);
+    _renderSettings.ResetColorTable();
 
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
@@ -234,9 +223,9 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _bWindowAlpha = pStateInfo->bWindowTransparency;
     _CursorType = static_cast<CursorType>(pStateInfo->CursorType);
     _fInterceptCopyPaste = pStateInfo->InterceptCopyPaste;
-    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = pStateInfo->DefaultForeground;
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = pStateInfo->DefaultBackground;
-    _colorTable.at(TextColor::CURSOR_COLOR) = pStateInfo->CursorColor;
+    SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, pStateInfo->DefaultForeground);
+    SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, pStateInfo->DefaultBackground);
+    SetColorTableEntry(TextColor::CURSOR_COLOR, pStateInfo->CursorColor);
     _TerminalScrolling = pStateInfo->TerminalScrolling;
 }
 
@@ -279,9 +268,9 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.bWindowTransparency = _bWindowAlpha;
     csi.CursorType = static_cast<unsigned int>(_CursorType);
     csi.InterceptCopyPaste = _fInterceptCopyPaste;
-    csi.DefaultForeground = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
-    csi.DefaultBackground = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
-    csi.CursorColor = _colorTable.at(TextColor::CURSOR_COLOR);
+    csi.DefaultForeground = GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    csi.DefaultBackground = GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+    csi.CursorColor = GetColorTableEntry(TextColor::CURSOR_COLOR);
     csi.TerminalScrolling = _TerminalScrolling;
     return csi;
 }
@@ -333,22 +322,22 @@ void Settings::Validate()
     WI_ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
     WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 
-    const auto defaultForeground = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
-    const auto defaultBackground = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
-    const auto cursorColor = _colorTable.at(TextColor::CURSOR_COLOR);
+    const auto defaultForeground = GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    const auto defaultBackground = GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+    const auto cursorColor = GetColorTableEntry(TextColor::CURSOR_COLOR);
 
     // If the extended color options are set to invalid values (all the same color), reset them.
     if (cursorColor != INVALID_COLOR && cursorColor == defaultBackground)
     {
         // INVALID_COLOR is used to represent "Invert Colors"
-        _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
+        SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
     }
 
     if (defaultForeground != INVALID_COLOR && defaultForeground == defaultBackground)
     {
         // INVALID_COLOR is used as an "unset" sentinel in future attribute functions.
-        _colorTable.at(TextColor::DEFAULT_FOREGROUND) = INVALID_COLOR;
-        _colorTable.at(TextColor::DEFAULT_BACKGROUND) = INVALID_COLOR;
+        SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         // If the damaged settings _further_ propagated to the default fill attribute, fix it.
         if (_wFillAttribute == 0)
         {
@@ -412,15 +401,6 @@ void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed
             ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
         }
     }
-}
-
-bool Settings::IsScreenReversed() const
-{
-    return _fScreenReversed;
-}
-void Settings::SetScreenReversed(const bool fScreenReversed)
-{
-    _fScreenReversed = fScreenReversed;
 }
 
 bool Settings::GetFilterOnPaste() const
@@ -751,24 +731,24 @@ void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
     _dwStartupFlags &= ~dwFlagToUnset;
 }
 
-void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
+void Settings::SetColorTableEntry(const size_t index, const COLORREF color)
 {
-    _colorTable.at(index) = ColorValue;
+    _renderSettings.SetColorTableEntry(index, color);
 }
 
 COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
-    return _colorTable.at(index);
+    return _renderSettings.GetColorTableEntry(index);
 }
 
-void Settings::SetLegacyColorTableEntry(const size_t index, const COLORREF ColorValue)
+void Settings::SetLegacyColorTableEntry(const size_t index, const COLORREF color)
 {
-    _colorTable.at(TextColor::TransposeLegacyIndex(index)) = ColorValue;
+    SetColorTableEntry(TextColor::TransposeLegacyIndex(index), color);
 }
 
 COLORREF Settings::GetLegacyColorTableEntry(const size_t index) const
 {
-    return _colorTable.at(TextColor::TransposeLegacyIndex(index));
+    return GetColorTableEntry(TextColor::TransposeLegacyIndex(index));
 }
 
 CursorType Settings::GetCursorType() const noexcept
@@ -793,33 +773,15 @@ void Settings::SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept
 
 void Settings::CalculateDefaultColorIndices() noexcept
 {
-    const auto foregroundColor = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
+    const auto foregroundColor = GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     const auto foregroundIndex = TextColor::TransposeLegacyIndex(_wFillAttribute & FG_ATTRS);
-    _defaultForegroundIndex = foregroundColor != INVALID_COLOR ? TextColor::DEFAULT_FOREGROUND : foregroundIndex;
+    const auto foregroundAlias = foregroundColor != INVALID_COLOR ? TextColor::DEFAULT_FOREGROUND : foregroundIndex;
+    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, foregroundAlias);
 
-    const auto backgroundColor = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
+    const auto backgroundColor = GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     const auto backgroundIndex = TextColor::TransposeLegacyIndex((_wFillAttribute & BG_ATTRS) >> 4);
-    _defaultBackgroundIndex = backgroundColor != INVALID_COLOR ? TextColor::DEFAULT_BACKGROUND : backgroundIndex;
-}
-
-size_t Settings::GetDefaultForegroundIndex() const noexcept
-{
-    return _defaultForegroundIndex;
-}
-
-void Settings::SetDefaultForegroundIndex(const size_t index) noexcept
-{
-    _defaultForegroundIndex = index;
-}
-
-size_t Settings::GetDefaultBackgroundIndex() const noexcept
-{
-    return _defaultBackgroundIndex;
-}
-
-void Settings::SetDefaultBackgroundIndex(const size_t index) noexcept
-{
-    _defaultBackgroundIndex = index;
+    const auto backgroundAlias = backgroundColor != INVALID_COLOR ? TextColor::DEFAULT_BACKGROUND : backgroundIndex;
+    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, backgroundAlias);
 }
 
 bool Settings::IsTerminalScrolling() const noexcept
