@@ -464,12 +464,13 @@ try
     const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
     const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.Y, 0, _api.cellCount.y));
 
-    if (_api.currentRow != y)
+    if (_api.lastPaintBufferLineCoord.y != y)
     {
         _flushBufferLine();
     }
 
-    _api.currentRow = y;
+    _api.lastPaintBufferLineCoord = { x, y };
+    _api.bufferLineWasHyperlinked = false;
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
@@ -502,9 +503,21 @@ try
 CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+try
 {
+    if (!_api.bufferLineWasHyperlinked && lines.test(GridLines::Underline) && WI_IsFlagClear(_api.flags, CellFlags::Underline))
+    {
+        _api.bufferLineWasHyperlinked = true;
+
+        WI_UpdateFlagsInMask(_api.flags, CellFlags::Underline | CellFlags::UnderlineDotted | CellFlags::UnderlineDouble, CellFlags::Underline);
+
+        const BufferLineMetadata metadata{ _api.currentColor, _api.flags };
+        const size_t x = _api.lastPaintBufferLineCoord.x;
+        std::fill_n(_api.bufferLineMetadata.data() + x, _api.bufferLineMetadata.size() - x, metadata);
+    }
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(SMALL_RECT rect) noexcept
 try
@@ -568,15 +581,23 @@ try
 
     if (!isSettingDefaultBrushes)
     {
+        const auto hyperlinkId = textAttributes.GetHyperlinkId();
+
         auto flags = CellFlags::None;
         WI_SetFlagIf(flags, CellFlags::BorderLeft, textAttributes.IsLeftVerticalDisplayed());
         WI_SetFlagIf(flags, CellFlags::BorderTop, textAttributes.IsTopHorizontalDisplayed());
         WI_SetFlagIf(flags, CellFlags::BorderRight, textAttributes.IsRightVerticalDisplayed());
         WI_SetFlagIf(flags, CellFlags::BorderBottom, textAttributes.IsBottomHorizontalDisplayed());
         WI_SetFlagIf(flags, CellFlags::Underline, textAttributes.IsUnderlined());
-        WI_SetFlagIf(flags, CellFlags::UnderlineDotted, textAttributes.IsHyperlink());
+        WI_SetFlagIf(flags, CellFlags::UnderlineDotted, hyperlinkId != 0);
         WI_SetFlagIf(flags, CellFlags::UnderlineDouble, textAttributes.IsDoublyUnderlined());
         WI_SetFlagIf(flags, CellFlags::Strikethrough, textAttributes.IsCrossedOut());
+
+        if (_api.hyperlinkHoveredId && _api.hyperlinkHoveredId == hyperlinkId)
+        {
+            WI_SetFlag(flags, CellFlags::Underline);
+            WI_ClearAllFlags(flags, CellFlags::UnderlineDotted | CellFlags::UnderlineDouble);
+        }
 
         const u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
         const AtlasKeyAttributes attributes{ 0, textAttributes.IsBold(), textAttributes.IsItalic(), 0 };
@@ -1444,7 +1465,7 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t b
 
     const auto valueData = value.data();
     const auto coords = &valueData->coords[0];
-    const auto data = _getCell(x1, _api.currentRow);
+    const auto data = _getCell(x1, _api.lastPaintBufferLineCoord.y);
 
     for (u32 i = 0; i < cellCount; ++i)
     {
