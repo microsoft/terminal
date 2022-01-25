@@ -278,13 +278,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentTopLeft"
                                   Grid.Row="0"
                                   Grid.Column="0"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Left (0x01)  -->
                             <x:Int32>17</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xE744;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -297,13 +298,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentTop"
                                   Grid.Row="0"
                                   Grid.Column="1"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Center (0x00)  -->
                             <x:Int32>16</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xE745;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -316,13 +318,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentTopRight"
                                   Grid.Row="0"
                                   Grid.Column="2"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Right (0x02)  -->
                             <x:Int32>18</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xEA5F;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -337,13 +340,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentLeft"
                                   Grid.Row="1"
                                   Grid.Column="0"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Left (0x01)  -->
                             <x:Int32>1</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xE746;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -351,13 +355,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentCenter"
                                   Grid.Row="1"
                                   Grid.Column="1"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Center (0x00)  -->
                             <x:Int32>0</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xF16E;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -365,13 +370,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentRight"
                                   Grid.Row="1"
                                   Grid.Column="2"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Right (0x02)  -->
                             <x:Int32>2</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xEA61;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -381,13 +387,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentBottomLeft"
                                   Grid.Row="2"
                                   Grid.Column="0"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Left (0x01)  -->
                             <x:Int32>33</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xE744;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -395,13 +402,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentBottom"
                                   Grid.Row="2"
                                   Grid.Column="1"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Center (0x00)  -->
                             <x:Int32>32</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xE745;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -409,13 +417,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentBottomRight"
                                   Grid.Row="2"
                                   Grid.Column="2"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x20) | Horizontal_Right (0x02)  -->
                             <x:Int32>34</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="Segoe Fluent Icons"
                                       Glyph="&#xEA5F;" />
                         </ToggleButton.Content>
                     </ToggleButton>

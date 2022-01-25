@@ -124,7 +124,7 @@
                                                 SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_IconBox"
-                                         FontFamily="Segoe UI, Segoe MDL2 Assets"
+                                         FontFamily="Segoe UI, Segoe Fluent Icons"
                                          IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
                                          Text="{x:Bind Profile.Icon, Mode=TwoWay}" />
