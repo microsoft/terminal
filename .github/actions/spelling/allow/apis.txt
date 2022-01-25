@@ -52,6 +52,8 @@ hotkeys
 href
 hrgn
 HTCLOSE
+HWINSTA
+hwinsta
 IActivation
 IApp
 IAppearance
@@ -89,6 +91,8 @@ llabs
 llu
 localtime
 lround
+Lsa
+lsass
 LSHIFT
 MENUCOMMAND
 MENUDATA
@@ -180,11 +184,16 @@ TVal
 UChar
 UFIELD
 ULARGE
+UOI
 UPDATEINIFILE
 userenv
+USEROBJECTFLAGS
+WSF
 wcsstr
 wcstoui
 winmain
+winsta
+winstamin
 wmemcmp
 wpc
 wsregex
