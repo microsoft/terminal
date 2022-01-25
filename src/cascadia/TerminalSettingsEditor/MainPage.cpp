@@ -590,11 +590,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>(), BreadcrumbSubPage::None);
     }
 
-    bool MainPage::ShowBaseLayerMenuItem() const noexcept
-    {
-        return Feature_ShowProfileDefaultsInSettings::IsEnabled();
-    }
-
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
     {
         return _breadcrumbs;
