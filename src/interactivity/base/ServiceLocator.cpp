@@ -34,7 +34,7 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 #pragma region Public Methods
 
-void ServiceLocator::RundownAndExit(const HRESULT hr)
+[[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
     // MSFT:15506250
     // In VT I/O Mode, a client application might die before we've rendered
@@ -67,7 +67,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
         s_inputServices.reset(nullptr);
     }
 
-    TerminateProcess(GetCurrentProcess(), hr);
+    ExitProcess(hr);
 }
 
 #pragma region Creation Methods

@@ -214,6 +214,20 @@ void AppHost::_HandleCommandlineArgs()
             }
         }
 
+        // This is a fix for GH#12190 and hopefully GH#12169.
+        //
+        // If the commandline we were provided is going to result in us only
+        // opening elevated terminal instances, then we need to not even create
+        // the window at all here. In that case, we're going through this
+        // special escape hatch to dispatch all the calls to elevate-shim, and
+        // then we're going to exit immediately.
+        if (_logic.ShouldImmediatelyHandoffToElevated())
+        {
+            _shouldCreateWindow = false;
+            _logic.HandoffToElevated();
+            return;
+        }
+
         // After handling the initial args, hookup the callback for handling
         // future commandline invocations. When our peasant is told to execute a
         // commandline (in the future), it'll trigger this callback, that we'll
@@ -231,7 +245,9 @@ void AppHost::_HandleCommandlineArgs()
         {
             const auto numPeasants = _windowManager.GetNumberOfPeasants();
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (_logic.ShouldUsePersistedLayout() && layouts && layouts.Size() > 0)
+            if (_logic.ShouldUsePersistedLayout() &&
+                layouts &&
+                layouts.Size() > 0)
             {
                 uint32_t startIdx = 0;
                 // We want to create a window for every saved layout.

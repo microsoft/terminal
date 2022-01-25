@@ -170,7 +170,6 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();
-            return false;
         }
         else
         {
@@ -180,7 +179,6 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     else if (dwRead != cbBuffer)
     {
         _Shutdown();
-        return false;
     }
 
     return true;
@@ -233,6 +231,7 @@ void PtySignalInputThread::_Shutdown()
     //      happens if this method is called outside of lock, but if we're
     //      currently locked, we want to make sure ctrl events are handled
     //      _before_ we RundownAndExit.
+    LockConsole();
     ProcessCtrlEvents();
 
     // Make sure we terminate.

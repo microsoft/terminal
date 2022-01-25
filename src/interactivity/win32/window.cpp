@@ -243,6 +243,7 @@ void Window::_UpdateSystemMetrics() const
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
             break;
+#pragma warning(suppress : 4065)
         }
     }
     catch (...)

@@ -66,6 +66,7 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-winstamin-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uxtheme-themes-l1.lib \
     $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-dataobject-l1.lib \
@@ -128,6 +129,7 @@ DELAYLOAD = \
     ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \
     ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
     ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
+    ext-ms-win-rtcore-ntuser-winstamin-l1.dll; \
     ext-ms-win-shell-shell32-l1.dll; \
     ext-ms-win-uiacore-l1.dll; \
     ext-ms-win-uxtheme-themes-l1.dll; \

@@ -166,7 +166,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static bool IsVintageOpacityAvailable() noexcept;
 
-        void AdjustOpacity(const int32_t& opacity, const bool& relative);
+        void AdjustOpacity(const double opacity, const bool relative);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());

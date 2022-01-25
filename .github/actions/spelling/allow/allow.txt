@@ -3,6 +3,7 @@ apc
 Apc
 bsd
 calt
+CMMI
 ccmp
 changelog
 clickable
@@ -37,9 +38,11 @@ img
 inlined
 It'd
 kje
+libfuzzer
 liga
 lje
 Llast
+llvm
 Lmid
 locl
 lorem
@@ -48,11 +51,13 @@ maxed
 mkmk
 mnt
 mru
+noreply
 nje
 noreply
 ogonek
 ok'd
 overlined
+pipeline
 postmodern
 ptys
 qof

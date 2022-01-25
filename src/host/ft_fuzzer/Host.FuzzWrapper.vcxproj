@@ -82,7 +82,7 @@
     <!-- In theory, we may want to build with a normal main() when Fuzzing is not enabled. -->
     <!-- So, let's only add the fuzzer to the link line when we're building for Fuzzing. -->
     <Link>
-      <AdditionalDependencies>clang_rt.fuzzer-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>WinMM.Lib;clang_rt.fuzzer_MT-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

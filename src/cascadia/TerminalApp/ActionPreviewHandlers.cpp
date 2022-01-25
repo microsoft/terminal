@@ -70,12 +70,14 @@ namespace winrt::TerminalApp::implementation
         // Apply the reverts in reverse order - If we had multiple previews
         // stacked on top of each other, then this will ensure the first one in
         // is the last one out.
-        for (auto i{ _restorePreviewFuncs.rbegin() }; i < _restorePreviewFuncs.rend(); i++)
+        const auto cleanup = wil::scope_exit([this]() {
+            _restorePreviewFuncs.clear();
+        });
+
+        for (const auto& f : _restorePreviewFuncs)
         {
-            auto f = *i;
             f();
         }
-        _restorePreviewFuncs.clear();
     }
 
     // Method Description:
@@ -94,6 +96,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
+            const auto backup = _restorePreviewFuncs.empty();
+
             _ApplyToActiveControls([&](const auto& control) {
                 // Stash a copy of the current scheme.
                 auto originalScheme{ control.ColorScheme() };
@@ -101,34 +105,38 @@ namespace winrt::TerminalApp::implementation
                 // Apply the new scheme.
                 control.ColorScheme(scheme.ToCoreScheme());
 
-                // Each control will emplace a revert into the
-                // _restorePreviewFuncs for itself.
-                _restorePreviewFuncs.emplace_back([=]() {
-                    // On dismiss, restore the original scheme.
-                    control.ColorScheme(originalScheme);
-                });
+                if (backup)
+                {
+                    // Each control will emplace a revert into the
+                    // _restorePreviewFuncs for itself.
+                    _restorePreviewFuncs.emplace_back([=]() {
+                        // On dismiss, restore the original scheme.
+                        control.ColorScheme(originalScheme);
+                    });
+                }
             });
         }
     }
 
     void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
     {
-        // Clear the saved preview funcs because we don't need to add a restore each time
-        // the preview changes, we only need to be able to restore the last one.
-        _restorePreviewFuncs.clear();
+        const auto backup = _restorePreviewFuncs.empty();
 
         _ApplyToActiveControls([&](const auto& control) {
             // Stash a copy of the original opacity.
             auto originalOpacity{ control.BackgroundOpacity() };
 
             // Apply the new opacity
-            control.AdjustOpacity(args.Opacity(), args.Relative());
+            control.AdjustOpacity(args.Opacity() / 100.0, args.Relative());
 
-            _restorePreviewFuncs.emplace_back([=]() {
-                // On dismiss:
-                // Don't adjust relatively, just set outright.
-                control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity * 100), false);
-            });
+            if (backup)
+            {
+                _restorePreviewFuncs.emplace_back([=]() {
+                    // On dismiss:
+                    // Don't adjust relatively, just set outright.
+                    control.AdjustOpacity(originalOpacity, false);
+                });
+            }
         });
     }
 
