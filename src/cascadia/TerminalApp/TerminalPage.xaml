@@ -12,15 +12,6 @@
       Background="Transparent"
       mc:Ignorable="d">
 
-    <Page.Resources>
-        <!--  Info Bar  -->
-        <Style x:Key="SettingsInfoBarStyle"
-               TargetType="mux:InfoBar">
-            <Setter Property="Margin" Value="-2" />
-            <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
-        </Style>
-    </Page.Resources>
-
     <Grid x:Name="Root"
           Background="Transparent">
         <Grid.RowDefinitions>
@@ -32,15 +23,15 @@
         <local:TabRowControl x:Name="TabRow"
                              Grid.Row="0" />
 
-        <StackPanel Grid.Row="1">
+        <StackPanel Grid.Row="1"
+                    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
                          x:Load="False"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
                          Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
-                         Severity="Warning"
-                         Style="{StaticResource InfoBarStyle}">
+                         Severity="Warning">
                 <mux:InfoBar.ActionButton>
                     <Button x:Uid="InfoBarDismissButton"
                             Click="_KeyboardServiceWarningInfoDismissHandler" />
@@ -53,8 +44,7 @@
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
-                         Severity="Informational"
-                         Style="{StaticResource InfoBarStyle}">
+                         Severity="Informational">
                 <mux:InfoBar.ActionButton>
                     <Button x:Uid="InfoBarDismissButton"
                             Click="_CloseOnExitInfoDismissHandler" />
@@ -68,8 +58,7 @@
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
-                         Severity="Informational"
-                         Style="{StaticResource SettingsInfoBarStyle}">
+                         Severity="Informational">
                 <mux:InfoBar.ActionButton>
                     <HyperlinkButton x:Uid="SetAsDefaultTip_OpenSettingsLink"
                                      Click="_SetAsDefaultOpenSettingsHandler" />
