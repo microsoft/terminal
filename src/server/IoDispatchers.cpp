@@ -132,6 +132,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
 }
 
 // LsaGetLoginSessionData might also fit the bill here, but it looks like it does RPC with lsass.exe. Using user32 is cheaper.
+#pragma warning(suppress : 4505)
 static bool _isInteractiveUserSession()
 {
     DWORD sessionId{};
