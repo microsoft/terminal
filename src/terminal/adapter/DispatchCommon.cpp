@@ -21,39 +21,7 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
                                     const size_t width,
                                     const size_t height)
 {
-    SHORT sColumns = 0;
-    SHORT sRows = 0;
-
-    THROW_IF_FAILED(SizeTToShort(width, &sColumns));
-    THROW_IF_FAILED(SizeTToShort(height, &sRows));
-    // We should do nothing if 0 is passed in for a size.
-    RETURN_BOOL_IF_FALSE(width > 0 && height > 0);
-
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    conApi.GetConsoleScreenBufferInfoEx(csbiex);
-
-    const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
-    const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
-    // Always resize the width of the console
-    csbiex.dwSize.X = sColumns;
-    // Only set the screen buffer's height if it's currently less than
-    //  what we're requesting.
-    if (sRows > csbiex.dwSize.Y)
-    {
-        csbiex.dwSize.Y = sRows;
-    }
-
-    // SetWindowInfo expect inclusive rects
-    const auto sri = newViewport.ToInclusive();
-
-    // SetConsoleScreenBufferInfoEx however expects exclusive rects
-    const auto sre = newViewport.ToExclusive();
-    csbiex.srWindow = sre;
-
-    conApi.SetConsoleScreenBufferInfoEx(csbiex);
-    conApi.SetWindowInfo(true, sri);
-    return true;
+    return conApi.ResizeWindow(width, height);
 }
 
 // Routine Description:

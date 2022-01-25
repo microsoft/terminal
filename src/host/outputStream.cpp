@@ -609,6 +609,50 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 }
 
 // Routine Description:
+// - Resizes the window to the specified dimensions, in characters.
+// Arguments:
+// - width: The new width of the window, in columns
+// - height: The new height of the window, in rows
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height)
+{
+    SHORT sColumns = 0;
+    SHORT sRows = 0;
+
+    THROW_IF_FAILED(SizeTToShort(width, &sColumns));
+    THROW_IF_FAILED(SizeTToShort(height, &sRows));
+    // We should do nothing if 0 is passed in for a size.
+    RETURN_BOOL_IF_FALSE(width > 0 && height > 0);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    GetConsoleScreenBufferInfoEx(csbiex);
+
+    const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
+    const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    // Always resize the width of the console
+    csbiex.dwSize.X = sColumns;
+    // Only set the screen buffer's height if it's currently less than
+    //  what we're requesting.
+    if (sRows > csbiex.dwSize.Y)
+    {
+        csbiex.dwSize.Y = sRows;
+    }
+
+    // SetWindowInfo expect inclusive rects
+    const auto sri = newViewport.ToInclusive();
+
+    // SetConsoleScreenBufferInfoEx however expects exclusive rects
+    const auto sre = newViewport.ToExclusive();
+    csbiex.srWindow = sre;
+
+    SetConsoleScreenBufferInfoEx(csbiex);
+    SetWindowInfo(true, sri);
+    return true;
+}
+
+// Routine Description:
 // - Forces the VT Renderer to NOT paint the next resize event. This is used by
 //      InteractDispatch, to prevent resizes from echoing between terminal and host.
 // Arguments:

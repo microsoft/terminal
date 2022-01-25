@@ -313,6 +313,12 @@ public:
         Log::Comment(L"RefreshWindow MOCK called...");
     }
 
+    bool ResizeWindow(const size_t /*width*/, const size_t /*height*/) override
+    {
+        Log::Comment(L"ResizeWindow MOCK called...");
+        return true;
+    }
+
     void SuppressResizeRepaint() override
     {
         Log::Comment(L"SuppressResizeRepaint MOCK called...");
