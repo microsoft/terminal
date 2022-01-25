@@ -82,8 +82,8 @@ struct NullDeviceComm : public IDeviceComm
 
     CONSOLE_API_CONNECTINFO fakeConnectInfo{};
     fakeConnectInfo.ConsoleInfo.SetShowWindow(SW_NORMAL);
-    fakeConnectInfo.ConsoleInfo.SetScreenBufferSize(til::size{ 80, 25 });
-    fakeConnectInfo.ConsoleInfo.SetWindowSize(til::size{ 80, 25 });
+    fakeConnectInfo.ConsoleInfo.SetScreenBufferSize(til::size{ 80, 25 }.to_win32_coord());
+    fakeConnectInfo.ConsoleInfo.SetWindowSize(til::size{ 80, 25 }.to_win32_coord());
     fakeConnectInfo.ConsoleInfo.SetStartupFlags(STARTF_USECOUNTCHARS);
     wcscpy_s(fakeConnectInfo.Title, fakeTitle.data());
     fakeConnectInfo.TitleLength = gsl::narrow_cast<DWORD>(fakeTitle.size() * sizeof(wchar_t)); // bytes, not wchars
