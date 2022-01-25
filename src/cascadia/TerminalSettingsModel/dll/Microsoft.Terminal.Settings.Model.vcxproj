@@ -57,6 +57,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj">
       <Project>{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\internal\internal.vcxproj">
+      <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
+    </ProjectReference>
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't
     include Settings and Connection, since Control will include them for us) -->
