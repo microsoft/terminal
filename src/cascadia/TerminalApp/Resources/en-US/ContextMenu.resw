@@ -122,6 +122,7 @@
   </data>
   <data name="AppNameDev" xml:space="preserve">
     <value>Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="AppNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
@@ -131,6 +132,7 @@
   </data>
   <data name="AppShortNameDev" xml:space="preserve">
     <value>Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="AppShortNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
@@ -140,6 +142,7 @@
   </data>
   <data name="AppDescriptionDev" xml:space="preserve">
     <value>The Windows Terminal, but Unofficial</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="AppDescriptionPre" xml:space="preserve">
     <value>Windows Terminal with a preview of upcoming features</value>
