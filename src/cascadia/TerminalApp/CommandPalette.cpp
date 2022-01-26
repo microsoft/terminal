@@ -822,16 +822,13 @@ namespace winrt::TerminalApp::implementation
         {
             const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
             _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
-            if (!currentNeedleHasResults)
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
             {
-                if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
-                {
-                    automationPeer.RaiseNotificationEvent(
-                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                        NoMatchesText(), // NoMatchesText contains the right text for the current mode
-                        L"CommandPaletteResultAnnouncement" /* unique name for this notification */);
-                }
+                automationPeer.RaiseNotificationEvent(
+                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                    currentNeedleHasResults ? RS_(L"CommandPalette_MatchesAvailable") : NoMatchesText(), // what to announce if results were found
+                    L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
         }
         else
