@@ -1472,6 +1472,24 @@ namespace winrt::TerminalApp::implementation
         return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
     }
 
+    bool AppLogic::ShouldImmediatelyHandoffToElevated()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;
+    }
+    void AppLogic::HandoffToElevated()
+    {
+        if (_root)
+        {
+            _root->HandoffToElevated(_settings);
+        }
+    }
+
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
     {
         std::vector<WindowLayout> converted;
@@ -1569,38 +1587,24 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::GetMinimizeToNotificationArea()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            LoadSettings();
+        }
 
-            return _settings.GlobalSettings().MinimizeToNotificationArea();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().MinimizeToNotificationArea();
     }
 
     bool AppLogic::GetAlwaysShowNotificationIcon()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            LoadSettings();
+        }
 
-            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().AlwaysShowNotificationIcon();
     }
 
     bool AppLogic::GetShowTitleInTitlebar()

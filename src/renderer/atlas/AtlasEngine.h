@@ -649,6 +649,7 @@ namespace Microsoft::Console::Render
             bool isWindows10OrGreater = true;
 
 #ifndef NDEBUG
+            std::filesystem::path sourceDirectory;
             wil::unique_folder_change_reader_nothrow sourceCodeWatcher;
             std::atomic<int64_t> sourceCodeInvalidationTime{ INT64_MAX };
 #endif
@@ -734,10 +735,13 @@ namespace Microsoft::Console::Render
             u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::Device
             u32x2 currentColor;
             AtlasKeyAttributes attributes{};
-            u16 currentRow = 0;
+            u16x2 lastPaintBufferLineCoord;
             CellFlags flags = CellFlags::None;
             // SetSelectionBackground()
             u32 selectionColor = 0x7fffffff;
+            // UpdateHyperlinkHoveredId()
+            u16 hyperlinkHoveredId = 0;
+            bool bufferLineWasHyperlinked = false;
 
             // dirtyRect is a computed value based on invalidatedRows.
             til::rect dirtyRect;

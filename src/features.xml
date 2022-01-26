@@ -58,13 +58,6 @@
     </feature>
 
     <feature>
-        <name>Feature_NotificationIcon</name>
-        <description>Controls whether the Notification Icon and related settings (aka. MinimizeToNotificationArea and AlwaysShowNotificationIcon) are enabled</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
-    </feature>
-
-    <feature>
         <name>Feature_PersistedWindowLayout</name>
         <description>Whether to allow the user to enable persisted window layout saving and loading</description>
         <id>766</id>

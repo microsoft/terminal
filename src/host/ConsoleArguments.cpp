@@ -667,7 +667,7 @@ bool ConsoleArguments::IsWin32InputModeEnabled() const
 #ifdef UNIT_TESTING
 // Method Description:
 // - This is a test helper method. It can be used to trick us into thinking
-//   we're headless (in conpty mode), even without parsing any arguments.
+//   we're in conpty mode, even without parsing any arguments.
 // Arguments:
 // - <none>
 // Return Value:
@@ -675,5 +675,7 @@ bool ConsoleArguments::IsWin32InputModeEnabled() const
 void ConsoleArguments::EnableConptyModeForTests()
 {
     _headless = true;
+    _vtInHandle = GetStdHandle(STD_INPUT_HANDLE);
+    _vtOutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 }
 #endif

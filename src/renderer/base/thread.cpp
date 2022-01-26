@@ -219,7 +219,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
     return S_OK;
 }
 
-void RenderThread::NotifyPaint()
+void RenderThread::NotifyPaint() noexcept
 {
     if (_fWaiting.load(std::memory_order_acquire))
     {
@@ -231,17 +231,17 @@ void RenderThread::NotifyPaint()
     }
 }
 
-void RenderThread::EnablePainting()
+void RenderThread::EnablePainting() noexcept
 {
     SetEvent(_hPaintEnabledEvent);
 }
 
-void RenderThread::DisablePainting()
+void RenderThread::DisablePainting() noexcept
 {
     ResetEvent(_hPaintEnabledEvent);
 }
 
-void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
+void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) noexcept
 {
     // When rendering takes place via DirectX, and a console application
     // currently owns the screen, and a new console application is launched (or

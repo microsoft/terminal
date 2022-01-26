@@ -17,6 +17,7 @@ mdtauk
 cppreference
 gfycat
 Guake
+azurewebsites
 askubuntu
 dostips
 viewtopic

@@ -26,7 +26,9 @@ class UtilsTests
     TEST_METHOD(TestStringToUint);
     TEST_METHOD(TestColorFromXTermColor);
 
+#if !__INSIDE_WINDOWS
     TEST_METHOD(TestMangleWSLPaths);
+#endif
 
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
@@ -335,6 +337,8 @@ void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)
     VERIFY_IS_FALSE(color.has_value());
 }
 
+#if !__INSIDE_WINDOWS
+// Windows' compiler dislikes these raw strings...
 void UtilsTests::TestMangleWSLPaths()
 {
     // Continue on failures
@@ -476,3 +480,4 @@ void UtilsTests::TestMangleWSLPaths()
         VERIFY_ARE_EQUAL(L"", path);
     }
 }
+#endif

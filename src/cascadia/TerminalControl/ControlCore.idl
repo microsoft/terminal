@@ -54,6 +54,7 @@ namespace Microsoft.Terminal.Control
         String FontFaceName { get; };
         UInt16 FontWeight { get; };
         Double Opacity { get; };
+        Boolean UseAcrylic { get; };
 
         Boolean TrySendKeyEvent(Int16 vkey,
                              Int16 scanCode,
@@ -98,7 +99,7 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
 
-        void AdjustOpacity(Int32 Opacity, Boolean relative);
+        void AdjustOpacity(Double Opacity, Boolean relative);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

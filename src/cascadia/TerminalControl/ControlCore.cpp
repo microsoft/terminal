@@ -478,6 +478,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _renderer->NotifyPaintFrame();
         }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
@@ -1718,9 +1719,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings->HasUnfocusedAppearance();
     }
 
-    void ControlCore::AdjustOpacity(const int32_t& opacity, const bool& relative)
+    void ControlCore::AdjustOpacity(const double opacityAdjust, const bool relative)
     {
-        const double opacityAdjust = static_cast<double>(opacity) / 100.0;
         if (relative)
         {
             AdjustOpacity(opacityAdjust);

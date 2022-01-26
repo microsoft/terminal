@@ -9,8 +9,6 @@
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
-#define SHADER_SOURCE_DIRECTORY LR"(..\..\renderer\atlas\)"
-
 // #### NOTE ####
 // This file should only contain methods that are only accessed by the caller of Present() (the "Renderer" class).
 // Basically this file poses the "synchronization" point between the concurrently running
@@ -192,16 +190,17 @@ AtlasEngine::AtlasEngine()
     _sr.isWindows10OrGreater = IsWindows10OrGreater();
 
 #ifndef NDEBUG
-    // If you run the Host.EXE project inside Visual Studio it'll have a working directory of
-    // $(SolutionDir)\src\host\exe. This relative path will thus end up in this source directory.
-    _sr.sourceCodeWatcher = wil::make_folder_change_reader_nothrow(SHADER_SOURCE_DIRECTORY, false, wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime, [this](wil::FolderChangeEvent, PCWSTR path) {
-        if (til::ends_with(path, L".hlsl"))
-        {
-            auto expected = INT64_MAX;
-            const auto invalidationTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
-            _sr.sourceCodeInvalidationTime.compare_exchange_strong(expected, invalidationTime.time_since_epoch().count(), std::memory_order_relaxed);
-        }
-    });
+    {
+        _sr.sourceDirectory = std::filesystem::path{ __FILE__ }.parent_path();
+        _sr.sourceCodeWatcher = wil::make_folder_change_reader_nothrow(_sr.sourceDirectory.c_str(), false, wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime, [this](wil::FolderChangeEvent, PCWSTR path) {
+            if (til::ends_with(path, L".hlsl"))
+            {
+                auto expected = INT64_MAX;
+                const auto invalidationTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+                _sr.sourceCodeInvalidationTime.compare_exchange_strong(expected, invalidationTime.time_since_epoch().count(), std::memory_order_relaxed);
+            }
+        });
+    }
 #endif
 }
 
@@ -265,8 +264,8 @@ try
 
         try
         {
-            static const auto compile = [](const wchar_t* path, const char* target) {
-                const wil::unique_hfile fileHandle{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
+            static const auto compile = [](const std::filesystem::path& path, const char* target) {
+                const wil::unique_hfile fileHandle{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
                 THROW_LAST_ERROR_IF(!fileHandle);
 
                 const auto fileSize = GetFileSize(fileHandle.get(), nullptr);
@@ -303,8 +302,8 @@ try
                 return blob;
             };
 
-            const auto vs = compile(SHADER_SOURCE_DIRECTORY "shader_vs.hlsl", "vs_4_1");
-            const auto ps = compile(SHADER_SOURCE_DIRECTORY "shader_ps.hlsl", "ps_4_1");
+            const auto vs = compile(_sr.sourceDirectory / L"shader_vs.hlsl", "vs_4_1");
+            const auto ps = compile(_sr.sourceDirectory / L"shader_ps.hlsl", "ps_4_1");
 
             THROW_IF_FAILED(_r.device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, _r.vertexShader.put()));
             THROW_IF_FAILED(_r.device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, _r.pixelShader.put()));
@@ -465,12 +464,13 @@ try
     const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
     const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.Y, 0, _api.cellCount.y));
 
-    if (_api.currentRow != y)
+    if (_api.lastPaintBufferLineCoord.y != y)
     {
         _flushBufferLine();
     }
 
-    _api.currentRow = y;
+    _api.lastPaintBufferLineCoord = { x, y };
+    _api.bufferLineWasHyperlinked = false;
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
@@ -503,9 +503,21 @@ try
 CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+try
 {
+    if (!_api.bufferLineWasHyperlinked && lines.test(GridLines::Underline) && WI_IsFlagClear(_api.flags, CellFlags::Underline))
+    {
+        _api.bufferLineWasHyperlinked = true;
+
+        WI_UpdateFlagsInMask(_api.flags, CellFlags::Underline | CellFlags::UnderlineDotted | CellFlags::UnderlineDouble, CellFlags::Underline);
+
+        const BufferLineMetadata metadata{ _api.currentColor, _api.flags };
+        const size_t x = _api.lastPaintBufferLineCoord.x;
+        std::fill_n(_api.bufferLineMetadata.data() + x, _api.bufferLineMetadata.size() - x, metadata);
+    }
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(SMALL_RECT rect) noexcept
 try
@@ -569,15 +581,23 @@ try
 
     if (!isSettingDefaultBrushes)
     {
+        const auto hyperlinkId = textAttributes.GetHyperlinkId();
+
         auto flags = CellFlags::None;
         WI_SetFlagIf(flags, CellFlags::BorderLeft, textAttributes.IsLeftVerticalDisplayed());
         WI_SetFlagIf(flags, CellFlags::BorderTop, textAttributes.IsTopHorizontalDisplayed());
         WI_SetFlagIf(flags, CellFlags::BorderRight, textAttributes.IsRightVerticalDisplayed());
         WI_SetFlagIf(flags, CellFlags::BorderBottom, textAttributes.IsBottomHorizontalDisplayed());
         WI_SetFlagIf(flags, CellFlags::Underline, textAttributes.IsUnderlined());
-        WI_SetFlagIf(flags, CellFlags::UnderlineDotted, textAttributes.IsHyperlink());
+        WI_SetFlagIf(flags, CellFlags::UnderlineDotted, hyperlinkId != 0);
         WI_SetFlagIf(flags, CellFlags::UnderlineDouble, textAttributes.IsDoublyUnderlined());
         WI_SetFlagIf(flags, CellFlags::Strikethrough, textAttributes.IsCrossedOut());
+
+        if (_api.hyperlinkHoveredId && _api.hyperlinkHoveredId == hyperlinkId)
+        {
+            WI_SetFlag(flags, CellFlags::Underline);
+            WI_ClearAllFlags(flags, CellFlags::UnderlineDotted | CellFlags::UnderlineDouble);
+        }
 
         const u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
         const AtlasKeyAttributes attributes{ 0, textAttributes.IsBold(), textAttributes.IsItalic(), 0 };
@@ -1445,14 +1465,15 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t b
 
     const auto valueData = value.data();
     const auto coords = &valueData->coords[0];
-    const auto flags = valueData->flags | _api.bufferLineMetadata[x1].flags;
-    const auto color = _api.bufferLineMetadata[x1].colors;
-    const auto data = _getCell(x1, _api.currentRow);
+    const auto data = _getCell(x1, _api.lastPaintBufferLineCoord.y);
 
     for (u32 i = 0; i < cellCount; ++i)
     {
         data[i].tileIndex = coords[i];
-        data[i].flags = flags;
-        data[i].color = color;
+        // We should apply the column color and flags from each column (instead
+        // of copying them from the x1) so that ligatures can appear in multiple
+        // colors with different line styles.
+        data[i].flags = valueData->flags | _api.bufferLineMetadata[static_cast<size_t>(x1) + i].flags;
+        data[i].color = _api.bufferLineMetadata[static_cast<size_t>(x1) + i].colors;
     }
 }
