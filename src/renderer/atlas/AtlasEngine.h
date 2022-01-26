@@ -396,7 +396,6 @@ namespace Microsoft::Console::Render
             Inlined         = 0x00000001,
 
             ColoredGlyph    = 0x00000002,
-            ThinFont        = 0x00000004,
 
             Cursor          = 0x00000008,
             Selected        = 0x00000010,
@@ -528,7 +527,6 @@ namespace Microsoft::Console::Render
         {
             const AtlasKey* key;
             const AtlasValue* value;
-            float scale;
         };
 
         struct CachedCursorOptions
@@ -556,8 +554,8 @@ namespace Microsoft::Console::Render
             //   This means a structure like {u32; u32; u32; u32x2} would require
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
             alignas(sizeof(f32x4)) f32x4 viewport;
-            alignas(sizeof(f32x4)) f32x4 gammaRatios;
-            alignas(sizeof(f32)) f32 grayscaleEnhancedContrast = 0;
+            alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
+            alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(u32)) u32 cellCountX = 0;
             alignas(sizeof(u32x2)) u32x2 cellSize;
             alignas(sizeof(u32x2)) u32x2 underlinePos;
@@ -565,6 +563,7 @@ namespace Microsoft::Console::Render
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
+            alignas(sizeof(u32)) u32 useClearType = 0;
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -612,14 +611,13 @@ namespace Microsoft::Console::Render
         void _setCellFlags(SMALL_RECT coords, CellFlags mask, CellFlags bits) noexcept;
         u16x2 _allocateAtlasTile() noexcept;
         void _flushBufferLine();
-        void _emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2);
+        void _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
         void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
         void _setShaderResources() const;
-        static f32x4 _getGammaRatios(float gamma) noexcept;
         void _updateConstantBuffer() const noexcept;
         void _adjustAtlasSize();
         void _reserveScratchpadSize(u16 minWidth);
@@ -696,6 +694,7 @@ namespace Microsoft::Console::Render
             std::vector<AtlasQueueItem> glyphQueue;
 
             f32 gamma = 0;
+            f32 cleartypeEnhancedContrast = 0;
             f32 grayscaleEnhancedContrast = 0;
             u32 backgroundColor = 0xff000000;
             u32 selectionColor = 0x7fffffff;

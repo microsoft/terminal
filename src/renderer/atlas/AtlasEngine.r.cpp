@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include "dwrite.h"
+
 // #### NOTE ####
 // If you see any code in here that contains "_api." you might be seeing a race condition.
 // The AtlasEngine::Present() method is called on a background thread without any locks,
@@ -109,42 +111,17 @@ void AtlasEngine::_setShaderResources() const
     _r.deviceContext->PSSetShaderResources(0, gsl::narrow_cast<UINT>(resources.size()), resources.data());
 }
 
-AtlasEngine::f32x4 AtlasEngine::_getGammaRatios(float gamma) noexcept
-{
-    static constexpr f32x4 gammaIncorrectTargetRatios[13]{
-        { 0.0000f / 4.f, 0.0000f / 4.f, 0.0000f / 4.f, 0.0000f / 4.f }, // gamma = 1.0
-        { 0.0166f / 4.f, -0.0807f / 4.f, 0.2227f / 4.f, -0.0751f / 4.f }, // gamma = 1.1
-        { 0.0350f / 4.f, -0.1760f / 4.f, 0.4325f / 4.f, -0.1370f / 4.f }, // gamma = 1.2
-        { 0.0543f / 4.f, -0.2821f / 4.f, 0.6302f / 4.f, -0.1876f / 4.f }, // gamma = 1.3
-        { 0.0739f / 4.f, -0.3963f / 4.f, 0.8167f / 4.f, -0.2287f / 4.f }, // gamma = 1.4
-        { 0.0933f / 4.f, -0.5161f / 4.f, 0.9926f / 4.f, -0.2616f / 4.f }, // gamma = 1.5
-        { 0.1121f / 4.f, -0.6395f / 4.f, 1.1588f / 4.f, -0.2877f / 4.f }, // gamma = 1.6
-        { 0.1300f / 4.f, -0.7649f / 4.f, 1.3159f / 4.f, -0.3080f / 4.f }, // gamma = 1.7
-        { 0.1469f / 4.f, -0.8911f / 4.f, 1.4644f / 4.f, -0.3234f / 4.f }, // gamma = 1.8
-        { 0.1627f / 4.f, -1.0170f / 4.f, 1.6051f / 4.f, -0.3347f / 4.f }, // gamma = 1.9
-        { 0.1773f / 4.f, -1.1420f / 4.f, 1.7385f / 4.f, -0.3426f / 4.f }, // gamma = 2.0
-        { 0.1908f / 4.f, -1.2652f / 4.f, 1.8650f / 4.f, -0.3476f / 4.f }, // gamma = 2.1
-        { 0.2031f / 4.f, -1.3864f / 4.f, 1.9851f / 4.f, -0.3501f / 4.f }, // gamma = 2.2
-    };
-    static constexpr auto norm13 = static_cast<float>(static_cast<double>(0x10000) / (255 * 255) * 4);
-    static constexpr auto norm24 = static_cast<float>(static_cast<double>(0x100) / (255) * 4);
-
-    gamma = clamp(gamma, 1.0f, 2.2f);
-
-    const size_t index = gsl::narrow_cast<size_t>(std::round((gamma - 1.0f) / 1.2f * 12.0f));
-    const auto& ratios = gammaIncorrectTargetRatios[index];
-    return { norm13 * ratios.x, norm24 * ratios.y, norm13 * ratios.z, norm24 * ratios.w };
-}
-
 void AtlasEngine::_updateConstantBuffer() const noexcept
 {
+    const auto useClearType = _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+
     ConstBuffer data;
     data.viewport.x = 0;
     data.viewport.y = 0;
     data.viewport.z = static_cast<float>(_r.cellCount.x * _r.cellSize.x);
     data.viewport.w = static_cast<float>(_r.cellCount.y * _r.cellSize.y);
-    data.gammaRatios = _getGammaRatios(_r.gamma);
-    data.grayscaleEnhancedContrast = _r.grayscaleEnhancedContrast;
+    DWrite_GetGammaRatios(_r.gamma, data.gammaRatios);
+    data.enhancedContrast = useClearType ? _r.cleartypeEnhancedContrast : _r.grayscaleEnhancedContrast;
     data.cellCountX = _r.cellCount.x;
     data.cellSize.x = _r.cellSize.x;
     data.cellSize.y = _r.cellSize.y;
@@ -155,6 +132,7 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
     data.backgroundColor = _r.backgroundColor;
     data.cursorColor = _r.cursorOptions.cursorColor;
     data.selectionColor = _r.selectionColor;
+    data.useClearType = useClearType;
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
     _r.deviceContext->UpdateSubresource(_r.constantBuffer.get(), 0, nullptr, &data, 0, 0);
 }
@@ -282,13 +260,8 @@ void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
     {
         const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
 
-        wil::com_ptr<IDWriteRenderingParams1> defaultParams;
-        THROW_IF_FAILED(_sr.dwriteFactory->CreateRenderingParams(reinterpret_cast<IDWriteRenderingParams**>(defaultParams.addressof())));
         wil::com_ptr<IDWriteRenderingParams1> renderingParams;
-        THROW_IF_FAILED(_sr.dwriteFactory->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, defaultParams->GetClearTypeLevel(), defaultParams->GetPixelGeometry(), defaultParams->GetRenderingMode(), renderingParams.addressof()));
-
-        _r.gamma = defaultParams->GetGamma();
-        _r.grayscaleEnhancedContrast = defaultParams->GetGrayscaleEnhancedContrast();
+        DWrite_GetRenderParams(_sr.dwriteFactory.get(), &_r.gamma, &_r.cleartypeEnhancedContrast, &_r.grayscaleEnhancedContrast, renderingParams.addressof());
 
         D2D1_RENDER_TARGET_PROPERTIES props{};
         props.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
@@ -300,11 +273,9 @@ void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
         // We don't really use D2D for anything except DWrite, but it
         // can't hurt to ensure that everything it does is pixel aligned.
         _r.d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        _r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
         // Ensure that D2D uses the exact same gamma as our shader uses.
         _r.d2dRenderTarget->SetTextRenderingParams(renderingParams.get());
-        // We can't set the antialiasingMode here, as D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE
-        // will force the alpha channel to be 0 for _all_ text.
-        //_r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
     }
     {
         static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
@@ -344,11 +315,6 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
     THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key->chars[0], charsLength, textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
-    if (item.scale != 1.0f)
-    {
-        const auto f = textFormat->GetFontSize();
-        textLayout->SetFontSize(f * item.scale, { 0, charsLength });
-    }
     if (_r.typography)
     {
         textLayout->SetTypography(_r.typography.get(), { 0, charsLength });

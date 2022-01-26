@@ -1180,10 +1180,9 @@ void AtlasEngine::_flushBufferLine()
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
-        float scale = 1.0f;
-
         if (_sr.systemFontFallback)
         {
+            float scale = 1.0f;
             u32 mappedLength = 0;
 
             if (textFormatAxis)
@@ -1247,7 +1246,7 @@ void AtlasEngine::_flushBufferLine()
                 {
                     if (const auto col2 = _api.bufferLineColumn[pos2]; col1 != col2)
                     {
-                        _emplaceGlyph(nullptr, scale, pos1, pos2);
+                        _emplaceGlyph(nullptr, pos1, pos2);
                         pos1 = pos2;
                         col1 = col2;
                     }
@@ -1285,7 +1284,7 @@ void AtlasEngine::_flushBufferLine()
             {
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
-                    _emplaceGlyph(mappedFontFace.get(), scale, idx + i, idx + i + 1u);
+                    _emplaceGlyph(mappedFontFace.get(), idx + i, idx + i + 1u);
                 }
             }
             else
@@ -1369,7 +1368,7 @@ void AtlasEngine::_flushBufferLine()
                     {
                         if (_api.textProps[i].canBreakShapingAfter)
                         {
-                            _emplaceGlyph(mappedFontFace.get(), scale, a.textPosition + beg, a.textPosition + i + 1);
+                            _emplaceGlyph(mappedFontFace.get(), a.textPosition + beg, a.textPosition + i + 1);
                             beg = i + 1;
                         }
                     }
@@ -1379,7 +1378,7 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
-void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2)
+void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2)
 {
     static constexpr auto replacement = L'\uFFFD';
 
@@ -1438,7 +1437,7 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t b
             coords[i] = _allocateAtlasTile();
         }
 
-        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value, scale });
+        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value });
         _r.maxEncounteredCellCount = std::max(_r.maxEncounteredCellCount, cellCount);
     }
 
