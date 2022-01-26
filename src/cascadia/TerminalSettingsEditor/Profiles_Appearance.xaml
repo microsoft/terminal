@@ -89,7 +89,8 @@
                                             HasSettingValue="{x:Bind Profile.HasUseAcrylic, Mode=OneWay}"
                                             SettingOverrideSource="{x:Bind Profile.UseAcrylicOverrideSource, Mode=OneWay}">
                         <ToggleSwitch x:Name="UseAcrylicToggleSwitch"
-                                      IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}" />
+                                      IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingContainer>
 
                 </StackPanel>

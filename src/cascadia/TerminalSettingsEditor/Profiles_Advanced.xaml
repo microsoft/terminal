@@ -43,7 +43,8 @@
                                         ClearSettingValue="{x:Bind Profile.ClearSuppressApplicationTitle}"
                                         HasSettingValue="{x:Bind Profile.HasSuppressApplicationTitle, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
-                    <ToggleSwitch IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
                 <!--  Antialiasing Mode  -->
@@ -63,7 +64,8 @@
                                         ClearSettingValue="{x:Bind Profile.ClearAltGrAliasing}"
                                         HasSettingValue="{x:Bind Profile.HasAltGrAliasing, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
-                    <ToggleSwitch IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
                 <!--  Snap On Input  -->
@@ -71,7 +73,8 @@
                                         ClearSettingValue="{x:Bind Profile.ClearSnapOnInput}"
                                         HasSettingValue="{x:Bind Profile.HasSnapOnInput, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.SnapOnInputOverrideSource, Mode=OneWay}">
-                    <ToggleSwitch IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
                 <!--  History Size  -->
@@ -121,7 +124,8 @@
                                         HasSettingValue="{x:Bind Profile.HasUseAtlasEngine, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}"
                                         Visibility="{x:Bind Profile.AtlasEngineAvailable}">
-                    <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
         </ScrollViewer>
