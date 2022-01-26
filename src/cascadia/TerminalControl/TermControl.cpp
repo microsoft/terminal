@@ -452,7 +452,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto settings{ _core.Settings() };
         auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
         // GH#11743: Make sure to use the Core's current UseAcrylic value, not
-        // the one from the settings.
+        // the one from the settings. The Core's runtime UseAcrylic may have
+        // changed from what was in the original settings.
         if (_core.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
