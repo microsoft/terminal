@@ -28,6 +28,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         explicit DefaultTerminal(DelegationConfig::DelegationPackage&& pkg);
 
+        hstring ToString()
+        {
+            return hstring{ fmt::format(L"{}, {}, {}", Name(), Author(), Version()) };
+        }
+
         hstring Name() const;
         hstring Author() const;
         hstring Version() const;
