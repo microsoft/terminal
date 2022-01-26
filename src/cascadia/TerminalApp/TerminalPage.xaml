@@ -21,7 +21,8 @@
         </Grid.RowDefinitions>
 
         <local:TabRowControl x:Name="TabRow"
-                             Grid.Row="0" />
+                             Grid.Row="0"
+                             KeyUp="_KeyDownHandler" />
 
         <StackPanel Grid.Row="1">
             <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"

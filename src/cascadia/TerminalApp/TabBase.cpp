@@ -251,4 +251,5 @@ namespace winrt::TerminalApp::implementation
             }
         });
     }
+
 }
