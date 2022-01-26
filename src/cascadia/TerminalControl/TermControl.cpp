@@ -451,7 +451,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto settings{ _core.Settings() };
         auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
-        if (settings.UseAcrylic())
+        // GH#11743: Make sure to use the Core's current UseAcrylic value, not
+        // the one from the settings. The Core's runtime UseAcrylic may have
+        // changed from what was in the original settings.
+        if (_core.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
@@ -536,12 +539,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_changeBackgroundOpacity()
     {
         const auto opacity{ _core.Opacity() };
+        const auto useAcrylic{ _core.UseAcrylic() };
+
+        // GH#11743, #11619: If we're changing whether or not acrylic is used,
+        // then just entirely reinitialize the brush. The primary way that this
+        // happens is on Windows 10, where we need to enable acrylic when the
+        // user asks for <100% opacity. Even when we remove this Windows 10
+        // fallback, we may still need this for something like changing if
+        // acrylic is enabled at runtime (GH#2531)
         if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
         {
+            if (!useAcrylic)
+            {
+                _InitializeBackgroundBrush();
+                return;
+            }
             acrylic.TintOpacity(opacity);
         }
         else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
         {
+            if (useAcrylic)
+            {
+                _InitializeBackgroundBrush();
+                return;
+            }
             solidColor.Opacity(opacity);
         }
     }
