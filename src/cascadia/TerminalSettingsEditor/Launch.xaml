@@ -110,15 +110,18 @@
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Text="{x:Bind Name}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}" />
 
