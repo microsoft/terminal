@@ -88,8 +88,8 @@
     </Style>
 
     <Style TargetType="local:SettingContainer">
-        <Setter Property="Margin" Value="0,0,8,0" />
         <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
@@ -124,10 +124,11 @@
 
     <Style x:Key="ExpanderSettingContainerStyle"
            TargetType="local:SettingContainer">
+        <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <muxc:Expander Margin="0,4,8,0"
+                    <muxc:Expander Margin="0,4,0,0"
                                    HorizontalAlignment="Stretch"
                                    HorizontalContentAlignment="Stretch"
                                    Content="{TemplateBinding Content}">
