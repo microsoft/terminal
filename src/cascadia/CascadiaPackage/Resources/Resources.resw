@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AppName" xml:space="preserve">
-    <value>Windows Terminal</value>
+    <value>Terminal</value>
   </data>
   <data name="AppNameDev" xml:space="preserve">
-    <value>Windows Terminal Dev</value>
+    <value>Terminal Dev</value>
   </data>
   <data name="AppNamePre" xml:space="preserve">
-    <value>Windows Terminal Preview</value>
+    <value>Terminal Preview</value>
   </data>
   <data name="AppShortName" xml:space="preserve">
     <value>Terminal</value>

@@ -21,7 +21,7 @@
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>Windows Terminal</DisplayName>
+    <DisplayName>Terminal</DisplayName>
     <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -88,7 +88,7 @@
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
                 Id="Terminal"
-                DisplayName="Windows Terminal"
+                DisplayName="Terminal"
                 Description="Terminal host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
