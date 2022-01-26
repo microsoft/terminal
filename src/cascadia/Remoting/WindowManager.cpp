@@ -542,10 +542,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::SummonAllWindows()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
-        {
-            _monarch.SummonAllWindows();
-        }
+        _monarch.SummonAllWindows();
     }
 
     Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetPeasantInfos()

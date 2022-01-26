@@ -88,14 +88,12 @@
             </local:SettingContainer>
 
             <!--  Always Show Notification Icon  -->
-            <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon"
-                                    Visibility="{x:Bind FeatureNotificationIconEnabled}">
+            <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowNotificationIcon, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Minimize To Notification Area  -->
-            <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea"
-                                    Visibility="{x:Bind FeatureNotificationIconEnabled}">
+            <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.MinimizeToNotificationArea, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>
