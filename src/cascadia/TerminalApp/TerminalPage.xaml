@@ -10,8 +10,17 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
       Background="Transparent"
-      KeyDown="_KeyDownHandler"
       mc:Ignorable="d">
+
+    <!--
+        Notes:
+        None of
+        PreviewKeyDown="_KeyDownHandler"
+        KeyDown="_KeyDownHandler"
+        KeyUp="_KeyDownHandler"
+        
+        Seem to fire when the focus is in the TabViewItem or the NewTab flyout. But they fire just fine when focus is in the TermControl. Interesting, because you'd think that the TermControl would have already handled the key...
+    -->
 
     <Grid x:Name="Root"
           Background="Transparent">
@@ -22,7 +31,8 @@
         </Grid.RowDefinitions>
 
         <local:TabRowControl x:Name="TabRow"
-                             Grid.Row="0" />
+                             Grid.Row="0"
+                             KeyUp="_KeyDownHandler" />
 
         <StackPanel Grid.Row="1">
             <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"

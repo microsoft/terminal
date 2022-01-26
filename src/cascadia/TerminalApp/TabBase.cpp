@@ -251,7 +251,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        TabViewItem().KeyUp({ get_weak(), &TabBase::_KeyHandler });
+        // TabViewItem().KeyUp({ get_weak(), &TabBase::_KeyHandler });
     }
 
     void TabBase::_KeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
