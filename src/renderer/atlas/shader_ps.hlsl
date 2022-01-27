@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#include "dwrite.hlsl"
+
 #define INVALID_COLOR 0xffffffff
 
 // These flags are shared with AtlasEngine::CellFlags.
@@ -10,7 +12,6 @@
 #define CellFlags_Inlined         0x00000001
 
 #define CellFlags_ColoredGlyph    0x00000002
-#define CellFlags_ThinFont        0x00000004
 
 #define CellFlags_Cursor          0x00000008
 #define CellFlags_Selected        0x00000010
@@ -39,7 +40,7 @@ cbuffer ConstBuffer : register(b0)
 {
     float4 viewport;
     float4 gammaRatios;
-    float grayscaleEnhancedContrast;
+    float enhancedContrast;
     uint cellCountX;
     uint2 cellSize;
     uint2 underlinePos;
@@ -47,17 +48,14 @@ cbuffer ConstBuffer : register(b0)
     uint backgroundColor;
     uint cursorColor;
     uint selectionColor;
+    uint useClearType;
 };
 StructuredBuffer<Cell> cells : register(t0);
 Texture2D<float4> glyphs : register(t1);
 
 float4 decodeRGBA(uint i)
 {
-    uint r = i & 0xff;
-    uint g = (i >> 8) & 0xff;
-    uint b = (i >> 16) & 0xff;
-    uint a = i >> 24;
-    float4 c = float4(r, g, b, a) / 255.0f;
+    float4 c = (i >> uint4(0, 8, 16, 24) & 0xff) / 255.0f;
     // Convert to premultiplied alpha for simpler alpha blending.
     c.rgb *= c.a;
     return c;
@@ -70,30 +68,8 @@ uint2 decodeU16x2(uint i)
 
 float4 alphaBlendPremultiplied(float4 bottom, float4 top)
 {
-    float ia = 1 - top.a;
-    return float4(bottom.rgb * ia + top.rgb, bottom.a * ia + top.a);
-}
-
-float applyLightOnDarkContrastAdjustment(float3 color)
-{
-    float lightness = 0.30f * color.r + 0.59f * color.g + 0.11f * color.b;
-    float multiplier = saturate(4.0f * (0.75f - lightness));
-    return grayscaleEnhancedContrast * multiplier;
-}
-
-float calcColorIntensity(float3 color)
-{
-    return (color.r + color.g + color.g + color.b) / 4.0f;
-}
-
-float enhanceContrast(float alpha, float k)
-{
-    return alpha * (k + 1.0f) / (alpha * k + 1.0f);
-}
-
-float applyAlphaCorrection(float a, float f, float4 g)
-{
-    return a + a * (1 - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));
+    bottom *= 1 - top.a;
+    return bottom + top;
 }
 
 // clang-format off
@@ -138,7 +114,7 @@ float4 main(float4 pos: SV_Position): SV_Target
     {
         color = alphaBlendPremultiplied(color, fg);
     }
-    if ((cell.flags & CellFlags_UnderlineDotted) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 1))
+    if ((cell.flags & CellFlags_UnderlineDotted) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 3) == 0)
     {
         color = alphaBlendPremultiplied(color, fg);
     }
@@ -146,17 +122,18 @@ float4 main(float4 pos: SV_Position): SV_Target
     {
         float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
 
-        if (!(cell.flags & CellFlags_ColoredGlyph))
+        if (cell.flags & CellFlags_ColoredGlyph)
         {
-            float contrastBoost = (cell.flags & CellFlags_ThinFont) == 0 ? 0.0f : 0.5f;
-            float enhancedContrast = contrastBoost + applyLightOnDarkContrastAdjustment(fg.rgb);
-            float intensity = calcColorIntensity(fg.rgb);
-            float contrasted = enhanceContrast(glyph.a, enhancedContrast);
-            float correctedAlpha = applyAlphaCorrection(contrasted, intensity, gammaRatios);
-            glyph = fg * correctedAlpha;
+            color = alphaBlendPremultiplied(color, glyph);
         }
-
-        color = alphaBlendPremultiplied(color, glyph);
+        else if (useClearType)
+        {
+            color = DWrite_CleartypeBlend(gammaRatios, enhancedContrast, false, color, fg, glyph);
+        }
+        else
+        {
+            color = alphaBlendPremultiplied(color, DWrite_GrayscaleBlend(gammaRatios, enhancedContrast, false, fg, glyph.a));
+        }
     }
     // Step 3: Lines, but not "under"lines
     if ((cell.flags & CellFlags_Strikethrough) && cellPos.y >= strikethroughPos.x && cellPos.y < strikethroughPos.y)

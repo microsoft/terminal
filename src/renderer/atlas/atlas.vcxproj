@@ -12,16 +12,21 @@
   <ItemGroup>
     <ClCompile Include="AtlasEngine.api.cpp" />
     <ClCompile Include="AtlasEngine.r.cpp" />
+    <ClCompile Include="dwrite.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="AtlasEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dwrite.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="AtlasEngine.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="dwrite.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="shader_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>4.1</ShaderModel>
