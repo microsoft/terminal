@@ -759,6 +759,14 @@
     <value>If enabled, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
+  <data name="Profile_Elevate.Header" xml:space="preserve">
+    <value>Run this profile as Administrator</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
+  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+    <value>If enabled, the profile will open in an Admin terminal window automatically. If the current window is already running as admin, it'll open in this window.</value>
+    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>History size</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>

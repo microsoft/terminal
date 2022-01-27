@@ -93,5 +93,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAtlasEngine);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
     }
 }
