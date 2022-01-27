@@ -224,7 +224,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                page->_OpenNewTerminal(NewTerminalArgs());
+                page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
         });
         _newTabButton.Drop([weakThis{ get_weak() }](Windows::Foundation::IInspectable const&, winrt::Windows::UI::Xaml::DragEventArgs e) {
@@ -458,7 +458,7 @@ namespace winrt::TerminalApp::implementation
 
             NewTerminalArgs args;
             args.StartingDirectory(winrt::hstring{ path.wstring() });
-            this->_OpenNewTerminal(args);
+            this->_OpenNewTerminalViaDropdown(args);
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider,
@@ -846,6 +846,9 @@ namespace winrt::TerminalApp::implementation
             auto newWindowRun = WUX::Documents::Run();
             newWindowRun.Text(RS_(L"NewWindowRun/Text"));
             newWindowRun.FontStyle(FontStyle::Italic);
+            auto elevatedRun = WUX::Documents::Run();
+            elevatedRun.Text(RS_(L"ElevatedRun/Text"));
+            elevatedRun.FontStyle(FontStyle::Italic);
 
             auto textBlock = WUX::Controls::TextBlock{};
             textBlock.Inlines().Append(newTabRun);
@@ -853,6 +856,8 @@ namespace winrt::TerminalApp::implementation
             textBlock.Inlines().Append(newPaneRun);
             textBlock.Inlines().Append(WUX::Documents::LineBreak{});
             textBlock.Inlines().Append(newWindowRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(elevatedRun);
 
             auto toolTip = WUX::Controls::ToolTip{};
             toolTip.Content(textBlock);
@@ -862,7 +867,7 @@ namespace winrt::TerminalApp::implementation
                 if (auto page{ weakThis.get() })
                 {
                     NewTerminalArgs newTerminalArgs{ profileIndex };
-                    page->_OpenNewTerminal(newTerminalArgs);
+                    page->_OpenNewTerminalViaDropdown(newTerminalArgs);
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -956,7 +961,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout().ShowAt(_newTabButton);
     }
 
-    void TerminalPage::_OpenNewTerminal(const NewTerminalArgs newTerminalArgs)
+    void TerminalPage::_OpenNewTerminalViaDropdown(const NewTerminalArgs newTerminalArgs)
     {
         // if alt is pressed, open a pane
         const CoreWindow window = CoreWindow::GetForCurrentThread();
@@ -972,12 +977,21 @@ namespace winrt::TerminalApp::implementation
                                  WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
                                  WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
 
+        const auto ctrlState{ window.GetKeyState(VirtualKey::Control) };
+        const auto rCtrlState = window.GetKeyState(VirtualKey::RightControl);
+        const auto lCtrlState = window.GetKeyState(VirtualKey::LeftControl);
+        const auto ctrlPressed{ WI_IsFlagSet(ctrlState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(rCtrlState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(lCtrlState, CoreVirtualKeyStates::Down) };
+
         // Check for DebugTap
         bool debugTap = this->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                         WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        if (shiftPressed && !debugTap)
+        const bool dispatchToElevatedWindow = ctrlPressed && !IsElevated();
+
+        if ((shiftPressed || dispatchToElevatedWindow) && !debugTap)
         {
             // Manually fill in the evaluated profile.
             if (newTerminalArgs.ProfileIndex() != nullptr)
@@ -989,7 +1003,15 @@ namespace winrt::TerminalApp::implementation
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
                 }
             }
-            this->_OpenNewWindow(false, newTerminalArgs);
+
+            if (dispatchToElevatedWindow)
+            {
+                _OpenElevatedWT(newTerminalArgs);
+            }
+            else
+            {
+                _OpenNewWindow(newTerminalArgs);
+            }
         }
         else
         {
