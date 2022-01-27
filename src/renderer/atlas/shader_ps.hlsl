@@ -114,7 +114,7 @@ float4 main(float4 pos: SV_Position): SV_Target
     {
         color = alphaBlendPremultiplied(color, fg);
     }
-    if ((cell.flags & CellFlags_UnderlineDotted) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 1))
+    if ((cell.flags & CellFlags_UnderlineDotted) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 3) == 0)
     {
         color = alphaBlendPremultiplied(color, fg);
     }
