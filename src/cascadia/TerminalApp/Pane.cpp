@@ -1066,13 +1066,37 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
     co_await winrt::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.get() })
     {
+        if (!s_bellPlayer)
+        {
+            s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+        }
         if (s_bellPlayer)
         {
             const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
             const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
             s_bellPlayer.Source(item);
             s_bellPlayer.Play();
+            s_bellPlayer.MediaEnded([](auto&&, auto&&) {
+                // s_bellPlayer.Close();
+                s_bellPlayer = nullptr;
+            });
+            // s_bellPlayer.Close();
         }
+
+        // try
+        // {
+        //     auto bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+
+        //     if (bellPlayer)
+
+        //     {
+        //         const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+        //         const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+        //         bellPlayer.Source(item);
+        //         bellPlayer.Play();
+        //     }
+        // }
+        // CATCH_LOG();
     }
 }
 
