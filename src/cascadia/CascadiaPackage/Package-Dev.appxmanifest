@@ -20,7 +20,7 @@
     Version="0.0.1.0" />
 
   <Properties>
-    <DisplayName>Terminal Dev</DisplayName>
+    <DisplayName>ms-resource:TerminalApp/ContextMenu/AppNameDev</DisplayName>
     <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
