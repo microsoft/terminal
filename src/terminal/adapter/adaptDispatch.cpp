@@ -2515,7 +2515,7 @@ void AdaptDispatch::_ReportSGRSetting() const
                 response.append(parameter);
             }
         };
-        addAttribute(L";1"sv, attr.IsBold());
+        addAttribute(L";1"sv, attr.IsIntense());
         addAttribute(L";2"sv, attr.IsFaint());
         addAttribute(L";3"sv, attr.IsItalic());
         addAttribute(L";4"sv, attr.IsUnderlined());

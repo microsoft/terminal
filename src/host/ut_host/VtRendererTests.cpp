@@ -831,9 +831,9 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
 
     switch (renditionAttribute)
     {
-    case GraphicsOptions::BoldBright:
-        Log::Comment(L"----Set Bold Attribute----");
-        textAttributes.SetBold(true);
+    case GraphicsOptions::Intense:
+        Log::Comment(L"----Set Intense Attribute----");
+        textAttributes.SetIntense(true);
         break;
     case GraphicsOptions::RGBColorOrFaint:
         Log::Comment(L"----Set Faint Attribute----");
@@ -1364,9 +1364,9 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
 
     switch (renditionAttribute)
     {
-    case GraphicsOptions::BoldBright:
-        Log::Comment(L"----Set Bold Attribute----");
-        textAttributes.SetBold(true);
+    case GraphicsOptions::Intense:
+        Log::Comment(L"----Set Intense Attribute----");
+        textAttributes.SetIntense(true);
         break;
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");

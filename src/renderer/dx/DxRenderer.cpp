@@ -1962,7 +1962,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
-        _drawingContext->useBoldFont = textAttributes.IsBold() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold);
+        _drawingContext->useBoldFont = textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold);
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 

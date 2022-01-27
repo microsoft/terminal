@@ -467,7 +467,7 @@ bool DxFontRenderData::DidUserSetAxes() const noexcept
 // Routine Description:
 // - Function called to inform us whether to use the user set weight
 //   in the font axes
-// - Called by CustomTextLayout, when the text attribute is bold we should
+// - Called by CustomTextLayout, when the text attribute is intense we should
 //   ignore the user set weight, otherwise setting the bold font axis
 //   breaks the bold font attribute
 // Arguments:
@@ -547,7 +547,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
     {
         // Store the weight aside: we will be creating a span of all the axes in the vector except the weight,
         // and then we will add the weight to the vector
-        // We are doing this so that when the text attribute is bold, we can apply all the axes except the weight
+        // We are doing this so that when the text attribute is intense, we can apply all the axes except the weight
         std::optional<DWRITE_FONT_AXIS_VALUE> weightAxis;
 
         // Since we are calling an 'emplace_back' after creating the span,
