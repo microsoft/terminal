@@ -1881,11 +1881,11 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
-    //   isn't a control selected for any reason, returns "Windows Terminal"
+    //   isn't a control selected for any reason, returns "Terminal"
     // Arguments:
     // - <none>
     // Return Value:
-    // - the title of the focused control if there is one, else "Windows Terminal"
+    // - the title of the focused control if there is one, else "Terminal"
     hstring TerminalPage::Title()
     {
         if (_settings.GlobalSettings().ShowTitleInTitlebar())
@@ -1903,7 +1903,7 @@ namespace winrt::TerminalApp::implementation
                 CATCH_LOG();
             }
         }
-        return { L"Windows Terminal" };
+        return { L"Terminal" };
     }
 
     // Method Description:

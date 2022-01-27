@@ -384,7 +384,7 @@
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
-    <value>When disabled, the title bar will be 'Windows Terminal'.</value>
+    <value>When disabled, the title bar will be 'Terminal'.</value>
     <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
@@ -408,7 +408,7 @@
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
-    <value>When enabled, this enables the launch of Windows Terminal at machine startup.</value>
+    <value>When enabled, this enables the launch of Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
@@ -416,7 +416,7 @@
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
-    <value>Windows Terminal will always be the topmost window on the desktop.</value>
+    <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
@@ -848,7 +848,7 @@
     <comment>A supplementary setting to the "starting directory" setting. "Parent" refers to the parent process of the current process.</comment>
   </data>
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>If enabled, this profile will spawn in the directory from which Windows Terminal was launched.</value>
+    <value>If enabled, this profile will spawn in the directory from which Terminal was launched.</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
