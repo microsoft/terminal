@@ -40,7 +40,12 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(std::unique_ptr<IStateMachineEngine> engine);
+        template<typename T>
+        StateMachine(std::unique_ptr<T> engine) :
+            StateMachine(std::move(engine), std::is_same_v<T, class InputStateMachineEngine>)
+        {
+        }
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput);
 
         enum class Mode : size_t
         {
@@ -148,6 +153,7 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
 
         std::unique_ptr<IStateMachineEngine> _engine;
+        const bool _isEngineForInput;
 
         VTStates _state;
 

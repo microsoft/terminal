@@ -10,8 +10,9 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
+StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) :
     _engine(std::move(engine)),
+    _isEngineForInput(isEngineForInput),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _parameters{},
@@ -1041,7 +1042,12 @@ void StateMachine::_EventEscape(const wchar_t wch)
     _trace.TraceOnEvent(L"Escape");
     if (_isC0Code(wch))
     {
-        if (_engine->DispatchControlCharsFromEscape())
+        // Typically, control characters are immediately executed in the Escape
+        // state without returning to ground. For the InputStateMachineEngine,
+        // though, we instead need to call ActionExecuteFromEscape and then enter
+        // the Ground state when a control character is encountered in the escape
+        // state.
+        if (_isEngineForInput)
         {
             _ActionExecuteFromEscape(wch);
             _EnterGround();
@@ -1057,7 +1063,10 @@ void StateMachine::_EventEscape(const wchar_t wch)
     }
     else if (_isIntermediate(wch))
     {
-        if (_engine->DispatchIntermediatesFromEscape())
+        // In the InputStateMachineEngine, we do _not_ want to buffer any characters
+        // as intermediates, because we use ESC as a prefix to indicate a key was
+        // pressed while Alt was pressed.
+        if (_isEngineForInput)
         {
             _ActionEscDispatch(wch);
             _EnterGround();
@@ -1078,7 +1087,7 @@ void StateMachine::_EventEscape(const wchar_t wch)
         {
             _EnterOscParam();
         }
-        else if (_isSs3Indicator(wch) && _engine->ParseControlSequenceAfterSs3())
+        else if (_isSs3Indicator(wch) && _isEngineForInput)
         {
             _EnterSs3Entry();
         }
@@ -1724,7 +1733,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     // _ActionExecuteFromEscape, as to send a Ctrl+Alt+key key. We should only
     // do this for the InputStateMachineEngine - the OutputEngine should execute
     // these from any state.
-    if (isFromAnywhereChar && !(_state == VTStates::Escape && _engine->DispatchControlCharsFromEscape()))
+    if (isFromAnywhereChar && !(_state == VTStates::Escape && _isEngineForInput))
     {
         _ActionInterrupt();
         _ActionExecute(wch);
@@ -1942,7 +1951,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // means we'll make sure to call `_ActionEscDispatch('[')`., which will
         // properly decode the string as <kbd>alt+[</kbd>.
 
-        if (_engine->FlushAtEndOfString())
+        if (_isEngineForInput)
         {
             // Reset our state, and put all but the last char in again.
             ResetState();
