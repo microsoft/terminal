@@ -30,7 +30,6 @@ static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
-static constexpr std::string_view BellSoundKey{ "bellSound" };
 
 Profile::Profile(guid guid) noexcept :
     _Guid(guid)
