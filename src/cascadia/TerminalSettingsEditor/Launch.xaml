@@ -109,15 +109,18 @@
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Text="{x:Bind Name}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}" />
 
@@ -177,23 +180,23 @@
                         <TextBlock x:Uid="Globals_InitialRows"
                                    Grid.Row="0"
                                    Grid.Column="0"
-                                       Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                       VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource SettingsPageItemHeaderStyle}" />
                         <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
                                         Grid.Row="0"
                                         Grid.Column="1"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
                         <TextBlock x:Uid="Globals_InitialCols"
                                    Grid.Row="1"
                                    Grid.Column="0"
-                                       Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                       VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource SettingsPageItemHeaderStyle}" />
                         <muxc:NumberBox x:Uid="Globals_InitialColsBox"
                                         Grid.Row="1"
                                         Grid.Column="1"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
                     </Grid>
                 </local:SettingContainer>
             </StackPanel>

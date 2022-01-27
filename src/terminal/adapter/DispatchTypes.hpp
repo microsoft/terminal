@@ -261,19 +261,19 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum GraphicsOptions : size_t
     {
         Off = 0,
-        BoldBright = 1,
+        Intense = 1,
         // The 2 and 5 entries here are for BOTH the extended graphics options,
         // as well as the Faint/Blink options.
         RGBColorOrFaint = 2, // 2 is also Faint, decreased intensity (ISO 6429).
         Italics = 3,
         Underline = 4,
-        BlinkOrXterm256Index = 5, // 5 is also Blink (appears as Bold).
+        BlinkOrXterm256Index = 5, // 5 is also Blink.
         RapidBlink = 6,
         Negative = 7,
         Invisible = 8,
         CrossedOut = 9,
         DoublyUnderlined = 21,
-        NotBoldOrFaint = 22,
+        NotIntenseOrFaint = 22,
         NotItalics = 23,
         NoUnderline = 24,
         Steady = 25, // _not_ blink
@@ -325,7 +325,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     // are used here to indicate that the foreground/background colors should be saved).
     // From xterm's ctlseqs doc for XTPUSHSGR:
     //
-    //      Ps = 1    =>  Bold.
+    //      Ps = 1    =>  Intense.
     //      Ps = 2    =>  Faint.
     //      Ps = 3    =>  Italicized.
     //      Ps = 4    =>  Underlined.
@@ -340,7 +340,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum class SgrSaveRestoreStackOptions : size_t
     {
         All = 0,
-        Boldness = 1,
+        Intense = 1,
         Faintness = 2,
         Italics = 3,
         Underline = 4,

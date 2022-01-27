@@ -100,6 +100,7 @@
            TargetType="Button">
         <Setter Property="Height" Value="33" />
         <Setter Property="Width" Value="33" />
+        <Setter Property="Padding" Value="5" />
     </Style>
 
     <Style x:Key="AccentBrowseButtonStyle"
@@ -116,11 +117,19 @@
         <Setter Property="VerticalAlignment" Value="Bottom" />
         <Setter Property="Height" Value="33" />
         <Setter Property="Width" Value="33" />
+        <Setter Property="Padding" Value="5" />
     </Style>
 
     <Style x:Key="IconButtonTextBlockStyle"
            TargetType="TextBlock">
         <Setter Property="Margin" Value="10,0,0,0" />
+    </Style>
+
+    <Style x:Key="BIAlignmentToggleButtonStyle"
+           TargetType="ToggleButton">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Padding" Value="8" />
     </Style>
 
     <!--  Slider-Related Styling  -->

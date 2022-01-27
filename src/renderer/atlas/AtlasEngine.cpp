@@ -600,7 +600,7 @@ try
         }
 
         const u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
-        const AtlasKeyAttributes attributes{ 0, textAttributes.IsBold(), textAttributes.IsItalic(), 0 };
+        const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense(), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
         {

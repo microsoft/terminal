@@ -133,8 +133,8 @@ void TextColor::SetDefault() noexcept
 //     - If brighten is true, and we've got a 16 color index in the "dark"
 //       portion of the color table (indices [0,7]), then we'll look up the
 //       bright version of this color (from indices [8,15]). This should be
-//       true for TextAttributes that are "Bold" and we're treating bold as
-//       bright (which is the default behavior of most terminals.)
+//       true for TextAttributes that are "intense" and we're treating intense
+//       as bright (which is the default behavior of most terminals.)
 //   * If we're a default color, we'll return the default color provided.
 // Arguments:
 // - colorTable: The table of colors we should use to look up the value of

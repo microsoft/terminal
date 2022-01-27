@@ -21,9 +21,11 @@
         </Grid.RowDefinitions>
 
         <local:TabRowControl x:Name="TabRow"
-                             Grid.Row="0" />
+                             Grid.Row="0"
+                             KeyUp="_KeyDownHandler" />
 
-        <StackPanel Grid.Row="1">
+        <StackPanel Grid.Row="1"
+                    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
                          x:Load="False"
                          IsClosable="True"

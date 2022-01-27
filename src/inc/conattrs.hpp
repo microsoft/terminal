@@ -11,7 +11,7 @@ Licensed under the MIT license.
 enum class ExtendedAttributes : BYTE
 {
     Normal = 0x00,
-    Bold = 0x01,
+    Intense = 0x01,
     Italics = 0x02,
     Blinking = 0x04,
     Invisible = 0x08,

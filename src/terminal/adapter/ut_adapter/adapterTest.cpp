@@ -1200,11 +1200,11 @@ public:
             _testGetSet->_attribute = TextAttribute{ (WORD)~_testGetSet->s_defaultFill };
             _testGetSet->_expectedAttribute = TextAttribute{};
             break;
-        case DispatchTypes::GraphicsOptions::BoldBright:
-            Log::Comment(L"Testing graphics 'Bold/Bright'");
+        case DispatchTypes::GraphicsOptions::Intense:
+            Log::Comment(L"Testing graphics 'Intense'");
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute.SetBold(true);
+            _testGetSet->_expectedAttribute.SetIntense(true);
             break;
         case DispatchTypes::GraphicsOptions::RGBColorOrFaint:
             Log::Comment(L"Testing graphics 'Faint'");
@@ -1246,10 +1246,10 @@ public:
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetCrossedOut(true);
             break;
-        case DispatchTypes::GraphicsOptions::NotBoldOrFaint:
-            Log::Comment(L"Testing graphics 'No Bold or Faint'");
+        case DispatchTypes::GraphicsOptions::NotIntenseOrFaint:
+            Log::Comment(L"Testing graphics 'No Intense or Faint'");
             _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_attribute.SetBold(true);
+            _testGetSet->_attribute.SetIntense(true);
             _testGetSet->_attribute.SetFaint(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
@@ -1577,10 +1577,10 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         cOptions = 1;
-        rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Intense;
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
-        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetIntense(true);
         _testGetSet->_expectedAttribute.SetDefaultBackground();
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
@@ -1588,12 +1588,12 @@ public:
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
-        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetIntense(true);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
-        // Push, specifying that we only want to save the background, the boldness, and double-underline-ness:
+        // Push, specifying that we only want to save the background, the intensity, and double-underline-ness:
         cOptions = 3;
-        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Boldness;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Intense;
         rgStackOptions[1] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::SaveBackgroundColor;
         rgStackOptions[2] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::DoublyUnderlined;
         VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
@@ -1605,7 +1605,7 @@ public:
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
-        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetIntense(true);
         _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
@@ -1614,11 +1614,11 @@ public:
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
-        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetIntense(true);
         _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
-        rgOptions[0] = DispatchTypes::GraphicsOptions::NotBoldOrFaint;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NotIntenseOrFaint;
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
@@ -1630,7 +1630,7 @@ public:
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
-        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetIntense(true);
         VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
     }
 
@@ -1655,17 +1655,17 @@ public:
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Enabling brightness");
-        rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
-        _testGetSet->_expectedAttribute.SetBold(true);
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Intense;
+        _testGetSet->_expectedAttribute.SetIntense(true);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_TRUE(WI_IsFlagSet(_testGetSet->_attribute.GetLegacyAttributes(), FOREGROUND_GREEN));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
         Log::Comment(L"Resetting graphics options");
@@ -1673,56 +1673,56 @@ public:
         _testGetSet->_expectedAttribute = {};
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_TRUE(WI_IsFlagClear(_testGetSet->_attribute.GetLegacyAttributes(), FOREGROUND_INTENSITY));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue', brightness of 9x series doesn't persist");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
         Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_expectedAttribute = {};
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Enabling brightness");
-        rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
-        _testGetSet->_expectedAttribute.SetBold(true);
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Intense;
+        _testGetSet->_expectedAttribute.SetIntense(true);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue, with brightness', brightness of 9x series doesn't affect brightness");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
+        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
     }
 
     TEST_METHOD(DeviceStatusReportTests)
@@ -1913,10 +1913,10 @@ public:
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0m\033\\");
 
-        Log::Comment(L"Requesting SGR attributes (bold, underlined, reversed).");
+        Log::Comment(L"Requesting SGR attributes (intense, underlined, reversed).");
         _testGetSet->PrepData();
         _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetBold(true);
+        _testGetSet->_attribute.SetIntense(true);
         _testGetSet->_attribute.SetUnderlined(true);
         _testGetSet->_attribute.SetReverseVideo(true);
         requestSetting(L"m");
