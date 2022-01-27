@@ -20,7 +20,7 @@
     Version="0.0.1.0" />
 
   <Properties>
-    <DisplayName>Windows Terminal Dev</DisplayName>
+    <DisplayName>ms-resource:TerminalApp/ContextMenu/AppNameDev</DisplayName>
     <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -38,8 +38,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="ms-resource:AppNameDev"
-        Description="ms-resource:AppDescriptionDev"
+        DisplayName="ms-resource:TerminalApp/ContextMenu/AppNameDev"
+        Description="ms-resource:TerminalApp/ContextMenu/AppDescriptionDev"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
         Square44x44Logo="Images\Square44x44Logo.png">
@@ -47,7 +47,7 @@
           Wide310x150Logo="Images\Wide310x150Logo.png"
           Square71x71Logo="Images\SmallTile.png"
           Square310x310Logo="Images\LargeTile.png"
-          ShortName="ms-resource:AppShortNameDev">
+          ShortName="ms-resource:TerminalApp/ContextMenu/AppShortNameDev">
           <uap:ShowNameOnTiles>
             <uap:ShowOn Tile="square150x150Logo"/>
             <uap:ShowOn Tile="wide310x150Logo"/>
@@ -66,7 +66,7 @@
           <uap5:StartupTask
             TaskId="StartTerminalOnLoginTask"
             Enabled="false"
-            DisplayName="ms-resource:AppNameDev" />
+            DisplayName="ms-resource:TerminalApp/ContextMenu/AppNameDev" />
         </uap5:Extension>
         <uap3:Extension Category="windows.appExtensionHost">
               <uap3:AppExtensionHost>
@@ -87,7 +87,7 @@
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
                 Id="Terminal-Dev"
-                DisplayName="Windows Terminal Dev"
+                DisplayName="Terminal Dev"
                 Description="Terminal host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
