@@ -313,7 +313,10 @@ namespace winrt::TerminalApp::implementation
     // - true if we're not elevated but all relevant pane-spawning actions are elevated
     bool TerminalPage::ShouldImmediatelyHandoffToElevated(const CascadiaSettings& settings) const
     {
-        if (!_startupActions || IsElevated())
+        // GH#12267: Don't forget about defterm handoff here. If we're being
+        // created for embedding, then _yea_, we don't need to handoff to an
+        // elevated window.
+        if (!_startupActions || IsElevated() || _shouldStartInboundListener)
         {
             // there arent startup actions, or we're elevated. In that case, go for it.
             return false;
