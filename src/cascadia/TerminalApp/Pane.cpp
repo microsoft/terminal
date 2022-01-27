@@ -1124,13 +1124,23 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
             {
                 // Audible is set, play the sound
                 auto sounds{ _profile.BellSound() };
+                bool playedBell{ false };
+
                 if (sounds && sounds.Size() > 0)
                 {
-                    winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
-                    winrt::Windows::Foundation::Uri uri{ soundPath };
-                    _playBellSound(uri);
+                    if (sounds.Size() == 1 && sounds.GetAt(0).empty())
+                    {
+                    }
+                    else
+                    {
+                        winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
+                        winrt::Windows::Foundation::Uri uri{ soundPath };
+                        _playBellSound(uri);
+                        playedBell = true;
+                    }
                 }
-                else
+
+                if (!playedBell)
                 {
                     const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
                     PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
