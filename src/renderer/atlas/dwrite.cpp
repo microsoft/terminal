@@ -117,6 +117,8 @@ bool DWrite_IsThinFontFamily(const wchar_t* canonicalFamilyName) noexcept
 {
     int n = 0;
 
+    // Check if the given canonicalFamilyName is a member of the set of thinFontFamilyNames.
+    // Binary search isn't helpful here, as it doesn't really reduce the number of average comparisons.
     for (const auto familyName : thinFontFamilyNames)
     {
         n = wcscmp(canonicalFamilyName, familyName);
