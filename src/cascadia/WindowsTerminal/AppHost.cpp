@@ -1443,24 +1443,26 @@ void AppHost::_WindowMoved()
         _logic.DismissDialog();
 
         const auto root{ _logic.GetRoot() };
-
-        try
+        if (root && root.XamlRoot())
         {
-            // This is basically DismissAllPopups which is also in
-            // TerminalSettingsEditor/Utils.h
-            // There isn't a good place that's shared between these two files, but
-            // it's only 5 LOC so whatever.
-            const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
-            for (const auto& p : popups)
+            try
             {
-                p.IsOpen(false);
+                // This is basically DismissAllPopups which is also in
+                // TerminalSettingsEditor/Utils.h
+                // There isn't a good place that's shared between these two files, but
+                // it's only 5 LOC so whatever.
+                const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+                for (const auto& p : popups)
+                {
+                    p.IsOpen(false);
+                }
             }
-        }
-        catch (...)
-        {
-            // We purposely don't log here, because this is exceptionally noisy,
-            // especially on startup, when we're moving the window into place
-            // but might not have a real xamlRoot yet.
+            catch (...)
+            {
+                // We purposely don't log here, because this is exceptionally noisy,
+                // especially on startup, when we're moving the window into place
+                // but might not have a real xamlRoot yet.
+            }
         }
     }
 }
