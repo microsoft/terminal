@@ -265,22 +265,10 @@ try
         try
         {
             static const auto compile = [](const std::filesystem::path& path, const char* target) {
-                const wil::unique_hfile fileHandle{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
-                THROW_LAST_ERROR_IF(!fileHandle);
-
-                const auto fileSize = GetFileSize(fileHandle.get(), nullptr);
-                const wil::unique_handle mappingHandle{ CreateFileMappingW(fileHandle.get(), nullptr, PAGE_READONLY, 0, fileSize, nullptr) };
-                THROW_LAST_ERROR_IF(!mappingHandle);
-
-                const wil::unique_mapview_ptr<void> dataBeg{ MapViewOfFile(mappingHandle.get(), FILE_MAP_READ, 0, 0, 0) };
-                THROW_LAST_ERROR_IF(!dataBeg);
-
                 wil::com_ptr<ID3DBlob> error;
                 wil::com_ptr<ID3DBlob> blob;
-                const auto hr = D3DCompile(
-                    /* pSrcData    */ dataBeg.get(),
-                    /* SrcDataSize */ fileSize,
-                    /* pFileName   */ nullptr,
+                const auto hr = D3DCompileFromFile(
+                    /* pFileName   */ path.c_str(),
                     /* pDefines    */ nullptr,
                     /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
                     /* pEntrypoint */ "main",
