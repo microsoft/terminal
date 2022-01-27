@@ -1608,13 +1608,13 @@ class UiaTextRangeTests
         }
         {
             Log::Comment(L"Test Font Weight");
-            attr.SetBold(true);
+            attr.SetIntense(true);
             updateBuffer(attr);
             VARIANT result;
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_FontWeightAttributeId, &result));
             VERIFY_ARE_EQUAL(FW_BOLD, result.lVal);
 
-            attr.SetBold(false);
+            attr.SetIntense(false);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_FontWeightAttributeId, &result));
             VERIFY_ARE_EQUAL(FW_NORMAL, result.lVal);
