@@ -283,9 +283,17 @@
     <value>Columns</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
   </data>
+  <data name="Globals_InitialColsHelpText.Text" xml:space="preserve">
+    <value>The number of columns displayed in the window upon first load. Measured in characters.</value>
+    <comment>A description for what the "columns" setting does. Presented near "Globals_InitialCols.Header".</comment>
+  </data>
   <data name="Globals_InitialRows.Text" xml:space="preserve">
     <value>Rows</value>
     <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
+  </data>
+  <data name="Globals_InitialRowsHelpText.Text" xml:space="preserve">
+    <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
+    <comment>A description for what the "rows" setting does. Presented near "Globals_InitialRows.Header".</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Initial Columns</value>
