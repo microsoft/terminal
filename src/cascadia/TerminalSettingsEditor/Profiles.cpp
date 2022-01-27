@@ -57,23 +57,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // These changes should force us to update our own set of "Current<Setting>" members,
         // and propagate those changes to the UI
         _ViewModelChangedRevoker = _Profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-            const auto settingName{ args.PropertyName() };
-            if (settingName == L"AntialiasingMode")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAntiAliasingMode" });
-            }
-            else if (settingName == L"CloseOnExit")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCloseOnExitMode" });
-            }
-            else if (settingName == L"BellStyle")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsBellStyleFlagSet" });
-            }
-            else if (settingName == L"ScrollState")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
-            }
             _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
         });
 
