@@ -130,7 +130,7 @@
                 <local:SettingContainer x:Uid="Profile_Hidden"
                                         Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                     <ToggleSwitch IsOn="{x:Bind Profile.Hidden, Mode=TwoWay}"
-                                  Style="{StaticResource ToggleSwitchInExpanderStyle}"/>
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
                 <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
