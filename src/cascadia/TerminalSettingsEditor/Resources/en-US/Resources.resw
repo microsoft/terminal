@@ -279,21 +279,13 @@
     <value>When disabled, the terminal will render only the updates to the screen between frames.</value>
     <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
   </data>
-  <data name="Globals_InitialCols.Header" xml:space="preserve">
+  <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columns</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
   </data>
-  <data name="Globals_InitialCols.HelpText" xml:space="preserve">
-    <value>The number of columns displayed in the window upon first load. Measured in characters.</value>
-    <comment>A description for what the "columns" setting does. Presented near "Globals_InitialCols.Header".</comment>
-  </data>
-  <data name="Globals_InitialRows.Header" xml:space="preserve">
+  <data name="Globals_InitialRows.Text" xml:space="preserve">
     <value>Rows</value>
     <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
-  </data>
-  <data name="Globals_InitialRows.HelpText" xml:space="preserve">
-    <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
-    <comment>A description for what the "rows" setting does. Presented near "Globals_InitialRows.Header".</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Initial Columns</value>
@@ -1011,9 +1003,13 @@
     <value>Thin</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
-  <data name="Globals_LaunchSize.Text" xml:space="preserve">
+  <data name="Globals_LaunchSize.Header" xml:space="preserve">
     <value>Launch size</value>
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
+  </data>
+  <data name="Globals_LaunchSize.HelpText" xml:space="preserve">
+    <value>The number of rows and columns displayed in the window upon first load. Measured in characters.</value>
+    <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
     <value>All</value>

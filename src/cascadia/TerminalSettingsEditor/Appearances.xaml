@@ -45,7 +45,6 @@
 
             <!--  Color Scheme  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
                                     HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
@@ -151,7 +150,8 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
                                     HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Adjust Indistinguishable Colors  -->
@@ -160,7 +160,8 @@
                                     HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind ShowIndistinguishableColorsItem}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.AdjustIndistinguishableColors, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Appearance.AdjustIndistinguishableColors, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
 
@@ -171,10 +172,10 @@
 
             <!--  Cursor Shape  -->
             <local:SettingContainer x:Uid="Profile_CursorShape"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
@@ -212,10 +213,11 @@
             <!--  Background Image  -->
             <local:SettingContainer x:Name="BackgroundImageContainer"
                                     x:Uid="Profile_BackgroundImage"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImagePath}"
+                                    CurrentValue="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImagePath, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
                         <TextBox IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
@@ -238,6 +240,7 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageStretchMode}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageStretchMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
@@ -250,6 +253,7 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageAlignment}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageAlignment, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageAlignmentOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
                 <Grid HorizontalAlignment="Left">
                     <Grid.RowDefinitions>
@@ -460,10 +464,10 @@
 
             <!--  Intense is bold, bright  -->
             <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
