@@ -138,6 +138,7 @@
     <Style x:Key="ExpanderSettingContainerStyle"
            TargetType="local:SettingContainer">
         <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
