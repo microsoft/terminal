@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(hstring, HelpText);
+        DEPENDENCY_PROPERTY(hstring, CurrentValue);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
         DEPENDENCY_PROPERTY(IInspectable, SettingOverrideSource);
         TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);
