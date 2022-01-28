@@ -75,11 +75,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool AtlasEngineAvailable() const noexcept;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
-        WINRT_PROPERTY(bool, IsBaseLayer, false);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, _profile, AntialiasingMode);
-        GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, _profile, CloseOnExit);
-        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, _profile, ScrollState);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
@@ -107,6 +102,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
+
+        WINRT_PROPERTY(bool, IsBaseLayer, false);
+        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
+        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
+        GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
+        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
+
 
         TYPED_EVENT(DeleteProfile, Editor::ProfileViewModel, Editor::DeleteProfileEventArgs);
 

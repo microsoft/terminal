@@ -21,7 +21,7 @@
             <Color x:Key="CardStrokeColorDefault">#0F000000</Color>
             <SolidColorBrush x:Key="CardStrokeColorDefaultBrush"
                              Color="{StaticResource CardStrokeColorDefault}" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush"
+                <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="CardStrokeColorDefaultBrush" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
@@ -80,7 +80,7 @@
         <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
         <Setter Property="Padding" Value="16,0,8,0" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+            <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
     </Style>
 
     <Style x:Key="SettingsPageItemHeaderStyle"
@@ -101,7 +101,7 @@
 
     <Style TargetType="local:SettingContainer">
         <Setter Property="Margin" Value="0,4,8,0" />
-            <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
         <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="Template">
             <Setter.Value>

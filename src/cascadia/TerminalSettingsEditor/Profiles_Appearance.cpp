@@ -40,12 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Subscribe to some changes in the view model
         // These changes should force us to update our own set of "Current<Setting>" members,
         // and propagate those changes to the UI
-        _ViewModelChangedRevoker = _Profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-            const auto settingName{ args.PropertyName() };
-            if (settingName == L"ScrollState")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
-            }
+        _ViewModelChangedRevoker = _Profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
             _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
         });
 
