@@ -1070,6 +1070,10 @@
     <value>Cursor</value>
     <comment>Header for a group of settings that control the appearance of the cursor. Presented near "Profile_CursorHeight" and other keys starting with "Profile_Cursor".</comment>
   </data>
+  <data name="Profile_AdditionalSettingsHeader.Text" xml:space="preserve">
+    <value>Additional settings</value>
+    <comment>Header for the buttons that navigate to additional settings for the profile.</comment>
+  </data>
   <data name="Profile_TextHeader.Text" xml:space="preserve">
     <value>Text</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
