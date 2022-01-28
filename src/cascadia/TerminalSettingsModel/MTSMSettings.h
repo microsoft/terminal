@@ -108,5 +108,5 @@ Author(s):
     X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", true)
 
 // Intentionally omitted Appearance settings:
-// * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colorsq
+// * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
