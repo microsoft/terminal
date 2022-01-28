@@ -82,11 +82,6 @@ public:
 
     bool ActionSs3Dispatch(const wchar_t /* wch */, const VTParameters /* parameters */) override { return true; };
 
-    bool ParseControlSequenceAfterSs3() const override { return false; }
-    bool FlushAtEndOfString() const override { return false; };
-    bool DispatchControlCharsFromEscape() const override { return false; };
-    bool DispatchIntermediatesFromEscape() const override { return false; };
-
     // ActionCsiDispatch is the only method that's actually implemented.
     bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override
     {
