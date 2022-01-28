@@ -10,12 +10,4 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         ProfileViewModel Profile { get; };
     };
-
-    [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        Profiles();
-        ProfileViewModel Profile { get; };
-
-        Windows.UI.Xaml.Controls.Slider OpacitySlider { get; };
-    }
 }

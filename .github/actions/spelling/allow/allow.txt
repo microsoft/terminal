@@ -1,4 +1,8 @@
 apc
+Apc
+bsd
+breadcrumb
+breadcrumbs
 calt
 ccmp
 changelog
