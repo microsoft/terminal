@@ -33,7 +33,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
-winrt::Windows::Media::Playback::MediaPlayer Pane::s_bellPlayer = { nullptr };
+// winrt::Windows::Media::Playback::MediaPlayer Pane::s_bellPlayer = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -73,32 +73,32 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 
     if (!s_bellPlayer)
     {
-        try
-        {
-            s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-            if (s_bellPlayer)
-            {
-                // BODGY
-                //
-                // Manually leak a ref to the MediaPlayer we just instantiated.
-                // We're doing this just like the way we do in AppHost with the
-                // App itself.
-                //
-                // We have to do this because there's some bug in the OS with
-                // the way a MediaPlayer gets torn down. At time of writing (Nov
-                // 2021), if you search for `remove_SoundLevelChanged` in the OS
-                // repo, you'll find a pile of bugs.
-                //
-                // We tried moving the MediaPlayer singleton up to the
-                // TerminalPage, but alas, that teardown had the same problem.
-                // So _whatever_. We'll leak it here. It needs to last the
-                // lifetime of the app anyways, and it'll get cleaned up when the
-                // Terminal is closed, so whatever.
-                winrt::Windows::Media::Playback::MediaPlayer p{ s_bellPlayer };
-                ::winrt::detach_abi(p);
-            }
-        }
-        CATCH_LOG();
+        // try
+        // {
+        //     s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+        //     if (s_bellPlayer)
+        //     {
+        //         // BODGY
+        //         //
+        //         // Manually leak a ref to the MediaPlayer we just instantiated.
+        //         // We're doing this just like the way we do in AppHost with the
+        //         // App itself.
+        //         //
+        //         // We have to do this because there's some bug in the OS with
+        //         // the way a MediaPlayer gets torn down. At time of writing (Nov
+        //         // 2021), if you search for `remove_SoundLevelChanged` in the OS
+        //         // repo, you'll find a pile of bugs.
+        //         //
+        //         // We tried moving the MediaPlayer singleton up to the
+        //         // TerminalPage, but alas, that teardown had the same problem.
+        //         // So _whatever_. We'll leak it here. It needs to last the
+        //         // lifetime of the app anyways, and it'll get cleaned up when the
+        //         // Terminal is closed, so whatever.
+        //         winrt::Windows::Media::Playback::MediaPlayer p{ s_bellPlayer };
+        //         ::winrt::detach_abi(p);
+        //     }
+        // }
+        // CATCH_LOG();
     }
 }
 
@@ -1061,10 +1061,10 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
 
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 {
-    auto weakThis{ shared_from_this() };
+    std::weak_ptr<Pane> weakThis{ shared_from_this() };
 
     co_await winrt::resume_foreground(_root.Dispatcher());
-    if (auto pane{ weakThis.get() })
+    if (auto pane{ weakThis.lock() })
     {
         if (!s_bellPlayer)
         {
@@ -1076,9 +1076,21 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
             const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
             s_bellPlayer.Source(item);
             s_bellPlayer.Play();
-            s_bellPlayer.MediaEnded([](auto&&, auto&&) {
-                // s_bellPlayer.Close();
-                s_bellPlayer = nullptr;
+            std::weak_ptr<Pane> weakThis2{ shared_from_this() };
+            _mediaEndedRevoker = s_bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
+                if (auto self{ weakThis2.lock() })
+                {
+                    if (self->s_bellPlayer)
+                    {
+                        self->s_bellPlayer.Pause();
+                        self->s_bellPlayer.Source(nullptr);
+                        self->s_bellPlayer.Close();
+                    }
+                    // s_bellPlayer.Close();
+                    self->_mediaEndedRevoker.revoke();
+
+                    self->s_bellPlayer = nullptr;
+                }
             });
             // s_bellPlayer.Close();
         }
@@ -1197,6 +1209,16 @@ void Pane::Shutdown()
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
+    _mediaEndedRevoker.revoke();
+
+    if (s_bellPlayer)
+    {
+        s_bellPlayer.Pause();
+        s_bellPlayer.Source(nullptr);
+        s_bellPlayer.Close();
+    }
+    s_bellPlayer = nullptr;
+
     if (_IsLeaf())
     {
         _control.Close();
