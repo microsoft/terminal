@@ -127,7 +127,7 @@
     <value>Split Pane...</value>
   </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
-    <value>Windows Terminal (Unpackaged)</value>
+    <value>Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
   </data>
   <data name="ApplicationVersionUnknown" xml:space="preserve">

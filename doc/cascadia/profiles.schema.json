@@ -1709,7 +1709,7 @@
         },
         "startOnUserLogin": {
           "default": false,
-          "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
+          "description": "When set to true, this enables the launch of Terminal at startup. Setting this to false will disable the startup task entry. If the Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
           "type": "boolean"
         },
         "firstWindowPreference": {

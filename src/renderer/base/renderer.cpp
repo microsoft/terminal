@@ -138,7 +138,7 @@ try
         // at the next opportunity.
         if (pEngine->RequiresContinuousRedraw())
         {
-            _NotifyPaintFrame();
+            NotifyPaintFrame();
         }
     });
 
@@ -183,7 +183,7 @@ try
 }
 CATCH_RETURN()
 
-void Renderer::_NotifyPaintFrame()
+void Renderer::NotifyPaintFrame() noexcept
 {
     // If we're running in the unittests, we might not have a render thread.
     if (_pThread)
@@ -206,7 +206,7 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
         LOG_IF_FAILED(pEngine->InvalidateSystem(prcDirtyClient));
     }
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
 }
 
 // Routine Description:
@@ -240,7 +240,7 @@ void Renderer::TriggerRedraw(const Viewport& region)
             LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
         }
 
-        _NotifyPaintFrame();
+        NotifyPaintFrame();
     }
 }
 
@@ -292,7 +292,7 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
                 LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
             }
 
-            _NotifyPaintFrame();
+            NotifyPaintFrame();
         }
     }
 }
@@ -311,7 +311,7 @@ void Renderer::TriggerRedrawAll()
         LOG_IF_FAILED(pEngine->InvalidateAll());
     }
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
 }
 
 // Method Description:
@@ -377,7 +377,7 @@ void Renderer::TriggerSelection()
 
         _previousSelection = std::move(rects);
 
-        _NotifyPaintFrame();
+        NotifyPaintFrame();
     }
     CATCH_LOG();
 }
@@ -425,7 +425,7 @@ void Renderer::TriggerScroll()
 {
     if (_CheckViewportAndScroll())
     {
-        _NotifyPaintFrame();
+        NotifyPaintFrame();
     }
 }
 
@@ -447,7 +447,7 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 
     _ScrollPreviousSelection(til::point{ *pcoordDelta });
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
 }
 
 // Routine Description:
@@ -490,7 +490,7 @@ void Renderer::TriggerTitleChange()
     {
         LOG_IF_FAILED(pEngine->InvalidateTitle(newTitle));
     }
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
 }
 
 // Routine Description:
@@ -521,7 +521,7 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
         LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo));
     }
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
 }
 
 // Routine Description:

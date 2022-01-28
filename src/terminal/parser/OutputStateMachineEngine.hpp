@@ -55,11 +55,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) noexcept override;
 
-        bool ParseControlSequenceAfterSs3() const noexcept override;
-        bool FlushAtEndOfString() const noexcept override;
-        bool DispatchControlCharsFromEscape() const noexcept override;
-        bool DispatchIntermediatesFromEscape() const noexcept override;
-
         void SetTerminalConnection(Microsoft::Console::Render::VtEngine* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);
 

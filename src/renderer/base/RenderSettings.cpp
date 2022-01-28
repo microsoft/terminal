@@ -180,7 +180,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     const auto defaultFgIndex = GetColorAliasIndex(ColorAlias::DefaultForeground);
     const auto defaultBgIndex = GetColorAliasIndex(ColorAlias::DefaultBackground);
 
-    const auto brightenFg = attr.IsBold() && GetRenderMode(Mode::IntenseIsBright);
+    const auto brightenFg = attr.IsIntense() && GetRenderMode(Mode::IntenseIsBright);
     const auto dimFg = attr.IsFaint() || (_blinkShouldBeFaint && attr.IsBlinking());
     const auto swapFgAndBg = attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed);
 
@@ -197,7 +197,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
 
         if (fgTextColor.IsIndex16() && (fgIndex < 8) && brightenFg)
         {
-            // There is a special case for bold here - we need to get the bright version of the foreground color
+            // There is a special case for intense here - we need to get the bright version of the foreground color
             fgIndex += 8;
         }
 

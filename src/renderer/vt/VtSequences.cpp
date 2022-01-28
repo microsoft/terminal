@@ -216,12 +216,12 @@ using namespace Microsoft::Console::Render;
     // Foreground sequences are in [30,37] U [90,97]
     // Background sequences are in [40,47] U [100,107]
     // The "dark" sequences are in the first 7 values, the bright sequences in the second set.
-    // Note that text brightness and boldness are different in VT. Boldness is
-    //      handled by _SetGraphicsBoldness. Here, we can emit either bright or
+    // Note that text brightness and intensity are different in VT. Intensity is
+    //      handled by _SetIntense. Here, we can emit either bright or
     //      dark colors. For conhost as a terminal, it can't draw bold
-    //      characters, so it displays "bold" as bright, and in fact most
-    //      terminals display the bright color when displaying bolded text.
-    // By specifying the boldness and brightness separately, we'll make sure the
+    //      characters, so it displays "intense" as bright, and in fact most
+    //      terminals display the bright color when displaying intense text.
+    // By specifying the intensity and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
     const auto prefix = WI_IsFlagSet(index, FOREGROUND_INTENSITY) ? (fIsForeground ? 90 : 100) : (fIsForeground ? 30 : 40);
     return _WriteFormatted(FMT_COMPILE("\x1b[{}m"), prefix + (index & 7));
@@ -260,7 +260,7 @@ using namespace Microsoft::Console::Render;
 
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes to the
-//      default foreground or background. Does not affect the boldness of text.
+//      default foreground or background. Does not affect the intensity of text.
 // Arguments:
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
@@ -311,14 +311,14 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the boldness of the following text.
+// - Formats and writes a sequence to change the intensity of the following text.
 // Arguments:
-// - isBold: If true, we'll embolden the text. Otherwise we'll debolden the text.
+// - isIntense: If true, we'll make the text intense. Otherwise we'll remove the intensity.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetBold(const bool isBold) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetIntense(const bool isIntense) noexcept
 {
-    return _Write(isBold ? "\x1b[1m" : "\x1b[22m");
+    return _Write(isIntense ? "\x1b[1m" : "\x1b[22m");
 }
 
 // Method Description:

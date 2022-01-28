@@ -3,7 +3,7 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    runtimeclass DefaultTerminal
+    runtimeclass DefaultTerminal : Windows.Foundation.IStringable
     {
         String Name { get; };
         String Author { get; };

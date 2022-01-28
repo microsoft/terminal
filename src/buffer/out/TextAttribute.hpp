@@ -84,7 +84,7 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsBold() const noexcept;
+    bool IsIntense() const noexcept;
     bool IsFaint() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
@@ -95,7 +95,7 @@ public:
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
 
-    void SetBold(bool isBold) noexcept;
+    void SetIntense(bool isIntense) noexcept;
     void SetFaint(bool isFaint) noexcept;
     void SetItalic(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
@@ -214,10 +214,10 @@ namespace WEX
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
+                    L"{FG:%s,BG:%s,intense:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
-                    attr.IsBold(),
+                    attr.IsIntense(),
                     attr._wAttrLegacy,
                     static_cast<DWORD>(attr._extendedAttrs));
             }

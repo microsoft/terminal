@@ -878,57 +878,6 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
     return !string.empty();
 }
 
-// Method Description:
-// - Returns true if the engine should attempt to parse a control sequence
-//      following an SS3 escape prefix.
-//   If this is false, an SS3 escape sequence should be dispatched as soon
-//      as it is encountered.
-// Return Value:
-// - True iff we should parse a control sequence following an SS3.
-bool OutputStateMachineEngine::ParseControlSequenceAfterSs3() const noexcept
-{
-    return false;
-}
-
-// Routine Description:
-// - Returns true if the engine should dispatch on the last character of a string
-//      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist its state across calls to
-//      ProcessString, and dispatch only at the end of the sequence.
-// Return Value:
-// - True iff we should manually dispatch on the last character of a string.
-bool OutputStateMachineEngine::FlushAtEndOfString() const noexcept
-{
-    return false;
-}
-
-// Routine Description:
-// - Returns true if the engine should dispatch control characters in the Escape
-//      state. Typically, control characters are immediately executed in the
-//      Escape state without returning to ground. If this returns true, the
-//      state machine will instead call ActionExecuteFromEscape and then enter
-//      the Ground state when a control character is encountered in the escape
-//      state.
-// Return Value:
-// - True iff we should return to the Ground state when the state machine
-//      encounters a Control (C0) character in the Escape state.
-bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const noexcept
-{
-    return false;
-}
-
-// Routine Description:
-// - Returns false if the engine wants to be able to collect intermediate
-//   characters in the Escape state. We do want to buffer characters as
-//   intermediates. We need them for things like Designate G0 Character Set
-// Return Value:
-// - True iff we should dispatch in the Escape state when we encounter a
-//   Intermediate character.
-bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
-{
-    return false;
-}
-
 // Routine Description:
 // - OSC 4 ; c ; spec ST
 //      c: the index of the ansi color table

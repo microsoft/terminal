@@ -88,14 +88,14 @@ bool TerminalDispatch::SetGraphicsRendition(const VTParameters options) noexcept
         case BackgroundDefault:
             attr.SetDefaultBackground();
             break;
-        case BoldBright:
-            attr.SetBold(true);
+        case Intense:
+            attr.SetIntense(true);
             break;
         case RGBColorOrFaint:
             attr.SetFaint(true);
             break;
-        case NotBoldOrFaint:
-            attr.SetBold(false);
+        case NotIntenseOrFaint:
+            attr.SetIntense(false);
             attr.SetFaint(false);
             break;
         case Italics:

@@ -174,7 +174,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clipboardDataHandler. This is called when the clipboard data is
         // loaded.
         auto clipboardDataHandler = std::bind(&ControlInteractivity::_sendPastedTextToConnection, this, std::placeholders::_1);
-        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
+        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler, _core->BracketedPasteEnabled());
 
         // send paste event up to TermApp
         _PasteFromClipboardHandlers(*this, *pasteArgs);

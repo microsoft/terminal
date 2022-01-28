@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
 
@@ -39,6 +40,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _HelpTextProperty =
                 DependencyProperty::Register(
                     L"HelpText",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
+        if (!_CurrentValueProperty)
+        {
+            _CurrentValueProperty =
+                DependencyProperty::Register(
+                    L"CurrentValue",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });
@@ -132,6 +142,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
                     Automation::AutomationProperties::SetFullDescription(obj, helpText);
+                }
+            }
+        }
+
+        if (HelpText().empty())
+        {
+            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            {
+                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
+                {
+                    textBlock.Visibility(Visibility::Collapsed);
                 }
             }
         }

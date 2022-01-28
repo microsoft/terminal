@@ -70,11 +70,23 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Profiles.h">
-      <DependentUpon>Profiles.xaml</DependentUpon>
+      <DependentUpon>Profiles.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ProfileViewModel.h">
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Profiles_Base.h">
+      <DependentUpon>Profiles_Base.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Profiles_Advanced.h">
+      <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Profiles_Appearance.h">
+      <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Appearances.h">
@@ -119,7 +131,13 @@
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Profiles.xaml">
+    <Page Include="Profiles_Base.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles_Advanced.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles_Appearance.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Appearances.xaml">
@@ -168,11 +186,23 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Profiles.cpp">
-      <DependentUpon>Profiles.xaml</DependentUpon>
+      <DependentUpon>Profiles.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="ProfileViewModel.cpp">
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles_Base.cpp">
+      <DependentUpon>Profiles_Base.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles_Advanced.cpp">
+      <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles_Appearance.cpp">
+      <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Appearances.cpp">
@@ -230,10 +260,21 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Midl>
     <Midl Include="Profiles.idl">
-      <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="Profiles_Base.idl">
+      <DependentUpon>Profiles_Base.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Profiles_Advanced.idl">
+      <DependentUpon>Profiles_Advanced.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Profiles_Appearance.idl">
+      <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Appearances.idl">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>

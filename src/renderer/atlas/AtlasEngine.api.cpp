@@ -311,10 +311,11 @@ HRESULT AtlasEngine::Enable() noexcept
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
-    const auto mode = gsl::narrow_cast<u16>(antialiasingMode);
+    const auto mode = gsl::narrow_cast<u8>(antialiasingMode);
     if (_api.antialiasingMode != mode)
     {
         _api.antialiasingMode = mode;
+        _resolveAntialiasingMode();
         WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
     }
 }
@@ -330,6 +331,7 @@ void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
     if (_api.backgroundOpaqueMixin != mixin)
     {
         _api.backgroundOpaqueMixin = mixin;
+        _resolveAntialiasingMode();
         WI_SetFlag(_api.invalidations, ApiInvalidations::SwapChain);
     }
 }
@@ -494,9 +496,19 @@ CATCH_RETURN()
 
 void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 {
+    _api.hyperlinkHoveredId = hoveredId;
 }
 
 #pragma endregion
+
+void AtlasEngine::_resolveAntialiasingMode() noexcept
+{
+    // If the user asks for ClearType, but also for a transparent background
+    // (which our ClearType shader doesn't simultaneously support)
+    // then we need to sneakily force the renderer to grayscale AA.
+    const auto forceGrayscaleAA = _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE && !_api.backgroundOpaqueMixin;
+    _api.realizedAntialiasingMode = forceGrayscaleAA ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : _api.antialiasingMode;
+}
 
 void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics) const
 {
@@ -580,7 +592,7 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
         const auto strikethroughOffsetInPx = static_cast<double>(-metrics.strikethroughPosition) * designUnitsPerPx;
         const auto strikethroughThicknessInPx = static_cast<double>(metrics.strikethroughThickness) * designUnitsPerPx;
         const auto lineThickness = gsl::narrow<u16>(std::round(std::min(underlineThicknessInPx, strikethroughThicknessInPx)));
-        const auto underlinePos = gsl::narrow<u16>(std::round(baseline + underlineOffsetInPx - lineThickness / 2.0));
+        const auto underlinePos = gsl::narrow<u16>(std::ceil(baseline + underlineOffsetInPx - lineThickness / 2.0));
         const auto strikethroughPos = gsl::narrow<u16>(std::round(baseline + strikethroughOffsetInPx - lineThickness / 2.0));
 
         auto fontName = wil::make_process_heap_string(requestedFaceName);

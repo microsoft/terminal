@@ -39,6 +39,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintFrame();
 
+        void NotifyPaintFrame() noexcept;
         void TriggerSystemRedraw(const RECT* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
         void TriggerRedraw(const COORD* const pcoord) override;
@@ -82,7 +83,6 @@ namespace Microsoft::Console::Render
         static IRenderEngine::GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
-        void _NotifyPaintFrame();
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);

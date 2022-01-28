@@ -361,18 +361,18 @@ std::optional<bool> UiaTextRangeBase::_verifyAttr(TEXTATTRIBUTEID attributeId, V
 
         // The font weight can be any value from 0 to 900.
         // The text buffer doesn't store the actual value,
-        // we just store "IsBold" and "IsFaint".
+        // we just store "IsIntense" and "IsFaint".
         const auto queryFontWeight{ val.lVal };
 
         if (queryFontWeight > FW_NORMAL)
         {
             // we're looking for a bold font weight
-            return attr.IsBold();
+            return attr.IsIntense();
         }
         else
         {
             // we're looking for "normal" font weight
-            return !attr.IsBold();
+            return !attr.IsIntense();
         }
     }
     case UIA_ForegroundColorAttributeId:
@@ -687,10 +687,10 @@ bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT
     {
         // The font weight can be any value from 0 to 900.
         // The text buffer doesn't store the actual value,
-        // we just store "IsBold" and "IsFaint".
+        // we just store "IsIntense" and "IsFaint".
         // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
         pRetVal->vt = VT_I4;
-        pRetVal->lVal = attr.IsBold() ? FW_BOLD : FW_NORMAL;
+        pRetVal->lVal = attr.IsIntense() ? FW_BOLD : FW_NORMAL;
         return true;
     }
     case UIA_ForegroundColorAttributeId:

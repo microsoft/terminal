@@ -2222,7 +2222,7 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -2272,23 +2272,23 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[3] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[4] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[4] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[5] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[6] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[6] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[7] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[8] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[8] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[9] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[10] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[10] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[11] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[12] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[12] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[13] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[14] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[14] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[15] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[16] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[16] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 17 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2299,7 +2299,7 @@ class StateMachineExternalTest final
         mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
         VerifyDispatchTypes({ rgExpected, 2 }, *pDispatch);
 
@@ -2311,9 +2311,9 @@ class StateMachineExternalTest final
         mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2326,7 +2326,7 @@ class StateMachineExternalTest final
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundRed;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2543,7 +2543,7 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -2560,7 +2560,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
 
@@ -2580,7 +2580,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"30mHello World\x1b[2J");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
 
@@ -2595,7 +2595,7 @@ class StateMachineExternalTest final
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 5: A sequence with mixed ProcessCharacter and ProcessString calls");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
 
         mach.ProcessString(L"\x1b[1;");
