@@ -101,4 +101,4 @@ stages:
     dependsOn: [Build_x64]
     condition: succeeded()
     jobs:
-      - template: ./templates/codnav-indexer.yml
+      - template: ./templates/codenav-indexer.yml
