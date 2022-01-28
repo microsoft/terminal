@@ -100,7 +100,7 @@
     </Style>
 
     <Style TargetType="local:SettingContainer">
-        <Setter Property="Margin" Value="0,4,8,0" />
+        <Setter Property="Margin" Value="0,4,0,0" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="Template">
