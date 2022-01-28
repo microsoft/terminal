@@ -128,11 +128,11 @@
 
                 <!--  Elevate  -->
                 <local:SettingContainer x:Uid="Profile_Elevate"
-                                                ClearSettingValue="{x:Bind Profile.ClearElevate}"
-                                                HasSettingValue="{x:Bind Profile.HasElevate, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind Profile.ElevateOverrideSource, Mode=OneWay}">
+                                        ClearSettingValue="{x:Bind Profile.ClearElevate}"
+                                        HasSettingValue="{x:Bind Profile.HasElevate, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.ElevateOverrideSource, Mode=OneWay}">
                     <ToggleSwitch IsOn="{x:Bind Profile.Elevate, Mode=TwoWay}"
-                                  Style="{StaticResource ToggleSwitchInExpanderStyle}"/>
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
                 <!--  Hidden  -->
