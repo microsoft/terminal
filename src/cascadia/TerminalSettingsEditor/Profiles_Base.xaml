@@ -126,6 +126,15 @@
                              Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
                 </local:SettingContainer>
 
+                <!--  Elevate  -->
+                <local:SettingContainer x:Uid="Profile_Elevate"
+                                        ClearSettingValue="{x:Bind Profile.ClearElevate}"
+                                        HasSettingValue="{x:Bind Profile.HasElevate, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.ElevateOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.Elevate, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+
                 <!--  Hidden  -->
                 <local:SettingContainer x:Uid="Profile_Hidden"
                                         Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">

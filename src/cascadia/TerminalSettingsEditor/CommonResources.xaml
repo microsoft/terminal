@@ -795,6 +795,7 @@
            TargetType="ToggleButton">
         <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
         <Setter Property="MinWidth" Value="{ThemeResource FlyoutThemeMinWidth}" />
+        <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="MinHeight" Value="64" />
         <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
         <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
