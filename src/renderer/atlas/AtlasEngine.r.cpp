@@ -113,7 +113,7 @@ void AtlasEngine::_setShaderResources() const
 
 void AtlasEngine::_updateConstantBuffer() const noexcept
 {
-    const auto useClearType = _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const auto useClearType = _api.realizedAntialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
 
     ConstBuffer data;
     data.viewport.x = 0;
@@ -273,7 +273,9 @@ void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
         // We don't really use D2D for anything except DWrite, but it
         // can't hurt to ensure that everything it does is pixel aligned.
         _r.d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-        _r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
+        // In case _api.realizedAntialiasingMode is D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE we'll
+        // continuously adjust it in AtlasEngine::_drawGlyph. See _drawGlyph.
+        _r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.realizedAntialiasingMode));
         // Ensure that D2D uses the exact same gamma as our shader uses.
         _r.d2dRenderTarget->SetTextRenderingParams(renderingParams.get());
     }
@@ -311,6 +313,7 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     const auto charsLength = key->charCount;
     const auto cells = static_cast<u32>(key->attributes.cellCount);
     const auto textFormat = _getTextFormat(key->attributes.bold, key->attributes.italic);
+    const auto coloredGlyph = WI_IsFlagSet(value->flags, CellFlags::ColoredGlyph);
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
@@ -323,7 +326,16 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     auto options = D2D1_DRAW_TEXT_OPTIONS_NONE;
     // D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT enables a bunch of internal machinery
     // which doesn't have to run if we know we can't use it anyways in the shader.
-    WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, WI_IsFlagSet(value->flags, CellFlags::ColoredGlyph));
+    WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, coloredGlyph);
+
+    // Colored glyphs cannot be drawn in linear gamma.
+    // That's why we're simply alpha-blending them in the shader.
+    // In order for this to work correctly we have to prevent them from being drawn
+    // with ClearType, because we would then lack the alpha channel for the glyphs.
+    if (_api.realizedAntialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE)
+    {
+        _r.d2dRenderTarget->SetTextAntialiasMode(coloredGlyph ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+    }
 
     _r.d2dRenderTarget->BeginDraw();
     // We could call
