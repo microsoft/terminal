@@ -200,4 +200,12 @@ Please either install the missing font or choose another one.</value>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Read-only mode is enabled.</value>
   </data>
+  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
+    <value>Results found</value>
+    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
+  </data>
+  <data name="SearchBox_NoMatches" xml:space="preserve">
+    <value>No results found</value>
+    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
+  </data>
 </root>

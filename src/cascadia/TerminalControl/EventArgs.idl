@@ -68,4 +68,10 @@ namespace Microsoft.Terminal.Control
     {
         Double Opacity { get; };
     }
+
+
+    runtimeclass FoundResultsArgs
+    {
+        Boolean FoundMatch { get; };
+    }
 }

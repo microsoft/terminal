@@ -82,6 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
         _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
         _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
+        _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
@@ -2747,4 +2748,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.Opacity();
     }
+
+    // Method Description:
+    // - Called when the core raises a FoundMatch event. That's done in response
+    //   to us starting a search query with ControlCore::Search.
+    // - The args will tell us if there were or were not any results for that
+    //   particular search. We'll use that to control what to announce to
+    //   Narrator. When we have more elaborate search information to report, we
+    //   may want to report that here. (see GH #3920)
+    // Arguments:
+    // - args: contains information about the results that were or were not found.
+    // Return Value:
+    // - <none>
+    void TermControl::_coreFoundMatch(const IInspectable& /*sender*/, const Control::FoundResultsArgs& args)
+    {
+        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
+        {
+            automationPeer.RaiseNotificationEvent(
+                Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                args.FoundMatch() ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
+                L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
+        }
+    }
+
 }
