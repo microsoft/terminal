@@ -119,7 +119,7 @@
 
         </muxc:NavigationView.MenuItems>
 
-        <muxc:NavigationView.PaneFooter>
+        <muxc:NavigationView.FooterMenuItems>
             <!--  The OpenJson item needs both Tapped and KeyDown handler  -->
             <muxc:NavigationViewItem x:Name="OpenJsonNavItem"
                                      x:Uid="Nav_OpenJSON"
@@ -129,7 +129,7 @@
                     <FontIcon Glyph="&#xE713;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
-        </muxc:NavigationView.PaneFooter>
+        </muxc:NavigationView.FooterMenuItems>
 
         <Grid Margin="0,-30,0,0">
             <Grid.RowDefinitions>
