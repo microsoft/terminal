@@ -119,6 +119,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, TransparencyChangedEventArgs> TransparencyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReceivedOutput;
+        event Windows.Foundation.TypedEventHandler<Object, FoundResultsArgs> FoundMatch;
 
     };
 }

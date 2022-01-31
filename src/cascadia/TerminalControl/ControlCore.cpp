@@ -1316,12 +1316,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
-        if (search.FindNext())
+        const bool foundMatch{ search.FindNext() };
+        if (foundMatch)
         {
             _terminal->SetBlockSelection(false);
             search.Select();
             _renderer->TriggerSelection();
         }
+
+        // Raise a FoundMatch event, which the control will use to notify
+        // narrator if there was any results in the buffer
+        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
+        _FoundMatchHandlers(*this, *foundResults);
     }
 
     // Method Description:

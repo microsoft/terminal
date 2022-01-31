@@ -11,6 +11,7 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
+#include "FoundResultsArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -132,5 +133,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(double, Opacity);
+    };
+
+    struct FoundResultsArgs : public FoundResultsArgsT<FoundResultsArgs>
+    {
+    public:
+        FoundResultsArgs(const bool foundMatch) :
+            _FoundMatch(foundMatch)
+        {
+        }
+
+        WINRT_PROPERTY(bool, FoundMatch);
     };
 }
