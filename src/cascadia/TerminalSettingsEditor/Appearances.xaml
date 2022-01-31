@@ -117,6 +117,7 @@
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <StackPanel>
                     <ComboBox x:Name="FontWeightComboBox"
+                              x:Uid="Profile_FontWeightComboBox"
                               ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
                               ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
@@ -131,6 +132,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Slider x:Name="FontWeightSlider"
+                                x:Uid="Profile_FontWeightSlider"
                                 Grid.Column="0"
                                 Maximum="1000"
                                 Minimum="0"
@@ -220,7 +222,8 @@
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
-                        <TextBox IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                        <TextBox x:Uid="Profile_BackgroundImageBox"
+                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                  IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
                                  Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
@@ -448,6 +451,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Slider x:Name="BIOpacitySlider"
+                            x:Uid="Profile_BackgroundImageOpacitySlider"
                             Grid.Column="0"
                             Value="{x:Bind local:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"

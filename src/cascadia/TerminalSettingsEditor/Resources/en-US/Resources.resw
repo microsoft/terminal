@@ -499,6 +499,10 @@
     <value>Sets the transparency of the window.</value>
     <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
   </data>
+  <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background opacity</value>
+    <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
+  </data>
   <data name="Profile_Opacity.Header" xml:space="preserve">
     <value>Background opacity</value>
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -542,6 +546,10 @@
   <data name="Profile_Appearance.Header" xml:space="preserve">
     <value>Appearance</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
+  </data>
+  <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image path</value>
+    <comment>Name for a control to determine the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImage.Header" xml:space="preserve">
     <value>Background image path</value>
@@ -598,6 +606,10 @@
   <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image opacity</value>
+    <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
     <value>Background image opacity</value>
@@ -731,6 +743,14 @@
     <value>Size of the font in points.</value>
     <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
   </data>
+  <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font weight</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontWeightSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font weight</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
   <data name="Profile_FontWeight.Header" xml:space="preserve">
     <value>Font weight</value>
     <comment>Header for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -786,6 +806,10 @@
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_PaddingSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Padding</value>
+    <comment>Name for a control to determine the amount of space between text in a terminal and the edge of the window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Padding</value>
@@ -1214,9 +1238,17 @@
     <value>If enabled, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
+  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Create Appearance</value>
+    <comment>Name for a control which creates an the unfocused appearance settings for this profile.</comment>
+  </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
     <comment>A description for what the create unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Delete Appearance</value>
+    <comment>Name for a control which deletes an the unfocused appearance settings for this profile.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Delete the unfocused appearance for this profile.</value>
