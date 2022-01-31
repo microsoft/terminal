@@ -158,11 +158,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
 
-        bool ParseControlSequenceAfterSs3() const noexcept override;
-        bool FlushAtEndOfString() const noexcept override;
-        bool DispatchControlCharsFromEscape() const noexcept override;
-        bool DispatchIntermediatesFromEscape() const noexcept override;
-
         void SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue);
 
     private:

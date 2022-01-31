@@ -70,7 +70,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
-    ProfilesPivots ProfileViewModel::_LastActivePivot{ ProfilesPivots::General };
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
