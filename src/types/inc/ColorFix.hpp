@@ -26,7 +26,7 @@ public:
     static COLORREF GetPerceivableColor(COLORREF fg, COLORREF bg);
 
 #pragma warning(push)
-    // CL will complain about the both nameless and anonymous struct.
+        // CL will complain about the both nameless and anonymous struct.
 #pragma warning(disable : 4201)
     // RGB
     union

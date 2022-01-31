@@ -377,11 +377,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             THROW_IF_FAILED(hostSignalThread->Start());
 
             TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "ConsoleHandoffSucceeded",
-                              TraceLoggingDescription("successfully handed off console connection"),
-                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
-                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                    "ConsoleHandoffSucceeded",
+                    TraceLoggingDescription("successfully handed off console connection"),
+                    TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             // Unlock in case anything tries to spool down as we exit.
             UnlockConsole();
@@ -397,12 +397,12 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             const auto hr = wil::ResultFromCaughtException();
 
             TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "ConsoleHandoffFailed",
-                              TraceLoggingDescription("failed while attempting handoff"),
-                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
-                              TraceLoggingHResult(hr),
-                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                    "ConsoleHandoffFailed",
+                    TraceLoggingDescription("failed while attempting handoff"),
+                    TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
+                    TraceLoggingHResult(hr),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             // Just log, don't do anything more. We'll move on to launching normally on failure.
             LOG_CAUGHT_EXCEPTION();
