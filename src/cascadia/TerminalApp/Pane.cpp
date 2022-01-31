@@ -1035,6 +1035,7 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
     co_await winrt::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.lock() })
     {
+        // BODGY
         // GH#12258: We learned that if you leave the MediaPlayer open, and
         // press the media keys (like play/pause), then the OS will _replay the
         // bell_. So we have to re-create the MediaPlayer each time we want to
