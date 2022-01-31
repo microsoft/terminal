@@ -2753,7 +2753,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Called when the core raises a FoundMatch event. That's done in response
     //   to us starting a search query with ControlCore::Search.
     // - The args will tell us if there were or were not any results for that
-    //   particular sesarch. We'll use that to control what to announce to
+    //   particular search. We'll use that to control what to announce to
     //   Narrator. When we have more elaborate search information to report, we
     //   may want to report that here. (see GH #3920)
     // Arguments:
