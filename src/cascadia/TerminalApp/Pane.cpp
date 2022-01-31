@@ -1030,7 +1030,7 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
 
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 {
-    std::weak_ptr<Pane> weakThis{ shared_from_this() };
+    auto weakThis{ weak_from_this() };
 
     co_await winrt::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.lock() })
@@ -1053,7 +1053,7 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
             _bellPlayer.Play();
 
             // This lambda will clean up the bell player when we're done with it.
-            std::weak_ptr<Pane> weakThis2{ shared_from_this() };
+            auto weakThis2{ weak_from_this() };
             _mediaEndedRevoker = _bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
                 if (auto self{ weakThis2.lock() })
                 {
