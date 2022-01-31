@@ -74,6 +74,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Slider x:Name="OpacitySlider"
+                                        x:Uid="Profile_OpacitySlider"
                                         Grid.Column="0"
                                         Value="{x:Bind local:Converters.PercentageToPercentageValue(Profile.Opacity), BindBack=Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
                                 <TextBlock Grid.Column="1"
@@ -111,6 +112,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Slider x:Name="PaddingSlider"
+                                    x:Uid="Profile_PaddingSlider"
                                     Grid.Column="0"
                                     Value="{x:Bind local:Converters.MaxValueFromPaddingString(Profile.Padding), BindBack=Profile.SetPadding, Mode=TwoWay}" />
                             <TextBlock Grid.Column="1"

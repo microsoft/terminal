@@ -499,6 +499,10 @@
     <value>Sets the transparency of the window.</value>
     <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
   </data>
+  <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background opacity</value>
+    <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
+  </data>
   <data name="Profile_Opacity.Header" xml:space="preserve">
     <value>Background opacity</value>
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -518,6 +522,10 @@
   <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
     <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When disabled, this behavior will be disabled.</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header".</comment>
+  </data>
+  <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Text antialiasing</value>
+    <comment>Name for a control to select the graphical anti-aliasing format of text.</comment>
   </data>
   <data name="Profile_AntialiasingMode.Header" xml:space="preserve">
     <value>Text antialiasing</value>
@@ -543,6 +551,14 @@
     <value>Appearance</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image path</value>
+    <comment>Name for a control to determine the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImage.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image path</value>
+    <comment>Name for a control to determine the image presented on the background of the app.</comment>
+  </data>
   <data name="Profile_BackgroundImage.Header" xml:space="preserve">
     <value>Background image path</value>
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
@@ -550,6 +566,10 @@
   <data name="Profile_BackgroundImage.HelpText" xml:space="preserve">
     <value>File location of the image used in the background of the window.</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image alignment</value>
+    <comment>Name for a control to choose the visual alignment of the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImageAlignment.Header" xml:space="preserve">
     <value>Background image alignment</value>
@@ -599,6 +619,10 @@
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image opacity</value>
+    <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>
+  </data>
   <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
     <value>Background image opacity</value>
     <comment>Header for a control to choose the opacity of the image presented on the background of the app.</comment>
@@ -606,6 +630,10 @@
   <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
     <value>Sets the transparency of the background image.</value>
     <comment>A description for what the "background image opacity" setting does. Presented near "Profile_BackgroundImageOpacity".</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image stretch mode</value>
+    <comment>Name for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
   </data>
   <data name="Profile_BackgroundImageStretchMode.Header" xml:space="preserve">
     <value>Background image stretch mode</value>
@@ -631,6 +659,10 @@
     <value>Uniform to fill</value>
     <comment>An option to choose from for the "background image stretch mode" setting. When selected, the content is resized to fill the destination dimensions while it preserves its native aspect ratio. But if the aspect ratio of the destination differs, the image is clipped to fit in the space (to fill the space)</comment>
   </data>
+  <data name="Profile_CloseOnExit.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Profile termination behavior</value>
+    <comment>Name for a control to select the behavior of a terminal session (a profile) when it closes.</comment>
+  </data>
   <data name="Profile_CloseOnExit.Header" xml:space="preserve">
     <value>Profile termination behavior</value>
     <comment>Header for a control to select the behavior of a terminal session (a profile) when it closes.</comment>
@@ -655,6 +687,10 @@
     <value>Name of the color scheme to use.</value>
     <comment>A description for what the "color scheme" setting does. Presented near "Profile_ColorScheme".</comment>
   </data>
+  <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Command line</value>
+    <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
+  </data>
   <data name="Profile_Commandline.Header" xml:space="preserve">
     <value>Command line</value>
     <comment>Header for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
@@ -678,6 +714,10 @@
   <data name="Profile_CursorHeight.HelpText" xml:space="preserve">
     <value>Sets the percentage height of the cursor starting from the bottom. Only works with the vintage cursor shape.</value>
     <comment>A description for what the "cursor height" setting does. Presented near "Profile_CursorHeight".</comment>
+  </data>
+  <data name="Profile_CursorShape.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Cursor shape</value>
+    <comment>Name for a control to select the shape of the text cursor.</comment>
   </data>
   <data name="Profile_CursorShape.Header" xml:space="preserve">
     <value>Cursor shape</value>
@@ -731,6 +771,14 @@
     <value>Size of the font in points.</value>
     <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
   </data>
+  <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font weight</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontWeightSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font weight</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
   <data name="Profile_FontWeight.Header" xml:space="preserve">
     <value>Font weight</value>
     <comment>Header for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -771,6 +819,10 @@
     <value>The number of lines above the ones displayed in the window you can scroll back to.</value>
     <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
   </data>
+  <data name="Profile_Icon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Icon</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+  </data>
   <data name="Profile_Icon.Header" xml:space="preserve">
     <value>Icon</value>
     <comment>Header for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
@@ -786,6 +838,10 @@
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_PaddingSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Padding</value>
+    <comment>Name for a control to determine the amount of space between text in a terminal and the edge of the window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Padding</value>
@@ -811,6 +867,10 @@
     <value>When enabled, enables automatic adjustment of indistinguishable colors, which will, only when necessary, adjust the foreground color's lightness to make it more visible (based on the background color).</value>
     <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
+  <data name="Profile_ScrollbarVisibility.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Scrollbar visibility</value>
+    <comment>Name for a control to select the visibility of the scrollbar in a session.</comment>
+  </data>
   <data name="Profile_ScrollbarVisibility.Header" xml:space="preserve">
     <value>Scrollbar visibility</value>
     <comment>Header for a control to select the visibility of the scrollbar in a session.</comment>
@@ -826,6 +886,10 @@
   <data name="Profile_SnapOnInput.Header" xml:space="preserve">
     <value>Scroll to input when typing</value>
     <comment>Header for a control to toggle if keyboard input should automatically scroll to where the input was placed.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Starting directory</value>
+    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>Starting directory</value>
@@ -858,6 +922,10 @@
   <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
     <value>Use the tab title to override the default title of the tab and suppress any title change messages from the application.</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle".</comment>
+  </data>
+  <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Tab title</value>
+    <comment>Name for a control to determine the title of the tab. This is represented using a text box.</comment>
   </data>
   <data name="Profile_TabTitle.Header" xml:space="preserve">
     <value>Tab title</value>
@@ -930,6 +998,10 @@
   <data name="Globals_LaunchModeMaximizedFullscreenFocus.Content" xml:space="preserve">
     <value>Maximized full screen focus</value>
     <comment>An option to choose from for the "launch mode" setting. Opens the app maximized in full screen and in focus mode.</comment>
+  </data>
+  <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bell notification style</value>
+    <comment>Name for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
   <data name="Profile_BellStyle.Header" xml:space="preserve">
     <value>Bell notification style</value>
@@ -1049,6 +1121,10 @@
   <data name="Profile_Name.HelpText" xml:space="preserve">
     <value>The name of the profile that appears in the dropdown.</value>
     <comment>A description for what the "name" setting does. Presented near "Profile_Name".</comment>
+  </data>
+  <data name="Profile_Name.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Name</value>
+    <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
     <value>Name</value>
@@ -1218,9 +1294,17 @@
     <value>If enabled, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
+  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Create Appearance</value>
+    <comment>Name for a control which creates an the unfocused appearance settings for this profile.</comment>
+  </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
     <comment>A description for what the create unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Delete Appearance</value>
+    <comment>Name for a control which deletes an the unfocused appearance settings for this profile.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Delete the unfocused appearance for this profile.</value>
@@ -1293,6 +1377,10 @@
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>Text Formatting</value>
     <comment>Header for a control to how text is formatted</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Intense text style</value>
+    <comment>Name for a control to select how "intense" text is formatted (bold, bright, both or none)</comment>
   </data>
   <data name="Appearance_IntenseTextStyle.Header" xml:space="preserve">
     <value>Intense text style</value>
