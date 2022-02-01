@@ -30,7 +30,6 @@ public:
     // Implement Adapter callbacks for default cases (non-escape sequences)
     void Print(const wchar_t wch) override;
     void PrintString(const std::wstring_view string) override;
-    void Execute(const wchar_t wch) override;
 
     [[nodiscard]] NTSTATUS GetResult() { return _ntstatus; };
 

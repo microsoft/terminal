@@ -19,14 +19,6 @@ try
 }
 CATCH_RETURN_FALSE()
 
-bool Terminal::ExecuteChar(wchar_t wch) noexcept
-try
-{
-    _WriteBuffer({ &wch, 1 });
-    return true;
-}
-CATCH_RETURN_FALSE()
-
 TextAttribute Terminal::GetTextAttributes() const noexcept
 {
     return _buffer->GetCurrentAttributes();

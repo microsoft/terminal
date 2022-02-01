@@ -48,17 +48,6 @@ void WriteBuffer::PrintString(const std::wstring_view string)
 }
 
 // Routine Description:
-// - Handles the execute action from the state machine
-// Arguments:
-// - wch - The C0 control character to be executed.
-// Return Value:
-// - <none>
-void WriteBuffer::Execute(const wchar_t wch)
-{
-    _DefaultCase(wch);
-}
-
-// Routine Description:
 // - Default text editing/printing handler for all characters that were not routed elsewhere by other state machine intercepts.
 // Arguments:
 // - wch - The character to be processed by our default text editing/printing mechanisms.
