@@ -28,34 +28,12 @@ WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
 // Routine Description:
 // - Handles the print action from the state machine
 // Arguments:
-// - wch - The character to be printed.
-// Return Value:
-// - <none>
-void WriteBuffer::Print(const wchar_t wch)
-{
-    _DefaultCase(wch);
-}
-
-// Routine Description:
-// - Handles the print action from the state machine
-// Arguments:
 // - string - The string to be printed.
 // Return Value:
 // - <none>
 void WriteBuffer::PrintString(const std::wstring_view string)
 {
     _DefaultStringCase(string);
-}
-
-// Routine Description:
-// - Default text editing/printing handler for all characters that were not routed elsewhere by other state machine intercepts.
-// Arguments:
-// - wch - The character to be processed by our default text editing/printing mechanisms.
-// Return Value:
-// - <none>
-void WriteBuffer::_DefaultCase(const wchar_t wch)
-{
-    _DefaultStringCase({ &wch, 1 });
 }
 
 // Routine Description:

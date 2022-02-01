@@ -28,13 +28,11 @@ public:
     WriteBuffer(_In_ Microsoft::Console::IIoProvider& io);
 
     // Implement Adapter callbacks for default cases (non-escape sequences)
-    void Print(const wchar_t wch) override;
     void PrintString(const std::wstring_view string) override;
 
     [[nodiscard]] NTSTATUS GetResult() { return _ntstatus; };
 
 private:
-    void _DefaultCase(const wchar_t wch);
     void _DefaultStringCase(const std::wstring_view string);
 
     Microsoft::Console::IIoProvider& _io;

@@ -55,7 +55,7 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
     // a character is only output if the DEL is translated to something else.
     if (wchTranslated != AsciiChars::DEL)
     {
-        _pDefaults->Print(wchTranslated);
+        _pDefaults->PrintString({ &wchTranslated, 1 });
     }
 }
 

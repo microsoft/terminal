@@ -645,10 +645,6 @@ private:
 
 class DummyAdapter : public AdaptDefaults
 {
-    void Print(const wchar_t /*wch*/) override
-    {
-    }
-
     void PrintString(const std::wstring_view /*string*/) override
     {
     }
