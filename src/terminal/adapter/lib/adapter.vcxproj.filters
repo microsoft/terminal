@@ -44,9 +44,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\adaptDefaults.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\adaptDispatch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
