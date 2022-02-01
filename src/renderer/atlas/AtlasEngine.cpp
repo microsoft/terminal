@@ -904,6 +904,8 @@ void AtlasEngine::_recreateSizeDependentResources()
         _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ projectedTextSize };
         _api.glyphIndices = Buffer<u16>{ projectedGlyphSize };
         _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ projectedGlyphSize };
+        _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
+        _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
 
         D3D11_BUFFER_DESC desc;
         desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
@@ -1369,6 +1371,37 @@ void AtlasEngine::_flushBufferLine()
                         THROW_IF_FAILED(hr);
                         break;
                     }
+
+                    if (_api.glyphAdvances.size() < actualGlyphCount)
+                    {
+                        // Grow the buffer by at least 1.5x and at least of `actualGlyphCount` items.
+                        // The 1.5x growth ensures we don't reallocate every time we need 1 more slot.
+                        auto size = _api.glyphAdvances.size();
+                        size = size + (size >> 1);
+                        size = std::max<size_t>(size, actualGlyphCount);
+                        _api.glyphAdvances = Buffer<f32>{ size };
+                        _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ size };
+                    }
+
+                    THROW_IF_FAILED(_sr.textAnalyzer->GetGlyphPlacements(
+                        /* textString          */ _api.bufferLine.data() + a.textPosition,
+                        /* clusterMap          */ _api.clusterMap.data(),
+                        /* textProps           */ _api.textProps.data(),
+                        /* textLength          */ a.textLength,
+                        /* glyphIndices        */ _api.glyphIndices.data(),
+                        /* glyphProps          */ _api.glyphProps.data(),
+                        /* glyphCount          */ actualGlyphCount,
+                        /* fontFace            */ mappedFontFace.get(),
+                        /* fontEmSize          */ _api.fontMetrics.fontSizeInDIP,
+                        /* isSideways          */ false,
+                        /* isRightToLeft       */ a.bidiLevel & 1,
+                        /* scriptAnalysis      */ &scriptAnalysis,
+                        /* localeName          */ nullptr,
+                        /* features            */ &features,
+                        /* featureRangeLengths */ &featureRangeLengths,
+                        /* featureRanges       */ featureRanges,
+                        /* glyphAdvances       */ _api.glyphAdvances.data(),
+                        /* glyphOffsets        */ _api.glyphOffsets.data()));
 
                     _api.textProps[a.textLength - 1].canBreakShapingAfter = 1;
 
