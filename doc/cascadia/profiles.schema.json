@@ -2060,7 +2060,7 @@
           "type": "string"
         },
         "experimental.useAtlasEngine": {
-          "description": "Enable using the experimental new renderering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
+          "description": "Enable using the experimental new rendering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean",
           "default": false
         },
