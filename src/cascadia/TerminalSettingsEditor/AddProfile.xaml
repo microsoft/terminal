@@ -23,19 +23,15 @@
 
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <Button x:Uid="AddProfile_AddNewButton"
-                    AutomationProperties.AutomationId="AddProfile_AddNewButton"
-                    AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
+            <Button x:Name="AddNewButton"
                     Click="AddNewClick"
                     Style="{StaticResource AccentButtonStyle}">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE710;" />
                         <TextBlock x:Uid="AddProfile_AddNewTextBlock"
                                    Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
-                </Button.Content>
             </Button>
             <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
