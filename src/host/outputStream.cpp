@@ -19,9 +19,8 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::StateMachine;
 using Microsoft::Console::VirtualTerminal::TerminalInput;
 
-WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
-    _io{ io },
-    _ntstatus{ STATUS_INVALID_DEVICE_STATE }
+ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
+    _io{ io }
 {
 }
 
@@ -31,18 +30,7 @@ WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
 // - string - The string to be printed.
 // Return Value:
 // - <none>
-void WriteBuffer::PrintString(const std::wstring_view string)
-{
-    _DefaultStringCase(string);
-}
-
-// Routine Description:
-// - Default text editing/printing handler for all characters that were not routed elsewhere by other state machine intercepts.
-// Arguments:
-// - string - The string to be processed by our default text editing/printing mechanisms.
-// Return Value:
-// - <none>
-void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
+void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 {
     size_t dwNumBytes = string.size() * sizeof(wchar_t);
 
@@ -55,21 +43,18 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
     // Defer the cursor drawing while we are iterating the string, for a better performance.
     // We can not waste time displaying a cursor event when we know more text is coming right behind it.
     cursor.StartDeferDrawing();
-    _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
-                                 string.data(),
-                                 string.data(),
-                                 string.data(),
-                                 &dwNumBytes,
-                                 nullptr,
-                                 _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                 WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
-                                 nullptr);
+    const auto ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
+                                           string.data(),
+                                           string.data(),
+                                           string.data(),
+                                           &dwNumBytes,
+                                           nullptr,
+                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
+                                           WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
+                                           nullptr);
     cursor.EndDeferDrawing();
-}
 
-ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
-    _io{ io }
-{
+    THROW_IF_NTSTATUS_FAILED(ntstatus);
 }
 
 // Routine Description:
