@@ -23,6 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"AddProfile_AddNewTextBlock/Text"));
+        Automation::AutomationProperties::SetName(DuplicateButton(), RS_(L"AddProfile_DuplicateTextBlock/Text"));
     }
 
     void AddProfile::OnNavigatedTo(const NavigationEventArgs& e)

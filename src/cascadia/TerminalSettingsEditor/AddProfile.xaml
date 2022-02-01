@@ -27,11 +27,11 @@
                     Click="AddNewClick"
                     Style="{StaticResource AccentButtonStyle}">
                 <StackPanel Orientation="Horizontal">
-                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                  Glyph="&#xE710;" />
-                        <TextBlock x:Uid="AddProfile_AddNewTextBlock"
-                                   Style="{StaticResource IconButtonTextBlockStyle}" />
-                    </StackPanel>
+                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                              Glyph="&#xE710;" />
+                    <TextBlock x:Uid="AddProfile_AddNewTextBlock"
+                               Style="{StaticResource IconButtonTextBlockStyle}" />
+                </StackPanel>
             </Button>
             <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
@@ -64,21 +64,17 @@
                         </muxc:RadioButtons.ItemTemplate>
                     </muxc:RadioButtons>
                 </local:SettingContainer>
-                <Button x:Uid="AddProfile_DuplicateButton"
+                <Button x:Name="DuplicateButton"
                         Margin="{StaticResource StandardControlMargin}"
-                        AutomationProperties.AutomationId="AddProfile_DuplicateButton"
-                        AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
                         Click="DuplicateClick"
                         IsEnabled="{x:Bind IsProfileSelected, Mode=OneWay}"
                         Style="{StaticResource AccentButtonStyle}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE8C8;" />
-                            <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
-                                       Style="{StaticResource IconButtonTextBlockStyle}" />
-                        </StackPanel>
-                    </Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE8C8;" />
+                        <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
                 </Button>
             </StackPanel>
         </StackPanel>
