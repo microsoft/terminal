@@ -40,9 +40,16 @@ void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noex
 
 [[nodiscard]] HRESULT DefaultApp::CheckShouldTerminalBeDefault(bool& isEnabled) noexcept
 {
-    // False since setting Terminal as the default app is an OS feature and probably
-    // should not be done in the open source conhost. We can always decide to turn it
-    // on in the future though.
-    isEnabled = false;
+    // Since we toggled this feature on in Windows, Terminal (and Terminal Preview) need to
+    // agree -- otherwise, they will present UI that suggests Terminal is NOT the default,
+    // like the info bar.
+    OSVERSIONINFOEXW osver{};
+    osver.dwOSVersionInfoSize = sizeof(osver);
+    osver.dwBuildNumber = 22544;
+
+    DWORDLONG dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    isEnabled = VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
     return S_OK;
 }
