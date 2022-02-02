@@ -434,6 +434,17 @@ class InputBufferTests
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         size_t eventsRead = 0;
         bool resetWaitEvent = false;
+
+        // GH #8663: We only insert 4 events. but we need to ask for 6 here.
+        // The Raised Hand emoji is U+270B in utf16, but it's 0xE2 0x9C 0x8B in utf-8.
+        Log::Comment(fmt::format(L"Codepage: {}", ServiceLocator::LocateGlobals().getConsoleInformation().CP).c_str());
+        ServiceLocator::LocateGlobals().getConsoleInformation().CP = 932;
+        Log::Comment(fmt::format(L"Changed to: {}", ServiceLocator::LocateGlobals().getConsoleInformation().CP).c_str());
+
+        // GH #8663: We only insert 4 events. When we ask for 4 here., we'll only get 3. 
+        // InpuBuffer::_ReadBuffer, when called with !unicode, will only return
+        // as many events as _will_ fit into readCount, assuming the caller
+        // expands them with SplitToOem.
         inputBuffer._ReadBuffer(outEvents,
                                 recordInsertCount,
                                 eventsRead,
@@ -442,12 +453,59 @@ class InputBufferTests
                                 false,
                                 false);
 
-        // TODO! I broke this test. This test expects 4 events to get read back, regardless of the fact that one would get expanded by ConvertToA.
-        // This might be okay, the test probably shouldn't be calling the private method directly. 
+        // the dbcs record should have counted for two elements in
+        // the array, making it so that we get less events read
+        VERIFY_ARE_EQUAL(recordInsertCount - 1, eventsRead);
+        VERIFY_ARE_EQUAL(eventsRead, outEvents.size());
+        for (size_t i = 0; i < eventsRead; ++i)
+        {
+            VERIFY_ARE_EQUAL(outEvents[i]->ToInputRecord(), inRecords[i]);
+        }
+    }
+
+    TEST_METHOD(ReadingDbcsCharsPadsOutputArrayForEmoji)
+    {
+        Log::Comment(L"During a utf-8 read, make sure the input buffer leaves "
+                     L"enough room for keys that could be expanded into more than two chars.");
+
+        // write a mouse event, key event, dbcs key event, mouse event
+        InputBuffer inputBuffer;
+        const unsigned int recordInsertCount = 4;
+        INPUT_RECORD inRecords[recordInsertCount];
+        inRecords[0].EventType = MOUSE_EVENT;
+        inRecords[1] = MakeKeyEvent(TRUE, 1, L'A', 0, L'A', 0);
+        inRecords[2] = MakeKeyEvent(TRUE, 1, 0x270B, 0, 0x270B, 0); // U+270B RAISED HAND
+        inRecords[3].EventType = MOUSE_EVENT;
+
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        for (size_t i = 0; i < recordInsertCount; ++i)
+        {
+            inEvents.push_back(IInputEvent::Create(inRecords[i]));
+        }
+
+        inputBuffer.Flush();
+        VERIFY_IS_GREATER_THAN(inputBuffer.Write(inEvents), 0u);
+
+        // read them out non-unicode style and compare
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t eventsRead = 0;
+        bool resetWaitEvent = false;
+
+        // GH #8663: We only insert 4 events. but we need to ask for 6 here.
+        // The Raised Hand emoji is U+270B in utf16, but it's 0xE2 0x9C 0x8B in utf-8.
+        ServiceLocator::LocateGlobals().getConsoleInformation().CP = 65001;
+
+        inputBuffer._ReadBuffer(outEvents,
+                                5,
+                                eventsRead,
+                                false,
+                                resetWaitEvent,
+                                false,
+                                false);
 
         // the dbcs record should have counted for two elements in
         // the array, making it so that we get less events read
-        VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);
+        VERIFY_ARE_EQUAL(3, eventsRead);
         VERIFY_ARE_EQUAL(eventsRead, outEvents.size());
         for (size_t i = 0; i < eventsRead; ++i)
         {

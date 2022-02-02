@@ -434,10 +434,13 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
                 }
             }
         }
-        // TODO!: If we do this, then readers who come asking for 4 events might
+        // When we do this, then readers who come asking for 4 events might
         // only get 3 back, under the implication that they know they need to
-        // expand the events themselves. Who are all the InputBuffer::Read
-        // callers? Are they all expanding (in the case of !unicode) in post?
+        // expand the events themselves. There are only two callers:
+        // * DirectReadData::Notify
+        // * _DoGetConsoleInput
+        //
+        // and they both handle !unicode the same way.
 
         if (performNormalRead)
         {
