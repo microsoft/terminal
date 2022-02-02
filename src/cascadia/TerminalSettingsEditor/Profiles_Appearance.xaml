@@ -45,13 +45,15 @@
                       ViewChanging="ViewChanging">
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Control Preview  -->
-                <Border x:Name="ControlPreview"
-                        Width="350"
-                        Height="160"
-                        Margin="0,0,0,12"
-                        HorizontalAlignment="Left"
-                        BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                        BorderThickness="1" />
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    <Border x:Name="ControlPreview"
+                            Width="350"
+                            Height="160"
+                            Margin="0,0,0,12"
+                            HorizontalAlignment="Left"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" />
+                </Border>
 
                 <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
                                    SourceProfile="{x:Bind Profile, Mode=OneWay}" />
@@ -59,7 +61,7 @@
                 <!--  Grouping: Transparency  -->
                 <StackPanel Style="{StaticResource PivotStackStyle}">
                     <TextBlock x:Uid="Profile_TransparencyHeader"
-                               Style="{StaticResource SubtitleTextBlockStyle}" />
+                               Style="{StaticResource TextBlockSubHeaderStyle}" />
 
                     <!--  Opacity  -->
                     <local:SettingContainer x:Name="OpacityContainer"
@@ -99,7 +101,7 @@
                 <!--  Grouping: Window  -->
                 <StackPanel Style="{StaticResource PivotStackStyle}">
                     <TextBlock x:Uid="Profile_WindowHeader"
-                               Style="{StaticResource SubtitleTextBlockStyle}" />
+                               Style="{StaticResource TextBlockSubHeaderStyle}" />
 
                     <!--  Padding  -->
                     <local:SettingContainer x:Uid="Profile_Padding"
@@ -133,7 +135,7 @@
                                            SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}" />
                     </local:SettingContainer>
                 </StackPanel>
-                <StackPanel>
+                <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                         <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"

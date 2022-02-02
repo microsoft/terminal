@@ -144,7 +144,7 @@
 
                 <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
                            Margin="0,48,0,0"
-                           Style="{StaticResource SubtitleTextBlockStyle}" />
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
 
                 <Button x:Name="AppearanceNavigator"
                         Click="Appearance_Click"
@@ -159,77 +159,79 @@
                                Text="Advanced" />
                 </Button>
                 <!--  Delete Button  -->
-                <Button x:Name="DeleteButton"
-                        Margin="{StaticResource StandardControlMargin}"
-                        Style="{StaticResource DeleteButtonStyle}"
-                        Visibility="{x:Bind Profile.CanDeleteProfile}">
-                    <Button.Resources>
-                        <ResourceDictionary>
-                            <ResourceDictionary.ThemeDictionaries>
-                                <ResourceDictionary x:Key="Light">
-                                    <SolidColorBrush x:Key="ButtonBackground"
-                                                     Color="Firebrick" />
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                     Color="#C23232" />
-                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                     Color="#A21212" />
-                                    <SolidColorBrush x:Key="ButtonForeground"
-                                                     Color="White" />
-                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                     Color="White" />
-                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                     Color="White" />
-                                </ResourceDictionary>
-                                <ResourceDictionary x:Key="Dark">
-                                    <SolidColorBrush x:Key="ButtonBackground"
-                                                     Color="Firebrick" />
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                     Color="#C23232" />
-                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                     Color="#A21212" />
-                                    <SolidColorBrush x:Key="ButtonForeground"
-                                                     Color="White" />
-                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                     Color="White" />
-                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                     Color="White" />
-                                </ResourceDictionary>
-                                <ResourceDictionary x:Key="HighContrast">
-                                    <SolidColorBrush x:Key="ButtonBackground"
-                                                     Color="{ThemeResource SystemColorButtonFaceColor}" />
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                     Color="{ThemeResource SystemColorHighlightColor}" />
-                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                     Color="{ThemeResource SystemColorHighlightColor}" />
-                                    <SolidColorBrush x:Key="ButtonForeground"
-                                                     Color="{ThemeResource SystemColorButtonTextColor}" />
-                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                     Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                     Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                </ResourceDictionary>
-                            </ResourceDictionary.ThemeDictionaries>
-                        </ResourceDictionary>
-                    </Button.Resources>
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE74D;" />
-                            <TextBlock x:Uid="Profile_DeleteButton"
-                                       Margin="10,0,0,0" />
-                        </StackPanel>
-                    </Button.Content>
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <Button x:Uid="Profile_DeleteConfirmationButton"
-                                        Click="DeleteConfirmation_Click" />
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    <Button x:Name="DeleteButton"
+                            Margin="{StaticResource StandardControlMargin}"
+                            Style="{StaticResource DeleteButtonStyle}"
+                            Visibility="{x:Bind Profile.CanDeleteProfile}">
+                        <Button.Resources>
+                            <ResourceDictionary>
+                                <ResourceDictionary.ThemeDictionaries>
+                                    <ResourceDictionary x:Key="Light">
+                                        <SolidColorBrush x:Key="ButtonBackground"
+                                                         Color="Firebrick" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                         Color="#C23232" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                         Color="#A21212" />
+                                        <SolidColorBrush x:Key="ButtonForeground"
+                                                         Color="White" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                         Color="White" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                         Color="White" />
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="Dark">
+                                        <SolidColorBrush x:Key="ButtonBackground"
+                                                         Color="Firebrick" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                         Color="#C23232" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                         Color="#A21212" />
+                                        <SolidColorBrush x:Key="ButtonForeground"
+                                                         Color="White" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                         Color="White" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                         Color="White" />
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="HighContrast">
+                                        <SolidColorBrush x:Key="ButtonBackground"
+                                                         Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                         Color="{ThemeResource SystemColorHighlightColor}" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                         Color="{ThemeResource SystemColorHighlightColor}" />
+                                        <SolidColorBrush x:Key="ButtonForeground"
+                                                         Color="{ThemeResource SystemColorButtonTextColor}" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                         Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                        <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                         Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                    </ResourceDictionary>
+                                </ResourceDictionary.ThemeDictionaries>
+                            </ResourceDictionary>
+                        </Button.Resources>
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE74D;" />
+                                <TextBlock x:Uid="Profile_DeleteButton"
+                                           Margin="10,0,0,0" />
                             </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
+                        </Button.Content>
+                        <Button.Flyout>
+                            <Flyout>
+                                <StackPanel>
+                                    <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
+                                               Style="{StaticResource CustomFlyoutTextStyle}" />
+                                    <Button x:Uid="Profile_DeleteConfirmationButton"
+                                            Click="DeleteConfirmation_Click" />
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>
