@@ -7,9 +7,12 @@
 #include "AddProfilePageNavigationState.g.cpp"
 #include "EnumEntry.h"
 
+#include <LibraryResources.h>
+
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
@@ -18,6 +21,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AddProfile::AddProfile()
     {
         InitializeComponent();
+
+        Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"AddProfile_AddNewTextBlock/Text"));
+        Automation::AutomationProperties::SetName(DuplicateButton(), RS_(L"AddProfile_DuplicateTextBlock/Text"));
     }
 
     void AddProfile::OnNavigatedTo(const NavigationEventArgs& e)
