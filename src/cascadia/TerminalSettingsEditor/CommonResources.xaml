@@ -48,7 +48,8 @@
     <Style x:Key="TextBoxSettingStyle"
            BasedOn="{StaticResource DefaultTextBoxStyle}"
            TargetType="TextBox">
-        <Setter Property="Width" Value="{StaticResource StandardBoxMinWidth}" />
+        <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
+        <Setter Property="MaxWidth" Value="500" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
