@@ -57,8 +57,8 @@
                             <StaticResource x:Key="TabViewBackground"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
 
-                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
-                                             Color="#FF333333" />
+                            <StaticResource x:Key="UnfocusedBorderBrush"
+                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -66,8 +66,8 @@
                             <StaticResource x:Key="TabViewBackground"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
 
-                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
-                                             Color="#FFCCCCCC" />
+                            <StaticResource x:Key="UnfocusedBorderBrush"
+                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

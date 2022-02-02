@@ -58,7 +58,7 @@
     <Style x:Key="TextBlockSubHeaderStyle"
            BasedOn="{StaticResource SubtitleTextBlockStyle}"
            TargetType="TextBlock">
-        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
     </Style>
 
     <!--  Used for disclaimers  -->
