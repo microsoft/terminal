@@ -53,6 +53,12 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <Style x:Key="TextBlockSubHeaderStyle"
+           BasedOn="{StaticResource SubtitleTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="1000" />
+    </Style>
+
     <!--  Used for disclaimers  -->
     <Style x:Key="DisclaimerStyle"
            TargetType="TextBlock">
@@ -71,7 +77,7 @@
     <!--  Number Box  -->
     <Style x:Key="NumberBoxSettingStyle"
            TargetType="muxc:NumberBox">
-        <Setter Property="SpinButtonPlacementMode" Value="Compact" />
+        <Setter Property="SpinButtonPlacementMode" Value="Inline" />
         <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
 
