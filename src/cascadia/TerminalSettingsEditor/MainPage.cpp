@@ -476,15 +476,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args)
     {
-        const auto tag = args.Item().as<Breadcrumb>()->Tag();
-        const auto subPage = args.Item().as<Breadcrumb>()->SubPage();
-        if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
+        if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
-            _Navigate(*profileViewModel, subPage);
-        }
-        else
-        {
-            _Navigate(tag.as<hstring>(), subPage);
+            const auto tag = args.Item().as<Breadcrumb>()->Tag();
+            const auto subPage = args.Item().as<Breadcrumb>()->SubPage();
+            if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
+            {
+                _Navigate(*profileViewModel, subPage);
+            }
+            else
+            {
+                _Navigate(tag.as<hstring>(), subPage);
+            }
         }
     }
 
