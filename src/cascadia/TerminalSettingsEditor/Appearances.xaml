@@ -41,7 +41,7 @@
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <!--  Grouping: Text  -->
             <TextBlock x:Uid="Profile_TextHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Color Scheme  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
@@ -170,7 +170,7 @@
         <!--  Grouping: Cursor  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Profile_CursorHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Cursor Shape  -->
             <local:SettingContainer x:Uid="Profile_CursorShape"
@@ -210,7 +210,7 @@
         <!--  Grouping: Background  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Profile_BackgroundHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Background Image  -->
             <local:SettingContainer x:Name="BackgroundImageContainer"
@@ -464,7 +464,7 @@
         <!--  Grouping: Text Formatting  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Appearance_TextFormattingHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Intense is bold, bright  -->
             <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
