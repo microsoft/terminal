@@ -146,19 +146,18 @@
                            Margin="0,48,0,0"
                            Style="{StaticResource SubtitleTextBlockStyle}" />
 
-                <ToggleButton Click="Appearance_Click"
-                              Style="{StaticResource ToggleButtonStyle}">
+                <Button x:Name="AppearanceNavigator"
+                        Click="Appearance_Click"
+                        Style="{StaticResource NavigatorButtonStyle}">
+                    Appearance
+                </Button>
+                <Button x:Name="AdvancedNavigator"
+                        Click="Advanced_Click"
+                        Style="{StaticResource NavigatorButtonStyle}">
                     <TextBlock HorizontalAlignment="Left"
                                VerticalAlignment="Center"
-                               Text="Appearance" />
-                </ToggleButton>
-                <ToggleButton Click="Advanced_Click"
-                              Style="{StaticResource ToggleButtonStyle}">
-                    <ContentPresenter HorizontalAlignment="Left">
-                        <TextBlock HorizontalAlignment="Left"
-                                   Text="Advanced" />
-                    </ContentPresenter>
-                </ToggleButton>
+                               Text="Advanced" />
+                </Button>
                 <!--  Delete Button  -->
                 <Button x:Name="DeleteButton"
                         Margin="{StaticResource StandardControlMargin}"
