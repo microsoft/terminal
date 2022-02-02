@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include "DynamicProfileUtils.h"
 
+static constexpr std::wstring_view WslHomeDirectory{ L"~" };
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
 
 // The WSL entries are structured as such:
@@ -22,6 +23,18 @@ static constexpr wchar_t RegKeyDistroName[] = L"DistributionName";
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+static bool isWslDashDashCdAvailableForLinuxPaths() noexcept
+{
+    OSVERSIONINFOEXW osver{};
+    osver.dwOSVersionInfoSize = sizeof(osver);
+    osver.dwBuildNumber = 19041;
+
+    DWORDLONG dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+}
 
 // Legacy GUIDs:
 //   - Debian       58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530
@@ -43,7 +56,14 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(command));
     WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
     WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
-    WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
+    if (isWslDashDashCdAvailableForLinuxPaths())
+    {
+        WSLDistro->StartingDirectory(winrt::hstring{ WslHomeDirectory });
+    }
+    else
+    {
+        WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
+    }
     WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
     return WSLDistro;
 }

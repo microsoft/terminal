@@ -504,7 +504,25 @@ namespace winrt::TerminalApp::implementation
             if (keyboardServiceIsDisabled)
             {
                 _root->ShowKeyboardServiceWarning();
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "KeyboardServiceWasDisabled",
+                    TraceLoggingDescription("Event emitted when the keyboard service is disabled, and we warned them about it"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             }
+        }
+        else
+        {
+            // For when the warning was disabled in the settings
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "KeyboardServiceWarningWasDisabledBySetting",
+                TraceLoggingDescription("Event emitted when the user has disabled the KB service warning"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
 
         if (FAILED(_settingsLoadedResult))

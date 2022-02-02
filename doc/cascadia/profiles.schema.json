@@ -2059,6 +2059,11 @@
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
+        "experimental.useAtlasEngine": {
+          "description": "Enable using the experimental new rendering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean",
+          "default": false
+        },
         "fontFace": {
           "default": "Cascadia Mono",
           "description": "[deprecated] Define 'face' within the 'font' object instead.",

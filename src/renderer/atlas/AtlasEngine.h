@@ -724,6 +724,8 @@ namespace Microsoft::Console::Render
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             Buffer<u16> glyphIndices;
             Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps;
+            Buffer<f32> glyphAdvances;
+            Buffer<DWRITE_GLYPH_OFFSET> glyphOffsets;
             std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as ApiInvalidations::Font|Size
             std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
             FontMetrics fontMetrics; // changes are flagged as ApiInvalidations::Font|Size
