@@ -37,7 +37,7 @@
                     </Button.Content>
                 </Button>
             </Border>
-                <StackPanel Margin="{StaticResource StandardControlMargin}">
+            <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
                     <ComboBox x:Name="Profiles"
                               AutomationProperties.AccessibilityView="Content"
