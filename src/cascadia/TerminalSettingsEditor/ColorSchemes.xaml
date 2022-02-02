@@ -94,7 +94,8 @@
     </Page.Resources>
 
     <ScrollViewer ViewChanging="ViewChanging">
-        <StackPanel Margin="{StaticResource StandardIndentMargin}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 
             <!--  Select Color and Add New Button  -->

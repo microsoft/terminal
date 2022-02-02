@@ -15,6 +15,7 @@
     <Thickness x:Key="StandardIndentMargin">13,0,0,0</Thickness>
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
     <x:Double x:Key="StandardBoxMinWidth">250</x:Double>
+    <x:Double x:Key="StandardControlMaxWidth">1000</x:Double>
 
     <!--
         This is for styling the entire items control used on the
@@ -48,9 +49,16 @@
     <Style x:Key="TextBoxSettingStyle"
            BasedOn="{StaticResource DefaultTextBoxStyle}"
            TargetType="TextBox">
-        <Setter Property="Width" Value="{StaticResource StandardBoxMinWidth}" />
+        <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
+        <Setter Property="MaxWidth" Value="500" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="TextBlockSubHeaderStyle"
+           BasedOn="{StaticResource SubtitleTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
     </Style>
 
     <!--  Used for disclaimers  -->
@@ -71,7 +79,7 @@
     <!--  Number Box  -->
     <Style x:Key="NumberBoxSettingStyle"
            TargetType="muxc:NumberBox">
-        <Setter Property="SpinButtonPlacementMode" Value="Compact" />
+        <Setter Property="SpinButtonPlacementMode" Value="Inline" />
         <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
 
