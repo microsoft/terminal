@@ -5,6 +5,7 @@
 #include "inputBuffer.hpp"
 #include "dbcs.h"
 #include "stream.h"
+#include "../types/inc/convert.hpp"
 #include "../types/inc/GlyphWidth.hpp"
 
 #include <functional>
@@ -386,6 +387,8 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
     // of events actually put into outRecords.
     size_t virtualReadCount = 0;
 
+    const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+
     while (!_storage.empty() && virtualReadCount < readCount)
     {
         bool performNormalRead = true;
@@ -407,6 +410,24 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
             }
         }
 
+        const auto& keyToRead{ _storage.front() };
+        if (!unicode)
+        {
+            if (keyToRead->EventType() == InputEventType::KeyEvent)
+            {
+                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(keyToRead.get());
+
+                // convert from wchar to char
+                std::wstring wstr{ pKeyEvent->GetCharData() };
+                const auto str = ConvertToA(codepage, wstr);
+                const auto sizeOfThisKey{ str.size() };
+                if (virtualReadCount + sizeOfThisKey > readCount)
+                {
+                    break;
+                }
+            }
+        }
+
         if (performNormalRead)
         {
             readEvents.push_back(std::move(_storage.front()));
@@ -419,9 +440,23 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
             if (readEvents.back()->EventType() == InputEventType::KeyEvent)
             {
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
-                if (IsGlyphFullWidth(pKeyEvent->GetCharData()))
+
+                if (!unicode)
                 {
-                    ++virtualReadCount;
+                    // convert from wchar to char
+                    std::wstring wstr{ pKeyEvent->GetCharData() };
+                    const auto str = ConvertToA(codepage, wstr);
+                    if (str.size() > 1)
+                    {
+                        virtualReadCount += (str.size() - 1);
+                    }
+                }
+                else
+                {
+                    if (IsGlyphFullWidth(pKeyEvent->GetCharData()))
+                    {
+                        ++virtualReadCount;
+                    }
                 }
             }
         }
