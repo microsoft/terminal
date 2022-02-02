@@ -441,6 +441,10 @@ class InputBufferTests
                                 resetWaitEvent,
                                 false,
                                 false);
+
+        // TODO! I broke this test. This test expects 4 events to get read back, regardless of the fact that one would get expanded by ConvertToA.
+        // This might be okay, the test probably shouldn't be calling the private method directly. 
+
         // the dbcs record should have counted for two elements in
         // the array, making it so that we get less events read
         VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);

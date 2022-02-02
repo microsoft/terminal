@@ -410,6 +410,13 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
             }
         }
 
+        // GH #8663: Before we read this key from the buffer, check that there's
+        // space for it. If we're calling Read without unidoce being set, then I
+        // believe we're also going to try and break this key event into one key
+        // for each OEM character. Problem is though, one unicode codepoint can
+        // be more than two chars long. So don't just use IsGlyphFullWidth,
+        // actually check with the codepoint how wide this key should be.
+        size_t sizeOfThisKey = 1;
         const auto& keyToRead{ _storage.front() };
         if (!unicode)
         {
@@ -420,13 +427,17 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
                 // convert from wchar to char
                 std::wstring wstr{ pKeyEvent->GetCharData() };
                 const auto str = ConvertToA(codepage, wstr);
-                const auto sizeOfThisKey{ str.size() };
+                sizeOfThisKey = str.size();
                 if (virtualReadCount + sizeOfThisKey > readCount)
                 {
                     break;
                 }
             }
         }
+        // TODO!: If we do this, then readers who come asking for 4 events might
+        // only get 3 back, under the implication that they know they need to
+        // expand the events themselves. Who are all the InputBuffer::Read
+        // callers? Are they all expanding (in the case of !unicode) in post?
 
         if (performNormalRead)
         {
@@ -434,32 +445,7 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
             _storage.pop_front();
         }
 
-        ++virtualReadCount;
-        if (!unicode)
-        {
-            if (readEvents.back()->EventType() == InputEventType::KeyEvent)
-            {
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
-
-                if (!unicode)
-                {
-                    // convert from wchar to char
-                    std::wstring wstr{ pKeyEvent->GetCharData() };
-                    const auto str = ConvertToA(codepage, wstr);
-                    if (str.size() > 1)
-                    {
-                        virtualReadCount += (str.size() - 1);
-                    }
-                }
-                else
-                {
-                    if (IsGlyphFullWidth(pKeyEvent->GetCharData()))
-                    {
-                        ++virtualReadCount;
-                    }
-                }
-            }
-        }
+        virtualReadCount += sizeOfThisKey;
     }
 
     // the amount of events that were actually read
