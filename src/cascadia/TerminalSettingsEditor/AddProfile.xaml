@@ -23,7 +23,7 @@
 
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <Border MaxWidth="1000">
+            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
                 <Button x:Uid="AddProfile_AddNewButton"
                         AutomationProperties.AutomationId="AddProfile_AddNewButton"
                         AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
@@ -45,7 +45,8 @@
                               AutomationProperties.AccessibilityView="Content"
                               ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
                               SelectedIndex="0"
-                              SelectionChanged="ProfilesSelectionChanged">
+                              SelectionChanged="ProfilesSelectionChanged"
+                              Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="model:Profile">
                                 <Grid HorizontalAlignment="Stretch"
@@ -71,7 +72,7 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </local:SettingContainer>
-                <Border MaxWidth="1000">
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
                     <Button x:Uid="AddProfile_DuplicateButton"
                             Margin="{StaticResource StandardControlMargin}"
                             AutomationProperties.AutomationId="AddProfile_DuplicateButton"

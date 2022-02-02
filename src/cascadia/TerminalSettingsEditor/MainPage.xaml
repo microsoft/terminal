@@ -49,7 +49,7 @@
         </muxc:NavigationView.Resources>
         <muxc:NavigationView.Header>
             <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
-                                MaxWidth="1000"
+                                MaxWidth="{StaticResource StandardControlMaxWidth}"
                                 ItemClicked="BreadcrumbBar_ItemClicked"
                                 ItemsSource="{x:Bind Breadcrumbs}">
                 <muxc:BreadcrumbBar.ItemTemplate>

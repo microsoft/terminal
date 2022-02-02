@@ -375,7 +375,7 @@
     </Page.Resources>
 
     <ScrollViewer ViewChanging="ViewChanging">
-        <Border MaxWidth="1000">
+        <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
             <StackPanel MaxWidth="600"
                         HorizontalAlignment="Left"
                         Spacing="8"

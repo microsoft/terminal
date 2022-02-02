@@ -94,7 +94,7 @@
     </Page.Resources>
 
     <ScrollViewer ViewChanging="ViewChanging">
-        <StackPanel MaxWidth="1000"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 

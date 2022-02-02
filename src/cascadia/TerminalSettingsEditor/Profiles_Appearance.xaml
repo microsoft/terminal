@@ -45,7 +45,7 @@
                       ViewChanging="ViewChanging">
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Control Preview  -->
-                <Border MaxWidth="1000">
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
                     <Border x:Name="ControlPreview"
                             Width="350"
                             Height="160"
@@ -135,7 +135,7 @@
                                            SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}" />
                     </local:SettingContainer>
                 </StackPanel>
-                <StackPanel MaxWidth="1000">
+                <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                         <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"

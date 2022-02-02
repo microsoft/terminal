@@ -160,7 +160,7 @@
                     </ContentPresenter>
                 </ToggleButton>
                 <!--  Delete Button  -->
-                <Border MaxWidth="1000">
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
                     <Button x:Name="DeleteButton"
                             Margin="{StaticResource StandardControlMargin}"
                             Style="{StaticResource DeleteButtonStyle}"

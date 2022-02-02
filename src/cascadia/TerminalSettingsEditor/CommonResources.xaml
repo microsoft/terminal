@@ -15,6 +15,7 @@
     <Thickness x:Key="StandardIndentMargin">13,0,0,0</Thickness>
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
     <x:Double x:Key="StandardBoxMinWidth">250</x:Double>
+    <x:Double x:Key="StandardControlMaxWidth">1000</x:Double>
 
     <!--
         This is for styling the entire items control used on the
