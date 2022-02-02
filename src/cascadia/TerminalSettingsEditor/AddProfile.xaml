@@ -26,12 +26,14 @@
             <Button x:Name="AddNewButton"
                     Click="AddNewClick"
                     Style="{StaticResource AccentButtonStyle}">
-                <StackPanel Orientation="Horizontal">
-                    <FontIcon FontSize="{StaticResource StandardIconSize}"
-                              Glyph="&#xE710;" />
-                    <TextBlock x:Uid="AddProfile_AddNewTextBlock"
-                               Style="{StaticResource IconButtonTextBlockStyle}" />
-                </StackPanel>
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                        <TextBlock x:Uid="AddProfile_AddNewTextBlock"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
+                </Button.Content>
             </Button>
             <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
@@ -69,12 +71,14 @@
                         Click="DuplicateClick"
                         IsEnabled="{x:Bind IsProfileSelected, Mode=OneWay}"
                         Style="{StaticResource AccentButtonStyle}">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                  Glyph="&#xE8C8;" />
-                        <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
-                                   Style="{StaticResource IconButtonTextBlockStyle}" />
-                    </StackPanel>
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE8C8;" />
+                            <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button.Content>
                 </Button>
             </StackPanel>
         </StackPanel>
