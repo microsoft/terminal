@@ -441,7 +441,7 @@ class InputBufferTests
         ServiceLocator::LocateGlobals().getConsoleInformation().CP = 932;
         Log::Comment(fmt::format(L"Changed to: {}", ServiceLocator::LocateGlobals().getConsoleInformation().CP).c_str());
 
-        // GH #8663: We only insert 4 events. When we ask for 4 here., we'll only get 3. 
+        // GH #8663: We only insert 4 events. When we ask for 4 here, we'll only get 3.
         // InputBuffer::_ReadBuffer, when called with !unicode, will only return
         // as many events as _will_ fit into readCount, assuming the caller
         // expands them with SplitToOem.
@@ -508,7 +508,7 @@ class InputBufferTests
         // the emoji record should have counted for three elements in
         // the array, making it so that we get less events read.
         // We'll get the mouse, the key(A), and the key(U+270B)
-        VERIFY_ARE_EQUAL(3, eventsRead);
+        VERIFY_ARE_EQUAL(3u, eventsRead);
         VERIFY_ARE_EQUAL(eventsRead, outEvents.size());
 
         // The events we read back here are _not_ pre-translated to the active codepage.
