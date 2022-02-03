@@ -21,7 +21,7 @@
     Version="0.5.0.0" />
 
   <Properties>
-    <DisplayName>ms-resource:TerminalApp/ContextMenu/AppNamePre</DisplayName>
+    <DisplayName>ms-resource:TerminalApp/ContextMenu/AppStoreNamePre</DisplayName>
     <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
