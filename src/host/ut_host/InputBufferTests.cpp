@@ -442,7 +442,7 @@ class InputBufferTests
         Log::Comment(fmt::format(L"Changed to: {}", ServiceLocator::LocateGlobals().getConsoleInformation().CP).c_str());
 
         // GH #8663: We only insert 4 events. When we ask for 4 here., we'll only get 3. 
-        // InpuBuffer::_ReadBuffer, when called with !unicode, will only return
+        // InputBuffer::_ReadBuffer, when called with !unicode, will only return
         // as many events as _will_ fit into readCount, assuming the caller
         // expands them with SplitToOem.
         inputBuffer._ReadBuffer(outEvents,
