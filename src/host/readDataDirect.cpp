@@ -158,7 +158,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
                 // because a single codepoint might have been expanded into more
                 // that a single char.
                 //
-                // As of GH #8663, InputBuffer::Read will have pre-emptively
+                // As of GH #8663, InputBuffer::Read will have preemptively
                 // checked how much space each key is about to take up, and will
                 // only return as many as will fit in readBuffer _after_ a call
                 // to SplitToOem.

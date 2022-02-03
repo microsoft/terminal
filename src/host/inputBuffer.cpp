@@ -411,7 +411,7 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
         }
 
         // GH #8663: Before we read this key from the buffer, check that there's
-        // space for it. If we're calling Read without unidoce being set, then I
+        // space for it. If we're calling Read without unicode being set, then I
         // believe we're also going to try and break this key event into one key
         // for each OEM character. Problem is though, one unicode codepoint can
         // be more than two chars long. So don't just use IsGlyphFullWidth,

@@ -436,7 +436,7 @@ class InputBufferTests
         bool resetWaitEvent = false;
 
         // GH #8663: We only insert 4 events. but we need to ask for 6 here.
-        // The Raised Hand emoji is U+270B in utf16, but it's 0xE2 0x9C 0x8B in utf-8.
+        // The hiragana A is U+3042 in utf16, but it turns into two chars in 932.
         Log::Comment(fmt::format(L"Codepage: {}", ServiceLocator::LocateGlobals().getConsoleInformation().CP).c_str());
         ServiceLocator::LocateGlobals().getConsoleInformation().CP = 932;
         Log::Comment(fmt::format(L"Changed to: {}", ServiceLocator::LocateGlobals().getConsoleInformation().CP).c_str());
@@ -465,10 +465,12 @@ class InputBufferTests
 
     TEST_METHOD(ReadingDbcsCharsPadsOutputArrayForEmoji)
     {
+        // Basically the same test as ReadingDbcsCharsPadsOutputArray, but with
+        // emoji where 1 wchar can turn into 3 chars.
         Log::Comment(L"During a utf-8 read, make sure the input buffer leaves "
                      L"enough room for keys that could be expanded into more than two chars.");
 
-        // write a mouse event, key event, dbcs key event, mouse event
+        // write a mouse event, key event, emoji key event, mouse event
         InputBuffer inputBuffer;
         const unsigned int recordInsertCount = 4;
         INPUT_RECORD inRecords[recordInsertCount];
@@ -491,7 +493,7 @@ class InputBufferTests
         size_t eventsRead = 0;
         bool resetWaitEvent = false;
 
-        // GH #8663: We only insert 4 events. but we need to ask for 6 here.
+        // GH #8663: We only insert 4 events. but we need to ask for 5 here.
         // The Raised Hand emoji is U+270B in utf16, but it's 0xE2 0x9C 0x8B in utf-8.
         ServiceLocator::LocateGlobals().getConsoleInformation().CP = 65001;
 
@@ -503,10 +505,13 @@ class InputBufferTests
                                 false,
                                 false);
 
-        // the dbcs record should have counted for two elements in
-        // the array, making it so that we get less events read
+        // the emoji record should have counted for three elements in
+        // the array, making it so that we get less events read.
+        // We'll get the mouse, the key(A), and the key(U+270B)
         VERIFY_ARE_EQUAL(3, eventsRead);
         VERIFY_ARE_EQUAL(eventsRead, outEvents.size());
+
+        // The events we read back here are _not_ pre-translated to the active codepage.
         for (size_t i = 0; i < eventsRead; ++i)
         {
             VERIFY_ARE_EQUAL(outEvents[i]->ToInputRecord(), inRecords[i]);
