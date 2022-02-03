@@ -127,6 +127,16 @@
   <data name="AppNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
   </data>
+  <data name="AppStoreName" xml:space="preserve">
+    <value>Windows Terminal</value>
+  </data>
+  <data name="AppStoreNameDev" xml:space="preserve">
+    <value>Windows Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
+  <data name="AppStoreNamePre" xml:space="preserve">
+    <value>Windows Terminal Preview</value>
+  </data>
   <data name="AppShortName" xml:space="preserve">
     <value>Terminal</value>
   </data>
