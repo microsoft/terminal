@@ -183,6 +183,7 @@ CATCH_RETURN();
 }
 
 [[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
+try
 {
     if (!newText.empty())
     {
@@ -190,6 +191,7 @@ CATCH_RETURN();
     }
     return S_OK;
 }
+CATCH_LOG_RETURN_HR(E_FAIL);
 
 // Routine Description:
 // - This is unused by this renderer.
