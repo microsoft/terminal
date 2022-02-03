@@ -147,7 +147,6 @@ steps:
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: binlog'
-  condition: failed()
   continueOnError: True
   inputs:
     PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
