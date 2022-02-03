@@ -64,6 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SignalSelectionChanged() override;
         void SignalTextChanged() override;
         void SignalCursorChanged() override;
+        void NotifyNewOutput(const std::wstring_view newOutput) override;
 #pragma endregion
 
 #pragma region ITextProvider Pattern

@@ -45,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contentAutomationPeer.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
         _contentAutomationPeer.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
         _contentAutomationPeer.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
+        _contentAutomationPeer.NewOutput([this](auto&&, auto&& newOutput) { NotifyNewOutput(newOutput); });
         _contentAutomationPeer.ParentProvider(*this);
     };
 
@@ -138,6 +139,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 //    because no additional information was provided. Crashing the screen
                 //    reader.
                 strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+            }
+        });
+    }
+
+    void TermControlAutomationPeer::NotifyNewOutput(const std::wstring_view newOutput)
+    {
+        auto dispatcher{ Dispatcher() };
+        if (!dispatcher)
+        {
+            return;
+        }
+        dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, notificationText{ hstring(newOutput) }]() {
+            if (auto strongThis{ weakThis.get() })
+            {
+                strongThis->RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
+                                                   AutomationNotificationProcessing::ImportantAll,
+                                                   notificationText,
+                                                   L"TerminalTextOutput");
             }
         });
     }

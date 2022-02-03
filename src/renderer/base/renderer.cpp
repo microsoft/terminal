@@ -493,6 +493,14 @@ void Renderer::TriggerTitleChange()
     NotifyPaintFrame();
 }
 
+void Renderer::TriggerNewTextNotification(const std::wstring_view newText)
+{
+    FOREACH_ENGINE(pEngine)
+    {
+        LOG_IF_FAILED(pEngine->NotifyNewText(newText));
+    }
+}
+
 // Routine Description:
 // - Update the title for a particular engine.
 // Arguments:

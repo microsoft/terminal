@@ -182,6 +182,15 @@ CATCH_RETURN();
     return S_FALSE;
 }
 
+[[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
+{
+    if (!newText.empty())
+    {
+        _newOutput += newText;
+    }
+    return S_OK;
+}
+
 // Routine Description:
 // - This is unused by this renderer.
 // Arguments:
@@ -252,11 +261,20 @@ CATCH_RETURN();
         }
         CATCH_LOG();
     }
+    if (!_newOutput.empty())
+    {
+        try
+        {
+            _dispatcher->NotifyNewOutput(_newOutput);
+        }
+        CATCH_LOG();
+    }
 
     _selectionChanged = false;
     _textBufferChanged = false;
     _cursorChanged = false;
     _isPainting = false;
+    _newOutput.clear();
 
     return S_OK;
 }

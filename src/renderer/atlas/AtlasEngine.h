@@ -35,6 +35,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* pForcePaint) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept override;
+        [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, size_t targetRow, size_t viewportLeft) noexcept override;
