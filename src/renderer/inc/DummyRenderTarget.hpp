@@ -31,4 +31,5 @@ public:
     void TriggerScroll(const COORD* const /*pcoordDelta*/) override {}
     void TriggerCircling() override {}
     void TriggerTitleChange() override {}
+    void TriggerNewTextNotification(const std::wstring_view) override {}
 };
