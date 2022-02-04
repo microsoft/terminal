@@ -8,12 +8,14 @@ jobs:
   variables:
     BuildConfiguration: AuditMode
     BuildPlatform: ${{ parameters.platform }}
-  pool: 
+  pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPoolOSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPool-L
-    demands: ImageOverride -equals WinDevVS16-latest
+  demands:
+  - ImageOverride -equals WinDevVS16-latest
+  - ImageVersionOverride -equals 6.0.0
 
   steps:
   - checkout: self

@@ -2,9 +2,11 @@
 trigger: none
 pr: none
 
-pool: 
+pool:
   name: WinDevPool-L
-  demands: ImageOverride -equals WinDevVS16-latest
+  demands:
+  - ImageOverride -equals WinDevVS16-latest
+  - ImageVersionOverride -equals 6.0.0
 
 parameters:
   - name: branding
@@ -271,7 +273,7 @@ jobs:
 
 - ${{ if eq(parameters.runCompliance, true) }}:
   - template: ./templates/build-console-compliance-job.yml
-  
+
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
     displayName: Create and sign AppX/MSIX bundles
