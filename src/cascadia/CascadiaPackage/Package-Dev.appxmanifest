@@ -30,7 +30,20 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="EN-US" />
+    <Resource Language="DE-DE" />
+    <Resource Language="ES-ES" />
+    <Resource Language="FR-FR" />
+    <Resource Language="IT-IT" />
+    <Resource Language="JA-JP" />
+    <Resource Language="KO-KR" />
+    <Resource Language="PT-BR" />
+    <Resource Language="QPS-PLOC" />
+    <Resource Language="QPS-PLOCA" />
+    <Resource Language="QPS-PLOCM" />
+    <Resource Language="RU-RU" />
+    <Resource Language="ZH-CN" />
+    <Resource Language="ZH-TW" />
   </Resources>
 
   <Applications>
