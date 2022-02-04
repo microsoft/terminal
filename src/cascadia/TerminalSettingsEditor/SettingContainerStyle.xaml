@@ -112,15 +112,21 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Style="{StaticResource SettingsPageItemHeaderStyle}"
                                            Text="{TemplateBinding Header}" />
                                 <Button x:Name="ResetButton"
+                                        Grid.Column="1"
                                         Style="{StaticResource SettingContainerResetButtonStyle}">
                                     <FontIcon Glyph="&#xE845;"
                                               Style="{StaticResource SettingContainerFontIconStyle}" />
                                 </Button>
-                            </StackPanel>
+                            </Grid>
                             <TextBlock x:Name="HelpTextBlock"
                                        Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                        Text="{TemplateBinding HelpText}" />
@@ -153,15 +159,21 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Style="{StaticResource SettingsPageItemHeaderStyle}"
                                                    Text="{TemplateBinding Header}" />
                                         <Button x:Name="ResetButton"
+                                                Grid.Column="1"
                                                 Style="{StaticResource SettingContainerResetButtonStyle}">
                                             <FontIcon Glyph="&#xE845;"
                                                       Style="{StaticResource SettingContainerFontIconStyle}" />
                                         </Button>
-                                    </StackPanel>
+                                    </Grid>
                                     <TextBlock x:Name="HelpTextBlock"
                                                Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                                Text="{TemplateBinding HelpText}" />
