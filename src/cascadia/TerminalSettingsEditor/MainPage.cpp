@@ -55,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
+        _colorSchemesNavState.AllColorSchemes(_MakeColorSchemeVMsHelper(_settingsClone));
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -443,6 +444,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> MainPage::_MakeColorSchemeVMsHelper(const Model::CascadiaSettings& settings)
+    {
+        Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> AllColorSchemes{ single_threaded_observable_vector<Editor::ColorSchemeViewModel>() };
+        const auto& colorSchemeMap{ settings.GlobalSettings().ColorSchemes() };
+        for (const auto& pair : colorSchemeMap)
+        {
+            const auto viewModel = Editor::ColorSchemeViewModel(pair.Value());
+            AllColorSchemes.Append(viewModel);
+        }
+        return AllColorSchemes;
+    }
+
+
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
@@ -476,18 +490,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args)
     {
-        if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
+        const auto tag = args.Item().as<Breadcrumb>()->Tag();
+        const auto subPage = args.Item().as<Breadcrumb>()->SubPage();
+        if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
         {
-            const auto tag = args.Item().as<Breadcrumb>()->Tag();
-            const auto subPage = args.Item().as<Breadcrumb>()->SubPage();
-            if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
-            {
-                _Navigate(*profileViewModel, subPage);
-            }
-            else
-            {
-                _Navigate(tag.as<hstring>(), subPage);
-            }
+            _Navigate(*profileViewModel, subPage);
+        }
+        else
+        {
+            _Navigate(tag.as<hstring>(), subPage);
         }
     }
 

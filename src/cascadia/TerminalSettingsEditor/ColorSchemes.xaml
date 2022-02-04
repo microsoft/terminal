@@ -96,6 +96,42 @@
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
+                <local:SettingContainer x:Uid="ColorScheme_Select">
+                    <ComboBox x:Name="ColorSchemeComboBox2"
+                                  ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                                  SelectedIndex="0"
+                                  SelectionChanged="ColorSchemeSelectionChanged"
+                                  Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:ColorScheme">
+                                <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </local:SettingContainer>
+                <local:SettingContainer x:Uid="ColorScheme_AddNew">
+                    <Button x:Name="AddNewButton2"
+                        Click="AddNew_Click"
+                        Style="{StaticResource BrowseButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                            <TextBlock x:Uid="ColorScheme_AddNewButton"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button>
+                </local:SettingContainer>
+                <TextBlock x:Uid="ColorScheme_Customize"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                <local:SettingContainer x:Uid="ColorScheme_Rename"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
+                         IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
+                             Text="{x:Bind State.LastSelectedScheme, Mode=TwoWay}" />
+                </local:SettingContainer>
+            </StackPanel>
 
             <!--  Select Color and Add New Button  -->
             <StackPanel Orientation="Horizontal">

@@ -1,0 +1,22 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorSchemes.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme);
+
+        // Terminal Colors
+        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable;
+        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable;
+
+        // System Colors
+        ColorTableEntry CurrentForegroundColor;
+        ColorTableEntry CurrentBackgroundColor;
+        ColorTableEntry CurrentCursorColor;
+        ColorTableEntry CurrentSelectionBackgroundColor;
+    }
+}

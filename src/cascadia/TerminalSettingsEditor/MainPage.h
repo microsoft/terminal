@@ -63,6 +63,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
 
+        Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> _MakeColorSchemeVMsHelper(const Model::CascadiaSettings& settings);
+
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;

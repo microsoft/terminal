@@ -227,6 +227,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                           MUX::Controls::ColorChangedEventArgs const& args)
     {
         const til::color newColor{ args.NewColor() };
+
         if (const auto& picker{ sender.try_as<MUX::Controls::ColorPicker>() })
         {
             if (const auto& tag{ picker.Tag() })
