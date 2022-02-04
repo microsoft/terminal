@@ -92,6 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ColorSchemesPageNavigationState>();
+        _AllColorSchemes = _State.AllColorSchemes();
         _UpdateColorSchemeList();
 
         // Initialize our color table view model with 16 dummy colors

@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
+        Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> _AllColorSchemes;
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
 

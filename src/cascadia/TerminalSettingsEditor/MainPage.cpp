@@ -55,7 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
-        _colorSchemesNavState.AllColorSchemes(_MakeColorSchemeVMsHelper(_settingsClone));
+        _AllColorSchemes = _MakeColorSchemeVMsHelper(_settingsClone);
+        _colorSchemesNavState.AllColorSchemes(_AllColorSchemes);
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -128,6 +129,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesNavState.Settings(_settingsClone);
+        _AllColorSchemes = _MakeColorSchemeVMsHelper(_settingsClone);
+        _colorSchemesNavState.AllColorSchemes(_AllColorSchemes);
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
         // now that the menuItems are repopulated,
