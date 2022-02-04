@@ -26,8 +26,8 @@ namespace Microsoft::Console::VirtualTerminal
                                    const size_t width,
                                    const size_t height);
 
-        static bool s_RefreshWindow(ConGetSet& conApi);
+        static void s_RefreshWindow(ConGetSet& conApi);
 
-        static bool s_SuppressResizeRepaint(ConGetSet& conApi);
+        static void s_SuppressResizeRepaint(ConGetSet& conApi);
     };
 }

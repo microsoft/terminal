@@ -416,6 +416,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     auto& stateMachine = screenInfo.GetStateMachine();
     auto& cursor = screenInfo._textBuffer->GetCursor();
     auto viewport = screenInfo.GetViewport();
+    const auto reverseLineFeed = L"\033M";
 
     VERIFY_ARE_EQUAL(viewport.Top(), 0);
 
@@ -427,7 +428,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
     VERIFY_ARE_EQUAL(viewport.Top(), 0);
 
-    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
+    stateMachine.ProcessString(reverseLineFeed);
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
@@ -448,7 +449,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 0);
 
-    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
+    stateMachine.ProcessString(reverseLineFeed);
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
@@ -473,7 +474,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 5);
 
-    LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(screenInfo));
+    stateMachine.ProcessString(reverseLineFeed);
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 8);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);

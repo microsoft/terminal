@@ -192,10 +192,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   std::vector<size_t>& tableIndexes,
-                                  std::vector<DWORD>& rgbs) const noexcept;
+                                  std::vector<DWORD>& rgbs) const;
 
         bool _GetOscSetColor(const std::wstring_view string,
-                             std::vector<DWORD>& rgbs) const noexcept;
+                             std::vector<DWORD>& rgbs) const;
 
         bool _GetOscSetClipboard(const std::wstring_view string,
                                  std::wstring& content,
