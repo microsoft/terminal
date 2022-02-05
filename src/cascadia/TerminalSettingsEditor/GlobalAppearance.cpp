@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // --> "und" is synonymous for "Use system language".
     constexpr std::wstring_view systemLanguageTag{ L"und" };
 
-    static constexpr std::array appLanguageTags{ 
+    static constexpr std::array appLanguageTags{
         L"en-US",
         L"de-DE",
         L"es-ES",
@@ -116,7 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // As per the function definition, the first item
             // is always "Use system language" ("und").
             tags.emplace_back(systemLanguageTag);
-            
+
             // Add our hardcoded languages after the system definition.
             for (const auto& v : appLanguageTags)
             {
