@@ -109,7 +109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // ~100 languages that are localized for the shell extension and start menu
             // presentation so we align with Windows display languages for those surfaces.
             // However, the actual content of our application is limited to a much smaller
-            // subset of approximately 14 languages. As such, we will hardcode the limited
+            // subset of approximately 14 languages. As such, we will code the limited
             // subset of languages that we support for selection within the Settings
             // dropdown to steer users towards the ones that we can display in the app.
 
