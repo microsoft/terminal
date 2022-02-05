@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             // As per the function definition, the first item
             // is always "Use system language" ("und").
-            tags.push_back(systemLanguageTag.data());
+            tags.emplace_back(systemLanguageTag);
             
             // Add our hardcoded languages after the system definition.
             for (const auto& v : appLanguageTags)
