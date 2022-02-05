@@ -167,7 +167,8 @@
         <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
         <Setter Property="MinWidth" Value="{StaticResource ToggleSwitchThemeMinWidth}" />
         <Setter Property="FocusVisualMargin" Value="-7,-3,-7,-3" />
-        <Setter Property="Margin" Value="0,0,-80,0" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="MinWidth" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleSwitch">
