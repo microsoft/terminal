@@ -24,22 +24,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // --> "und" is synonymous for "Use system language".
     constexpr std::wstring_view systemLanguageTag{ L"und" };
 
-    constexpr std::array<std::wstring_view, 14> appLanguageTags{ {
-        { L"en-US" },
-        { L"de-DE" },
-        { L"es-ES" },
-        { L"fr-FR" },
-        { L"it-IT" },
-        { L"ja" },
-        { L"ko" },
-        { L"pt-BR" },
-        { L"qps-PLOC" },
-        { L"qps-PLOCA" },
-        { L"qps-PLOCM" },
-        { L"ru" },
-        { L"zh-Hans-CN" },
-        { L"zh-Hant-TW" },
-    } };
+    static constexpr std::array appLanguageTags{ 
+        L"en-US",
+        L"de-DE",
+        L"es-ES",
+        L"fr-FR",
+        L"it-IT",
+        L"ja",
+        L"ko",
+        L"pt-BR",
+        L"qps-PLOC",
+        L"qps-PLOCA",
+        L"qps-PLOCM",
+        L"ru",
+        L"zh-Hans-CN",
+        L"zh-Hant-TW",
+    };
 
     GlobalAppearance::GlobalAppearance()
     {
@@ -119,18 +119,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             
             // Add our hardcoded languages after the system definition.
             for (const auto& v : appLanguageTags)
-            {
-                tags.push_back(v.data());
-            }
-     
-            // Languages is a computed list that merges the ManifestLanguages with the
-            // user's ranked list of preferred languages taken from the system settings.
-            // As is tradition the API documentation is incomplete though, as it can also
-            // contain regional language variants. If our app supports en-US, but the user
-            // has en-GB or en-DE in their system's preferred language list, Languages will
-            // contain those as well, as they're variants from a supported language. We should
-            // allow a user to select those, as regional formattings can vary significantly.
-            for (const auto& v : winrt::Windows::Globalization::ApplicationLanguages::Languages())
             {
                 tags.push_back(v);
             }
