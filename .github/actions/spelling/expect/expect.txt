@@ -472,6 +472,7 @@ cygwin
 CYHSCROLL
 CYMIN
 CYPADDEDBORDER
+CYRL
 CYSIZE
 CYSIZEFRAME
 CYSMICON
@@ -1237,12 +1238,14 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KOK
 KPRIORITY
 KVM
 langid
 LANGUAGELIST
 lasterror
 lastexitcode
+LATN
 LAYOUTRTL
 LBN
 LBound
@@ -1789,6 +1792,9 @@ placeholders
 platforming
 playsound
 plist
+PLOC
+PLOCA
+PLOCM
 PLOGICAL
 plugin
 PMv
@@ -1922,6 +1928,7 @@ qsort
 queryable
 QUESTIONMARK
 quickedit
+QUZ
 QWER
 qzmp
 RAII
