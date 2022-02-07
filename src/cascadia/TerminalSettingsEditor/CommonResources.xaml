@@ -66,6 +66,7 @@
            TargetType="TextBlock">
         <Setter Property="FontStyle" Value="Italic" />
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
+        <Setter Property="MaxWidth" Value="1000" />
     </Style>
 
     <!--  Used for flyout messages  -->
