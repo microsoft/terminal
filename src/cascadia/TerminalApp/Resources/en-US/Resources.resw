@@ -728,14 +728,11 @@
     <value>Open Settings</value>
     <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
   </data>
-  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
-    <value>Suggestions available</value>
-  </data>
   <data name="CommandPalette_OneMatcheAvailable" xml:space="preserve">
     <value>One suggestion available</value>
   </data>
   <data name="CommandPalette_ManyMatchesAvailable" xml:space="preserve">
     <value>{0} suggestions available</value>
-    <comment>{0}</comment>
+    <comment>{0} will be replaced with a number bigger than 1</comment>
   </data>
 </root>

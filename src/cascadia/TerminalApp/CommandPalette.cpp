@@ -825,16 +825,15 @@ namespace winrt::TerminalApp::implementation
             if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
             {
                 const bool hasMultipleMatches{ _filteredActions.Size() > 1 };
-                const auto message{ currentNeedleHasResults ?
-                                        (hasMultipleMatches ?
-                                             winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_ManyMatchesAvailable") }, _filteredActions.Size()) } :
-                                             RS_(L"CommandPalette_OneMatcheAvailable")) :
-                                        NoMatchesText() };
 
                 automationPeer.RaiseNotificationEvent(
                     Automation::Peers::AutomationNotificationKind::ActionCompleted,
                     Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                    message, // what to announce if results were found
+                    currentNeedleHasResults ?
+                        (hasMultipleMatches ?
+                             winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_ManyMatchesAvailable") }, _filteredActions.Size()) } :
+                             RS_(L"CommandPalette_OneMatcheAvailable")) :
+                        NoMatchesText(), // what to announce if results were found
                     L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
         }
