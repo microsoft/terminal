@@ -49,10 +49,7 @@ try
     // TODO GH#XXXX: We should be able to just check some fields off of the Cursor object,
     // but Windows Terminal isn't updating those flags properly.
     _start = cursor.GetPosition();
-    if (const auto bufferSize{ pData->GetTextBuffer().GetSize() }; !bufferSize.IsInBounds(_start))
-    {
-        bufferSize.Clamp(_start);
-    }
+    pData->GetTextBuffer().GetSize().Clamp(_start);
     _end = _start;
 
     UiaTracing::TextRange::Constructor(*this);
