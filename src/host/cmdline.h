@@ -98,7 +98,7 @@ protected:
     CommandLine& operator=(CommandLine const&) = delete;
 
     [[nodiscard]] NTSTATUS _startCommandListPopup(COOKED_READ_DATA& cookedReadData);
-    [[nodiscard]] NTSTATUS _startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData);
+    [[nodiscard]] NTSTATUS _startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData, COORD& cursorPosition);
     [[nodiscard]] NTSTATUS _startCopyToCharPopup(COOKED_READ_DATA& cookedReadData);
 
     void _processHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection);

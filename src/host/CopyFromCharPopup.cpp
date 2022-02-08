@@ -21,6 +21,8 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]] NTSTATUS CopyFromCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
+    _cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
+
     // get user input
     WCHAR Char = UNICODE_NULL;
     bool PopupKeys = false;
@@ -44,6 +46,8 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
     {
         // char not found, delete everything to the right of the cursor
         CommandLine::Instance().DeletePromptAfterCursor(cookedReadData);
+
+        // DeletePromptAfterCursor doesn't move the cursor
     }
     else
     {
@@ -60,4 +64,9 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 void CopyFromCharPopup::_DrawContent()
 {
     _DrawPrompt(ID_CONSOLE_MSGCMDLINEF4);
+}
+
+COORD CopyFromCharPopup::FinalCursorPosition() const noexcept
+{
+    return _cursorPosition;
 }

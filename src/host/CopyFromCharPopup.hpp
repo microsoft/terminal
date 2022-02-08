@@ -24,6 +24,10 @@ public:
 
     [[nodiscard]] NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept override;
 
+    COORD FinalCursorPosition() const noexcept;
 protected:
     void _DrawContent() override;
+
+private:
+    COORD _cursorPosition{0, 0};
 };

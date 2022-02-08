@@ -337,7 +337,7 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
-[[nodiscard]] NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData)
+[[nodiscard]] NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData, COORD& cursorPosition)
 {
     // Delete the current command from cursor position to the
     // letter specified by the user. The user is prompted via
@@ -346,9 +346,11 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
     {
         try
         {
-            auto& popup = *_popups.emplace_front(std::make_unique<CopyFromCharPopup>(cookedReadData.ScreenInfo()));
-            popup.Draw();
-            return popup.Process(cookedReadData);
+            auto* popup = _popups.emplace_front(std::make_unique<CopyFromCharPopup>(cookedReadData.ScreenInfo())).get();
+            popup->Draw();
+            const auto result = popup->Process(cookedReadData);
+            cursorPosition = ((CopyFromCharPopup*)(popup))->FinalCursorPosition();
+            return result;
         }
         CATCH_RETURN();
     }
@@ -1235,10 +1237,15 @@ COORD CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noe
         break;
     case VK_F4:
     {
-        Status = _startCopyFromCharPopup(cookedReadData);
+        Status = _startCopyFromCharPopup(cookedReadData, cursorPosition);
         if (S_FALSE == Status)
         {
             // We couldn't display a popup. Go around a loop behind.
+            break;
+        }
+        else if (SUCCEEDED_NTSTATUS(Status))
+        {
+            UpdateCursorPosition = true;
             break;
         }
         else
