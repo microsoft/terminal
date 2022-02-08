@@ -50,7 +50,7 @@
            BasedOn="{StaticResource DefaultTextBoxStyle}"
            TargetType="TextBox">
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
-        <Setter Property="MaxWidth" Value="500" />
+        <Setter Property="MaxWidth" Value="400" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
