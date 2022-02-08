@@ -342,7 +342,7 @@ jobs:
     # public symbol push. Otherwise, we would have to list all of the PDB files one by one.
     - pwsh: |-
         mkdir $(Build.SourcesDirectory)/appxsym-temp
-        Get-Item "$(System.ArtifactsDirectory)" -Filter *.appxsym -Recurse | % {
+        Get-ChildItem "$(System.ArtifactsDirectory)" -Filter *.appxsym -Recurse | % {
           $src = $_.FullName
           $dest = Join-Path "$(Build.SourcesDirectory)/appxsym-temp/" $_.Name
 
