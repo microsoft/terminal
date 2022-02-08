@@ -3096,7 +3096,7 @@ namespace winrt::TerminalApp::implementation
             NewTerminalArgs newTerminalArgs;
             newTerminalArgs.Commandline(connection.Commandline());
             // GH #12370: We absolutely cannot allow a defterm connection to
-            // auto-elevate. Defterm doesn't work for elevated senarios in the
+            // auto-elevate. Defterm doesn't work for elevated scenarios in the
             // first place. If we try accepting the connection, the spawning an
             // elevated version of the Terminal with that profile... that's a
             // recipe for disaster. We won't ever open up a tab in this window.
