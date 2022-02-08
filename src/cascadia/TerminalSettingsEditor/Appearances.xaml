@@ -292,7 +292,7 @@
                             <x:Int32>17</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE744;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -312,7 +312,7 @@
                             <x:Int32>16</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE745;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -332,7 +332,7 @@
                             <x:Int32>18</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA5F;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -354,7 +354,7 @@
                             <x:Int32>1</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE746;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -369,7 +369,7 @@
                             <x:Int32>0</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xF16E;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -384,7 +384,7 @@
                             <x:Int32>2</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA61;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -401,7 +401,7 @@
                             <x:Int32>33</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE744;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -416,7 +416,7 @@
                             <x:Int32>32</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE745;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -431,7 +431,7 @@
                             <x:Int32>34</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA5F;" />
                         </ToggleButton.Content>
                     </ToggleButton>
