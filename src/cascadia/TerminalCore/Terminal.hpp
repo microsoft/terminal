@@ -95,47 +95,47 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    bool PrintString(std::wstring_view stringView) override;
-    bool ExecuteChar(wchar_t wch) override;
+    void PrintString(std::wstring_view stringView) override;
+    void ExecuteChar(wchar_t wch) override;
     TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
     Microsoft::Console::Types::Viewport GetBufferSize() override;
-    bool SetCursorPosition(short x, short y) override;
+    void SetCursorPosition(short x, short y) override;
     COORD GetCursorPosition() override;
-    bool SetCursorVisibility(const bool visible) override;
-    bool EnableCursorBlinking(const bool enable) override;
-    bool CursorLineFeed(const bool withReturn) override;
-    bool DeleteCharacter(const size_t count) override;
-    bool InsertCharacter(const size_t count) override;
-    bool EraseCharacters(const size_t numChars) override;
+    void SetCursorVisibility(const bool visible) override;
+    void EnableCursorBlinking(const bool enable) override;
+    void CursorLineFeed(const bool withReturn) override;
+    void DeleteCharacter(const size_t count) override;
+    void InsertCharacter(const size_t count) override;
+    void EraseCharacters(const size_t numChars) override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
-    bool WarningBell() override;
-    bool SetWindowTitle(std::wstring_view title) override;
+    void WarningBell() override;
+    void SetWindowTitle(std::wstring_view title) override;
     COLORREF GetColorTableEntry(const size_t tableIndex) const override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
+    void SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
     void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
-    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
+    void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
 
-    bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
-    bool SetRenderMode(const ::Microsoft::Console::Render::RenderSettings::Mode mode, const bool enabled) override;
+    void SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
+    void SetRenderMode(const ::Microsoft::Console::Render::RenderSettings::Mode mode, const bool enabled) override;
 
-    bool EnableXtermBracketedPasteMode(const bool enabled) override;
+    void EnableXtermBracketedPasteMode(const bool enabled) override;
     bool IsXtermBracketedPasteModeEnabled() const override;
 
     bool IsVtInputEnabled() const override;
 
-    bool CopyToClipboard(std::wstring_view content) override;
+    void CopyToClipboard(std::wstring_view content) override;
 
-    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) override;
-    bool EndHyperlink() override;
+    void AddHyperlink(std::wstring_view uri, std::wstring_view params) override;
+    void EndHyperlink() override;
 
-    bool SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
-    bool SetWorkingDirectory(std::wstring_view uri) override;
+    void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
+    void SetWorkingDirectory(std::wstring_view uri) override;
     std::wstring_view GetWorkingDirectory() override;
 
-    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
-    bool PopGraphicsRendition() override;
+    void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
+    void PopGraphicsRendition() override;
 
 #pragma endregion
 

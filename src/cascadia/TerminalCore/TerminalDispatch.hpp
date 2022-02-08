@@ -93,8 +93,8 @@ private:
 
     bool _ModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams param, const bool enable);
 
-    bool _ClearSingleTabStop();
-    bool _ClearAllTabStops();
+    void _ClearSingleTabStop();
+    void _ClearAllTabStops();
     void _ResetTabStops();
     void _InitTabStopsForWidth(const size_t width);
 };

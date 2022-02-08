@@ -11,16 +11,14 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Print puts the text in the buffer and moves the cursor
-bool Terminal::PrintString(std::wstring_view stringView)
+void Terminal::PrintString(std::wstring_view stringView)
 {
     _WriteBuffer(stringView);
-    return true;
 }
 
-bool Terminal::ExecuteChar(wchar_t wch)
+void Terminal::ExecuteChar(wchar_t wch)
 {
     _WriteBuffer({ &wch, 1 });
-    return true;
 }
 
 TextAttribute Terminal::GetTextAttributes() const
@@ -38,7 +36,7 @@ Viewport Terminal::GetBufferSize()
     return _buffer->GetSize();
 }
 
-bool Terminal::SetCursorPosition(short x, short y)
+void Terminal::SetCursorPosition(short x, short y)
 {
     const auto viewport = _GetMutableViewport();
     const auto viewOrigin = viewport.Origin();
@@ -47,8 +45,6 @@ bool Terminal::SetCursorPosition(short x, short y)
     COORD newPos{ absoluteX, absoluteY };
     viewport.Clamp(newPos);
     _buffer->GetCursor().SetPosition(newPos);
-
-    return true;
 }
 
 COORD Terminal::GetCursorPosition()
@@ -69,8 +65,8 @@ COORD Terminal::GetCursorPosition()
 // Arguments:
 // - withReturn, set to true if a carriage return should be performed as well.
 // Return value:
-// - true if succeeded, false otherwise
-bool Terminal::CursorLineFeed(const bool withReturn)
+// - <none>
+void Terminal::CursorLineFeed(const bool withReturn)
 {
     auto cursorPos = _buffer->GetCursor().GetPosition();
 
@@ -84,8 +80,6 @@ bool Terminal::CursorLineFeed(const bool withReturn)
         cursorPos.X = 0;
     }
     _AdjustCursorPosition(cursorPos);
-
-    return true;
 }
 
 // Method Description:
@@ -97,8 +91,8 @@ bool Terminal::CursorLineFeed(const bool withReturn)
 // Arguments:
 // - count, the number of characters to delete
 // Return value:
-// - true if succeeded, false otherwise
-bool Terminal::DeleteCharacter(const size_t count)
+// - <none>
+void Terminal::DeleteCharacter(const size_t count)
 {
     SHORT dist;
     THROW_IF_FAILED(SizeTToShort(count, &dist));
@@ -125,8 +119,6 @@ bool Terminal::DeleteCharacter(const size_t count)
         const auto data = OutputCell(*(_buffer->GetCellDataAt(sourcePos)));
         _buffer->Write(OutputCellIterator({ &data, 1 }), targetPos);
     } while (source.WalkInBounds(sourcePos, walkDirection) && target.WalkInBounds(targetPos, walkDirection));
-
-    return true;
 }
 
 // Method Description:
@@ -137,8 +129,8 @@ bool Terminal::DeleteCharacter(const size_t count)
 // Arguments:
 // - count, the number of spaces to insert
 // Return value:
-// - true if succeeded, false otherwise
-bool Terminal::InsertCharacter(const size_t count)
+// - <none>
+void Terminal::InsertCharacter(const size_t count)
 {
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
@@ -172,11 +164,9 @@ bool Terminal::InsertCharacter(const size_t count)
     } while (source.WalkInBounds(sourcePos, walkDirection) && target.WalkInBounds(targetPos, walkDirection));
     const auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), dist);
     _buffer->Write(eraseIter, cursorPos);
-
-    return true;
 }
 
-bool Terminal::EraseCharacters(const size_t numChars)
+void Terminal::EraseCharacters(const size_t numChars)
 {
     const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
@@ -184,7 +174,6 @@ bool Terminal::EraseCharacters(const size_t numChars)
     const short fillLimit = std::min(static_cast<short>(numChars), distanceToRight);
     const auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), fillLimit);
     _buffer->Write(eraseIter, absoluteCursorPos);
-    return true;
 }
 
 // Method description:
@@ -313,20 +302,18 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     return true;
 }
 
-bool Terminal::WarningBell()
+void Terminal::WarningBell()
 {
     _pfnWarningBell();
-    return true;
 }
 
-bool Terminal::SetWindowTitle(std::wstring_view title)
+void Terminal::SetWindowTitle(std::wstring_view title)
 {
     if (!_suppressApplicationTitle)
     {
         _title.emplace(title);
         _pfnTitleChanged(_title.value());
     }
-    return true;
 }
 
 // Method Description:
@@ -347,8 +334,8 @@ COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const
 // - tableIndex: the index of the color table to update.
 // - color: the new COLORREF to use as that color table value.
 // Return Value:
-// - true iff we successfully updated the color table entry.
-bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
+// - <none>
+void Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 {
     _renderSettings.SetColorTableEntry(tableIndex, color);
 
@@ -359,7 +346,6 @@ bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
 }
 
 // Method Description:
@@ -379,8 +365,8 @@ void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableInde
 // Arguments:
 // - cursorStyle: the style to be set for the cursor
 // Return Value:
-// - true iff we successfully set the cursor style
-bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
+// - <none>
+void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     CursorType finalCursorType = CursorType::Legacy;
     bool shouldBlink = false;
@@ -418,34 +404,29 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     default:
         // Invalid argument should be ignored.
-        return true;
+        return;
     }
 
     _buffer->GetCursor().SetType(finalCursorType);
     _buffer->GetCursor().SetBlinkingAllowed(shouldBlink);
-
-    return true;
 }
 
-bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled)
+void Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled)
 {
     _terminalInput->SetInputMode(mode, enabled);
-    return true;
 }
 
-bool Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
+void Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
 {
     _renderSettings.SetRenderMode(mode, enabled);
 
     // Repaint everything - the colors will have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
 }
 
-bool Terminal::EnableXtermBracketedPasteMode(const bool enabled)
+void Terminal::EnableXtermBracketedPasteMode(const bool enabled)
 {
     _bracketedPasteMode = enabled;
-    return true;
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const
@@ -459,13 +440,12 @@ bool Terminal::IsVtInputEnabled() const
     FAIL_FAST();
 }
 
-bool Terminal::SetCursorVisibility(const bool visible)
+void Terminal::SetCursorVisibility(const bool visible)
 {
     _buffer->GetCursor().SetIsVisible(visible);
-    return true;
 }
 
-bool Terminal::EnableCursorBlinking(const bool enable)
+void Terminal::EnableCursorBlinking(const bool enable)
 {
     _buffer->GetCursor().SetBlinkingAllowed(enable);
 
@@ -476,14 +456,11 @@ bool Terminal::EnableCursorBlinking(const bool enable)
     // cursor visibility property controls whether the user can see it or not.
     // (Yes, the cursor can be On and NOT Visible)
     _buffer->GetCursor().SetIsOn(true);
-    return true;
 }
 
-bool Terminal::CopyToClipboard(std::wstring_view content)
+void Terminal::CopyToClipboard(std::wstring_view content)
 {
     _pfnCopyToClipboard(content);
-
-    return true;
 }
 
 // Method Description:
@@ -492,27 +469,25 @@ bool Terminal::CopyToClipboard(std::wstring_view content)
 // - The hyperlink URI
 // - The customID provided (if there was one)
 // Return Value:
-// - true
-bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params)
+// - <none>
+void Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params)
 {
     auto attr = _buffer->GetCurrentAttributes();
     const auto id = _buffer->GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     _buffer->SetCurrentAttributes(attr);
     _buffer->AddHyperlinkToMap(uri, id);
-    return true;
 }
 
 // Method Description:
 // - Updates the buffer's current text attributes to end a hyperlink
 // Return Value:
-// - true
-bool Terminal::EndHyperlink()
+// - <none>
+void Terminal::EndHyperlink()
 {
     auto attr = _buffer->GetCurrentAttributes();
     attr.SetHyperlinkId(0);
     _buffer->SetCurrentAttributes(attr);
-    return true;
 }
 
 // Method Description:
@@ -521,8 +496,8 @@ bool Terminal::EndHyperlink()
 // - state: indicates the progress state
 // - progress: indicates the progress value
 // Return Value:
-// - true
-bool Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress)
+// - <none>
+void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress)
 {
     _taskbarState = static_cast<size_t>(state);
 
@@ -563,13 +538,11 @@ bool Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
     {
         _pfnTaskbarProgressChanged();
     }
-    return true;
 }
 
-bool Terminal::SetWorkingDirectory(std::wstring_view uri)
+void Terminal::SetWorkingDirectory(std::wstring_view uri)
 {
     _workingDirectory = uri;
-    return true;
 }
 
 std::wstring_view Terminal::GetWorkingDirectory()
@@ -584,11 +557,10 @@ std::wstring_view Terminal::GetWorkingDirectory()
 //   should be saved. Only a small subset of GraphicsOptions are actually supported;
 //   others are ignored. If no options are specified, all attributes are stored.
 // Return Value:
-// - true
-bool Terminal::PushGraphicsRendition(const VTParameters options)
+// - <none>
+void Terminal::PushGraphicsRendition(const VTParameters options)
 {
     _sgrStack.Push(_buffer->GetCurrentAttributes(), options);
-    return true;
 }
 
 // Method Description:
@@ -597,10 +569,9 @@ bool Terminal::PushGraphicsRendition(const VTParameters options)
 // Arguments:
 // - <none>
 // Return Value:
-// - true
-bool Terminal::PopGraphicsRendition()
+// - <none>
+void Terminal::PopGraphicsRendition()
 {
     const TextAttribute current = _buffer->GetCurrentAttributes();
     _buffer->SetCurrentAttributes(_sgrStack.Pop(current));
-    return true;
 }

@@ -55,11 +55,11 @@ void TerminalApiTest::SetColorTableEntry()
     auto settings = winrt::make<MockTermSettings>(100, 100, 100);
     term.UpdateSettings(settings);
 
-    VERIFY_IS_TRUE(term.SetColorTableEntry(0, 100));
-    VERIFY_IS_TRUE(term.SetColorTableEntry(128, 100));
-    VERIFY_IS_TRUE(term.SetColorTableEntry(255, 100));
+    VERIFY_NO_THROW(term.SetColorTableEntry(0, 100));
+    VERIFY_NO_THROW(term.SetColorTableEntry(128, 100));
+    VERIFY_NO_THROW(term.SetColorTableEntry(255, 100));
 
-    VERIFY_IS_FALSE(term.SetColorTableEntry(512, 100));
+    VERIFY_THROWS(term.SetColorTableEntry(512, 100), std::exception);
 }
 
 // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.

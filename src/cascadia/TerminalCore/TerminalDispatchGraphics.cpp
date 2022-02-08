@@ -256,10 +256,12 @@ bool TerminalDispatch::SetGraphicsRendition(const VTParameters options)
 
 bool TerminalDispatch::PushGraphicsRendition(const VTParameters options)
 {
-    return _terminalApi.PushGraphicsRendition(options);
+    _terminalApi.PushGraphicsRendition(options);
+    return true;
 }
 
 bool TerminalDispatch::PopGraphicsRendition()
 {
-    return _terminalApi.PopGraphicsRendition();
+    _terminalApi.PopGraphicsRendition();
+    return true;
 }
