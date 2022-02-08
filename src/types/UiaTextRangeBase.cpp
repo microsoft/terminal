@@ -44,7 +44,15 @@ try
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
+    // GH#8730: The cursor position may be in a delayed state, resulting in it being out of bounds.
+    // If that's the case, clamp it to be within bounds.
+    // TODO GH#XXXX: We should be able to just check some fields off of the Cursor object,
+    // but Windows Terminal isn't updating those flags properly.
     _start = cursor.GetPosition();
+    if (const auto bufferSize{ pData->GetTextBuffer().GetSize() }; !bufferSize.IsInBounds(_start))
+    {
+        bufferSize.Clamp(_start);
+    }
     _end = _start;
 
     UiaTracing::TextRange::Constructor(*this);
