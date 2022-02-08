@@ -600,7 +600,6 @@ bool Utils::IsElevated()
 std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std::wstring_view commandLine,
                                                                             std::wstring_view startingDirectory)
 {
-    bool executableWasWSL{ false };
     do
     {
         if (startingDirectory.size() > 0 && commandLine.size() >= 3)
@@ -612,7 +611,6 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
             const auto executableFilename{ executablePath.filename().wstring() };
             if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
             {
-                executableWasWSL = true;
                 // We've got a WSL -- let's just make sure it's the right one.
                 if (executablePath.has_parent_path())
                 {
