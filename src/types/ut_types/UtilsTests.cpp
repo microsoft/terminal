@@ -511,6 +511,9 @@ void UtilsTests::TestMangleWSLPaths()
 
 void UtilsTests::TestTrimTrailingWhitespace()
 {
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
     // Tests for GH #11473
     VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo   "));
     VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\n"));
@@ -518,14 +521,28 @@ void UtilsTests::TestTrimTrailingWhitespace()
     VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\r\n"));
     VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\n"));
     VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\n"));
-    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t"));
-    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\t"));
-    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\n"));
+
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t"), L"Trim when there is a tab at the end.");
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\t"), L"Trim when there are tabs at the end.");
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\n"), L"Trim when there are tabs at the start of the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tbar\t\n"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tbar\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tbar\t\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
 }
 void UtilsTests::TestDontTrimTrailingWhitespace()
 {
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar"));
+
     // Tests for GH #12387
     VERIFY_ARE_EQUAL(L"Foo\nBar\n", TrimPaste(L"Foo\nBar\n"));
     VERIFY_ARE_EQUAL(L"Foo  Baz\nBar\n", TrimPaste(L"Foo  Baz\nBar\n"));
-    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\n", TrimPaste(L"Foo\tBaz\nBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\n", TrimPaste(L"Foo\tBaz\nBar\n"), L"Don't trim when there's a trailing newline, and tabs in the middle");
+    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\t\n", TrimPaste(L"Foo\tBaz\nBar\t\n"), L"Don't trim when there's a trailing newline, and tabs in the middle");
+
+    // We need to both
+    // * trim when there's a tab followed by only whitespace
+    // * not trim then there's a tab in the middle, and the string ends in whitespace
 }

@@ -775,13 +775,35 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
 
 std::wstring_view Utils::TrimPaste(std::wstring_view textView)
 {
-    const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
-    if (pos == textView.npos)
+    const auto lastNonSpace = textView.find_last_not_of(L"\t\n\v\f\r ");
+    const auto firstNewline = textView.find_first_of(L"\n\v\f\r");
+    const auto firstTab = textView.find_first_of(L"\t");
+    const bool onlyWhitespace = lastNonSpace == textView.npos;
+    const bool hasNewline = firstNewline != textView.npos;
+    // We want to trim trailing tabs when:
+    // * there is a tab in the string
+    // * it's after the last non-whitespace char
+    //
+    // So "Foo Bar\t\n" gets trimmed but "foo\tbar\n" doesn't.
+    const bool trimTab = (firstTab != textView.npos) &&
+                         (hasNewline) &&
+                         (!onlyWhitespace) &&
+                         (firstTab > lastNonSpace || firstTab >= firstNewline);
+
+    if (onlyWhitespace)
     {
         // Text is all white space, nothing to paste
         return L"";
     }
-    else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
+    else if (!trimTab && firstNewline != textView.npos && (lastNonSpace + 1 != firstNewline))
+    {
+        // In this case, there was trailing whitespace, but there was also a
+        // newline somewhere in the middle of the text. In this case, the user
+        // totally wanted to paste multiple lines of text, and that likely
+        // includes the trailing newline.
+        // DON'T trim it in this case.
+    }
+    else if (const auto toRemove = textView.size() - 1 - lastNonSpace; trimTab || toRemove > 0)
     {
         textView.remove_suffix(toRemove);
     }
