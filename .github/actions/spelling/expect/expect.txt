@@ -1463,6 +1463,7 @@ msctls
 msdata
 msdn
 msft
+MSDL
 MSGCMDLINEF
 MSGF
 MSGFILTER
