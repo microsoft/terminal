@@ -2444,6 +2444,7 @@ TREX
 triaged
 triaging
 TRIANGLESTRIP
+Tribool
 TRIMZEROHEADINGS
 truetype
 trx
