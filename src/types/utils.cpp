@@ -678,7 +678,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
     // %userprofile%, so it's at least something reasonable.
     return {
         std::wstring{ commandLine },
-        std::wstring{ startingDirectory == L"~" ? wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%") :
+        std::wstring{ startingDirectory == L"~" ? L"" :
                                                   startingDirectory }
     };
 }
