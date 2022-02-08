@@ -832,7 +832,7 @@ namespace winrt::TerminalApp::implementation
                     currentNeedleHasResults ?
                         (hasMultipleMatches ?
                              winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_ManyMatchesAvailable") }, _filteredActions.Size()) } :
-                             RS_(L"CommandPalette_OneMatcheAvailable")) :
+                             RS_(L"CommandPalette_OneMatchAvailable")) :
                         NoMatchesText(), // what to announce if results were found
                     L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
