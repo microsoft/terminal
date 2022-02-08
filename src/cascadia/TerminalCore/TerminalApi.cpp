@@ -11,39 +11,34 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Print puts the text in the buffer and moves the cursor
-bool Terminal::PrintString(std::wstring_view stringView) noexcept
-try
+bool Terminal::PrintString(std::wstring_view stringView)
 {
     _WriteBuffer(stringView);
     return true;
 }
-CATCH_RETURN_FALSE()
 
-bool Terminal::ExecuteChar(wchar_t wch) noexcept
-try
+bool Terminal::ExecuteChar(wchar_t wch)
 {
     _WriteBuffer({ &wch, 1 });
     return true;
 }
-CATCH_RETURN_FALSE()
 
-TextAttribute Terminal::GetTextAttributes() const noexcept
+TextAttribute Terminal::GetTextAttributes() const
 {
     return _buffer->GetCurrentAttributes();
 }
 
-void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
+void Terminal::SetTextAttributes(const TextAttribute& attrs)
 {
     _buffer->SetCurrentAttributes(attrs);
 }
 
-Viewport Terminal::GetBufferSize() noexcept
+Viewport Terminal::GetBufferSize()
 {
     return _buffer->GetSize();
 }
 
-bool Terminal::SetCursorPosition(short x, short y) noexcept
-try
+bool Terminal::SetCursorPosition(short x, short y)
 {
     const auto viewport = _GetMutableViewport();
     const auto viewOrigin = viewport.Origin();
@@ -55,9 +50,8 @@ try
 
     return true;
 }
-CATCH_RETURN_FALSE()
 
-COORD Terminal::GetCursorPosition() noexcept
+COORD Terminal::GetCursorPosition()
 {
     const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
@@ -76,8 +70,7 @@ COORD Terminal::GetCursorPosition() noexcept
 // - withReturn, set to true if a carriage return should be performed as well.
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::CursorLineFeed(const bool withReturn) noexcept
-try
+bool Terminal::CursorLineFeed(const bool withReturn)
 {
     auto cursorPos = _buffer->GetCursor().GetPosition();
 
@@ -94,7 +87,6 @@ try
 
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Method Description:
 // - deletes count characters starting from the cursor's current position
@@ -106,23 +98,16 @@ CATCH_RETURN_FALSE()
 // - count, the number of characters to delete
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::DeleteCharacter(const size_t count) noexcept
-try
+bool Terminal::DeleteCharacter(const size_t count)
 {
     SHORT dist;
-    if (!SUCCEEDED(SizeTToShort(count, &dist)))
-    {
-        return false;
-    }
+    THROW_IF_FAILED(SizeTToShort(count, &dist));
     const auto cursorPos = _buffer->GetCursor().GetPosition();
     const auto copyToPos = cursorPos;
     const COORD copyFromPos{ cursorPos.X + dist, cursorPos.Y };
     const auto sourceWidth = _mutableViewport.RightExclusive() - copyFromPos.X;
     SHORT width;
-    if (!SUCCEEDED(UIntToShort(sourceWidth, &width)))
-    {
-        return false;
-    }
+    THROW_IF_FAILED(UIntToShort(sourceWidth, &width));
 
     // Get a rectangle of the source
     auto source = Viewport::FromDimensions(copyFromPos, width, 1);
@@ -143,7 +128,6 @@ try
 
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Inserts count spaces starting from the cursor's current position, moving over the existing text
@@ -154,27 +138,20 @@ CATCH_RETURN_FALSE()
 // - count, the number of spaces to insert
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::InsertCharacter(const size_t count) noexcept
-try
+bool Terminal::InsertCharacter(const size_t count)
 {
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
     // that does the 'move a region from here to there' operation
     // TODO: Github issue #2163
     SHORT dist;
-    if (!SUCCEEDED(SizeTToShort(count, &dist)))
-    {
-        return false;
-    }
+    THROW_IF_FAILED(SizeTToShort(count, &dist));
     const auto cursorPos = _buffer->GetCursor().GetPosition();
     const auto copyFromPos = cursorPos;
     const COORD copyToPos{ cursorPos.X + dist, cursorPos.Y };
     const auto sourceWidth = _mutableViewport.RightExclusive() - copyFromPos.X;
     SHORT width;
-    if (!SUCCEEDED(UIntToShort(sourceWidth, &width)))
-    {
-        return false;
-    }
+    THROW_IF_FAILED(UIntToShort(sourceWidth, &width));
 
     // Get a rectangle of the source
     auto source = Viewport::FromDimensions(copyFromPos, width, 1);
@@ -198,10 +175,8 @@ try
 
     return true;
 }
-CATCH_RETURN_FALSE()
 
-bool Terminal::EraseCharacters(const size_t numChars) noexcept
-try
+bool Terminal::EraseCharacters(const size_t numChars)
 {
     const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
@@ -211,7 +186,6 @@ try
     _buffer->Write(eraseIter, absoluteCursorPos);
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Method description:
 // - erases a line of text, either from
@@ -223,8 +197,7 @@ CATCH_RETURN_FALSE()
 // - the erase type
 // Return value:
 // - true if succeeded, false otherwise
-bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept
-try
+bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType)
 {
     const auto cursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
@@ -257,7 +230,6 @@ try
     _buffer->Write(eraseIter, startPos, false);
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Method description:
 // - erases text in the buffer in two ways depending on erase type
@@ -267,8 +239,7 @@ CATCH_RETURN_FALSE()
 // - the erase type
 // Return Value:
 // - true if succeeded, false otherwise
-bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType) noexcept
-try
+bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
     // Store the relative cursor position so we can restore it later after we move the viewport
     const auto cursorPos = _buffer->GetCursor().GetPosition();
@@ -341,18 +312,14 @@ try
 
     return true;
 }
-CATCH_RETURN_FALSE()
 
-bool Terminal::WarningBell() noexcept
-try
+bool Terminal::WarningBell()
 {
     _pfnWarningBell();
     return true;
 }
-CATCH_RETURN_FALSE()
 
-bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
-try
+bool Terminal::SetWindowTitle(std::wstring_view title)
 {
     if (!_suppressApplicationTitle)
     {
@@ -361,7 +328,6 @@ try
     }
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Retrieves the value in the colortable at the specified index.
@@ -369,14 +335,9 @@ CATCH_RETURN_FALSE()
 // - tableIndex: the index of the color table to retrieve.
 // Return Value:
 // - the COLORREF value for the color at that index in the table.
-COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const noexcept
-try
+COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const
 {
     return _renderSettings.GetColorTableEntry(tableIndex);
-}
-catch (...)
-{
-    return INVALID_COLOR;
 }
 
 // Method Description:
@@ -387,8 +348,7 @@ catch (...)
 // - color: the new COLORREF to use as that color table value.
 // Return Value:
 // - true iff we successfully updated the color table entry.
-bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
-try
+bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 {
     _renderSettings.SetColorTableEntry(tableIndex, color);
 
@@ -401,7 +361,6 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Sets the position in the color table for the given color alias.
@@ -410,7 +369,7 @@ CATCH_RETURN_FALSE()
 // - tableIndex: the new position of the alias in the color table.
 // Return Value:
 // - <none>
-void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
+void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex)
 {
     _renderSettings.SetColorAliasIndex(alias, tableIndex);
 }
@@ -421,7 +380,7 @@ void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableInde
 // - cursorStyle: the style to be set for the cursor
 // Return Value:
 // - true iff we successfully set the cursor style
-bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noexcept
+bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     CursorType finalCursorType = CursorType::Legacy;
     bool shouldBlink = false;
@@ -468,16 +427,13 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     return true;
 }
 
-bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept
-try
+bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled)
 {
     _terminalInput->SetInputMode(mode, enabled);
     return true;
 }
-CATCH_RETURN_FALSE()
 
-bool Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled) noexcept
-try
+bool Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
 {
     _renderSettings.SetRenderMode(mode, enabled);
 
@@ -485,32 +441,31 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_RETURN_FALSE()
 
-bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
+bool Terminal::EnableXtermBracketedPasteMode(const bool enabled)
 {
     _bracketedPasteMode = enabled;
     return true;
 }
 
-bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
+bool Terminal::IsXtermBracketedPasteModeEnabled() const
 {
     return _bracketedPasteMode;
 }
 
-bool Terminal::IsVtInputEnabled() const noexcept
+bool Terminal::IsVtInputEnabled() const
 {
     // We should never be getting this call in Terminal.
     FAIL_FAST();
 }
 
-bool Terminal::SetCursorVisibility(const bool visible) noexcept
+bool Terminal::SetCursorVisibility(const bool visible)
 {
     _buffer->GetCursor().SetIsVisible(visible);
     return true;
 }
 
-bool Terminal::EnableCursorBlinking(const bool enable) noexcept
+bool Terminal::EnableCursorBlinking(const bool enable)
 {
     _buffer->GetCursor().SetBlinkingAllowed(enable);
 
@@ -524,14 +479,12 @@ bool Terminal::EnableCursorBlinking(const bool enable) noexcept
     return true;
 }
 
-bool Terminal::CopyToClipboard(std::wstring_view content) noexcept
-try
+bool Terminal::CopyToClipboard(std::wstring_view content)
 {
     _pfnCopyToClipboard(content);
 
     return true;
 }
-CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Updates the buffer's current text attributes to start a hyperlink
@@ -540,7 +493,7 @@ CATCH_RETURN_FALSE()
 // - The customID provided (if there was one)
 // Return Value:
 // - true
-bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept
+bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params)
 {
     auto attr = _buffer->GetCurrentAttributes();
     const auto id = _buffer->GetHyperlinkId(uri, params);
@@ -554,7 +507,7 @@ bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noe
 // - Updates the buffer's current text attributes to end a hyperlink
 // Return Value:
 // - true
-bool Terminal::EndHyperlink() noexcept
+bool Terminal::EndHyperlink()
 {
     auto attr = _buffer->GetCurrentAttributes();
     attr.SetHyperlinkId(0);
@@ -569,7 +522,7 @@ bool Terminal::EndHyperlink() noexcept
 // - progress: indicates the progress value
 // Return Value:
 // - true
-bool Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) noexcept
+bool Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress)
 {
     _taskbarState = static_cast<size_t>(state);
 
@@ -613,13 +566,13 @@ bool Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
     return true;
 }
 
-bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
+bool Terminal::SetWorkingDirectory(std::wstring_view uri)
 {
     _workingDirectory = uri;
     return true;
 }
 
-std::wstring_view Terminal::GetWorkingDirectory() noexcept
+std::wstring_view Terminal::GetWorkingDirectory()
 {
     return _workingDirectory;
 }
@@ -632,7 +585,7 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
 //   others are ignored. If no options are specified, all attributes are stored.
 // Return Value:
 // - true
-bool Terminal::PushGraphicsRendition(const VTParameters options) noexcept
+bool Terminal::PushGraphicsRendition(const VTParameters options)
 {
     _sgrStack.Push(_buffer->GetCurrentAttributes(), options);
     return true;
@@ -645,7 +598,7 @@ bool Terminal::PushGraphicsRendition(const VTParameters options) noexcept
 // - <none>
 // Return Value:
 // - true
-bool Terminal::PopGraphicsRendition() noexcept
+bool Terminal::PopGraphicsRendition()
 {
     const TextAttribute current = _buffer->GetCurrentAttributes();
     _buffer->SetCurrentAttributes(_sgrStack.Pop(current));
