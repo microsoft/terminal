@@ -106,4 +106,9 @@ namespace Microsoft::Console::Utils
     std::tuple<std::wstring, std::wstring> MangleStartingDirectoryForWSL(std::wstring_view commandLine,
                                                                          std::wstring_view startingDirectory);
 
+    // Similar to MangleStartingDirectoryForWSL, this function is only ever used
+    // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
+    // testing easier.
+    std::wstring_view TrimPaste(std::wstring_view textView);
+
 }

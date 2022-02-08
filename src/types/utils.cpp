@@ -772,3 +772,18 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                                     std::wstring{ startingDirectory }
     };
 }
+
+std::wstring_view Utils::TrimPaste(std::wstring_view textView)
+{
+    const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
+    if (pos == textView.npos)
+    {
+        // Text is all white space, nothing to paste
+        return L"";
+    }
+    else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
+    {
+        textView.remove_suffix(toRemove);
+    }
+    return textView;
+}
