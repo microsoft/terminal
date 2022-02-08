@@ -56,11 +56,11 @@ namespace Microsoft::Console::Render
     protected:
         // I'm using a non-class enum here, so that the values
         // are trivially convertible and comparable to bool.
-        enum Tribool : uint8_t
+        enum class Tribool : uint8_t
         {
-            Tribool_False = 0,
-            Tribool_True,
-            Tribool_Invalid,
+            False = 0,
+            True,
+            Invalid,
         };
 
         const bool _fUseAsciiOnly;

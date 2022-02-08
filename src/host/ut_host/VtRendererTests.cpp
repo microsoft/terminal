@@ -1484,9 +1484,8 @@ void VtRendererTest::TestCursorVisibility()
     // Frame 1: Paint the cursor at the home position. At the end of the frame,
     // the cursor should be on. Because we're moving the cursor with CUP, we
     // need to disable the cursor during this frame.
+    qExpectedInput.push_back("\x1b[2J");
     TestPaint(*engine, [&]() {
-        qExpectedInput.push_back("\x1b[2J");
-
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1504,7 +1503,6 @@ void VtRendererTest::TestCursorVisibility()
         qExpectedInput.push_back("\x1b[?25h");
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1512,7 +1510,6 @@ void VtRendererTest::TestCursorVisibility()
     // frame, the cursor should be on, the same as before. We aren't moving the
     // cursor during this frame, so _needToDisableCursor will stay false.
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1523,7 +1520,6 @@ void VtRendererTest::TestCursorVisibility()
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1531,7 +1527,6 @@ void VtRendererTest::TestCursorVisibility()
     // should be on, the same as before. Because we're moving the cursor with
     // CUP, we need to disable the cursor during this frame.
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1542,7 +1537,6 @@ void VtRendererTest::TestCursorVisibility()
 
         VERIFY_SUCCEEDED(engine->PaintCursor(options));
 
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
         VERIFY_IS_TRUE(engine->_needToDisableCursor);
 
@@ -1552,7 +1546,6 @@ void VtRendererTest::TestCursorVisibility()
         qExpectedInput.push_back("\x1b[?25h");
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1560,14 +1553,12 @@ void VtRendererTest::TestCursorVisibility()
     // should be off.
     Log::Comment(NoThrowString().Format(L"Painting without calling PaintCursor will hide the cursor"));
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
         qExpectedInput.push_back("\x1b[?25l");
     });
 
-    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
     VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 }

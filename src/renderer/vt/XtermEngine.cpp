@@ -17,7 +17,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _needToDisableCursor(false),
     // GH#12401: Ensure a DECTCEM cursor show/hide sequence
     // is emitted on the first frame no matter what.
-    _lastCursorIsVisible(Tribool_Invalid),
+    _lastCursorIsVisible(Tribool::Invalid),
     _nextCursorIsVisible(true)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
@@ -100,10 +100,10 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     {
         // If the cursor was previously visible, let's hide it for this frame,
         // by prepending a cursor off.
-        if (_lastCursorIsVisible)
+        if (_lastCursorIsVisible != Tribool::False)
         {
             _buffer.insert(0, "\x1b[?25l");
-            _lastCursorIsVisible = Tribool_False;
+            _lastCursorIsVisible = Tribool::False;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
         // need to worry, it's already off.
