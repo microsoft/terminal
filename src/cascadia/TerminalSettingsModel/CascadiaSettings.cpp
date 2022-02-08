@@ -593,7 +593,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
 Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring& commandLine) const
 {
     // We're going to cache all the command lines we got, as
-    // _normalizeCommandLine is a relatively heavy operation.
+    // NormalizeCommandLine is a relatively heavy operation.
     std::call_once(_commandLinesCacheOnce, [this]() {
         _commandLinesCache.reserve(_allProfiles.Size());
 
@@ -612,7 +612,7 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
 
             try
             {
-                _commandLinesCache.emplace_back(_normalizeCommandLine(cmd.c_str()), profile);
+                _commandLinesCache.emplace_back(NormalizeCommandLine(cmd.c_str()), profile);
             }
             CATCH_LOG()
         }
@@ -631,7 +631,7 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
 
     try
     {
-        const auto needle = _normalizeCommandLine(commandLine.c_str());
+        const auto needle = NormalizeCommandLine(commandLine.c_str());
 
         // til::starts_with(string, prefix) will always return false if prefix.size() > string.size().
         // --> Using binary search we can safely skip all items in _commandLinesCache where .first.size() > needle.size().
@@ -678,7 +678,7 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
 // is considered a compatible profile with
 //   "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
 // as it shares the same (normalized) prefix.
-std::wstring CascadiaSettings::_normalizeCommandLine(LPCWSTR commandLine)
+std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
 {
     // Turn "%SystemRoot%\System32\cmd.exe" into "C:\WINDOWS\System32\cmd.exe".
     // We do this early, as environment variables might occur anywhere in the commandLine.
@@ -691,6 +691,15 @@ std::wstring CascadiaSettings::_normalizeCommandLine(LPCWSTR commandLine)
     int argc = 0;
     wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
     THROW_LAST_ERROR_IF(!argc);
+
+    // The index of the first argument in argv for our executable in argv[0].
+    // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
+    int startOfArguments = 1;
+    // Returns true if the executable in argv[0] to argv[startOfArguments - 1]
+    // has any further arguments in argv[startOfArguments] to argv[argc - 1].
+    const auto hasTrailingArguments = [&]() noexcept {
+        return (argc - startOfArguments) > 1;
+    };
 
     // The given commandLine should start with an executable name or path.
     // For instance given the following argv arrays:
@@ -713,39 +722,39 @@ std::wstring CascadiaSettings::_normalizeCommandLine(LPCWSTR commandLine)
         // CreateProcessW uses RtlGetExePath to get the lpPath for SearchPathW.
         // The difference between the behavior of SearchPathW if lpPath is nullptr and what RtlGetExePath returns
         // seems to be mostly whether SafeProcessSearchMode is respected and the support for relative paths.
-        // Windows Terminal makes the use relative paths rather impractical which is why we simply dropped the call to RtlGetExePath.
+        // Windows Terminal makes the use of relative paths rather impractical which is why we simply dropped the call to RtlGetExePath.
         const auto status = wil::SearchPathW(nullptr, argv[0], L".exe", normalized);
 
         if (status == S_OK)
         {
-            std::filesystem::path path{ std::move(normalized) };
+            const auto attributes = GetFileAttributesW(normalized.c_str());
 
-            // ExpandEnvironmentStringsW() might have returned a string that's not in the canonical capitalization.
-            // For instance %SystemRoot% is set to C:\WINDOWS on my system (ugh), even though the path is actually C:\Windows.
-            // We need to fix this as case-sensitive path comparisons will fail otherwise (Windows supports case-sensitive file systems).
-            // If we fail to resolve the path for whatever reason (pretty unlikely given that SearchPathW found it)
-            // we fall back to leaving the path as is. Better than throwing a random exception and making this unusable.
+            if (attributes != INVALID_FILE_ATTRIBUTES && WI_IsFlagClear(attributes, FILE_ATTRIBUTE_DIRECTORY))
             {
-                std::error_code ec;
-                auto canonicalPath = std::filesystem::canonical(path, ec);
-                if (!ec)
+                std::filesystem::path path{ std::move(normalized) };
+
+                // canonical() will resolve symlinks, etc. for us.
                 {
-                    path = std::move(canonicalPath);
+                    std::error_code ec;
+                    auto canonicalPath = std::filesystem::canonical(path, ec);
+                    if (!ec)
+                    {
+                        path = std::move(canonicalPath);
+                    }
                 }
+
+                // std::filesystem::path has no way to extract the internal path.
+                // So about that.... I own you, computer. Give me that path.
+                normalized = std::move(const_cast<std::wstring&>(path.native()));
+                break;
             }
-
-            // std::filesystem::path has no way to extract the internal path.
-            // So about that.... I own you, computer. Give me that path.
-            normalized = std::move(const_cast<std::wstring&>(path.native()));
-            break;
         }
-
         // If the file path couldn't be found by SearchPathW this could be the result of us being given a commandLine
         // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"}.
         // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
         // Of course we can only do that if we have at least 2 remaining arguments in argv.
         // All other error types aren't handled at the moment.
-        if (argc < 2 || status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        else if (!hasTrailingArguments() || status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
         {
             break;
         }
@@ -753,19 +762,19 @@ std::wstring CascadiaSettings::_normalizeCommandLine(LPCWSTR commandLine)
         // As described in the comment right above, we concatenate arguments in an attempt to resolve a valid path.
         // The code below turns argv from {"C:\foo", "bar\baz.exe", "-arg"} into {"C:\foo bar\baz.exe", "-arg"}.
         // The code abuses the fact that CommandLineToArgvW allocates all arguments back-to-back on the heap separated by '\0'.
-        argv[1][-1] = L' ';
-        --argc;
+        argv[startOfArguments][-1] = L' ';
+        ++startOfArguments;
     }
 
     // We've (hopefully) finished resolving the path to the executable.
     // We're now going to append all remaining arguments to the resulting string.
     // If argv is {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"},
     // then we'll get "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
-    if (argc > 1)
+    if (hasTrailingArguments())
     {
         // normalized contains a canonical form of argv[0] at this point.
         // -1 allows us to include the \0 between argv[0] and argv[1] in the call to append().
-        const auto beg = argv[1] - 1;
+        const auto beg = argv[startOfArguments] - 1;
         const auto lastArg = argv[argc - 1];
         const auto end = lastArg + wcslen(lastArg);
         normalized.append(beg, end);

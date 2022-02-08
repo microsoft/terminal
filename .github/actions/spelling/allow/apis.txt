@@ -10,16 +10,16 @@ bitfields
 BUILDBRANCH
 BUILDMSG
 BUILDNUMBER
-BYPOSITION
 BYCOMMAND
+BYPOSITION
 charconv
 CLASSNOTAVAILABLE
 cmdletbinding
 COLORPROPERTY
 colspan
 COMDLG
-comparand
 commandlinetoargv
+comparand
 cstdint
 CXICON
 CYICON
@@ -52,8 +52,8 @@ hotkeys
 href
 hrgn
 HTCLOSE
-HWINSTA
 hwinsta
+HWINSTA
 IActivation
 IApp
 IAppearance
@@ -76,8 +76,8 @@ IObject
 iosfwd
 IPackage
 IPeasant
-isspace
 ISetup
+isspace
 IStorage
 istream
 IStringable
@@ -94,14 +94,14 @@ lround
 Lsa
 lsass
 LSHIFT
+memicmp
 MENUCOMMAND
 MENUDATA
 MENUINFO
 MENUITEMINFOW
-memicmp
-mptt
 MOUSELEAVE
 mov
+mptt
 msappx
 MULTIPLEUSE
 NCHITTEST
@@ -125,6 +125,7 @@ oaidl
 ocidl
 ODR
 offsetof
+ofstream
 onefuzz
 osver
 OSVERSIONINFOEXW
@@ -176,6 +177,7 @@ THEMECHANGED
 tlg
 TME
 tmp
+tmpdir
 tolower
 toupper
 TRACKMOUSEEVENT
@@ -188,7 +190,6 @@ UOI
 UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
-WSF
 wcsstr
 wcstoui
 winmain
@@ -196,6 +197,7 @@ winsta
 winstamin
 wmemcmp
 wpc
+WSF
 wsregex
 wwinmain
 xchg
