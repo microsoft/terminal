@@ -287,14 +287,17 @@ jobs:
       inputs:
         disableOutputRedirect: true
     - task: DownloadBuildArtifacts@0
-      displayName: Download Artifacts (*.appx, *.msix)
+      displayName: Download Artifacts (*.appx, *.msix, *.appxsym)
       inputs:
         downloadType: specific
         itemPattern: >-
           **/*.msix
 
           **/*.appx
+
+          **/*.appxsym
         extractTars: false
+
     - task: PowerShell@2
       displayName: Create WindowsTerminal*.msixbundle
       inputs:
@@ -334,6 +337,43 @@ jobs:
                   "ToolVersion": "1.0"
               }
           ]
+
+    # It seems easier to do this -- download every appxsym -- then enumerate all the PDBs in the build directory for the
+    # public symbol push. Otherwise, we would have to list all of the PDB files one by one.
+    - pwsh: |-
+        mkdir $(Build.SourcesDirectory)/appxsym-temp
+        Get-ChildItem "$(System.ArtifactsDirectory)" -Filter *.appxsym -Recurse | % {
+          $src = $_.FullName
+          $dest = Join-Path "$(Build.SourcesDirectory)/appxsym-temp/" $_.Name
+
+          mkdir $dest
+          Write-Host "Extracting $src to $dest..."
+          tar -x -v -f $src -C $dest
+        }
+      displayName: Extract symbols for public consumption
+
+    # Publish the app symbols to the public MSDL symbol server
+    # accessible via https://msdl.microsoft.com/download/symbols
+    - task: PublishSymbols@2
+      displayName: 'Publish app symbols to MSDL'
+      inputs:
+        symbolsFolder: '$(Build.SourcesDirectory)/appxsym-temp'
+        searchPattern: '**/*.pdb'
+        SymbolsMaximumWaitTime: 30
+        SymbolServerType: 'TeamServices'
+        SymbolsProduct: 'Windows Terminal Application Binaries'
+        SymbolsVersion: '$(XES_APPXMANIFESTVERSION)'
+        # The ADO task does not support indexing of GitHub sources.
+        indexSources: false
+        detailedLog: true
+      # There is a bug which causes this task to fail if LIB includes an inaccessible path (even though it does not depend on it).
+      # To work around this issue, we just force LIB to be any dir that we know exists.
+      # Copied from https://github.com/microsoft/icu/blob/f869c214adc87415dfe751d81f42f1bca55dcf5f/build/azure-nuget.yml#L564-L583
+      env:
+        LIB: $(Build.SourcesDirectory)
+        ArtifactServices_Symbol_AccountName: microsoftpublicsymbols
+        ArtifactServices_Symbol_PAT: $(ADO_microsoftpublicsymbols_PAT)
+
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
       inputs:
