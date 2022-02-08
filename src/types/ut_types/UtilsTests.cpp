@@ -30,6 +30,9 @@ class UtilsTests
     TEST_METHOD(TestMangleWSLPaths);
 #endif
 
+    TEST_METHOD(TestTrimTrailingWhitespace);
+    TEST_METHOD(TestDontTrimTrailingWhitespace);
+
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
 };
@@ -505,3 +508,24 @@ void UtilsTests::TestMangleWSLPaths()
     }
 }
 #endif
+
+void UtilsTests::TestTrimTrailingWhitespace()
+{
+    // Tests for GH #11473
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo   "));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\n"));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\n\n"));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\r\n"));
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\n"));
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t"));
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\t"));
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\n"));
+}
+void UtilsTests::TestDontTrimTrailingWhitespace()
+{
+    // Tests for GH #12387
+    VERIFY_ARE_EQUAL(L"Foo\nBar\n", TrimPaste(L"Foo\nBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo  Baz\nBar\n", TrimPaste(L"Foo  Baz\nBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\n", TrimPaste(L"Foo\tBaz\nBar\n"));
+}
