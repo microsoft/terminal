@@ -90,7 +90,29 @@ class Microsoft::Console::Render::VtRendererTest
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
 
-    void VerifyExpectedInputsDrained();
+    void VerifyFirstPaint(VtEngine& engine)
+    {
+        // Verify the first BeginPaint emits a clear and go home
+        qExpectedInput.push_back("\x1b[2J");
+        // Verify the first EndPaint sets the cursor state
+        qExpectedInput.push_back("\x1b[?25l");
+        VERIFY_IS_TRUE(engine._firstPaint);
+        TestPaint(engine, [&]() {
+            VERIFY_IS_FALSE(engine._firstPaint);
+        });
+    }
+
+    void VerifyExpectedInputsDrained()
+    {
+        if (!qExpectedInput.empty())
+        {
+            for (const auto& exp : qExpectedInput)
+            {
+                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: %hs", exp.c_str()));
+            }
+            VERIFY_FAIL(L"there should be no remaining un-drained expected input");
+        }
+    }
 };
 
 Viewport VtRendererTest::SetUpViewport()
@@ -101,18 +123,6 @@ Viewport VtRendererTest::SetUpViewport()
     view.Right = 79;
 
     return Viewport::FromInclusive(view);
-}
-
-void VtRendererTest::VerifyExpectedInputsDrained()
-{
-    if (!qExpectedInput.empty())
-    {
-        for (const auto& exp : qExpectedInput)
-        {
-            Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: %hs", exp.c_str()));
-        }
-        VERIFY_FAIL(L"there should be no remaining un-drained expected input");
-    }
 }
 
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
@@ -212,12 +222,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     const Viewport view = SetUpViewport();
 
@@ -402,12 +407,7 @@ void VtRendererTest::Xterm256TestColors()
     RenderSettings renderSettings;
     RenderData renderData;
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     Viewport view = SetUpViewport();
 
@@ -585,12 +585,7 @@ void VtRendererTest::Xterm256TestCursor()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     Viewport view = SetUpViewport();
 
@@ -766,12 +761,7 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     Viewport view = SetUpViewport();
 
@@ -907,12 +897,7 @@ void VtRendererTest::XtermTestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     Viewport view = SetUpViewport();
 
@@ -1096,12 +1081,7 @@ void VtRendererTest::XtermTestColors()
     RenderSettings renderSettings;
     RenderData renderData;
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     Viewport view = SetUpViewport();
 
@@ -1234,12 +1214,7 @@ void VtRendererTest::XtermTestCursor()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     Viewport view = SetUpViewport();
 
@@ -1412,12 +1387,7 @@ void VtRendererTest::TestWrapping()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
     Viewport view = SetUpViewport();
 
@@ -1465,8 +1435,10 @@ void VtRendererTest::TestResize()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
+    // Verify the first BeginPaint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
+    // Verify the first EndPaint sets the cursor state
+    qExpectedInput.push_back("\x1b[?25l");
     VERIFY_IS_TRUE(engine->_firstPaint);
     VERIFY_IS_TRUE(engine->_suppressResizeRepaint);
 
@@ -1502,21 +1474,6 @@ void VtRendererTest::TestCursorVisibility()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
-    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
-    TestPaint(*engine, [&]() {
-        // During StartPaint, we'll mark the cursor as off. make sure that happens.
-        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
-
-    // The cursor wasn't painted in the last frame.
-    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
-    VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
-
     COORD origin{ 0, 0 };
 
     VERIFY_ARE_NOT_EQUAL(origin, engine->_lastText);
@@ -1527,8 +1484,8 @@ void VtRendererTest::TestCursorVisibility()
     // Frame 1: Paint the cursor at the home position. At the end of the frame,
     // the cursor should be on. Because we're moving the cursor with CUP, we
     // need to disable the cursor during this frame.
+    qExpectedInput.push_back("\x1b[2J");
     TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1539,10 +1496,13 @@ void VtRendererTest::TestCursorVisibility()
         VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
         VERIFY_IS_TRUE(engine->_needToDisableCursor);
 
+        // GH#12401:
+        // The other tests verify that the cursor is explicitly hidden on the
+        // first frame (VerifyFirstPaint). This test on the other hand does
+        // the opposite by calling PaintCursor() during the first paint cycle.
         qExpectedInput.push_back("\x1b[?25h");
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1550,7 +1510,6 @@ void VtRendererTest::TestCursorVisibility()
     // frame, the cursor should be on, the same as before. We aren't moving the
     // cursor during this frame, so _needToDisableCursor will stay false.
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1561,7 +1520,6 @@ void VtRendererTest::TestCursorVisibility()
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1569,7 +1527,6 @@ void VtRendererTest::TestCursorVisibility()
     // should be on, the same as before. Because we're moving the cursor with
     // CUP, we need to disable the cursor during this frame.
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1580,7 +1537,6 @@ void VtRendererTest::TestCursorVisibility()
 
         VERIFY_SUCCEEDED(engine->PaintCursor(options));
 
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
         VERIFY_IS_TRUE(engine->_needToDisableCursor);
 
@@ -1590,7 +1546,6 @@ void VtRendererTest::TestCursorVisibility()
         qExpectedInput.push_back("\x1b[?25h");
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1598,14 +1553,12 @@ void VtRendererTest::TestCursorVisibility()
     // should be off.
     Log::Comment(NoThrowString().Format(L"Painting without calling PaintCursor will hide the cursor"));
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
         qExpectedInput.push_back("\x1b[?25l");
     });
 
-    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
     VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 }
