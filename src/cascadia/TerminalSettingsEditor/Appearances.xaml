@@ -221,20 +221,22 @@
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
+                    <TextBox x:Uid="Profile_BackgroundImageBox"
+                             IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                             IsSpellCheckEnabled="False"
+                             Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                     <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_BackgroundImageBox"
-                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
-                                 IsSpellCheckEnabled="False"
-                                 Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                         <Button x:Uid="Profile_BackgroundImageBrowse"
+                                Margin="0,10,10,0"
                                 Click="BackgroundImage_Click"
                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
+                        <CheckBox x:Name="UseDesktopImageCheckBox"
+                                  x:Uid="Profile_UseDesktopImage"
+                                  Margin="0,5,0,0"
+                                  IsChecked="{x:Bind Appearance.UseDesktopBGImage, Mode=TwoWay}" />
                     </StackPanel>
-                    <CheckBox x:Name="UseDesktopImageCheckBox"
-                              x:Uid="Profile_UseDesktopImage"
-                              IsChecked="{x:Bind Appearance.UseDesktopBGImage, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
 
