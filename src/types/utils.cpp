@@ -600,6 +600,7 @@ bool Utils::IsElevated()
 std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std::wstring_view commandLine,
                                                                             std::wstring_view startingDirectory)
 {
+    bool executableWasWSL{ false };
     do
     {
         if (startingDirectory.size() > 0 && commandLine.size() >= 3)
@@ -611,6 +612,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
             const auto executableFilename{ executablePath.filename().wstring() };
             if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
             {
+                executableWasWSL = true;
                 // We've got a WSL -- let's just make sure it's the right one.
                 if (executablePath.has_parent_path())
                 {
@@ -670,8 +672,15 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
         }
     } while (false);
 
+    // GH #12353: `~` is never a valid windows path. We can only accept that as
+    // a startingDirectory when the exe is specifically wsl.exe, because that
+    // can override the real startingDirectory. If the user set the
+    // startingDirectory to ~, but the commandline to something like pwsh.exe,
+    // that won't actually work. In that case, mangle the startingDirectory to
+    // %userprofile%, so it's at least something reasonable.
     return {
         std::wstring{ commandLine },
-        std::wstring{ startingDirectory }
+        std::wstring{ startingDirectory == L"~" ? wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%") :
+                                                  startingDirectory }
     };
 }
