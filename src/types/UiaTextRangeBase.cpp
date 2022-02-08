@@ -46,7 +46,7 @@ try
 
     // GH#8730: The cursor position may be in a delayed state, resulting in it being out of bounds.
     // If that's the case, clamp it to be within bounds.
-    // TODO GH#XXXX: We should be able to just check some fields off of the Cursor object,
+    // TODO GH#12440: We should be able to just check some fields off of the Cursor object,
     // but Windows Terminal isn't updating those flags properly.
     _start = cursor.GetPosition();
     pData->GetTextBuffer().GetSize().Clamp(_start);
