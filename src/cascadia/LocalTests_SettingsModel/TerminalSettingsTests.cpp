@@ -38,6 +38,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TryCreateWinRTType);
         TEST_METHOD(TestTerminalArgsForBinding);
         TEST_METHOD(CommandLineToArgvW);
+        TEST_METHOD(NormalizeCommandLine);
         TEST_METHOD(GetProfileForArgsWithCommandline);
         TEST_METHOD(MakeSettingsForProfile);
         TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
@@ -118,6 +119,59 @@ namespace SettingsModelLocalTests
         VERIFY_IS_GREATER_THAN(end, beg);
         VERIFY_ARE_EQUAL(expectedArgv.size(), static_cast<size_t>(end - beg));
         VERIFY_ARE_EQUAL(0, memcmp(beg, expectedArgv.data(), expectedArgv.size()));
+    }
+
+    // This unit test covers GH#12345.
+    // * paths with more than 1 whitespace
+    // * paths sharing a common prefix with another directory
+    void TerminalSettingsTests::NormalizeCommandLine()
+    {
+        using namespace std::string_literals;
+
+        static constexpr auto touch = [](const auto& path) {
+            std::ofstream file{ path };
+        };
+
+        std::wstring guid;
+        {
+            GUID g{};
+            THROW_IF_FAILED(CoCreateGuid(&g));
+            guid = fmt::format(
+                L"{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+                g.Data1,
+                g.Data2,
+                g.Data3,
+                g.Data4[0],
+                g.Data4[1],
+                g.Data4[2],
+                g.Data4[3],
+                g.Data4[4],
+                g.Data4[5],
+                g.Data4[6],
+                g.Data4[7]);
+        }
+
+        const auto tmpdir = std::filesystem::temp_directory_path();
+        const auto dir1 = tmpdir / guid;
+        const auto dir2 = tmpdir / (guid + L" two");
+        const auto file1 = dir1 / L"file 1.exe";
+        const auto file2 = dir2 / L"file 2.exe";
+
+        const auto cleanup = wil::scope_exit([&]() {
+            std::error_code ec;
+            remove_all(dir1, ec);
+            remove_all(dir2, ec);
+        });
+
+        create_directory(dir1);
+        create_directory(dir2);
+        touch(file1);
+        touch(file2);
+
+        const auto commandLine = file2.native() + LR"( -foo "bar1 bar2" -baz)"s;
+        const auto expected = file2.native() + L"\0-foo\0bar1 bar2\0-baz"s;
+        const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine.c_str());
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     void TerminalSettingsTests::GetProfileForArgsWithCommandline()
