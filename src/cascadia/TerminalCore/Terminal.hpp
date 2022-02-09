@@ -95,47 +95,47 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    bool PrintString(std::wstring_view stringView) noexcept override;
-    bool ExecuteChar(wchar_t wch) noexcept override;
-    TextAttribute GetTextAttributes() const noexcept override;
-    void SetTextAttributes(const TextAttribute& attrs) noexcept override;
-    Microsoft::Console::Types::Viewport GetBufferSize() noexcept override;
-    bool SetCursorPosition(short x, short y) noexcept override;
-    COORD GetCursorPosition() noexcept override;
-    bool SetCursorVisibility(const bool visible) noexcept override;
-    bool EnableCursorBlinking(const bool enable) noexcept override;
-    bool CursorLineFeed(const bool withReturn) noexcept override;
-    bool DeleteCharacter(const size_t count) noexcept override;
-    bool InsertCharacter(const size_t count) noexcept override;
-    bool EraseCharacters(const size_t numChars) noexcept override;
-    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
-    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
-    bool WarningBell() noexcept override;
-    bool SetWindowTitle(std::wstring_view title) noexcept override;
-    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
-    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept override;
-    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
+    void PrintString(std::wstring_view stringView) override;
+    void ExecuteChar(wchar_t wch) override;
+    TextAttribute GetTextAttributes() const override;
+    void SetTextAttributes(const TextAttribute& attrs) override;
+    Microsoft::Console::Types::Viewport GetBufferSize() override;
+    void SetCursorPosition(short x, short y) override;
+    COORD GetCursorPosition() override;
+    void SetCursorVisibility(const bool visible) override;
+    void EnableCursorBlinking(const bool enable) override;
+    void CursorLineFeed(const bool withReturn) override;
+    void DeleteCharacter(const size_t count) override;
+    void InsertCharacter(const size_t count) override;
+    void EraseCharacters(const size_t numChars) override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
+    void WarningBell() override;
+    void SetWindowTitle(std::wstring_view title) override;
+    COLORREF GetColorTableEntry(const size_t tableIndex) const override;
+    void SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
+    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
+    void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
 
-    bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;
-    bool SetRenderMode(const ::Microsoft::Console::Render::RenderSettings::Mode mode, const bool enabled) noexcept override;
+    void SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
+    void SetRenderMode(const ::Microsoft::Console::Render::RenderSettings::Mode mode, const bool enabled) override;
 
-    bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
-    bool IsXtermBracketedPasteModeEnabled() const noexcept override;
+    void EnableXtermBracketedPasteMode(const bool enabled) override;
+    bool IsXtermBracketedPasteModeEnabled() const override;
 
-    bool IsVtInputEnabled() const noexcept override;
+    bool IsVtInputEnabled() const override;
 
-    bool CopyToClipboard(std::wstring_view content) noexcept override;
+    void CopyToClipboard(std::wstring_view content) override;
 
-    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
-    bool EndHyperlink() noexcept override;
+    void AddHyperlink(std::wstring_view uri, std::wstring_view params) override;
+    void EndHyperlink() override;
 
-    bool SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) noexcept override;
-    bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
-    std::wstring_view GetWorkingDirectory() noexcept override;
+    void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
+    void SetWorkingDirectory(std::wstring_view uri) override;
+    std::wstring_view GetWorkingDirectory() override;
 
-    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
-    bool PopGraphicsRendition() noexcept override;
+    void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
+    void PopGraphicsRendition() override;
 
 #pragma endregion
 
