@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "InteractDispatch.hpp"
-#include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
@@ -102,14 +101,14 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        DispatchCommon::s_RefreshWindow(*_pConApi);
+        _pConApi->RefreshWindow();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // the ConGetSet interface, that specifically handles a conpty resize.
-        if (DispatchCommon::s_ResizeWindow(*_pConApi, parameter2.value_or(0), parameter1.value_or(0)))
+        if (_pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
         {
-            DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+            _pConApi->SuppressResizeRepaint();
         }
         return true;
     default:

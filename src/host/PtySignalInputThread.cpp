@@ -8,7 +8,6 @@
 #include "output.h"
 #include "handle.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../terminal/adapter/DispatchCommon.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
@@ -137,9 +136,9 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - <none>
 void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
-    if (DispatchCommon::s_ResizeWindow(*_pConApi, data.sx, data.sy))
+    if (_pConApi->ResizeWindow(data.sx, data.sy))
     {
-        DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+        _pConApi->SuppressResizeRepaint();
     }
 }
 

@@ -31,7 +31,6 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
     ..\adaptDispatch.cpp \
-    ..\DispatchCommon.cpp \
     ..\FontBuffer.cpp \
     ..\InteractDispatch.cpp \
     ..\adaptDispatchGraphics.cpp \
