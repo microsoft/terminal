@@ -352,6 +352,12 @@ jobs:
         }
       displayName: Extract symbols for public consumption
 
+    - task: PowerShell@2
+      displayName: Source Index PDBs (the public ones)
+      inputs:
+        filePath: build\scripts\Index-Pdbs.ps1
+        arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-tmp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+
     # Publish the app symbols to the public MSDL symbol server
     # accessible via https://msdl.microsoft.com/download/symbols
     - task: PublishSymbols@2
