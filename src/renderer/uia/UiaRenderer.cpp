@@ -235,6 +235,26 @@ CATCH_LOG_RETURN_HR(E_FAIL);
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::EndPaint() noexcept
 {
+    return S_OK;
+}
+
+// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
+// But UiaEngine is never the only engine running. Overriding this function prevents
+// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
+void UiaEngine::WaitUntilCanRender() noexcept
+{
+}
+
+// Routine Description:
+// - Used to perform longer running presentation steps outside the lock so the
+//      other threads can continue.
+// - Not currently used by UiaEngine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE since we do nothing.
+[[nodiscard]] HRESULT UiaEngine::Present() noexcept
+{
     RETURN_HR_IF(S_FALSE, !_isEnabled);
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
@@ -279,26 +299,6 @@ CATCH_LOG_RETURN_HR(E_FAIL);
     _newOutput.clear();
 
     return S_OK;
-}
-
-// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
-// But UiaEngine is never the only engine running. Overriding this function prevents
-// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
-void UiaEngine::WaitUntilCanRender() noexcept
-{
-}
-
-// Routine Description:
-// - Used to perform longer running presentation steps outside the lock so the
-//      other threads can continue.
-// - Not currently used by UiaEngine.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT UiaEngine::Present() noexcept
-{
-    return S_FALSE;
 }
 
 // Routine Description:

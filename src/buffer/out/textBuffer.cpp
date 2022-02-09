@@ -388,8 +388,6 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     const auto written = newIt.GetCellDistance(givenIt);
     const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
     _NotifyPaint(paint);
-    _renderTarget.TriggerNewTextNotification(givenIt->Chars());
-
     return newIt;
 }
 

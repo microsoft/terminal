@@ -150,15 +150,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, notificationText{ hstring(newOutput) }]() {
-            if (auto strongThis{ weakThis.get() })
-            {
-                strongThis->RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
-                                                   AutomationNotificationProcessing::ImportantAll,
-                                                   notificationText,
-                                                   L"TerminalTextOutput");
-            }
-        });
+
+        dispatcher
+            .RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+                try
+                {
+                    RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
+                                           AutomationNotificationProcessing::All,
+                                           newOutput,
+                                           L"TerminalTextOutput");
+                }
+                CATCH_LOG();
+            })
+            .get();
     }
 
     hstring TermControlAutomationPeer::GetClassNameCore() const
