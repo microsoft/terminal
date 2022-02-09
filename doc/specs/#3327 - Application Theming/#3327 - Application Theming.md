@@ -1,9 +1,21 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-12-13
-last updated: 2020-04-23
+last updated: 2022-02-09
 issue id: #3327
 ---
+
+
+TODOS:
+* Mica. The whole app needs to be transparent for that. It'll affect the vintage opacity setting. Must be careful.
+* Allow alpha in these colors. Like, I want the tabs to be `#10808080` lighter than the tabrow which is acrylic, `#40102030`
+  - Oh my, I already did that didn't I
+* whole application window BG images, a la that one post in the theming thread
+* `window.roundedCorners` true/false
+* How do themes play with different window title settings? (different themes for different windows. `_quake` esp.))
+* any clever ideas for elevated themes?
+* tab.bottomCornerRadius? or is tab.cornerRadius a "1" = all 1, "1, 2" = tops 1, bottoms 2 kinda situation
+
 
 # Spec Title
 
