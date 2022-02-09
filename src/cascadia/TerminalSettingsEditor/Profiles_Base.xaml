@@ -58,12 +58,13 @@
                                         SettingOverrideSource="{x:Bind Profile.CommandlineOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}"
                                         Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel>
                         <TextBox x:Uid="Profile_CommandlineBox"
                                  IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
                                  Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
                         <Button x:Uid="Profile_CommandlineBrowse"
+                                Margin="0,10,0,0"
                                 Click="Commandline_Click"
                                 Style="{StaticResource BrowseButtonStyle}" />
                     </StackPanel>
@@ -78,21 +79,23 @@
                                         SettingOverrideSource="{x:Bind Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel Orientation="Vertical">
+                        <TextBox x:Uid="Profile_StartingDirectoryBox"
+                                 IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                 IsSpellCheckEnabled="False"
+                                 Style="{StaticResource TextBoxSettingStyle}"
+                                 Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
                         <StackPanel Orientation="Horizontal">
-                            <TextBox x:Uid="Profile_StartingDirectoryBox"
-                                     IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
-                                     IsSpellCheckEnabled="False"
-                                     Style="{StaticResource TextBoxSettingStyle}"
-                                     Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
                             <Button x:Name="StartingDirectoryBrowse"
                                     x:Uid="Profile_StartingDirectoryBrowse"
+                                    Margin="0,10,10,0"
                                     Click="StartingDirectory_Click"
                                     IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                     Style="{StaticResource BrowseButtonStyle}" />
+                            <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
+                                      x:Uid="Profile_StartingDirectoryUseParentCheckbox"
+                                      Margin="0,5,0,0"
+                                      IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                         </StackPanel>
-                        <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
-                                  x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                  IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                     </StackPanel>
                 </local:SettingContainer>
 
@@ -103,13 +106,14 @@
                                         HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel>
                         <TextBox x:Uid="Profile_IconBox"
                                  FontFamily="Segoe UI, Segoe MDL2 Assets"
                                  IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
                                  Text="{x:Bind Profile.Icon, Mode=TwoWay}" />
                         <Button x:Uid="Profile_IconBrowse"
+                                Margin="0,10,0,0"
                                 Click="Icon_Click"
                                 Style="{StaticResource BrowseButtonStyle}" />
                     </StackPanel>

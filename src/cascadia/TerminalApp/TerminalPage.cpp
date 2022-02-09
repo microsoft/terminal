@@ -3095,9 +3095,12 @@ namespace winrt::TerminalApp::implementation
         {
             NewTerminalArgs newTerminalArgs;
             newTerminalArgs.Commandline(connection.Commandline());
-            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-            const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
-
+            // GH #12370: We absolutely cannot allow a defterm connection to
+            // auto-elevate. Defterm doesn't work for elevated scenarios in the
+            // first place. If we try accepting the connection, the spawning an
+            // elevated version of the Terminal with that profile... that's a
+            // recipe for disaster. We won't ever open up a tab in this window.
+            newTerminalArgs.Elevate(false);
             _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, connection));
 
             // Request a summon of this window to the foreground

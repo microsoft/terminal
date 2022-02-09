@@ -68,7 +68,7 @@
            TargetType="FontIcon">
         <Setter Property="Foreground" Value="{StaticResource SystemAccentColor}" />
         <Setter Property="FontSize" Value="11" />
-        <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
+        <Setter Property="FontFamily" Value="{ThemeResource SymbolThemeFontFamily}" />
     </Style>
 
     <Style x:Key="NonExpanderGrid"

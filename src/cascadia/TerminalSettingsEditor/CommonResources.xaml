@@ -50,7 +50,7 @@
            BasedOn="{StaticResource DefaultTextBoxStyle}"
            TargetType="TextBox">
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
-        <Setter Property="MaxWidth" Value="500" />
+        <Setter Property="MaxWidth" Value="400" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
@@ -66,6 +66,7 @@
            TargetType="TextBlock">
         <Setter Property="FontStyle" Value="Italic" />
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
+        <Setter Property="MaxWidth" Value="1000" />
     </Style>
 
     <!--  Used for flyout messages  -->
@@ -167,7 +168,8 @@
         <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
         <Setter Property="MinWidth" Value="{StaticResource ToggleSwitchThemeMinWidth}" />
         <Setter Property="FocusVisualMargin" Value="-7,-3,-7,-3" />
-        <Setter Property="Margin" Value="0,0,-80,0" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="MinWidth" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleSwitch">
