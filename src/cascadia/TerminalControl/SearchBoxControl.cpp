@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation
+// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -9,7 +9,7 @@ using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Constructor
     SearchBoxControl::SearchBoxControl()
@@ -107,6 +107,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             Input::FocusManager::TryFocusAsync(TextBox(), FocusState::Keyboard);
             TextBox().SelectAll();
+        }
+    }
+
+    // Method Description:
+    // - Allows to set the value of the text to search
+    // Arguments:
+    // - text: string value to populate in the TextBox
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::PopulateTextbox(winrt::hstring const& text)
+    {
+        if (TextBox())
+        {
+            TextBox().Text(text);
         }
     }
 

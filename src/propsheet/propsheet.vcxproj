@@ -53,6 +53,9 @@
     <ProjectReference Include="..\propslib\propslib.vcxproj">
       <Project>{345fd5a4-b32b-4f29-bd1c-b033bd2c35cc}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\internal\internal.vcxproj">
+      <Project>{EF3E32A7-5FF6-42B4-B6E2-96CD7D033F00}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="console.def" />
@@ -75,8 +78,10 @@
       <AdditionalIncludeDirectories>$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
+  <!-- If you don't include a '.' at the end of the $(IntermediateOutputPath),
+  mc.exe will get confused by the trailing slash. -->
   <Target Name="MessageCompile" Inputs="@(MessageCompile)" Outputs="$(IntermediateOutputPath)\%(MessageCompile.Filename).h" BeforeTargets="ClCompile">
-    <Exec Command="mc.exe /h $(IntermediateOutputPath) /r $(IntermediateOutputPath) @(MessageCompile)" />
+    <Exec Command="mc.exe /h &quot;$(IntermediateOutputPath).&quot; /r &quot;$(IntermediateOutputPath).&quot; @(MessageCompile)" />
   </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\common.build.post.props" />

@@ -17,7 +17,7 @@ Revision History:
 
 #pragma once
 
-#include "..\server\IWaitRoutine.h"
+#include "../server/IWaitRoutine.h"
 #include "writeData.hpp"
 
 /*++
@@ -57,9 +57,9 @@ Arguments:
         bytes written.
     NumSpaces - On output, the number of spaces consumed by the written characters.
     dwFlags -
-      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-      WC_KEEP_CURSOR_VISIBLE   change window origin desirable when hit rt. edge
-      WC_ECHO                  if called by Read (echoing characters)
+      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+      WC_KEEP_CURSOR_VISIBLE     change window origin desirable when hit rt. edge
+      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 
 Return Value:
 
@@ -90,7 +90,7 @@ Note:
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
-[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
+[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PCWCHAR pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
                                       bool requiresVtQuirk,

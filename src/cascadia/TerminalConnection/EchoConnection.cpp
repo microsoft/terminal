@@ -1,13 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
 #include "EchoConnection.h"
 #include <sstream>
-
-// We have to define GSL here, not PCH
-// because TelnetConnection has a conflicting GSL implementation.
-#include <gsl/gsl>
 
 #include "EchoConnection.g.cpp"
 

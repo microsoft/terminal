@@ -1,4 +1,4 @@
-﻿//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // <copyright file="CloseTests.cs" company="Microsoft">
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
@@ -74,6 +74,7 @@ namespace Conhost.UIA.Tests
 
         [TestMethod]
         [TestProperty("IsolationLevel", "Method")]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void CheckClose()
         {
             string closeTestCmdLine = $"{closeTestBinaryLocation} -n {processCount} --log {testPipeName} --delay 1000 --no-realloc";

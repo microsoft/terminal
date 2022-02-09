@@ -30,17 +30,14 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
     ..\AttrRow.cpp \
-    ..\AttrRowIterator.cpp \
     ..\cursor.cpp    \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \
     ..\OutputCellRect.cpp \
     ..\OutputCellView.cpp \
     ..\Row.cpp \
-    ..\RowCellIterator.cpp \
     ..\TextColor.cpp \
     ..\TextAttribute.cpp \
-    ..\TextAttributeRun.cpp \
     ..\textBuffer.cpp \
     ..\textBufferCellIterator.cpp \
     ..\textBufferTextIterator.cpp \

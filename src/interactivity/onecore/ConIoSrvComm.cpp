@@ -6,11 +6,11 @@
 #include "ConIoSrvComm.hpp"
 #include "ConIoSrv.h"
 
-#include "..\..\host\dbcs.h"
-#include "..\..\host\input.h"
-#include "..\..\types\inc\IInputEvent.hpp"
+#include "../../host/dbcs.h"
+#include "../../host/input.h"
+#include "../../types/inc/IInputEvent.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -322,7 +322,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
 VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 {
     BOOL Ret;
-    IRenderer* Renderer;
+    Renderer* Renderer;
     CIS_EVENT ReplyEvent;
 
     Renderer = ServiceLocator::LocateGlobals().pRender;

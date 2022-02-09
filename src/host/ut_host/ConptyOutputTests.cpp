@@ -67,9 +67,10 @@ class ConptyOutputTests
         // Set up some sane defaults
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
-        gci.SetDefaultForegroundColor(INVALID_COLOR);
-        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
+        gci.CalculateDefaultColorIndices();
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
@@ -78,7 +79,7 @@ class ConptyOutputTests
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
-        g.pRender = new Renderer(&gci.renderData, nullptr, 0, nullptr);
+        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
 
         // Set up an xterm-256 renderer for conpty
         wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
@@ -119,6 +120,7 @@ class ConptyOutputTests
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
     TEST_METHOD(InvalidateUntilOneBeforeEnd);
+    TEST_METHOD(SetConsoleTitleWithControlChars);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -361,6 +363,40 @@ void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
     expectedOutput.push_back("X"); // sequence optimizer should choose ECH here
     expectedOutput.push_back("\x1b[13X");
     expectedOutput.push_back("\x1b[13C");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::SetConsoleTitleWithControlChars()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:control", L"{0x00, 0x0A, 0x1B, 0x80, 0x9B, 0x9C}")
+    END_TEST_METHOD_PROPERTIES()
+
+    int control;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"control", control));
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+
+    Log::Comment(NoThrowString().Format(
+        L"SetConsoleTitle with a control character (0x%02X) embedded in the text", control));
+
+    std::wstringstream titleText;
+    titleText << L"Hello " << wchar_t(control) << L"World!";
+    g.getConsoleInformation().SetTitle(titleText.str());
+
+    // This is the standard init sequences for the first frame.
+    expectedOutput.push_back("\x1b[2J");
+    expectedOutput.push_back("\x1b[m");
+    expectedOutput.push_back("\x1b[H");
+
+    // The title change is propagated as an OSC 0 sequence.
+    // Control characters are stripped, so it's always "Hello World".
+    expectedOutput.push_back("\x1b]0;Hello World!\a");
+
+    // This is also part of the standard init sequence.
+    expectedOutput.push_back("\x1b[?25h");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }

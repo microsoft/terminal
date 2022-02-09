@@ -13,14 +13,16 @@ class BitmapTests
 {
     TEST_CLASS(BitmapTests);
 
-    void _checkBits(const til::rectangle& bitsOn,
-                    const til::bitmap& map)
+    template<typename T>
+    void _checkBits(const til::rect& bitsOn,
+                    const til::details::bitmap<T>& map)
     {
-        _checkBits(std::vector<til::rectangle>{ bitsOn }, map);
+        _checkBits(std::vector<til::rect>{ bitsOn }, map);
     }
 
-    void _checkBits(const std::vector<til::rectangle>& bitsOn,
-                    const til::bitmap& map)
+    template<typename T>
+    void _checkBits(const std::vector<til::rect>& bitsOn,
+                    const til::details::bitmap<T>& map)
     {
         Log::Comment(L"Check all bits in map.");
         // For every point in the map...
@@ -48,7 +50,7 @@ class BitmapTests
     {
         const til::bitmap bitmap;
         const til::size expectedSize{ 0, 0 };
-        const til::rectangle expectedRect{ 0, 0, 0, 0 };
+        const til::rect expectedRect{ 0, 0, 0, 0 };
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
         VERIFY_ARE_EQUAL(0u, bitmap._bits.size());
@@ -61,7 +63,7 @@ class BitmapTests
     TEST_METHOD(SizeConstruct)
     {
         const til::size expectedSize{ 5, 10 };
-        const til::rectangle expectedRect{ 0, 0, 5, 10 };
+        const til::rect expectedRect{ 0, 0, 5, 10 };
         const til::bitmap bitmap{ expectedSize };
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
@@ -82,7 +84,7 @@ class BitmapTests
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fill", fill));
 
         const til::size expectedSize{ 5, 10 };
-        const til::rectangle expectedRect{ 0, 0, 5, 10 };
+        const til::rect expectedRect{ 0, 0, 5, 10 };
         const til::bitmap bitmap{ expectedSize, fill };
         VERIFY_ARE_EQUAL(expectedSize, bitmap._sz);
         VERIFY_ARE_EQUAL(expectedRect, bitmap._rc);
@@ -182,7 +184,7 @@ class BitmapTests
         // 0 1 1 0
         // 0 1 1 0
         // 0 0 0 0
-        map.set(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 2 } });
+        map.set(til::rect{ til::point{ 1, 1 }, til::size{ 2, 2 } });
 
         Log::Comment(L"1.) Move down and right");
         {
@@ -224,7 +226,7 @@ class BitmapTests
             // 0 1 1 0         0 0 0 0
             // 0 1 1 0 v  -->  0 0 0 0
             // 0 0 0 0 v       0 1 1 0
-            expected.set(til::rectangle{ til::point{ 1, 3 }, til::size{ 2, 1 } });
+            expected.set(til::rect{ til::point{ 1, 3 }, til::size{ 2, 1 } });
 
             actual.translate(delta);
 
@@ -269,7 +271,7 @@ class BitmapTests
             // 0 1 1 0    -->  1 0 0 0
             // 0 0 0 0         0 0 0 0
             // <--<--
-            expected.set(til::rectangle{ til::point{ 0, 1 }, til::size{ 1, 2 } });
+            expected.set(til::rect{ til::point{ 0, 1 }, til::size{ 1, 2 } });
 
             actual.translate(delta);
 
@@ -316,7 +318,7 @@ class BitmapTests
             // 0 1 1 0 ^       0 0 0 0
             // 0 1 1 0    -->  0 0 0 0
             // 0 0 0 0         0 0 0 0
-            expected.set(til::rectangle{ til::point{ 1, 0 }, til::size{ 2, 1 } });
+            expected.set(til::rect{ til::point{ 1, 0 }, til::size{ 2, 1 } });
 
             actual.translate(delta);
 
@@ -361,7 +363,7 @@ class BitmapTests
             // 0 1 1 0    -->  0 0 0 1
             // 0 0 0 0         0 0 0 0
             //     ->->
-            expected.set(til::rectangle{ til::point{ 3, 1 }, til::size{ 1, 2 } });
+            expected.set(til::rect{ til::point{ 3, 1 }, til::size{ 1, 2 } });
 
             actual.translate(delta);
 
@@ -379,7 +381,7 @@ class BitmapTests
         // 0 1 1 0
         // 0 1 1 0
         // 0 0 0 0
-        map.set(til::rectangle{ til::point{ 1, 1 }, til::size{ 2, 2 } });
+        map.set(til::rect{ til::point{ 1, 1 }, til::size{ 2, 2 } });
 
         Log::Comment(L"1.) Move down and right");
         {
@@ -398,8 +400,8 @@ class BitmapTests
             // 0 1 1 0 v  -->  0 0 0 0   -->    F F 0 0
             // 0 0 0 0 v       0 1 1 0          F F 0 1
             //                     ->->
-            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 2 } });
-            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 2, 2 } });
+            expected.set(til::rect{ til::point{ 0, 0 }, til::size{ 4, 2 } });
+            expected.set(til::rect{ til::point{ 0, 2 }, til::size{ 2, 2 } });
             expected.set(til::point{ 3, 3 });
 
             actual.translate(delta, true);
@@ -423,8 +425,8 @@ class BitmapTests
             // 0 1 1 0         F F F F
             // 0 1 1 0 v  -->  0 0 0 0
             // 0 0 0 0 v       0 1 1 0
-            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 2 } });
-            expected.set(til::rectangle{ til::point{ 1, 3 }, til::size{ 2, 1 } });
+            expected.set(til::rect{ til::point{ 0, 0 }, til::size{ 4, 2 } });
+            expected.set(til::rect{ til::point{ 1, 3 }, til::size{ 2, 1 } });
 
             actual.translate(delta, true);
 
@@ -448,8 +450,8 @@ class BitmapTests
             // 0 1 1 0 v  -->  0 0 0 0   -->    0 0 F F
             // 0 0 0 0 v       0 1 1 0          1 0 F F
             //                 <-<-
-            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 2 } });
-            expected.set(til::rectangle{ til::point{ 2, 2 }, til::size{ 2, 2 } });
+            expected.set(til::rect{ til::point{ 0, 0 }, til::size{ 4, 2 } });
+            expected.set(til::rect{ til::point{ 2, 2 }, til::size{ 2, 2 } });
             expected.set(til::point{ 0, 3 });
 
             actual.translate(delta, true);
@@ -471,8 +473,8 @@ class BitmapTests
             // 0 1 1 0    -->  1 0 F F
             // 0 0 0 0         0 0 F F
             // <--<--
-            expected.set(til::rectangle{ til::point{ 2, 0 }, til::size{ 2, 4 } });
-            expected.set(til::rectangle{ til::point{ 0, 1 }, til::size{ 1, 2 } });
+            expected.set(til::rect{ til::point{ 2, 0 }, til::size{ 2, 4 } });
+            expected.set(til::rect{ til::point{ 0, 1 }, til::size{ 1, 2 } });
 
             actual.translate(delta, true);
 
@@ -496,8 +498,8 @@ class BitmapTests
             // 0 1 1 0    -->  F F F F   -->    F F F F
             // 0 0 0 0         F F F F          F F F F
             //                 <-<-
-            expected.set(til::rectangle{ til::point{ 2, 0 }, til::size{ 2, 2 } });
-            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 2 } });
+            expected.set(til::rect{ til::point{ 2, 0 }, til::size{ 2, 2 } });
+            expected.set(til::rect{ til::point{ 0, 2 }, til::size{ 4, 2 } });
             expected.set(til::point{ 0, 0 });
 
             actual.translate(delta, true);
@@ -521,8 +523,8 @@ class BitmapTests
             // 0 1 1 0 ^       0 0 0 0
             // 0 1 1 0    -->  F F F F
             // 0 0 0 0         F F F F
-            expected.set(til::rectangle{ til::point{ 1, 0 }, til::size{ 2, 1 } });
-            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 2 } });
+            expected.set(til::rect{ til::point{ 1, 0 }, til::size{ 2, 1 } });
+            expected.set(til::rect{ til::point{ 0, 2 }, til::size{ 4, 2 } });
 
             actual.translate(delta, true);
 
@@ -547,8 +549,8 @@ class BitmapTests
             // 0 0 0 0         F F F F          F F F F
             //                     ->->
             expected.set(til::point{ 3, 0 });
-            expected.set(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 2 } });
-            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 2 } });
+            expected.set(til::rect{ til::point{ 0, 2 }, til::size{ 4, 2 } });
+            expected.set(til::rect{ til::point{ 0, 0 }, til::size{ 2, 2 } });
 
             actual.translate(delta, true);
 
@@ -569,8 +571,8 @@ class BitmapTests
             // 0 1 1 0    -->  F F 0 1
             // 0 0 0 0         F F 0 0
             //     ->->
-            expected.set(til::rectangle{ til::point{ 3, 1 }, til::size{ 1, 2 } });
-            expected.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 4 } });
+            expected.set(til::rect{ til::point{ 3, 1 }, til::size{ 1, 2 } });
+            expected.set(til::rect{ til::point{ 0, 0 }, til::size{ 2, 4 } });
 
             actual.translate(delta, true);
 
@@ -590,8 +592,8 @@ class BitmapTests
         const til::point point{ 2, 2 };
         bitmap.set(point);
 
-        std::vector<til::rectangle> expectedSet;
-        expectedSet.emplace_back(til::rectangle{ point });
+        std::vector<til::rect> expectedSet;
+        expectedSet.emplace_back(til::rect{ 2, 2, 3, 3 });
 
         // Run through every bit. Only the one we set should be true.
         Log::Comment(L"Only the bit we set should be true.");
@@ -601,7 +603,7 @@ class BitmapTests
         bitmap.set_all();
 
         expectedSet.clear();
-        expectedSet.emplace_back(til::rectangle{ bitmap._rc });
+        expectedSet.emplace_back(til::rect{ bitmap._rc });
         _checkBits(expectedSet, bitmap);
 
         Log::Comment(L"Now reset them all.");
@@ -610,13 +612,13 @@ class BitmapTests
         expectedSet.clear();
         _checkBits(expectedSet, bitmap);
 
-        til::rectangle totalZone{ sz };
+        til::rect totalZone{ sz };
         Log::Comment(L"Set a rectangle of bits and test they went on.");
         // 0 0 0 0       |1 1|0 0
         // 0 0 0 0  --\  |1 1|0 0
         // 0 0 0 0  --/  |1 1|0 0
         // 0 0 0 0        0 0 0 0
-        til::rectangle setZone{ til::point{ 0, 0 }, til::size{ 2, 3 } };
+        til::rect setZone{ til::point{ 0, 0 }, til::size{ 2, 3 } };
         bitmap.set(setZone);
 
         expectedSet.clear();
@@ -645,11 +647,7 @@ class BitmapTests
         Log::Comment(L"2.) SetRectangle out of bounds.");
         {
             auto fn = [&]() {
-                map.set(til::rectangle{ til::point{
-                                            2,
-                                            2,
-                                        },
-                                        til::size{ 10, 10 } });
+                map.set(til::rect{ til::point{ 2, 2 }, til::size{ 10, 10 } });
             };
 
             VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
@@ -662,11 +660,11 @@ class BitmapTests
         const til::size originalSize{ 2, 2 };
         til::bitmap bitmap{ originalSize, true };
 
-        std::vector<til::rectangle> expectedFillRects;
+        std::vector<til::rect> expectedFillRects;
 
         // 1 1
         // 1 1
-        expectedFillRects.emplace_back(til::rectangle{ originalSize });
+        expectedFillRects.emplace_back(til::rect{ originalSize });
         _checkBits(expectedFillRects, bitmap);
 
         Log::Comment(L"Attempt resize to the same size.");
@@ -686,7 +684,7 @@ class BitmapTests
 
         Log::Comment(L"Set a bit out in the new space and check it.");
         const til::point spaceBit{ 1, 2 };
-        expectedFillRects.emplace_back(til::rectangle{ spaceBit });
+        expectedFillRects.emplace_back(til::rect{ 1, 2, 2, 3 });
         bitmap.set(spaceBit);
 
         // 1 1 0
@@ -695,7 +693,7 @@ class BitmapTests
         _checkBits(expectedFillRects, bitmap);
 
         Log::Comment(L"Grow vertically and shrink horizontally at the same time. Fill any new space.");
-        expectedFillRects.emplace_back(til::rectangle{ til::point{ 0, 3 }, til::size{ 2, 1 } });
+        expectedFillRects.emplace_back(til::rect{ til::point{ 0, 3 }, til::size{ 2, 1 } });
         bitmap.resize(til::size{ 2, 4 }, true);
 
         // 1 1
@@ -838,25 +836,25 @@ class BitmapTests
         // 0 1 1 0      _ F F _
         Log::Comment(L"Set up a bitmap with some runs.");
 
-        til::bitmap map{ til::size{ 4, 4 } };
+        til::bitmap map{ til::size{ 4, 4 }, false };
 
         // 0 0 0 0     |1 1|0 0
         // 0 0 0 0      0 0 0 0
         // 0 0 0 0 -->  0 0 0 0
         // 0 0 0 0      0 0 0 0
-        map.set(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 1 } });
+        map.set(til::rect{ til::point{ 0, 0 }, til::size{ 2, 1 } });
 
         // 1 1 0 0     1 1 0 0
         // 0 0 0 0     0 0|1|0
         // 0 0 0 0 --> 0 0|1|0
         // 0 0 0 0     0 0|1|0
-        map.set(til::rectangle{ til::point{ 2, 1 }, til::size{ 1, 3 } });
+        map.set(til::rect{ til::point{ 2, 1 }, til::size{ 1, 3 } });
 
         // 1 1 0 0     1 1 0|1|
         // 0 0 1 0     0 0 1|1|
         // 0 0 1 0 --> 0 0 1 0
         // 0 0 1 0     0 0 1 0
-        map.set(til::rectangle{ til::point{ 3, 0 }, til::size{ 1, 2 } });
+        map.set(til::rect{ til::point{ 3, 0 }, til::size{ 1, 2 } });
 
         // 1 1 0 1     1 1 0 1
         // 0 0 1 1    |1|0 1 1
@@ -877,16 +875,16 @@ class BitmapTests
         // C _ D D
         // _ _ E _
         // _ F F _
-        til::some<til::rectangle, 6> expected;
-        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 2, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 3, 0 }, til::size{ 1, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 1, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 2, 1 }, til::size{ 2, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 2, 2 }, til::size{ 1, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 1, 3 }, til::size{ 2, 1 } });
+        til::some<til::rect, 6> expected;
+        expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 2, 1 } });
+        expected.push_back(til::rect{ til::point{ 3, 0 }, til::size{ 1, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 1, 1 } });
+        expected.push_back(til::rect{ til::point{ 2, 1 }, til::size{ 2, 1 } });
+        expected.push_back(til::rect{ til::point{ 2, 2 }, til::size{ 1, 1 } });
+        expected.push_back(til::rect{ til::point{ 1, 3 }, til::size{ 2, 1 } });
 
         Log::Comment(L"Run the iterator and collect the runs.");
-        til::some<til::rectangle, 6> actual;
+        til::some<til::rect, 6> actual;
         for (auto run : map.runs())
         {
             actual.push_back(run);
@@ -910,7 +908,7 @@ class BitmapTests
 
         Log::Comment(L"Set point and validate runs updated.");
         const til::point setPoint{ 2, 2 };
-        expected.push_back(til::rectangle{ setPoint });
+        expected.push_back(til::rect{ 2, 2, 3, 3 });
         map.set(setPoint);
 
         for (auto run : map.runs())
@@ -920,10 +918,10 @@ class BitmapTests
         VERIFY_ARE_EQUAL(expected, actual);
 
         Log::Comment(L"Set rectangle and validate runs updated.");
-        const til::rectangle setRect{ setPoint, til::size{ 2, 2 } };
+        const til::rect setRect{ setPoint, til::size{ 2, 2 } };
         expected.clear();
-        expected.push_back(til::rectangle{ til::point{ 2, 2 }, til::size{ 2, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 2, 3 }, til::size{ 2, 1 } });
+        expected.push_back(til::rect{ til::point{ 2, 2 }, til::size{ 2, 1 } });
+        expected.push_back(til::rect{ til::point{ 2, 3 }, til::size{ 2, 1 } });
         map.set(setRect);
 
         actual.clear();
@@ -935,10 +933,10 @@ class BitmapTests
 
         Log::Comment(L"Set all and validate runs updated.");
         expected.clear();
-        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 4, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 4, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 0, 2 }, til::size{ 4, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 0, 3 }, til::size{ 4, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 4, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 4, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 2 }, til::size{ 4, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 3 }, til::size{ 4, 1 } });
         map.set_all();
 
         actual.clear();
@@ -951,9 +949,147 @@ class BitmapTests
         Log::Comment(L"Resize and validate runs updated.");
         const til::size newSize{ 3, 3 };
         expected.clear();
-        expected.push_back(til::rectangle{ til::point{ 0, 0 }, til::size{ 3, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 0, 1 }, til::size{ 3, 1 } });
-        expected.push_back(til::rectangle{ til::point{ 0, 2 }, til::size{ 3, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 3, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 3, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 2 }, til::size{ 3, 1 } });
+        map.resize(newSize);
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(RunsWithPmr)
+    {
+        // This is a copy of the above test, but with a pmr::bitmap.
+        std::pmr::unsynchronized_pool_resource pool{ til::pmr::get_default_resource() };
+
+        // This map --> Those runs
+        // 1 1 0 1      A A _ B
+        // 1 0 1 1      C _ D D
+        // 0 0 1 0      _ _ E _
+        // 0 1 1 0      _ F F _
+        Log::Comment(L"Set up a PMR bitmap with some runs.");
+
+        til::pmr::bitmap map{ til::size{ 4, 4 }, false, &pool };
+
+        // 0 0 0 0     |1 1|0 0
+        // 0 0 0 0      0 0 0 0
+        // 0 0 0 0 -->  0 0 0 0
+        // 0 0 0 0      0 0 0 0
+        map.set(til::rect{ til::point{ 0, 0 }, til::size{ 2, 1 } });
+
+        // 1 1 0 0     1 1 0 0
+        // 0 0 0 0     0 0|1|0
+        // 0 0 0 0 --> 0 0|1|0
+        // 0 0 0 0     0 0|1|0
+        map.set(til::rect{ til::point{ 2, 1 }, til::size{ 1, 3 } });
+
+        // 1 1 0 0     1 1 0|1|
+        // 0 0 1 0     0 0 1|1|
+        // 0 0 1 0 --> 0 0 1 0
+        // 0 0 1 0     0 0 1 0
+        map.set(til::rect{ til::point{ 3, 0 }, til::size{ 1, 2 } });
+
+        // 1 1 0 1     1 1 0 1
+        // 0 0 1 1    |1|0 1 1
+        // 0 0 1 0 --> 0 0 1 0
+        // 0 0 1 0     0 0 1 0
+        map.set(til::point{ 0, 1 });
+
+        // 1 1 0 1     1 1 0 1
+        // 1 0 1 1     1 0 1 1
+        // 0 0 1 0 --> 0 0 1 0
+        // 0 0 1 0     0|1|1 0
+        map.set(til::point{ 1, 3 });
+
+        Log::Comment(L"Building the expected run rectangles.");
+
+        // Reminder, we're making 6 rectangle runs A-F like this:
+        // A A _ B
+        // C _ D D
+        // _ _ E _
+        // _ F F _
+        til::some<til::rect, 6> expected;
+        expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 2, 1 } });
+        expected.push_back(til::rect{ til::point{ 3, 0 }, til::size{ 1, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 1, 1 } });
+        expected.push_back(til::rect{ til::point{ 2, 1 }, til::size{ 2, 1 } });
+        expected.push_back(til::rect{ til::point{ 2, 2 }, til::size{ 1, 1 } });
+        expected.push_back(til::rect{ til::point{ 1, 3 }, til::size{ 2, 1 } });
+
+        Log::Comment(L"Run the iterator and collect the runs.");
+        til::some<til::rect, 6> actual;
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+
+        Log::Comment(L"Verify they match what we expected.");
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Clear the map and iterate and make sure we get no results.");
+        map.reset_all();
+
+        expected.clear();
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+
+        Log::Comment(L"Verify they're empty.");
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set point and validate runs updated.");
+        const til::point setPoint{ 2, 2 };
+        expected.push_back(til::rect{ 2, 2, 3, 3 });
+        map.set(setPoint);
+
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set rectangle and validate runs updated.");
+        const til::rect setRect{ setPoint, til::size{ 2, 2 } };
+        expected.clear();
+        expected.push_back(til::rect{ til::point{ 2, 2 }, til::size{ 2, 1 } });
+        expected.push_back(til::rect{ til::point{ 2, 3 }, til::size{ 2, 1 } });
+        map.set(setRect);
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Set all and validate runs updated.");
+        expected.clear();
+        expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 4, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 4, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 2 }, til::size{ 4, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 3 }, til::size{ 4, 1 } });
+        map.set_all();
+
+        actual.clear();
+        for (auto run : map.runs())
+        {
+            actual.push_back(run);
+        }
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        Log::Comment(L"Resize and validate runs updated.");
+        const til::size newSize{ 3, 3 };
+        expected.clear();
+        expected.push_back(til::rect{ til::point{ 0, 0 }, til::size{ 3, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 1 }, til::size{ 3, 1 } });
+        expected.push_back(til::rect{ til::point{ 0, 2 }, til::size{ 3, 1 } });
         map.resize(newSize);
 
         actual.clear();

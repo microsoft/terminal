@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <RuleSet Name="Console Rules" Description="These rules enforce static analysis on console code." ToolsVersion="15.0">
 
   <Include Path="cppcorecheckrules.ruleset" Action="Error" />
@@ -11,6 +11,9 @@
     <Rule Id="C26466" Action="None" />
     <!-- This one has caught us off guard as it suddenly showed up. Re-enablement is going to be in #2941 -->
     <Rule Id="C26814" Action="None" />
+
+    <!-- There are *so many* enums that should be enum classes. -->
+    <Rule Id="C26812" Action="None" />
   </Rules>
   
 

@@ -1,0 +1,71 @@
+parameters:
+  condition: 'succeededOrFailed()'
+  dependsOn: ''
+  rerunPassesRequiredToAvoidFailure: 5
+  minimumExpectedTestsExecutedCount: 10
+  checkJobAttempt: false
+  pgoArtifact: ''
+
+jobs:
+- job: ProcessTestResults
+  displayName: Process Helix Results ${{ parameters.platform }} ${{ parameters.configuration }}
+  condition: ${{ parameters.condition }}
+  dependsOn: ${{ parameters.dependsOn }}
+  pool:
+    vmImage: 'windows-2019'
+  timeoutInMinutes: 120
+  variables:
+    helixOutputFolder: $(Build.SourcesDirectory)\HelixOutput
+
+  steps:
+  - task: powershell@2
+    displayName: 'UpdateUnreliableTests.ps1'
+    condition: succeededOrFailed()
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      HelixAccessToken: $(HelixApiAccessToken)
+    inputs:
+      targetType: filePath
+      filePath: build\Helix\UpdateUnreliableTests.ps1
+      arguments: -RerunPassesRequiredToAvoidFailure '${{ parameters.rerunPassesRequiredToAvoidFailure }}'
+
+  - task: powershell@2
+    displayName: 'OutputTestResults.ps1'
+    condition: succeededOrFailed()
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      HelixAccessToken: $(HelixApiAccessToken)
+    inputs:
+      targetType: filePath
+      filePath: build\Helix\OutputTestResults.ps1
+      arguments: -MinimumExpectedTestsExecutedCount '${{ parameters.minimumExpectedTestsExecutedCount }}' -CheckJobAttempt $${{ parameters.checkJobAttempt }}
+
+  - task: powershell@2
+    displayName: 'ProcessHelixFiles.ps1'
+    condition: succeededOrFailed()
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      HelixAccessToken: $(HelixApiAccessToken)
+    inputs:
+      targetType: filePath
+      filePath: build\Helix\ProcessHelixFiles.ps1
+      arguments: -OutputFolder '$(helixOutputFolder)'
+
+  - ${{if ne(parameters.pgoArtifact, '') }}:
+    - script: move /y $(helixOutputFolder)\PGO $(Build.ArtifactStagingDirectory)
+      displayName: 'Move pgc files to PGO artifact'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Helix files'
+    condition: succeededOrFailed()
+    inputs:
+      PathtoPublish: $(helixOutputFolder)
+      artifactName: drop
+
+  - ${{if ne(parameters.pgoArtifact, '') }}:
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish pgc files'
+      condition: succeededOrFailed()
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)\PGO\Release
+        artifactName: ${{ parameters.pgoArtifact }}

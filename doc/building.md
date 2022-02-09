@@ -9,7 +9,13 @@ git submodule update --init --recursive
 
 OpenConsole.sln may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
-When using Visual Studio, be sure to set up the path for code formatting. This can be done in Visual Studio by going to Tools > Options > Text Editor > C++ > Formatting and checking "Use custom clang-format.exe file" and choosing the clang-format.exe in the repository at /dep/llvm/clang-format.exe by clicking "browse" right under the check box.
+When using Visual Studio, be sure to set up the path for code formatting. To download the required clang-format.exe file, follow one of the building instructions below and run:
+```powershell
+Import-Module .\tools\OpenConsole.psm1
+Set-MsBuildDevEnvironment
+Get-Format
+```
+After, go to Tools > Options > Text Editor > C++ > Formatting and check "Use custom clang-format.exe file" in Visual Studio and choose the clang-format.exe in the repository at /packages/clang-format.win-x86.10.0.0/tools/clang-format.exe by clicking "browse" right under the check box.
 
 ### Building in PowerShell
 
@@ -67,12 +73,12 @@ To update the version of a given package, use the following snippet
 
 where:
 - `$PackageName` is the name of the package, e.g. Microsoft.UI.Xaml
-- `$OldVersionNumber` is the version number currently used, e.g. 2.5.0-prerelease.200609001
-- `$NewVersionNumber` is the version number you want to migrate to, e.g. 2.4.200117003-prerelease
+- `$OldVersionNumber` is the version number currently used, e.g. 2.4.0-prerelease.200506002
+- `$NewVersionNumber` is the version number you want to migrate to, e.g. 2.5.0-prerelease.200812002
 
 Example usage:
 
-`git grep -z -l Microsoft.UI.Xaml | xargs -0 sed -i -e 's/2.5.0-prerelease.200609001/2.4.200117003-prerelease/g'`
+`git grep -z -l Microsoft.UI.Xaml | xargs -0 sed -i -e 's/2.4.0-prerelease.200506002/2.5.0-prerelease.200812002/g'`
 
 ## Using .nupkg files instead of downloaded Nuget packages
 If you want to use .nupkg files instead of the downloaded Nuget package, you can do this with the following steps:
@@ -81,3 +87,46 @@ If you want to use .nupkg files instead of the downloaded Nuget package, you can
 2. Create the folder /dep/packages
 3. Put your .nupkg files in /dep/packages
 4. If you are using different versions than those already being used, you need to update the references as well. How to do that is explained under "Updating Nuget package references".
+
+
+## Building the Terminal package from the commandline
+
+The Terminal is bundled as an `.msix`, which is produced by the `CascadiaPackage.wapproj` project. To build that project from the commandline, you can run the following (from a window you've already run `tools\razzle.cmd` in):
+
+```cmd
+"%msbuild%" "%OPENCON%\OpenConsole.sln" /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% /p:AppxSymbolPackageEnabled=false /t:Terminal\CascadiaPackage /m
+```
+
+This takes quite some time, and only generates an `msix`. It does not install the msix. To deploy the package:
+
+```powershell
+# If you haven't already:
+Import-Module tools\OpenConsole.psm1;
+Set-MsBuildDevEnvironment;
+
+# The Set-MsBuildDevEnvironment call is needed for finding the path to
+# makeappx. It also takes a little longer to run. If you're sticking in powershell, best to do that.
+
+Set-Location -Path src\cascadia\CascadiaPackage\AppPackages\CascadiaPackage_0.0.1.0_x64_Debug_Test;
+if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) {
+Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'
+};
+New-Item ..\loose -Type Directory -Force;
+makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\Loose\;
+Add-AppxPackage -Path ..\loose\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown
+```
+
+Or the cmd.exe version:
+```cmd
+@rem razzle.cmd doesn't set:
+@rem set WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\
+@rem vsdevcmd.bat does a lot of logic to find that.
+@rem
+@rem I'm gonna hard code it below:
+
+powershell -Command Set-Location -Path %OPENCON%\src\cascadia\CascadiaPackage\AppPackages\CascadiaPackage_0.0.1.0_x64_Debug_Test;if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) { Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'};New-Item ..\loose -Type Directory -Force;C:\'Program Files (x86)'\'Windows Kits'\10\bin\10.0.19041.0\x64\makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\Loose\;Add-AppxPackage -Path ..\loose\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown
+```
+
+(yes, the cmd version is just calling powershell to do the powershell version. Too lazy to convert the rest by hand, I'm already copying from `.vscode\tasks.json`)
+
+Building the package from VS generates the loose layout to begin with, and then registers the loose manifest, skipping the msix stop. It's a lot faster than the commandline inner loop here, unfortunately.

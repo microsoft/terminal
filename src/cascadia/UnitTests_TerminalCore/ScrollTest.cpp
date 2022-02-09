@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
-#include <argb.h>
 #include <DefaultSettings.h>
 
 #include "../renderer/inc/DummyRenderTarget.hpp"
@@ -16,7 +15,7 @@
 #include "consoletaeftemplates.hpp"
 #include "TestUtils.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::Types;
 
@@ -45,7 +44,7 @@ namespace
         virtual void TriggerRedraw(const COORD* const){};
         virtual void TriggerRedrawCursor(const COORD* const){};
         virtual void TriggerRedrawAll(){};
-        virtual void TriggerTeardown(){};
+        virtual void TriggerTeardown() noexcept {};
         virtual void TriggerSelection(){};
         virtual void TriggerScroll(){};
         virtual void TriggerScroll(const COORD* const delta)

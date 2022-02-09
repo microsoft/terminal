@@ -57,6 +57,7 @@ namespace Microsoft::Console::Types
         SHORT Height() const noexcept;
         SHORT Width() const noexcept;
         COORD Origin() const noexcept;
+        COORD BottomRightExclusive() const noexcept;
         COORD EndExclusive() const noexcept;
         COORD Dimensions() const noexcept;
 
@@ -120,6 +121,16 @@ namespace Microsoft::Console::Types
 
         [[nodiscard]] static SomeViewports Subtract(const Viewport& original, const Viewport& removeMe) noexcept;
 
+        constexpr bool operator==(const Viewport& other) const noexcept
+        {
+            return _sr == other._sr;
+        }
+
+        constexpr bool operator!=(const Viewport& other) const noexcept
+        {
+            return _sr != other._sr;
+        }
+
     private:
         Viewport(const SMALL_RECT sr) noexcept;
 
@@ -140,16 +151,4 @@ inline COORD operator-(const COORD& a, const COORD& b) noexcept
 inline COORD operator-(const COORD& c) noexcept
 {
     return { -c.X, -c.Y };
-}
-
-inline bool operator==(const Microsoft::Console::Types::Viewport& a,
-                       const Microsoft::Console::Types::Viewport& b) noexcept
-{
-    return a.ToInclusive() == b.ToInclusive();
-}
-
-inline bool operator!=(const Microsoft::Console::Types::Viewport& a,
-                       const Microsoft::Console::Types::Viewport& b) noexcept
-{
-    return !(a == b);
 }

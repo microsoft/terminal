@@ -21,6 +21,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     _cursorChanged{ false },
     _isEnabled{ true },
     _prevSelection{},
+    _prevCursorRegion{},
     RenderEngineBase()
 {
 }
@@ -66,18 +67,18 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - Notifies us that the console has changed the position of the cursor.
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
-// - pcoordCursor - the new position of the cursor
+// - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 try
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
+    RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
     // check if cursor moved
-    if (*pcoordCursor != _prevCursorPos)
+    if (*psrRegion != _prevCursorRegion)
     {
-        _prevCursorPos = *pcoordCursor;
+        _prevCursorRegion = *psrRegion;
         _cursorChanged = true;
     }
     return S_OK;
@@ -260,6 +261,13 @@ CATCH_RETURN();
     return S_OK;
 }
 
+// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
+// But UiaEngine is never the only engine running. Overriding this function prevents
+// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
+void UiaEngine::WaitUntilCanRender() noexcept
+{
+}
+
 // Routine Description:
 // - Used to perform longer running presentation steps outside the lock so the
 //      other threads can continue.
@@ -323,7 +331,7 @@ CATCH_RETURN();
 // - coordTarget - <unused>
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLines const /*lines*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                       COLORREF const /*color*/,
                                                       size_t const /*cchLine*/,
                                                       COORD const /*coordTarget*/) noexcept
@@ -362,12 +370,16 @@ CATCH_RETURN();
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - textAttributes - <unused>
+// - renderSettings - <unused>
 // - pData - <unused>
+// - usingSoftFont - <unused>
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
+                                                      const RenderSettings& /*renderSettings*/,
                                                       const gsl::not_null<IRenderData*> /*pData*/,
+                                                      const bool /*usingSoftFont*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;
@@ -427,12 +439,16 @@ CATCH_RETURN();
 // - Gets the area that we currently believe is dirty within the character cell grid
 // - Not currently used by UiaEngine.
 // Arguments:
-// - <none>
+// - area - Rectangle describing dirty area in characters.
 // Return Value:
-// - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<til::rectangle> UiaEngine::GetDirtyArea()
+// - S_OK.
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    return { Viewport::Empty().ToInclusive() };
+    // Magic static is only valid because any instance of this object has the same behavior.
+    // Use member variable instead if this ever changes.
+    static constexpr til::rect empty;
+    area = { &empty, 1 };
+    return S_OK;
 }
 
 // Routine Description:
@@ -465,7 +481,7 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     return S_FALSE;
 }

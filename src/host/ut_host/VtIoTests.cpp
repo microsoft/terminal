@@ -3,17 +3,17 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
-#include "..\..\types\inc\Viewport.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
+#include "../../types/inc/Viewport.hpp"
 
-#include "..\..\renderer\vt\Xterm256Engine.hpp"
-#include "..\..\renderer\vt\XtermEngine.hpp"
-#include "..\..\renderer\base\Renderer.hpp"
-#include "..\Settings.hpp"
-#include "..\VtIo.hpp"
+#include "../../renderer/vt/Xterm256Engine.hpp"
+#include "../../renderer/vt/XtermEngine.hpp"
+#include "../../renderer/base/Renderer.hpp"
+#include "../Settings.hpp"
+#include "../VtIo.hpp"
 
-#ifndef __INSIDE_WINDOWS
-#include "..\..\renderer\dx\DxRenderer.hpp"
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+#include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
 using namespace WEX::Common;
@@ -38,7 +38,7 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(RendererDtorAndThread);
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     TEST_METHOD(RendererDtorAndThreadAndDx);
 #endif
 
@@ -290,11 +290,6 @@ public:
     {
     }
 
-    const TextAttribute GetDefaultBrushColors() noexcept override
-    {
-        return TextAttribute{};
-    }
-
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& /*attr*/) const noexcept override
     {
         return std::make_pair(COLORREF{}, COLORREF{});
@@ -330,17 +325,7 @@ public:
         return 12ul;
     }
 
-    COLORREF GetCursorColor() const noexcept override
-    {
-        return COLORREF{};
-    }
-
     bool IsCursorDoubleWidth() const override
-    {
-        return false;
-    }
-
-    bool IsScreenReversed() const noexcept override
     {
         return false;
     }
@@ -355,9 +340,9 @@ public:
         return false;
     }
 
-    const std::wstring GetConsoleTitle() const noexcept override
+    const std::wstring_view GetConsoleTitle() const noexcept override
     {
-        return std::wstring{};
+        return std::wstring_view{};
     }
 
     const bool IsSelectionActive() const override
@@ -391,6 +376,26 @@ public:
     void ColorSelection(const COORD /*coordSelectionStart*/, const COORD /*coordSelectionEnd*/, const TextAttribute /*attr*/)
     {
     }
+
+    const bool IsUiaDataInitialized() const noexcept
+    {
+        return true;
+    }
+
+    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
+    {
+        return {};
+    }
+
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    {
+        return {};
+    }
+
+    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    {
+        return {};
+    }
 };
 
 void VtIoTests::RendererDtorAndThread()
@@ -403,7 +408,7 @@ void VtIoTests::RendererDtorAndThread()
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
         // Sleep for a hot sec to make sure the thread starts before we enable painting
         // If you don't, the thread might wait on the paint enabled event AFTER
@@ -418,7 +423,7 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 void VtIoTests::RendererDtorAndThreadAndDx()
 {
     Log::Comment(NoThrowString().Format(
@@ -429,7 +434,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
@@ -441,6 +446,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         // which is what CI uses.
         /*Sleep(500);*/
 
+        (void)dxEngine->Enable();
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();
         pRenderer.reset();

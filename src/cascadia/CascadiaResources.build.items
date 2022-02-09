@@ -12,13 +12,9 @@
       <Link>Images\%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
     <!-- Fonts -->
-    <Content Include="$(OpenConsoleDir)res\Cascadia.ttf" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+    <Content Include="$(OpenConsoleDir)res\fonts\*.ttf" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <DeploymentContent>true</DeploymentContent>
-      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
-    </Content>
-    <Content Include="$(OpenConsoleDir)res\CascadiaMono.ttf" Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
-      <DeploymentContent>true</DeploymentContent>
-      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <Link>%(FileName)%(Extension)</Link>
     </Content>
     <!-- Profile Icons -->
     <Content Include="$(OpenConsoleDir)src\cascadia\CascadiaPackage\ProfileIcons\**\*">
@@ -26,7 +22,7 @@
       <Link>ProfileIcons\%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
     <!-- Default Settings -->
-    <Content Include="$(OpenConsoleDir)src\cascadia\TerminalApp\defaults.json">
+    <Content Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\defaults.json">
       <DeploymentContent>true</DeploymentContent>
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>

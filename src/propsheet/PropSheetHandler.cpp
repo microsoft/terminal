@@ -3,9 +3,9 @@
 
 #include "precomp.h"
 
-#include <wrl\implements.h>
-#include <wrl\module.h>
-#include <wil\resource.h>
+#include <wrl/implements.h>
+#include <wrl/module.h>
+#include <wil/resource.h>
 
 #include <shlwapi.h>
 #include <shellapi.h>
@@ -18,14 +18,7 @@ static CONSOLE_STATE_INFO g_csi;
 using namespace Microsoft::WRL;
 
 // This class exposes console property sheets for use when launching the filesystem shortcut properties dialog.
-// clang-format off
-[uuid(D2942F8E-478E-41D3-870A-35A16238F4EE)]
-class ConsolePropertySheetHandler WrlFinal : public RuntimeClass<RuntimeClassFlags<ClassicCom>,
-                                                                 IShellExtInit,
-                                                                 IShellPropSheetExt,
-                                                                 IPersist,
-                                                                 FtmBase>
-// clang-format on
+class __declspec(uuid("D2942F8E-478E-41D3-870A-35A16238F4EE")) ConsolePropertySheetHandler final : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IShellExtInit, IShellPropSheetExt, IPersist, FtmBase>
 {
 public:
     HRESULT RuntimeClassInitialize()

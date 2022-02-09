@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -21,6 +21,55 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using Microsoft::Console::Interactivity::ServiceLocator;
+
+template<typename T>
+T GetIterator();
+
+template<typename T>
+T GetIteratorAt(COORD at);
+
+template<typename T>
+T GetIteratorWithAdvance();
+
+template<>
+TextBufferCellIterator GetIteratorAt<TextBufferCellIterator>(COORD at)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& outputBuffer = gci.GetActiveOutputBuffer();
+    return outputBuffer.GetCellDataAt(at);
+}
+
+template<>
+TextBufferCellIterator GetIterator<TextBufferCellIterator>()
+{
+    return GetIteratorAt<TextBufferCellIterator>({ 0 });
+}
+
+template<>
+TextBufferCellIterator GetIteratorWithAdvance<TextBufferCellIterator>()
+{
+    return GetIteratorAt<TextBufferCellIterator>({ 5, 5 });
+}
+
+template<>
+TextBufferTextIterator GetIteratorAt<TextBufferTextIterator>(COORD at)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& outputBuffer = gci.GetActiveOutputBuffer();
+    return outputBuffer.GetTextDataAt(at);
+}
+
+template<>
+TextBufferTextIterator GetIterator<TextBufferTextIterator>()
+{
+    return GetIteratorAt<TextBufferTextIterator>({ 0 });
+}
+
+template<>
+TextBufferTextIterator GetIteratorWithAdvance<TextBufferTextIterator>()
+{
+    return GetIteratorAt<TextBufferTextIterator>({ 5, 5 });
+}
 
 class TextBufferIteratorTests
 {
@@ -267,61 +316,6 @@ class TextBufferIteratorTests
     TEST_METHOD(ConstructedNoLimit);
     TEST_METHOD(ConstructedLimits);
 };
-
-template<typename T>
-T GetIterator()
-{
-}
-
-template<typename T>
-T GetIteratorAt(COORD at)
-{
-}
-
-template<typename T>
-T GetIteratorWithAdvance()
-{
-}
-
-template<>
-TextBufferCellIterator GetIteratorAt<TextBufferCellIterator>(COORD at)
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetCellDataAt(at);
-}
-
-template<>
-TextBufferCellIterator GetIterator<TextBufferCellIterator>()
-{
-    return GetIteratorAt<TextBufferCellIterator>({ 0 });
-}
-
-template<>
-TextBufferCellIterator GetIteratorWithAdvance<TextBufferCellIterator>()
-{
-    return GetIteratorAt<TextBufferCellIterator>({ 5, 5 });
-}
-
-template<>
-TextBufferTextIterator GetIteratorAt<TextBufferTextIterator>(COORD at)
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetTextDataAt(at);
-}
-
-template<>
-TextBufferTextIterator GetIterator<TextBufferTextIterator>()
-{
-    return GetIteratorAt<TextBufferTextIterator>({ 0 });
-}
-
-template<>
-TextBufferTextIterator GetIteratorWithAdvance<TextBufferTextIterator>()
-{
-    return GetIteratorAt<TextBufferTextIterator>({ 5, 5 });
-}
 
 void TextBufferIteratorTests::BoolOperatorText()
 {

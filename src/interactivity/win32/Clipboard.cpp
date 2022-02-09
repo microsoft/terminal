@@ -6,15 +6,16 @@
 #include "clipboard.hpp"
 #include "resource.h"
 
-#include "..\..\host\dbcs.h"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\output.h"
+#include "../../host/dbcs.h"
+#include "../../host/scrolling.hpp"
+#include "../../host/output.h"
 
-#include "..\..\types\inc\convert.hpp"
-#include "..\..\types\inc\viewport.hpp"
+#include "../../types/inc/convert.hpp"
+#include "../../types/inc/viewport.hpp"
 
-#include "..\inc\conint.h"
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/conint.h"
+#include "../inc/EventSynthesis.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -206,8 +207,11 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
+    const auto& renderSettings = gci.GetRenderSettings();
 
-    const auto GetAttributeColors = std::bind(&CONSOLE_INFORMATION::LookupAttributeColors, &gci, std::placeholders::_1);
+    const auto GetAttributeColors = [&](const auto& attr) {
+        return renderSettings.GetAttributeColors(attr);
+    };
 
     bool includeCRLF, trimTrailingWhitespace;
     if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))
@@ -271,9 +275,10 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
 
         if (fAlsoCopyFormatting)
         {
-            const auto& fontData = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetCurrentFont();
+            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
-            const COLORREF bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().GetDefaultBackground();
+            const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
 
             std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");

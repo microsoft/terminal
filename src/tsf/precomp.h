@@ -44,7 +44,7 @@ extern "C" {
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
-#include "..\inc\contsf.h"
+#include "../inc/contsf.h"
 
 #include "globals.h"
 

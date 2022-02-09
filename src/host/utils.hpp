@@ -17,7 +17,7 @@ Author(s):
 #include "conapi.h"
 #include "server.h"
 
-#include "..\server\ObjectHandle.h"
+#include "../server/ObjectHandle.h"
 
 #define RECT_WIDTH(x) ((x)->right - (x)->left)
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)

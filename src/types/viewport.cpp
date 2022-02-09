@@ -138,6 +138,17 @@ COORD Viewport::Origin() const noexcept
 }
 
 // Method Description:
+// - Get a coord representing the bottom right of the viewport in exclusive terms.
+// Arguments:
+// - <none>
+// Return Value:
+// - the exclusive bottom right coordinates of this viewport.
+COORD Viewport::BottomRightExclusive() const noexcept
+{
+    return { RightExclusive(), BottomExclusive() };
+}
+
+// Method Description:
 // - For Accessibility, get a COORD representing the end of this viewport in exclusive terms.
 // - This is needed to represent an exclusive endpoint in UiaTextRange that includes the last
 //    COORD's text in the buffer at (RightInclusive(), BottomInclusive())

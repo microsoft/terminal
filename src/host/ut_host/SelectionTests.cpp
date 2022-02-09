@@ -1,9 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -12,7 +12,7 @@
 #include "selection.hpp"
 #include "cmdline.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -333,7 +333,7 @@ class SelectionTests
 
         COORD startPos{ sTargetX, sTargetY };
         COORD endPos{ base::ClampAdd(sTargetX, sLength), sTargetY };
-        const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos);
+        const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos, false, false);
 
         VERIFY_ARE_EQUAL(static_cast<size_t>(1), selectionRects.size());
         srSelection = selectionRects.at(0);
@@ -412,6 +412,7 @@ class SelectionInputTests
     TEST_CLASS(SelectionInputTests);
 
     CommonState* m_state;
+    CommandHistory* m_pHistory;
 
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -420,12 +421,20 @@ class SelectionInputTests
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
+        if (!m_pHistory)
+        {
+            return false;
+        }
+        // History must be prepared before COOKED_READ (as it uses s_Find to get at it)
 
         return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
+        CommandHistory::s_Free(nullptr);
+        m_pHistory = nullptr;
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();

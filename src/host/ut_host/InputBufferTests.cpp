@@ -3,11 +3,11 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 #include "CommonState.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\types\inc\IInputEvent.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/IInputEvent.hpp"
 
 using namespace WEX::Logging;
 using Microsoft::Console::Interactivity::ServiceLocator;

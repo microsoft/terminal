@@ -29,13 +29,17 @@ namespace Microsoft::Console::Render
         virtual ~Xterm256Engine() override = default;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
+                                                   const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
 
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept;
+        [[nodiscard]] HRESULT _UpdateHyperlinkAttr(const TextAttribute& textAttributes,
+                                                   const gsl::not_null<IRenderData*> pData) noexcept;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;

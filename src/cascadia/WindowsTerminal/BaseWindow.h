@@ -3,9 +3,7 @@
 
 #pragma once
 
-// Custom window messages
-#define CM_UPDATE_TITLE (WM_USER)
-
+#include "CustomWindowMessages.h"
 #include <wil/resource.h>
 
 template<typename T>
@@ -133,6 +131,11 @@ public:
     HWND GetHandle() const noexcept
     {
         return _window.get();
+    }
+
+    UINT GetCurrentDpi() const noexcept
+    {
+        return ::GetDpiForWindow(_window.get());
     }
 
     float GetCurrentDpiScale() const noexcept

@@ -5,7 +5,7 @@
 
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 
 static const COORD c_coordZero = { 0, 0 };
 

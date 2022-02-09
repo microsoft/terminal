@@ -10,6 +10,7 @@
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
+#include "handle.h" // LockConsole
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
 
@@ -213,6 +214,7 @@ bool VtIo::IsUsingVt() const
         {
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+            g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
         }
         CATCH_RETURN();
     }
@@ -382,6 +384,7 @@ void VtIo::_ShutdownIfNeeded()
         //      happens if this method is called outside of lock, but if we're
         //      currently locked, we want to make sure ctrl events are handled
         //      _before_ we RundownAndExit.
+        LockConsole();
         ProcessCtrlEvents();
 
         // Make sure we terminate.

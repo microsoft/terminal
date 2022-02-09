@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "TabBase.idl";
+import "TerminalTabStatus.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TerminalTab : TabBase
+    {
+        TerminalTabStatus TabStatus { get; };
+    }
+}

@@ -1,0 +1,30 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "..\ICoreAppearance.idl";
+
+namespace Microsoft.Terminal.Core
+{
+    interface ICoreSettings requires ICoreAppearance
+    {
+        // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
+        Int32 HistorySize;
+        Int32 InitialRows;
+        Int32 InitialCols;
+
+        Boolean SnapOnInput;
+        Boolean AltGrAliasing;
+
+        String StartingTitle;
+        Boolean SuppressApplicationTitle;
+        String WordDelimiters;
+
+        Boolean ForceVTInput;
+        Boolean TrimBlockSelection;
+        Boolean DetectURLs;
+
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
+    };
+
+}

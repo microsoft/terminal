@@ -5,14 +5,14 @@
 
 #include "ApiDispatchers.h"
 
-#include "..\host\globals.h"
-#include "..\host\handle.h"
-#include "..\host\server.h"
-#include "..\host\telemetry.hpp"
+#include "../host/globals.h"
+#include "../host/handle.h"
+#include "../host/server.h"
+#include "../host/telemetry.hpp"
 
-#include "..\host\ntprivapi.hpp"
+#include "../host/ntprivapi.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 

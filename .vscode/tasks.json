@@ -1,0 +1,121 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "process",
+            "label": "Build Terminal/Console",
+            "command": "powershell.exe",
+            "args": [
+              "-Command",
+              "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
+              "Set-MsBuildDevEnvironment;",
+              "$project = switch(\"${input:buildProjectChoice}\"){OpenConsole{\"Conhost\\Host_EXE\"} Terminal{\"Terminal\\CascadiaPackage\"}  TermControl{\"Terminal\\TerminalControl\"}};",
+              "$target = switch(\"${input:buildModeChoice}\"){Build{\"\"} Rebuild{\":Rebuild\"} Clean{\":Clean\"}};",
+              "$target = $project + $target;",
+              "msbuild",
+              "${workspaceFolder}\\OpenConsole.sln",
+              "/p:Configuration=${input:configChoice}",
+              "/p:Platform=${input:platformChoice}",
+              "/p:AppxSymbolPackageEnabled=false", // This takes a long time, so false if we don't really need it.
+              "/t:$target",
+              "/m", // Parallel builds
+              "/verbosity:minimal"
+            ],
+            "problemMatcher": ["$msCompile"],
+            "group": {
+              "kind": "build",
+              "isDefault": true
+            },
+            "runOptions": {
+                "reevaluateOnRerun": false,
+                "instanceLimit": 1,
+                "runOn": "default"
+            }
+        },
+        {
+            "type": "process",
+            "label": "Register Windows Terminal x64 Debug",
+            "command": "powershell.exe",
+            "args": [
+              "-Command",
+              "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
+              "Set-MsBuildDevEnvironment;",
+              "Set-Location -Path ${workspaceFolder}\\src\\cascadia\\CascadiaPackage\\AppPackages\\CascadiaPackage_0.0.1.0_x64_Debug_Test;",
+              "if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) { Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'};",
+              "New-Item ..\\loose -Type Directory -Force;",
+              "makeappx unpack /v /o /p .\\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\\Loose\\;",
+              "Add-AppxPackage -Path ..\\loose\\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown"
+            ],
+            "problemMatcher": ["$msCompile"],
+            "group": {
+              "kind": "build"
+            }
+        },
+        {
+            "type": "process",
+            "label": "Run Windows Terminal Dev",
+            "command": "wtd.exe",
+            "args": [
+            ],
+            "problemMatcher": ["$msCompile"],
+        },
+        {
+            "type": "process",
+            "label": "Run Code Format",
+            "command": "powershell.exe",
+            "args": [
+              "-Command",
+              "Import-Module ${workspaceFolder}\\tools\\OpenConsole.psm1;",
+              "Set-MsBuildDevEnvironment;",
+              "Invoke-CodeFormat",
+            ],
+            "problemMatcher": ["$msCompile"],
+        }
+    ],
+    "inputs":[
+        {
+            "id": "platformChoice",
+            "type": "pickString",
+            "description": "Processor architecture choice",
+            "options":[
+                "x64",
+                "x86",
+                "arm64"
+            ],
+            "default": "x64"
+        },
+        {
+            "id": "configChoice",
+            "type": "pickString",
+            "description": "Debug or release?",
+            "options":[
+                "Debug",
+                "Release"
+            ],
+            "default": "Debug"
+        },
+        {
+            "id": "buildModeChoice",
+            "type": "pickString",
+            "description": "Build, rebuild, or clean?",
+            "options":[
+                "Build",
+                "Rebuild",
+                "Clean"
+            ],
+            "default": "Build"
+        },
+        {
+            "id": "buildProjectChoice",
+            "type": "pickString",
+            "description": "OpenConsole or Terminal?",
+            "options":[
+                "OpenConsole",
+                "Terminal",
+                "TermControl"
+            ],
+            "default": "Terminal"
+        }
+
+    ]
+}

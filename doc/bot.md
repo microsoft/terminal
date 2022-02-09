@@ -127,4 +127,4 @@ When a release is created, if the PR ID number is linked inside the release desc
 - Issue message: 🎉This issue was addressed in #{pull request ID}, which has now been successfully released as {release name} {release version}.🎉"
 
 ## Admin Panel
-[Here](https://fabric-cp.azurewebsites.net/bot/)
+[Here](https://portal.fabricbot.ms/bot/?repo=microsoft/terminal)

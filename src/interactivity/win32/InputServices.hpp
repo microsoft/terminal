@@ -12,7 +12,7 @@ Author(s):
 - Hernan Gatta (HeGatta) 29-Mar-2017
 --*/
 
-#include "..\inc\IInputServices.hpp"
+#include "../inc/IInputServices.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {

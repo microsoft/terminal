@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -9,8 +9,9 @@
 
 // Needs to be defined or we get redeclaration errors
 #define WIN32_LEAN_AND_MEAN
-
-#define BLOCK_GSL
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -30,3 +31,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalConnectionProvider);
 #include <telemetry/ProjectTelemetry.h>
 
 #include "til.h"
+
+#include <cppwinrt_utils.h>

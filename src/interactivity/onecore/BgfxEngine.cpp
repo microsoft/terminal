@@ -6,7 +6,7 @@
 #include "BgfxEngine.hpp"
 
 #include "ConIoSrvComm.hpp"
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -38,7 +38,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::InvalidateCursor(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }
@@ -157,7 +157,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
         for (size_t i = 0; i < clusters.size() && i < (size_t)_displayWidth; i++)
         {
-            NewRun[coord.X + i].Character = clusters.at(i).GetTextAsSingle();
+            NewRun[coord.X + i].Character = til::at(clusters, i).GetTextAsSingle();
             NewRun[coord.X + i].Attribute = _currentLegacyColorAttribute;
         }
 
@@ -166,7 +166,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                        COLORREF const /*color*/,
                                                        size_t const /*cchLine*/,
                                                        COORD const /*coordTarget*/) noexcept
@@ -195,7 +195,9 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 }
 
 [[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                       const RenderSettings& /*renderSettings*/,
                                                        const gsl::not_null<IRenderData*> /*pData*/,
+                                                       const bool /*usingSoftFont*/,
                                                        bool const /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
@@ -230,15 +232,15 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-std::vector<til::rectangle> BgfxEngine::GetDirtyArea()
+[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    SMALL_RECT r;
-    r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
-    r.Top = 0;
-    r.Left = 0;
-    r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
+    _dirtyArea.bottom = std::max<LONG>(0, _displayHeight);
+    _dirtyArea.right = std::max<LONG>(0, _displayWidth);
 
-    return { r };
+    area = { &_dirtyArea,
+             1 };
+
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
@@ -260,7 +262,7 @@ std::vector<til::rectangle> BgfxEngine::GetDirtyArea()
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     return S_OK;
 }

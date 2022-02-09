@@ -13,12 +13,6 @@
 
 
 # -------------------------------------
-# Preprocessor Settings
-# -------------------------------------
-
-C_DEFINES               = $(C_DEFINES) -DFE_IME
-
-# -------------------------------------
 # Compiler Settings
 # -------------------------------------
 
@@ -38,7 +32,6 @@ TARGET_DESTINATION      = retail
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # Defines IME and Codepage support
-W32_SB                  = 1
 
 
 # -------------------------------------
@@ -96,7 +89,6 @@ SOURCES = \
     ..\utf8ToWideCharParser.cpp \
     ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
-    ..\conattrs.cpp \
     ..\ConsoleArguments.cpp \
     ..\CommandNumberPopup.cpp \
     ..\CommandListPopup.cpp \
@@ -141,6 +133,7 @@ CRTLIBS = \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-core-commandlinetoargv-l1.lib \
     $(ONECORE_INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
@@ -177,8 +170,10 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-winstamin-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uxtheme-themes-l1.lib \
+    $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-dataobject-l1.lib \
     $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-namespace-l1.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uiacore-l1.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
@@ -200,14 +195,18 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
 
 DELAYLOAD = \
-    PROPSYS.dll; \
     D2D1.dll; \
+    D3D11.dll; \
     DWrite.dll; \
     DXGI.dll; \
-    D3D11.dll; \
     OLEAUT32.dll; \
+    PROPSYS.dll; \
+    api-ms-win-core-com-l1.dll; \
+    api-ms-win-core-registry-l2.dll; \
     api-ms-win-mm-playsound-l1.dll; \
+    api-ms-win-shcore-obsolete-l1.dll; \
     api-ms-win-shcore-scaling-l1.dll; \
+    api-ms-win-shell-dataobject-l1.dll; \
     api-ms-win-shell-namespace-l1.dll; \
     ext-ms-win-dwmapi-ext-l1.dll; \
     ext-ms-win-edputil-policy-l1.dll; \
@@ -236,12 +235,9 @@ DELAYLOAD = \
     ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \
     ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
     ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
+    ext-ms-win-rtcore-ntuser-winstamin-l1.dll; \
     ext-ms-win-shell-shell32-l1.dll; \
     ext-ms-win-uiacore-l1.dll; \
     ext-ms-win-uxtheme-themes-l1.dll; \
 
 DLOAD_ERROR_HANDLER = kernelbase
-
-# Add /d2:-notypeopt to disable optimization bug caused by LKG9. Bug #25439646
-USER_C_FLAGS=/d2notypeopt $(USER_C_FLAGS)
-LINKER_FLAGS=/d2:-notypeopt $(LINKER_FLAGS)

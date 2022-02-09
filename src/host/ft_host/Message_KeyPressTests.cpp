@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include <memory>
 #include <utility>
@@ -25,7 +25,7 @@
 
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 
 class KeyPressTests
 {

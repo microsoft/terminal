@@ -17,7 +17,7 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
-#include "..\types\UiaTextRangeBase.hpp"
+#include "../types/UiaTextRangeBase.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {
@@ -56,7 +56,6 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
-        void _ChangeViewport(const SMALL_RECT NewWindow) override;
         void _TranslatePointToScreen(LPPOINT clientPoint) const override;
         void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
 

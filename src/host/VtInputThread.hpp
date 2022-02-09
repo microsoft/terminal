@@ -14,7 +14,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\terminal\parser\StateMachine.hpp"
+#include "../terminal/parser/StateMachine.hpp"
 
 namespace Microsoft::Console
 {

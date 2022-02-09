@@ -3,8 +3,11 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/Profile.h"
+#include "../TerminalSettingsModel/Profile.h"
 #include "../TerminalApp/ColorHelper.h"
+
+// Import some templates to compare floats using approximate matching.
+#include <consoletaeftemplates.hpp>
 
 using namespace Microsoft::Console;
 using namespace winrt::TerminalApp;

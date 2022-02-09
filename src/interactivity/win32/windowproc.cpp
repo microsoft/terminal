@@ -13,23 +13,23 @@
 #include "windowio.hpp"
 #include "windowmetrics.hpp"
 
-#include "..\..\host\_output.h"
-#include "..\..\host\output.h"
-#include "..\..\host\dbcs.h"
-#include "..\..\host\handle.h"
-#include "..\..\host\input.h"
-#include "..\..\host\misc.h"
-#include "..\..\host\registry.hpp"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\srvinit.h"
+#include "../../host/_output.h"
+#include "../../host/output.h"
+#include "../../host/dbcs.h"
+#include "../../host/handle.h"
+#include "../../host/input.h"
+#include "../../host/misc.h"
+#include "../../host/registry.hpp"
+#include "../../host/scrolling.hpp"
+#include "../../host/srvinit.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
-#include "..\..\inc\conint.h"
+#include "../../inc/conint.h"
 
-#include "..\interactivity\win32\CustomWindowMessages.h"
+#include "../interactivity/win32/CustomWindowMessages.h"
 
-#include "..\interactivity\win32\windowUiaProvider.hpp"
+#include "../interactivity/win32/windowUiaProvider.hpp"
 
 #include <iomanip>
 #include <sstream>
@@ -101,7 +101,7 @@ using namespace Microsoft::Console::Types;
 
         // First get the new DPI and update all the scaling factors in the console that are affected.
 
-        // NOTE: GetWindowDpi and/or GetDpiForWindow can be *WRONG* at this point in time depending on monitor configuration.
+        // NOTE: GetDpiForWindow can be *WRONG* at this point in time depending on monitor configuration.
         //       They won't be correct until the window is actually shown. So instead of using those APIs, figure out the DPI
         //       based on the rectangle that is about to be shown using the nearest monitor.
 
@@ -181,7 +181,6 @@ using namespace Microsoft::Console::Types;
 
         // First retrieve the new DPI and the current DPI.
         DWORD const dpiProposed = (WORD)wParam;
-        DWORD const dpiCurrent = g.dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();
@@ -226,18 +225,15 @@ using namespace Microsoft::Console::Types;
         _UpdateSystemMetrics();
         s_ReinitializeFontsForDPIChange();
 
-        if (IsInFullscreen())
-        {
-            // If we're a full screen window, completely ignore what the DPICHANGED says as it will be bigger than the monitor and
-            // instead just ensure that the window is still taking up the full screen.
-            SetIsFullscreen(true);
-        }
-        else
-        {
-            // this is the RECT that the system suggests.
-            RECT* const prcNewScale = (RECT*)lParam;
-            SetWindowPos(hWnd, HWND_TOP, prcNewScale->left, prcNewScale->top, RECT_WIDTH(prcNewScale), RECT_HEIGHT(prcNewScale), SWP_NOZORDER | SWP_NOACTIVATE);
-        }
+        // This is the RECT that the system suggests.
+        RECT* const prcNewScale = (RECT*)lParam;
+        SetWindowPos(hWnd,
+                     HWND_TOP,
+                     prcNewScale->left,
+                     prcNewScale->top,
+                     RECT_WIDTH(prcNewScale),
+                     RECT_HEIGHT(prcNewScale),
+                     SWP_NOZORDER | SWP_NOACTIVATE);
 
         _fInDPIChange = false;
 
@@ -267,7 +263,7 @@ using namespace Microsoft::Console::Types;
         HandleFocusEvent(TRUE);
 
         // ActivateTextServices does nothing if already active so this is OK to be called every focus.
-        ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos);
+        ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos, GetTextBoxArea);
 
         // set the text area to have focus for accessibility consumers
         if (_pUiaProvider)
@@ -465,7 +461,7 @@ using namespace Microsoft::Console::Types;
         // which will have a better suggested rectangle than this one.
         // NOTE: This stopped being possible in RS4 as the DPI now changes when and only when
         // we receive WM_DPICHANGED. We keep this check around so that we perform better downlevel.
-        int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetWindowDPI(hWnd);
+        int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hWnd);
         if (dpi == ServiceLocator::LocateGlobals().dpi)
         {
             _HandleWindowPosChanged(lParam);
@@ -578,6 +574,10 @@ using namespace Microsoft::Console::Types;
         {
             Menu::s_ShowPropertiesDialog(hWnd, TRUE);
         }
+        else if (wParam == SC_RESTORE && _fIsInFullscreen)
+        {
+            SetIsFullscreen(false);
+        }
         else
         {
             goto CallDefWin;
@@ -687,7 +687,10 @@ using namespace Microsoft::Console::Types;
 
     case CM_UPDATE_TITLE:
     {
-        SetWindowTextW(hWnd, gci.GetTitleAndPrefix().c_str());
+        // SetWindowTextW needs null terminated string so assign view to string.
+        const std::wstring titleAndPrefix{ gci.GetTitleAndPrefix() };
+
+        SetWindowTextW(hWnd, titleAndPrefix.c_str());
         break;
     }
 

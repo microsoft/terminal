@@ -6,7 +6,7 @@
 #include "SystemConfigurationProvider.hpp"
 
 #include "icon.hpp"
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
@@ -86,13 +86,12 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
             CONSOLE_STATE_INFO csi = pLinkSettings->CreateConsoleStateInfo();
             csi.LinkTitle = linkNameForCsi;
-            WCHAR wszShortcutTitle[MAX_PATH];
-            BOOL fReadConsoleProperties;
+            WCHAR wszShortcutTitle[MAX_PATH] = L"\0";
+            BOOL fReadConsoleProperties = FALSE;
             WORD wShowWindow = pLinkSettings->GetShowWindow();
             DWORD dwHotKey = pLinkSettings->GetHotKey();
-
-            int iShowWindow;
-            WORD wHotKey;
+            int iShowWindow = 0;
+            WORD wHotKey = 0;
             NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
                                                                      &fReadConsoleProperties,
                                                                      wszShortcutTitle,
@@ -105,19 +104,22 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                                                                      &iShowWindow,
                                                                      &wHotKey);
 
-            // Convert results back to appropriate types and set.
-            if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
+            if (NT_SUCCESS(Status))
             {
-                pLinkSettings->SetShowWindow(wShowWindow);
-            }
+                // Convert results back to appropriate types and set.
+                if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
+                {
+                    pLinkSettings->SetShowWindow(wShowWindow);
+                }
 
-            dwHotKey = wHotKey;
-            pLinkSettings->SetHotKey(dwHotKey);
+                dwHotKey = wHotKey;
+                pLinkSettings->SetHotKey(dwHotKey);
 
-            if (wszLinkTarget[0] != L'\0')
-            {
-                // guarantee null termination to make OACR happy.
-                wszLinkTarget[ARRAYSIZE(wszLinkTarget) - 1] = L'\0';
+                if (wszLinkTarget[0] != L'\0')
+                {
+                    // guarantee null termination to make OACR happy.
+                    wszLinkTarget[ARRAYSIZE(wszLinkTarget) - 1] = L'\0';
+                }
             }
 
             // if we got a title, use it. even on overall link value load failure, the title will be correct if
@@ -172,9 +174,9 @@ void SystemConfigurationProvider::GetSettingsFromLink(
             const DWORD dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
 
             // If we cannot find the application in the path, then try to fall back and see if the window title is a valid path and use that.
-            if (dwLinkLen <= 0 || dwLinkLen > sizeof(wszIconLocation))
+            if (dwLinkLen <= 0 || dwLinkLen > ARRAYSIZE(wszIconLocation))
             {
-                if (PathFileExistsW(pwszTitle) && (wcslen(pwszTitle) < sizeof(wszIconLocation)))
+                if (PathFileExistsW(pwszTitle) && (wcslen(pwszTitle) < ARRAYSIZE(wszIconLocation)))
                 {
                     StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszTitle);
                 }

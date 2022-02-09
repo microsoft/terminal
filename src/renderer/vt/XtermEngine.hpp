@@ -39,7 +39,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const RenderSettings& renderSettings,
                                                            const gsl::not_null<IRenderData*> pData,
+                                                           const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               const COORD coord,
@@ -52,14 +54,23 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
     protected:
+        // I'm using a non-class enum here, so that the values
+        // are trivially convertible and comparable to bool.
+        enum class Tribool : uint8_t
+        {
+            False = 0,
+            True,
+            Invalid,
+        };
+
         const bool _fUseAsciiOnly;
         bool _needToDisableCursor;
-        bool _lastCursorIsVisible;
+        Tribool _lastCursorIsVisible;
         bool _nextCursorIsVisible;
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 
-        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;

@@ -1,4 +1,4 @@
-﻿using GUIConsole.ConPTY.Processes;
+using GUIConsole.ConPTY.Processes;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.IO;
@@ -33,7 +33,7 @@ namespace GUIConsole.ConPTY
         }
 
         /// <summary>
-        /// Start the psuedoconsole and run the process as shown in 
+        /// Start the pseudoconsole and run the process as shown in 
         /// https://docs.microsoft.com/en-us/windows/console/creating-a-pseudoconsole-session#creating-the-pseudoconsole
         /// </summary>
         /// <param name="command">the command to run, e.g. cmd.exe</param>

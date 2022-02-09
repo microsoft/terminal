@@ -1,0 +1,110 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.GlobalAppearance"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="EnumRadioButtonTemplate"
+                          x:DataType="local:EnumEntry">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <ScrollViewer ViewChanging="ViewChanging">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <!--  Language  -->
+            <local:SettingContainer x:Uid="Globals_Language"
+                                    Visibility="{x:Bind LanguageSelectorAvailable}">
+                <ComboBox ItemsSource="{x:Bind LanguageList}"
+                          SelectedItem="{x:Bind CurrentLanguage, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{x:Bind local:GlobalAppearance.LanguageDisplayConverter((x:String))}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </local:SettingContainer>
+
+            <!--  Theme  -->
+            <local:SettingContainer x:Uid="Globals_Theme"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                   ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Always show tabs  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Show Titlebar  -->
+            <local:SettingContainer x:Uid="Globals_ShowTitlebar">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Show Acrylic in Tab Row  -->
+            <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.UseAcrylicInTabRow, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Show Title in Titlebar  -->
+            <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Always on Top  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Tab Width Mode  -->
+            <local:SettingContainer x:Uid="Globals_TabWidthMode"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                   ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Disable Animations  -->
+            <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
+            <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
+                <ToggleSwitch IsOn="{x:Bind local:Converters.InvertBoolean(State.Globals.DisableAnimations), BindBack=State.Globals.SetInvertedDisableAnimationsValue, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Always Show Notification Icon  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowNotificationIcon, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Minimize To Notification Area  -->
+            <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.MinimizeToNotificationArea, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -19,7 +19,7 @@ Revision History:
 
 #include <list>
 
-#include "..\host\conapi.h"
+#include "../host/conapi.h"
 
 #include "IWaitRoutine.h"
 #include "WaitBlock.h"

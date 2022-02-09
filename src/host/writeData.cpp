@@ -5,9 +5,9 @@
 #include "writeData.hpp"
 
 #include "_stream.h"
-#include "..\types\inc\convert.hpp"
+#include "../types/inc/convert.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Creates a new write data object for used in servicing write console requests
@@ -22,7 +22,7 @@
 // Return Value:
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(SCREEN_INFORMATION& siContext,
-                     _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
+                     _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
                      const size_t cbContext,
                      const UINT uiOutputCodepage,
                      const bool requiresVtQuirk) :
@@ -188,4 +188,9 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     *pNumBytes = cbContext;
     *pReplyStatus = Status;
     return true;
+}
+
+void WriteData::MigrateUserBuffersOnTransitionToBackgroundWait(const void* /*oldBuffer*/, void* /*newBuffer*/)
+{
+    // WriteData does not hold API message buffers across a wait
 }

@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -12,7 +12,7 @@
 #include "dbcs.h"
 #include "misc.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace WEX::Logging;
@@ -27,6 +27,7 @@ class ApiRoutinesTests
 
     ApiRoutines _Routines;
     IApiRoutines* _pApiRoutines = &_Routines;
+    CommandHistory* m_pHistory;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
@@ -37,11 +38,20 @@ class ApiRoutinesTests
 
         m_state->PrepareGlobalInputBuffer();
 
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
+        if (!m_pHistory)
+        {
+            return false;
+        }
+        // History must be prepared before COOKED_READ
         return true;
     }
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        CommandHistory::s_Free(nullptr);
+        m_pHistory = nullptr;
+
         m_state->CleanupGlobalInputBuffer();
 
         m_state->CleanupGlobalScreenBuffer();
@@ -207,10 +217,12 @@ class ApiRoutinesTests
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetTitle(L"Test window title.");
 
+        const auto title = gci.GetTitle();
+
         int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci.GetTitle().c_str(),
-                                                     -1,
+                                                     title.data(),
+                                                     gsl::narrow_cast<int>(title.size()),
                                                      nullptr,
                                                      0,
                                                      nullptr,
@@ -221,8 +233,8 @@ class ApiRoutinesTests
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci.GetTitle().c_str(),
-                                                        -1,
+                                                        title.data(),
+                                                        gsl::narrow_cast<int>(title.size()),
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
@@ -251,10 +263,13 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+
+        const auto title = gci.GetTitle();
+
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchWritten);
-        VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchNeeded);
-        VERIFY_ARE_EQUAL(WEX::Common::String(gci.GetTitle().c_str()), WEX::Common::String(pwszTitle));
+        VERIFY_ARE_EQUAL(title.length(), cchWritten);
+        VERIFY_ARE_EQUAL(title.length(), cchNeeded);
+        VERIFY_ARE_EQUAL(WEX::Common::String(title.data(), gsl::narrow_cast<int>(title.size())), WEX::Common::String(pwszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleA)
@@ -262,26 +277,31 @@ class ApiRoutinesTests
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetOriginalTitle(L"Test original window title.");
 
+        const auto originalTitle = gci.GetOriginalTitle();
+
         int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
-                                                     gci.GetOriginalTitle().c_str(),
-                                                     -1,
+                                                     originalTitle.data(),
+                                                     gsl::narrow_cast<int>(originalTitle.size()),
                                                      nullptr,
                                                      0,
                                                      nullptr,
                                                      nullptr);
 
-        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);
+        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded + 1);
         VERIFY_IS_NOT_NULL(pszExpected);
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
-                                                        gci.GetOriginalTitle().c_str(),
-                                                        -1,
+                                                        originalTitle.data(),
+                                                        gsl::narrow_cast<int>(originalTitle.size()),
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
                                                         nullptr));
+
+        // Make sure we terminate the expected title -- WC2MB does not add the \0 if we use the size variant
+        pszExpected[iBytesNeeded] = '\0';
 
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
@@ -306,10 +326,12 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+
+        const auto originalTitle = gci.GetOriginalTitle();
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
-        VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length(), cchWritten);
-        VERIFY_ARE_EQUAL(gci.GetOriginalTitle().length(), cchNeeded);
-        VERIFY_ARE_EQUAL(WEX::Common::String(gci.GetOriginalTitle().c_str()), WEX::Common::String(pwszTitle));
+        VERIFY_ARE_EQUAL(originalTitle.length(), cchWritten);
+        VERIFY_ARE_EQUAL(originalTitle.length(), cchNeeded);
+        VERIFY_ARE_EQUAL(WEX::Common::String(originalTitle.data(), gsl::narrow_cast<int>(originalTitle.size())), WEX::Common::String(pwszTitle));
     }
 
     static void s_AdjustOutputWait(const bool fShouldBlock)

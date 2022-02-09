@@ -133,7 +133,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01
 #define WC_KEEP_CURSOR_VISIBLE 0x02
-#define WC_ECHO 0x04
+#define WC_PRINTABLE_CONTROL_CHARS 0x04
 
 // This is no longer necessary. The buffer will always be Unicode. We don't need to perform special work to check if we're in a raster font
 // and convert the entire buffer to match (and all insertions).
@@ -147,8 +147,6 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 // Word delimiters
 bool IsWordDelim(const wchar_t wch);
 bool IsWordDelim(const std::wstring_view charData);
-
-[[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept;
 
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 

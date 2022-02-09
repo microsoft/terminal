@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F210A4AE-E02A-4BFC-80BB-F50A672FE763}</ProjectGuid>
@@ -21,6 +21,9 @@
     <ClInclude Include="precomp.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\lib\parser.vcxproj">
       <Project>{3ae13314-1939-4dfa-9c14-38ca0834050c}</Project>
     </ProjectReference>

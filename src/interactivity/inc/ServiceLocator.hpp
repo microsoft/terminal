@@ -30,15 +30,17 @@ namespace Microsoft::Console::Interactivity
     class ServiceLocator final
     {
     public:
-        static void RundownAndExit(const HRESULT hr);
+        [[noreturn]] static void RundownAndExit(const HRESULT hr);
 
         // N.B.: Location methods without corresponding creation methods
         //       automatically create the singleton object on demand.
         //       In case the on-demand creation fails, the return value
         //       is nullptr and a message is logged.
 
+        [[nodiscard]] static HRESULT CreateAccessibilityNotifier();
         static IAccessibilityNotifier* LocateAccessibilityNotifier();
 
+        [[nodiscard]] static NTSTATUS SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control);
         static IConsoleControl* LocateConsoleControl();
         template<typename T>
         static T* LocateConsoleControl()

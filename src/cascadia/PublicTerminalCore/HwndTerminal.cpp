@@ -16,12 +16,16 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
 static constexpr bool _IsMouseMessage(UINT uMsg)
 {
     return uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_LBUTTONDBLCLK ||
            uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONUP || uMsg == WM_MBUTTONDBLCLK ||
            uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP || uMsg == WM_RBUTTONDBLCLK ||
-           uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL;
+           uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL;
 }
 
 // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -55,10 +59,31 @@ try
 
     if (terminal)
     {
-        if (_IsMouseMessage(uMsg) && terminal->_CanSendVTMouseInput())
+        if (_IsMouseMessage(uMsg))
         {
-            if (terminal->_SendMouseEvent(uMsg, wParam, lParam))
+            if (terminal->_CanSendVTMouseInput() && terminal->_SendMouseEvent(uMsg, wParam, lParam))
             {
+                // GH#6401: Capturing the mouse ensures that we get drag/release events
+                // even if the user moves outside the window.
+                // _SendMouseEvent returns false if the terminal's not in VT mode, so we'll
+                // fall through to release the capture.
+                switch (uMsg)
+                {
+                case WM_LBUTTONDOWN:
+                case WM_MBUTTONDOWN:
+                case WM_RBUTTONDOWN:
+                    SetCapture(hwnd);
+                    break;
+                case WM_LBUTTONUP:
+                case WM_MBUTTONUP:
+                case WM_RBUTTONUP:
+                    ReleaseCapture();
+                    break;
+                default:
+                    break;
+                }
+
+                // Suppress all mouse events that made it into the terminal.
                 return 0;
             }
         }
@@ -76,6 +101,10 @@ try
             return 0;
         case WM_LBUTTONUP:
             terminal->_singleClickTouchdownPos = std::nullopt;
+            [[fallthrough]];
+        case WM_MBUTTONUP:
+        case WM_RBUTTONUP:
+            ReleaseCapture();
             break;
         case WM_MOUSEMOVE:
             if (WI_IsFlagSet(wParam, MK_LBUTTON))
@@ -105,6 +134,8 @@ try
             terminal->_hwnd.release();
             terminal->Teardown();
             return 0;
+        default:
+            break;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -141,7 +172,6 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _desiredFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8 },
     _actualFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
-    _uiaProviderInitialized{ false },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
     _pfnWriteCallback{ nullptr },
     _multiClickTime{ 500 } // this will be overwritten by the windows system double-click time
@@ -184,7 +214,8 @@ HRESULT HwndTerminal::Initialize()
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
     auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
     auto* const localPointerToThread = renderThread.get();
-    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
+    const auto& renderSettings = _terminal->GetRenderSettings();
+    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
     RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
@@ -209,9 +240,9 @@ HRESULT HwndTerminal::Initialize()
     _terminal->SetBackgroundCallback([](auto) {});
 
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
-    _terminal->SetDefaultBackground(RGB(12, 12, 12));
-    _terminal->SetDefaultForeground(RGB(204, 204, 204));
-    _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept { _WriteTextToConnection(input); });
+    _terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
+    _terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
+    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
@@ -293,26 +324,22 @@ void HwndTerminal::_UpdateFont(int newDpi)
 
 IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
 {
-    if (nullptr == _uiaProvider && !_uiaProviderInitialized)
+    // If TermControlUiaProvider throws during construction,
+    // we don't want to try constructing an instance again and again.
+    // _uiaProviderInitialized helps us prevent this.
+    if (!_uiaProviderInitialized)
     {
-        std::unique_lock<std::shared_mutex> lock;
         try
         {
-#pragma warning(suppress : 26441) // The lock is named, this appears to be a false positive
-            lock = _terminal->LockForWriting();
-            if (_uiaProviderInitialized)
-            {
-                return _uiaProvider.Get();
-            }
-
+            auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, this->GetUiaData(), this));
+            _uiaProviderInitialized = true;
         }
         catch (...)
         {
             LOG_HR(wil::ResultFromCaughtException());
             _uiaProvider = nullptr;
         }
-        _uiaProviderInitialized = true;
     }
 
     return _uiaProvider.Get();
@@ -402,7 +429,15 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
     publicTerminal->SendOutput(data);
 }
 
-HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
+/// <summary>
+/// Triggers a terminal resize using the new width and height in pixel.
+/// </summary>
+/// <param name="terminal">Terminal pointer.</param>
+/// <param name="width">New width of the terminal in pixels.</param>
+/// <param name="height">New height of the terminal in pixels</param>
+/// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
+/// <returns>HRESULT of the attempted resize.</returns>
+HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -415,8 +450,53 @@ HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double heig
         static_cast<int>(height),
         0));
 
-    const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
+    const SIZE windowSize{ width, height };
     return publicTerminal->Refresh(windowSize, dimensions);
+}
+
+/// <summary>
+/// Helper method for resizing the terminal using character column and row counts
+/// </summary>
+/// <param name="terminal">Pointer to the terminal object.</param>
+/// <param name="dimensionsInCharacters">New terminal size in row and column count.</param>
+/// <param name="dimensionsInPixels">Out parameter with the new size of the renderer.</param>
+/// <returns>HRESULT of the attempted resize.</returns>
+HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensionsInCharacters, _Out_ SIZE* dimensionsInPixels)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, dimensionsInPixels);
+
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    const auto viewInCharacters = Viewport::FromDimensions({ 0, 0 }, { (dimensionsInCharacters.X), (dimensionsInCharacters.Y) });
+    const auto viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
+
+    dimensionsInPixels->cx = viewInPixels.Width();
+    dimensionsInPixels->cy = viewInPixels.Height();
+
+    COORD unused{ 0, 0 };
+
+    return TerminalTriggerResize(terminal, viewInPixels.Width(), viewInPixels.Height(), &unused);
+}
+
+/// <summary>
+/// Calculates the amount of rows and columns that fit in the provided width and height.
+/// </summary>
+/// <param name="terminal">Terminal pointer</param>
+/// <param name="width">Width of the terminal area to calculate.</param>
+/// <param name="height">Height of the terminal area to calculate.</param>
+/// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
+/// <returns>HRESULT of the calculation.</returns>
+HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { width, height });
+    const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
+
+    dimensions->X = viewInCharacters.Width();
+    dimensions->Y = viewInCharacters.Height();
+
+    return S_OK;
 }
 
 void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
@@ -470,11 +550,11 @@ try
 
     if (multiClickMapper == 3)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Line);
+        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Line);
     }
     else if (multiClickMapper == 2)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Word);
+        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Word);
     }
     else
     {
@@ -503,19 +583,25 @@ try
 
     RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.area() == 0); // either dimension = 0, area == 0
 
-    if (this->_singleClickTouchdownPos)
+    // This is a copy of ControlInteractivity::PointerMoved
+    if (_singleClickTouchdownPos)
     {
-        const auto& touchdownPoint{ *this->_singleClickTouchdownPos };
-        const auto distance{ std::sqrtf(std::powf(cursorPosition.x<float>() - touchdownPoint.x<float>(), 2) + std::powf(cursorPosition.y<float>() - touchdownPoint.y<float>(), 2)) };
-        if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
+        const auto touchdownPoint = *_singleClickTouchdownPos;
+        const auto dx = cursorPosition.x - touchdownPoint.x;
+        const auto dy = cursorPosition.y - touchdownPoint.y;
+        const auto w = fontSize.width;
+        const auto distanceSquared = dx * dx + dy * dy;
+        const auto maxDistanceSquared = w * w / 16; // (w / 4)^2
+
+        if (distanceSquared >= maxDistanceSquared)
         {
-            _terminal->SetSelectionAnchor(touchdownPoint / fontSize);
+            _terminal->SetSelectionAnchor((touchdownPoint / fontSize).to_win32_coord());
             // stop tracking the touchdown point
             _singleClickTouchdownPos = std::nullopt;
         }
     }
 
-    this->_terminal->SetSelectionEnd(cursorPosition / fontSize);
+    this->_terminal->SetSelectionEnd((cursorPosition / fontSize).to_win32_coord());
     this->_renderer->TriggerSelection();
 
     return S_OK;
@@ -605,19 +691,30 @@ bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 try
 {
-    const til::point cursorPosition{
+    til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
     };
 
     const til::size fontSize{ this->_actualFont.GetSize() };
     short wheelDelta{ 0 };
-    if (uMsg == WM_MOUSEWHEEL)
+    if (uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL)
     {
         wheelDelta = HIWORD(wParam);
+
+        // If it's a *WHEEL event, it's in screen coordinates, not window (?!)
+        POINT coordsToTransform = cursorPosition.to_win32_point();
+        ScreenToClient(_hwnd.get(), &coordsToTransform);
+        cursorPosition = til::point{ coordsToTransform };
     }
 
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta);
+    const TerminalInput::MouseButtonState state{
+        WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
+        WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
+        WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
+    };
+
+    return _terminal->SendMouseEvent((cursorPosition / fontSize).to_win32_coord(), uMsg, getControlKeyState(), wheelDelta, state);
 }
 catch (...)
 {
@@ -625,15 +722,19 @@ catch (...)
     return false;
 }
 
-void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, bool keyDown) noexcept
+void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, WORD flags, bool keyDown) noexcept
 try
 {
-    const auto flags = getControlKeyState();
-    _terminal->SendKeyEvent(vkey, scanCode, flags, keyDown);
+    auto modifiers = getControlKeyState();
+    if (WI_IsFlagSet(flags, ENHANCED_KEY))
+    {
+        modifiers |= ControlKeyStates::EnhancedKey;
+    }
+    _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
 }
 CATCH_LOG();
 
-void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode) noexcept
+void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept
 try
 {
     if (_terminal->IsSelectionActive())
@@ -653,21 +754,25 @@ try
         return;
     }
 
-    const auto flags = getControlKeyState();
-    _terminal->SendCharEvent(ch, scanCode, flags);
+    auto modifiers = getControlKeyState();
+    if (WI_IsFlagSet(flags, ENHANCED_KEY))
+    {
+        modifiers |= ControlKeyStates::EnhancedKey;
+    }
+    _terminal->SendCharEvent(ch, scanCode, modifiers);
 }
 CATCH_LOG();
 
-void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown)
+void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendKeyEvent(vkey, scanCode, keyDown);
+    publicTerminal->_SendKeyEvent(vkey, scanCode, flags, keyDown);
 }
 
-void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode)
+void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_SendCharEvent(ch, scanCode);
+    publicTerminal->_SendCharEvent(ch, scanCode, flags);
 }
 
 void _stdcall DestroyTerminal(void* terminal)
@@ -683,8 +788,9 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
-        publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
-        publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
+        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
+        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, theme.DefaultBackground);
+        publicTerminal->_renderEngine->SetSelectionBackground(theme.DefaultSelectionBackground, theme.SelectionBackgroundAlpha);
 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
@@ -694,7 +800,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         }
     }
 
-    publicTerminal->_terminal->SetCursorStyle(theme.CursorStyle);
+    publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));
 
     publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, { 0, fontSize }, CP_UTF8 };
     publicTerminal->_UpdateFont(newDpi);
@@ -707,18 +813,6 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     COORD dimensions = {};
     const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
     publicTerminal->Refresh(windowSize, &dimensions);
-}
-
-// Resizes the terminal to the specified rows and columns.
-HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
-{
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-
-    auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->ClearSelection();
-    publicTerminal->_renderer->TriggerRedrawAll();
-
-    return publicTerminal->_terminal->UserResize(dimensions);
 }
 
 void _stdcall TerminalBlinkCursor(void* terminal)
@@ -796,7 +890,7 @@ try
         {
             const auto& fontData = _actualFont;
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
-            const COLORREF bgColor = _terminal->GetAttributeColors(_terminal->GetDefaultBrushColors()).second;
+            const COLORREF bgColor = _terminal->GetAttributeColors({}).second;
 
             std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
@@ -890,7 +984,7 @@ void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
     CATCH_LOG();
 }
 
-COORD HwndTerminal::GetFontSize() const
+COORD HwndTerminal::GetFontSize() const noexcept
 {
     return _actualFont.GetSize();
 }

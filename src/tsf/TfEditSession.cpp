@@ -1016,7 +1016,7 @@ CEditSessionObject::Release()
     RETURN_HR_IF(E_FAIL, lStartResult > 0);
 
     FullTextRange->CompareEnd(ec, InterimRange, TF_ANCHOR_END, &lEndResult);
-    RETURN_HR_IF(E_FAIL, lEndResult != 1);
+    RETURN_HR_IF(E_FAIL, lEndResult < 0);
 
     if (lStartResult < 0)
     {

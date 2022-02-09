@@ -14,8 +14,9 @@ Author(s):
 
 #pragma once
 
-#include "..\renderer\inc\IRenderData.hpp"
-#include "..\types\IUiaData.h"
+#include "../renderer/inc/IRenderData.hpp"
+#include "../types/inc/colorTable.hpp"
+#include "../types/IUiaData.h"
 
 class RenderData final :
     public Microsoft::Console::Render::IRenderData,
@@ -35,29 +36,28 @@ public:
 #pragma endregion
 
 #pragma region IRenderData
-    const TextAttribute GetDefaultBrushColors() noexcept override;
-
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
-
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    COLORREF GetCursorColor() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
-
-    bool IsScreenReversed() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
 
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
-    const std::wstring GetConsoleTitle() const noexcept override;
+    const std::wstring_view GetConsoleTitle() const noexcept override;
+
+    const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
+    const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
+
+    const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     const bool IsSelectionActive() const override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
@@ -65,5 +65,6 @@ public:
     const COORD GetSelectionAnchor() const noexcept;
     const COORD GetSelectionEnd() const noexcept;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
+    const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
 };

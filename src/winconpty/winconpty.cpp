@@ -23,22 +23,33 @@
 #pragma warning(disable : 26485) // array-to-pointer decay is virtually impossible to avoid when we can't use STL.
 
 // Function Description:
+// - Returns the path to conhost.exe as a process heap string.
+static wil::unique_process_heap_string _InboxConsoleHostPath()
+{
+    wil::unique_process_heap_string systemDirectory;
+    wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
+    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+}
+
+// Function Description:
 // - Returns the path to either conhost.exe or the side-by-side OpenConsole, depending on whether this
-//   module is building with Windows.
+//   module is building with Windows and OpenConsole could be found.
 // Return Value:
 // - A pointer to permanent storage containing the path to the console host.
 static wchar_t* _ConsoleHostPath()
 {
     // Use the magic of magic statics to only calculate this once.
     static wil::unique_process_heap_string consoleHostPath = []() {
-#ifdef __INSIDE_WINDOWS
-        wil::unique_process_heap_string systemDirectory;
-        wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
-        return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+#if defined(__INSIDE_WINDOWS)
+        return _InboxConsoleHostPath();
 #else
         // Use the STL only if we're not building in Windows.
         std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
         modulePath.replace_filename(L"OpenConsole.exe");
+        if (!std::filesystem::exists(modulePath))
+        {
+            return _InboxConsoleHostPath();
+        }
         auto modulePathAsString{ modulePath.wstring() };
         return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
 #endif // __INSIDE_WINDOWS
@@ -221,6 +232,27 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 }
 
 // Function Description:
+// - Clears the conpty
+// Arguments:
+// - hSignal: A signal pipe as returned by CreateConPty.
+// Return Value:
+// - S_OK if the call succeeded, else an appropriate HRESULT for failing to
+//      write the clear message to the pty.
+HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
+{
+    if (pPty == nullptr)
+    {
+        return E_INVALIDARG;
+    }
+
+    unsigned short signalPacket[1];
+    signalPacket[0] = PTY_SIGNAL_CLEAR_WINDOW;
+
+    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
+// Function Description:
 // - This closes each of the members of a PseudoConsole. It does not free the
 //      data associated with the PseudoConsole. This is helpful for testing,
 //      where we might stack allocate a PseudoConsole (instead of getting a
@@ -258,6 +290,7 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
             }
 
             TerminateProcess(pPty->hConPtyProcess, 0);
+            CloseHandle(pPty->hConPtyProcess);
             pPty->hConPtyProcess = nullptr;
         }
         // Then take care of the reference handle.
@@ -374,6 +407,23 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
 }
 
 // Function Description:
+// - Clear the contents of the conpty buffer, leaving the cursor row at the top
+//   of the viewport.
+// - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
+//   a terminal to clear the contents of the ConPTY buffer, which is important
+//   if the user would like to be able to clear the terminal-side buffer.
+extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
+{
+    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    if (SUCCEEDED(hr))
+    {
+        hr = _ClearPseudoConsole(pPty);
+    }
+    return hr;
+}
+
+// Function Description:
 // Closes the conpty and all associated state.
 // Client applications attached to the conpty will also behave as though the
 //      console window they were running in was closed.
@@ -386,6 +436,37 @@ extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
     {
         _ClosePseudoConsole(pPty);
     }
+}
+
+// NOTE: This one is not defined in the Windows headers but is
+// necessary for our outside recipient in the Terminal
+// to set up a PTY session in fundamentally the same way as the
+// Creation functions. Using the same HPCON pack enables
+// resizing and closing to "just work."
+
+// Function Description:
+// Packs loose handle information for an inbound ConPTY
+//  session into the same HPCON as a created session.
+extern "C" HRESULT WINAPI ConptyPackPseudoConsole(_In_ HANDLE hProcess,
+                                                  _In_ HANDLE hRef,
+                                                  _In_ HANDLE hSignal,
+                                                  _Out_ HPCON* phPC)
+{
+    RETURN_HR_IF(E_INVALIDARG, nullptr == phPC);
+    *phPC = nullptr;
+    RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hProcess));
+    RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hRef));
+    RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hSignal));
+
+    PseudoConsole* pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
+    RETURN_IF_NULL_ALLOC(pPty);
+
+    pPty->hConPtyProcess = hProcess;
+    pPty->hPtyReference = hRef;
+    pPty->hSignal = hSignal;
+
+    *phPC = (HPCON)pPty;
+    return S_OK;
 }
 
 #pragma warning(pop)

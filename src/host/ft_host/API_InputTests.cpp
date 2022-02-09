@@ -5,13 +5,13 @@
 
 #include <thread>
 
-#include "..\..\interactivity\onecore\SystemConfigurationProvider.hpp"
+#include "../../interactivity/onecore/SystemConfigurationProvider.hpp"
 
 // some assumptions have been made on this value. only change it if you have a good reason to.
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 // This class is intended to test:

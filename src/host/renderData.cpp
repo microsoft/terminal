@@ -7,7 +7,7 @@
 
 #include "dbcs.h"
 #include "handle.h"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -102,17 +102,6 @@ void RenderData::UnlockConsole() noexcept
 #pragma endregion
 
 #pragma region IRenderData
-// Routine Description:
-// - Retrieves the brush colors that should be used in absence of any other color data from
-//   cells in the text buffer.
-// Return Value:
-// - TextAttribute containing the foreground and background brush color data.
-const TextAttribute RenderData::GetDefaultBrushColors() noexcept
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().GetAttributes();
-}
-
 // Method Description:
 // - Gets the cursor's position in the buffer, relative to the buffer origin.
 // Arguments:
@@ -214,20 +203,6 @@ ULONG RenderData::GetCursorPixelWidth() const noexcept
     return ServiceLocator::LocateGlobals().cursorPixelWidth;
 }
 
-// Method Description:
-// - Get the color of the cursor. If the color is INVALID_COLOR, the cursor
-//      should be drawn by inverting the color of the cursor.
-// Arguments:
-// - <none>
-// Return Value:
-// - the color of the cursor.
-COLORREF RenderData::GetCursorColor() const noexcept
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetColor();
-}
-
 // Routine Description:
 // - Retrieves overlays to be drawn on top of the main screen buffer area.
 // - Overlays are drawn from first to last
@@ -276,7 +251,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - <none>
 // Return Value:
 // - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const noexcept
+bool RenderData::IsCursorDoubleWidth() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
@@ -318,12 +293,44 @@ const bool RenderData::IsGridLineDrawingAllowed() noexcept
 // - Retrieves the title information to be displayed in the frame/edge of the window
 // Return Value:
 // - String with title information
-const std::wstring RenderData::GetConsoleTitle() const noexcept
+const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetTitleAndPrefix();
 }
 
+// Method Description:
+// - Get the hyperlink URI associated with a hyperlink ID
+// Arguments:
+// - The hyperlink ID
+// Return Value:
+// - The URI
+const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
+}
+
+// Method Description:
+// - Get the custom ID associated with a hyperlink ID
+// Arguments:
+// - The hyperlink ID
+// Return Value:
+// - The custom ID if there was one, empty string otherwise
+const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
+}
+
+// For now, we ignore regex patterns in conhost
+const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) const noexcept
+{
+    return {};
+}
+#pragma endregion
+
+#pragma region IUiaData
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.
@@ -331,12 +338,10 @@ const std::wstring RenderData::GetConsoleTitle() const noexcept
 // - ARGB color values for the foreground and background
 std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupAttributeColors(attr);
+    const auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    return renderSettings.GetAttributeColors(attr);
 }
-#pragma endregion
 
-#pragma region IUiaData
 // Routine Description:
 // - Determines whether the selection area is empty.
 // Arguments:
@@ -438,17 +443,5 @@ const COORD RenderData::GetSelectionEnd() const noexcept
 void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
 {
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
-}
-
-// Method Description:
-// - Returns true if the screen is globally inverted
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the screen is globally inverted
-bool RenderData::IsScreenReversed() const noexcept
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.IsScreenReversed();
 }
 #pragma endregion

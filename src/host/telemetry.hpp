@@ -51,6 +51,8 @@ public:
 
     void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
 
+    bool IsUserInteractive();
+
     // Names are from the external API call names.  Note that some names can be different
     // than the internal API calls.
     // Don't worry about the following APIs, because they are external to our conhost codebase and hard to track through
@@ -189,7 +191,7 @@ private:
 };
 
 // Log the RIPMSG through telemetry, and also through a normal OutputDebugStringW call.
-// These are drop-in substitutes for the RIPMSG0-4 macros from \windows\Core\ntcon2\conhost\consrv.h
+// These are drop-in substitutes for the RIPMSG0-4 macros from /windows/Core/ntcon2/conhost/consrv.h
 #define RIPMSG0(flags, msg) Telemetry::Instance().LogRipMessage(msg);
 #define RIPMSG1(flags, msg, a) Telemetry::Instance().LogRipMessage(msg, a);
 #define RIPMSG2(flags, msg, a, b) Telemetry::Instance().LogRipMessage(msg, a, b);

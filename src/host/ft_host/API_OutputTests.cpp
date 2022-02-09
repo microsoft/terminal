@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\types\inc\viewport.hpp"
+#include "../types/inc/viewport.hpp"
 
 #include <thread>
 #include <vector>
@@ -11,7 +11,7 @@
 
 using namespace Microsoft::Console::Types;
 using namespace WEX::TestExecution;
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 class OutputTests

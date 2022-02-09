@@ -1,0 +1,25 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import "ShortcutActionDispatch.idl";
+
+namespace TerminalApp
+{
+    unsealed runtimeclass TabBase : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Title { get; };
+        String Icon { get; };
+        Boolean ReadOnly { get; };
+
+        Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
+        Windows.UI.Xaml.FrameworkElement Content { get; };
+        Windows.UI.Xaml.FocusState FocusState { get; };
+
+        UInt32 TabViewIndex;
+        UInt32 TabViewNumTabs;
+
+        overridable void Focus(Windows.UI.Xaml.FocusState focusState);
+        overridable void Shutdown();
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
+    }
+}

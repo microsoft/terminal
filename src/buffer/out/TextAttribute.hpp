@@ -27,8 +27,6 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
-#pragma pack(push, 1)
-
 class TextAttribute final
 {
 public:
@@ -36,15 +34,17 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{},
         _background{},
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _extendedAttrs{ ExtendedAttributes::Normal },
+        _hyperlinkId{ 0 }
     {
     }
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
-        _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
+        _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
+        _extendedAttrs{ ExtendedAttributes::Normal },
+        _hyperlinkId{ 0 }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
         WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
@@ -55,18 +55,14 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _extendedAttrs{ ExtendedAttributes::Normal },
+        _hyperlinkId{ 0 }
     {
     }
 
     static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
     static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
-
-    std::pair<COLORREF, COLORREF> CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
-                                                     const COLORREF defaultFgColor,
-                                                     const COLORREF defaultBgColor,
-                                                     const bool reverseScreenMode = false) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -88,30 +84,35 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsBold() const noexcept;
+    bool IsIntense() const noexcept;
     bool IsFaint() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
     bool IsInvisible() const noexcept;
     bool IsCrossedOut() const noexcept;
     bool IsUnderlined() const noexcept;
+    bool IsDoublyUnderlined() const noexcept;
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
 
-    void SetBold(bool isBold) noexcept;
+    void SetIntense(bool isIntense) noexcept;
     void SetFaint(bool isFaint) noexcept;
     void SetItalic(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
     void SetUnderlined(bool isUnderlined) noexcept;
+    void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;
 
+    bool IsHyperlink() const noexcept;
+
     TextColor GetForeground() const noexcept;
     TextColor GetBackground() const noexcept;
+    uint16_t GetHyperlinkId() const noexcept;
     void SetForeground(const TextColor foreground) noexcept;
     void SetBackground(const TextColor background) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
@@ -121,9 +122,11 @@ public:
     void SetIndexedForeground256(const BYTE fgIndex) noexcept;
     void SetIndexedBackground256(const BYTE bgIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
+    void SetHyperlinkId(uint16_t id) noexcept;
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
+    void SetDefaultMetaAttrs() noexcept;
 
     bool BackgroundIsDefault() const noexcept;
 
@@ -141,11 +144,14 @@ public:
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
                // crossed out, doubly and singly underlined have a visual representation
                WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // hyperlinks have a visual representation
+               !IsHyperlink() &&
                // all other attributes do not have a visual representation
                (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
                ((checkForeground && _foreground == other._foreground) ||
                 (!checkForeground && _background == other._background)) &&
-               _extendedAttrs == other._extendedAttrs;
+               _extendedAttrs == other._extendedAttrs &&
+               IsHyperlink() == other.IsHyperlink();
     }
 
     constexpr bool IsAnyGridLineEnabled() const noexcept
@@ -154,18 +160,14 @@ public:
     }
 
 private:
-    static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
-    {
-        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
-    }
+    static std::array<TextColor, 16> s_legacyForegroundColorMap;
+    static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 
-    static BYTE s_legacyDefaultForeground;
-    static BYTE s_legacyDefaultBackground;
-
-    WORD _wAttrLegacy;
-    TextColor _foreground;
-    TextColor _background;
-    ExtendedAttributes _extendedAttrs;
+    uint16_t _wAttrLegacy; // sizeof: 2, alignof: 2
+    uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
+    TextColor _foreground; // sizeof: 4, alignof: 1
+    TextColor _background; // sizeof: 4, alignof: 1
+    ExtendedAttributes _extendedAttrs; // sizeof: 1, alignof: 1
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -174,13 +176,6 @@ private:
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
-
-#pragma pack(pop)
-// 2 for _wAttrLegacy
-// 4 for _foreground
-// 4 for _background
-// 1 for _extendedAttrs
-static_assert(sizeof(TextAttribute) <= 11 * sizeof(BYTE), "We should only need 11B for an entire TextColor. Any more than that is just waste");
 
 enum class TextAttributeBehavior
 {
@@ -194,7 +189,8 @@ constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexce
     return a._wAttrLegacy == b._wAttrLegacy &&
            a._foreground == b._foreground &&
            a._background == b._background &&
-           a._extendedAttrs == b._extendedAttrs;
+           a._extendedAttrs == b._extendedAttrs &&
+           a._hyperlinkId == b._hyperlinkId;
 }
 
 constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
@@ -205,7 +201,7 @@ constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexce
 #ifdef UNIT_TESTING
 
 #define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format( \
-    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
+    L## #attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX
 {
@@ -218,10 +214,10 @@ namespace WEX
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
+                    L"{FG:%s,BG:%s,intense:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
-                    attr.IsBold(),
+                    attr.IsIntense(),
                     attr._wAttrLegacy,
                     static_cast<DWORD>(attr._extendedAttrs));
             }

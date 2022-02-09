@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
@@ -33,6 +33,8 @@
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!=''" Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets" />
+
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
        set after we've imported Microsoft.Cpp.targets -->
   <PropertyGroup>
@@ -54,10 +56,27 @@
   <Target Name="CleanUpPrecompForSmallCIAgents"
           DependsOnTargets="_ComputePrecompToCleanUp"
           AfterTargets="AfterBuild"
-          Condition="'$(AGENT_ID)' != ''">
+          Condition="'$(OpenConsoleCleanPCH)' == 'true' and '$(AGENT_ID)' != '' and !$(ProjectName.Contains('TerminalApp'))">
     <!-- We just need to keep *TerminalApp*'s PCHs because they get rebuilt more often. -->
     <Delete Files="@(_PCHFileToCleanWithTimestamp)"/>
     <Touch Files="@(_PCHFileToCleanWithTimestamp)" Time="%(LastWriteTime)" AlwaysCreate="true" />
     <Message Text="PCH and Precomp object @(_PCHFileToCleanWithTimestamp) has been deleted for $(ProjectName)." />
   </Target>
+
+  <PropertyGroup>
+    <BuildDependsOn>
+      OCCallFeatureFlagGenerator;
+      $(BuildDependsOn)
+    </BuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="OCCallFeatureFlagGenerator">
+    <MSBuild Projects="$(SolutionDir)\build\rules\GenerateFeatureFlags.proj" />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <ForcedIncludeFiles>$(SolutionDir)\bin\$(Configuration)\inc\TilFeatureStaging.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

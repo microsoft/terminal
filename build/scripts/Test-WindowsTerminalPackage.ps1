@@ -8,7 +8,7 @@ Param(
     [Parameter(HelpMessage="Path to Windows Kit")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0"
+    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,7 +58,7 @@ Try {
 
     ### Check the activatable class entries for a few DLLs we need.
     $inProcServers = $Manifest.Package.Extensions.Extension.InProcessServer.Path
-    $RequiredInProcServers = ("TerminalApp.dll", "TerminalControl.dll", "TerminalConnection.dll")
+    $RequiredInProcServers = ("TerminalApp.dll", "Microsoft.Terminal.Control.dll", "Microsoft.Terminal.Remoting.dll", "Microsoft.Terminal.Settings.Editor.dll", "Microsoft.Terminal.Settings.Model.dll", "TerminalConnection.dll")
 
     Write-Verbose "InProc Servers: $inProcServers"
 
@@ -104,6 +104,10 @@ Try {
     If (($null -eq (Get-Item "$AppxPackageRootPath\wtd.exe" -EA:Ignore)) -And
         ($null -eq (Get-Item "$AppxPackageRootPath\wt.exe" -EA:Ignore))) {
         Throw "Failed to find wt.exe/wtd.exe -- check the WAP packaging project"
+    }
+
+    If ($null -eq (Get-Item "$AppxPackageRootPath\OpenConsole.exe" -EA:Ignore)) {
+        Throw "Failed to find OpenConsole.exe -- check the WAP packaging project"
     }
 
 } Finally {

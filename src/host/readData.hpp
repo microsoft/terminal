@@ -20,8 +20,11 @@ Revision History:
 
 #pragma once
 
+#include "inputReadHandleData.h"
 #include "../server/IWaitRoutine.h"
 #include "../server/WaitTerminationReason.h"
+
+class InputBuffer;
 
 class ReadData : public IWaitRoutine
 {
@@ -36,6 +39,7 @@ public:
     ReadData& operator=(const ReadData&) & = delete;
     ReadData& operator=(ReadData&&) & = delete;
 
+    virtual void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) = 0;
     virtual bool Notify(const WaitTerminationReason TerminationReason,
                         const bool fIsUnicode,
                         _Out_ NTSTATUS* const pReplyStatus,

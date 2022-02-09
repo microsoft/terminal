@@ -20,8 +20,8 @@ Revision History:
 
 #include "input.h"
 
-#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
-#include "..\interactivity\inc\IConsoleWindow.hpp"
+#include "../interactivity/inc/IAccessibilityNotifier.hpp"
+#include "../interactivity/inc/IConsoleWindow.hpp"
 
 class Selection
 {
@@ -174,7 +174,6 @@ private:
     COORD _coordSavedCursorPosition;
     ULONG _ulSavedCursorSize;
     bool _fSavedCursorVisible;
-    COLORREF _savedCursorColor;
     CursorType _savedCursorType;
 
 #ifdef UNIT_TESTING

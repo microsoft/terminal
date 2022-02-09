@@ -42,8 +42,6 @@ Revision History:
 #include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
-#include "../inc/ITerminalOutputConnection.hpp"
-
 #include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
 
@@ -99,6 +97,7 @@ public:
 
     [[nodiscard]] NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
 
+    bool HasAccessibilityEventing() const noexcept;
     void NotifyAccessibilityEventing(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
 
     void UpdateScrollBars();
@@ -188,8 +187,6 @@ public:
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
 
-    void SetCursorColor(const unsigned int Color, const bool setMain = false) noexcept;
-
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
@@ -202,7 +199,6 @@ public:
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
     bool AreMarginsSet() const noexcept;
     bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
-    Microsoft::Console::Types::Viewport GetScrollingRegion() const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
@@ -222,8 +218,9 @@ public:
                               const TextAttribute& popupAttributes);
 
     [[nodiscard]] HRESULT VtEraseAll();
+    [[nodiscard]] HRESULT ClearBuffer();
 
-    void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
 
     void UpdateBottom();
     void MoveToBottom();

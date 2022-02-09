@@ -11,6 +11,7 @@
 #include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
@@ -67,24 +68,20 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
 // - <none>
 void AdaptDispatch::PrintString(const std::wstring_view string)
 {
-    try
+    if (_termOutput.NeedToTranslate())
     {
-        if (_termOutput.NeedToTranslate())
+        std::wstring buffer;
+        buffer.reserve(string.size());
+        for (auto& wch : string)
         {
-            std::wstring buffer;
-            buffer.reserve(string.size());
-            for (auto& wch : string)
-            {
-                buffer.push_back(_termOutput.TranslateKey(wch));
-            }
-            _pDefaults->PrintString(buffer);
+            buffer.push_back(_termOutput.TranslateKey(wch));
         }
-        else
-        {
-            _pDefaults->PrintString(string);
-        }
+        _pDefaults->PrintString(buffer);
     }
-    CATCH_LOG();
+    else
+    {
+        _pDefaults->PrintString(string);
+    }
 }
 
 // Routine Description:
@@ -97,7 +94,7 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorUp(const size_t distance)
 {
     return _CursorMovePosition(Offset::Backward(distance), Offset::Unchanged(), true);
@@ -113,7 +110,7 @@ bool AdaptDispatch::CursorUp(const size_t distance)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorDown(const size_t distance)
 {
     return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), true);
@@ -124,7 +121,7 @@ bool AdaptDispatch::CursorDown(const size_t distance)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorForward(const size_t distance)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), true);
@@ -135,7 +132,7 @@ bool AdaptDispatch::CursorForward(const size_t distance)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorBackward(const size_t distance)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Backward(distance), true);
@@ -147,7 +144,7 @@ bool AdaptDispatch::CursorBackward(const size_t distance)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorNextLine(const size_t distance)
 {
     return _CursorMovePosition(Offset::Forward(distance), Offset::Absolute(1), true);
@@ -159,7 +156,7 @@ bool AdaptDispatch::CursorNextLine(const size_t distance)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorPrevLine(const size_t distance)
 {
     return _CursorMovePosition(Offset::Backward(distance), Offset::Absolute(1), true);
@@ -172,84 +169,80 @@ bool AdaptDispatch::CursorPrevLine(const size_t distance)
 // - colOffset - The column to move to
 // - clampInMargins - Should the position be clamped within the scrolling margins
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const
 {
-    bool success = true;
-
     // First retrieve some information about the buffer
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-    if (success)
+    // Calculate the viewport boundaries as inclusive values.
+    // srWindow is exclusive so we need to subtract 1 from the bottom.
+    const int viewportTop = csbiex.srWindow.Top;
+    const int viewportBottom = csbiex.srWindow.Bottom - 1;
+
+    // Calculate the absolute margins of the scrolling area.
+    const int topMargin = viewportTop + _scrollMargins.Top;
+    const int bottomMargin = viewportTop + _scrollMargins.Bottom;
+    const bool marginsSet = topMargin < bottomMargin;
+
+    // For relative movement, the given offsets will be relative to
+    // the current cursor position.
+    int row = csbiex.dwCursorPosition.Y;
+    int col = csbiex.dwCursorPosition.X;
+
+    // But if the row is absolute, it will be relative to the top of the
+    // viewport, or the top margin, depending on the origin mode.
+    if (rowOffset.IsAbsolute)
     {
-        // Calculate the viewport boundaries as inclusive values.
-        // srWindow is exclusive so we need to subtract 1 from the bottom.
-        const int viewportTop = csbiex.srWindow.Top;
-        const int viewportBottom = csbiex.srWindow.Bottom - 1;
-
-        // Calculate the absolute margins of the scrolling area.
-        const int topMargin = viewportTop + _scrollMargins.Top;
-        const int bottomMargin = viewportTop + _scrollMargins.Bottom;
-        const bool marginsSet = topMargin < bottomMargin;
-
-        // For relative movement, the given offsets will be relative to
-        // the current cursor position.
-        int row = csbiex.dwCursorPosition.Y;
-        int col = csbiex.dwCursorPosition.X;
-
-        // But if the row is absolute, it will be relative to the top of the
-        // viewport, or the top margin, depending on the origin mode.
-        if (rowOffset.IsAbsolute)
-        {
-            row = _isOriginModeRelative ? topMargin : viewportTop;
-        }
-
-        // And if the column is absolute, it'll be relative to column 0.
-        // Horizontal positions are not affected by the viewport.
-        if (colOffset.IsAbsolute)
-        {
-            col = 0;
-        }
-
-        // Adjust the base position by the given offsets and clamp the results.
-        // The row is constrained within the viewport's vertical boundaries,
-        // while the column is constrained by the buffer width.
-        row = std::clamp(row + rowOffset.Value, viewportTop, viewportBottom);
-        col = std::clamp(col + colOffset.Value, 0, csbiex.dwSize.X - 1);
-
-        // If the operation needs to be clamped inside the margins, or the origin
-        // mode is relative (which always requires margin clamping), then the row
-        // may need to be adjusted further.
-        if (marginsSet && (clampInMargins || _isOriginModeRelative))
-        {
-            // See microsoft/terminal#2929 - If the cursor is _below_ the top
-            // margin, it should stay below the top margin. If it's _above_ the
-            // bottom, it should stay above the bottom. Cursor movements that stay
-            // outside the margins shouldn't necessarily be affected. For example,
-            // moving up while below the bottom margin shouldn't just jump straight
-            // to the bottom margin. See
-            // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
-            // behavior.
-            if (csbiex.dwCursorPosition.Y >= topMargin)
-            {
-                row = std::max(row, topMargin);
-            }
-            if (csbiex.dwCursorPosition.Y <= bottomMargin)
-            {
-                row = std::min(row, bottomMargin);
-            }
-        }
-
-        // Finally, attempt to set the adjusted cursor position back into the console.
-        const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
-        success = _pConApi->SetConsoleCursorPosition(newPos);
+        row = _isOriginModeRelative ? topMargin : viewportTop;
     }
 
-    return success;
+    // And if the column is absolute, it'll be relative to column 0.
+    // Horizontal positions are not affected by the viewport.
+    if (colOffset.IsAbsolute)
+    {
+        col = 0;
+    }
+
+    // Adjust the base position by the given offsets and clamp the results.
+    // The row is constrained within the viewport's vertical boundaries,
+    // while the column is constrained by the buffer width.
+    row = std::clamp(row + rowOffset.Value, viewportTop, viewportBottom);
+    col = std::clamp(col + colOffset.Value, 0, csbiex.dwSize.X - 1);
+
+    // If the operation needs to be clamped inside the margins, or the origin
+    // mode is relative (which always requires margin clamping), then the row
+    // may need to be adjusted further.
+    if (marginsSet && (clampInMargins || _isOriginModeRelative))
+    {
+        // See microsoft/terminal#2929 - If the cursor is _below_ the top
+        // margin, it should stay below the top margin. If it's _above_ the
+        // bottom, it should stay above the bottom. Cursor movements that stay
+        // outside the margins shouldn't necessarily be affected. For example,
+        // moving up while below the bottom margin shouldn't just jump straight
+        // to the bottom margin. See
+        // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
+        // behavior.
+        if (csbiex.dwCursorPosition.Y >= topMargin)
+        {
+            row = std::max(row, topMargin);
+        }
+        if (csbiex.dwCursorPosition.Y <= bottomMargin)
+        {
+            row = std::min(row, bottomMargin);
+        }
+    }
+
+    // Finally, attempt to set the adjusted cursor position back into the console.
+    const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
+    _pConApi->SetCursorPosition(newPos);
+
+    return true;
 }
 
 // Routine Description:
@@ -257,7 +250,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 // Arguments:
 // - column - Specific X/Column position to move to
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorHorizontalPositionAbsolute(const size_t column)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(column), false);
@@ -268,7 +261,7 @@ bool AdaptDispatch::CursorHorizontalPositionAbsolute(const size_t column)
 // Arguments:
 // - line - Specific Y/Row position to move to
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 {
     return _CursorMovePosition(Offset::Absolute(line), Offset::Unchanged(), false);
@@ -280,7 +273,7 @@ bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::HorizontalPositionRelative(const size_t distance)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), false);
@@ -292,7 +285,7 @@ bool AdaptDispatch::HorizontalPositionRelative(const size_t distance)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::VerticalPositionRelative(const size_t distance)
 {
     return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), false);
@@ -304,7 +297,7 @@ bool AdaptDispatch::VerticalPositionRelative(const size_t distance)
 // - line - Specific Y/Row/Line position to move to
 // - column - Specific X/Column position to move to
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorPosition(const size_t line, const size_t column)
 {
     return _CursorMovePosition(Offset::Absolute(line), Offset::Absolute(column), false);
@@ -317,7 +310,7 @@ bool AdaptDispatch::CursorPosition(const size_t line, const size_t column)
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorSaveState()
 {
     // First retrieve some information about the buffer
@@ -325,29 +318,27 @@ bool AdaptDispatch::CursorSaveState()
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    bool success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-    TextAttribute attributes;
-    success = success && (_pConApi->PrivateGetTextAttributes(attributes));
+    const auto attributes = _pConApi->GetTextAttributes();
 
-    if (success)
-    {
-        // The cursor is given to us by the API as relative to the whole buffer.
-        // But in VT speak, the cursor row should be relative to the current viewport top.
-        COORD coordCursor = csbiex.dwCursorPosition;
-        coordCursor.Y -= csbiex.srWindow.Top;
+    // The cursor is given to us by the API as relative to the whole buffer.
+    // But in VT speak, the cursor row should be relative to the current viewport top.
+    COORD coordCursor = csbiex.dwCursorPosition;
+    coordCursor.Y -= csbiex.srWindow.Top;
 
-        // VT is also 1 based, not 0 based, so correct by 1.
-        auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
-        savedCursorState.Column = coordCursor.X + 1;
-        savedCursorState.Row = coordCursor.Y + 1;
-        savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
-        savedCursorState.Attributes = attributes;
-        savedCursorState.TermOutput = _termOutput;
-        _pConApi->GetConsoleOutputCP(savedCursorState.CodePage);
-    }
+    // VT is also 1 based, not 0 based, so correct by 1.
+    auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
+    savedCursorState.Column = coordCursor.X + 1;
+    savedCursorState.Row = coordCursor.Y + 1;
+    savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
+    savedCursorState.Attributes = attributes;
+    savedCursorState.TermOutput = _termOutput;
+    savedCursorState.C1ControlsAccepted = _pConApi->GetParserMode(StateMachine::Mode::AcceptC1);
+    savedCursorState.CodePage = _pConApi->GetConsoleOutputCP();
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -357,7 +348,7 @@ bool AdaptDispatch::CursorSaveState()
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorRestoreState()
 {
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
@@ -375,24 +366,27 @@ bool AdaptDispatch::CursorRestoreState()
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _isOriginModeRelative = false;
-    bool success = CursorPosition(row, col);
+    CursorPosition(row, col);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
     _isOriginModeRelative = savedCursorState.IsOriginModeRelative;
 
     // Restore text attributes.
-    success = (_pConApi->PrivateSetTextAttributes(savedCursorState.Attributes)) && success;
+    _pConApi->SetTextAttributes(savedCursorState.Attributes);
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
 
+    // Restore the parsing state of C1 control codes.
+    AcceptC1Controls(savedCursorState.C1ControlsAccepted);
+
     // Restore the code page if it was previously saved.
     if (savedCursorState.CodePage != 0)
     {
-        success = _pConApi->SetConsoleOutputCP(savedCursorState.CodePage);
+        _pConApi->SetConsoleOutputCP(savedCursorState.CodePage);
     }
 
-    return success;
+    return true;
 }
 
 // Routine Description:
@@ -400,12 +394,13 @@ bool AdaptDispatch::CursorRestoreState()
 // Arguments:
 // - fIsVisible - Turns the cursor rendering on (TRUE) or off (FALSE).
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 {
     // This uses a private API instead of the public one, because the public API
     //      will set the cursor shape back to legacy.
-    return _pConApi->PrivateShowCursor(fIsVisible);
+    _pConApi->SetCursorVisibility(fIsVisible);
+    return true;
 }
 
 // Routine Description:
@@ -415,27 +410,26 @@ bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 // - count - The number of characters to insert
 // - isInsert - TRUE if insert mode (cut and paste to the right, away from the cursor). FALSE if delete mode (cut and paste to the left, toward the cursor)
 // Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert) const
+// - <none>
+void AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert) const
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT distance;
-    RETURN_BOOL_IF_FALSE(SUCCEEDED(SizeTToShort(count, &distance)));
+    THROW_IF_FAILED(SizeTToShort(count, &distance));
 
     // get current cursor, attributes
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    RETURN_BOOL_IF_FALSE(_pConApi->MoveToBottom());
-    RETURN_BOOL_IF_FALSE(_pConApi->GetConsoleScreenBufferInfoEx(csbiex));
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
-    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = SHORT_MAX;
+    srScroll.Right = _pConApi->GetLineWidth(cursor.Y) - 1;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -444,25 +438,19 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
     coordDestination.Y = cursor.Y;
     coordDestination.X = cursor.X;
 
-    bool success = false;
     if (isInsert)
     {
         // Insert makes space by moving characters out to the right. So move the destination of the cut/paste region.
-        success = SUCCEEDED(ShortAdd(coordDestination.X, distance, &coordDestination.X));
+        THROW_IF_FAILED(ShortAdd(coordDestination.X, distance, &coordDestination.X));
     }
     else
     {
         // Delete scrolls the affected region to the left, relying on the clipping rect to actually delete the characters.
-        success = SUCCEEDED(ShortSub(coordDestination.X, distance, &coordDestination.X));
+        THROW_IF_FAILED(ShortSub(coordDestination.X, distance, &coordDestination.X));
     }
 
-    if (success)
-    {
-        // Note the revealed characters are filled with the standard erase attributes.
-        success = _pConApi->PrivateScrollRegion(srScroll, srScroll, coordDestination, true);
-    }
-
-    return success;
+    // Note the revealed characters are filled with the standard erase attributes.
+    _pConApi->ScrollRegion(srScroll, srScroll, coordDestination, true);
 }
 
 // Routine Description:
@@ -471,10 +459,11 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 // Arguments:
 // - count - The number of characters to insert
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::InsertCharacter(const size_t count)
 {
-    return _InsertDeleteHelper(count, true);
+    _InsertDeleteHelper(count, true);
+    return true;
 }
 
 // Routine Description:
@@ -483,10 +472,11 @@ bool AdaptDispatch::InsertCharacter(const size_t count)
 // Arguments:
 // - count - The number of characters to delete
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::DeleteCharacter(const size_t count)
 {
-    return _InsertDeleteHelper(count, false);
+    _InsertDeleteHelper(count, false);
+    return true;
 }
 
 // Routine Description:
@@ -498,16 +488,13 @@ bool AdaptDispatch::DeleteCharacter(const size_t count)
 // - lineId - The line number (array index value, starts at 0) of the line to operate on within the buffer.
 //           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
 // Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
+// - <none>
+void AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
                                            const DispatchTypes::EraseType eraseType,
                                            const size_t lineId) const
 {
     COORD coordStartPosition = { 0 };
-    if (FAILED(SizeTToShort(lineId, &coordStartPosition.Y)))
-    {
-        return false;
-    }
+    THROW_IF_FAILED(SizeTToShort(lineId, &coordStartPosition.Y));
 
     // determine start position from the erase type
     // remember that erases are inclusive of the current cursor position.
@@ -534,12 +521,12 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
         // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = csbiex.dwSize.X - coordStartPosition.X;
+        nLength = _pConApi->GetLineWidth(lineId) - coordStartPosition.X;
         break;
     }
 
     // Note that the region is filled with the standard erase attributes.
-    return _pConApi->PrivateFillRegion(coordStartPosition, nLength, L' ', true);
+    _pConApi->FillRegion(coordStartPosition, nLength, L' ', true);
 }
 
 // Routine Description:
@@ -550,26 +537,24 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
 // Arguments:
 // - numChars - The number of characters to erase.
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::EraseCharacters(const size_t numChars)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-    if (success)
-    {
-        const COORD startPosition = csbiex.dwCursorPosition;
+    const COORD startPosition = csbiex.dwCursorPosition;
 
-        const SHORT remainingSpaces = csbiex.dwSize.X - startPosition.X;
-        const size_t actualRemaining = gsl::narrow_cast<size_t>((remainingSpaces < 0) ? 0 : remainingSpaces);
-        // erase at max the number of characters remaining in the line from the current position.
-        const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
+    const SHORT remainingSpaces = csbiex.dwSize.X - startPosition.X;
+    const size_t actualRemaining = gsl::narrow_cast<size_t>((remainingSpaces < 0) ? 0 : remainingSpaces);
+    // erase at max the number of characters remaining in the line from the current position.
+    const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
 
-        // Note that the region is filled with the standard erase attributes.
-        success = _pConApi->PrivateFillRegion(startPosition, eraseLength, L' ', true);
-    }
-    return success;
+    // Note that the region is filled with the standard erase attributes.
+    _pConApi->FillRegion(startPosition, eraseLength, L' ', true);
+
+    return true;
 }
 
 // Routine Description:
@@ -584,6 +569,8 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
+    RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::Scrollback);
+
     // First things first. If this is a "Scrollback" clear, then just do that.
     // Scrollback clears erase everything in the "scrollback" of a *nix terminal
     //      Everything that's scrolled off the screen so far.
@@ -591,13 +578,12 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     //      by moving the current contents of the viewport into the scrollback.
     if (eraseType == DispatchTypes::EraseType::Scrollback)
     {
-        const bool eraseScrollbackResult = _EraseScrollback();
+        _EraseScrollback();
         // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
         // make the state machine propagate this ED sequence to the connected
         // terminal application. While we're in conpty mode, we don't really
         // have a scrollback, but the attached terminal might.
-        const bool isPty = _pConApi->IsConsolePty();
-        return eraseScrollbackResult && (!isPty);
+        return !_pConApi->IsConsolePty();
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
@@ -607,70 +593,68 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         // requests a Erase All operation, we need to manually tell the
         // connected terminal to do the same thing, so that the terminal will
         // move it's own buffer contents into the scrollback.
-        const bool eraseAllResult = _EraseAll();
-        const bool isPty = _pConApi->IsConsolePty();
-        return eraseAllResult && (!isPty);
+        _EraseAll();
+        return !_pConApi->IsConsolePty();
     }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    bool success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-    if (success)
+    // When erasing the display, every line that is erased in full should be
+    // reset to single width. When erasing to the end, this could include
+    // the current line, if the cursor is in the first column. When erasing
+    // from the beginning, though, the current line would never be included,
+    // because the cursor could never be in the rightmost column (assuming
+    // the line is double width).
+    if (eraseType == DispatchTypes::EraseType::FromBeginning)
     {
-        // What we need to erase is grouped into 3 types:
-        // 1. Lines before cursor
-        // 2. Cursor Line
-        // 3. Lines after cursor
-        // We erase one or more of these based on the erase type:
-        // A. FromBeginning - Erase 1 and Some of 2.
-        // B. ToEnd - Erase some of 2 and 3.
-        // C. All - Erase 1, 2, and 3.
+        const auto endRow = csbiex.dwCursorPosition.Y;
+        _pConApi->ResetLineRenditionRange(csbiex.srWindow.Top, endRow);
+    }
+    if (eraseType == DispatchTypes::EraseType::ToEnd)
+    {
+        const auto startRow = csbiex.dwCursorPosition.Y + (csbiex.dwCursorPosition.X > 0 ? 1 : 0);
+        _pConApi->ResetLineRenditionRange(startRow, csbiex.srWindow.Bottom);
+    }
 
-        // 1. Lines before cursor line
-        if (eraseType == DispatchTypes::EraseType::FromBeginning)
+    // What we need to erase is grouped into 3 types:
+    // 1. Lines before cursor
+    // 2. Cursor Line
+    // 3. Lines after cursor
+    // We erase one or more of these based on the erase type:
+    // A. FromBeginning - Erase 1 and Some of 2.
+    // B. ToEnd - Erase some of 2 and 3.
+    // C. All - Erase 1, 2, and 3.
+
+    // 1. Lines before cursor line
+    if (eraseType == DispatchTypes::EraseType::FromBeginning)
+    {
+        // For beginning and all, erase all complete lines before (above vertically) from the cursor position.
+        for (SHORT startLine = csbiex.srWindow.Top; startLine < csbiex.dwCursorPosition.Y; startLine++)
         {
-            // For beginning and all, erase all complete lines before (above vertically) from the cursor position.
-            for (SHORT startLine = csbiex.srWindow.Top; startLine < csbiex.dwCursorPosition.Y; startLine++)
-            {
-                success = _EraseSingleLineHelper(csbiex, DispatchTypes::EraseType::All, startLine);
-
-                if (!success)
-                {
-                    break;
-                }
-            }
-        }
-
-        if (success)
-        {
-            // 2. Cursor Line
-            success = _EraseSingleLineHelper(csbiex, eraseType, csbiex.dwCursorPosition.Y);
-        }
-
-        if (success)
-        {
-            // 3. Lines after cursor line
-            if (eraseType == DispatchTypes::EraseType::ToEnd)
-            {
-                // For beginning and all, erase all complete lines after (below vertically) the cursor position.
-                // Remember that the viewport bottom value is 1 beyond the viewable area of the viewport.
-                for (SHORT startLine = csbiex.dwCursorPosition.Y + 1; startLine < csbiex.srWindow.Bottom; startLine++)
-                {
-                    success = _EraseSingleLineHelper(csbiex, DispatchTypes::EraseType::All, startLine);
-
-                    if (!success)
-                    {
-                        break;
-                    }
-                }
-            }
+            _EraseSingleLineHelper(csbiex, DispatchTypes::EraseType::All, startLine);
         }
     }
 
-    return success;
+    // 2. Cursor Line
+    _EraseSingleLineHelper(csbiex, eraseType, csbiex.dwCursorPosition.Y);
+
+    // 3. Lines after cursor line
+    if (eraseType == DispatchTypes::EraseType::ToEnd)
+    {
+        // For beginning and all, erase all complete lines after (below vertically) the cursor position.
+        // Remember that the viewport bottom value is 1 beyond the viewable area of the viewport.
+        for (SHORT startLine = csbiex.dwCursorPosition.Y + 1; startLine < csbiex.srWindow.Bottom; startLine++)
+        {
+            _EraseSingleLineHelper(csbiex, DispatchTypes::EraseType::All, startLine);
+        }
+    }
+
+    return true;
 }
 
 // Routine Description:
@@ -681,16 +665,28 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
+    RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::All);
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-    if (success)
-    {
-        success = _EraseSingleLineHelper(csbiex, eraseType, csbiex.dwCursorPosition.Y);
-    }
+    _EraseSingleLineHelper(csbiex, eraseType, csbiex.dwCursorPosition.Y);
 
-    return success;
+    return true;
+}
+
+// Routine Description:
+// - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
+// Arguments:
+// - rendition - Determines whether the line will be rendered as single width, double
+//   width, or as one half of a double height line.
+// Return Value:
+// - True.
+bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
+{
+    _pConApi->SetCurrentLineRendition(rendition);
+    return true;
 }
 
 // Routine Description:
@@ -702,19 +698,17 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
 {
-    bool success = false;
-
     switch (statusType)
     {
     case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
-        success = _OperatingStatus();
-        break;
+        _OperatingStatus();
+        return true;
     case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
-        success = _CursorPositionReport();
-        break;
+        _CursorPositionReport();
+        return true;
+    default:
+        return false;
     }
-
-    return success;
 }
 
 // Routine Description:
@@ -723,11 +717,12 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statu
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::DeviceAttributes()
 {
     // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
-    return _WriteResponse(L"\x1b[?1;0c");
+    _WriteResponse(L"\x1b[?1;0c");
+    return true;
 }
 
 // Routine Description:
@@ -738,10 +733,11 @@ bool AdaptDispatch::DeviceAttributes()
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::SecondaryDeviceAttributes()
 {
-    return _WriteResponse(L"\x1b[>0;10;1c");
+    _WriteResponse(L"\x1b[>0;10;1c");
+    return true;
 }
 
 // Routine Description:
@@ -750,10 +746,11 @@ bool AdaptDispatch::SecondaryDeviceAttributes()
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::TertiaryDeviceAttributes()
 {
-    return _WriteResponse(L"\x1bP!|00000000\x1b\\");
+    _WriteResponse(L"\x1bP!|00000000\x1b\\");
+    return true;
 }
 
 // Routine Description:
@@ -763,10 +760,47 @@ bool AdaptDispatch::TertiaryDeviceAttributes()
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::Vt52DeviceAttributes()
 {
-    return _WriteResponse(L"\x1b/Z");
+    _WriteResponse(L"\x1b/Z");
+    return true;
+}
+
+// Routine Description:
+// - DECREQTPARM - This sequence was originally used on the VT100 terminal to
+//   report the serial communication parameters (baud rate, data bits, parity,
+//   etc.). On modern terminal emulators, the response is simply hardcoded.
+// Arguments:
+// - permission - This would originally have determined whether the terminal
+//   was allowed to send unsolicited reports or not.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPermission permission)
+{
+    // We don't care whether unsolicited reports are allowed or not, but the
+    // requested permission does determine the value of the first response
+    // parameter. The remaining parameters are just hardcoded to indicate a
+    // 38400 baud connection, which matches the XTerm response. The full
+    // parameter sequence is as follows:
+    // - response type:    2 or 3 (unsolicited or solicited)
+    // - parity:           1 (no parity)
+    // - data bits:        1 (8 bits per character)
+    // - transmit speed:   128 (38400 baud)
+    // - receive speed:    128 (38400 baud)
+    // - clock multiplier: 1
+    // - flags:            0
+    switch (permission)
+    {
+    case DispatchTypes::ReportingPermission::Unsolicited:
+        _WriteResponse(L"\x1b[2;1;1;128;128;1;0x");
+        return true;
+    case DispatchTypes::ReportingPermission::Solicited:
+        _WriteResponse(L"\x1b[3;1;1;128;128;1;0x");
+        return true;
+    default:
+        return false;
+    }
 }
 
 // Routine Description:
@@ -774,11 +808,11 @@ bool AdaptDispatch::Vt52DeviceAttributes()
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_OperatingStatus() const
+// - <none>
+void AdaptDispatch::_OperatingStatus() const
 {
     // We always report a good operating condition.
-    return _WriteResponse(L"\x1b[0n");
+    _WriteResponse(L"\x1b[0n");
 }
 
 // Routine Description:
@@ -786,40 +820,36 @@ bool AdaptDispatch::_OperatingStatus() const
 // Arguments:
 // - <none>
 // Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_CursorPositionReport() const
+// - <none>
+void AdaptDispatch::_CursorPositionReport() const
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    bool success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-    if (success)
+    // First pull the cursor position relative to the entire buffer out of the console.
+    COORD coordCursorPos = csbiex.dwCursorPosition;
+
+    // Now adjust it for its position in respect to the current viewport top.
+    coordCursorPos.Y -= csbiex.srWindow.Top;
+
+    // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
+    coordCursorPos.X++;
+    coordCursorPos.Y++;
+
+    // If the origin mode is relative, line numbers start at top margin of the scrolling region.
+    if (_isOriginModeRelative)
     {
-        // First pull the cursor position relative to the entire buffer out of the console.
-        COORD coordCursorPos = csbiex.dwCursorPosition;
-
-        // Now adjust it for its position in respect to the current viewport top.
-        coordCursorPos.Y -= csbiex.srWindow.Top;
-
-        // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
-        coordCursorPos.X++;
-        coordCursorPos.Y++;
-
-        // If the origin mode is relative, line numbers start at top margin of the scrolling region.
-        if (_isOriginModeRelative)
-        {
-            coordCursorPos.Y -= _scrollMargins.Top;
-        }
-
-        // Now send it back into the input channel of the console.
-        // First format the response string.
-        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", coordCursorPos.Y, coordCursorPos.X);
-        success = _WriteResponse(response);
+        coordCursorPos.Y -= _scrollMargins.Top;
     }
 
-    return success;
+    // Now send it back into the input channel of the console.
+    // First format the response string.
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", coordCursorPos.Y, coordCursorPos.X);
+    _WriteResponse(response);
 }
 
 // Routine Description:
@@ -829,35 +859,29 @@ bool AdaptDispatch::_CursorPositionReport() const
 // Arguments:
 // - reply - The reply string to transmit back to the input stream
 // Return Value:
-// - True if the string was converted to input events and placed into the console input buffer successfully. False otherwise.
-bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
+// - <none>
+void AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 {
-    bool success = false;
     std::deque<std::unique_ptr<IInputEvent>> inEvents;
-    try
-    {
-        // generate a paired key down and key up event for every
-        // character to be sent into the console's input buffer
-        for (const auto& wch : reply)
-        {
-            // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-            KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
 
-            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-            keyEvent.SetKeyDown(false);
-            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        }
-    }
-    catch (...)
+    // generate a paired key down and key up event for every
+    // character to be sent into the console's input buffer
+    for (const auto& wch : reply)
     {
-        LOG_HR(wil::ResultFromCaughtException());
-        return false;
+        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
+        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
+
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        keyEvent.SetKeyDown(false);
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
     }
 
     size_t eventsWritten;
-    success = _pConApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
-
-    return success;
+    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
+    // to make sure that "response" input is spooled directly into the application.
+    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
+    // could collide with eachother.
+    _pConApi->WriteInput(inEvents, eventsWritten);
 }
 
 // Routine Description:
@@ -866,49 +890,42 @@ bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 // - scrollDirection - Specific direction to move
 // - distance - Magnitude of the move
 // Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_ScrollMovement(const ScrollDirection scrollDirection, const size_t distance) const
+// - <none>
+void AdaptDispatch::_ScrollMovement(const ScrollDirection scrollDirection, const size_t distance) const
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the size_t into a short first.
     SHORT dist;
-    bool success = SUCCEEDED(SizeTToShort(distance, &dist));
+    THROW_IF_FAILED(SizeTToShort(distance, &dist));
 
-    if (success)
+    // get current cursor
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    // Make sure to reset the viewport (with MoveToBottom )to where it was
+    //      before the user scrolled the console output
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+
+    // Rectangle to cut out of the existing buffer. This is inclusive.
+    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+    SMALL_RECT srScreen;
+    srScreen.Left = 0;
+    srScreen.Right = SHORT_MAX;
+    srScreen.Top = csbiex.srWindow.Top;
+    srScreen.Bottom = csbiex.srWindow.Bottom - 1; // srWindow is exclusive, hence the - 1
+    // Clip to the DECSTBM margin boundaries
+    if (_scrollMargins.Top < _scrollMargins.Bottom)
     {
-        // get current cursor
-        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        // Make sure to reset the viewport (with MoveToBottom )to where it was
-        //      before the user scrolled the console output
-        success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
-
-        if (success)
-        {
-            // Rectangle to cut out of the existing buffer. This is inclusive.
-            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
-            SMALL_RECT srScreen;
-            srScreen.Left = 0;
-            srScreen.Right = SHORT_MAX;
-            srScreen.Top = csbiex.srWindow.Top;
-            srScreen.Bottom = csbiex.srWindow.Bottom - 1; // srWindow is exclusive, hence the - 1
-            // Clip to the DECSTBM margin boundaries
-            if (_scrollMargins.Top < _scrollMargins.Bottom)
-            {
-                srScreen.Top = csbiex.srWindow.Top + _scrollMargins.Top;
-                srScreen.Bottom = csbiex.srWindow.Top + _scrollMargins.Bottom;
-            }
-
-            // Paste coordinate for cut text above
-            COORD coordDestination;
-            coordDestination.X = srScreen.Left;
-            coordDestination.Y = srScreen.Top + dist * (scrollDirection == ScrollDirection::Up ? -1 : 1);
-
-            // Note the revealed lines are filled with the standard erase attributes.
-            success = _pConApi->PrivateScrollRegion(srScreen, srScreen, coordDestination, true);
-        }
+        srScreen.Top = csbiex.srWindow.Top + _scrollMargins.Top;
+        srScreen.Bottom = csbiex.srWindow.Top + _scrollMargins.Bottom;
     }
 
-    return success;
+    // Paste coordinate for cut text above
+    COORD coordDestination;
+    coordDestination.X = srScreen.Left;
+    coordDestination.Y = srScreen.Top + dist * (scrollDirection == ScrollDirection::Up ? -1 : 1);
+
+    // Note the revealed lines are filled with the standard erase attributes.
+    _pConApi->ScrollRegion(srScreen, srScreen, coordDestination, true);
 }
 
 // Routine Description:
@@ -916,10 +933,11 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection scrollDirection, const
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::ScrollUp(const size_t uiDistance)
 {
-    return _ScrollMovement(ScrollDirection::Up, uiDistance);
+    _ScrollMovement(ScrollDirection::Up, uiDistance);
+    return true;
 }
 
 // Routine Description:
@@ -927,10 +945,11 @@ bool AdaptDispatch::ScrollUp(const size_t uiDistance)
 // Arguments:
 // - distance - Distance to move
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 {
-    return _ScrollMovement(ScrollDirection::Down, uiDistance);
+    _ScrollMovement(ScrollDirection::Down, uiDistance);
+    return true;
 }
 
 // Routine Description:
@@ -940,24 +959,19 @@ bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 // Arguments:
 // - columns - Number of columns
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::SetColumns(const size_t columns)
 {
     SHORT col;
-    bool success = SUCCEEDED(SizeTToShort(columns, &col));
-    if (success)
-    {
-        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-        success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    THROW_IF_FAILED(SizeTToShort(columns, &col));
 
-        if (success)
-        {
-            csbiex.dwSize.X = col;
-            success = _pConApi->SetConsoleScreenBufferInfoEx(csbiex);
-        }
-    }
-    return success;
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    csbiex.dwSize.X = col;
+    _pConApi->SetConsoleScreenBufferInfoEx(csbiex);
+
+    return true;
 }
 
 // Routine Description:
@@ -966,98 +980,84 @@ bool AdaptDispatch::SetColumns(const size_t columns)
 // Arguments:
 // - columns - Number of columns
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::_DoDECCOLMHelper(const size_t columns)
 {
-    if (!_isDECCOLMAllowed)
+    // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
+    if (_isDECCOLMAllowed)
     {
-        // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
-        return true;
+        SetColumns(columns);
+        SetOriginMode(false);
+        CursorPosition(1, 1);
+        EraseInDisplay(DispatchTypes::EraseType::All);
+        _DoSetTopBottomScrollingMargins(0, 0);
     }
-
-    bool success = SetColumns(columns);
-    if (success)
-    {
-        success = SetOriginMode(false);
-        if (success)
-        {
-            success = CursorPosition(1, 1);
-            if (success)
-            {
-                success = EraseInDisplay(DispatchTypes::EraseType::All);
-                if (success)
-                {
-                    success = _DoSetTopBottomScrollingMargins(0, 0);
-                }
-            }
-        }
-    }
-    return success;
+    return true;
 }
 
 // Routine Description:
 // - Support routine for routing private mode parameters to be set/reset as flags
 // Arguments:
-// - params - array of params to set/reset
+// - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable)
+bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
     bool success = false;
     switch (param)
     {
-    case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+    case DispatchTypes::ModeParams::DECANM_AnsiMode:
         success = SetAnsiMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
+    case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
-    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         success = SetScreenMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+    case DispatchTypes::ModeParams::DECOM_OriginMode:
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
         break;
-    case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+    case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         success = SetAutoWrapMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         success = CursorVisibility(enable);
         break;
-    case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+    case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         success = EnableDECCOLMSupport(enable);
         break;
-    case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
         success = EnableAnyEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::UTF8_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
         success = EnableUTF8ExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::SGR_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
-    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
     default:
@@ -1069,47 +1069,25 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
 }
 
 // Routine Description:
-// - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
-//     All params in the rgParams will attempt to be executed, even if one
-//     fails, to allow us to successfully re/set params that are chained with
-//     params we don't yet support.
-// Arguments:
-// - params - array of params to set/reset
-// - enable - True for set, false for unset.
-// Return Value:
-// - True if ALL params were handled successfully. False otherwise.
-bool AdaptDispatch::_SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable)
-{
-    // because the user might chain together params we don't support with params we DO support, execute all
-    // params in the sequence, and only return failure if we failed at least one of them
-    size_t failures = 0;
-    for (const auto& p : params)
-    {
-        failures += _PrivateModeParamsHelper(p, enable) ? 0 : 1; // increment the number of failures if we fail.
-    }
-    return failures == 0;
-}
-
-// Routine Description:
 // - DECSET - Enables the given DEC private mode params.
 // Arguments:
-// - params - array of params to set
+// - param - mode parameter to set
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 {
-    return _SetResetPrivateModes(params, true);
+    return _ModeParamsHelper(param, true);
 }
 
 // Routine Description:
 // - DECRST - Disables the given DEC private mode params.
 // Arguments:
-// - params - array of params to reset
+// - param - mode parameter to reset
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 {
-    return _SetResetPrivateModes(params, false);
+    return _ModeParamsHelper(param, false);
 }
 
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
@@ -1119,15 +1097,7 @@ bool AdaptDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::Priva
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
 }
 
 // Method Description:
@@ -1139,15 +1109,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableWin32InputMode(win32InputMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
 }
 
 // - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
@@ -1157,15 +1119,7 @@ bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
 }
 
 // - att610 - Enables or disables the cursor blinking.
@@ -1175,7 +1129,7 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 {
-    return _pConApi->PrivateAllowCursorBlinking(enable);
+    return _pConApi->EnableCursorBlinking(enable);
 }
 
 // Routine Description:
@@ -1185,10 +1139,11 @@ bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 // Arguments:
 // - distance - number of lines to insert
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::InsertLine(const size_t distance)
 {
-    return _pConApi->InsertLines(distance);
+    _pConApi->InsertLines(distance);
+    return true;
 }
 
 // Routine Description:
@@ -1202,24 +1157,30 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 // Arguments:
 // - distance - number of lines to delete
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
-    return _pConApi->DeleteLines(distance);
+    _pConApi->DeleteLines(distance);
+    return true;
 }
 
 // - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
 // Arguments:
 // - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 {
     // When an attempt is made to update the mode, the designated character sets
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    return _pConApi->PrivateSetAnsiMode(ansiMode);
+    _pConApi->SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _pConApi->SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+
+    // We don't check the SetInputMode return value, because we'll never want
+    // to forward a DECANM mode change over conpty.
+    return true;
 }
 
 // Routine Description:
@@ -1237,7 +1198,8 @@ bool AdaptDispatch::SetScreenMode(const bool reverseMode)
         return false;
     }
 
-    return _pConApi->PrivateSetScreenMode(reverseMode);
+    _pConApi->SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
+    return true;
 }
 
 // Routine Description:
@@ -1247,7 +1209,7 @@ bool AdaptDispatch::SetScreenMode(const bool reverseMode)
 // Arguments:
 // - relativeMode - set to true to use relative addressing, false for absolute addressing.
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
 {
     _isOriginModeRelative = relativeMode;
@@ -1261,10 +1223,11 @@ bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
 // Arguments:
 // - wrapAtEOL - set to true to wrap, false to overwrite the last character.
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
 {
-    return _pConApi->PrivateSetAutoWrapMode(wrapAtEOL);
+    _pConApi->SetAutoWrapMode(wrapAtEOL);
+    return true;
 }
 
 // Routine Description:
@@ -1276,66 +1239,61 @@ bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
 // - topMargin - the line number for the top margin.
 // - bottomMargin - the line number for the bottom margin.
 // Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
+// - <none>
+void AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
                                                     const size_t bottomMargin)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    bool success = (_pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex));
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
     // so notes time: (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
     // having only a bottom param is legal      ([;3r   -> 0,3   -> 1,3  -> 1,3,true)
     // having neither uses the defaults         ([;r [r -> 0,0   -> 0,0  -> 0,0,false)
     // an illegal combo (eg, 3;2r) is ignored
-    if (success)
+    SHORT actualTop = 0;
+    SHORT actualBottom = 0;
+    THROW_IF_FAILED(SizeTToShort(topMargin, &actualTop));
+    THROW_IF_FAILED(SizeTToShort(bottomMargin, &actualBottom));
+
+    const SHORT screenHeight = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+    // The default top margin is line 1
+    if (actualTop == 0)
     {
-        SHORT actualTop = 0;
-        SHORT actualBottom = 0;
-        success = SUCCEEDED(SizeTToShort(topMargin, &actualTop)) && SUCCEEDED(SizeTToShort(bottomMargin, &actualBottom));
-        if (success)
-        {
-            const SHORT screenHeight = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
-            // The default top margin is line 1
-            if (actualTop == 0)
-            {
-                actualTop = 1;
-            }
-            // The default bottom margin is the screen height
-            if (actualBottom == 0)
-            {
-                actualBottom = screenHeight;
-            }
-            // The top margin must be less than the bottom margin, and the
-            // bottom margin must be less than or equal to the screen height
-            success = (actualTop < actualBottom && actualBottom <= screenHeight);
-            if (success)
-            {
-                if (actualTop == 1 && actualBottom == screenHeight)
-                {
-                    // Client requests setting margins to the entire screen
-                    //    - clear them instead of setting them.
-                    // This is for apps like `apt` (NOT `apt-get` which set scroll
-                    //      margins, but don't use the alt buffer.)
-                    actualTop = 0;
-                    actualBottom = 0;
-                }
-                else
-                {
-                    // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-                    actualTop -= 1;
-                    actualBottom -= 1;
-                }
-                _scrollMargins.Top = actualTop;
-                _scrollMargins.Bottom = actualBottom;
-                success = _pConApi->PrivateSetScrollingRegion(_scrollMargins);
-            }
-        }
+        actualTop = 1;
     }
-    return success;
+    // The default bottom margin is the screen height
+    if (actualBottom == 0)
+    {
+        actualBottom = screenHeight;
+    }
+    // The top margin must be less than the bottom margin, and the
+    // bottom margin must be less than or equal to the screen height
+    if (actualTop < actualBottom && actualBottom <= screenHeight)
+    {
+        if (actualTop == 1 && actualBottom == screenHeight)
+        {
+            // Client requests setting margins to the entire screen
+            //    - clear them instead of setting them.
+            // This is for apps like `apt` (NOT `apt-get` which set scroll
+            //      margins, but don't use the alt buffer.)
+            actualTop = 0;
+            actualBottom = 0;
+        }
+        else
+        {
+            // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+            actualTop -= 1;
+            actualBottom -= 1;
+        }
+        _scrollMargins.Top = actualTop;
+        _scrollMargins.Bottom = actualBottom;
+        _pConApi->SetScrollingRegion(_scrollMargins);
+    }
 }
 
 // Routine Description:
@@ -1347,13 +1305,15 @@ bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
 // - topMargin - the line number for the top margin.
 // - bottomMargin - the line number for the bottom margin.
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::SetTopBottomScrollingMargins(const size_t topMargin,
                                                  const size_t bottomMargin)
 {
     // When this is called, the cursor should also be moved to home.
     // Other functions that only need to set/reset the margins should call _DoSetTopBottomScrollingMargins
-    return _DoSetTopBottomScrollingMargins(topMargin, bottomMargin) && CursorPosition(1, 1);
+    _DoSetTopBottomScrollingMargins(topMargin, bottomMargin);
+    CursorPosition(1, 1);
+    return true;
 }
 
 // Routine Description:
@@ -1362,10 +1322,11 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const size_t topMargin,
 // Arguments:
 // - None
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::WarningBell()
 {
-    return _pConApi->PrivateWarningBell();
+    _pConApi->WarningBell();
+    return true;
 }
 
 // Routine Description:
@@ -1374,7 +1335,7 @@ bool AdaptDispatch::WarningBell()
 // Arguments:
 // - None
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::CarriageReturn()
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(1), true);
@@ -1392,11 +1353,14 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        return _pConApi->PrivateLineFeed(_pConApi->PrivateGetLineFeedMode());
+        _pConApi->LineFeed(_pConApi->GetLineFeedMode());
+        return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
-        return _pConApi->PrivateLineFeed(false);
+        _pConApi->LineFeed(false);
+        return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        return _pConApi->PrivateLineFeed(true);
+        _pConApi->LineFeed(true);
+        return true;
     default:
         return false;
     }
@@ -1408,10 +1372,11 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 // Arguments:
 // - None
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::ReverseLineFeed()
 {
-    return _pConApi->PrivateReverseLineFeed();
+    _pConApi->ReverseLineFeed();
+    return true;
 }
 
 // Routine Description:
@@ -1419,10 +1384,11 @@ bool AdaptDispatch::ReverseLineFeed()
 // Arguments:
 // - title - The string to set the title to. Must be null terminated.
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
-    return _pConApi->SetConsoleTitleW(title);
+    _pConApi->SetWindowTitle(title);
+    return true;
 }
 
 // - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
@@ -1431,19 +1397,13 @@ bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // Arguments:
 // - None
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::UseAlternateScreenBuffer()
 {
-    bool success = CursorSaveState();
-    if (success)
-    {
-        success = _pConApi->PrivateUseAlternateScreenBuffer();
-        if (success)
-        {
-            _usingAltBuffer = true;
-        }
-    }
-    return success;
+    CursorSaveState();
+    _pConApi->UseAlternateScreenBuffer();
+    _usingAltBuffer = true;
+    return true;
 }
 
 // Routine Description:
@@ -1452,19 +1412,13 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
 // Arguments:
 // - None
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::UseMainScreenBuffer()
 {
-    bool success = _pConApi->PrivateUseMainScreenBuffer();
-    if (success)
-    {
-        _usingAltBuffer = false;
-        if (success)
-        {
-            success = CursorRestoreState();
-        }
-    }
-    return success;
+    _pConApi->UseMainScreenBuffer();
+    _usingAltBuffer = false;
+    CursorRestoreState();
+    return true;
 }
 
 //Routine Description:
@@ -1472,21 +1426,20 @@ bool AdaptDispatch::UseMainScreenBuffer()
 //Arguments:
 // - None
 // Return value:
-// True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::HorizontalTabSet()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    const bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-    if (success)
-    {
-        const auto width = csbiex.dwSize.X;
-        const auto column = csbiex.dwCursorPosition.X;
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-        _InitTabStopsForWidth(width);
-        _tabStopColumns.at(column) = true;
-    }
-    return success;
+    const auto width = csbiex.dwSize.X;
+    const auto column = csbiex.dwCursorPosition.X;
+
+    _InitTabStopsForWidth(width);
+    _tabStopColumns.at(column) = true;
+
+    return true;
 }
 
 //Routine Description:
@@ -1497,32 +1450,30 @@ bool AdaptDispatch::HorizontalTabSet()
 //Arguments:
 // - numTabs - the number of tabs to perform
 // Return value:
-// True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::ForwardTab(const size_t numTabs)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-    if (success)
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+
+    const auto width = csbiex.dwSize.X;
+    const auto row = csbiex.dwCursorPosition.Y;
+    auto column = csbiex.dwCursorPosition.X;
+    auto tabsPerformed = 0u;
+
+    _InitTabStopsForWidth(width);
+    while (column + 1 < width && tabsPerformed < numTabs)
     {
-        const auto width = csbiex.dwSize.X;
-        const auto row = csbiex.dwCursorPosition.Y;
-        auto column = csbiex.dwCursorPosition.X;
-        auto tabsPerformed = 0u;
-
-        _InitTabStopsForWidth(width);
-        while (column + 1 < width && tabsPerformed < numTabs)
+        column++;
+        if (til::at(_tabStopColumns, column))
         {
-            column++;
-            if (til::at(_tabStopColumns, column))
-            {
-                tabsPerformed++;
-            }
+            tabsPerformed++;
         }
-
-        success = _pConApi->SetConsoleCursorPosition({ column, row });
     }
-    return success;
+
+    _pConApi->SetCursorPosition({ column, row });
+    return true;
 }
 
 //Routine Description:
@@ -1531,32 +1482,30 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
 //Arguments:
 // - numTabs - the number of tabs to perform
 // Return value:
-// True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-    if (success)
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+
+    const auto width = csbiex.dwSize.X;
+    const auto row = csbiex.dwCursorPosition.Y;
+    auto column = csbiex.dwCursorPosition.X;
+    auto tabsPerformed = 0u;
+
+    _InitTabStopsForWidth(width);
+    while (column > 0 && tabsPerformed < numTabs)
     {
-        const auto width = csbiex.dwSize.X;
-        const auto row = csbiex.dwCursorPosition.Y;
-        auto column = csbiex.dwCursorPosition.X;
-        auto tabsPerformed = 0u;
-
-        _InitTabStopsForWidth(width);
-        while (column > 0 && tabsPerformed < numTabs)
+        column--;
+        if (til::at(_tabStopColumns, column))
         {
-            column--;
-            if (til::at(_tabStopColumns, column))
-            {
-                tabsPerformed++;
-            }
+            tabsPerformed++;
         }
-
-        success = _pConApi->SetConsoleCursorPosition({ column, row });
     }
-    return success;
+
+    _pConApi->SetCursorPosition({ column, row });
+    return true;
 }
 
 //Routine Description:
@@ -1567,19 +1516,19 @@ bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 // - clearType - Whether to clear the current column, or all columns, defined in DispatchTypes::TabClearType
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::TabClear(const size_t clearType)
+bool AdaptDispatch::TabClear(const DispatchTypes::TabClearType clearType)
 {
-    bool success = false;
     switch (clearType)
     {
     case DispatchTypes::TabClearType::ClearCurrentColumn:
-        success = _ClearSingleTabStop();
-        break;
+        _ClearSingleTabStop();
+        return true;
     case DispatchTypes::TabClearType::ClearAllColumns:
-        success = _ClearAllTabStops();
-        break;
+        _ClearAllTabStops();
+        return true;
+    default:
+        return false;
     }
-    return success;
 }
 
 // Routine Description:
@@ -1587,21 +1536,18 @@ bool AdaptDispatch::TabClear(const size_t clearType)
 // Arguments:
 // - <none>
 // Return value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_ClearSingleTabStop()
+// - <none>
+void AdaptDispatch::_ClearSingleTabStop()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    const bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-    if (success)
-    {
-        const auto width = csbiex.dwSize.X;
-        const auto column = csbiex.dwCursorPosition.X;
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-        _InitTabStopsForWidth(width);
-        _tabStopColumns.at(column) = false;
-    }
-    return success;
+    const auto width = csbiex.dwSize.X;
+    const auto column = csbiex.dwCursorPosition.X;
+
+    _InitTabStopsForWidth(width);
+    _tabStopColumns.at(column) = false;
 }
 
 // Routine Description:
@@ -1610,12 +1556,11 @@ bool AdaptDispatch::_ClearSingleTabStop()
 // Arguments:
 // - <none>
 // Return value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_ClearAllTabStops() noexcept
+// - <none>
+void AdaptDispatch::_ClearAllTabStops() noexcept
 {
     _tabStopColumns.clear();
     _initDefaultTabStops = false;
-    return true;
 }
 
 // Routine Description:
@@ -1660,43 +1605,38 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 
 //Routine Description:
 // DOCS - Selects the coding system through which character sets are activated.
-//     When ISO2022 is selected, the code page is set to ISO-8859-1, and both
-//     GL and GR areas of the code table can be remapped. When UTF8 is selected,
-//     the code page is set to UTF-8, and only the GL area can be remapped.
+//     When ISO2022 is selected, the code page is set to ISO-8859-1, C1 control
+//     codes are accepted, and both GL and GR areas of the code table can be
+//     remapped. When UTF8 is selected, the code page is set to UTF-8, the C1
+//     control codes are disabled, and only the GL area can be remapped.
 //Arguments:
 // - codingSystem - The coding system that will be selected.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
+bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 {
     // If we haven't previously saved the initial code page, do so now.
     // This will be used to restore the code page in response to a reset.
     if (!_initialCodePage.has_value())
     {
-        unsigned int currentCodePage;
-        _pConApi->GetConsoleOutputCP(currentCodePage);
-        _initialCodePage = currentCodePage;
+        _initialCodePage = _pConApi->GetConsoleOutputCP();
     }
 
-    bool success = false;
     switch (codingSystem)
     {
     case DispatchTypes::CodingSystem::ISO2022:
-        success = _pConApi->SetConsoleOutputCP(28591);
-        if (success)
-        {
-            _termOutput.EnableGrTranslation(true);
-        }
-        break;
+        _pConApi->SetConsoleOutputCP(28591);
+        AcceptC1Controls(true);
+        _termOutput.EnableGrTranslation(true);
+        return true;
     case DispatchTypes::CodingSystem::UTF8:
-        success = _pConApi->SetConsoleOutputCP(CP_UTF8);
-        if (success)
-        {
-            _termOutput.EnableGrTranslation(false);
-        }
-        break;
+        _pConApi->SetConsoleOutputCP(CP_UTF8);
+        AcceptC1Controls(false);
+        _termOutput.EnableGrTranslation(false);
+        return true;
+    default:
+        return false;
     }
-    return success;
 }
 
 //Routine Description:
@@ -1706,10 +1646,10 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate94Charset(gsetNumber, charset);
 }
@@ -1721,10 +1661,10 @@ bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate96Charset(gsetNumber, charset);
 }
@@ -1763,6 +1703,18 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 }
 
 //Routine Description:
+// DECAC1 - Enable or disable the reception of C1 control codes in the parser.
+//Arguments:
+// - enabled - true to allow C1 controls to be used, false to disallow.
+// Return value:
+// - True.
+bool AdaptDispatch::AcceptC1Controls(const bool enabled)
+{
+    _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+    return true;
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
@@ -1795,24 +1747,25 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
-    bool success = CursorVisibility(true); // Cursor enabled.
-    success = SetOriginMode(false) && success; // Absolute cursor addressing.
-    success = SetAutoWrapMode(true) && success; // Wrap at end of line.
-    success = SetCursorKeysMode(false) && success; // Normal characters.
-    success = SetKeypadMode(false) && success; // Numeric characters.
+    CursorVisibility(true); // Cursor enabled.
+    SetOriginMode(false); // Absolute cursor addressing.
+    SetAutoWrapMode(true); // Wrap at end of line.
+    SetCursorKeysMode(false); // Normal characters.
+    SetKeypadMode(false); // Numeric characters.
 
     // Top margin = 1; bottom margin = page length.
-    success = _DoSetTopBottomScrollingMargins(0, 0) && success;
+    _DoSetTopBottomScrollingMargins(0, 0);
 
     _termOutput = {}; // Reset all character set designations.
     if (_initialCodePage.has_value())
     {
         // Restore initial code page if previously changed by a DOCS sequence.
-        success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
+        _pConApi->SetConsoleOutputCP(_initialCodePage.value());
     }
+    // Disable parsing of C1 control codes.
+    AcceptC1Controls(false);
 
-    const auto opt = DispatchTypes::GraphicsOptions::Off;
-    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+    SetGraphicsRendition({}); // Normal rendition.
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that
@@ -1820,7 +1773,7 @@ bool AdaptDispatch::SoftReset()
     _savedCursorState.at(0) = {}; // Main buffer
     _savedCursorState.at(1) = {}; // Alt buffer
 
-    return success;
+    return !_pConApi->IsConsolePty();
 }
 
 //Routine Description:
@@ -1831,6 +1784,7 @@ bool AdaptDispatch::SoftReset()
 //   - Performs a communications line disconnect.
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
+//      * The soft font is reset in the renderer and the font buffer is deleted.
 //   - Clears the screen.
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
@@ -1846,42 +1800,43 @@ bool AdaptDispatch::SoftReset()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
-    bool success = true;
-
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
     {
-        success = _pConApi->PrivateUseMainScreenBuffer();
-        _usingAltBuffer = !success;
+        _pConApi->UseMainScreenBuffer();
+        _usingAltBuffer = false;
     }
 
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
-    success = SoftReset() && success;
+    SoftReset();
 
     // Clears the screen - Needs to be done in two operations.
-    success = EraseInDisplay(DispatchTypes::EraseType::All) && success;
-    success = EraseInDisplay(DispatchTypes::EraseType::Scrollback) && success;
+    EraseInDisplay(DispatchTypes::EraseType::All);
+    EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 
     // Set the DECSCNM screen mode back to normal.
-    success = SetScreenMode(false) && success;
+    SetScreenMode(false);
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
-    success = CursorPosition(1, 1) && success;
+    CursorPosition(1, 1);
+
+    // Reset the mouse mode
+    EnableSGRExtendedMouseMode(false);
+    EnableAnyEventMouseMode(false);
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
+
+    // Clear the soft font in the renderer and delete the font buffer.
+    _pConApi->UpdateSoftFont({}, {}, false);
+    _fontBuffer = nullptr;
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
     // terminal application. We've reset our state, but the connected terminal
     // might need to do more.
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return success;
+    return !_pConApi->IsConsolePty();
 }
 
 // Routine Description:
@@ -1891,37 +1846,34 @@ bool AdaptDispatch::HardReset()
 // Arguments:
 // - None
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::ScreenAlignmentPattern()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    bool success = _pConApi->MoveToBottom() && _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-    if (success)
-    {
-        // Fill the screen with the letter E using the default attributes.
-        auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
-        const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
-        success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
-        // Reset the meta/extended attributes (but leave the colors unchanged).
-        TextAttribute attr;
-        if (_pConApi->PrivateGetTextAttributes(attr))
-        {
-            attr.SetStandardErase();
-            success = success && _pConApi->PrivateSetTextAttributes(attr);
-        }
-        // Reset the origin mode to absolute.
-        success = success && SetOriginMode(false);
-        // Clear the scrolling margins.
-        success = success && _DoSetTopBottomScrollingMargins(0, 0);
-        // Set the cursor position to home.
-        success = success && CursorPosition(1, 1);
-    }
+    // Fill the screen with the letter E using the default attributes.
+    auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
+    const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
+    _pConApi->FillRegion(fillPosition, fillLength, L'E', false);
+    // Reset the line rendition for all of these rows.
+    _pConApi->ResetLineRenditionRange(csbiex.srWindow.Top, csbiex.srWindow.Bottom);
+    // Reset the meta/extended attributes (but leave the colors unchanged).
+    TextAttribute attr = _pConApi->GetTextAttributes();
+    attr.SetStandardErase();
+    _pConApi->SetTextAttributes(attr);
+    // Reset the origin mode to absolute.
+    SetOriginMode(false);
+    // Clear the scrolling margins.
+    _DoSetTopBottomScrollingMargins(0, 0);
+    // Set the cursor position to home.
+    CursorPosition(1, 1);
 
-    return success;
+    return true;
 }
 
 //Routine Description:
@@ -1935,63 +1887,52 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // Arguments:
 // - <none>
 // Return value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseScrollback()
+// - <none>
+void AdaptDispatch::_EraseScrollback()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(csbiex);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    bool success = (_pConApi->GetConsoleScreenBufferInfoEx(csbiex) && _pConApi->MoveToBottom());
-    if (success)
-    {
-        const SMALL_RECT screen = csbiex.srWindow;
-        const SHORT height = screen.Bottom - screen.Top;
-        FAIL_FAST_IF(!(height > 0));
-        const COORD cursor = csbiex.dwCursorPosition;
+    _pConApi->MoveToBottom();
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
 
-        // Rectangle to cut out of the existing buffer
-        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
-        SMALL_RECT scroll = screen;
-        scroll.Left = 0;
-        scroll.Right = SHORT_MAX;
-        // Paste coordinate for cut text above
-        COORD destination;
-        destination.X = 0;
-        destination.Y = 0;
+    const SMALL_RECT screen = csbiex.srWindow;
+    const SHORT height = screen.Bottom - screen.Top;
+    THROW_HR_IF(E_UNEXPECTED, height <= 0);
+    const COORD cursor = csbiex.dwCursorPosition;
 
-        // Typically a scroll operation should fill with standard erase attributes, but in
-        // this case we need to use the default attributes, hence standardFillAttrs is false.
-        success = _pConApi->PrivateScrollRegion(scroll, std::nullopt, destination, false);
-        if (success)
-        {
-            // Clear everything after the viewport.
-            const DWORD totalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - height);
-            const COORD coordBelowStartPosition = { 0, height };
-            // Again we need to use the default attributes, hence standardFillAttrs is false.
-            success = _pConApi->PrivateFillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
+    // Rectangle to cut out of the existing buffer
+    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+    SMALL_RECT scroll = screen;
+    scroll.Left = 0;
+    scroll.Right = SHORT_MAX;
+    // Paste coordinate for cut text above
+    COORD destination;
+    destination.X = 0;
+    destination.Y = 0;
 
-            if (success)
-            {
-                // Move the viewport (CAN'T be done in one call with SetConsolescreenBufferInfoEx, because legacy)
-                SMALL_RECT newViewport;
-                newViewport.Left = screen.Left;
-                newViewport.Top = 0;
-                // SetConsoleWindowInfo uses an inclusive rect, while GetConsolescreenBufferInfo is exclusive
-                newViewport.Right = screen.Right - 1;
-                newViewport.Bottom = height - 1;
-                success = _pConApi->SetConsoleWindowInfo(true, newViewport);
-
-                if (success)
-                {
-                    // Move the cursor to the same relative location.
-                    const COORD newcursor = { cursor.X, cursor.Y - screen.Top };
-                    success = _pConApi->SetConsoleCursorPosition(newcursor);
-                }
-            }
-        }
-    }
-    return success;
+    // Typically a scroll operation should fill with standard erase attributes, but in
+    // this case we need to use the default attributes, hence standardFillAttrs is false.
+    _pConApi->ScrollRegion(scroll, std::nullopt, destination, false);
+    // Clear everything after the viewport.
+    const DWORD totalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - height);
+    const COORD coordBelowStartPosition = { 0, height };
+    // Again we need to use the default attributes, hence standardFillAttrs is false.
+    _pConApi->FillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
+    // Also reset the line rendition for all of the cleared rows.
+    _pConApi->ResetLineRenditionRange(height, csbiex.dwSize.Y);
+    // Move the viewport (CAN'T be done in one call with SetConsolescreenBufferInfoEx, because legacy)
+    SMALL_RECT newViewport;
+    newViewport.Left = screen.Left;
+    newViewport.Top = 0;
+    // SetWindowInfo uses an inclusive rect, while GetConsolescreenBufferInfo is exclusive
+    newViewport.Right = screen.Right - 1;
+    newViewport.Bottom = height - 1;
+    _pConApi->SetWindowInfo(true, newViewport);
+    // Move the cursor to the same relative location.
+    const COORD newcursor = { cursor.X, cursor.Y - screen.Top };
+    _pConApi->SetCursorPosition(newcursor);
 }
 
 //Routine Description:
@@ -2004,10 +1945,10 @@ bool AdaptDispatch::_EraseScrollback()
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseAll()
+// - <none>
+void AdaptDispatch::_EraseAll()
 {
-    return _pConApi->PrivateEraseAll();
+    _pConApi->EraseAll();
 }
 
 // Routine Description:
@@ -2015,7 +1956,7 @@ bool AdaptDispatch::_EraseAll()
 // Arguments:
 // - enabled - set to true to allow DECCOLM to be used, false to disallow.
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
 {
     _isDECCOLMAllowed = enabled;
@@ -2030,15 +1971,7 @@ bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableVT200MouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2050,15 +1983,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
 }
 
 //Routine Description:
@@ -2070,15 +1995,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
 }
 
 //Routine Description:
@@ -2089,15 +2006,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2109,15 +2018,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2129,15 +2030,18 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableAlternateScroll(enabled);
+    return _pConApi->SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
+}
 
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+//Routine Description:
+// Enable "bracketed paste mode".
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexcept
+{
+    return NoOp();
 }
 
 //Routine Description:
@@ -2154,8 +2058,11 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     switch (cursorStyle)
     {
+    case DispatchTypes::CursorStyle::UserDefault:
+        fEnableBlinking = true;
+        actualType = _pConApi->GetUserDefaultCursorStyle();
+        break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
-    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
         fEnableBlinking = true;
         actualType = CursorType::FullBox;
         break;
@@ -2181,22 +2088,18 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         fEnableBlinking = false;
         actualType = CursorType::VerticalBar;
         break;
-    }
 
-    bool success = _pConApi->SetCursorStyle(actualType);
-    if (success)
-    {
-        success = _pConApi->PrivateAllowCursorBlinking(fEnableBlinking);
-    }
-
-    // If we're a conpty, always return false, so that this cursor state will be
-    // sent to the connected terminal
-    if (_pConApi->IsConsolePty())
-    {
+    default:
+        // Invalid argument should be handled by the connected terminal.
         return false;
     }
 
-    return success;
+    _pConApi->SetCursorStyle(actualType);
+    _pConApi->EnableCursorBlinking(fEnableBlinking);
+
+    // If we're a conpty, always return false, so that this cursor state will be
+    // sent to the connected terminal
+    return !_pConApi->IsConsolePty();
 }
 
 // Method Description:
@@ -2208,12 +2111,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return _pConApi->SetCursorColor(cursorColor);
+    return _pConApi->SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
 }
 
 // Routine Description:
@@ -2236,18 +2134,7 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetColorTableEntry(tableIndex, dwColor);
 }
 
 // Method Description:
@@ -2256,21 +2143,10 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetDefaultForeground(dwColor);
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return success;
+    _pConApi->SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
+    return _pConApi->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 }
 
 // Method Description:
@@ -2279,21 +2155,10 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(co
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetDefaultBackground(dwColor);
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return success;
+    _pConApi->SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
+    return _pConApi->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 }
 
 //Routine Description:
@@ -2304,52 +2169,286 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
 //      codes that are supported in one direction but not the other.
 //Arguments:
 // - function - An identifier of the WindowManipulation function to perform
-// - parameters - Additional parameters to pass to the function
+// - parameter1 - The first optional parameter for the function
+// - parameter2 - The second optional parameter for the function
 // Return value:
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                       const gsl::span<const size_t> parameters)
+                                       const VTParameter parameter1,
+                                       const VTParameter parameter2)
 {
-    bool success = false;
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        if (parameters.empty())
-        {
-            success = DispatchCommon::s_RefreshWindow(*_pConApi);
-        }
-        break;
+        DispatchCommon::s_RefreshWindow(*_pConApi);
+        return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-        if (parameters.size() == 2)
-        {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, til::at(parameters, 1), til::at(parameters, 0));
-        }
-        break;
+        DispatchCommon::s_ResizeWindow(*_pConApi, parameter2.value_or(0), parameter1.value_or(0));
+        return true;
     default:
-        success = false;
+        return false;
     }
-
-    return success;
 }
 
-// Routine Description:
-// - Determines whether we should pass any sequence that manipulates
-//   TerminalInput's input generator through the PTY. It encapsulates
-//   a check for whether the PTY is in use.
-// Return value:
-// True if the request should be passed.
-bool AdaptDispatch::_ShouldPassThroughInputModeChange() const
+// Method Description:
+// - Starts a hyperlink
+// Arguments:
+// - The hyperlink URI, optional additional parameters
+// Return Value:
+// - true
+bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input.
-    // The original comment said, "Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911". Unfortunately, time has shown
-    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-    // impact on the actual connected terminal. We can't remove this check,
-    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return _pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled();
+    _pConApi->AddHyperlink(uri, params);
+    return true;
+}
+
+// Method Description:
+// - Ends a hyperlink
+// Return Value:
+// - true
+bool AdaptDispatch::EndHyperlink()
+{
+    _pConApi->EndHyperlink();
+    return true;
+}
+
+// Method Description:
+// - Ascribes to the ITermDispatch interface
+// - Not actually used in conhost
+// Return Value:
+// - false (so that the command gets flushed to terminal)
+bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
+{
+    return false;
+}
+
+// Method Description:
+// - DECDLD - Downloads one or more characters of a dynamically redefinable
+//   character set (DRCS) with a specified pixel pattern. The pixel array is
+//   transmitted in sixel format via the returned StringHandler function.
+// Arguments:
+// - fontNumber - The buffer number into which the font will be loaded.
+// - startChar - The first character in the set that will be replaced.
+// - eraseControl - Which characters to erase before loading the new data.
+// - cellMatrix - The character cell width (sometimes also height in legacy formats).
+// - fontSet - The screen size for which the font is designed.
+// - fontUsage - Whether it is a text font or a full-cell font.
+// - cellHeight - The character cell height (if not defined by cellMatrix).
+// - charsetSize - Whether the character set is 94 or 96 characters.
+// Return Value:
+// - a function to receive the pixel data or nullptr if parameters are invalid
+ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber,
+                                                         const VTParameter startChar,
+                                                         const DispatchTypes::DrcsEraseControl eraseControl,
+                                                         const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                                         const DispatchTypes::DrcsFontSet fontSet,
+                                                         const DispatchTypes::DrcsFontUsage fontUsage,
+                                                         const VTParameter cellHeight,
+                                                         const DispatchTypes::DrcsCharsetSize charsetSize)
+{
+    // If we're a conpty, we're just going to ignore the operation for now.
+    // There's no point in trying to pass it through without also being able
+    // to pass through the character set designations.
+    if (_pConApi->IsConsolePty())
+    {
+        return nullptr;
+    }
+
+    // The font buffer is created on demand.
+    if (!_fontBuffer)
+    {
+        _fontBuffer = std::make_unique<FontBuffer>();
+    }
+
+    // Only one font buffer is supported, so only 0 (default) and 1 are valid.
+    auto success = fontNumber <= 1;
+    success = success && _fontBuffer->SetEraseControl(eraseControl);
+    success = success && _fontBuffer->SetAttributes(cellMatrix, cellHeight, fontSet, fontUsage);
+    success = success && _fontBuffer->SetStartChar(startChar, charsetSize);
+
+    // If any of the parameters are invalid, we return a null handler to let
+    // the state machine know we want to ignore the subsequent data string.
+    if (!success)
+    {
+        return nullptr;
+    }
+
+    return [=](const auto ch) {
+        // We pass the data string straight through to the font buffer class
+        // until we receive an ESC, indicating the end of the string. At that
+        // point we can finalize the buffer, and if valid, update the renderer
+        // with the constructed bit pattern.
+        if (ch != AsciiChars::ESC)
+        {
+            _fontBuffer->AddSixelData(ch);
+        }
+        else if (_fontBuffer->FinalizeSixelData())
+        {
+            // We also need to inform the character set mapper of the ID that
+            // will map to this font (we only support one font buffer so there
+            // will only ever be one active dynamic character set).
+            if (charsetSize == DispatchTypes::DrcsCharsetSize::Size96)
+            {
+                _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
+            }
+            else
+            {
+                _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
+            }
+            const auto bitPattern = _fontBuffer->GetBitPattern();
+            const auto cellSize = _fontBuffer->GetCellSize();
+            const auto centeringHint = _fontBuffer->GetTextCenteringHint();
+            _pConApi->UpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
+        }
+        return true;
+    };
+}
+
+// Method Description:
+// - DECRQSS - Requests the state of a VT setting. The value being queried is
+//   identified by the intermediate and final characters of its control
+//   sequence, which are passed to the string handler.
+// Arguments:
+// - None
+// Return Value:
+// - a function to receive the VTID of the setting being queried
+ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
+{
+    // We use a VTIDBuilder to parse the characters in the control string into
+    // an ID which represents the setting being queried. If the given ID isn't
+    // supported, we respond with an error sequence: DCS 0 $ r ST. Note that
+    // this is the opposite of what is documented in most DEC manuals, which
+    // say that 0 is for a valid response, and 1 is for an error. The correct
+    // interpretation is documented in the DEC STD 070 reference.
+    const auto idBuilder = std::make_shared<VTIDBuilder>();
+    return [=](const auto ch) {
+        if (ch >= '\x40' && ch <= '\x7e')
+        {
+            const auto id = idBuilder->Finalize(ch);
+            switch (id)
+            {
+            case VTID('m'):
+                _ReportSGRSetting();
+                break;
+            case VTID('r'):
+                _ReportDECSTBMSetting();
+                break;
+            default:
+                _WriteResponse(L"\033P0$r\033\\");
+                break;
+            }
+            return false;
+        }
+        else
+        {
+            if (ch >= '\x20' && ch <= '\x2f')
+            {
+                idBuilder->AddIntermediate(ch);
+            }
+            return true;
+        }
+    };
+}
+
+// Method Description:
+// - Reports the current SGR attributes in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportSGRSetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    // Then the '0' parameter is to reset the SGR attributes to the defaults.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r0"sv);
+
+    const auto attr = _pConApi->GetTextAttributes();
+    // For each boolean attribute that is set, we add the appropriate
+    // parameter value to the response string.
+    const auto addAttribute = [&](const auto& parameter, const auto enabled) {
+        if (enabled)
+        {
+            response.append(parameter);
+        }
+    };
+    addAttribute(L";1"sv, attr.IsIntense());
+    addAttribute(L";2"sv, attr.IsFaint());
+    addAttribute(L";3"sv, attr.IsItalic());
+    addAttribute(L";4"sv, attr.IsUnderlined());
+    addAttribute(L";5"sv, attr.IsBlinking());
+    addAttribute(L";7"sv, attr.IsReverseVideo());
+    addAttribute(L";8"sv, attr.IsInvisible());
+    addAttribute(L";9"sv, attr.IsCrossedOut());
+    addAttribute(L";21"sv, attr.IsDoublyUnderlined());
+    addAttribute(L";53"sv, attr.IsOverlined());
+
+    // We also need to add the appropriate color encoding parameters for
+    // both the foreground and background colors.
+    const auto addColor = [&](const auto base, const auto color) {
+        if (color.IsIndex16())
+        {
+            const auto index = color.GetIndex();
+            const auto colorParameter = base + (index >= 8 ? 60 : 0) + (index % 8);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}"), colorParameter);
+        }
+        else if (color.IsIndex256())
+        {
+            const auto index = color.GetIndex();
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
+        }
+        else if (color.IsRgb())
+        {
+            const auto r = GetRValue(color.GetRGB());
+            const auto g = GetGValue(color.GetRGB());
+            const auto b = GetBValue(color.GetRGB());
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};2;{};{};{}"), base + 8, r, g, b);
+        }
+    };
+    addColor(30, attr.GetForeground());
+    addColor(40, attr.GetBackground());
+
+    // The 'm' indicates this is an SGR response, and ST ends the sequence.
+    response.append(L"m\033\\"sv);
+    _WriteResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSTBM margin range in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSTBMSetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+
+    auto marginTop = _scrollMargins.Top + 1;
+    auto marginBottom = _scrollMargins.Bottom + 1;
+    // If the margin top is greater than or equal to the bottom, then the
+    // margins aren't actually set, so we need to return the full height
+    // of the window for the margin range.
+    if (marginTop >= marginBottom)
+    {
+        marginTop = 1;
+        marginBottom = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+    }
+    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop, marginBottom);
+
+    // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
+    response.append(L"r\033\\"sv);
+    _WriteResponse({ response.data(), response.size() });
 }

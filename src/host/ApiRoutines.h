@@ -17,7 +17,7 @@ Revision History:
 
 #pragma once
 
-#include "..\server\IApiRoutines.h"
+#include "../server/IApiRoutines.h"
 
 class ApiRoutines : public IApiRoutines
 {

@@ -37,23 +37,3 @@ constexpr bool operator!=(const SMALL_RECT& a, const SMALL_RECT& b) noexcept
 {
     return !(a == b);
 }
-
-constexpr bool operator==(const std::wstring& wstr, const std::wstring_view& wstrView)
-{
-    return (wstrView == std::wstring_view{ wstr.c_str(), wstr.size() });
-}
-
-constexpr bool operator==(const std::wstring_view& wstrView, const std::wstring& wstr)
-{
-    return (wstr == wstrView);
-}
-
-constexpr bool operator!=(const std::wstring& wstr, const std::wstring_view& wstrView)
-{
-    return !(wstr == wstrView);
-}
-
-constexpr bool operator!=(const std::wstring_view& wstrView, const std::wstring& wstr)
-{
-    return !(wstr == wstrView);
-}
