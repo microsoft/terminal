@@ -237,6 +237,7 @@ charlespetzold
 charset
 CHARSETINFO
 chcp
+Checkin
 checkbox
 checkboxes
 chh
@@ -673,6 +674,7 @@ dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxp
 dxsm
 dxttbmp
 Dyreen
@@ -2671,6 +2673,7 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
+wdx
 webclient
 webpage
 website
@@ -2705,6 +2708,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windev
 WINDIR
 windll
 WINDOWALPHA
