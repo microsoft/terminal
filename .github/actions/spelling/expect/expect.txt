@@ -12,6 +12,7 @@ ACTCTXW
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
+adaa
 ADDALIAS
 ADDREF
 addressof
@@ -189,6 +190,7 @@ cacafire
 callee
 capslock
 CARETBLINKINGENABLED
+carlos
 CARRIAGERETURN
 cascadia
 cassert
@@ -481,6 +483,7 @@ dai
 DATABLOCK
 DATAVIEW
 DATAW
+datetime
 DBatch
 dbcs
 DBCSCHAR
@@ -676,6 +679,7 @@ dxsm
 dxttbmp
 Dyreen
 eachother
+eae
 eaf
 EASTEUROPE
 ECH
@@ -697,6 +701,7 @@ elems
 elif
 elseif
 emacs
+emplate
 EMPTYBOX
 enabledelayedexpansion
 endian
@@ -1008,6 +1013,7 @@ horiz
 HORZ
 hostable
 hostlib
+Hostx
 HPA
 HPAINTBUFFER
 HPCON
@@ -1134,6 +1140,7 @@ INPUTPROCESSORPROFILE
 inputrc
 Inputreadhandledata
 INSERTMODE
+installationpath
 intellisense
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1436,6 +1443,7 @@ mkdir
 MMBB
 mmcc
 MMCPL
+MMdd
 mmsystem
 MNC
 MNOPQ
@@ -2874,6 +2882,7 @@ YCast
 YCENTER
 YCount
 YDPI
+yIcon
 yml
 YOffset
 YPosition
