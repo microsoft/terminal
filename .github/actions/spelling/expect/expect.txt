@@ -318,6 +318,7 @@ concat
 concfg
 conclnt
 conddkrefs
+condev
 condrv
 conechokey
 conemu
@@ -1152,6 +1153,7 @@ ioctl
 iomanip
 iostream
 iot
+ipa
 ipch
 ipconfig
 IPersist
@@ -1475,6 +1477,7 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
+mspartners
 msrc
 msvcrt
 MSVCRTD
