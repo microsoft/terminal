@@ -22,7 +22,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\adaptDefaults.hpp" />
     <ClInclude Include="..\adaptDispatch.hpp" />
     <ClInclude Include="..\charsets.hpp" />
     <ClInclude Include="..\DispatchTypes.hpp" />

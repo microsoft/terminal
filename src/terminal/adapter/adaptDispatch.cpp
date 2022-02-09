@@ -26,17 +26,14 @@ bool NoOp() noexcept
 }
 
 // Note: AdaptDispatch will take ownership of pConApi and pDefaults
-AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
-                             std::unique_ptr<AdaptDefaults> pDefaults) :
+AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi) :
     _pConApi{ std::move(pConApi) },
-    _pDefaults{ std::move(pDefaults) },
     _usingAltBuffer(false),
     _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
     _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _termOutput()
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
-    THROW_HR_IF_NULL(E_INVALIDARG, _pDefaults.get());
     _scrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
@@ -55,7 +52,7 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
     // a character is only output if the DEL is translated to something else.
     if (wchTranslated != AsciiChars::DEL)
     {
-        _pDefaults->Print(wchTranslated);
+        _pConApi->PrintString({ &wchTranslated, 1 });
     }
 }
 
@@ -76,11 +73,11 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
         {
             buffer.push_back(_termOutput.TranslateKey(wch));
         }
-        _pDefaults->PrintString(buffer);
+        _pConApi->PrintString(buffer);
     }
     else
     {
-        _pDefaults->PrintString(string);
+        _pConApi->PrintString(string);
     }
 }
 

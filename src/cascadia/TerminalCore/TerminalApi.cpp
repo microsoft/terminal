@@ -16,11 +16,6 @@ void Terminal::PrintString(std::wstring_view stringView)
     _WriteBuffer(stringView);
 }
 
-void Terminal::ExecuteChar(wchar_t wch)
-{
-    _WriteBuffer({ &wch, 1 });
-}
-
 TextAttribute Terminal::GetTextAttributes() const
 {
     return _buffer->GetCurrentAttributes();

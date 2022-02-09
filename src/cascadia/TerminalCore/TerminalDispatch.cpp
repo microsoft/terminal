@@ -19,11 +19,6 @@ TerminalDispatch::TerminalDispatch(ITerminalApi& terminalApi) noexcept :
 {
 }
 
-void TerminalDispatch::Execute(const wchar_t wchControl)
-{
-    _terminalApi.ExecuteChar(wchControl);
-}
-
 void TerminalDispatch::Print(const wchar_t wchPrintable)
 {
     _terminalApi.PrintString({ &wchPrintable, 1 });

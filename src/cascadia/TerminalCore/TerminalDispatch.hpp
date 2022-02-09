@@ -12,7 +12,6 @@ class TerminalDispatch : public Microsoft::Console::VirtualTerminal::TermDispatc
 public:
     TerminalDispatch(::Microsoft::Terminal::Core::ITerminalApi& terminalApi) noexcept;
 
-    void Execute(const wchar_t wchControl) override;
     void Print(const wchar_t wchPrintable) override;
     void PrintString(const std::wstring_view string) override;
 

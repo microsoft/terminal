@@ -58,6 +58,10 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ConGetSet
 {
 public:
+    void PrintString(const std::wstring_view /*string*/) override
+    {
+    }
+
     void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& sbiex) const override
     {
         Log::Comment(L"GetConsoleScreenBufferInfoEx MOCK returning data...");
@@ -649,21 +653,6 @@ private:
     HANDLE _hCon;
 };
 
-class DummyAdapter : public AdaptDefaults
-{
-    void Print(const wchar_t /*wch*/) override
-    {
-    }
-
-    void PrintString(const std::wstring_view /*string*/) override
-    {
-    }
-
-    void Execute(const wchar_t /*wch*/) override
-    {
-    }
-};
-
 class AdapterTest
 {
 public:
@@ -677,11 +666,9 @@ public:
         fSuccess = api.get() != nullptr;
         if (fSuccess)
         {
-            auto adapter = std::make_unique<DummyAdapter>();
-
             // give AdaptDispatch ownership of _testGetSet
             _testGetSet = api.get(); // keep a copy for us but don't manage its lifetime anymore.
-            _pDispatch = std::make_unique<AdaptDispatch>(std::move(api), std::move(adapter));
+            _pDispatch = std::make_unique<AdaptDispatch>(std::move(api));
             fSuccess = _pDispatch != nullptr;
         }
         return fSuccess;

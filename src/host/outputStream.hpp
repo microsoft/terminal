@@ -14,35 +14,10 @@ Author:
 
 #pragma once
 
-#include "../terminal/adapter/adaptDefaults.hpp"
+#include "../terminal/adapter/conGetSet.hpp"
 #include "../types/inc/IInputEvent.hpp"
 #include "../inc/conattrs.hpp"
 #include "IIoProvider.hpp"
-
-class SCREEN_INFORMATION;
-
-// The WriteBuffer class provides helpers for writing text into the TextBuffer that is backing a particular console screen buffer.
-class WriteBuffer : public Microsoft::Console::VirtualTerminal::AdaptDefaults
-{
-public:
-    WriteBuffer(_In_ Microsoft::Console::IIoProvider& io);
-
-    // Implement Adapter callbacks for default cases (non-escape sequences)
-    void Print(const wchar_t wch) override;
-    void PrintString(const std::wstring_view string) override;
-    void Execute(const wchar_t wch) override;
-
-    [[nodiscard]] NTSTATUS GetResult() { return _ntstatus; };
-
-private:
-    void _DefaultCase(const wchar_t wch);
-    void _DefaultStringCase(const std::wstring_view string);
-
-    Microsoft::Console::IIoProvider& _io;
-    NTSTATUS _ntstatus;
-};
-
-#include "../terminal/adapter/conGetSet.hpp"
 
 // The ConhostInternalGetSet is for the Conhost process to call the entrypoints for its own Get/Set APIs.
 // Normally, these APIs are accessible from the outside of the conhost process (like by the process being "hosted") through
@@ -53,6 +28,8 @@ class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::
 {
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
+
+    void PrintString(const std::wstring_view string) override;
 
     void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const override;
     void SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) override;

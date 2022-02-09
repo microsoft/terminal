@@ -96,7 +96,6 @@ public:
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     void PrintString(std::wstring_view stringView) override;
-    void ExecuteChar(wchar_t wch) override;
     TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
     Microsoft::Console::Types::Viewport GetBufferSize() override;
