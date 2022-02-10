@@ -363,7 +363,6 @@ jobs:
     # Publish the app symbols to the public MSDL symbol server
     # accessible via https://msdl.microsoft.com/download/symbols
     - task: PublishSymbols@2
-      condition: false
       displayName: 'Publish app symbols to MSDL'
       inputs:
         symbolsFolder: '$(Build.SourcesDirectory)/appxsym-temp'
