@@ -141,6 +141,55 @@ namespace winrt::TerminalApp::implementation
         return isElevated;
     }
 
+    til::color wat(const winrt::Windows::UI::Xaml::ResourceDictionary& res)
+    {
+        // bool isHighContrast = GetAccessibilitySettings().HighContrast();
+        std::wstring helperBrushName = L"WATBrushForThemeBackgroundColor";
+        // Ensure helper SCB referencing appropriate color as a ThemeResource is added to WV2.Resources.
+        // This is needed since programatic lookup of theme resources themselves does not account for active theme.
+
+        if (!res.HasKey(box_value(helperBrushName)))
+        {
+            // std::wstring resourceName = isHighContrast ? L"SystemColorWindowColor" : L"SolidBackgroundFillColorBase";
+            std::wstring resourceName = L"SolidBackgroundFillColorBase";
+            Media::SolidColorBrush helperBrush = winrt::Windows::UI::Xaml::Markup::XamlReader::Load(
+                                                     L"<SolidColorBrush xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' "
+                                                     L"xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' "
+                                                     L"x:Name='" +
+                                                     helperBrushName + L"' "
+                                                                       L"Color='{ThemeResource " +
+                                                     resourceName + L"}'/>")
+                                                     .as<Media::SolidColorBrush>();
+
+            res.Insert(winrt::box_value(helperBrushName), helperBrush);
+        }
+        // Read off the theme-appropriate BG color from helper brush resource
+        til::color result{ (res.Lookup(winrt::box_value(helperBrushName)).as<Media::SolidColorBrush>()).Color() };
+        return result;
+    }
+
+    template<typename T>
+    T _safeLookupResource(const winrt::Windows::UI::Xaml::ResourceDictionary& res,
+                          const winrt::hstring& key)
+    {
+        const auto boxedKey = winrt::box_value(key);
+        return res.HasKey(boxedKey) ? res.Lookup(boxedKey).try_as<T>() : nullptr;
+    }
+
+    winrt::Windows::Foundation::IInspectable _safeLookupResource(const winrt::Windows::UI::Xaml::ResourceDictionary& res,
+                                                                 const winrt::hstring& key)
+    {
+        const auto boxedKey = winrt::box_value(key);
+        if (res.HasKey(boxedKey))
+        {
+            return res.Lookup(boxedKey);
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -153,41 +202,105 @@ namespace winrt::TerminalApp::implementation
 
         const auto isElevated = IsElevated();
 
+        auto theme = _settings.GlobalSettings().Theme();
+        const auto oldTheme{ RequestedTheme() };
+        oldTheme;
+
+        RequestedTheme(theme);
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
-            const auto res = Application::Current().Resources();
-            const auto lightKey = winrt::box_value(L"Light");
-            const auto darkKey = winrt::box_value(L"Dark");
-            const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+            // const auto res = Application::Current().Resources();
+            // const auto lightKey = winrt::box_value(L"Light");
+            // const auto darkKey = winrt::box_value(L"Dark");
+            // const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
 
-            for (auto const& dictionary : res.MergedDictionaries())
+            // for (auto const& dictionary : res.MergedDictionaries())
+            // {
+            //     // Don't change MUX resources
+            //     if (dictionary.Source())
+            //     {
+            //         continue;
+            //     }
+
+            //     for (auto const& kvPair : dictionary.ThemeDictionaries())
+            //     {
+            //         const auto themeDictionary = kvPair.Value().as<winrt::Windows::UI::Xaml::ResourceDictionary>();
+
+            //         if (themeDictionary.HasKey(tabViewBackgroundKey))
+            //         {
+            //             const auto backgroundSolidBrush = themeDictionary.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
+
+            //             const til::color backgroundColor = backgroundSolidBrush.Color();
+
+            //             const auto acrylicBrush = Media::AcrylicBrush();
+            //             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            //             acrylicBrush.FallbackColor(backgroundColor);
+            //             acrylicBrush.TintColor(backgroundColor);
+            //             acrylicBrush.TintOpacity(0.5);
+
+            //             themeDictionary.Insert(tabViewBackgroundKey, acrylicBrush);
+            //         }
+            //     }
+            // }
+
+            ////////////////////////
+            const auto res = Resources();
+            til::color color_ViaAPBGTB;
+            til::color color_MyThemeColorBrush;
+            til::color color_MyStaticColorBrush;
+            til::color color_ManualColorBrush;
+
+            // if (const auto obj{ _safeLookupResource(res, L"ViaAPBGTB") })
+            // {
+            //     if (const auto asBrush{ obj.try_as<Media::SolidColorBrush>() })
+            //     {
+            //         color_ViaAPBGTB = til::color{ asBrush.Color() };
+            //     }
+            // }
+            // if (const auto obj{ _safeLookupResource(res, L"MyThemeColorBrush") })
+            // {
+            //     if (const auto asBrush{ obj.try_as<Media::SolidColorBrush>() })
+            //     {
+            //         color_MyThemeColorBrush = til::color{ asBrush.Color() };
+            //     }
+            // }
+            // if (const auto obj{ _safeLookupResource(res, L"MyStaticColorBrush") })
+            // {
+            //     if (const auto asBrush{ obj.try_as<Media::SolidColorBrush>() })
+            //     {
+            //         color_MyStaticColorBrush = til::color{ asBrush.Color() };
+            //     }
+            // }
+            // if (const auto obj{ _safeLookupResource(res, L"ManualColorBrush") })
+            // {
+            //     if (const auto asBrush{ obj.try_as<Media::SolidColorBrush>() })
+            //     {
+            //         color_ManualColorBrush = til::color{ asBrush.Color() };
+            //     }
+            // }
+            if (const auto asBrush{ _safeLookupResource<Media::SolidColorBrush>(res, L"ViaAPBGTB") })
             {
-                // Don't change MUX resources
-                if (dictionary.Source())
-                {
-                    continue;
-                }
-
-                for (auto const& kvPair : dictionary.ThemeDictionaries())
-                {
-                    const auto themeDictionary = kvPair.Value().as<winrt::Windows::UI::Xaml::ResourceDictionary>();
-
-                    if (themeDictionary.HasKey(tabViewBackgroundKey))
-                    {
-                        const auto backgroundSolidBrush = themeDictionary.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
-
-                        const til::color backgroundColor = backgroundSolidBrush.Color();
-
-                        const auto acrylicBrush = Media::AcrylicBrush();
-                        acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-                        acrylicBrush.FallbackColor(backgroundColor);
-                        acrylicBrush.TintColor(backgroundColor);
-                        acrylicBrush.TintOpacity(0.5);
-
-                        themeDictionary.Insert(tabViewBackgroundKey, acrylicBrush);
-                    }
-                }
+                color_ViaAPBGTB = til::color{ asBrush.Color() };
             }
+            if (const auto asBrush{ _safeLookupResource<Media::SolidColorBrush>(res, L"MyThemeColorBrush") })
+            {
+                color_MyThemeColorBrush = til::color{ asBrush.Color() };
+            }
+            if (const auto asBrush{ _safeLookupResource<Media::SolidColorBrush>(res, L"MyStaticColorBrush") })
+            {
+                color_MyStaticColorBrush = til::color{ asBrush.Color() };
+            }
+            if (const auto asBrush{ _safeLookupResource<Media::SolidColorBrush>(res, L"ManualColorBrush") })
+            {
+                color_ManualColorBrush = til::color{ asBrush.Color() };
+            }
+            color_ViaAPBGTB;
+            color_MyThemeColorBrush;
+            color_MyStaticColorBrush;
+            color_ManualColorBrush;
+            auto waaaaa{ wat(res) };
+            waaaaa;
         }
 
         _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
@@ -2607,6 +2720,20 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
+
+        auto res{ Resources() };
+        auto theme = _settings.GlobalSettings().Theme();
+        const auto oldTheme{ RequestedTheme() };
+        auto one{ wat(res) };
+        one;
+        oldTheme;
+
+        RequestedTheme(theme);
+        auto two{ wat(res) };
+        two;
+        auto a = 0;
+        a++;
+        a;
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

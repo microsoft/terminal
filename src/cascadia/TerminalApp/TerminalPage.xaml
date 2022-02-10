@@ -12,6 +12,53 @@
       Background="Transparent"
       mc:Ignorable="d">
 
+
+    <Page.Resources>
+        <ResourceDictionary>
+
+
+
+            <!-- <ResourceDictionary.MergedDictionaries> -->
+            <!-- <ResourceDictionary> -->
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!--  Define resources for Dark mode here  -->
+                    <StaticResource x:Key="ViaAPBGTB"
+                                    ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                    <SolidColorBrush x:Key="MyThemeColorBrush"
+                                     Color="{ThemeResource SolidBackgroundFillColorBase}" />
+                    <SolidColorBrush x:Key="MyStaticColorBrush"
+                                     Color="{StaticResource SolidBackgroundFillColorBase}" />
+                    <SolidColorBrush x:Key="ManualColorBrush"
+                                     Color="#202020" />
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Light">
+                    <!--  Define resources for Light mode here  -->
+
+                    <StaticResource x:Key="ViaAPBGTB"
+                                    ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                    <SolidColorBrush x:Key="MyThemeColorBrush"
+                                     Color="{ThemeResource SolidBackgroundFillColorBase}" />
+                    <SolidColorBrush x:Key="MyStaticColorBrush"
+                                     Color="{StaticResource SolidBackgroundFillColorBase}" />
+                    <SolidColorBrush x:Key="ManualColorBrush"
+                                     Color="#F3F3F3" />
+
+                    <StaticResource x:Key="UnfocusedBorderBrush"
+                                    ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+            <!-- </ResourceDictionary> -->
+            <!-- </ResourceDictionary.MergedDictionaries> -->
+
+        </ResourceDictionary>
+    </Page.Resources>
+
     <Grid x:Name="Root"
           Background="Transparent">
         <Grid.RowDefinitions>
