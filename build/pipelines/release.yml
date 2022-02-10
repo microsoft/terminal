@@ -352,6 +352,8 @@ jobs:
         }
       displayName: Extract symbols for public consumption
 
+    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
+    - template: .\templates\install-winsdk-steps.yml
     - task: PowerShell@2
       displayName: Source Index PDBs (the public ones)
       inputs:
