@@ -237,6 +237,7 @@ charlespetzold
 charset
 CHARSETINFO
 chcp
+Checkin
 checkbox
 checkboxes
 chh
@@ -318,6 +319,7 @@ concat
 concfg
 conclnt
 conddkrefs
+condev
 condrv
 conechokey
 conemu
@@ -672,6 +674,7 @@ dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxp
 dxsm
 dxttbmp
 Dyreen
@@ -1152,6 +1155,7 @@ ioctl
 iomanip
 iostream
 iot
+ipa
 ipch
 ipconfig
 IPersist
@@ -1475,6 +1479,7 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
+mspartners
 msrc
 msvcrt
 MSVCRTD
@@ -2668,6 +2673,7 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
+wdx
 webclient
 webpage
 website
@@ -2702,6 +2708,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windev
 WINDIR
 windll
 WINDOWALPHA
