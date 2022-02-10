@@ -135,23 +135,20 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
     const size_t colFixed = col - 1;
 
     // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    COORD coordCursor = csbiex.dwCursorPosition;
+    const auto viewport = _pConApi->GetViewport();
+    auto coordCursor = _pConApi->GetTextBuffer().GetCursor().GetPosition();
 
     // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
     THROW_IF_FAILED(SizeTToShort(rowFixed, &coordCursor.Y));
     THROW_IF_FAILED(SizeTToShort(colFixed, &coordCursor.X));
 
     // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-    THROW_IF_FAILED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y));
-    THROW_IF_FAILED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+    THROW_IF_FAILED(ShortAdd(coordCursor.Y, viewport.Top, &coordCursor.Y));
+    THROW_IF_FAILED(ShortAdd(coordCursor.X, viewport.Left, &coordCursor.X));
 
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
-    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
+    coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, gsl::narrow<SHORT>(viewport.Bottom - 1));
+    coordCursor.X = std::clamp(coordCursor.X, viewport.Left, gsl::narrow<SHORT>(viewport.Right - 1));
 
     // Finally, attempt to set the adjusted cursor position back into the console.
     _pConApi->SetCursorPosition(coordCursor);

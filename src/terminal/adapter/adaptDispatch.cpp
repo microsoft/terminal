@@ -170,33 +170,25 @@ bool AdaptDispatch::CursorPrevLine(const size_t distance)
 bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const
 {
     // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    // Calculate the viewport boundaries as inclusive values.
-    // srWindow is exclusive so we need to subtract 1 from the bottom.
-    const int viewportTop = csbiex.srWindow.Top;
-    const int viewportBottom = csbiex.srWindow.Bottom - 1;
+    const auto viewport = _pConApi->GetViewport();
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
     // Calculate the absolute margins of the scrolling area.
-    const int topMargin = viewportTop + _scrollMargins.Top;
-    const int bottomMargin = viewportTop + _scrollMargins.Bottom;
+    const int topMargin = viewport.Top + _scrollMargins.Top;
+    const int bottomMargin = viewport.Top + _scrollMargins.Bottom;
     const bool marginsSet = topMargin < bottomMargin;
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
-    int row = csbiex.dwCursorPosition.Y;
-    int col = csbiex.dwCursorPosition.X;
+    int row = cursorPosition.Y;
+    int col = cursorPosition.X;
 
     // But if the row is absolute, it will be relative to the top of the
     // viewport, or the top margin, depending on the origin mode.
     if (rowOffset.IsAbsolute)
     {
-        row = _isOriginModeRelative ? topMargin : viewportTop;
+        row = _isOriginModeRelative ? topMargin : viewport.Top;
     }
 
     // And if the column is absolute, it'll be relative to column 0.
@@ -209,8 +201,8 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // Adjust the base position by the given offsets and clamp the results.
     // The row is constrained within the viewport's vertical boundaries,
     // while the column is constrained by the buffer width.
-    row = std::clamp(row + rowOffset.Value, viewportTop, viewportBottom);
-    col = std::clamp(col + colOffset.Value, 0, csbiex.dwSize.X - 1);
+    row = std::clamp<int>(row + rowOffset.Value, viewport.Top, viewport.Bottom - 1);
+    col = std::clamp<int>(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
 
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
@@ -225,11 +217,11 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
         // to the bottom margin. See
         // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
         // behavior.
-        if (csbiex.dwCursorPosition.Y >= topMargin)
+        if (cursorPosition.Y >= topMargin)
         {
             row = std::max(row, topMargin);
         }
-        if (csbiex.dwCursorPosition.Y <= bottomMargin)
+        if (cursorPosition.Y <= bottomMargin)
         {
             row = std::min(row, bottomMargin);
         }
@@ -311,24 +303,19 @@ bool AdaptDispatch::CursorPosition(const size_t line, const size_t column)
 bool AdaptDispatch::CursorSaveState()
 {
     // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    const auto attributes = _pConApi->GetTextAttributes();
+    const auto viewport = _pConApi->GetViewport();
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto attributes = textBuffer.GetCurrentAttributes();
 
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
-    COORD coordCursor = csbiex.dwCursorPosition;
-    coordCursor.Y -= csbiex.srWindow.Top;
+    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    cursorPosition.Y -= viewport.Top;
 
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
-    savedCursorState.Column = coordCursor.X + 1;
-    savedCursorState.Row = coordCursor.Y + 1;
+    savedCursorState.Column = cursorPosition.X + 1;
+    savedCursorState.Row = cursorPosition.Y + 1;
     savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
@@ -414,26 +401,21 @@ void AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
     SHORT distance;
     THROW_IF_FAILED(SizeTToShort(count, &distance));
 
-    // get current cursor, attributes
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    // get current cursor
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
-    const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
     SMALL_RECT srScroll;
-    srScroll.Left = cursor.X;
-    srScroll.Right = _pConApi->GetLineWidth(cursor.Y) - 1;
-    srScroll.Top = cursor.Y;
+    srScroll.Left = cursorPosition.X;
+    srScroll.Right = textBuffer.GetLineWidth(cursorPosition.Y) - 1;
+    srScroll.Top = cursorPosition.Y;
     srScroll.Bottom = srScroll.Top;
 
     // Paste coordinate for cut text above
     COORD coordDestination;
-    coordDestination.Y = cursor.Y;
-    coordDestination.X = cursor.X;
+    coordDestination.Y = cursorPosition.Y;
+    coordDestination.X = cursorPosition.X;
 
     if (isInsert)
     {
@@ -480,13 +462,13 @@ bool AdaptDispatch::DeleteCharacter(const size_t count)
 // - Internal helper to erase one particular line of the buffer. Either from beginning to the cursor, from the cursor to the end, or the entire line.
 // - Used by both erase line (used just once) and by erase screen (used in a loop) to erase a portion of the buffer.
 // Arguments:
-// - csbiex - Pointer to the console screen buffer that we will be erasing (and getting cursor data from within)
+// - textBuffer - the text buffer that we will be erasing (and getting cursor data from within)
 // - eraseType - Enumeration mode of which kind of erase to perform: beginning to cursor, cursor to end, or entire line.
 // - lineId - The line number (array index value, starts at 0) of the line to operate on within the buffer.
 //           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
 // Return Value:
 // - <none>
-void AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
+void AdaptDispatch::_EraseSingleLineHelper(const TextBuffer& textBuffer,
                                            const DispatchTypes::EraseType eraseType,
                                            const size_t lineId) const
 {
@@ -502,7 +484,7 @@ void AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
         coordStartPosition.X = 0; // from beginning and the whole line start from the left most edge of the buffer.
         break;
     case DispatchTypes::EraseType::ToEnd:
-        coordStartPosition.X = csbiex.dwCursorPosition.X; // from the current cursor position (including it)
+        coordStartPosition.X = textBuffer.GetCursor().GetPosition().X; // from the current cursor position (including it)
         break;
     }
 
@@ -513,12 +495,12 @@ void AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
     {
     case DispatchTypes::EraseType::FromBeginning:
         // +1 because if cursor were at the left edge, the length would be 0 and we want to paint at least the 1 character the cursor is on.
-        nLength = csbiex.dwCursorPosition.X + 1;
+        nLength = textBuffer.GetCursor().GetPosition().X + 1;
         break;
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
         // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = _pConApi->GetLineWidth(lineId) - coordStartPosition.X;
+        nLength = textBuffer.GetLineWidth(lineId) - coordStartPosition.X;
         break;
     }
 
@@ -537,13 +519,10 @@ void AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
 // - True.
 bool AdaptDispatch::EraseCharacters(const size_t numChars)
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const COORD startPosition = textBuffer.GetCursor().GetPosition();
 
-    const COORD startPosition = csbiex.dwCursorPosition;
-
-    const SHORT remainingSpaces = csbiex.dwSize.X - startPosition.X;
+    const SHORT remainingSpaces = textBuffer.GetSize().Dimensions().X - startPosition.X;
     const size_t actualRemaining = gsl::narrow_cast<size_t>((remainingSpaces < 0) ? 0 : remainingSpaces);
     // erase at max the number of characters remaining in the line from the current position.
     const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
@@ -594,12 +573,9 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         return !_pConApi->IsConsolePty();
     }
 
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    const auto viewport = _pConApi->GetViewport();
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
     // When erasing the display, every line that is erased in full should be
     // reset to single width. When erasing to the end, this could include
@@ -609,13 +585,13 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     // the line is double width).
     if (eraseType == DispatchTypes::EraseType::FromBeginning)
     {
-        const auto endRow = csbiex.dwCursorPosition.Y;
-        _pConApi->ResetLineRenditionRange(csbiex.srWindow.Top, endRow);
+        const auto endRow = cursorPosition.Y;
+        textBuffer.ResetLineRenditionRange(viewport.Top, endRow);
     }
     if (eraseType == DispatchTypes::EraseType::ToEnd)
     {
-        const auto startRow = csbiex.dwCursorPosition.Y + (csbiex.dwCursorPosition.X > 0 ? 1 : 0);
-        _pConApi->ResetLineRenditionRange(startRow, csbiex.srWindow.Bottom);
+        const auto startRow = cursorPosition.Y + (cursorPosition.X > 0 ? 1 : 0);
+        textBuffer.ResetLineRenditionRange(startRow, viewport.Bottom);
     }
 
     // What we need to erase is grouped into 3 types:
@@ -631,23 +607,23 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     if (eraseType == DispatchTypes::EraseType::FromBeginning)
     {
         // For beginning and all, erase all complete lines before (above vertically) from the cursor position.
-        for (SHORT startLine = csbiex.srWindow.Top; startLine < csbiex.dwCursorPosition.Y; startLine++)
+        for (SHORT startLine = viewport.Top; startLine < cursorPosition.Y; startLine++)
         {
-            _EraseSingleLineHelper(csbiex, DispatchTypes::EraseType::All, startLine);
+            _EraseSingleLineHelper(textBuffer, DispatchTypes::EraseType::All, startLine);
         }
     }
 
     // 2. Cursor Line
-    _EraseSingleLineHelper(csbiex, eraseType, csbiex.dwCursorPosition.Y);
+    _EraseSingleLineHelper(textBuffer, eraseType, cursorPosition.Y);
 
     // 3. Lines after cursor line
     if (eraseType == DispatchTypes::EraseType::ToEnd)
     {
         // For beginning and all, erase all complete lines after (below vertically) the cursor position.
         // Remember that the viewport bottom value is 1 beyond the viewable area of the viewport.
-        for (SHORT startLine = csbiex.dwCursorPosition.Y + 1; startLine < csbiex.srWindow.Bottom; startLine++)
+        for (SHORT startLine = cursorPosition.Y + 1; startLine < viewport.Bottom; startLine++)
         {
-            _EraseSingleLineHelper(csbiex, DispatchTypes::EraseType::All, startLine);
+            _EraseSingleLineHelper(textBuffer, DispatchTypes::EraseType::All, startLine);
         }
     }
 
@@ -664,11 +640,9 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
     RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::All);
 
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    _EraseSingleLineHelper(csbiex, eraseType, csbiex.dwCursorPosition.Y);
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    _EraseSingleLineHelper(textBuffer, eraseType, cursorPosition.Y);
 
     return true;
 }
@@ -820,32 +794,28 @@ void AdaptDispatch::_OperatingStatus() const
 // - <none>
 void AdaptDispatch::_CursorPositionReport() const
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    const auto viewport = _pConApi->GetViewport();
+    const auto& textBuffer = _pConApi->GetTextBuffer();
 
     // First pull the cursor position relative to the entire buffer out of the console.
-    COORD coordCursorPos = csbiex.dwCursorPosition;
+    auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
     // Now adjust it for its position in respect to the current viewport top.
-    coordCursorPos.Y -= csbiex.srWindow.Top;
+    cursorPosition.Y -= viewport.Top;
 
     // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
-    coordCursorPos.X++;
-    coordCursorPos.Y++;
+    cursorPosition.X++;
+    cursorPosition.Y++;
 
     // If the origin mode is relative, line numbers start at top margin of the scrolling region.
     if (_isOriginModeRelative)
     {
-        coordCursorPos.Y -= _scrollMargins.Top;
+        cursorPosition.Y -= _scrollMargins.Top;
     }
 
     // Now send it back into the input channel of the console.
     // First format the response string.
-    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", coordCursorPos.Y, coordCursorPos.X);
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
     _WriteResponse(response);
 }
 
@@ -894,26 +864,20 @@ void AdaptDispatch::_ScrollMovement(const ScrollDirection scrollDirection, const
     SHORT dist;
     THROW_IF_FAILED(SizeTToShort(distance, &dist));
 
-    // get current cursor
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    const auto viewport = _pConApi->GetViewport();
 
     // Rectangle to cut out of the existing buffer. This is inclusive.
     // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScreen;
     srScreen.Left = 0;
     srScreen.Right = SHORT_MAX;
-    srScreen.Top = csbiex.srWindow.Top;
-    srScreen.Bottom = csbiex.srWindow.Bottom - 1; // srWindow is exclusive, hence the - 1
+    srScreen.Top = viewport.Top;
+    srScreen.Bottom = viewport.Bottom - 1; // viewport is exclusive, hence the - 1
     // Clip to the DECSTBM margin boundaries
     if (_scrollMargins.Top < _scrollMargins.Bottom)
     {
-        srScreen.Top = csbiex.srWindow.Top + _scrollMargins.Top;
-        srScreen.Bottom = csbiex.srWindow.Top + _scrollMargins.Bottom;
+        srScreen.Top = viewport.Top + _scrollMargins.Top;
+        srScreen.Bottom = viewport.Top + _scrollMargins.Bottom;
     }
 
     // Paste coordinate for cut text above
@@ -1240,13 +1204,6 @@ bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
 void AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
                                                     const size_t bottomMargin)
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
     // so notes time: (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
     // having only a bottom param is legal      ([;3r   -> 0,3   -> 1,3  -> 1,3,true)
@@ -1257,7 +1214,8 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
     THROW_IF_FAILED(SizeTToShort(topMargin, &actualTop));
     THROW_IF_FAILED(SizeTToShort(bottomMargin, &actualBottom));
 
-    const SHORT screenHeight = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+    const auto viewport = _pConApi->GetViewport();
+    const SHORT screenHeight = viewport.Bottom - viewport.Top;
     // The default top margin is line 1
     if (actualTop == 0)
     {
@@ -1426,12 +1384,9 @@ bool AdaptDispatch::UseMainScreenBuffer()
 // - True.
 bool AdaptDispatch::HorizontalTabSet()
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    const auto width = csbiex.dwSize.X;
-    const auto column = csbiex.dwCursorPosition.X;
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto width = textBuffer.GetSize().Dimensions().X;
+    const auto column = textBuffer.GetCursor().GetPosition().X;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = true;
@@ -1450,13 +1405,10 @@ bool AdaptDispatch::HorizontalTabSet()
 // - True.
 bool AdaptDispatch::ForwardTab(const size_t numTabs)
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    const auto width = csbiex.dwSize.X;
-    const auto row = csbiex.dwCursorPosition.Y;
-    auto column = csbiex.dwCursorPosition.X;
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto width = textBuffer.GetSize().Dimensions().X;
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    auto column = textBuffer.GetCursor().GetPosition().X;
     auto tabsPerformed = 0u;
 
     _InitTabStopsForWidth(width);
@@ -1482,13 +1434,10 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
 // - True.
 bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    const auto width = csbiex.dwSize.X;
-    const auto row = csbiex.dwCursorPosition.Y;
-    auto column = csbiex.dwCursorPosition.X;
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto width = textBuffer.GetSize().Dimensions().X;
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    auto column = textBuffer.GetCursor().GetPosition().X;
     auto tabsPerformed = 0u;
 
     _InitTabStopsForWidth(width);
@@ -1536,12 +1485,9 @@ bool AdaptDispatch::TabClear(const DispatchTypes::TabClearType clearType)
 // - <none>
 void AdaptDispatch::_ClearSingleTabStop()
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    const auto width = csbiex.dwSize.X;
-    const auto column = csbiex.dwCursorPosition.X;
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto width = textBuffer.GetSize().Dimensions().X;
+    const auto column = textBuffer.GetCursor().GetPosition().X;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = false;
@@ -1846,19 +1792,15 @@ bool AdaptDispatch::HardReset()
 // - True.
 bool AdaptDispatch::ScreenAlignmentPattern()
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
+    const auto viewport = _pConApi->GetViewport();
+    const auto bufferWidth = _pConApi->GetTextBuffer().GetSize().Dimensions().X;
 
     // Fill the screen with the letter E using the default attributes.
-    auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
-    const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
+    auto fillPosition = COORD{ 0, viewport.Top };
+    const auto fillLength = (viewport.Bottom - viewport.Top) * bufferWidth;
     _pConApi->FillRegion(fillPosition, fillLength, L'E', false);
     // Reset the line rendition for all of these rows.
-    _pConApi->ResetLineRenditionRange(csbiex.srWindow.Top, csbiex.srWindow.Bottom);
+    _pConApi->ResetLineRenditionRange(viewport.Top, viewport.Bottom);
     // Reset the meta/extended attributes (but leave the colors unchanged).
     TextAttribute attr = _pConApi->GetTextAttributes();
     attr.SetStandardErase();
@@ -1887,17 +1829,12 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // - <none>
 void AdaptDispatch::_EraseScrollback()
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(csbiex);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    _pConApi->MoveToBottom();
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    const SMALL_RECT screen = csbiex.srWindow;
+    const SMALL_RECT screen = _pConApi->GetViewport();
     const SHORT height = screen.Bottom - screen.Top;
     THROW_HR_IF(E_UNEXPECTED, height <= 0);
-    const COORD cursor = csbiex.dwCursorPosition;
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize().Dimensions();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
     // Rectangle to cut out of the existing buffer
     // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
@@ -1913,22 +1850,22 @@ void AdaptDispatch::_EraseScrollback()
     // this case we need to use the default attributes, hence standardFillAttrs is false.
     _pConApi->ScrollRegion(scroll, std::nullopt, destination, false);
     // Clear everything after the viewport.
-    const DWORD totalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - height);
+    const DWORD totalAreaBelow = bufferSize.X * (bufferSize.Y - height);
     const COORD coordBelowStartPosition = { 0, height };
     // Again we need to use the default attributes, hence standardFillAttrs is false.
     _pConApi->FillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
     // Also reset the line rendition for all of the cleared rows.
-    _pConApi->ResetLineRenditionRange(height, csbiex.dwSize.Y);
+    _pConApi->ResetLineRenditionRange(height, bufferSize.Y);
     // Move the viewport (CAN'T be done in one call with SetConsolescreenBufferInfoEx, because legacy)
     SMALL_RECT newViewport;
     newViewport.Left = screen.Left;
     newViewport.Top = 0;
-    // SetWindowInfo uses an inclusive rect, while GetConsolescreenBufferInfo is exclusive
+    // SetWindowInfo uses an inclusive rect, while the screen rect is exclusive
     newViewport.Right = screen.Right - 1;
     newViewport.Bottom = height - 1;
     _pConApi->SetWindowInfo(true, newViewport);
     // Move the cursor to the same relative location.
-    const COORD newcursor = { cursor.X, cursor.Y - screen.Top };
+    const COORD newcursor = { cursorPosition.X, cursorPosition.Y - screen.Top };
     _pConApi->SetCursorPosition(newcursor);
 }
 
@@ -2429,10 +2366,6 @@ void AdaptDispatch::_ReportDECSTBMSetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
     auto marginTop = _scrollMargins.Top + 1;
     auto marginBottom = _scrollMargins.Bottom + 1;
     // If the margin top is greater than or equal to the bottom, then the
@@ -2440,8 +2373,9 @@ void AdaptDispatch::_ReportDECSTBMSetting() const
     // of the window for the margin range.
     if (marginTop >= marginBottom)
     {
+        const auto viewport = _pConApi->GetViewport();
         marginTop = 1;
-        marginBottom = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+        marginBottom = viewport.Bottom - viewport.Top;
     }
     fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop, marginBottom);
 
