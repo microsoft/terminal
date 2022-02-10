@@ -58,6 +58,28 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 }
 
 // Routine Description:
+// - Retrieves the text buffer for the active output buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the TextBuffer instance.
+TextBuffer& ConhostInternalGetSet::GetTextBuffer()
+{
+    return _io.GetActiveOutputBuffer().GetTextBuffer();
+}
+
+// Routine Description:
+// - Retrieves the virtual viewport of the active output buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - the exclusive coordinates of the viewport.
+SMALL_RECT ConhostInternalGetSet::GetViewport() const
+{
+    return _io.GetActiveOutputBuffer().GetVirtualViewport().ToExclusive();
+}
+
+// Routine Description:
 // - Connects the GetConsoleScreenBufferInfoEx API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - screenBufferInfo - Structure to hold screen buffer information like the public API call.

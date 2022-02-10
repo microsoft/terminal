@@ -19,7 +19,7 @@ Author(s):
 #include "../parser/stateMachine.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 #include "../../buffer/out/LineRendition.hpp"
-#include "../../buffer/out/TextAttribute.hpp"
+#include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/RenderSettings.hpp"
 #include "../../inc/conattrs.hpp"
 
@@ -36,6 +36,9 @@ namespace Microsoft::Console::VirtualTerminal
         virtual ~ConGetSet() = default;
 
         virtual void PrintString(const std::wstring_view string) = 0;
+
+        virtual TextBuffer& GetTextBuffer() = 0;
+        virtual SMALL_RECT GetViewport() const = 0;
 
         virtual void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
         virtual void SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) = 0;

@@ -31,6 +31,9 @@ public:
 
     void PrintString(const std::wstring_view string) override;
 
+    TextBuffer& GetTextBuffer() override;
+    SMALL_RECT GetViewport() const override;
+
     void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const override;
     void SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) override;
 
