@@ -529,7 +529,18 @@ jobs:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       inputs:
         sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed\WindowsTerminal.app
-        description: Windows Terminal pre-install application
+        description: VPack for the Windows Terminal Application
         pushPkgName: WindowsTerminal.app
-        owner: condev
+        owner: conhost
+    - task: PublishPipelineArtifact@1
+      displayName: 'Copy VPack Manifest to Drop'
+      inputs:
+        targetPath: $(XES_VPACKMANIFESTDIRECTORY)
+        artifactName: VPackManifest
+    - task: PkgESFCIBGit@12
+      displayName: 'Submit VPack Manifest to Windows'
+      inputs:
+        configPath: '$(Build.SourcesDirectory)\build\config\GitCheckin.json'
+        artifactsDirectory: $(XES_VPACKMANIFESTDIRECTORY)
+        prTimeOut: 5
 ...
