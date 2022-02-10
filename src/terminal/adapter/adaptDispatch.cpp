@@ -381,9 +381,7 @@ bool AdaptDispatch::CursorRestoreState()
 // - True.
 bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 {
-    // This uses a private API instead of the public one, because the public API
-    //      will set the cursor shape back to legacy.
-    _pConApi->SetCursorVisibility(fIsVisible);
+    _pConApi->GetTextBuffer().GetCursor().SetIsVisible(fIsVisible);
     return true;
 }
 
@@ -656,7 +654,7 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 // - True.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    _pConApi->SetCurrentLineRendition(rendition);
+    _pConApi->GetTextBuffer().SetCurrentLineRendition(rendition);
     return true;
 }
 
@@ -1090,7 +1088,18 @@ bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 {
-    return _pConApi->EnableCursorBlinking(enable);
+    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    cursor.SetBlinkingAllowed(enable);
+
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    cursor.SetIsOn(true);
+
+    return !_pConApi->IsConsolePty();
 }
 
 // Routine Description:
@@ -1793,16 +1802,17 @@ bool AdaptDispatch::HardReset()
 bool AdaptDispatch::ScreenAlignmentPattern()
 {
     const auto viewport = _pConApi->GetViewport();
-    const auto bufferWidth = _pConApi->GetTextBuffer().GetSize().Dimensions().X;
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Dimensions().X;
 
     // Fill the screen with the letter E using the default attributes.
     auto fillPosition = COORD{ 0, viewport.Top };
     const auto fillLength = (viewport.Bottom - viewport.Top) * bufferWidth;
     _pConApi->FillRegion(fillPosition, fillLength, L'E', false);
     // Reset the line rendition for all of these rows.
-    _pConApi->ResetLineRenditionRange(viewport.Top, viewport.Bottom);
+    textBuffer.ResetLineRenditionRange(viewport.Top, viewport.Bottom);
     // Reset the meta/extended attributes (but leave the colors unchanged).
-    TextAttribute attr = _pConApi->GetTextAttributes();
+    auto attr = textBuffer.GetCurrentAttributes();
     attr.SetStandardErase();
     _pConApi->SetTextAttributes(attr);
     // Reset the origin mode to absolute.
@@ -1832,7 +1842,7 @@ void AdaptDispatch::_EraseScrollback()
     const SMALL_RECT screen = _pConApi->GetViewport();
     const SHORT height = screen.Bottom - screen.Top;
     THROW_HR_IF(E_UNEXPECTED, height <= 0);
-    const auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& textBuffer = _pConApi->GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
@@ -1855,7 +1865,7 @@ void AdaptDispatch::_EraseScrollback()
     // Again we need to use the default attributes, hence standardFillAttrs is false.
     _pConApi->FillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
     // Also reset the line rendition for all of the cleared rows.
-    _pConApi->ResetLineRenditionRange(height, bufferSize.Y);
+    textBuffer.ResetLineRenditionRange(height, bufferSize.Y);
     // Move the viewport (CAN'T be done in one call with SetConsolescreenBufferInfoEx, because legacy)
     SMALL_RECT newViewport;
     newViewport.Left = screen.Left;
@@ -2028,8 +2038,10 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         return false;
     }
 
-    _pConApi->SetCursorStyle(actualType);
-    _pConApi->EnableCursorBlinking(fEnableBlinking);
+    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    cursor.SetType(actualType);
+    cursor.SetBlinkingAllowed(fEnableBlinking);
+    cursor.SetIsOn(true);
 
     // If we're a conpty, always return false, so that this cursor state will be
     // sent to the connected terminal
@@ -2135,7 +2147,12 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 // - true
 bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
-    _pConApi->AddHyperlink(uri, params);
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto attr = textBuffer.GetCurrentAttributes();
+    const auto id = textBuffer.GetHyperlinkId(uri, params);
+    attr.SetHyperlinkId(id);
+    textBuffer.SetCurrentAttributes(attr);
+    textBuffer.AddHyperlinkToMap(uri, id);
     return true;
 }
 
@@ -2145,7 +2162,10 @@ bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
 // - true
 bool AdaptDispatch::EndHyperlink()
 {
-    _pConApi->EndHyperlink();
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto attr = textBuffer.GetCurrentAttributes();
+    attr.SetHyperlinkId(0);
+    textBuffer.SetCurrentAttributes(attr);
     return true;
 }
 
@@ -2302,7 +2322,7 @@ void AdaptDispatch::_ReportSGRSetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r0"sv);
 
-    const auto attr = _pConApi->GetTextAttributes();
+    const auto attr = _pConApi->GetTextBuffer().GetCurrentAttributes();
     // For each boolean attribute that is set, we add the appropriate
     // parameter value to the response string.
     const auto addAttribute = [&](const auto& parameter, const auto enabled) {
