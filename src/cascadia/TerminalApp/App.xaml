@@ -54,20 +54,36 @@
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!--  Define resources for Dark mode here  -->
-                            <StaticResource x:Key="TabViewBackground"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                            <!-- <SolidColorBrush x:Key="TabViewBackground"
+                                            Color="{ThemeResource SolidBackgroundFillColorBase}" />-->
+                            <!-- <SolidColorBrush x:Key="TabViewBackground"
+                                            Color="{StaticResource SolidBackgroundFillColorBase}" />-->
+                            <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#202020" />
 
-                            <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+
+                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
+                                             Color="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+
+
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!--  Define resources for Light mode here  -->
-                            <StaticResource x:Key="TabViewBackground"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                            <!-- <SolidColorBrush x:Key="TabViewBackground"
+                                            Color="{ThemeResource SolidBackgroundFillColorBase}" />-->
+                            <!-- <SolidColorBrush x:Key="TabViewBackground"
+                                            Color="{StaticResource SolidBackgroundFillColorBase}" />-->
+                            <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#F3F3F3" />
 
-                            <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+
+                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
+                                             Color="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+
+
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

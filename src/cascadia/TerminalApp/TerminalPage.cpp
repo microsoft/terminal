@@ -156,7 +156,6 @@ namespace winrt::TerminalApp::implementation
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const auto res = Application::Current().Resources();
-
             const auto lightKey = winrt::box_value(L"Light");
             const auto darkKey = winrt::box_value(L"Dark");
             const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
