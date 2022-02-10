@@ -222,7 +222,6 @@ public:
     void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
 
     void UpdateBottom();
-    void MoveToBottom();
 
     FontInfo& GetCurrentFont() noexcept;
     const FontInfo& GetCurrentFont() const noexcept;

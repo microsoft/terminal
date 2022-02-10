@@ -39,12 +39,7 @@ public:
 
     void SetCursorPosition(const COORD position) override;
 
-    TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
-
-    void SetCurrentLineRendition(const LineRendition lineRendition) override;
-    void ResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
-    SHORT GetLineWidth(const size_t row) const override;
 
     void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
 
@@ -56,9 +51,6 @@ public:
     void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
 
     void SetAutoWrapMode(const bool wrapAtEOL) override;
-
-    void SetCursorVisibility(const bool visible) override;
-    bool EnableCursorBlinking(const bool enable) override;
 
     void SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
 
@@ -78,7 +70,6 @@ public:
     void ClearBuffer() override;
 
     CursorType GetUserDefaultCursorStyle() const override;
-    void SetCursorStyle(CursorType const style) override;
 
     void RefreshWindow() override;
     bool ResizeWindow(const size_t width, const size_t height) override;
@@ -93,8 +84,6 @@ public:
 
     void DeleteLines(const size_t count) override;
     void InsertLines(const size_t count) override;
-
-    void MoveToBottom() override;
 
     COLORREF GetColorTableEntry(const size_t tableIndex) const override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
@@ -111,9 +100,6 @@ public:
                       const bool standardFillAttrs) override;
 
     bool IsVtInputEnabled() const override;
-
-    void AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
-    void EndHyperlink() const override;
 
     void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                         const SIZE cellSize,

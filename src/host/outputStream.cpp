@@ -115,17 +115,6 @@ void ConhostInternalGetSet::SetCursorPosition(const COORD position)
 }
 
 // Method Description:
-// - Retrieves the current TextAttribute of the active screen buffer.
-// Arguments:
-// - <none>
-// Return Value:
-// - the TextAttribute value.
-TextAttribute ConhostInternalGetSet::GetTextAttributes() const
-{
-    return _io.GetActiveOutputBuffer().GetAttributes();
-}
-
-// Method Description:
 // - Sets the current TextAttribute of the active screen buffer. Text
 //   written to this buffer will be written with these attributes.
 // Arguments:
@@ -135,46 +124,6 @@ TextAttribute ConhostInternalGetSet::GetTextAttributes() const
 void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 {
     _io.GetActiveOutputBuffer().SetAttributes(attrs);
-}
-
-// Method Description:
-// - Sets the line rendition attribute for the current row of the active screen
-//   buffer. This controls how character cells are scaled when the row is rendered.
-// Arguments:
-// - lineRendition: The new LineRendition attribute to use
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetCurrentLineRendition(const LineRendition lineRendition)
-{
-    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
-    textBuffer.SetCurrentLineRendition(lineRendition);
-}
-
-// Method Description:
-// - Resets the line rendition attribute to SingleWidth for a specified range
-//   of row numbers.
-// Arguments:
-// - startRow: The row number of first line to be modified
-// - endRow: The row number following the last line to be modified
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
-{
-    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
-    textBuffer.ResetLineRenditionRange(startRow, endRow);
-}
-
-// Method Description:
-// - Returns the number of cells that will fit on the specified row when
-//   rendered with its current line rendition.
-// Arguments:
-// - row: The row number of the line to measure
-// Return Value:
-// - the number of cells that will fit on the line
-SHORT ConhostInternalGetSet::GetLineWidth(const size_t row) const
-{
-    const auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
-    return textBuffer.GetLineWidth(row);
 }
 
 // Routine Description:
@@ -286,42 +235,6 @@ void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 {
     auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
     WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
-}
-
-// Routine Description:
-// - Makes the cursor visible or hidden. Does not modify blinking state.
-// Arguments:
-// - visible - set to true to make the cursor visible, false to hide.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetCursorVisibility(const bool visible)
-{
-    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
-    textBuffer.GetCursor().SetIsVisible(visible);
-}
-
-// Routine Description:
-// - Enables or disables the cursor blinking.
-// Arguments:
-// - fEnable - set to true to enable blinking, false to disable
-// Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::EnableCursorBlinking(const bool fEnable)
-{
-    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
-    textBuffer.GetCursor().SetBlinkingAllowed(fEnable);
-
-    // GH#2642 - From what we've gathered from other terminals, when blinking is
-    // disabled, the cursor should remain On always, and have the visibility
-    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
-    // to disable blinking, the cursor stays stuck On. At this point, only the
-    // cursor visibility property controls whether the user can see it or not.
-    // (Yes, the cursor can be On and NOT Visible)
-    textBuffer.GetCursor().SetIsOn(true);
-
-    // If we are connected to a pty, return that we could not handle this
-    // so that the VT sequence gets flushed to terminal.
-    return !IsConsolePty();
 }
 
 // Routine Description:
@@ -515,17 +428,6 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 }
 
 // Routine Description:
-// - Sets the current cursor style.
-// Arguments:
-// - style: The style of cursor to change the cursor to.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetCursorStyle(const CursorType style)
-{
-    _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetType(style);
-}
-
-// Routine Description:
 // - Forces the renderer to repaint the screen. If the input screen buffer is
 //      not the active one, then just do nothing. We only want to redraw the
 //      screen buffer that requested the repaint, and switching screen buffers
@@ -715,18 +617,6 @@ void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
 }
 
 // Method Description:
-// - Snaps the screen buffer's viewport to the "virtual bottom", the last place
-//      the viewport was before the user scrolled it (with the mouse or scrollbar)
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::MoveToBottom()
-{
-    _io.GetActiveOutputBuffer().MoveToBottom();
-}
-
-// Method Description:
 // - Retrieves the value in the colortable at the specified index.
 // Arguments:
 // - tableIndex: the index of the color table to retrieve.
@@ -869,31 +759,6 @@ void ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
 bool ConhostInternalGetSet::IsVtInputEnabled() const
 {
     return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
-}
-
-// Method Description:
-// - Updates the buffer's current text attributes depending on whether we are
-//   starting/ending a hyperlink
-// Arguments:
-// - The hyperlink URI
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto attr = screenInfo.GetAttributes();
-    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(uri, params);
-    attr.SetHyperlinkId(id);
-    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
-    screenInfo.GetTextBuffer().AddHyperlinkToMap(uri, id);
-}
-
-void ConhostInternalGetSet::EndHyperlink() const
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto attr = screenInfo.GetAttributes();
-    attr.SetHyperlinkId(0);
-    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
 }
 
 // Routine Description:

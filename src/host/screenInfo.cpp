@@ -2633,24 +2633,6 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
 }
 
 // Method Description:
-// - Moves the viewport to where we last believed the "virtual bottom" was. This
-//      emulates linux terminal behavior, where there's no buffer, only a
-//      viewport. This is called by WriteChars, on output from an application in
-//      VT mode, before the output is processed by the state machine.
-//   This ensures that if a user scrolls around in the buffer, and a client
-//      application uses VT to control the cursor/buffer, those commands are
-//      still processed relative to the coordinates before the user scrolled the buffer.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::MoveToBottom()
-{
-    const auto virtualView = GetVirtualViewport();
-    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, virtualView.Origin(), true));
-}
-
-// Method Description:
 // - Returns the "virtual" Viewport - the viewport with its bottom at
 //      `_virtualBottom`. For VT operations, this is essentially the mutable
 //      section of the buffer.
