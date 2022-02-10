@@ -16,7 +16,7 @@
         <maxversiontested Id="10.0.18362.0"/>
 
         <!-- You apparently are expected to include all the maxversiontested
-        entries seperately. They are treated like an array. This one turns on Segoe
+        entries separately. They are treated like an array. This one turns on Segoe
         UI Variable, GH #12452 -->
         <maxversiontested Id="10.0.22000.0"/>
         <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
