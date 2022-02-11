@@ -964,8 +964,16 @@
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
-    <value>Unfocused Appearance</value>
+    <value>Unfocused appearance</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
+  </data>
+  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
+    <value>Add</value>
+    <comment>Button label that adds an unfocused appearance for this profile.</comment>
+  </data>
+  <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Button label that deletes the unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
     <value>Enable acrylic</value>
