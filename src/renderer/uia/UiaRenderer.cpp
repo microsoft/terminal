@@ -239,8 +239,7 @@ CATCH_LOG_RETURN_HR(E_FAIL);
     // so present can work on the copy while another
     // thread might start filling the next "frame"
     // worth of text data.
-    _queuedOutput = _newOutput;
-    _newOutput.clear();
+    _queuedOutput = std::move(_newOutput);
     return S_OK;
 }
 
