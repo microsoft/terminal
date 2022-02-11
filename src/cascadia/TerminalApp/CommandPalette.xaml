@@ -145,7 +145,7 @@
                     <!--  xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_  -->
                     <FontIcon Grid.Column="2"
                               HorizontalAlignment="Right"
-                              FontFamily="Segoe MDL2 Assets"
+                              FontFamily="{ThemeResource SymbolThemeFontFamily}"
                               Glyph="&#xE70E;">
 
                         <FontIcon.RenderTransform>
@@ -199,20 +199,20 @@
                                 Orientation="Horizontal">
 
                         <FontIcon Margin="0,0,8,0"
-                                  FontFamily="Segoe MDL2 Assets"
+                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                   FontSize="12"
                                   Glyph="&#xEA8F;"
                                   Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).BellIndicator, Mode=OneWay}" />
 
                         <FontIcon Margin="0,0,8,0"
-                                  FontFamily="Segoe MDL2 Assets"
+                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                   FontSize="12"
                                   Glyph="&#xE8A3;"
                                   Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsPaneZoomed, Mode=OneWay}" />
 
                         <FontIcon x:Name="HeaderLockIcon"
                                   Margin="0,0,8,0"
-                                  FontFamily="Segoe MDL2 Assets"
+                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                   FontSize="12"
                                   Glyph="&#xE72E;"
                                   Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsReadOnlyActive, Mode=OneWay}" />
@@ -445,7 +445,7 @@
                         Background="Transparent"
                         Click="_moveBackButtonClicked"
                         ClickMode="Press">
-                    <FontIcon FontFamily="Segoe MDL2 Assets"
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                               FontSize="12"
                               Glyph="&#xE76b;" />
                 </Button>

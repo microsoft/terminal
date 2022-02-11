@@ -171,7 +171,7 @@
                                            Margin="0,0,-16,0"
                                            HorizontalAlignment="Right"
                                            VerticalAlignment="Center"
-                                           FontFamily="Segoe UI, Segoe MDL2 Assets"
+                                           FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
                                            Text="{TemplateBinding CurrentValue}" />
                             </Grid>

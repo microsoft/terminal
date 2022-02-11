@@ -90,7 +90,7 @@ namespace winrt::TerminalApp::implementation
         // Close
         Controls::MenuFlyoutItem closeTabMenuItem;
         Controls::FontIcon closeSymbol;
-        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
         closeSymbol.Glyph(L"\xE711");
 
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
