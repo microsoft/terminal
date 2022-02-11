@@ -230,7 +230,7 @@ def cloneGraph(oldSource, newSource, visited):
         for old in oldSource.adj:
 
             # Below check is for backtracking, so new
-            # nodes don't get initialized everytime
+            # nodes don't get initialized every time
             if clone is None or(clone is not None and clone.key != old.key):
                 clone = Node(old.key, [])
             newSource.adj.append(clone)

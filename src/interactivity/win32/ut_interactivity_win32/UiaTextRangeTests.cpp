@@ -1667,7 +1667,7 @@ class UiaTextRangeTests
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Single, result.lVal);
 
-            // Double underline (double supercedes single)
+            // Double underline (double supersedes single)
             attr.SetDoublyUnderlined(true);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));

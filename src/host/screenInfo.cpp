@@ -2711,7 +2711,7 @@ const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 // - Gets the desired font of the screen buffer. If we try loading this font and
 //      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
 //      We store this separately, so that if we need to reload the font, we can
-//      try again with our prefered font info (in the desired font info) instead
+//      try again with our preferred font info (in the desired font info) instead
 //      of re-using the looked up value from before.
 // Arguments:
 // - <none>

@@ -4,7 +4,7 @@
 // This test class creates an in-proc conpty host as well as a Terminal, to
 // validate that strings written to the conpty create the same response on the
 // terminal end. Tests can be written that validate both the contents of the
-// host buffer as well as the terminal buffer. Everytime that
+// host buffer as well as the terminal buffer. Every time that
 // `renderer.PaintFrame()` is called, the tests will validate the expected
 // output, and then flush the output of the VtEngine straight to the Terminal.
 
@@ -392,7 +392,7 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
 void ConptyRoundtripTests::WriteAFewSimpleLines()
 {
     Log::Comment(NoThrowString().Format(
-        L"Write more lines of outout. We should use \r\n to move the cursor"));
+        L"Write more lines of output. We should use \r\n to move the cursor"));
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -3047,7 +3047,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         // Line 2 chars: ____#_________#___ (break)
         // Line 2 attrs: BBBBBBBBBBBBBBDDDD (First spacesToPrint+5 are blue BG, then default attrs)
         //                    [<----->]
-        //                      This number of spaces controled by spacesToPrint
+        //                      This number of spaces controlled by spacesToPrint
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");

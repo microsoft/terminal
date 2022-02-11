@@ -389,7 +389,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 }
 
 // Method Description:
-// - Helper function that calculates a singe dimension value, given initialWindow and nonClientSizes
+// - Helper function that calculates a single dimension value, given initialWindow and nonClientSizes
 // Arguments:
 // - isWidth: parameter to pass to SnapDimensionCallback.
 //   True if the method is invoked for width computation, false if for height.
@@ -1332,7 +1332,7 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
-    // GetForegroundWindow afer the SetWindowPlacement call, _we_ will be the
+    // GetForegroundWindow after the SetWindowPlacement call, _we_ will be the
     // foreground window.
     const auto oldForegroundWindow = GetForegroundWindow();
 
@@ -1389,7 +1389,7 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
-    // GetForegroundWindow afer the SetWindowPlacement/ShowWindow call, _we_
+    // GetForegroundWindow after the SetWindowPlacement/ShowWindow call, _we_
     // will be the foreground window.
     const auto oldForegroundWindow = GetForegroundWindow();
 
