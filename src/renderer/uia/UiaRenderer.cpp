@@ -293,9 +293,9 @@ void UiaEngine::WaitUntilCanRender() noexcept
     {
         try
         {
-            // The speech API (SAPI) is limited to 1000 characters at a time.
+            // The speech API is limited to 1000 characters at a time.
             // Break up the output into 1000 character chunks to ensure
-            // the output isn't cut off by SAPI.
+            // the output isn't cut off.
             static const size_t sapiLimit{ 1000 };
             while (_queuedOutput.size() > sapiLimit)
             {
