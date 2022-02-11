@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../inc/RenderEngineBase.hpp"
+#include "../inc/FontResource.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -51,7 +52,7 @@ namespace Microsoft::Console::Render
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines,
                                                    const COLORREF color,
                                                    const size_t cchLine,
                                                    const COORD coordTarget) noexcept override;
@@ -60,10 +61,15 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
+                                                   const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                          _Out_ FontInfo& FontInfo) noexcept override;
+        [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                             const SIZE cellSize,
+                                             const size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
@@ -71,7 +77,7 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
@@ -87,7 +93,7 @@ namespace Microsoft::Console::Render
 
         bool _fPaintStarted;
 
-        til::rectangle _invalidCharacters;
+        til::rect _invalidCharacters;
         PAINTSTRUCT _psInvalidData;
         HDC _hdcMemoryContext;
         bool _isTrueTypeFont;
@@ -95,6 +101,7 @@ namespace Microsoft::Console::Render
         HFONT _hfont;
         HFONT _hfontItalic;
         TEXTMETRICW _tmFontMetrics;
+        FontResource _softFont;
 
         static const size_t s_cPolyTextCache = 80;
         POLYTEXTW _pPolyText[s_cPolyTextCache];
@@ -130,7 +137,14 @@ namespace Microsoft::Console::Render
 
         COLORREF _lastFg;
         COLORREF _lastBg;
-        bool _lastFontItalic;
+
+        enum class FontType : size_t
+        {
+            Default,
+            Italic,
+            Soft
+        };
+        FontType _lastFontType;
 
         XFORM _currentLineTransform;
         LineRendition _currentLineRendition;

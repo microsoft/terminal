@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
 
@@ -43,6 +44,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });
         }
+        if (!_CurrentValueProperty)
+        {
+            _CurrentValueProperty =
+                DependencyProperty::Register(
+                    L"CurrentValue",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
         if (!_HasSettingValueProperty)
         {
             _HasSettingValueProperty =
@@ -57,9 +67,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _SettingOverrideSourceProperty =
                 DependencyProperty::Register(
                     L"SettingOverrideSource",
-                    xaml_typename<bool>(),
+                    xaml_typename<IInspectable>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ nullptr });
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
         }
     }
 
@@ -135,6 +145,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         }
+
+        if (HelpText().empty())
+        {
+            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            {
+                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
+                {
+                    textBlock.Visibility(Visibility::Collapsed);
+                }
+            }
+        }
     }
 
     // Method Description:
@@ -152,17 +173,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // We want to be smart about showing the override system.
                     // Don't just show it if the user explicitly set the setting.
                     // If the tooltip is empty, we'll hide the entire override system.
-                    hstring tooltip{};
 
                     const auto& settingSrc{ SettingOverrideSource() };
-                    if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
-                    {
-                        tooltip = _GenerateOverrideMessage(profile);
-                    }
-                    else if (const auto& appearanceConfig{ settingSrc.try_as<Model::AppearanceConfig>() })
-                    {
-                        tooltip = _GenerateOverrideMessage(appearanceConfig.SourceProfile());
-                    }
+                    const auto tooltip{ _GenerateOverrideMessage(settingSrc) };
 
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
                     button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
@@ -182,35 +195,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - profile: the profile that defines the setting (aka SettingOverrideSource)
     // Return Value:
     // - text specifying where the setting was defined. If empty, we don't want to show the system.
-    hstring SettingContainer::_GenerateOverrideMessage(const Model::Profile& profile)
+    hstring SettingContainer::_GenerateOverrideMessage(const IInspectable& settingOrigin)
     {
-        const auto originTag{ profile.Origin() };
-        if (originTag == Model::OriginTag::InBox)
-        {
-            // in-box profile
-            return {};
-        }
-        else if (originTag == Model::OriginTag::Generated)
-        {
-            // from a dynamic profile generator
-            return {};
-        }
-        else if (originTag == Model::OriginTag::Fragment)
-        {
-            // from a fragment extension
-            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, profile.Source()) };
-        }
-        else
-        {
-            // base layer
-            // TODO GH#3818: When we add profile inheritance as a setting,
-            //               we'll need an extra conditional check to see if this
-            //               is the base layer or some other profile
+        // We only get here if the user had an override in place.
+        Model::OriginTag originTag{ Model::OriginTag::None };
+        winrt::hstring source;
 
-            // GH#9539: Base Layer has been removed from the Settings UI.
-            //          In the event that the Base Layer comes back,
-            //          return RS_(L"SettingContainer_OverrideMessageBaseLayer") instead
-            return {};
+        if (const auto& profile{ settingOrigin.try_as<Model::Profile>() })
+        {
+            source = profile.Source();
+            originTag = profile.Origin();
         }
+        else if (const auto& appearanceConfig{ settingOrigin.try_as<Model::AppearanceConfig>() })
+        {
+            const auto profile = appearanceConfig.SourceProfile();
+            source = profile.Source();
+            originTag = profile.Origin();
+        }
+
+        // We will display arrows for all origins, and informative tooltips for Fragments and Generated
+        if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
+        {
+            // from a fragment extension or generated profile
+            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
+        }
+        return RS_(L"SettingContainer_OverrideMessageBaseLayer");
     }
 }

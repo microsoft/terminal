@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32.SafeHandles;
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.ComponentModel;
 using static GUIConsole.ConPTY.Native.PseudoConsoleApi;

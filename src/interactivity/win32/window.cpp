@@ -9,17 +9,14 @@
 #include "window.hpp"
 #include "windowio.hpp"
 #include "windowdpiapi.hpp"
-#include "windowmetrics.hpp"
+#include "WindowMetrics.hpp"
 
 #include "../../inc/conint.h"
 
 #include "../../host/globals.h"
 #include "../../host/dbcs.h"
-#include "../../host/getset.h"
 #include "../../host/misc.h"
-#include "../../host/_output.h"
 #include "../../host/output.h"
-#include "../../host/renderData.hpp"
 #include "../../host/scrolling.hpp"
 #include "../../host/srvinit.h"
 #include "../../host/stream.h"
@@ -29,11 +26,11 @@
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/gdi/gdirenderer.hpp"
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_ATLASENGINE_ENABLED
+#include "../../renderer/atlas/AtlasEngine.h"
+#endif
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
-#else
-// Forward-declare this so we don't blow up later.
-struct DxEngine;
 #endif
 
 #include "../inc/ServiceLocator.hpp"
@@ -212,14 +209,20 @@ void Window::_UpdateSystemMetrics() const
     // Ensure we have appropriate system metrics before we start constructing the window.
     _UpdateSystemMetrics();
 
-    const bool useDx = pSettings->GetUseDx();
+    const auto useDx = pSettings->GetUseDx();
     GdiEngine* pGdiEngine = nullptr;
-    [[maybe_unused]] DxEngine* pDxEngine = nullptr;
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+    DxEngine* pDxEngine = nullptr;
+#endif
+#if TIL_FEATURE_ATLASENGINE_ENABLED
+    AtlasEngine* pAtlasEngine = nullptr;
+#endif
     try
     {
-#ifndef __INSIDE_WINDOWS
-        if (useDx)
+        switch (useDx)
         {
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+        case UseDx::DxEngine:
             pDxEngine = new DxEngine();
             // TODO: MSFT:21255595 make this less gross
             // Manually set the Dx Engine to Hwnd mode. When we're trying to
@@ -228,12 +231,19 @@ void Window::_UpdateSystemMetrics() const
             // math in the hwnd mode, not the Composition mode.
             THROW_IF_FAILED(pDxEngine->SetHwnd(nullptr));
             g.pRender->AddRenderEngine(pDxEngine);
-        }
-        else
+            break;
 #endif
-        {
+#if TIL_FEATURE_ATLASENGINE_ENABLED
+        case UseDx::AtlasEngine:
+            pAtlasEngine = new AtlasEngine();
+            g.pRender->AddRenderEngine(pAtlasEngine);
+            break;
+#endif
+        default:
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
+            break;
+#pragma warning(suppress : 4065)
         }
     }
     catch (...)
@@ -324,8 +334,8 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
-#ifndef __INSIDE_WINDOWS
-            if (useDx)
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+            if (pDxEngine)
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
 
@@ -333,6 +343,13 @@ void Window::_UpdateSystemMetrics() const
                 {
                     status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
                 }
+            }
+            else
+#endif
+#if TIL_FEATURE_ATLASENGINE_ENABLED
+                if (pAtlasEngine)
+            {
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pAtlasEngine->SetHwnd(hWnd))));
             }
             else
 #endif

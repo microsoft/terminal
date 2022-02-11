@@ -9,7 +9,7 @@
             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
             HorizontalAlignment="Left"
             VerticalAlignment="Top"
-            d:DesignHeight="36"
+            d:DesignHeight="40"
             d:DesignWidth="400"
             Background="Transparent"
             Orientation="Horizontal"
@@ -124,8 +124,9 @@
                 tabs will be flush with the top of the window. See GH#2541 for
                 details.
             -->
-            <x:Double x:Key="CaptionButtonHeightWindowed">36.0</x:Double>
-            <x:Double x:Key="CaptionButtonHeightMaximized">32.0</x:Double>
+            <x:Double x:Key="CaptionButtonHeightWindowed">40.0</x:Double>
+            <!--  32 + 1 to compensate for GH#10746  -->
+            <x:Double x:Key="CaptionButtonHeightMaximized">33.0</x:Double>
 
             <Style x:Key="CaptionButton"
                    TargetType="Button">
@@ -219,7 +220,7 @@
     </StackPanel.Resources>
 
     <Button x:Name="MinimizeButton"
-            x:Uid="WindowMinimizeButton"
+            x:Uid="MinimizeButton"
             Width="46.0"
             Height="{StaticResource CaptionButtonHeightWindowed}"
             MinWidth="46.0"
@@ -231,9 +232,14 @@
                 <x:String x:Key="CaptionButtonPath">M 0 0 H 10</x:String>
             </ResourceDictionary>
         </Button.Resources>
+        <ToolTipService.ToolTip>
+            <ToolTip>
+                <TextBlock x:Uid="WindowMinimizeButtonToolTip" />
+            </ToolTip>
+        </ToolTipService.ToolTip>
     </Button>
     <Button x:Name="MaximizeButton"
-            x:Uid="WindowMaximizeButton"
+            x:Uid="MaximizeButton"
             Width="46.0"
             Height="{StaticResource CaptionButtonHeightWindowed}"
             MinWidth="46.0"
@@ -255,7 +261,7 @@
         </ToolTipService.ToolTip>
     </Button>
     <Button x:Name="CloseButton"
-            x:Uid="WindowCloseButton"
+            x:Uid="CloseButton"
             Width="46.0"
             Height="{StaticResource CaptionButtonHeightWindowed}"
             MinWidth="46.0"
@@ -308,5 +314,10 @@
                 <x:String x:Key="CaptionButtonPath">M 0 0 L 10 10 M 10 0 L 0 10</x:String>
             </ResourceDictionary>
         </Button.Resources>
+        <ToolTipService.ToolTip>
+            <ToolTip>
+                <TextBlock x:Uid="WindowCloseButtonToolTip" />
+            </ToolTip>
+        </ToolTipService.ToolTip>
     </Button>
 </StackPanel>

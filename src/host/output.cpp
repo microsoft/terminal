@@ -520,5 +520,5 @@ void CloseConsoleProcessState()
     //      ctrl event will never actually get dispatched.
     // So, lock and unlock here, to make sure the ctrl event gets handled.
     LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    UnlockConsole();
 }

@@ -1,11 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
 
 #include "EchoConnection.g.h"
-
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -18,6 +16,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
 
+        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) const noexcept {};
+
         ConnectionState State() const noexcept { return ConnectionState::Connected; }
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
@@ -27,7 +27,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct EchoConnection : EchoConnectionT<EchoConnection, implementation::EchoConnection>
-    {
-    };
+    BASIC_FACTORY(EchoConnection);
 }

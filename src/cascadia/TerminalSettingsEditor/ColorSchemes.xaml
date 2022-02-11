@@ -60,7 +60,7 @@
             <DataTemplate x:Key="ColorTableEntryTemplate"
                           x:DataType="local:ColorTableEntry">
                 <Button AutomationProperties.Name="{x:Bind Name}"
-                        Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}"
+                        Background="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
                         Style="{StaticResource ColorButtonStyle}"
                         ToolTipService.ToolTip="{x:Bind Name}">
                     <Button.Resources>
@@ -69,11 +69,11 @@
                             <ResourceDictionary.ThemeDictionaries>
                                 <ResourceDictionary x:Key="Light">
                                     <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                     Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}" />
+                                                     Color="{x:Bind local:Converters.LightenColor(Color), Mode=OneWay}" />
                                 </ResourceDictionary>
                                 <ResourceDictionary x:Key="Dark">
                                     <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                     Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}" />
+                                                     Color="{x:Bind local:Converters.LightenColor(Color), Mode=OneWay}" />
                                 </ResourceDictionary>
                                 <!--  No High contrast dictionary, let's just leave that unchanged.  -->
                             </ResourceDictionary.ThemeDictionaries>
@@ -82,31 +82,28 @@
 
                     <Button.Flyout>
                         <Flyout>
-                            <ColorPicker ColorChanged="ColorPickerChanged"
-                                         Tag="{x:Bind Tag, Mode=OneWay}"
-                                         Color="{x:Bind Color, Mode=OneWay}" />
+                            <muxc:ColorPicker ColorChanged="ColorPickerChanged"
+                                              Tag="{x:Bind Tag, Mode=OneWay}"
+                                              Color="{x:Bind Color, Mode=OneWay}" />
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </DataTemplate>
 
-            <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
-            <local:ColorToHexConverter x:Key="ColorToHexConverter" />
-            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
-            <local:ColorLightenConverter x:Key="ColorLightenConverter" />
-
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
-        <StackPanel Margin="{StaticResource StandardIndentMargin}"
+    <ScrollViewer ViewChanging="ViewChanging">
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 
             <!--  Select Color and Add New Button  -->
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Margin="0,5,0,0"
+                        Orientation="Horizontal">
 
                 <StackPanel Orientation="Horizontal"
-                            Visibility="{x:Bind IsRenaming, Converter={StaticResource InvertedBooleanToVisibilityConverter}, Mode=OneWay}">
+                            Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsRenaming), Mode=OneWay}">
                     <!--  Select a color scheme  -->
                     <ComboBox x:Name="ColorSchemeComboBox"
                               ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"

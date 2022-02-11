@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "../cascadia/inc/cppwinrt_utils.h"
-
 namespace ControlUnitTests
 {
     class MockConnection : public winrt::implements<MockConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
@@ -16,6 +14,7 @@ namespace ControlUnitTests
     public:
         MockConnection() noexcept = default;
 
+        void Initialize(const winrt::Windows::Foundation::Collections::ValueSet& /*settings*/){};
         void Start() noexcept {};
         void WriteInput(winrt::hstring const& data)
         {

@@ -14,6 +14,7 @@ using namespace winrt;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -35,7 +36,6 @@ namespace winrt::TerminalApp::implementation
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _mruTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _commandLineHistory = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -244,15 +244,28 @@ namespace winrt::TerminalApp::implementation
                 _PreviewActionHandlers(*this, actionPaletteItem.Command());
             }
         }
+        else if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            if (filteredCommand)
+            {
+                SearchBoxPlaceholderText(filteredCommand.Item().Name());
+            }
+            else
+            {
+                SearchBoxPlaceholderText(RS_(L"CmdPalCommandlinePrompt"));
+            }
+        }
     }
 
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        auto key = e.OriginalKey();
-        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+        const auto key = e.OriginalKey();
+        const auto scanCode = e.KeyStatus().ScanCode;
+        const auto coreWindow = CoreWindow::GetForCurrentThread();
+        const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         // Some keypresses such as Tab, Return, Esc, and Arrow Keys are ignored by controls because
         // they're not considered input key presses. While they don't raise KeyDown events,
@@ -263,7 +276,7 @@ namespace winrt::TerminalApp::implementation
         // a really widely used keyboard navigation key.
         if (_currentMode == CommandPaletteMode::TabSwitchMode && _actionMap)
         {
-            winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+            winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, false, static_cast<int32_t>(key), static_cast<int32_t>(scanCode) };
             if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
             {
                 if (cmd.ActionAndArgs().Action() == ShortcutAction::PrevTab)
@@ -317,6 +330,13 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Enter)
         {
+            if (const auto& button = e.OriginalSource().try_as<Button>())
+            {
+                // Let the button handle the Enter key so an eventually attached click handler will be called
+                e.Handled(false);
+                return;
+            }
+
             const auto selectedCommand = _filteredActionsView().SelectedItem();
             const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
             _dispatchCommand(filteredCommand);
@@ -354,6 +374,17 @@ namespace winrt::TerminalApp::implementation
         {
             _searchBox().PasteFromClipboard();
             e.Handled(true);
+        }
+        else if (key == VirtualKey::Right && _currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
+            {
+                _searchBox().Text(command.Item().Name());
+                _searchBox().Select(_searchBox().Text().size(), 0);
+                _searchBox().Focus(FocusState::Programmatic);
+                _filteredActionsView().SelectedIndex(-1);
+                e.Handled(true);
+            }
         }
     }
 
@@ -394,9 +425,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_anchorKeyUpHandler()
     {
-        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+        const auto coreWindow = CoreWindow::GetForCurrentThread();
+        const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         if (!ctrlDown && !altDown && !shiftDown)
         {
@@ -509,6 +541,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::RoutedEventArgs const&)
     {
+        _PreviewActionHandlers(*this, nullptr);
         _nestedActionStack.Clear();
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
@@ -575,7 +608,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
             return _tabSwitcherMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabActions : _tabActions;
         case CommandPaletteMode::CommandlineMode:
-            return _commandLineHistory;
+            return _loadRecentCommands();
         default:
             return _allCommands;
         }
@@ -635,7 +668,13 @@ namespace winrt::TerminalApp::implementation
                     // palette like the Tab Switcher will be able to have the last laugh.
                     _close();
 
-                    _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+                    // But make an exception for the Toggle Command Palette action: we don't want the dispatch
+                    // make the command palette - that was just closed - visible again.
+                    // All other actions can just be dispatched.
+                    if (actionPaletteItem.Command().ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+                    {
+                        _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+                    }
 
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -702,14 +741,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command)
     {
-        const auto filteredCommand = command ? command : _buildCommandLineCommand(_getTrimmedInput());
+        const auto filteredCommand = command ? command : _buildCommandLineCommand(winrt::hstring(_getTrimmedInput()));
         if (filteredCommand.has_value())
         {
-            if (_commandLineHistory.Size() == CommandLineHistoryLength)
-            {
-                _commandLineHistory.RemoveAtEnd();
-            }
-            _commandLineHistory.InsertAt(0, filteredCommand.value());
+            _updateRecentCommands(filteredCommand.value().Item().Name());
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -726,15 +761,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(std::wstring const& commandLine)
+    std::optional<TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const hstring& commandLine)
     {
         if (commandLine.empty())
         {
             return std::nullopt;
         }
 
-        winrt::hstring cl{ commandLine };
-        auto commandLinePaletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(cl) };
+        auto commandLinePaletteItem{ winrt::make<CommandLinePaletteItem>(commandLine) };
         return winrt::make<FilteredCommand>(commandLinePaletteItem);
     }
 
@@ -788,16 +822,13 @@ namespace winrt::TerminalApp::implementation
         {
             const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
             _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
-            if (!currentNeedleHasResults)
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
             {
-                if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
-                {
-                    automationPeer.RaiseNotificationEvent(
-                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                        NoMatchesText(), // NoMatchesText contains the right text for the current mode
-                        L"CommandPaletteResultAnnouncement" /* unique name for this notification */);
-                }
+                automationPeer.RaiseNotificationEvent(
+                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                    currentNeedleHasResults ? RS_(L"CommandPalette_MatchesAvailable") : NoMatchesText(), // what to announce if results were found
+                    L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
         }
         else
@@ -1198,5 +1229,82 @@ namespace winrt::TerminalApp::implementation
         {
             itemContainer.DataContext(args.Item());
         }
+    }
+
+    // Method Description:
+    // - Reads the list of recent commands from the persistent application state
+    // Return Value:
+    // - The list of FilteredCommand representing the ones stored in the state
+    IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
+    {
+        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
+        // If this is the first time we've opened the commandline mode and
+        // there aren't any recent commands, then just return an empty vector.
+        if (!recentCommands)
+        {
+            return single_threaded_vector<TerminalApp::FilteredCommand>();
+        }
+
+        std::vector<TerminalApp::FilteredCommand> parsedCommands;
+        parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
+
+        for (const auto& c : recentCommands)
+        {
+            if (parsedCommands.size() >= CommandLineHistoryLength)
+            {
+                // Don't load more than CommandLineHistoryLength commands
+                break;
+            }
+
+            if (const auto parsedCommand = _buildCommandLineCommand(c))
+            {
+                parsedCommands.push_back(*parsedCommand);
+            }
+        }
+        return single_threaded_vector(std::move(parsedCommands));
+    }
+
+    // Method Description:
+    // - Update recent commands by putting the provided command as most recent.
+    // Upon race condition might override an update made by another window.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateRecentCommands(const hstring& command)
+    {
+        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
+        // If this is the first time we've opened the commandline mode and
+        // there aren't any recent commands, then just store the new command.
+        if (!recentCommands)
+        {
+            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(std::vector{ command })));
+            return;
+        }
+
+        const auto numNewRecentCommands = std::min(recentCommands.Size() + 1, CommandLineHistoryLength);
+
+        std::vector<hstring> newRecentCommands;
+        newRecentCommands.reserve(numNewRecentCommands);
+
+        std::unordered_set<hstring> uniqueCommands;
+        uniqueCommands.reserve(numNewRecentCommands);
+
+        newRecentCommands.push_back(command);
+        uniqueCommands.insert(command);
+
+        for (const auto& c : recentCommands)
+        {
+            if (newRecentCommands.size() >= CommandLineHistoryLength)
+            {
+                // Don't store more than CommandLineHistoryLength commands
+                break;
+            }
+
+            if (uniqueCommands.emplace(c).second)
+            {
+                newRecentCommands.push_back(c);
+            }
+        }
+
+        ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 }

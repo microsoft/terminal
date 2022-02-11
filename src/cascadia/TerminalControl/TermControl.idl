@@ -6,6 +6,7 @@ import "IControlSettings.idl";
 import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
+import "ControlCore.idl";
 
 namespace Microsoft.Terminal.Control
 {
@@ -16,14 +17,15 @@ namespace Microsoft.Terminal.Control
                                                    ICoreState
     {
         TermControl(IControlSettings settings,
+                    IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
 
-        void UpdateSettings();
+        void UpdateControlSettings(IControlSettings settings);
+        void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
 
-        Microsoft.Terminal.Control.IControlSettings Settings;
-        Microsoft.Terminal.Control.IControlAppearance UnfocusedAppearance;
+        Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
@@ -46,6 +48,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
+        void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
@@ -67,5 +70,16 @@ namespace Microsoft.Terminal.Control
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
+
+        String ReadEntireBuffer();
+
+        void AdjustOpacity(Double Opacity, Boolean relative);
+
+        // You'd think this should just be "Opacity", but UIElement already
+        // defines an "Opacity", which we're actually not setting at all. We're
+        // not overriding or changing _that_ value. Callers that want the
+        // opacity set by the settings should call this instead.
+        Double BackgroundOpacity { get; };
+
     }
 }

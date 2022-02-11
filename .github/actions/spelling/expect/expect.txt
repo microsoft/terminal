@@ -12,9 +12,7 @@ ACTCTXW
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
-adaa
 ADDALIAS
-ADDB
 ADDREF
 addressof
 ADDSTRING
@@ -50,6 +48,7 @@ APARTMENTTHREADED
 APCs
 api
 APIENTRY
+apimswincoresynchl
 apiset
 APPBARDATA
 appconsult
@@ -105,6 +104,7 @@ autoscrolling
 Autowrap
 AVerify
 AVI
+AVX
 awch
 azuredevopspodcast
 azzle
@@ -114,6 +114,7 @@ Backgrounder
 backgrounding
 backport
 backstory
+barbaz
 Batang
 baz
 Bazz
@@ -159,13 +160,16 @@ Borland
 BOTTOMLEFT
 BOTTOMRIGHT
 boutput
+boxheader
 BPBF
 bpp
 BPPF
 branchconfig
+brandings
 BRK
 Browsable
 bsearch
+Bspace
 bstr
 BTNFACE
 buf
@@ -188,6 +192,7 @@ CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
 cassert
+castsi
 catid
 cazamor
 CBash
@@ -232,6 +237,7 @@ charlespetzold
 charset
 CHARSETINFO
 chcp
+Checkin
 checkbox
 checkboxes
 chh
@@ -266,9 +272,12 @@ cmder
 CMDEXT
 Cmdlet
 cmdline
+cmh
 CMOUSEBUTTONS
 cmp
+cmpeq
 cmt
+cmw
 cmyk
 CNL
 cnt
@@ -279,8 +288,6 @@ codepage
 codepath
 codepoint
 codeproject
-coffgroup
-coffgrp
 coinit
 COLLECTIONURI
 colorizing
@@ -291,6 +298,7 @@ colorspaces
 colorspec
 colortable
 colortbl
+colortest
 colortool
 COLR
 combaseapi
@@ -311,6 +319,7 @@ concat
 concfg
 conclnt
 conddkrefs
+condev
 condrv
 conechokey
 conemu
@@ -376,11 +385,14 @@ CPINFOEX
 CPLINFO
 cplusplus
 cpp
+CPPARM
 CPPCORECHECK
 cppcorecheckrules
+cppm
 cpprest
 cpprestsdk
 cppwinrt
+CPPx
 CProc
 cpx
 crbegin
@@ -391,6 +403,7 @@ creativecommons
 cred
 cref
 crend
+Crisman
 CRLFs
 crloew
 Crt
@@ -400,11 +413,13 @@ csbiex
 csharp
 CSHORT
 CSIDL
+Cspace
 csproj
 Csr
 csrmsg
 CSRSS
 csrutil
+css
 cstdarg
 cstddef
 cstdio
@@ -458,6 +473,7 @@ cygwin
 CYHSCROLL
 CYMIN
 CYPADDEDBORDER
+CYRL
 CYSIZE
 CYSIZEFRAME
 CYSMICON
@@ -467,7 +483,6 @@ dai
 DATABLOCK
 DATAVIEW
 DATAW
-datetime
 DBatch
 dbcs
 DBCSCHAR
@@ -495,8 +510,8 @@ DEADCHAR
 dealloc
 Debian
 debolden
-debounce
 debugtype
+DECAC
 DECALN
 DECANM
 DECAUPSS
@@ -504,6 +519,8 @@ DECAWM
 DECCKM
 DECCOLM
 DECDHL
+decdld
+DECDLD
 DECDWL
 DECEKBD
 DECID
@@ -524,6 +541,7 @@ DECRC
 DECREQTPARM
 DECRLM
 DECRQM
+DECRQSS
 DECRST
 DECSASD
 DECSC
@@ -544,6 +562,7 @@ DECSTR
 DECSWL
 DECTCEM
 Dedupe
+deduplicate
 deduplicated
 DEFAPP
 DEFAULTBACKGROUND
@@ -593,6 +612,7 @@ DINLINE
 directio
 DIRECTX
 Dirs
+DISABLEDELAYEDEXPANSION
 DISABLENOSCROLL
 DISPLAYATTRIBUTE
 DISPLAYATTRIBUTEPROPERTY
@@ -617,13 +637,14 @@ doskey
 dotnet
 doubleclick
 downlevel
-dpg
+DPG
 dpi
 DPIAPI
 DPICHANGE
 DPICHANGED
 dpix
 dpiy
+dpnx
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
@@ -653,9 +674,11 @@ dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxp
+dxsm
 dxttbmp
+Dyreen
 eachother
-eae
 eaf
 EASTEUROPE
 ECH
@@ -670,13 +693,13 @@ edputil
 edu
 Efast
 EHsc
+EINS
 EJO
 ELEMENTNOTAVAILABLE
 elems
 elif
 elseif
 emacs
-emplate
 EMPTYBOX
 enabledelayedexpansion
 endian
@@ -696,6 +719,7 @@ enumranges
 envvar
 eol
 EPres
+EQU
 ERASEBKGND
 errno
 errorlevel
@@ -745,18 +769,19 @@ fdw
 fesb
 FFDE
 FFrom
+fgbg
 FGCOLOR
 fgetc
 fgetwc
 FGHIJ
 fgidx
+FGs
 FILEDESCRIPTION
 fileno
 filepath
 FILESUBTYPE
 FILESYSPATH
 filesystem
-FILETIME
 FILETYPE
 fileurl
 FILEW
@@ -772,11 +797,14 @@ FINDSTRINGEXACT
 FINDUP
 FIter
 FIXEDCONVERTED
+FIXEDFILEINFO
 Flg
 flyout
+fmix
 fmodern
 fmtarg
 fmtid
+FNV
 FOLDERID
 FONTCHANGE
 fontdlg
@@ -785,6 +813,7 @@ FONTENUMPROC
 FONTFACE
 FONTFAMILY
 FONTHEIGHT
+FONTINFO
 fontlist
 FONTOK
 FONTSIZE
@@ -794,11 +823,13 @@ FONTTYPE
 FONTWEIGHT
 FONTWIDTH
 FONTWINDOW
+fooo
 forceinline
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FORCEV
 foreach
+forground
 fprintf
 framebuffer
 FRAMECHANGED
@@ -831,7 +862,6 @@ gcy
 gdi
 gdip
 gdirenderer
-GENPROFILE
 geopol
 GETALIAS
 GETALIASES
@@ -897,6 +927,7 @@ github
 gitlab
 gle
 globals
+GLYPHENTRY
 gmail
 GMEM
 GNUC
@@ -915,9 +946,12 @@ groupbox
 gset
 gsl
 GTP
+GTR
+guardxfg
 guc
 gui
 guidatom
+guiddef
 GValue
 GWL
 GWLP
@@ -945,9 +979,9 @@ hdrstop
 HEIGHTSCROLL
 hfile
 hfont
+hfontresource
 hglobal
 hhh
-HHmm
 hhook
 hhx
 HIBYTE
@@ -977,10 +1011,9 @@ horiz
 HORZ
 hostable
 hostlib
-Hostx
 HPA
 HPAINTBUFFER
-hpcon
+HPCON
 hpj
 hpp
 HPR
@@ -1019,6 +1052,7 @@ IAction
 IApi
 IApplication
 IBase
+ICache
 icacls
 iccex
 icch
@@ -1103,7 +1137,6 @@ INPUTPROCESSORPROFILE
 inputrc
 Inputreadhandledata
 INSERTMODE
-installationpath
 intellisense
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1112,6 +1145,7 @@ interop
 interoperability
 inthread
 intptr
+intrin
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1121,6 +1155,7 @@ ioctl
 iomanip
 iostream
 iot
+ipa
 ipch
 ipconfig
 IPersist
@@ -1132,7 +1167,6 @@ IRaw
 IRead
 IReference
 IRender
-IRenderer
 IScheme
 ISelection
 IShell
@@ -1164,6 +1198,7 @@ IWin
 IWindow
 IXaml
 IXMP
+ixx
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1208,11 +1243,14 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KOK
+KPRIORITY
 KVM
 langid
 LANGUAGELIST
 lasterror
 lastexitcode
+LATN
 LAYOUTRTL
 LBN
 LBound
@@ -1256,6 +1294,7 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
+loadu
 LOBYTE
 localappdata
 localhost
@@ -1263,6 +1302,7 @@ locsrc
 locstudio
 Loewen
 LOGFONT
+LOGFONTA
 LOGFONTW
 logissue
 lowercased
@@ -1327,6 +1367,7 @@ lstrcmp
 lstrcmpi
 LTEXT
 LTLTLTLTL
+ltrim
 ltype
 LUID
 lval
@@ -1353,6 +1394,7 @@ MAXDIMENSTRING
 maxing
 MAXLENGTH
 MAXSHORT
+maxval
 maxversiontested
 MAXWORD
 maybenull
@@ -1398,7 +1440,6 @@ mkdir
 MMBB
 mmcc
 MMCPL
-MMdd
 mmsystem
 MNC
 MNOPQ
@@ -1416,6 +1457,7 @@ MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
 mousewheel
+movemask
 MOVESTART
 msb
 msbuild
@@ -1425,6 +1467,7 @@ msctls
 msdata
 msdn
 msft
+MSDL
 MSGCMDLINEF
 MSGF
 MSGFILTER
@@ -1436,17 +1479,19 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
+mspartners
 msrc
 msvcrt
 MSVCRTD
-MSVS
 msys
 msysgit
+MTSM
 mui
 Mul
 multiline
 munged
 munges
+murmurhash
 mutex
 mutexes
 muxes
@@ -1497,6 +1542,7 @@ nfe
 nlength
 Nls
 NLSMODE
+nnn
 NOACTIVATE
 NOAPPLYNOW
 NOCLIP
@@ -1504,6 +1550,7 @@ NOCOLOR
 NOCOMM
 NOCONTEXTHELP
 NOCOPYBITS
+nodefaultlib
 nodiscard
 NODUP
 noexcept
@@ -1543,6 +1590,7 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
+notmatch
 NOTNULL
 NOTOPMOST
 NOTRACK
@@ -1550,6 +1598,7 @@ NOTSUPPORTED
 nouicompat
 nounihan
 NOUPDATE
+novtable
 NOWAIT
 NOYIELD
 NOZORDER
@@ -1577,6 +1626,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nullability
 nullness
 nullonfailure
 nullopt
@@ -1611,6 +1661,7 @@ onecoreuapuuid
 onecoreuuid
 ONECOREWINDOWS
 onehalf
+oneseq
 ONLCR
 openbash
 opencode
@@ -1641,6 +1692,7 @@ oss
 ostream
 ostringstream
 ouicompat
+OUnter
 outdir
 outfile
 Outof
@@ -1648,9 +1700,11 @@ OUTOFCONTEXT
 OUTOFMEMORY
 outout
 Outptr
+outstr
 OVERLAPPEDWINDOW
 OWNDC
 OWNERDRAWFIXED
+packagename
 packageuwp
 PACKCOORD
 PACKVERSION
@@ -1675,6 +1729,7 @@ pcch
 PCCHAR
 PCCONSOLE
 PCD
+pcg
 pch
 PCHAR
 PCIDLIST
@@ -1722,6 +1777,7 @@ PFONTENUMDATA
 PFS
 pgd
 pgdn
+PGONu
 pgorepro
 pgort
 PGU
@@ -1745,6 +1801,9 @@ placeholders
 platforming
 playsound
 plist
+PLOC
+PLOCA
+PLOCM
 PLOGICAL
 plugin
 PMv
@@ -1756,6 +1815,7 @@ PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
+Poli
 POLYTEXTW
 popd
 POPF
@@ -1770,6 +1830,7 @@ POSX
 POSXSCROLL
 POSYSCROLL
 ppci
+PPEB
 ppf
 ppguid
 ppidl
@@ -1876,6 +1937,7 @@ qsort
 queryable
 QUESTIONMARK
 quickedit
+QUZ
 QWER
 qzmp
 RAII
@@ -1920,6 +1982,7 @@ realloc
 reamapping
 rects
 redef
+redefinable
 Redir
 redirector
 redist
@@ -1939,9 +2002,8 @@ REGISTERVDM
 regkey
 REGSTR
 reingest
-Relayout
 RELBINPATH
-Remoting
+remoting
 renamer
 renderengine
 rendersize
@@ -1962,9 +2024,11 @@ resx
 retval
 rfa
 rfc
+rfid
 rftp
 rgb
 rgba
+RGBCOLOR
 rgbi
 rgci
 rgfae
@@ -1982,9 +2046,11 @@ rhs
 RIGHTALIGN
 RIGHTBUTTON
 riid
+Rike
 RIPMSG
 RIS
 RMENU
+rng
 roadmap
 robomac
 roundtrip
@@ -1998,6 +2064,8 @@ rtf
 RTFTo
 Rtl
 RTLREADING
+Rtn
+rtrim
 RTTI
 ruleset
 runas
@@ -2014,6 +2082,7 @@ runut
 runxamlformat
 rvalue
 RVERTICAL
+rvpa
 RWIN
 rxvt
 safearray
@@ -2030,7 +2099,6 @@ scanline
 schemename
 SCL
 scm
-scprintf
 SCRBUF
 SCRBUFSIZE
 screenbuffer
@@ -2062,7 +2130,7 @@ selectany
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
-serializers
+SERIALIZERS
 SERVERDLL
 SETACTIVE
 SETBUDDYINT
@@ -2127,13 +2195,13 @@ SHOWNOACTIVATE
 SHOWNORMAL
 SHOWWINDOW
 SHRT
-sid
 sidebyside
 SIF
 SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+sixel
 SIZEBOX
 sizeof
 SIZESCROLL
@@ -2157,7 +2225,6 @@ somefile
 SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
-SPACEBAR
 spammy
 spand
 sprintf
@@ -2190,6 +2257,7 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
+stdc
 stdcall
 stdcpp
 stderr
@@ -2205,6 +2273,7 @@ stoi
 stol
 stoul
 stoutapot
+Stri
 strikethrough
 stringstream
 STRINGTABLE
@@ -2213,6 +2282,7 @@ strrev
 strsafe
 strtok
 structs
+STUBHEAD
 STUVWX
 STX
 stylecop
@@ -2237,6 +2307,7 @@ SWMR
 SWP
 swprintf
 SYMED
+symlink
 SYNCPAINT
 sys
 syscalls
@@ -2303,7 +2374,6 @@ testmddefinition
 testmode
 testname
 testnameprefix
-testnetv
 TESTNULL
 testpass
 testpasses
@@ -2334,12 +2404,12 @@ TIcon
 tif
 tilunittests
 Timeline
+timelines
 titlebar
 TITLEISLINKNAME
 TJson
 TLambda
 TLEN
-Tlg
 Tlgdata
 TMAE
 TMPF
@@ -2380,6 +2450,7 @@ TREX
 triaged
 triaging
 TRIANGLESTRIP
+Tribool
 TRIMZEROHEADINGS
 truetype
 trx
@@ -2414,7 +2485,6 @@ uapadmin
 UAX
 ubuntu
 ucd
-ucd
 ucdxml
 uch
 UCHAR
@@ -2434,6 +2504,7 @@ uint
 uintptr
 ulcch
 ulong
+umd
 Unadvise
 unattend
 uncomment
@@ -2451,6 +2522,7 @@ UNICRT
 uninit
 uninitialize
 uninstall
+unintense
 Uniscribe
 unittest
 unittesting
@@ -2461,7 +2533,6 @@ unmark
 UNORM
 unparseable
 unpause
-Unregister
 unregistering
 untests
 untextured
@@ -2474,7 +2545,6 @@ upvote
 uri
 url
 urlencoded
-Urxvt
 USASCII
 usebackq
 USECALLBACK
@@ -2519,10 +2589,10 @@ Vcount
 vcpkg
 vcprintf
 vcproj
-vcvarsall
 vcxitems
 vcxproj
 vec
+vectorized
 VERCTRL
 versioning
 VERTBAR
@@ -2540,13 +2610,13 @@ VMs
 VPA
 VPATH
 VPR
-VPrintf
 VProc
 VRaw
 VREDRAW
 vsc
 vscprintf
 VSCROLL
+vsdevshell
 vsinfo
 vsnprintf
 vso
@@ -2603,6 +2673,8 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
+wdx
+webclient
 webpage
 website
 websocket
@@ -2636,6 +2708,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windev
 WINDIR
 windll
 WINDOWALPHA
@@ -2655,6 +2728,7 @@ WINDOWPOSCHANGING
 windowproc
 windowrect
 windowsapp
+windowsdeveloper
 windowsinternalstring
 WINDOWSIZE
 windowsx
@@ -2676,6 +2750,7 @@ Winperf
 WInplace
 winres
 winrt
+winsdk
 wintelnet
 winternl
 winuser
@@ -2686,6 +2761,7 @@ wixproj
 wline
 wlinestream
 wmain
+wmemory
 WMSZ
 wnd
 WNDALLOC
@@ -2721,6 +2797,7 @@ WRITECONSOLE
 WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT
 WRITECONSOLEOUTPUTSTRING
+wrkstr
 wrl
 wrp
 WRunoff
@@ -2741,6 +2818,7 @@ WTo
 wtof
 wtoi
 WTs
+WTSOFTFONT
 wtw
 wtypes
 Wubi
@@ -2767,8 +2845,8 @@ XCount
 xdy
 XEncoding
 xes
-Xes
 xff
+xfg
 XFile
 XFORM
 XManifest
@@ -2778,8 +2856,6 @@ xml
 xmlns
 xor
 xorg
-xorg
-Xpath
 XPosition
 XResource
 xsd

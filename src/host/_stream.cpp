@@ -28,8 +28,6 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 // Used by WriteCharsLegacy.
 #define IS_GLYPH_CHAR(wch) (((wch) >= L' ') && ((wch) != 0x007F))
 
-constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
-
 // Routine Description:
 // - This routine updates the cursor position.  Its input is the non-special
 //   cased new location of the cursor.  For example, if the cursor were being
@@ -339,7 +337,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
     SHORT XPosition;
-    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
     size_t TempNumSpaces = 0;
     const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
     const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
@@ -359,6 +356,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     {
         coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
     }
+
+    static constexpr unsigned int LOCAL_BUFFER_SIZE = 1024;
+    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
 
     while (*pcb < BufferSize)
     {
@@ -557,7 +557,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             const auto itEnd = screenInfo.Write(it);
 
             // Notify accessibility
-            screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
+            if (screenInfo.HasAccessibilityEventing())
+            {
+                screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
+            }
 
             // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
             // when/if we need to erase the command line.
@@ -998,7 +1001,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - STATUS_SUCCESS if OK.
 // - CONSOLE_STATUS_WAIT if we couldn't finish now and need to be called back later (see ppWaiter).
 // - Or a suitable NTSTATUS format error code for memory/string/math failures.
-[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
+[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PCWCHAR pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
                                       bool requiresVtQuirk,
@@ -1218,7 +1221,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             wstr.resize((dbcsLength + mbPtrLength) / sizeof(wchar_t));
         }
 
-        // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
+        // Hold the specific version of the waiter locally so we can tinker with it if we have to store additional context.
         std::unique_ptr<WriteData> writeDataWaiter{};
 
         // Make the W version of the call

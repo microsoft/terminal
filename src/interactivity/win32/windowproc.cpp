@@ -181,7 +181,6 @@ using namespace Microsoft::Console::Types;
 
         // First retrieve the new DPI and the current DPI.
         DWORD const dpiProposed = (WORD)wParam;
-        DWORD const dpiCurrent = g.dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();
@@ -264,7 +263,7 @@ using namespace Microsoft::Console::Types;
         HandleFocusEvent(TRUE);
 
         // ActivateTextServices does nothing if already active so this is OK to be called every focus.
-        ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos);
+        ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos, GetTextBoxArea);
 
         // set the text area to have focus for accessibility consumers
         if (_pUiaProvider)
@@ -574,6 +573,10 @@ using namespace Microsoft::Console::Types;
         else if (wParam == ID_CONSOLE_DEFAULTS)
         {
             Menu::s_ShowPropertiesDialog(hWnd, TRUE);
+        }
+        else if (wParam == SC_RESTORE && _fIsInFullscreen)
+        {
+            SetIsFullscreen(false);
         }
         else
         {

@@ -105,9 +105,10 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         IWindowMetrics* pMetrics = ServiceLocator::LocateWindowMetrics();
         THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
-        IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        THROW_HR_IF_NULL(E_FAIL, pNotifier);
-
+        const auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        // It is possible for pNotifier to be null and that's OK.
+        // For instance, the PTY doesn't need to send events. Just pass it along
+        // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
         SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
 
         // Set up viewport
@@ -122,7 +123,6 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
                                                             pScreen->_renderTarget);
 
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        pScreen->_textBuffer->GetCursor().SetColor(gci.GetCursorColor());
         pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
@@ -255,8 +255,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     try
     {
         auto getset = std::make_unique<ConhostInternalGetSet>(*this);
-        auto defaults = std::make_unique<WriteBuffer>(*this);
-        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), std::move(defaults));
+        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset));
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
@@ -363,7 +362,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
     for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
     {
-        lpColorTable[i] = gci.GetColorTableEntry(i);
+        lpColorTable[i] = gci.GetLegacyColorTableEntry(i);
     }
 
     *pcoordMaximumWindowSize = GetMaxWindowSizeInCharacters();
@@ -564,6 +563,19 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
     }
 }
 
+// Routine Description:
+// - Informs clients whether we have accessibility eventing so they can
+//   save themselves the work of performing math or lookups before calling
+//   `NotifyAccessibilityEventing`.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if we have an accessibility listener. False otherwise.
+bool SCREEN_INFORMATION::HasAccessibilityEventing() const noexcept
+{
+    return _pAccessibilityNotifier;
+}
+
 // NOTE: This method was historically used to notify accessibility apps AND
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
@@ -573,6 +585,11 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
                                                      const short sEndX,
                                                      const short sEndY)
 {
+    if (!_pAccessibilityNotifier)
+    {
+        return;
+    }
+
     // Fire off a winevent to let accessibility apps know what changed.
     if (IsActiveScreenBuffer())
     {
@@ -674,7 +691,10 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     }
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    if (_pAccessibilityNotifier)
+    {
+        _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    }
 
     ResizingWindow--;
 }
@@ -999,6 +1019,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
         // 1. Delete input string if necessary (see menu.c)
         commandLine.Hide(FALSE);
+
+        const auto savedCursorVisibility = _textBuffer->GetCursor().IsVisible();
         _textBuffer->GetCursor().SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
@@ -1007,7 +1029,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // MSFT:19976291 Don't re-show the commandline here. We need to wait for
         //      the viewport to also get resized before we can re-show the commandline.
         //      ProcessResizeWindow will call commandline.Show() for us.
-        _textBuffer->GetCursor().SetIsVisible(true);
+        _textBuffer->GetCursor().SetIsVisible(savedCursorVisibility);
 
         // Return S_OK, to indicate we succeeded and actually did something.
         hr = S_OK;
@@ -1520,7 +1542,10 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (NT_SUCCESS(status))
     {
-        NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        if (HasAccessibilityEventing())
+        {
+            NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        }
 
         if ((!ConvScreenInfo))
         {
@@ -1532,7 +1557,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         }
 
         // Fire off an event to let accessibility apps know the layout has changed.
-        if (IsActiveScreenBuffer())
+        if (_pAccessibilityNotifier && IsActiveScreenBuffer())
         {
             _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
         }
@@ -1602,29 +1627,6 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
     if (_psiMainBuffer)
     {
         _psiMainBuffer->SetCursorInformation(Size, Visible);
-    }
-}
-
-// Routine Description:
-// - This routine sets the cursor color. Also updates the cursor information of
-//      this buffer's main buffer, if this buffer is an alt buffer.
-// Arguments:
-// - Color - The new color to set the cursor to
-// - setMain - If true, propagate change to main buffer as well.
-// Return Value:
-// - None
-void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color, const bool setMain) noexcept
-{
-    Cursor& cursor = _textBuffer->GetCursor();
-
-    cursor.SetColor(Color);
-
-    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
-    // We don't want to pollute that buffer with this state,
-    // UNLESS we're getting called from the propsheet, then we DO want to update this.
-    if (_psiMainBuffer && setMain)
-    {
-        _psiMainBuffer->SetCursorColor(Color);
     }
 }
 
@@ -1879,10 +1881,17 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        // Update the alt buffer's cursor style to match our own.
+        // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
         auto* const createdBuffer = *ppsiNewScreenBuffer;
-        createdBuffer->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
+        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
+        altCursor.SetIsVisible(myCursor.IsVisible());
+        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        // The new position should match the viewport-relative position of the main buffer.
+        auto altCursorPos = myCursor.GetPosition();
+        altCursorPos.Y -= GetVirtualViewport().Top();
+        altCursor.SetPosition(altCursorPos);
 
         s_InsertScreenBuffer(createdBuffer);
 
@@ -1970,6 +1979,14 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
 
         SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
+
+        // Copy the alt buffer's cursor style and visibility back to the main buffer.
+        const auto& altCursor = psiAlt->GetTextBuffer().GetCursor();
+        auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
+        mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
+        mainCursor.SetIsVisible(altCursor.IsVisible());
+        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
         // deleting the alt buffer will give the GetSet back to its main
 
@@ -2238,6 +2255,55 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 }
 
 // Method Description:
+// - Clear the entire contents of the viewport, except for the cursor's row,
+//   which is moved to the top line of the viewport.
+// - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
+//   a terminal to clear the contents of the ConPTY buffer, which is important
+//   if the user would like to be able to clear the terminal-side buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK
+[[nodiscard]] HRESULT SCREEN_INFORMATION::ClearBuffer()
+{
+    const COORD oldCursorPos = _textBuffer->GetCursor().GetPosition();
+    short sNewTop = oldCursorPos.Y;
+    const Viewport oldViewport = _viewport;
+
+    short delta = (sNewTop + _viewport.Height()) - (GetBufferSize().Height());
+    for (auto i = 0; i < delta; i++)
+    {
+        _textBuffer->IncrementCircularBuffer();
+        sNewTop--;
+    }
+
+    const COORD coordNewOrigin = { 0, sNewTop };
+    RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
+
+    // Place the cursor at the same x coord, on the row that's now the top
+    RETURN_IF_FAILED(SetCursorPosition(COORD{ oldCursorPos.X, sNewTop }, false));
+
+    // Update all the rows in the current viewport with the standard erase attributes,
+    // i.e. the current background color, but with no meta attributes set.
+    auto fillAttributes = GetAttributes();
+    fillAttributes.SetStandardErase();
+
+    // +1 on the y coord because we don't want to clear the attributes of the
+    // cursor row, the one we saved.
+    auto fillPosition = COORD{ 0, _viewport.Top() + 1 };
+    auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
+    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
+    Write(fillData, fillPosition, false);
+
+    _textBuffer->GetRenderTarget().TriggerRedrawAll();
+
+    // Also reset the line rendition for the erased rows.
+    _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
+
+    return S_OK;
+}
+
+// Method Description:
 // - Sets up the Output state machine to be in pty mode. Sequences it doesn't
 //      understand will be written to the pTtyConnection passed in here.
 // Arguments:
@@ -2245,7 +2311,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 //      sequence we didn't understand to.
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* const pTtyConnection)
+void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnection)
 {
     OutputStateMachineEngine& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     if (pTtyConnection)

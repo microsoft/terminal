@@ -54,6 +54,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // monarch!
         CoRevokeClassObject(_registrationHostClass);
         _registrationHostClass = 0;
+        SignalClose();
         _monarchWaitInterrupt.SetEvent();
 
         // A thread is joinable once it's been started. Basically this just
@@ -61,6 +62,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         if (_electionThread.joinable())
         {
             _electionThread.join();
+        }
+    }
+
+    void WindowManager::SignalClose()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                _monarch.SignalClose(_peasant.GetID());
+            }
+            CATCH_LOG()
         }
     }
 
@@ -239,8 +252,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (_peasant)
         {
-            // Inform the monarch of the time we were last activated
-            _monarch.HandleActivatePeasant(_peasant.GetLastActivatedArgs());
+            if (const auto& lastActivated{ _peasant.GetLastActivatedArgs() })
+            {
+                // Inform the monarch of the time we were last activated
+                _monarch.HandleActivatePeasant(lastActivated);
+            }
         }
 
         if (!_isKing)
@@ -250,10 +266,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Here, we're the king!
         //
         // This is where you should do any additional setup that might need to be
-        // done when we become the king. THis will be called both for the first
+        // done when we become the king. This will be called both for the first
         // window, and when the current monarch dies.
 
+        _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
+        _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
+        _monarch.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
+        _monarch.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
+        _monarch.QuitAllRequested({ get_weak(), &WindowManager::_QuitAllRequestedHandlers });
 
         _BecameMonarchHandlers(*this, nullptr);
     }
@@ -300,11 +321,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
         }
 
+        _peasant.GetWindowLayoutRequested({ get_weak(), &WindowManager::_GetWindowLayoutRequestedHandlers });
+
         TraceLoggingWrite(g_hRemotingProvider,
                           "WindowManager_CreateOurPeasant",
                           TraceLoggingUInt64(_peasant.GetID(), "peasantID", "The ID of our new peasant"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        // If the peasant asks us to quit we should not try to act in future elections.
+        _peasant.QuitRequested([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto wm = weakThis.get())
+            {
+                wm->_monarchWaitInterrupt.SetEvent();
+            }
+        });
 
         return _peasant;
     }
@@ -509,4 +540,89 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.SummonWindow(args);
     }
 
+    void WindowManager::SummonAllWindows()
+    {
+        _monarch.SummonAllWindows();
+    }
+
+    Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetPeasantInfos()
+    {
+        // We should only get called when we're the monarch since the monarch
+        // is the only one that knows about all peasants.
+        return _monarch.GetPeasantInfos();
+    }
+
+    uint64_t WindowManager::GetNumberOfPeasants()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                return _monarch.GetNumberOfPeasants();
+            }
+            CATCH_LOG()
+        }
+        return 0;
+    }
+
+    // Method Description:
+    // - Ask the monarch to show a notification icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestShowNotificationIcon()
+    {
+        co_await winrt::resume_background();
+        _peasant.RequestShowNotificationIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to hide its notification icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestHideNotificationIcon()
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        _peasant.RequestHideNotificationIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to quit all windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestQuitAll()
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        _peasant.RequestQuitAll();
+    }
+
+    bool WindowManager::DoesQuakeWindowExist()
+    {
+        return _monarch.DoesQuakeWindowExist();
+    }
+
+    void WindowManager::UpdateActiveTabTitle(winrt::hstring title)
+    {
+        winrt::get_self<implementation::Peasant>(_peasant)->ActiveTabTitle(title);
+    }
+
+    Windows::Foundation::Collections::IVector<winrt::hstring> WindowManager::GetAllWindowLayouts()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                return _monarch.GetAllWindowLayouts();
+            }
+            CATCH_LOG()
+        }
+        return nullptr;
+    }
 }

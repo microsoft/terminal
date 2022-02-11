@@ -36,10 +36,6 @@ namespace Microsoft
 class DummyDispatch final : public TermDispatch
 {
 public:
-    virtual void Execute(const wchar_t /*wchControl*/) override
-    {
-    }
-
     virtual void Print(const wchar_t /*wchPrintable*/) override
     {
     }
@@ -269,6 +265,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x9b');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
@@ -446,6 +445,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto dispatch = std::make_unique<DummyDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
+
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x9d');
@@ -696,6 +698,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x90');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
@@ -913,6 +918,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+
         // C1 ST should terminate OSC string.
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -974,16 +982,14 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 class StatefulDispatch final : public TermDispatch
 {
 public:
-    virtual void Execute(const wchar_t /*wchControl*/) override
+    virtual void Print(const wchar_t wchPrintable) override
     {
+        _printString += wchPrintable;
     }
 
-    virtual void Print(const wchar_t /*wchPrintable*/) override
+    virtual void PrintString(const std::wstring_view string) override
     {
-    }
-
-    virtual void PrintString(const std::wstring_view /*string*/) override
-    {
+        _printString += string;
     }
 
     StatefulDispatch() :
@@ -1471,6 +1477,7 @@ public:
         return true;
     }
 
+    std::wstring _printString;
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
@@ -1828,7 +1835,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
         pDispatch->_isInAnsiMode = false;
-        mach.SetAnsiMode(false);
+        mach.SetParserMode(StateMachine::Mode::Ansi, false);
 
         mach.ProcessString(L"\x1b<");
         VERIFY_IS_TRUE(pDispatch->_isInAnsiMode);
@@ -2207,7 +2214,7 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -2257,23 +2264,23 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[3] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[4] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[4] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[5] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[6] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[6] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[7] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[8] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[8] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[9] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[10] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[10] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[11] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[12] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[12] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[13] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[14] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[14] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[15] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[16] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[16] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 17 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2284,7 +2291,7 @@ class StateMachineExternalTest final
         mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
         VerifyDispatchTypes({ rgExpected, 2 }, *pDispatch);
 
@@ -2296,9 +2303,9 @@ class StateMachineExternalTest final
         mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2311,7 +2318,7 @@ class StateMachineExternalTest final
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundRed;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2528,7 +2535,7 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -2545,7 +2552,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
 
@@ -2565,7 +2572,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"30mHello World\x1b[2J");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
 
@@ -2580,7 +2587,7 @@ class StateMachineExternalTest final
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 5: A sequence with mixed ProcessCharacter and ProcessString calls");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
 
         mach.ProcessString(L"\x1b[1;");
@@ -2737,7 +2744,7 @@ class StateMachineExternalTest final
         StateMachine mach(std::move(engine));
 
         // ANSI mode must be reset for VT52 sequences to be recognized.
-        mach.SetAnsiMode(false);
+        mach.SetParserMode(StateMachine::Mode::Ansi, false);
 
         Log::Comment(L"Cursor Up");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -2823,7 +2830,7 @@ class StateMachineExternalTest final
         StateMachine mach(std::move(engine));
 
         Log::Comment(L"Identify Device in VT52 mode.");
-        mach.SetAnsiMode(false);
+        mach.SetParserMode(StateMachine::Mode::Ansi, false);
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
@@ -2832,7 +2839,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         Log::Comment(L"Identify Device in ANSI mode.");
-        mach.SetAnsiMode(true);
+        mach.SetParserMode(StateMachine::Mode::Ansi, true);
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_deviceAttributes);
@@ -3255,7 +3262,7 @@ class StateMachineExternalTest final
 
         pDispatch->_copyContent = L"UNCHANGED";
         // Passing a non-base64 `Pd` param is illegal, won't change the content.
-        mach.ProcessString(L"\x1b]52;;foo\x07");
+        mach.ProcessString(L"\x1b]52;;???\x07");
         VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
 
         pDispatch->ClearState();
@@ -3298,75 +3305,126 @@ class StateMachineExternalTest final
 
         // First we test with no custom id
         // Process the opening osc 8 sequence
-        mach.ProcessString(L"\x1b]8;;test.url\x9c");
+        mach.ProcessString(L"\x1b]8;;test.url\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"test.url");
         VERIFY_IS_TRUE(pDispatch->_customId.empty());
 
         // Process the closing osc 8 sequences
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // Next we test with a custom id
         // Process the opening osc 8 sequence
-        mach.ProcessString(L"\x1b]8;id=testId;test2.url\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;test2.url\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"test2.url");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
         // Process the closing osc 8 sequence
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // Let's try more complicated params and URLs
-        mach.ProcessString(L"\x1b]8;id=testId;https://example.com\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // Multiple params
-        mach.ProcessString(L"\x1b]8;id=testId:foo=bar;https://example.com\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId:foo=bar;https://example.com\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
-        mach.ProcessString(L"\x1b]8;foo=bar:id=testId;https://example.com\x9c");
+        mach.ProcessString(L"\x1b]8;foo=bar:id=testId;https://example.com\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // URIs with query strings
-        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
-        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1;value2;value3\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1;value2;value3\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1;value2;value3");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestC1ParserMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"C1 parsing disabled: CSI control ignored and rest of sequence printed");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, false);
+        mach.ProcessString(L"\u009b"
+                           L"123A");
+        VERIFY_IS_FALSE(pDispatch->_cursorUp);
+        VERIFY_ARE_EQUAL(pDispatch->_printString, L"123A");
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"C1 parsing enabled: CSI interpreted and CUP sequence executed");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+        mach.ProcessString(L"\u009b"
+                           L"123A");
+        VERIFY_IS_TRUE(pDispatch->_cursorUp);
+        VERIFY_ARE_EQUAL(pDispatch->_cursorDistance, 123u);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"C1 parsing disabled: NEL has no effect within a sequence");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, false);
+        mach.ProcessString(L"\x1b[12"
+                           L"\u0085"
+                           L";34H");
+        VERIFY_IS_FALSE(pDispatch->_lineFeed);
+        VERIFY_IS_TRUE(pDispatch->_cursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_line, 12u);
+        VERIFY_ARE_EQUAL(pDispatch->_column, 34u);
+        VERIFY_ARE_EQUAL(pDispatch->_printString, L"");
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"C1 parsing enabled: NEL aborts sequence and executes line feed");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+        mach.ProcessString(L"\x1b[12"
+                           L"\u0085"
+                           L";34H");
+        VERIFY_IS_TRUE(pDispatch->_lineFeed);
+        VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::WithReturn, pDispatch->_lineFeedType);
+        VERIFY_IS_FALSE(pDispatch->_cursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_printString, L";34H");
 
         pDispatch->ClearState();
     }

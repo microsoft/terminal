@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
     };
 
-    struct Launch : LaunchT<Launch>
+    struct Launch : public HasScrollViewer<Launch>, LaunchT<Launch>
     {
     public:
         Launch();
@@ -27,11 +27,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
+        winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
+
+        bool ShowFirstWindowPreference() const noexcept;
 
         WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 
-        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
-        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Settings().GlobalSettings, WindowingBehavior);
+        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, State().Settings().GlobalSettings().FirstWindowPreference);
+        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings().LaunchMode);
+        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Settings().GlobalSettings().WindowingBehavior);
     };
 }
 

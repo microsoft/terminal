@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{DCF55140-EF6A-4736-A403-957E4F7430BB}</ProjectGuid>
@@ -11,7 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\adaptDispatch.cpp" />
-    <ClCompile Include="..\DispatchCommon.cpp" />
+    <ClCompile Include="..\FontBuffer.cpp" />
     <ClCompile Include="..\InteractDispatch.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
     <ClCompile Include="..\telemetry.cpp" />
@@ -22,11 +22,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\adaptDefaults.hpp" />
     <ClInclude Include="..\adaptDispatch.hpp" />
     <ClInclude Include="..\charsets.hpp" />
     <ClInclude Include="..\DispatchTypes.hpp" />
-    <ClInclude Include="..\DispatchCommon.hpp" />
+    <ClInclude Include="..\FontBuffer.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\conGetSet.hpp" />
     <ClInclude Include="..\precomp.h" />

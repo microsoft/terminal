@@ -22,44 +22,48 @@ class ConPtyTests
     TEST_METHOD(DiesOnClose);
 };
 
-HRESULT _CreatePseudoConsole(const COORD size,
-                             const HANDLE hInput,
-                             const HANDLE hOutput,
-                             const DWORD dwFlags,
-                             _Inout_ PseudoConsole* pPty)
+static HRESULT _CreatePseudoConsole(const COORD size,
+                                    const HANDLE hInput,
+                                    const HANDLE hOutput,
+                                    const DWORD dwFlags,
+                                    _Inout_ PseudoConsole* pPty)
 {
     return _CreatePseudoConsole(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, pPty);
 }
 
-HRESULT AttachPseudoConsole(HPCON hPC, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList)
+static HRESULT AttachPseudoConsole(HPCON hPC, std::wstring& command, PROCESS_INFORMATION* ppi)
 {
-    BOOL fSuccess = UpdateProcThreadAttribute(lpAttributeList,
-                                              0,
-                                              PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-                                              hPC,
-                                              sizeof(HANDLE),
-                                              nullptr,
-                                              nullptr);
-    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
-}
+    SIZE_T size = 0;
+    InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
+    RETURN_LAST_ERROR_IF(size == 0);
 
-void _CreateChildProcess(std::wstring& command, STARTUPINFOEXW* psiEx, PROCESS_INFORMATION* ppi)
-{
-    std::unique_ptr<wchar_t[]> mutableCommandline = std::make_unique<wchar_t[]>(command.length() + 1);
-    VERIFY_IS_NOT_NULL(mutableCommandline);
-    VERIFY_SUCCEEDED(StringCchCopyW(mutableCommandline.get(), command.length() + 1, command.c_str()));
-    VERIFY_IS_TRUE(CreateProcessW(
+    const auto buffer = std::make_unique<std::byte[]>(gsl::narrow_cast<size_t>(size));
+
+    STARTUPINFOEXW siEx{};
+    siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+    siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(buffer.get());
+
+    RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+    auto deleteAttrList = wil::scope_exit([&] {
+        DeleteProcThreadAttributeList(siEx.lpAttributeList);
+    });
+
+    RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, hPC, sizeof(HANDLE), nullptr, nullptr));
+
+    RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
         nullptr,
-        mutableCommandline.get(),
+        command.data(),
         nullptr, // lpProcessAttributes
         nullptr, // lpThreadAttributes
         true, // bInheritHandles
         EXTENDED_STARTUPINFO_PRESENT, // dwCreationFlags
         nullptr, // lpEnvironment
         nullptr, // lpCurrentDirectory
-        &psiEx->StartupInfo, // lpStartupInfo
+        &siEx.StartupInfo, // lpStartupInfo
         ppi // lpProcessInformation
         ));
+
+    return S_OK;
 }
 
 void ConPtyTests::CreateConPtyNoPipes()
@@ -200,27 +204,9 @@ void ConPtyTests::SurvivesOnBreakInput()
     VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 
-    STARTUPINFOEXW siEx;
-    siEx = { 0 };
-    siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-    size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
-    BYTE* attrList = new BYTE[size];
-    auto freeAttrList = wil::scope_exit([&] {
-        delete[] attrList;
-    });
-
-    siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
-    auto deleteAttrList = wil::scope_exit([&] {
-        DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    });
-    VERIFY_SUCCEEDED(
-        AttachPseudoConsole(reinterpret_cast<HPCON>(&pty), siEx.lpAttributeList));
-
     wil::unique_process_information piClient;
     std::wstring realCommand = L"cmd.exe";
-    _CreateChildProcess(realCommand, &siEx, piClient.addressof());
+    VERIFY_SUCCEEDED(AttachPseudoConsole(&pty, realCommand, piClient.addressof()));
 
     VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
@@ -263,27 +249,9 @@ void ConPtyTests::SurvivesOnBreakOutput()
     VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 
-    STARTUPINFOEXW siEx;
-    siEx = { 0 };
-    siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-    size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
-    BYTE* attrList = new BYTE[size];
-    auto freeAttrList = wil::scope_exit([&] {
-        delete[] attrList;
-    });
-
-    siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
-    auto deleteAttrList = wil::scope_exit([&] {
-        DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    });
-    VERIFY_SUCCEEDED(
-        AttachPseudoConsole(reinterpret_cast<HPCON>(&pty), siEx.lpAttributeList));
-
     wil::unique_process_information piClient;
     std::wstring realCommand = L"cmd.exe";
-    _CreateChildProcess(realCommand, &siEx, piClient.addressof());
+    VERIFY_SUCCEEDED(AttachPseudoConsole(&pty, realCommand, piClient.addressof()));
 
     VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
@@ -326,27 +294,9 @@ void ConPtyTests::DiesOnBreakBoth()
     VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 
-    STARTUPINFOEXW siEx;
-    siEx = { 0 };
-    siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-    size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
-    BYTE* attrList = new BYTE[size];
-    auto freeAttrList = wil::scope_exit([&] {
-        delete[] attrList;
-    });
-
-    siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
-    auto deleteAttrList = wil::scope_exit([&] {
-        DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    });
-    VERIFY_SUCCEEDED(
-        AttachPseudoConsole(reinterpret_cast<HPCON>(&pty), siEx.lpAttributeList));
-
     wil::unique_process_information piClient;
     std::wstring realCommand = L"cmd.exe";
-    _CreateChildProcess(realCommand, &siEx, piClient.addressof());
+    VERIFY_SUCCEEDED(AttachPseudoConsole(&pty, realCommand, piClient.addressof()));
 
     VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
@@ -415,27 +365,9 @@ void ConPtyTests::DiesOnClose()
     VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 
-    STARTUPINFOEXW siEx;
-    siEx = { 0 };
-    siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-    size_t size;
-    VERIFY_IS_FALSE(InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)&size));
-    BYTE* attrList = new BYTE[size];
-    auto freeAttrList = wil::scope_exit([&] {
-        delete[] attrList;
-    });
-
-    siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList);
-    VERIFY_IS_TRUE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, (PSIZE_T)&size));
-    auto deleteAttrList = wil::scope_exit([&] {
-        DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    });
-    VERIFY_SUCCEEDED(
-        AttachPseudoConsole(reinterpret_cast<HPCON>(&pty), siEx.lpAttributeList));
-
     wil::unique_process_information piClient;
-    std::wstring realCommand = testCommandline;
-    _CreateChildProcess(realCommand, &siEx, piClient.addressof());
+    std::wstring realCommand(reinterpret_cast<const wchar_t*>(testCommandline.GetBuffer()), testCommandline.GetLength());
+    VERIFY_SUCCEEDED(AttachPseudoConsole(&pty, realCommand, piClient.addressof()));
 
     VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);

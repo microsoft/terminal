@@ -168,7 +168,6 @@ void Selection::_SaveCursorData(const Cursor& cursor) noexcept
     _coordSavedCursorPosition = cursor.GetPosition();
     _ulSavedCursorSize = cursor.GetSize();
     _fSavedCursorVisible = cursor.IsVisible();
-    _savedCursorColor = cursor.GetColor();
     _savedCursorType = cursor.GetType();
 }
 
@@ -182,7 +181,6 @@ void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
 {
     cursor.SetSize(_ulSavedCursorSize);
     cursor.SetIsVisible(_fSavedCursorVisible);
-    cursor.SetColor(_savedCursorColor);
     cursor.SetType(_savedCursorType);
     cursor.SetIsOn(true);
     cursor.SetPosition(_coordSavedCursorPosition);

@@ -7,7 +7,7 @@
 
 #pragma hdrstop
 
-#define SET_FIELD_AND_SIZE(x) FIELD_OFFSET(Settings, x), RTL_FIELD_SIZE(Settings, x)
+#define SET_FIELD_AND_SIZE(x) UFIELD_OFFSET(Settings, x), RTL_FIELD_SIZE(Settings, x)
 
 #define NT_TESTNULL(var) (((var) == nullptr) ? STATUS_NO_MEMORY : STATUS_SUCCESS)
 
@@ -57,14 +57,19 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMa
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_TRIMZEROHEADINGS,              SET_FIELD_AND_SIZE(_fTrimLeadingZeros)           },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_ENABLE_COLOR_SELECTION,        SET_FIELD_AND_SIZE(_fEnableColorSelection)       },
     { _RegPropertyType::Coordinate,     CONSOLE_REGISTRY_WINDOWPOS,                     SET_FIELD_AND_SIZE(_dwWindowOrigin)              },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORCOLOR,                   SET_FIELD_AND_SIZE(_CursorColor)                 },
     { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORTYPE,                    SET_FIELD_AND_SIZE(_CursorType)                  },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,            SET_FIELD_AND_SIZE(_fInterceptCopyPaste)         },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_DEFAULTFOREGROUND,             SET_FIELD_AND_SIZE(_DefaultForeground)           },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_DEFAULTBACKGROUND,             SET_FIELD_AND_SIZE(_DefaultBackground)           },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_TERMINALSCROLLING,             SET_FIELD_AND_SIZE(_TerminalScrolling)           },
-    { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_USEDX,                         SET_FIELD_AND_SIZE(_fUseDx)                      },
+    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_USEDX,                         SET_FIELD_AND_SIZE(_fUseDx)                      },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_COPYCOLOR,                     SET_FIELD_AND_SIZE(_fCopyColor)                  }
+
+    // Special cases that are handled manually in Registry::LoadFromRegistry:
+    // - CONSOLE_REGISTRY_WINDOWPOS
+    // - CONSOLE_REGISTRY_CODEPAGE
+    // - CONSOLE_REGISTRY_COLORTABLE
+    // - CONSOLE_REGISTRY_DEFAULTFOREGROUND
+    // - CONSOLE_REGISTRY_DEFAULTBACKGROUND
+    // - CONSOLE_REGISTRY_CURSORCOLOR
 
 };
 const size_t RegistrySerialization::s_PropertyMappingsSize = ARRAYSIZE(s_PropertyMappings);
@@ -251,7 +256,8 @@ NTSTATUS RegistrySerialization::s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR 
 [[nodiscard]]
 NTSTATUS RegistrySerialization::s_DeleteValue(const HKEY hKey, _In_ PCWSTR const pwszValueName)
 {
-    return NTSTATUS_FROM_WIN32(RegDeleteKeyValueW(hKey, nullptr, pwszValueName));
+    const auto result = RegDeleteKeyValueW(hKey, nullptr, pwszValueName);
+    return result == ERROR_FILE_NOT_FOUND ? S_OK : NTSTATUS_FROM_WIN32(result);
 }
 
 // Routine Description:

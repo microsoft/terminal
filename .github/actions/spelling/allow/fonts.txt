@@ -7,3 +7,4 @@ Iosevka
 MDL
 Monofur
 Segoe
+wght

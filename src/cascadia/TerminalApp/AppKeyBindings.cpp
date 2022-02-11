@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -19,6 +19,11 @@ namespace winrt::TerminalApp::implementation
             return _dispatch.DoAction(cmd.ActionAndArgs());
         }
         return false;
+    }
+
+    bool AppKeyBindings::IsKeyChordExplicitlyUnbound(const KeyChord& kc)
+    {
+        return _actionMap.IsKeyChordExplicitlyUnbound(kc);
     }
 
     void AppKeyBindings::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)

@@ -12,16 +12,22 @@
 #include "SwitchToTabArgs.g.cpp"
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
+#include "MovePaneArgs.g.cpp"
+#include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetFocusModeArgs.g.cpp"
+#include "SetFullScreenArgs.g.cpp"
+#include "SetMaximizedArgs.g.cpp"
 #include "SetColorSchemeArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
+#include "CloseTabArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
@@ -31,8 +37,13 @@
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
+#include "ExportBufferArgs.g.cpp"
+#include "ClearBufferArgs.g.cpp"
+#include "MultipleActionsArgs.g.cpp"
+#include "AdjustOpacityArgs.g.cpp"
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 using namespace winrt::Microsoft::Terminal::Control;
 
@@ -88,6 +99,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
+        if (Elevate())
+        {
+            ss << fmt::format(L"elevate: {}, ", Elevate().Value());
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
@@ -116,12 +132,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!StartingDirectory().empty())
         {
-            ss << fmt::format(L"--startingDirectory \"{}\" ", StartingDirectory());
+            ss << fmt::format(L"--startingDirectory {} ", QuoteAndEscapeCommandlineArg(StartingDirectory()));
         }
 
         if (!TabTitle().empty())
         {
-            ss << fmt::format(L"--title \"{}\" ", TabTitle());
+            ss << fmt::format(L"--title {} ", QuoteAndEscapeCommandlineArg(TabTitle()));
         }
 
         if (TabColor())
@@ -144,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!ColorScheme().empty())
         {
-            ss << fmt::format(L"--colorScheme \"{}\" ", ColorScheme());
+            ss << fmt::format(L"--colorScheme {} ", QuoteAndEscapeCommandlineArg(ColorScheme()));
         }
 
         if (!Commandline().empty())
@@ -224,8 +240,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
+    winrt::hstring MovePaneArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
+        };
+    }
+
     winrt::hstring SwitchToTabArgs::GenerateName() const
     {
+        if (TabIndex() == UINT32_MAX)
+        {
+            return RS_(L"SwitchToLastTabCommandKey");
+        }
+
         return winrt::hstring{
             fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), TabIndex())
         };
@@ -274,9 +302,53 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         case FocusDirection::Previous:
             return RS_(L"MoveFocusToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"MoveFocusNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"MoveFocusPreviousInOrder");
+        case FocusDirection::First:
+            return RS_(L"MoveFocusFirstPane");
+        case FocusDirection::Parent:
+            return RS_(L"MoveFocusParentPane");
+        case FocusDirection::Child:
+            return RS_(L"MoveFocusChildPane");
         }
+
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
+                        directionString)
+        };
+    }
+
+    winrt::hstring SwapPaneArgs::GenerateName() const
+    {
+        winrt::hstring directionString;
+        switch (Direction())
+        {
+        case FocusDirection::Left:
+            directionString = RS_(L"DirectionLeft");
+            break;
+        case FocusDirection::Right:
+            directionString = RS_(L"DirectionRight");
+            break;
+        case FocusDirection::Up:
+            directionString = RS_(L"DirectionUp");
+            break;
+        case FocusDirection::Down:
+            directionString = RS_(L"DirectionDown");
+            break;
+        case FocusDirection::Previous:
+            return RS_(L"SwapPaneToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"SwapPaneNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"SwapPanePreviousInOrder");
+        case FocusDirection::First:
+            return RS_(L"SwapPaneFirstPane");
+        }
+
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"SwapPaneWithArgCommandKey")),
                         directionString)
         };
     }
@@ -339,13 +411,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This text is intentionally _not_ localized, to attempt to mirror the
         // exact syntax that the property would have in JSON.
-        switch (SplitStyle())
+        switch (SplitDirection())
         {
-        case SplitState::Vertical:
-            ss << L"split: vertical, ";
+        case SplitDirection::Up:
+            ss << L"split: up, ";
             break;
-        case SplitState::Horizontal:
-            ss << L"split: horizontal, ";
+        case SplitDirection::Right:
+            ss << L"split: right, ";
+            break;
+        case SplitDirection::Down:
+            ss << L"split: down, ";
+            break;
+        case SplitDirection::Left:
+            ss << L"split: left, ";
             break;
         }
 
@@ -385,6 +463,33 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         default:
             return RS_(L"OpenSettingsUICommandKey");
         }
+    }
+
+    winrt::hstring SetFocusModeArgs::GenerateName() const
+    {
+        if (IsFocusMode())
+        {
+            return RS_(L"EnableFocusModeCommandKey");
+        }
+        return RS_(L"DisableFocusModeCommandKey");
+    }
+
+    winrt::hstring SetFullScreenArgs::GenerateName() const
+    {
+        if (IsFullScreen())
+        {
+            return RS_(L"EnableFullScreenCommandKey");
+        }
+        return RS_(L"DisableFullScreenCommandKey");
+    }
+
+    winrt::hstring SetMaximizedArgs::GenerateName() const
+    {
+        if (IsMaximized())
+        {
+            return RS_(L"EnableMaximizedCommandKey");
+        }
+        return RS_(L"DisableMaximizedCommandKey");
     }
 
     winrt::hstring SetColorSchemeArgs::GenerateName() const
@@ -467,6 +572,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"CloseTabsAfterDefaultCommandKey");
+    }
+
+    winrt::hstring CloseTabArgs::GenerateName() const
+    {
+        if (Index())
+        {
+            // "Close tab at index {0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"CloseTabAtIndexCommandKey")),
+                            Index().Value())
+            };
+        }
+        return RS_(L"CloseTabCommandKey");
     }
 
     winrt::hstring ScrollUpArgs::GenerateName() const
@@ -587,6 +705,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring GlobalSummonArgs::GenerateName() const
     {
+        // GH#10210 - Is this action literally the same thing as the `quakeMode`
+        // action? That has a special name.
+        static const auto quakeModeArgs{ std::get<0>(GlobalSummonArgs::QuakeModeFromJson(Json::Value::null)) };
+        if (quakeModeArgs.Equals(*this))
+        {
+            return RS_(L"QuakeModeCommandKey");
+        }
+
         std::wstringstream ss;
         ss << std::wstring_view(RS_(L"GlobalSummonCommandKey"));
 
@@ -607,5 +733,77 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"FocusPaneCommandKey")),
                         Id())
         };
+    }
+
+    winrt::hstring ExportBufferArgs::GenerateName() const
+    {
+        if (!Path().empty())
+        {
+            // "Export text to {path}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ExportBufferToPathCommandKey")),
+                            Path())
+            };
+        }
+        else
+        {
+            // "Export text"
+            return RS_(L"ExportBufferCommandKey");
+        }
+    }
+
+    winrt::hstring ClearBufferArgs::GenerateName() const
+    {
+        // "Clear Buffer"
+        // "Clear Viewport"
+        // "Clear Scrollback"
+        switch (Clear())
+        {
+        case Control::ClearBufferType::All:
+            return RS_(L"ClearAllCommandKey");
+        case Control::ClearBufferType::Screen:
+            return RS_(L"ClearViewportCommandKey");
+        case Control::ClearBufferType::Scrollback:
+            return RS_(L"ClearScrollbackCommandKey");
+        }
+
+        // Return the empty string - the Clear() should be one of these values
+        return winrt::hstring{ L"" };
+    }
+
+    winrt::hstring MultipleActionsArgs::GenerateName() const
+    {
+        return L"";
+    }
+
+    winrt::hstring AdjustOpacityArgs::GenerateName() const
+    {
+        if (Relative())
+        {
+            if (Opacity() >= 0)
+            {
+                // "Increase background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"IncreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+            else
+            {
+                // "Decrease background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"DecreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+        }
+        else
+        {
+            // "Set background opacity to {Opacity}%"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"AdjustOpacityCommandKey")),
+                            Opacity())
+            };
+        }
     }
 }

@@ -18,7 +18,6 @@ Author(s):
 #include "ActionMap.g.h"
 #include "IInheritable.h"
 #include "Command.h"
-#include "../inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -34,25 +33,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct KeyChordHash
     {
-        std::size_t operator()(const Control::KeyChord& key) const
+        inline std::size_t operator()(const Control::KeyChord& key) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(key.Modifiers(), key.Vkey());
+            return static_cast<size_t>(key.Hash());
         }
     };
 
     struct KeyChordEquality
     {
-        bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
+        inline bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
         {
-            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
+            return lhs.Equals(rhs);
         }
     };
 
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {
-        ActionMap();
-
         // views
+        Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> KeyBindings();
@@ -60,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // queries
         Model::Command GetActionByKeyChord(Control::KeyChord const& keys) const;
+        bool IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action, IActionArgs const& actionArgs) const;
 
@@ -74,14 +73,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // modification
         bool RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);
         void DeleteKeyBinding(Control::KeyChord const& keys);
-
-        static Windows::System::VirtualKeyModifiers ConvertVKModifiers(Control::KeyModifiers modifiers);
+        void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
 
     private:
         std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
-        std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;
+        std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
-        void _PopulateNameMapWithNestedCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
+        void _RefreshKeyBindingCaches();
+        void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
+        void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
         std::vector<Model::Command> _GetCumulativeActions() const noexcept;
@@ -90,10 +90,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
 
+        Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
-        Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
+
+        std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
+        std::vector<Model::Command> _IterableCommands;
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 

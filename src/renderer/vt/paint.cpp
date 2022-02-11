@@ -34,7 +34,7 @@ using namespace Microsoft::Console::Types;
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn,
                            _invalidMap,
-                           _lastViewport.ToInclusive(),
+                           til::rect{ _lastViewport.ToInclusive() },
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
@@ -142,7 +142,7 @@ using namespace Microsoft::Console::Types;
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
+[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
                                                      const COLORREF /*color*/,
                                                      const size_t /*cchLine*/,
                                                      const COORD /*coordTarget*/) noexcept
@@ -158,7 +158,7 @@ using namespace Microsoft::Console::Types;
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
-    _trace.TracePaintCursor(options.coordCursor);
+    _trace.TracePaintCursor(til::point{ options.coordCursor });
 
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
@@ -287,20 +287,21 @@ using namespace Microsoft::Console::Types;
     }
 
     // We use the legacy color calculations to generate an approximation of the
-    // colors in the 16-color table.
-    auto fgIndex = fg.GetLegacyIndex(0);
-    auto bgIndex = bg.GetLegacyIndex(0);
+    // colors in the Windows 16-color table, but we need to transpose those
+    // values to obtain an index in an ANSI-compatible order.
+    auto fgIndex = TextColor::TransposeLegacyIndex(fg.GetLegacyIndex(0));
+    auto bgIndex = TextColor::TransposeLegacyIndex(bg.GetLegacyIndex(0));
 
-    // If the bold attribute is set, and the foreground can be brightened, then do so.
-    const bool brighten = textAttributes.IsBold() && fg.CanBeBrightened();
+    // If the intense attribute is set, and the foreground can be brightened, then do so.
+    const bool brighten = textAttributes.IsIntense() && fg.CanBeBrightened();
     fgIndex |= (brighten ? FOREGROUND_INTENSITY : 0);
 
-    // To actually render bright colors, though, we need to use SGR bold.
-    const auto needBold = fgIndex > 7;
-    if (needBold != _lastTextAttributes.IsBold())
+    // To actually render bright colors, though, we need to use SGR intense.
+    const auto needIntense = fgIndex > 7;
+    if (needIntense != _lastTextAttributes.IsIntense())
     {
-        RETURN_IF_FAILED(_SetBold(needBold));
-        _lastTextAttributes.SetBold(needBold);
+        RETURN_IF_FAILED(_SetIntense(needIntense));
+        _lastTextAttributes.SetIntense(needIntense);
     }
 
     // After which we drop the high bits, since only colors 0 to 7 are supported.

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
     };
 
-    struct Rendering : RenderingT<Rendering>
+    struct Rendering : public HasScrollViewer<Rendering>, RenderingT<Rendering>
     {
         Rendering();
 

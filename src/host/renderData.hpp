@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../renderer/inc/IRenderData.hpp"
+#include "../types/inc/colorTable.hpp"
 #include "../types/IUiaData.h"
 
 class RenderData final :
@@ -35,20 +36,13 @@ public:
 #pragma endregion
 
 #pragma region IRenderData
-    const TextAttribute GetDefaultBrushColors() noexcept override;
-
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
-
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const override;
-
-    bool IsScreenReversed() const noexcept override;
 
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
 
@@ -63,6 +57,7 @@ public:
 #pragma endregion
 
 #pragma region IUiaData
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     const bool IsSelectionActive() const override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
@@ -70,5 +65,6 @@ public:
     const COORD GetSelectionAnchor() const noexcept;
     const COORD GetSelectionEnd() const noexcept;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
+    const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
 };

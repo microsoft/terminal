@@ -144,11 +144,10 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     ULONG const LayerNumber = (Message->msgHeader.ApiNumber >> 24) - 1;
     ULONG const ApiNumber = Message->msgHeader.ApiNumber & 0xffffff;
 
-    NTSTATUS Status;
-    if ((LayerNumber >= RTL_NUMBER_OF(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
+    if ((LayerNumber >= std::size(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
     {
-        Status = STATUS_ILLEGAL_FUNCTION;
-        goto Complete;
+        Message->SetReplyStatus(STATUS_ILLEGAL_FUNCTION);
+        return Message;
     }
 
     CONSOLE_API_DESCRIPTOR const* Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
@@ -159,8 +158,8 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         (Message->msgHeader.ApiDescriptorSize > Message->Descriptor.InputSize - sizeof(CONSOLE_MSG_HEADER)) ||
         (Message->msgHeader.ApiDescriptorSize < Descriptor->RequiredSize))
     {
-        Status = STATUS_ILLEGAL_FUNCTION;
-        goto Complete;
+        Message->SetReplyStatus(STATUS_ILLEGAL_FUNCTION);
+        return Message;
     }
 
     BOOL ReplyPending = FALSE;
@@ -173,6 +172,7 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     // hard dependencies on NTSTATUS codes that aren't readily expressible as an HRESULT. There's currently only one
     // such known code -- STATUS_BUFFER_TOO_SMALL. There's a conlibk dependency on this being returned from the console
     // alias API.
+    NTSTATUS Status = S_OK;
     {
         const auto trace = Tracing::s_TraceApiCall(Status, Descriptor->TraceName);
         Status = (*Descriptor->Routine)(Message, &ReplyPending);
@@ -184,14 +184,9 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
 
     if (!ReplyPending)
     {
-        goto Complete;
+        Message->SetReplyStatus(Status);
+        return Message;
     }
 
     return nullptr;
-
-Complete:
-
-    Message->SetReplyStatus(Status);
-
-    return Message;
 }

@@ -153,7 +153,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyTrailingCRLF)
     {
-        PWSTR pwszSource = L"SourceWithoutCRLF\r\n";
+        const auto pwszSource = L"SourceWithoutCRLF\r\n";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 60;
@@ -164,10 +164,7 @@ class AliasTests
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
         size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
-
         DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
 
         // Register the wrong alias name before we try.
         std::wstring exe(L"exe.exe");
@@ -196,7 +193,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyInvalidExeName)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -228,7 +225,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyExeNotFound)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -260,7 +257,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyAliasNotFound)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -297,7 +294,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyTargetTooSmall)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -306,7 +303,6 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
         size_t cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 
@@ -334,7 +330,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyLeadingSpaces)
     {
-        PWSTR pwszSource = L" Source";
+        const auto pwszSource = L" Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;

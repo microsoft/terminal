@@ -21,6 +21,7 @@ enum TraceKeywords
     API = 0x400,
     UIA = 0x800,
     CookedRead = 0x1000,
+    ConsoleAttachDetach = 0x2000,
     All = 0x1FFF
 };
 DEFINE_ENUM_FLAG_OPERATORS(TraceKeywords);
@@ -57,7 +58,7 @@ Tracing::~Tracing()
 // Return Value:
 // - An object for the caller to hold until the API call is complete.
 //   Then destroy it to signal that the call is over so the stop trace can be written.
-Tracing Tracing::s_TraceApiCall(const NTSTATUS& result, PCSTR traceName)
+Tracing Tracing::s_TraceApiCall(const NTSTATUS result, PCSTR traceName)
 {
     // clang-format off
     TraceLoggingWrite(
@@ -405,14 +406,38 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
     }
 }
 
-void Tracing::s_TraceCookedRead(_In_z_ const wchar_t* pwszCookedBuffer)
+void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength)
 {
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "CookedRead",
-        TraceLoggingWideString(pwszCookedBuffer, "ReadBuffer"),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::CookedRead));
+    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::CookedRead))
+    {
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "CookedRead",
+            TraceLoggingCountedWideString(pwchCookedBuffer, cchCookedBufferLength, "ReadBuffer"),
+            TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
+            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
+            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+            TraceLoggingKeyword(TraceKeywords::CookedRead));
+    }
+}
+
+void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_ bool bIsAttach)
+{
+    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach))
+    {
+        bool bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
+
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "ConsoleAttachDetach",
+            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
+            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
+            TraceLoggingBool(bIsAttach, "IsAttach"),
+            TraceLoggingBool(bIsUserInteractive, "IsUserInteractive"),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+            TraceLoggingKeyword(TraceKeywords::ConsoleAttachDetach));
+    }
 }
 
 void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept

@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(hstring, HelpText);
+        DEPENDENCY_PROPERTY(hstring, CurrentValue);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
         DEPENDENCY_PROPERTY(IInspectable, SettingOverrideSource);
         TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);
@@ -38,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         static void _InitializeProperties();
         static void _OnHasSettingValueChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
-        static hstring _GenerateOverrideMessage(const Model::Profile& profile);
+        static hstring _GenerateOverrideMessage(const IInspectable& settingOrigin);
         void _UpdateOverrideSystem();
     };
 }

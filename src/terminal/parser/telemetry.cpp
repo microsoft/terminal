@@ -273,6 +273,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[OSCBG], "OscBackgroundColor"),
                                       TraceLoggingUInt32(_uiTimesUsed[OSCSCB], "OscSetClipboard"),
                                       TraceLoggingUInt32(_uiTimesUsed[REP], "REP"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECAC1], "DECAC1"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSWL], "DECSWL"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECDWL], "DECDWL"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECDHL], "DECDHL"),

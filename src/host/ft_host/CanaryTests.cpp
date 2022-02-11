@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 // This class is intended to provide a canary (simple launch test)

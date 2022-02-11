@@ -18,7 +18,6 @@ Abstract:
 #pragma once
 
 #include "SummonWindowSelectionArgs.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
@@ -34,6 +33,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(bool, FoundMatch, false);
         WINRT_PROPERTY(bool, OnCurrentDesktop, false);
         WINRT_PROPERTY(SummonWindowBehavior, SummonBehavior);
+
+        WINRT_PROPERTY(Windows::Foundation::IReference<uint64_t>, WindowID);
     };
 }
 

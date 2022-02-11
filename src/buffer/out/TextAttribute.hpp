@@ -41,8 +41,8 @@ public:
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
-        _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
+        _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
+        _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
         _extendedAttrs{ ExtendedAttributes::Normal },
         _hyperlinkId{ 0 }
     {
@@ -64,12 +64,6 @@ public:
     static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
-    std::pair<COLORREF, COLORREF> CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
-                                                     const COLORREF defaultFgColor,
-                                                     const COLORREF defaultBgColor,
-                                                     const bool reverseScreenMode = false,
-                                                     const bool blinkingIsFaint = false) const noexcept;
-
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
     bool IsTopHorizontalDisplayed() const noexcept;
@@ -90,7 +84,7 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsBold() const noexcept;
+    bool IsIntense() const noexcept;
     bool IsFaint() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
@@ -101,7 +95,7 @@ public:
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
 
-    void SetBold(bool isBold) noexcept;
+    void SetIntense(bool isIntense) noexcept;
     void SetFaint(bool isFaint) noexcept;
     void SetItalic(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
@@ -166,13 +160,8 @@ public:
     }
 
 private:
-    static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
-    {
-        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
-    }
-
-    static BYTE s_legacyDefaultForeground;
-    static BYTE s_legacyDefaultBackground;
+    static std::array<TextColor, 16> s_legacyForegroundColorMap;
+    static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 
     uint16_t _wAttrLegacy; // sizeof: 2, alignof: 2
     uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
@@ -212,7 +201,7 @@ constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexce
 #ifdef UNIT_TESTING
 
 #define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format( \
-    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
+    L## #attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX
 {
@@ -225,10 +214,10 @@ namespace WEX
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
+                    L"{FG:%s,BG:%s,intense:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
-                    attr.IsBold(),
+                    attr.IsIntense(),
                     attr._wAttrLegacy,
                     static_cast<DWORD>(attr._extendedAttrs));
             }

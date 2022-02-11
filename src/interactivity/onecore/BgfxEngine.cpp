@@ -166,7 +166,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                        COLORREF const /*color*/,
                                                        size_t const /*cchLine*/,
                                                        COORD const /*coordTarget*/) noexcept
@@ -195,7 +195,9 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 }
 
 [[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                       const RenderSettings& /*renderSettings*/,
                                                        const gsl::not_null<IRenderData*> /*pData*/,
+                                                       const bool /*usingSoftFont*/,
                                                        bool const /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
@@ -230,15 +232,10 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    SMALL_RECT r;
-    r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
-    r.Top = 0;
-    r.Left = 0;
-    r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
-
-    _dirtyArea = r;
+    _dirtyArea.bottom = std::max<LONG>(0, _displayHeight);
+    _dirtyArea.right = std::max<LONG>(0, _displayWidth);
 
     area = { &_dirtyArea,
              1 };

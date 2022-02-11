@@ -1,23 +1,31 @@
 name: "Bug report 🐛"
 description: Report errors or unexpected behavior
+labels: [Issue-Bug]
 body:
 - type: markdown
   attributes:
     value: |
-      Please make sure to [search for existing issues](https://github.com/microsoft/terminal/issues) before filing a new one!
+      Please make sure to [search for existing issues](https://github.com/microsoft/terminal/issues) and [check the FAQ](https://github.com/microsoft/terminal/wiki/Frequently-Asked-Questions-(FAQ)) before filing a new one!
 
       If this is an application crash, please also provide a [Feedback Hub](https://aka.ms/terminal-feedback-hub) submission link so we can find your diagnostic data on the backend. Use the category "Apps > Windows Terminal" and choose "Share My Feedback" after submission to get the link.
 
 - type: input
   attributes:
-    label: Windows Terminal version (or Windows build number)
-    placeholder: "10.0.19042.0, 1.7.3651.0"
+    label: Windows Terminal version
+    placeholder: "1.7.3651.0"
     description: |
-      If you are reporting an issue in Windows Terminal, you can find the version in the about dialog.
-
-      If you are reporting an issue with the Windows Console, please run `ver` or `[Environment]::OSVersion`.
+      You can find the version in the about dialog, or by running `wt -v` at the commandline.
   validations:
-    required: true
+    required: false
+    
+- type: input
+  attributes:
+    label: Windows build number
+    placeholder: "10.0.19042.0"
+    description: |
+      Please run `ver` or `[Environment]::OSVersion`.
+  validations:
+    required: false
 
 - type: textarea
   attributes:

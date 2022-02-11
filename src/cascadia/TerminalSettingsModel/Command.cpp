@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -394,10 +394,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::Value cmdList{ Json::ValueType::arrayValue };
 
-        if (_nestedCommand)
+        if (_nestedCommand || _IterateOn != ExpandCommandType::None)
         {
-            // handle nested command
-            // For nested commands, we can trust _originalJson to be correct.
+            // handle special commands
+            // For these, we can trust _originalJson to be correct.
             // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
             //   until we expand the command.
             cmdList.append(_originalJson);

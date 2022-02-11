@@ -11,7 +11,7 @@ Licensed under the MIT license.
 enum class ExtendedAttributes : BYTE
 {
     Normal = 0x00,
-    Bold = 0x01,
+    Intense = 0x01,
     Italics = 0x02,
     Blinking = 0x04,
     Invisible = 0x08,
@@ -21,20 +21,6 @@ enum class ExtendedAttributes : BYTE
     Faint = 0x80,
 };
 DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
-
-WORD XtermToWindowsIndex(const size_t index) noexcept;
-WORD Xterm256ToWindowsIndex(const size_t index) noexcept;
-WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);
-
-constexpr WORD WINDOWS_RED_ATTR = FOREGROUND_RED;
-constexpr WORD WINDOWS_GREEN_ATTR = FOREGROUND_GREEN;
-constexpr WORD WINDOWS_BLUE_ATTR = FOREGROUND_BLUE;
-constexpr WORD WINDOWS_BRIGHT_ATTR = FOREGROUND_INTENSITY;
-
-constexpr WORD XTERM_RED_ATTR = 0x01;
-constexpr WORD XTERM_GREEN_ATTR = 0x02;
-constexpr WORD XTERM_BLUE_ATTR = 0x04;
-constexpr WORD XTERM_BRIGHT_ATTR = 0x08;
 
 enum class CursorType : unsigned int
 {
@@ -51,4 +37,3 @@ enum class CursorType : unsigned int
 constexpr COLORREF INVALID_COLOR = 0xffffffff;
 
 constexpr WORD COLOR_TABLE_SIZE = 16;
-constexpr WORD XTERM_COLOR_TABLE_SIZE = 256;

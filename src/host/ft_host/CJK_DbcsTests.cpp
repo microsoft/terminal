@@ -10,7 +10,7 @@
 #define ENGLISH_US_CP 437u
 #define JAPANESE_CP 932u
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using WEX::TestExecution::TestData;
 using namespace WEX::Common;
 
@@ -2320,9 +2320,6 @@ void ReadStringWithReadConsoleInputAHelper(HANDLE hIn, PCSTR pszExpectedText, si
 
     while (cchRead < cchExpectedText)
     {
-        // expected read is either the size of the buffer or the number of characters remaining, whichever is smaller.
-        DWORD const dwReadExpected = (DWORD)std::min(cbBuffer, cchExpectedText - cchRead);
-
         DWORD dwRead;
         if (!VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputA(hIn, irRead, (DWORD)cbBuffer, &dwRead), L"Attempt to read input into buffer."))
         {

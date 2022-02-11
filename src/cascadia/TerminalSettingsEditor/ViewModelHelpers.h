@@ -1,9 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
-
-#include "../inc/cppwinrt_utils.h"
 
 template<typename T>
 struct ViewModelHelper
@@ -48,7 +46,7 @@ public:                                                   \
         if (name() != value)                              \
         {                                                 \
             target.name(value);                           \
-            _NotifyChanges(L"Has" #name, L#name);         \
+            _NotifyChanges(L"Has" #name, L## #name);      \
         }                                                 \
     }                                                     \
     bool Has##name() { return target.Has##name(); }
@@ -63,7 +61,7 @@ public:                                                   \
         target.Clear##name();                        \
         if (hadValue)                                \
         {                                            \
-            _NotifyChanges(L"Has" #name, L#name);    \
+            _NotifyChanges(L"Has" #name, L## #name); \
         }                                            \
     }                                                \
     auto name##OverrideSource() { return target.name##OverrideSource(); }
@@ -74,7 +72,8 @@ public:                                                   \
     _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)
 
 // Defines a basic observable property that uses the _NotifyChanges
-// system from ViewModelHelper.
+// system from ViewModelHelper. This is very similar to WINRT_OBSERVABLE_PROPERTY
+// except it leverages _NotifyChanges.
 #define VIEW_MODEL_OBSERVABLE_PROPERTY(type, name, ...) \
 public:                                                 \
     type name() const noexcept { return _##name; };     \
@@ -83,7 +82,7 @@ public:                                                 \
         if (_##name != value)                           \
         {                                               \
             _##name = value;                            \
-            _NotifyChanges(L#name);                     \
+            _NotifyChanges(L## #name);                  \
         }                                               \
     };                                                  \
                                                         \

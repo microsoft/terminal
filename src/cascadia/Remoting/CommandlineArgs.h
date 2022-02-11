@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CommandlineArgs.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {

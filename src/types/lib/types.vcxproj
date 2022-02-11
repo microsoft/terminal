@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{18D09A24-8240-42D6-8CB6-236EEE820263}</ProjectGuid>
@@ -11,6 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\CodepointWidthDetector.cpp" />
+    <ClCompile Include="..\ColorFix.cpp" />
     <ClCompile Include="..\convert.cpp" />
     <ClCompile Include="..\colorTable.cpp" />
     <ClCompile Include="..\Environment.cpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="..\IBaseData.h" />
     <ClInclude Include="..\IControlAccessibilityInfo.h" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
+    <ClInclude Include="..\inc\ColorFix.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\inc\colorTable.hpp" />
     <ClInclude Include="..\inc\Environment.hpp" />

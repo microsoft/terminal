@@ -36,6 +36,13 @@ HRESULT RenderEngineBase::UpdateTitle(const std::wstring_view newTitle) noexcept
     return hr;
 }
 
+HRESULT RenderEngineBase::UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+                                         const SIZE /*cellSize*/,
+                                         const size_t /*centeringHint*/) noexcept
+{
+    return S_FALSE;
+}
+
 HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept
 {
     return S_FALSE;
@@ -67,5 +74,6 @@ HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRenditi
 // - Blocks until the engine is able to render without blocking.
 void RenderEngineBase::WaitUntilCanRender() noexcept
 {
-    // do nothing by default
+    // Throttle the render loop a bit by default (~60 FPS), improving throughput.
+    Sleep(8);
 }

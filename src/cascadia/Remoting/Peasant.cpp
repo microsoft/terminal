@@ -5,6 +5,7 @@
 #include "Peasant.h"
 #include "CommandlineArgs.h"
 #include "SummonWindowBehavior.h"
+#include "GetWindowLayoutArgs.h"
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 
@@ -20,8 +21,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
     }
 
-    // This is a private constructor to be used in unit tests, where we don't
-    // want each Peasant to necessarily use the current PID.
+    // This constructor is intended to be used in unit tests,
+    // but we need to make it public in order to use make_self
+    // in the tests. It's not exposed through the idl though
+    // so it's not _truly_ fully public which should be acceptable.
     Peasant::Peasant(const uint64_t testPID) :
         _ourPID{ testPID }
     {
@@ -31,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         _id = id;
     }
+
     uint64_t Peasant::GetID()
     {
         return _id;
@@ -221,5 +225,89 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    void Peasant::RequestShowNotificationIcon()
+    {
+        try
+        {
+            _ShowNotificationIconRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestShowNotificationIcon",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    void Peasant::RequestHideNotificationIcon()
+    {
+        try
+        {
+            _HideNotificationIconRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestHideNotificationIcon",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    void Peasant::RequestQuitAll()
+    {
+        try
+        {
+            _QuitAllRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestQuit",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    void Peasant::Quit()
+    {
+        try
+        {
+            _QuitRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_Quit",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    // Method Description:
+    // - Request and return the window layout from the current TerminalPage
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the window layout as a json string
+    hstring Peasant::GetWindowLayout()
+    {
+        auto args = winrt::make_self<implementation::GetWindowLayoutArgs>();
+        _GetWindowLayoutRequestedHandlers(nullptr, *args);
+        if (const auto op = args->WindowLayoutJsonAsync())
+        {
+            // This will fail if called on the UI thread, so the monarch should
+            // never set WindowLayoutJsonAsync.
+            auto str = op.get();
+            return str;
+        }
+        return args->WindowLayoutJson();
     }
 }

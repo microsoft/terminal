@@ -273,18 +273,17 @@ try
     // TODO GH#6338: Add support for `"cursorTextColor": null` for letting the
     // cursor draw on top again.
 
-    // **MATH** PHASE
-    const til::size glyphSize{ til::math::flooring,
-                               drawingContext.cellSize.width,
-                               drawingContext.cellSize.height };
-
     // Create rectangular block representing where the cursor can fill.
-    D2D1_RECT_F rect = til::rectangle{ til::point{ options.coordCursor } }.scale_up(glyphSize);
+    D2D1_RECT_F rect;
+    rect.left = options.coordCursor.X * drawingContext.cellSize.width;
+    rect.top = options.coordCursor.Y * drawingContext.cellSize.height;
+    rect.right = rect.left + drawingContext.cellSize.width;
+    rect.bottom = rect.top + drawingContext.cellSize.height;
 
     // If we're double-width, make it one extra glyph wider
     if (options.fIsDoubleWidth)
     {
-        rect.right += glyphSize.width();
+        rect.right += drawingContext.cellSize.width;
     }
 
     // If the cursor isn't within the bounds of this current run of text, do nothing.
@@ -303,7 +302,7 @@ try
     {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
-        ulHeight = (glyphSize.height<ULONG>() * ulHeight) / 100;
+        ulHeight = gsl::narrow_cast<ULONG>(drawingContext.cellSize.height * ulHeight) / 100;
         ulHeight = std::max(ulHeight, MinCursorHeightPixels); // No smaller than 1px
 
         rect.top = rect.bottom - ulHeight;
@@ -348,8 +347,7 @@ try
     if (!fInvert)
     {
         // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
-                                                           &brush));
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ options.cursorColor }, &brush));
     }
     else
     {
@@ -487,6 +485,7 @@ CATCH_RETURN()
 {
     // Color glyph rendering sourced from https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/DWriteColorGlyph
 
+#pragma warning(suppress : 26429) // Symbol 'drawingContext' is never tested for nullness, it can be marked as not_null (f.23).
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
     // Since we've delegated the drawing of the background of the text into this function, the origin passed in isn't actually the baseline.

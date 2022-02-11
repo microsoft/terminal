@@ -6,8 +6,6 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/DefaultSettings.h"
-#include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 
@@ -41,10 +39,6 @@ static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& i
 Terminal::Terminal() :
     _mutableViewport{ Viewport::Empty() },
     _title{},
-    _colorTable{},
-    _defaultFg{ RGB(255, 255, 255) },
-    _defaultBg{ ARGB(0, 0, 0, 0) },
-    _screenReversed{ false },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
@@ -60,6 +54,14 @@ Terminal::Terminal() :
 
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
+    // Until we have a true pass-through mode (GH#1173), the decision as to
+    // whether C1 controls are interpreted or not is made at the conhost level.
+    // If they are being filtered out, then we will simply never receive them.
+    // But if they are being accepted by conhost, there's a chance they may get
+    // passed through in some situations, so it's important that our state
+    // machine is always prepared to accept them.
+    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
+
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
         {
@@ -71,7 +73,8 @@ Terminal::Terminal() :
 
     _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
 
-    _InitializeColorTable();
+    _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, RGB(255, 255, 255));
+    _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
@@ -126,12 +129,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
+        _tabColor = settings.TabColor().Value();
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
+        _startingTabColor = settings.StartingTabColor().Value();
     }
 
     if (_pfnTabColorChanged)
@@ -169,16 +172,22 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 // - appearance: an ICoreAppearance with new settings values for us to use.
 void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
-    // Set the default background as transparent to prevent the
-    // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ appearance.DefaultBackground() };
-    _defaultBg = newBackgroundColor.with_alpha(0);
-    _defaultFg = appearance.DefaultForeground();
+    _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
+    _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
+    _renderSettings.SetRenderMode(RenderSettings::Mode::DistinguishableColors, appearance.AdjustIndistinguishableColors());
+
+    const til::color newBackgroundColor{ appearance.DefaultBackground() };
+    _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
+    const til::color newForegroundColor{ appearance.DefaultForeground() };
+    _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
+    const til::color newCursorColor{ appearance.CursorColor() };
+    _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
 
     for (int i = 0; i < 16; i++)
     {
-        _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
+        _renderSettings.SetColorTableEntry(i, til::color{ appearance.GetColorTableEntry(i) });
     }
+    _renderSettings.MakeAdjustedColorArray();
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
@@ -206,9 +215,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     if (_buffer)
     {
-        _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
-                                      til::color{ appearance.CursorColor() },
-                                      cursorShape);
+        _buffer->GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
     }
 
     _defaultCursorShape = cursorShape;
@@ -231,15 +238,9 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
-
-    const auto oldTop = _mutableViewport.Top();
-
     const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
     COORD bufferSize{ viewportSize.X, newBufferHeight };
-
-    // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
@@ -430,7 +431,21 @@ void Terminal::Write(std::wstring_view stringView)
 {
     auto lock = LockForWriting();
 
+    auto& cursor = _buffer->GetCursor();
+    const til::point cursorPosBefore{ cursor.GetPosition() };
+
     _stateMachine->ProcessString(stringView);
+
+    const til::point cursorPosAfter{ cursor.GetPosition() };
+
+    // Firing the CursorPositionChanged event is very expensive so we try not to
+    // do that when the cursor does not need to be redrawn. We don't do this
+    // inside _AdjustCursorPosition, only once we're done writing the whole run
+    // of output.
+    if (cursorPosBefore != cursorPosAfter)
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::WritePastedText(std::wstring_view stringView)
@@ -500,8 +515,8 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         const auto end = result->stop;
         std::wstring uri;
 
-        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
-        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start.to_win32_coord()));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end.to_win32_coord()));
         for (auto iter = startIter; iter != endIter; ++iter)
         {
             uri += iter->Chars();
@@ -530,7 +545,7 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 // - The interval representing the start and end coordinates
 std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
 {
-    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
+    const auto results = _patternIntervalTree.findOverlapping(til::point{ position.X + 1, position.Y }, til::point{ position });
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -600,14 +615,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     }
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
-
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    // (This doesn't apply to Ctrl+Alt+Space.)
-    if (isAltOnlyPressed && vkey == VK_SPACE)
-    {
-        return false;
-    }
 
     // By default Windows treats Ctrl+Alt as an alias for AltGr.
     // When the altGrAliasing setting is set to false, this behaviour should be disabled.
@@ -679,13 +686,6 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
 // - false otherwise.
 bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
-    {
-        return false;
-    }
-
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
     {
@@ -715,8 +715,8 @@ void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, si
 {
     const auto vis = _VisibleStartIndex();
     auto invalidate = [=](const PointTree::interval& interval) {
-        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
-        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x), gsl::narrow<SHORT>(interval.start.y + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x), gsl::narrow<SHORT>(interval.stop.y + vis) };
         _InvalidateFromCoords(startCoord, endCoord);
     };
     tree.visit_all(invalidate);
@@ -738,18 +738,18 @@ void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
         const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
 
         // invalidate the first line
-        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        SMALL_RECT region{ start.X, start.Y, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(start.Y) };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
 
         if ((end.Y - start.Y) > 1)
         {
             // invalidate the lines in between the first and last line
-            region = til::rectangle(0, start.Y + 1, rowSize - 1, end.Y - 1);
+            region = SMALL_RECT{ 0, start.Y + 1, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(end.Y - 1) };
             _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
-        region = til::rectangle(0, end.Y, end.X, end.Y);
+        region = SMALL_RECT{ 0, end.Y, end.X, end.Y };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
@@ -867,9 +867,15 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
 {
-    return std::shared_lock<std::shared_mutex>(_readWriteLock);
+#ifdef NDEBUG
+    return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 // Method Description:
@@ -877,9 +883,15 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
 {
-    return std::unique_lock<std::shared_mutex>(_readWriteLock);
+#ifdef NDEBUG
+    return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept
@@ -1011,6 +1023,31 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
+
+            // Update our selection too, so it doesn't move as the buffer is cycled
+            if (_selection)
+            {
+                // If the start of the selection is above 0, we can reduce both the start and end by 1
+                if (_selection->start.Y > 0)
+                {
+                    _selection->start.Y -= 1;
+                    _selection->end.Y -= 1;
+                }
+                else
+                {
+                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
+                    if (_selection->end.Y > 0)
+                    {
+                        _selection->start.X = 0;
+                        _selection->end.Y -= 1;
+                    }
+                    else
+                    {
+                        // Both the start and end of the selection are at 0, clear the selection
+                        _selection.reset();
+                    }
+                }
+            }
         }
 
         // manually erase our pattern intervals since the locations have changed now
@@ -1067,11 +1104,9 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        COORD delta{ 0, -rowsPushedOffTopOfBuffer };
+        COORD delta{ 0, gsl::narrow_cast<short>(-rowsPushedOffTopOfBuffer) };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
-
-    _NotifyTerminalCursorPositionChanged();
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
@@ -1177,19 +1212,6 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
-void Terminal::_InitializeColorTable()
-try
-{
-    const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
-    // First set up the basic 256 colors
-    Utils::Initialize256ColorTable(tableView);
-    // Then use fill the first 16 values with the Campbell scheme
-    Utils::InitializeCampbellColorTable(tableView);
-    // Then make sure all the values have an alpha of 255
-    Utils::SetColorTableAlpha(tableView, 0xff);
-}
-CATCH_LOG()
-
 // Method Description:
 // - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor
@@ -1242,11 +1264,6 @@ const std::optional<til::color> Terminal::GetTabColor() const noexcept
     return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
 }
 
-BlinkingState& Terminal::GetBlinkingState() const noexcept
-{
-    return _blinkingState;
-}
-
 // Method Description:
 // - Gets the internal taskbar state value
 // Return Value:
@@ -1263,4 +1280,60 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexce
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;
+}
+
+Scheme Terminal::GetColorScheme() const noexcept
+{
+    Scheme s;
+
+    s.Foreground = til::color{ _renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
+    s.Background = til::color{ _renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
+
+    // SelectionBackground is stored in the ControlAppearance
+    s.CursorColor = til::color{ _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
+
+    s.Black = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_BLACK) };
+    s.Red = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_RED) };
+    s.Green = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_GREEN) };
+    s.Yellow = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_YELLOW) };
+    s.Blue = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_BLUE) };
+    s.Purple = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_MAGENTA) };
+    s.Cyan = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_CYAN) };
+    s.White = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_WHITE) };
+    s.BrightBlack = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLACK) };
+    s.BrightRed = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED) };
+    s.BrightGreen = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN) };
+    s.BrightYellow = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW) };
+    s.BrightBlue = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLUE) };
+    s.BrightPurple = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_MAGENTA) };
+    s.BrightCyan = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_CYAN) };
+    s.BrightWhite = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_WHITE) };
+    return s;
+}
+
+void Terminal::ApplyScheme(const Scheme& colorScheme)
+{
+    _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, til::color{ colorScheme.Foreground });
+    _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, til::color{ colorScheme.Background });
+
+    _renderSettings.SetColorTableEntry(TextColor::DARK_BLACK, til::color{ colorScheme.Black });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_RED, til::color{ colorScheme.Red });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_GREEN, til::color{ colorScheme.Green });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_YELLOW, til::color{ colorScheme.Yellow });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_BLUE, til::color{ colorScheme.Blue });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_MAGENTA, til::color{ colorScheme.Purple });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_CYAN, til::color{ colorScheme.Cyan });
+    _renderSettings.SetColorTableEntry(TextColor::DARK_WHITE, til::color{ colorScheme.White });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLACK, til::color{ colorScheme.BrightBlack });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_RED, til::color{ colorScheme.BrightRed });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_GREEN, til::color{ colorScheme.BrightGreen });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_YELLOW, til::color{ colorScheme.BrightYellow });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLUE, til::color{ colorScheme.BrightBlue });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_MAGENTA, til::color{ colorScheme.BrightPurple });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_CYAN, til::color{ colorScheme.BrightCyan });
+    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_WHITE, til::color{ colorScheme.BrightWhite });
+
+    _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
+
+    _renderSettings.MakeAdjustedColorArray();
 }

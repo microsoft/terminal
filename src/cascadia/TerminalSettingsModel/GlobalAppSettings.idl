@@ -18,13 +18,14 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Int64> Y;
     };
 
+    [flags]
     enum LaunchMode
     {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
-        FocusMode,
-        MaximizedFocusMode,
+        DefaultMode = 0,
+        MaximizedMode = 1,
+        FullscreenMode = 2,
+        FocusMode = 4,
+        MaximizedFocusMode = 5
     };
 
     enum WindowingMode
@@ -34,8 +35,17 @@ namespace Microsoft.Terminal.Settings.Model
         UseExisting,
     };
 
+    enum FirstWindowPreference
+    {
+        DefaultProfile,
+        PersistedWindowLayout,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
+
+        void SetInvertedDisableAnimationsValue(Boolean invertedDisableAnimationsValue);
+
         INHERITABLE_SETTING(String, UnparsedDefaultProfile);
 
         INHERITABLE_SETTING(Int32, InitialRows);
@@ -43,8 +53,10 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AlwaysShowTabs);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
         INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
+        INHERITABLE_SETTING(String, Language);
         INHERITABLE_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
+        INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
         INHERITABLE_SETTING(String, WordDelimiters);
         INHERITABLE_SETTING(Boolean, CopyOnSelect);
@@ -52,8 +64,10 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
         INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
+        INHERITABLE_SETTING(Boolean, TrimPaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
+        INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
         INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
@@ -69,6 +83,10 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);
+        INHERITABLE_SETTING(Boolean, MinimizeToNotificationArea);
+        INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
+        INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
+        INHERITABLE_SETTING(Boolean, ShowAdminShield);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

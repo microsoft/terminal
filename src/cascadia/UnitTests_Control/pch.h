@@ -47,8 +47,11 @@ Licensed under the MIT license.
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
 
+#include "ThrottledFunc.h"
+
 // Common includes for most tests:
-#include "../../inc/argb.h"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+
+#include <cppwinrt_utils.h>
