@@ -167,7 +167,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetClassNameCore() const
     {
-        return L"TermControl";
+        // After major UIA changes, we need to update the name.
+        // This is a simple way to let screen readers know what "version"
+        // of UIA they are interacting with (i.e. notifications supported).
+        return L"TermControl2";
     }
 
     AutomationControlType TermControlAutomationPeer::GetAutomationControlTypeCore() const
