@@ -235,6 +235,12 @@ CATCH_LOG_RETURN_HR(E_FAIL);
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::EndPaint() noexcept
 {
+    // Snap this now while we're still under lock
+    // so present can work on the copy while another
+    // thread might start filling the next "frame"
+    // worth of text data.
+    _queuedOutput = _newOutput;
+    _newOutput.clear();
     return S_OK;
 }
 
@@ -283,11 +289,21 @@ void UiaEngine::WaitUntilCanRender() noexcept
         }
         CATCH_LOG();
     }
-    if (!_newOutput.empty())
+    if (!_queuedOutput.empty())
     {
         try
         {
-            _dispatcher->NotifyNewOutput(_newOutput);
+            // The speech API (SAPI) is limited to 1000 characters at a time.
+            // Break up the output into 1000 character chunks to ensure
+            // the output isn't cut off by SAPI.
+            static const size_t sapiLimit{ 1000 };
+            while (_queuedOutput.size() > sapiLimit)
+            {
+                const auto croppedText{ _queuedOutput.substr(0, sapiLimit) };
+                _dispatcher->NotifyNewOutput(croppedText);
+                _queuedOutput = _queuedOutput.substr(sapiLimit);
+            }
+            _dispatcher->NotifyNewOutput(_queuedOutput);
         }
         CATCH_LOG();
     }
@@ -296,7 +312,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
     _textBufferChanged = false;
     _cursorChanged = false;
     _isPainting = false;
-    _newOutput.clear();
+    _queuedOutput.clear();
 
     return S_OK;
 }

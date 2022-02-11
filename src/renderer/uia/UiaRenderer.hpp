@@ -72,6 +72,7 @@ namespace Microsoft::Console::Render
         bool _textBufferChanged;
         bool _cursorChanged;
         std::wstring _newOutput;
+        std::wstring _queuedOutput;
 
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
 
