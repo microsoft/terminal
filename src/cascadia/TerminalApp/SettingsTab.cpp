@@ -98,7 +98,6 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            auto fontFamily = winrt::WUX::Media::FontFamily(L"Segoe MDL2 Assets");
             auto glyph = L"\xE713"; // This is the Setting icon (looks like a gear)
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
