@@ -352,6 +352,14 @@ jobs:
         }
       displayName: Extract symbols for public consumption
 
+    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
+    - template: .\templates\install-winsdk-steps.yml
+    - task: PowerShell@2
+      displayName: Source Index PDBs (the public ones)
+      inputs:
+        filePath: build\scripts\Index-Pdbs.ps1
+        arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-temp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+
     # Publish the app symbols to the public MSDL symbol server
     # accessible via https://msdl.microsoft.com/download/symbols
     - task: PublishSymbols@2
