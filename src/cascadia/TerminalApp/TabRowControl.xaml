@@ -24,7 +24,7 @@
             <!--  EA18 is the "Shield" glyph  -->
             <FontIcon x:Uid="ElevationShield"
                       Margin="9,4,0,4"
-                      FontFamily="Segoe MDL2 Assets"
+                      FontFamily="{ThemeResource SymbolThemeFontFamily}"
                       FontSize="16"
                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                       Glyph="&#xEA18;"
@@ -44,7 +44,7 @@
                              CornerRadius="{Binding Source={ThemeResource OverlayCornerRadius}, Converter={StaticResource TopCornerRadiusFilterConverter}}"
                              DragOver="OnNewTabButtonDragOver"
                              Drop="OnNewTabButtonDrop"
-                             FontFamily="Segoe MDL2 Assets"
+                             FontFamily="{ThemeResource SymbolThemeFontFamily}"
                              FontSize="12"
                              FontWeight="SemiLight"
                              UseLayoutRounding="true">
