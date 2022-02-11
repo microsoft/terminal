@@ -147,10 +147,12 @@
                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
-                                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                    <FontIcon Margin="0,3,0,0"
+                                              FontSize="{StaticResource StandardIconSize}"
                                               Glyph="&#xE710;" />
                                     <TextBlock x:Uid="Profile_AddAppearanceButton"
-                                               Margin="10,0,0,0" />
+                                               Margin="10,0,0,0"
+                                               FontSize="{StaticResource StandardIconSize}" />
                                 </StackPanel>
                             </Button.Content>
                         </Button>
@@ -164,7 +166,8 @@
                                     <FontIcon FontSize="{StaticResource StandardIconSize}"
                                               Glyph="&#xE74D;" />
                                     <TextBlock x:Uid="Profile_DeleteAppearanceButton"
-                                               Margin="10,0,0,0" />
+                                               Margin="10,0,0,0"
+                                               FontSize="{StaticResource StandardIconSize}" />
                                 </StackPanel>
                             </Button.Content>
                             <Button.Resources>
