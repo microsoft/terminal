@@ -827,7 +827,9 @@ namespace winrt::TerminalApp::implementation
                 automationPeer.RaiseNotificationEvent(
                     Automation::Peers::AutomationNotificationKind::ActionCompleted,
                     Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                    currentNeedleHasResults ? RS_(L"CommandPalette_MatchesAvailable") : NoMatchesText(), // what to announce if results were found
+                    currentNeedleHasResults ?
+                        winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                        NoMatchesText(), // what to announce if results were found
                     L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
         }
