@@ -76,7 +76,7 @@ public:
     bool ResetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) override; // DECRST
 
     bool DeviceStatusReport(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::AnsiStatusType /*statusType*/) override; // DSR, DSR-OS, DSR-CPR
-    
+
     bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
     bool EndHyperlink() override;
 
