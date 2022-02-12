@@ -58,7 +58,6 @@ public:
 
     bool GetLineFeedMode() const override;
     void LineFeed(const bool withReturn) override;
-    void ReverseLineFeed() override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 

@@ -1392,7 +1392,34 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 // - True.
 bool AdaptDispatch::ReverseLineFeed()
 {
-    _pConApi->ReverseLineFeed();
+    const auto viewport = _pConApi->GetViewport();
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+
+    // Calculate the absolute margins of the scrolling area.
+    // If margins aren't set, we use the full viewport.
+    const bool marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
+    const short topMargin = marginsSet ? viewport.Top + _scrollMargins.Top : viewport.Top;
+    const short bottomMargin = marginsSet ? viewport.Top + _scrollMargins.Bottom : viewport.Bottom - 1;
+
+    // If the cursor is at the top of the margin area, we shift the buffer
+    // contents down, to emulate inserting a line at that point.
+    if (cursorPosition.Y == topMargin)
+    {
+        // Rectangle to cut out of the existing buffer. This is inclusive.
+        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+        const SMALL_RECT srScroll = { 0, topMargin, SHORT_MAX, bottomMargin };
+        // Paste coordinate for cut text above
+        const COORD coordDestination = { 0, topMargin + 1 };
+        // Note the revealed lines are filled with the standard erase attributes.
+        _pConApi->ScrollRegion(srScroll, srScroll, coordDestination, true);
+    }
+    else if (cursorPosition.Y > viewport.Top)
+    {
+        // Otherwise we move the cursor up, but not past the top of the viewport.
+        const COORD newCursorPosition{ cursorPosition.X, cursorPosition.Y - 1 };
+        _pConApi->SetCursorPosition(newCursorPosition);
+    }
     return true;
 }
 
