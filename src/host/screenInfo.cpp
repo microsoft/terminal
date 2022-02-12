@@ -2701,35 +2701,6 @@ const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
     return _desiredFont;
 }
 
-// Method Description:
-// - Returns true iff the scroll margins have been set.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff the scroll margins have been set.
-bool SCREEN_INFORMATION::AreMarginsSet() const noexcept
-{
-    return _scrollMargins.BottomInclusive() > _scrollMargins.Top();
-}
-
-// Routine Description:
-// - Determines whether a cursor position is within the vertical bounds of the
-//      scroll margins, or the margins aren't set.
-// Parameters:
-// - cursorPosition - The cursor position to test
-// Return value:
-// - true iff the position is in bounds.
-bool SCREEN_INFORMATION::IsCursorInMargins(const COORD cursorPosition) const noexcept
-{
-    // If the margins aren't set, then any position is considered in bounds.
-    if (!AreMarginsSet())
-    {
-        return true;
-    }
-    const auto margins = GetAbsoluteScrollMargins().ToInclusive();
-    return cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
-}
-
 // Routine Description:
 // - Engages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
 void SCREEN_INFORMATION::SetIgnoreLegacyEquivalentVTAttributes() noexcept

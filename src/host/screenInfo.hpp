@@ -196,8 +196,6 @@ public:
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
-    bool AreMarginsSet() const noexcept;
-    bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
