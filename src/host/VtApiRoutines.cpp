@@ -96,7 +96,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
 {
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
-    // TODO GH10001: we only need to do this in cooked read mode.
+    // TODO GH#10001: we only need to do this in cooked read mode.
     if (waiter)
     {
         m_listeningForDSR = true;
