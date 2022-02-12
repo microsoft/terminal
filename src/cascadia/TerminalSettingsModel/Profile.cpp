@@ -26,18 +26,6 @@ static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view HiddenKey{ "hidden" };
 
-<<<<<<< HEAD
-=======
-static constexpr std::string_view TabTitleKey{ "tabTitle" };
-static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
-static constexpr std::string_view HistorySizeKey{ "historySize" };
-static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
-static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
-
-static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
-static constexpr std::string_view CommandlineKey{ "commandline" };
-static constexpr std::string_view VtPassthroughKey{ "experimental.connection.passthroughMode" };
->>>>>>> a19198a9f (argument/option for passthrough mode)
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
@@ -183,24 +171,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
-<<<<<<< HEAD
-=======
-    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::GetValueForKey(json, HistorySizeKey, _HistorySize);
-    JsonUtils::GetValueForKey(json, SnapOnInputKey, _SnapOnInput);
-    JsonUtils::GetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
-    JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
-
-    // Control Settings
-    JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
-    JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::GetValueForKey(json, VtPassthroughKey, _VtPassthrough);
-    JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
-    JsonUtils::GetValueForKey(json, UseAcrylicKey, _UseAcrylic);
-    JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
-    JsonUtils::GetValueForKey(json, CloseOnExitKey, _CloseOnExit);
-
->>>>>>> a19198a9f (argument/option for passthrough mode)
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
@@ -343,24 +313,6 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
-<<<<<<< HEAD
-=======
-    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
-    JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
-    JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
-    JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
-
-    // Control Settings
-    JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
-    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::SetValueForKey(json, VtPassthroughKey, _VtPassthrough);
-    JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
-    JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
-    JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
-    JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
-
->>>>>>> a19198a9f (argument/option for passthrough mode)
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
 
