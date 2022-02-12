@@ -80,9 +80,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SuppressResizeRepaint() = 0;
         virtual bool IsConsolePty() const = 0;
 
-        virtual void DeleteLines(const size_t count) = 0;
-        virtual void InsertLines(const size_t count) = 0;
-
         virtual COLORREF GetColorTableEntry(const size_t tableIndex) const = 0;
         virtual bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) = 0;
         virtual void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) = 0;

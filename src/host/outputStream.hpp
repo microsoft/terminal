@@ -82,9 +82,6 @@ public:
 
     bool IsConsolePty() const override;
 
-    void DeleteLines(const size_t count) override;
-    void InsertLines(const size_t count) override;
-
     COLORREF GetColorTableEntry(const size_t tableIndex) const override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
     void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
@@ -106,7 +103,5 @@ public:
                         const size_t centeringHint) override;
 
 private:
-    void _modifyLines(const size_t count, const bool insert);
-
     Microsoft::Console::IIoProvider& _io;
 };

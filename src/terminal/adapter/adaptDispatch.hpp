@@ -168,7 +168,8 @@ namespace Microsoft::Console::VirtualTerminal
                                     const size_t lineId) const;
         void _EraseScrollback();
         void _EraseAll();
-        void _InsertDeleteHelper(const size_t count, const bool isInsert) const;
+        void _InsertDeleteCharacterHelper(const size_t count, const bool isInsert);
+        void _InsertDeleteLineHelper(const size_t count, const bool isInsert);
         void _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
 
         void _DoSetTopBottomScrollingMargins(const size_t topMargin,

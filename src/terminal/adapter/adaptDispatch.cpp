@@ -393,7 +393,7 @@ bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 // - isInsert - TRUE if insert mode (cut and paste to the right, away from the cursor). FALSE if delete mode (cut and paste to the left, toward the cursor)
 // Return Value:
 // - <none>
-void AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert) const
+void AdaptDispatch::_InsertDeleteCharacterHelper(const size_t count, const bool isInsert)
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT distance;
@@ -439,7 +439,7 @@ void AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 // - True.
 bool AdaptDispatch::InsertCharacter(const size_t count)
 {
-    _InsertDeleteHelper(count, true);
+    _InsertDeleteCharacterHelper(count, true);
     return true;
 }
 
@@ -452,7 +452,7 @@ bool AdaptDispatch::InsertCharacter(const size_t count)
 // - True.
 bool AdaptDispatch::DeleteCharacter(const size_t count)
 {
-    _InsertDeleteHelper(count, false);
+    _InsertDeleteCharacterHelper(count, false);
     return true;
 }
 
@@ -1103,6 +1103,59 @@ bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 }
 
 // Routine Description:
+// - Internal logic for adding or removing lines in the active screen buffer.
+//   This also moves the cursor to the left margin, which is expected behavior for IL and DL.
+// Parameters:
+// - count - the number of lines to modify
+// - isInsert - true if inserting lines, false if deleting lines
+// Return Value:
+// - <none>
+void AdaptDispatch::_InsertDeleteLineHelper(const size_t count, const bool isInsert)
+{
+    const auto viewport = _pConApi->GetViewport();
+    const auto& textBuffer = _pConApi->GetTextBuffer();
+
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto relativeRow = row - viewport.Top;
+
+    const bool marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
+    const auto rowInMargins = relativeRow >= _scrollMargins.Top && relativeRow <= _scrollMargins.Bottom;
+    if (!marginsSet || rowInMargins)
+    {
+        // Rectangle to cut out of the existing buffer. This is inclusive.
+        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+        SMALL_RECT srScroll;
+        srScroll.Left = 0;
+        srScroll.Right = SHORT_MAX;
+        srScroll.Top = row;
+        srScroll.Bottom = viewport.Bottom - 1; // viewport is exclusive, hence the - 1
+        // Clip to the DECSTBM margin boundary
+        if (marginsSet)
+        {
+            srScroll.Bottom = viewport.Top + _scrollMargins.Bottom;
+        }
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        if (isInsert)
+        {
+            coordDestination.Y = row + gsl::narrow_cast<short>(count);
+        }
+        else
+        {
+            coordDestination.Y = row - gsl::narrow_cast<short>(count);
+        }
+
+        // Note the revealed lines are filled with the standard erase attributes.
+        _pConApi->ScrollRegion(srScroll, srScroll, coordDestination, true);
+
+        // The IL and DL controls are also expected to move the cursor to the left margin.
+        // For now this is just column 0, since we don't yet support DECSLRM.
+        _pConApi->SetCursorPosition({ 0, row });
+    }
+}
+
+// Routine Description:
 // - IL - This control function inserts one or more blank lines, starting at the cursor.
 //    As lines are inserted, lines below the cursor and in the scrolling region move down.
 //    Lines scrolled off the page are lost. IL has no effect outside the page margins.
@@ -1112,7 +1165,7 @@ bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 // - True.
 bool AdaptDispatch::InsertLine(const size_t distance)
 {
-    _pConApi->InsertLines(distance);
+    _InsertDeleteLineHelper(distance, true);
     return true;
 }
 
@@ -1130,7 +1183,7 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 // - True.
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
-    _pConApi->DeleteLines(distance);
+    _InsertDeleteLineHelper(distance, false);
     return true;
 }
 
