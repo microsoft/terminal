@@ -921,15 +921,9 @@ bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 // - True.
 bool AdaptDispatch::SetColumns(const size_t columns)
 {
-    SHORT col;
-    THROW_IF_FAILED(SizeTToShort(columns, &col));
-
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-    csbiex.dwSize.X = col;
-    _pConApi->SetConsoleScreenBufferInfoEx(csbiex);
-
+    const auto viewport = _pConApi->GetViewport();
+    const auto viewportHeight = viewport.Bottom - viewport.Top;
+    _pConApi->ResizeWindow(columns, viewportHeight);
     return true;
 }
 

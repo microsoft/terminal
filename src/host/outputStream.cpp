@@ -80,28 +80,6 @@ SMALL_RECT ConhostInternalGetSet::GetViewport() const
 }
 
 // Routine Description:
-// - Connects the GetConsoleScreenBufferInfoEx API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - screenBufferInfo - Structure to hold screen buffer information like the public API call.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const
-{
-    ServiceLocator::LocateGlobals().api->GetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo);
-}
-
-// Routine Description:
-// - Connects the SetConsoleScreenBufferInfoEx API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - screenBufferInfo - Structure containing screen buffer information like the public API call.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo)
-{
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo));
-}
-
-// Routine Description:
 // - Connects the SetCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - position - new cursor position to set like the public API call.
@@ -449,9 +427,12 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     // We should do nothing if 0 is passed in for a size.
     RETURN_BOOL_IF_FALSE(width > 0 && height > 0);
 
+    auto api = ServiceLocator::LocateGlobals().api;
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    GetConsoleScreenBufferInfoEx(csbiex);
+    api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
     const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
     const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
@@ -471,7 +452,7 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     const auto sre = newViewport.ToExclusive();
     csbiex.srWindow = sre;
 
-    SetConsoleScreenBufferInfoEx(csbiex);
+    THROW_IF_FAILED(api->SetConsoleScreenBufferInfoExImpl(screenInfo, csbiex));
     SetWindowInfo(true, sri);
     return true;
 }
