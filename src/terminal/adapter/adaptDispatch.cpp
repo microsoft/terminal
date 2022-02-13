@@ -1954,19 +1954,61 @@ void AdaptDispatch::_EraseScrollback()
 }
 
 //Routine Description:
-// Erase All (^[[2J - ED)
-//  Erase the current contents of the viewport. In most terminals, because they
-//      only have a scrollback (and not a buffer per-se), they implement this
-//      by scrolling the current contents of the buffer off of the screen.
-//  We can't properly replicate this behavior with only the public API, because
-//      we need to know where the last character in the buffer is. (it may be below the viewport)
-//Arguments:
-// <none>
+// - Erase All (^[[2J - ED)
+//   Performs a VT Erase All operation. In most terminals, this is done by
+//   moving the viewport into the scrollback, clearing out the current screen.
+//   For them, there can never be any characters beneath the viewport, as the
+//   viewport is always at the bottom. So, we can accomplish the same behavior
+//   by using the LastNonspaceCharacter as the "bottom", and placing the new
+//   viewport underneath that character.
+// Arguments:
+// - <none>
 // Return value:
 // - <none>
 void AdaptDispatch::_EraseAll()
 {
-    _pConApi->EraseAll();
+    const auto viewport = _pConApi->GetViewport();
+    const short viewportHeight = viewport.Bottom - viewport.Top;
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize();
+
+    // Stash away the current position of the cursor within the viewport.
+    // We'll need to restore the cursor to that same relative position, after
+    //      we move the viewport.
+    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    cursorPosition.Y -= viewport.Top;
+
+    // Calculate new viewport position
+    short newViewportTop = textBuffer.GetLastNonSpaceCharacter().Y + 1;
+    const auto delta = (newViewportTop + viewportHeight) - (bufferSize.Height());
+    for (auto i = 0; i < delta; i++)
+    {
+        textBuffer.IncrementCircularBuffer();
+        newViewportTop--;
+    }
+    // Move the viewport
+    SMALL_RECT newViewport;
+    newViewport.Left = viewport.Left;
+    newViewport.Top = newViewportTop;
+    // SetWindowInfo uses an inclusive rect, while the viewport rect is exclusive
+    newViewport.Right = viewport.Right - 1;
+    newViewport.Bottom = newViewportTop + viewportHeight - 1;
+    _pConApi->SetWindowInfo(true, newViewport);
+    // Restore the relative cursor position
+    cursorPosition.Y += newViewportTop;
+    _pConApi->SetCursorPosition(cursorPosition);
+
+    // Update all the rows in the current viewport with the standard erase attributes,
+    // i.e. the current background color, but with no meta attributes set.
+    auto fillAttributes = textBuffer.GetCurrentAttributes();
+    fillAttributes.SetStandardErase();
+    auto fillPosition = COORD{ 0, newViewportTop };
+    auto fillLength = gsl::narrow_cast<size_t>(viewportHeight * bufferSize.Width());
+    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
+    textBuffer.Write(fillData, fillPosition, false);
+
+    // Also reset the line rendition for the erased rows.
+    textBuffer.ResetLineRenditionRange(newViewportTop, newViewportTop + viewportHeight);
 }
 
 // Routine Description:

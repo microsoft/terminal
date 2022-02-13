@@ -214,7 +214,6 @@ public:
     void SetDefaultAttributes(const TextAttribute& attributes,
                               const TextAttribute& popupAttributes);
 
-    [[nodiscard]] HRESULT VtEraseAll();
     [[nodiscard]] HRESULT ClearBuffer();
 
     void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);

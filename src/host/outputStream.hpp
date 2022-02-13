@@ -62,7 +62,6 @@ public:
 
     void UseMainScreenBuffer() override;
 
-    void EraseAll() override;
     void ClearBuffer() override;
 
     CursorType GetUserDefaultCursorStyle() const override;

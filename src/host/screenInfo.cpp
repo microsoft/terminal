@@ -2205,57 +2205,6 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 }
 
 // Method Description:
-// - Performs a VT Erase All operation. In most terminals, this is done by
-//      moving the viewport into the scrollback, clearing out the current screen.
-//      For them, there can never be any characters beneath the viewport, as the
-//      viewport is always at the bottom. So, we can accomplish the same behavior
-//      by using the LastNonspaceCharacter as the "bottom", and placing the new
-//      viewport underneath that character.
-// Parameters:
-//  <none>
-// Return value:
-// - S_OK if we succeeded, or another status if there was a failure.
-[[nodiscard]] HRESULT SCREEN_INFORMATION::VtEraseAll()
-{
-    const COORD coordLastChar = _textBuffer->GetLastNonSpaceCharacter();
-    short sNewTop = coordLastChar.Y + 1;
-    const Viewport oldViewport = _viewport;
-    // Stash away the current position of the cursor within the viewport.
-    // We'll need to restore the cursor to that same relative position, after
-    //      we move the viewport.
-    const COORD oldCursorPos = _textBuffer->GetCursor().GetPosition();
-    COORD relativeCursor = oldCursorPos;
-    oldViewport.ConvertToOrigin(&relativeCursor);
-
-    short delta = (sNewTop + _viewport.Height()) - (GetBufferSize().Height());
-    for (auto i = 0; i < delta; i++)
-    {
-        _textBuffer->IncrementCircularBuffer();
-        sNewTop--;
-    }
-
-    const COORD coordNewOrigin = { 0, sNewTop };
-    RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
-    // Restore the relative cursor position
-    _viewport.ConvertFromOrigin(&relativeCursor);
-    RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
-
-    // Update all the rows in the current viewport with the standard erase attributes,
-    // i.e. the current background color, but with no meta attributes set.
-    auto fillAttributes = GetAttributes();
-    fillAttributes.SetStandardErase();
-    auto fillPosition = COORD{ 0, _viewport.Top() };
-    auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
-    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
-    Write(fillData, fillPosition, false);
-
-    // Also reset the line rendition for the erased rows.
-    _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
-
-    return S_OK;
-}
-
-// Method Description:
 // - Clear the entire contents of the viewport, except for the cursor's row,
 //   which is moved to the top line of the viewport.
 // - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
