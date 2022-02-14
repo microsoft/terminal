@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 $LocalizationsFromContextMenu = Get-ChildItem ./src/cascadia/TerminalApp/Resources -Recurse -Filter ContextMenu.resw
 $Languages = [System.Collections.HashTable]::New()
 $LocalizationsFromContextMenu | ForEach-Object {
