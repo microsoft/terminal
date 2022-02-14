@@ -465,7 +465,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (acrylic == nullptr)
             {
                 acrylic = Media::AcrylicBrush{};
-                acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+                // acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             }
 
             // see GH#1082: Initialize background color so we don't get a
