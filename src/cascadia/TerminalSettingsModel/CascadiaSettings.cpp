@@ -695,11 +695,6 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
     // The index of the first argument in argv for our executable in argv[0].
     // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
     int startOfArguments = 1;
-    // Returns true if the executable in argv[0] to argv[startOfArguments - 1]
-    // has any further arguments in argv[startOfArguments] to argv[argc - 1].
-    const auto hasTrailingArguments = [&]() noexcept {
-        return (argc - startOfArguments) > 1;
-    };
 
     // The given commandLine should start with an executable name or path.
     // For instance given the following argv arrays:
@@ -754,7 +749,7 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
         // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
         // Of course we can only do that if we have at least 2 remaining arguments in argv.
         // All other error types aren't handled at the moment.
-        else if (!hasTrailingArguments() || status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        else if ((argc - startOfArguments) < 2 || status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
         {
             break;
         }
@@ -770,7 +765,7 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
     // We're now going to append all remaining arguments to the resulting string.
     // If argv is {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"},
     // then we'll get "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
-    if (hasTrailingArguments())
+    if (startOfArguments < argc)
     {
         // normalized contains a canonical form of argv[0] at this point.
         // -1 allows us to include the \0 between argv[0] and argv[1] in the call to append().
