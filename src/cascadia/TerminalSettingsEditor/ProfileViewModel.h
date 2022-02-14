@@ -48,7 +48,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (value < 100.0 &&
                 !winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
             {
-                UseAcrylic(true);
+                DefaultAppearance().UseAcrylic(true);
+                /*if (UnfocusedAppearance())
+                    UnfocusedAppearance().UseAcrylic(true);*/
             }
         };
 
@@ -86,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
         OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
         OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
+        // OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);

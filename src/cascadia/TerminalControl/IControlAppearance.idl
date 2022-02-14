@@ -5,6 +5,7 @@ namespace Microsoft.Terminal.Control
 {
     interface IControlAppearance requires Microsoft.Terminal.Core.ICoreAppearance
     {
+        Boolean UseAcrylic { get; };
         Microsoft.Terminal.Core.Color SelectionBackground { get; };
         String BackgroundImage { get; };
         Double BackgroundImageOpacity { get; };

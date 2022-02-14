@@ -109,10 +109,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // only works on Win11. So we'll use that.
                 //
                 // Remove when we can remove the rest of GH#11285
-                if (!UseAcrylic() && !CascadiaSettings::IsDefaultTerminalAvailable())
-                {
-                    Opacity(1.0);
-                }
+                // // TODO!
+                //if (!UseAcrylic() && !CascadiaSettings::IsDefaultTerminalAvailable())
+                //{
+                //    Opacity(1.0);
+                //}
             }
             else if (viewModelProperty == L"AntialiasingMode")
             {

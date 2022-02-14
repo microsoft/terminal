@@ -168,8 +168,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
-        RUNTIME_SETTING(double, Opacity, _settings->Opacity());
-        RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
+        RUNTIME_SETTING(double, Opacity, _currentAppearance()->Opacity());
+        RUNTIME_SETTING(bool, UseAcrylic, _currentAppearance()->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -226,6 +226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint16_t _lastHoveredId{ 0 };
 
         bool _isReadOnly{ false };
+        bool _focused{ false };
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
@@ -275,6 +276,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setOpacity(const double opacity);
 
         bool _isBackgroundTransparent();
+        winrt::com_ptr<ControlAppearance> _currentAppearance() const;
 
         inline bool _IsClosing() const noexcept
         {

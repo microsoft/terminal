@@ -661,13 +661,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    winrt::com_ptr<ControlAppearance> ControlCore::_currentAppearance() const
+    {
+        return _focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance();
+    }
+
     // Method Description:
     // - Updates the appearance of the current terminal.
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::ApplyAppearance(const bool& focused)
     {
         auto lock = _terminal->LockForWriting();
-        const auto& newAppearance{ focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance() };
+        _focused = focused;
+        const auto& newAppearance{ _currentAppearance() };
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(*newAppearance);
 

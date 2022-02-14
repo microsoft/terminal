@@ -212,6 +212,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
         _Opacity = appearance.Opacity();
+
+        _UseAcrylic = appearance.UseAcrylic();
+
     }
 
     // Method Description:
@@ -231,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
         _ProfileSource = profile.Source();
-        _UseAcrylic = profile.UseAcrylic();
+        // _UseAcrylic = profile.UseAcrylic();
 
         _FontFace = profile.FontInfo().FontFace();
         _FontSize = profile.FontInfo().FontSize();

@@ -6,6 +6,7 @@
 // --------------------------- Core Appearance ---------------------------
 //  All of these settings are defined in ICoreAppearance.
 #define CORE_APPEARANCE_SETTINGS(X)                                                                                       \
+    X(bool, UseAcrylic, false)                                                                                            \
     X(til::color, DefaultForeground, DEFAULT_FOREGROUND)                                                                  \
     X(til::color, DefaultBackground, DEFAULT_BACKGROUND)                                                                  \
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
@@ -52,7 +53,6 @@
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::hstring, ProfileName)                                                                                                                       \
     X(winrt::hstring, ProfileSource)                                                                                                                     \
-    X(bool, UseAcrylic, false)                                                                                                                           \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
     X(int32_t, FontSize, DEFAULT_FONT_SIZE)                                                                                                              \

@@ -37,6 +37,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Int32, FontSize);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
 
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, UseAcrylic);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);

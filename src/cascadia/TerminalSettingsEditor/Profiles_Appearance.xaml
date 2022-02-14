@@ -87,14 +87,14 @@
                     </local:SettingContainer>
 
                     <!--  Use Acrylic  -->
-                    <local:SettingContainer x:Uid="Profile_UseAcrylic"
+                    <!--                     <local:SettingContainer x:Uid="Profile_UseAcrylic"
                                             ClearSettingValue="{x:Bind Profile.ClearUseAcrylic}"
                                             HasSettingValue="{x:Bind Profile.HasUseAcrylic, Mode=OneWay}"
                                             SettingOverrideSource="{x:Bind Profile.UseAcrylicOverrideSource, Mode=OneWay}">
                         <ToggleSwitch x:Name="UseAcrylicToggleSwitch"
                                       IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+                    </local:SettingContainer>-->
 
                 </StackPanel>
 
