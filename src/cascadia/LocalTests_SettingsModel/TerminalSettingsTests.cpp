@@ -199,6 +199,10 @@ namespace SettingsModelLocalTests
                         "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
                         "commandline": "cmd.exe /A /C",
                         "connectionType": "{9a9977a7-1fe0-49c0-b6c0-13a0cd1c98a1}"
+                    },
+                    {
+                        "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}",
+                        "commandline": "C:\\invalid.exe",
                     }
                 ]
             }
@@ -217,7 +221,7 @@ namespace SettingsModelLocalTests
             TestCase{ L"cmd.exe", 0 },
             // SearchPathW() normalization + case insensitive matching.
             TestCase{ L"cmd.exe /a", 1 },
-            TestCase{ L"C:\\Windows\\System32\\cmd.exe /A", 1 },
+            TestCase{ L"%SystemRoot%\\System32\\cmd.exe /A", 1 },
             // Test that we don't pick the equally long but different "/A /B" variant.
             TestCase{ L"C:\\Windows\\System32\\cmd.exe /A /C", 1 },
             // Test that we don't pick the shorter "/A" variant,
@@ -227,6 +231,9 @@ namespace SettingsModelLocalTests
             // Ignore profiles with a connection type, like the Azure cloud shell.
             // Instead it should pick any other prefix.
             TestCase{ L"C:\\Windows\\System32\\cmd.exe /A /C", 1 },
+            // Failure to normalize a path (e.g. because the path doesn't exist)
+            // should yield the unmodified input string (see NormalizeCommandLine).
+            TestCase{ L"C:\\invalid.exe /A /B", 4 },
             // Return base layer profile for missing profiles.
             TestCase{ L"C:\\Windows\\regedit.exe", -1 },
         };
