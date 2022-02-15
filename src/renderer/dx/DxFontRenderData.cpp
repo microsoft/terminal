@@ -178,10 +178,44 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 
 // Routine Description:
 // - Updates the font used for drawing
+// - This version is to be called when no features/axes were supplied, in which case we will
+//   use the ones we already know about (if any)
 // Arguments:
 // - desired - Information specifying the font that is requested
 // - actual - Filled with the nearest font actually chosen for drawing
 // - dpi - The DPI of the screen
+// Return Value:
+// - S_OK or relevant DirectX error
+[[nodiscard]] HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& desired, FontInfo& actual, const int dpi) noexcept
+{
+    try
+    {
+        _userLocaleName.clear();
+        _textFormatMap.clear();
+        _fontFaceMap.clear();
+        _boxDrawingEffect.Reset();
+
+        // Initialize the default font info and build everything from here.
+        _defaultFontInfo = DxFontInfo(desired.GetFaceName(),
+                                      desired.GetWeight(),
+                                      DWRITE_FONT_STYLE_NORMAL,
+                                      DWRITE_FONT_STRETCH_NORMAL);
+
+        _BuildFontRenderData(desired, actual, dpi);
+    }
+    CATCH_RETURN();
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Updates the font used for drawing
+// Arguments:
+// - desired - Information specifying the font that is requested
+// - actual - Filled with the nearest font actually chosen for drawing
+// - dpi - The DPI of the screen
+// - features - The font features to apply
+// - axes - The font axes to apply
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& desired, FontInfo& actual, const int dpi, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
