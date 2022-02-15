@@ -354,7 +354,18 @@ using namespace Microsoft::Console::Interactivity;
                 RegisterClass(&pseudoClass);
                 // Attempt to create window
                 hwnd = CreateWindowExW(
-                    0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, nullptr);
+                    0,
+                    PSEUDO_WINDOW_CLASS,
+                    nullptr,
+                    WS_CHILD, //WS_OVERLAPPEDWINDOW,
+                    0,
+                    0,
+                    0,
+                    0,
+                    (HWND)0x00070C6A, //HWND_DESKTOP,// parent
+                    nullptr,
+                    nullptr,
+                    nullptr);
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();

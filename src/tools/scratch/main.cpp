@@ -4,6 +4,9 @@
 
 #include <windows.h>
 
+// Register the window class.
+const wchar_t CLASS_NAME[] = L"Sample Window Class";
+
 struct handle_data
 {
     unsigned long process_id;
@@ -63,31 +66,12 @@ static LRESULT __stdcall WndProc(HWND const window, UINT const message, WPARAM c
     return DefWindowProc(window, message, wparam, lparam);
 }
 
-// This wmain exists for help in writing scratch programs while debugging.
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+int doTheWindowThing(HWND hwndToUseAsParent)
 {
-    const auto pid{ GetCurrentProcessId() };
-    const auto dumb{ GetConsoleWindow() };
-
-    wprintf(fmt::format(L"pid: {}\n", pid).c_str());
-    wprintf(fmt::format(L"dumb: {}\n", reinterpret_cast<unsigned long long>(dumb)).c_str());
-
-    const auto mainHwnd{ find_main_window(pid) };
-    wprintf(fmt::format(L"mainHwnd: {}\n", reinterpret_cast<unsigned long long>(mainHwnd)).c_str());
-
-    // Register the window class.
-    const wchar_t CLASS_NAME[] = L"Sample Window Class";
-
-    WNDCLASS wc = {};
     const auto hInst{ GetModuleHandle(NULL) };
-    wc.lpfnWndProc = WndProc;
-    wc.hInstance = hInst;
-    wc.lpszClassName = CLASS_NAME;
-
-    RegisterClass(&wc);
+    wprintf(fmt::format(L"Creating a Window, then a MessageBox, using {} as the parent HWND\n", reinterpret_cast<unsigned long long>(hwndToUseAsParent)).c_str());
 
     // Create the window.
-
     HWND hwnd = CreateWindowEx(
         0, // Optional window styles.
         CLASS_NAME, // Window class
@@ -100,16 +84,16 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
         200,
         200,
 
-        NULL, // Parent window
+        hwndToUseAsParent, // Parent window
         NULL, // Menu
         hInst, // Instance handle
         NULL // Additional application data
     );
 
-    wprintf(fmt::format(L"hwnd: {}\n", reinterpret_cast<unsigned long long>(hwnd)).c_str());
+    // wprintf(fmt::format(L"hwnd: {}\n", reinterpret_cast<unsigned long long>(hwnd)).c_str());
 
-    const auto newHwnd{ find_main_window(pid) };
-    wprintf(fmt::format(L"newHwnd: {}\n", reinterpret_cast<unsigned long long>(newHwnd)).c_str());
+    // const auto newHwnd{ find_main_window(pid) };
+    // wprintf(fmt::format(L"newHwnd: {}\n", reinterpret_cast<unsigned long long>(newHwnd)).c_str());
 
     if (hwnd == NULL)
     {
@@ -126,11 +110,37 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     wprintf(fmt::format(L"window was closed\n").c_str());
 
-    
     wprintf(fmt::format(L"Opening a messagebox...\n").c_str());
-    MessageBoxW(NULL, L"foo", L"bar", MB_OK);
+    MessageBoxW(hwndToUseAsParent, L"foo", L"bar", MB_OK);
     wprintf(fmt::format(L"closed a messagebox\n").c_str());
+    return 0;
+}
 
+// This wmain exists for help in writing scratch programs while debugging.
+int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+{
+    const auto pid{ GetCurrentProcessId() };
+    const auto dumb{ GetConsoleWindow() };
+
+    wprintf(fmt::format(L"pid: {}\n", pid).c_str());
+    wprintf(fmt::format(L"dumb: {}\n", reinterpret_cast<unsigned long long>(dumb)).c_str());
+
+    // const auto mainHwnd{ find_main_window(pid) };
+    // wprintf(fmt::format(L"mainHwnd: {}\n", reinterpret_cast<unsigned long long>(mainHwnd)).c_str());
+
+    WNDCLASS wc = {};
+    const auto hInst{ GetModuleHandle(NULL) };
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = hInst;
+    wc.lpszClassName = CLASS_NAME;
+
+    RegisterClass(&wc);
+
+    wprintf(fmt::format(L"Make some windows, using NULL as the parent.\n").c_str());
+
+    doTheWindowThing(nullptr);
+    wprintf(fmt::format(L"Now, with the console window handle.\n").c_str());
+    doTheWindowThing(dumb);
 
     return 0;
 }
