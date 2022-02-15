@@ -296,6 +296,18 @@ Globals& ServiceLocator::LocateGlobals()
     return s_globals;
 }
 
+void ServiceLocator::SetPseudoWindowCallback(std::function<void(std::wstring_view)> func)
+{
+    // Force the whole window to be put together first.
+    // We don't really need the handle, we just want to leverage the setup steps.
+    (void)LocatePseudoWindow();
+    
+    if (s_interactivityFactory)
+    {
+        s_interactivityFactory->SetPseudoWindowCallback(func);
+    }
+}
+
 // Method Description:
 // - Retrieves the pseudo console window, or attempts to instantiate one.
 // Arguments:

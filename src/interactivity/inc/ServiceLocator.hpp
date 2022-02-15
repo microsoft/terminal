@@ -89,6 +89,7 @@ namespace Microsoft::Console::Interactivity
 
         static Globals& LocateGlobals();
 
+        static void SetPseudoWindowCallback(std::function<void(std::wstring_view)> func);
         static HWND LocatePseudoWindow();
 
     protected:

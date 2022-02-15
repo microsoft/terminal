@@ -28,6 +28,7 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services);
 
         [[nodiscard]] NTSTATUS CreatePseudoWindow(HWND& hwnd);
+        void SetPseudoWindowCallback(std::function<void(std::wstring_view)> func);
 
         // Wndproc
         [[nodiscard]] static LRESULT CALLBACK s_PseudoWindowProc(_In_ HWND hwnd,
@@ -39,5 +40,8 @@ namespace Microsoft::Console::Interactivity
                                                         _In_ WPARAM wParam,
                                                         _In_ LPARAM lParam);
         
+    private:
+        void _WritePseudoWindowCallback(std::wstring_view text);
+        std::function<void(std::wstring_view)> _pseudoWindowMessageCallback;
     };
 }

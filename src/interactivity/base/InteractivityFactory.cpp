@@ -399,8 +399,32 @@ using namespace Microsoft::Console::Interactivity;
 
 [[nodiscard]] LRESULT CALLBACK InteractivityFactory::PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
+    switch (Message)
+    {
+        case WM_SHOWWINDOW:
+            if (lParam == 0) // Message came directly from someone calling ShowWindow on us.
+            {
+                if (wParam) // If TRUE, we're being shown
+                {
+                    _WritePseudoWindowCallback(L"\x1b[1t");
+                }
+                else // If FALSE, we're being hidden
+                {
+                    _WritePseudoWindowCallback(L"\x1b[2t");
+                }
+            }
+        break;
+    }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
+}
+
+void InteractivityFactory::_WritePseudoWindowCallback(std::wstring_view text)
+{
+    if (_pseudoWindowMessageCallback)
+    {
+        _pseudoWindowMessageCallback(text);
+    }
 }
 
 #pragma endregion
