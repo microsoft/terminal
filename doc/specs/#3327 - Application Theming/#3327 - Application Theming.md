@@ -6,18 +6,16 @@ issue id: #3327
 ---
 
 
-TODOS:
-* Mica. The whole app needs to be transparent for that. It'll affect the vintage opacity setting. Must be careful.
+TODO!S:
 * Allow alpha in these colors. Like, I want the tabs to be `#10808080` lighter than the tabrow which is acrylic, `#40102030`
   - Oh my, I already did that didn't I
 * whole application window BG images, a la that one post in the theming thread
-* `window.roundedCorners` true/false
 * How do themes play with different window title settings? (different themes for different windows. `_quake` esp.))
 * any clever ideas for elevated themes?
 * tab.bottomCornerRadius? or is tab.cornerRadius a "1" = all 1, "1, 2" = tops 1, bottoms 2 kinda situation
 
 
-# Spec Title
+# Application Theming
 
 ## Abstract
 
@@ -32,7 +30,6 @@ Much of the inspiration for this feature comes from VsCode and its themes. These
 themes can be more than just different color palettes for the editor - these
 themes can control the appearance of a variety of UI elements of the VsCode
 window.
-
 
 ## Solution Design
 
@@ -142,7 +139,7 @@ Take for example the following settings excerpt:
 }
 ```
 
-> **TODO FOR DISCUSSION**: I've given both a `tab.<property>` and a
+> **TODO! FOR DISCUSSION**: I've given both a `tab.<property>` and a
 > `tab<Property>` style here, for comparison. At the time of writing, I'm unsure
 > of which is better. I'll be using `<element>.<property>` for the remainder of
 > the doc.
@@ -194,6 +191,8 @@ control the UI.
   property. This can be one of `light`, `dark` or `system`. This controls how
   XAML fundamentally styles UI elements. If not provided, will use the default
   value "system", which will use whatever the system's default theme is.
+* `window.roundedCorners`: A boolean, to control whether the window has rounded
+  corners on Windows 11.
 
 #### Theme Colors
 
@@ -207,10 +206,10 @@ be one of:
   terminal instance.
 * `key:SomeXamlKey` to try and look `SomeXamlKey` up from our resources as a
   `Color`, and use that color for the value.
-    - TODO DISCUSSION: Does anyone want this?
+    - **TODO! DISCUSSION**: Does anyone want this?
     - is `accent` just `key:SystemAccentColor`? If it is, is it a reasonable
       alias that we'd want to provide anyways?
-    - TODO DISCUSSION: PR[#5280] suggested `{ "key": "SomeResourceKey" }` for
+    - **TODO! DISCUSSION**: PR[#5280] suggested `{ "key": "SomeResourceKey" }` for
       string resources, should we use that format for colors like this as well?
 
 This will enable users to not only provide custom colors, but also use the
@@ -410,7 +409,7 @@ confusing, but they have that freedom.
 
 ## UI/UX Design
 
-[TODO]: # TODO: We should include more mockups here. That would be nice.
+[TODO!]: # TODO: We should include more mockups here. That would be nice.
 
 ![Tab matches Terminal background](Tab-Matches-Terminal-Color-000.png)
 _fig 1_: Using a tab color set to "terminalBackground". The Windows PowerShell
@@ -424,6 +423,14 @@ _fig 2_: Using an acrylic titlebar color, with a tab color set to
 _fig 3_: Using an acrylic terminal background, and the titlebar color is set to
 "terminalBackground"
 
+![Whole window background image](whole-window-background-000.png) _fig
+4_: Using a single image as the background for the window, with a transparent
+tab row, and rounded bottoms on the TabViewItems. Courtesy of
+[@Shomnipotence](https://github.com/microsoft/terminal/issues/3327#issuecomment-765493313)
+
+
+[TODO!]: # TODO: Settings UI mocks? These pretty substantially affect the UI.
+<!-- We probably need to expose them in the UI in some way, and not just leave them as "power user settings" -->
 
 ## Capabilities
 
@@ -457,6 +464,9 @@ This change should not have any particular reliability concerns.
 The biggest compatibility concern is regarding the existing values for the
 `theme` property, which is addressed above.
 
+[TODO!]: # TODO: Deprecating the current titlebar acrylic setting, or totally overriding in theme.
+
+
 ### Performance, Power, and Efficiency
 
 ## Potential Issues
@@ -477,6 +487,55 @@ Windows Terminal". Is this something we're really all that concerned about
 though? If this is something users want (it is), then shouldn't that be what
 matters?
 
+### Light & dark mode theming
+
+One request that comes up with frequency is the ability to change the color
+scheme of a profile automatically based on the system theme. Many users have
+scripts that automatically change between light and dark theme in the OS based
+on time of day.
+
+One thing this design does not do well is account for such theme-switching
+scenarios. This design assumes a static set of colors for a whole Terminal
+theme, regardless of whatever `window.applicationTheme` is set to. Should the
+user leave `window.applicationTheme` set to `system`, it's entirely likely that
+they would like the rest of their colors to automatically update to match.
+
+[TODO!]: # TODO!
+
+_Terrible ideas_:
+* allow the user to set different themes for different OS themes. Something like
+  `"theme": { "light": "My Light Theme", "dark": "My Dark Theme" }`
+* Allow the user to set their own brushes as part of a theme? So like,
+```jsonc
+{
+    "name": "My theme aware theme",
+    "brushes": {
+        "light": {
+            "Foo": "#ff0000"
+        },
+        "dark": {
+            "Foo": "#00ff00"
+        }
+    },
+    "window.applicationTheme": "system",
+    "tabRow.background": "key:Foo",
+}
+```
+
+### Admin window themes
+
+[TODO!]: # TODO!
+
+Same idea as the light vs dark mode theme ideas. How should users be able to
+style admin vs regular windows?
+
+## Addenda
+
+This spec also has a follow-up spec which elaborates on the comlpexites of Mica
+in the Terminal. Please also refer to:
+
+* [Mica in the Terminal](./%2310509%20-%20Mica.md)
+
 ## Future considerations
 
 * Mentioned in [#7005] was the idea of shipping a default theme that had values
@@ -489,6 +548,10 @@ matters?
       "tabRow.background": "accent",
   },
   ```
+* Applications should be able to install themes as fragments.
+  - We probably shouldn't allow layering for fragment themes - don't want
+    `foo.exe` installing a `light` theme that totally overrides the built-in
+    one. Right? **TODO! DISCUSSION**
 
 #### Theming v2 Properties
 
@@ -503,7 +566,7 @@ matters?
   tab row and the Terminal panes beneath it. This border doesn't exist
   currently.
 * `tabRow.underlineColor`: Controls the color of the aforementioned underline
-
+* `DWMWA_BORDER_COLOR`: That's not super well documented but the name is interesting for sure.
 
 <!-- Footnotes -->
 
