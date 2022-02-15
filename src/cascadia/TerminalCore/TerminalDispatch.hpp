@@ -64,6 +64,11 @@ public:
     bool SoftReset() override; // DECSTR
     bool HardReset() override; // RIS
 
+    // DTTERM_WindowManipulation
+    bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
+                            const VTParameter /*parameter1*/,
+                            const VTParameter /*parameter2*/) override;
+
     bool EnableVT200MouseMode(const bool enabled) override; // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool enabled) override; // ?1005
     bool EnableSGRExtendedMouseMode(const bool enabled) override; // ?1006

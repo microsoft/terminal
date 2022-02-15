@@ -136,6 +136,8 @@ public:
     void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
     void PopGraphicsRendition() override;
 
+    void ShowWindow(bool showOrHide) override;
+
 #pragma endregion
 
 #pragma region ITerminalInput

@@ -406,6 +406,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum WindowManipulationType : size_t
     {
         Invalid = 0,
+        DeIconifyWindow = 1,
+        IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
     };

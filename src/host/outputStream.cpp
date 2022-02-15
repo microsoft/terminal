@@ -504,6 +504,18 @@ void ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 }
 
 // Routine Description:
+// - Shows or hides the active window when asked.
+// Arguments:
+// - showOrHide - True for show, False for hide. Matching WM_SHOWWINDOW lParam.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ShowWindow(bool showOrHide)
+{
+    auto hwnd = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    LOG_IF_WIN32_BOOL_FALSE(PostMessageW(hwnd, WM_SHOWWINDOW, showOrHide, 0));
+}
+
+// Routine Description:
 // - Forces the renderer to repaint the screen. If the input screen buffer is
 //      not the active one, then just do nothing. We only want to redraw the
 //      screen buffer that requested the repaint, and switching screen buffers

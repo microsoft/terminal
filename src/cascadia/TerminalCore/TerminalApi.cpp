@@ -570,3 +570,14 @@ void Terminal::PopGraphicsRendition()
     const TextAttribute current = _buffer->GetCurrentAttributes();
     _buffer->SetCurrentAttributes(_sgrStack.Pop(current));
 }
+
+// Method Description:
+// - Reacts to a client asking us to show or hide the window.
+// Arguments:
+// - showOrHide - True for show. False for hide.
+// Return Value:
+// - <none>
+void Terminal::ShowWindow(bool showOrHide)
+{
+    showOrHide;
+}

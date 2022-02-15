@@ -312,6 +312,12 @@ public:
         VERIFY_ARE_EQUAL(_expectedCursorStyle, cursorType);
     }
 
+    void ShowWindow(bool showOrHide) override
+    {
+        Log::Comment(L"ShowWindow MOCK called...");
+        VERIFY_ARE_EQUAL(_expectedShowWindow, showOrHide);
+    }
+
     void RefreshWindow() override
     {
         Log::Comment(L"RefreshWindow MOCK called...");
@@ -641,6 +647,7 @@ public:
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _moveToBottomResult = false;
+    bool _expectedShowWindow = false;
 
     bool _getColorTableEntryResult = false;
     bool _setColorTableEntryResult = false;
