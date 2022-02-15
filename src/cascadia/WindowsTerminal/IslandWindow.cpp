@@ -813,6 +813,15 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
     }
 }
 
+void IslandWindow::ShowWindowChanged(const bool showOrHide)
+{
+    const auto hwnd = GetHandle();
+    if (hwnd)
+    {
+        PostMessage(hwnd, WM_SYSCOMMAND, showOrHide ? SC_RESTORE : SC_MINIMIZE, 0);
+    }
+}
+
 // Method Description
 // - Flash the taskbar icon, indicating to the user that something needs their attention
 void IslandWindow::FlashTaskbar()

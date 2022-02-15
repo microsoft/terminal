@@ -42,6 +42,7 @@ public:
     void FocusModeChanged(const bool focusMode);
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
+    void ShowWindowChanged(const bool showOrHide);
 
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
