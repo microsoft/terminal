@@ -192,6 +192,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
         TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
+        TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         // clang-format on
 
     private:
@@ -261,6 +262,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const int bufferSize);
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
+        void _terminalShowWindowChanged(bool showOrHide);
 #pragma endregion
 
 #pragma region RendererCallbacks

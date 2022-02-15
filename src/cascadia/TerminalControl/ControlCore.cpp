@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
-        auto pfnShowWindowChanged = [&](bool foo){ foo;};
+        auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
@@ -1260,6 +1260,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_terminalTaskbarProgressChanged()
     {
         _TaskbarProgressChangedHandlers(*this, nullptr);
+    }
+
+    void ControlCore::_terminalShowWindowChanged(bool showOrHide)
+    {
+        auto showWindow = winrt::make_self<implementation::ShowWindowArgs>(showOrHide);
+        _ShowWindowChangedHandlers(*this, *showWindow);
     }
 
     bool ControlCore::HasSelection() const
