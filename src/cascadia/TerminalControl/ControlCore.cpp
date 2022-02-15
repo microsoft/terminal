@@ -924,6 +924,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _compositionScale = scale;
 
+        // _updateFont relies on the new _compositionScale set above
         _updateFont();
 
         const auto actualFontNewSize = _actualFont.GetSize();
