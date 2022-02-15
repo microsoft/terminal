@@ -917,8 +917,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto dpi = (float)(scale * USER_DEFAULT_SCREEN_DPI);
-
         const auto actualFontOldSize = _actualFont.GetSize();
 
         auto lock = _terminal->LockForWriting();
