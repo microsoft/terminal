@@ -924,9 +924,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _compositionScale = scale;
 
-        _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi),
-                                     _desiredFont,
-                                     _actualFont);
+        _updateFont();
 
         const auto actualFontNewSize = _actualFont.GetSize();
         if (actualFontNewSize != actualFontOldSize)

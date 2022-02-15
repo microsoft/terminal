@@ -83,8 +83,7 @@ namespace Microsoft::Console::Render
                                                                                      DWRITE_FONT_STYLE style,
                                                                                      DWRITE_FONT_STRETCH stretch);
 
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi) noexcept;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi, const std::unordered_map<std::wstring_view, uint32_t>& features = {}, const std::unordered_map<std::wstring_view, float>& axes = {}) noexcept;
 
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 

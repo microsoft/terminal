@@ -1987,18 +1987,7 @@ CATCH_RETURN()
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
 {
-    try
-    {
-        // If no font features or axes were supplied, we call the version of UpdateFont that
-        // tells the DxFontRenderData to continue using the features/axes it already has (if any)
-        RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi));
-
-        // Prepare the text layout.
-        _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());
-
-        return S_OK;
-    }
-    CATCH_RETURN();
+    return UpdateFont(pfiFontInfoDesired, fiFontInfo, {}, {});
 }
 
 // Routine Description:
