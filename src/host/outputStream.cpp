@@ -296,17 +296,6 @@ void ConhostInternalGetSet::UseMainScreenBuffer()
     _io.GetActiveOutputBuffer().UseMainScreenBuffer();
 }
 
-// Routine Description:
-// - Clears the entire contents of the viewport, except for the cursor's row,
-//     which is moved to the top line of the viewport.
-//     See SCREEN_INFORMATION::ClearBuffer's description for details.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::ClearBuffer()
-{
-    THROW_IF_FAILED(_io.GetActiveOutputBuffer().ClearBuffer());
-}
-
 // Method Description:
 // - Retrieves the current user default cursor style.
 // Arguments:

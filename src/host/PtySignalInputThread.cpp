@@ -145,7 +145,8 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 
 void PtySignalInputThread::_DoClearBuffer()
 {
-    _pConApi->ClearBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
 }
 
 // Method Description:

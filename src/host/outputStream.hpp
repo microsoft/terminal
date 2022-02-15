@@ -59,8 +59,6 @@ public:
 
     void UseMainScreenBuffer() override;
 
-    void ClearBuffer() override;
-
     CursorType GetUserDefaultCursorStyle() const override;
 
     void RefreshWindow() override;
