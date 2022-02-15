@@ -63,7 +63,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void ClearBuffer() = 0;
         virtual CursorType GetUserDefaultCursorStyle() const = 0;
-        virtual void WriteControlInput(const KeyEvent key) = 0;
         virtual void RefreshWindow() = 0;
 
         virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;

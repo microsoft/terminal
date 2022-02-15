@@ -50,7 +50,7 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 // - True.
 bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
 {
-    _pConApi->WriteControlInput(event);
+    HandleGenericKeyEvent(event, false);
     return true;
 }
 

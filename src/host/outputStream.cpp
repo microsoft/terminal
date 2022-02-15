@@ -338,23 +338,6 @@ void ConhostInternalGetSet::RefreshWindow()
 }
 
 // Routine Description:
-// - Writes the input KeyEvent to the console as a console control event. This
-//      can be used for potentially generating Ctrl-C events, as
-//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in
-//      the same way that it'd be handled from the window proc, with the proper
-//      processed vs raw input handling.
-//  If the input key is *not* a Ctrl-C key, then it will get written to the
-//      buffer just the same as any other KeyEvent.
-// Arguments:
-// - key - The keyevent to send to the console.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::WriteControlInput(const KeyEvent key)
-{
-    HandleGenericKeyEvent(key, false);
-}
-
-// Routine Description:
 // - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - codepage - the new output codepage of the console.

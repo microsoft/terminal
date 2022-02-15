@@ -66,8 +66,6 @@ public:
     void RefreshWindow() override;
     bool ResizeWindow(const size_t width, const size_t height) override;
 
-    void WriteControlInput(const KeyEvent key) override;
-
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
 
