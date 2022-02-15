@@ -66,7 +66,6 @@ public:
 
     void RefreshWindow() override;
     bool ResizeWindow(const size_t width, const size_t height) override;
-    void SuppressResizeRepaint() override;
 
     void WriteControlInput(const KeyEvent key) override;
 

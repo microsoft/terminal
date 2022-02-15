@@ -138,7 +138,8 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
     if (_pConApi->ResizeWindow(data.sx, data.sy))
     {
-        _pConApi->SuppressResizeRepaint();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
     }
 }
 

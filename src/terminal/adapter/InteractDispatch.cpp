@@ -5,10 +5,13 @@
 
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../host/conddkrefs.h"
+#include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -67,7 +70,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, codepage);
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
@@ -108,7 +111,8 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
         // the ConGetSet interface, that specifically handles a conpty resize.
         if (_pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
         {
-            _pConApi->SuppressResizeRepaint();
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
         }
         return true;
     default:

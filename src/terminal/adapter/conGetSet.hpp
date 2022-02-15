@@ -72,7 +72,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual unsigned int GetConsoleOutputCP() const = 0;
 
         virtual bool ResizeWindow(const size_t width, const size_t height) = 0;
-        virtual void SuppressResizeRepaint() = 0;
         virtual bool IsConsolePty() const = 0;
 
         virtual COLORREF GetColorTableEntry(const size_t tableIndex) const = 0;

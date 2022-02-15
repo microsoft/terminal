@@ -450,19 +450,6 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
 }
 
 // Routine Description:
-// - Forces the VT Renderer to NOT paint the next resize event. This is used by
-//      InteractDispatch, to prevent resizes from echoing between terminal and host.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SuppressResizeRepaint()
-{
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
-}
-
-// Routine Description:
 // - Checks if the console host is acting as a pty.
 // Arguments:
 // - <none>
