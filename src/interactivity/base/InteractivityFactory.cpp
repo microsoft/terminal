@@ -324,6 +324,8 @@ using namespace Microsoft::Console::Interactivity;
     return status;
 }
 
+
+
 // Method Description:
 // - Attempts to instantiate a "pseudo window" for when we're operating in
 //      pseudoconsole mode. There are some tools (cygwin & derivatives) that use
@@ -339,7 +341,7 @@ using namespace Microsoft::Console::Interactivity;
     hwnd = nullptr;
     ApiLevel level;
     NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);
-    ;
+    
     if (NT_SUCCESS(status))
     {
         try
@@ -350,11 +352,11 @@ using namespace Microsoft::Console::Interactivity;
             {
             case ApiLevel::Win32:
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
-                pseudoClass.lpfnWndProc = DefWindowProc;
+                pseudoClass.lpfnWndProc = s_PseudoWindowProc;
                 RegisterClass(&pseudoClass);
                 // Attempt to create window
                 hwnd = CreateWindowExW(
-                    0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, nullptr);
+                    0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, this);
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();
@@ -381,4 +383,24 @@ using namespace Microsoft::Console::Interactivity;
 
     return status;
 }
+
+[[nodiscard]] LRESULT CALLBACK InteractivityFactory::s_PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+{
+      // Dispatch the message to the specific class instance
+    InteractivityFactory* const pFactory = reinterpret_cast<InteractivityFactory*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+    if (pFactory != nullptr)
+    {
+        return pFactory->PseudoWindowProc(hWnd, Message, wParam, lParam);
+    }
+
+    // If we get this far, call the default window proc
+    return DefWindowProcW(hWnd, Message, wParam, lParam);
+}
+
+[[nodiscard]] LRESULT CALLBACK InteractivityFactory::PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+{
+    // If we get this far, call the default window proc
+    return DefWindowProcW(hWnd, Message, wParam, lParam);
+}
+
 #pragma endregion

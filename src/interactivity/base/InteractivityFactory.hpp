@@ -28,5 +28,16 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services);
 
         [[nodiscard]] NTSTATUS CreatePseudoWindow(HWND& hwnd);
+
+        // Wndproc
+        [[nodiscard]] static LRESULT CALLBACK s_PseudoWindowProc(_In_ HWND hwnd,
+                                                                 _In_ UINT uMsg,
+                                                                 _In_ WPARAM wParam,
+                                                                 _In_ LPARAM lParam);
+        [[nodiscard]] LRESULT CALLBACK PseudoWindowProc(_In_ HWND,
+                                                        _In_ UINT uMsg,
+                                                        _In_ WPARAM wParam,
+                                                        _In_ LPARAM lParam);
+        
     };
 }
