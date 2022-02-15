@@ -1940,14 +1940,8 @@ void AdaptDispatch::_EraseScrollback()
     _pConApi->FillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
     // Also reset the line rendition for all of the cleared rows.
     textBuffer.ResetLineRenditionRange(height, bufferSize.Y);
-    // Move the viewport (CAN'T be done in one call with SetConsolescreenBufferInfoEx, because legacy)
-    SMALL_RECT newViewport;
-    newViewport.Left = screen.Left;
-    newViewport.Top = 0;
-    // SetWindowInfo uses an inclusive rect, while the screen rect is exclusive
-    newViewport.Right = screen.Right - 1;
-    newViewport.Bottom = height - 1;
-    _pConApi->SetWindowInfo(true, newViewport);
+    // Move the viewport
+    _pConApi->SetViewportPosition({ screen.Left, 0 });
     // Move the cursor to the same relative location.
     const COORD newcursor = { cursorPosition.X, cursorPosition.Y - screen.Top };
     _pConApi->SetCursorPosition(newcursor);
@@ -1987,13 +1981,7 @@ void AdaptDispatch::_EraseAll()
         newViewportTop--;
     }
     // Move the viewport
-    SMALL_RECT newViewport;
-    newViewport.Left = viewport.Left;
-    newViewport.Top = newViewportTop;
-    // SetWindowInfo uses an inclusive rect, while the viewport rect is exclusive
-    newViewport.Right = viewport.Right - 1;
-    newViewport.Bottom = newViewportTop + viewportHeight - 1;
-    _pConApi->SetWindowInfo(true, newViewport);
+    _pConApi->SetViewportPosition({ viewport.Left, newViewportTop });
     // Restore the relative cursor position
     cursorPosition.Y += newViewportTop;
     _pConApi->SetCursorPosition(cursorPosition);

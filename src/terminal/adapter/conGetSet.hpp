@@ -39,7 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual TextBuffer& GetTextBuffer() = 0;
         virtual SMALL_RECT GetViewport() const = 0;
-
+        virtual void SetViewportPosition(const COORD position) = 0;
         virtual void SetCursorPosition(const COORD position) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
@@ -47,7 +47,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetTextAttributes(const TextAttribute& attrs) = 0;
 
         virtual void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) = 0;
-        virtual void SetWindowInfo(const bool absolute, const SMALL_RECT& window) = 0;
 
         virtual bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) = 0;
         virtual void SetParserMode(const StateMachine::Mode mode, const bool enabled) = 0;

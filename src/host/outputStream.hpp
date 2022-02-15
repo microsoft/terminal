@@ -33,14 +33,12 @@ public:
 
     TextBuffer& GetTextBuffer() override;
     SMALL_RECT GetViewport() const override;
-
+    void SetViewportPosition(const COORD position) override;
     void SetCursorPosition(const COORD position) override;
 
     void SetTextAttributes(const TextAttribute& attrs) override;
 
     void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
-
-    void SetWindowInfo(bool const absolute, const SMALL_RECT& window) override;
 
     bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
     void SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;

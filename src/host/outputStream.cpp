@@ -80,6 +80,20 @@ SMALL_RECT ConhostInternalGetSet::GetViewport() const
 }
 
 // Routine Description:
+// - Sets the position of the window viewport.
+// Arguments:
+// - position - the new position of the viewport.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetViewportPosition(const COORD position)
+{
+    auto& info = _io.GetActiveOutputBuffer();
+    const auto dimensions = info.GetViewport().Dimensions();
+    const auto windowRect = Viewport::FromDimensions(position, dimensions).ToInclusive();
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
+}
+
+// Routine Description:
 // - Connects the SetCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - position - new cursor position to set like the public API call.
@@ -115,18 +129,6 @@ void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
 {
     eventsWritten = _io.GetActiveInputBuffer()->Write(events);
-}
-
-// Routine Description:
-// - Connects the SetWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - absolute - Should the window be moved to an absolute position? If false, the movement is relative to the current pos.
-// - window - Info about how to move the viewport
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetWindowInfo(const bool absolute, const SMALL_RECT& window)
-{
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
 }
 
 // Routine Description:
@@ -443,7 +445,7 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     csbiex.srWindow = sre;
 
     THROW_IF_FAILED(api->SetConsoleScreenBufferInfoExImpl(screenInfo, csbiex));
-    SetWindowInfo(true, sri);
+    THROW_IF_FAILED(api->SetConsoleWindowInfoImpl(screenInfo, true, sri));
     return true;
 }
 
