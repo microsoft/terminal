@@ -20,7 +20,6 @@ namespace Microsoft::Terminal::Core
         ITerminalApi& operator=(ITerminalApi&&) = default;
 
         virtual void PrintString(std::wstring_view string) = 0;
-        virtual void ExecuteChar(wchar_t wch) = 0;
 
         virtual TextAttribute GetTextAttributes() const = 0;
         virtual void SetTextAttributes(const TextAttribute& attrs) = 0;

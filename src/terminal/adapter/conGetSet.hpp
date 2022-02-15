@@ -34,6 +34,9 @@ namespace Microsoft::Console::VirtualTerminal
 
     public:
         virtual ~ConGetSet() = default;
+
+        virtual void PrintString(const std::wstring_view string) = 0;
+
         virtual void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const = 0;
         virtual void SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) = 0;
         virtual void SetCursorPosition(const COORD position) = 0;
@@ -79,6 +82,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;
         virtual unsigned int GetConsoleOutputCP() const = 0;
 
+        virtual bool ResizeWindow(const size_t width, const size_t height) = 0;
         virtual void SuppressResizeRepaint() = 0;
         virtual bool IsConsolePty() const = 0;
 

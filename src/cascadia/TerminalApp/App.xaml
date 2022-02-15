@@ -54,17 +54,31 @@
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!--  Define resources for Dark mode here  -->
-                            <StaticResource x:Key="TabViewBackground"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+                            <!--
+                                This is the color of
+                                ApplicationPageBackgroundThemeBrush, which is
+                                evaluated as SolidBackgroundFillColorBase. If we try
+                                to use those resources directly though, we don't get
+                                the properly themed versions. Presumably because the
+                                App itself can't have it's RequestedTheme changed at
+                                runtime.
+                                
+                                See GH #12356 for more history on the subject.
+                            -->
+                            <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#202020" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!--  Define resources for Light mode here  -->
-                            <StaticResource x:Key="TabViewBackground"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                            <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#F3F3F3" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />

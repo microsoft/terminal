@@ -141,23 +141,34 @@
                         <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
                                    Style="{StaticResource TitleTextBlockStyle}" />
                         <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
-                                Margin="32,0,0,0"
+                                Margin="10,0,0,0"
                                 Click="CreateUnfocusedAppearance_Click"
                                 Style="{StaticResource BaseButtonStyle}"
                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
                             <Button.Content>
-                                <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                          Glyph="&#xE710;" />
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Margin="0,3,0,0"
+                                              FontSize="{StaticResource StandardIconSize}"
+                                              Glyph="&#xE710;" />
+                                    <TextBlock x:Uid="Profile_AddAppearanceButton"
+                                               Margin="10,0,0,0"
+                                               FontSize="{StaticResource StandardIconSize}" />
+                                </StackPanel>
                             </Button.Content>
                         </Button>
                         <Button x:Uid="Profile_DeleteUnfocusedAppearanceButton"
-                                Margin="32,0,0,0"
+                                Margin="10,0,0,0"
                                 Click="DeleteUnfocusedAppearance_Click"
                                 Style="{StaticResource BaseButtonStyle}"
                                 Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">
                             <Button.Content>
-                                <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                          Glyph="&#xE74D;" />
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                              Glyph="&#xE74D;" />
+                                    <TextBlock x:Uid="Profile_DeleteAppearanceButton"
+                                               Margin="10,0,0,0"
+                                               FontSize="{StaticResource StandardIconSize}" />
+                                </StackPanel>
                             </Button.Content>
                             <Button.Resources>
                                 <ResourceDictionary>

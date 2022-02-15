@@ -61,7 +61,7 @@ namespace Microsoft::Console::Interactivity
         template<typename T>
         static T* LocateConsoleWindow()
         {
-            return static_cast<T*>(s_consoleWindow);
+            return static_cast<T*>(s_consoleWindow.get());
         }
 
         static IWindowMetrics* LocateWindowMetrics();
@@ -106,7 +106,7 @@ namespace Microsoft::Console::Interactivity
         // TODO: MSFT 15344939 - some implementations of IConsoleWindow are currently singleton
         // classes so we can't own a pointer to them here. fix this so s_consoleWindow can follow the
         // pattern of the rest of the service interface pointers.
-        static IConsoleWindow* s_consoleWindow;
+        static std::unique_ptr<IConsoleWindow> s_consoleWindow;
         static std::unique_ptr<IWindowMetrics> s_windowMetrics;
         static std::unique_ptr<IHighDpiApi> s_highDpiApi;
         static std::unique_ptr<ISystemConfigurationProvider> s_systemConfigurationProvider;

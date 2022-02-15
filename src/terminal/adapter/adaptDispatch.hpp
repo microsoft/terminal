@@ -15,9 +15,7 @@ Author(s):
 #pragma once
 
 #include "termDispatch.hpp"
-#include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
-#include "adaptDefaults.hpp"
 #include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
 #include "..\..\types\inc\sgrStack.hpp"
@@ -27,16 +25,10 @@ namespace Microsoft::Console::VirtualTerminal
     class AdaptDispatch : public ITermDispatch
     {
     public:
-        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
-                      std::unique_ptr<AdaptDefaults> pDefaults);
+        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi);
 
-        void Execute(const wchar_t wchControl) override
-        {
-            _pDefaults->Execute(wchControl);
-        }
-
-        void PrintString(const std::wstring_view string) override;
         void Print(const wchar_t wchPrintable) override;
+        void PrintString(const std::wstring_view string) override;
 
         bool CursorUp(const size_t distance) override; // CUU
         bool CursorDown(const size_t distance) override; // CUD
@@ -200,7 +192,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _initDefaultTabStops = true;
 
         std::unique_ptr<ConGetSet> _pConApi;
-        std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::optional<unsigned int> _initialCodePage;
