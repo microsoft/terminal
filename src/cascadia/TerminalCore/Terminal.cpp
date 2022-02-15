@@ -1212,6 +1212,11 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
+void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
+{
+    _pfnShowWindowChanged.swap(pfn);
+}
+
 // Method Description:
 // - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor

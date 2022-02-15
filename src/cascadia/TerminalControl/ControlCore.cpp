@@ -108,6 +108,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
+        auto pfnShowWindowChanged = [&](bool foo){ foo;};
+        _terminal->SetShowWindowCallback(pfnShowWindowChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach

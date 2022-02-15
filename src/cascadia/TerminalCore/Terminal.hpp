@@ -207,6 +207,7 @@ public:
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
+    void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -274,6 +275,7 @@ private:
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
+    std::function<void(bool)> _pfnShowWindowChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

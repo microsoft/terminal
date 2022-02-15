@@ -579,5 +579,8 @@ void Terminal::PopGraphicsRendition()
 // - <none>
 void Terminal::ShowWindow(bool showOrHide)
 {
-    showOrHide;
+    if (_pfnShowWindowChanged)
+    {
+        _pfnShowWindowChanged(showOrHide);
+    }
 }
