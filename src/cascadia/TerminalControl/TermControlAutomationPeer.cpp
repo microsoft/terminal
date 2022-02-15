@@ -28,6 +28,32 @@ namespace XamlAutomation
     using winrt::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider;
 }
 
+static constexpr wchar_t UNICODE_NEWLINE{ L'\n' };
+
+static inline std::wstring Sanitize(std::wstring_view text)
+{
+    std::wstring sanitized;
+    std::for_each(text.begin(), text.end(), [&sanitized](auto&& c) {
+        if (c > UNICODE_SPACE || c == UNICODE_NEWLINE)
+        {
+            sanitized += c;
+        }
+    });
+    return sanitized;
+}
+
+static constexpr bool IsReadable(std::wstring_view text)
+{
+    for (const auto c : text)
+    {
+        if (c > UNICODE_SPACE)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControlAutomationPeer::TermControlAutomationPeer(TermControl* owner,
@@ -45,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contentAutomationPeer.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
         _contentAutomationPeer.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
         _contentAutomationPeer.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
-        _contentAutomationPeer.NewOutput([this](auto&&, auto&& newOutput) { NotifyNewOutput(newOutput); });
+        _contentAutomationPeer.NewOutput([this](auto&&, hstring newOutput) { NotifyNewOutput(std::wstring{ newOutput }); });
         _contentAutomationPeer.ParentProvider(*this);
     };
 
@@ -67,6 +93,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControlAutomationPeer::SetControlPadding(const Core::Padding padding)
     {
         _contentAutomationPeer.SetControlPadding(padding);
+    }
+
+    void TermControlAutomationPeer::RecordKeyEvent(const WORD vkey)
+    {
+        if (const auto charCode{ MapVirtualKey(vkey, MAPVK_VK_TO_CHAR) })
+        {
+            _keyEvents.emplace_back(gsl::narrow_cast<wchar_t>(charCode));
+        }
     }
 
     // Method Description:
@@ -143,8 +177,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
     }
 
-    void TermControlAutomationPeer::NotifyNewOutput(const std::wstring_view newOutput)
+    void TermControlAutomationPeer::NotifyNewOutput(std::wstring newOutput)
     {
+        // Try to suppress any events (or event data)
+        // that is just the keypress the user made
+        auto sanitized{ Sanitize(newOutput) };
+        while (!_keyEvents.empty() && IsReadable(sanitized))
+        {
+            if (towupper(sanitized.front()) == _keyEvents.back())
+            {
+                sanitized = sanitized.substr(1);
+                _keyEvents.pop_front();
+            }
+            else
+            {
+                // The output doesn't match,
+                // so clear the input stack and
+                // move on to fire the event.
+                _keyEvents.clear();
+                break;
+            }
+        }
+
+        // Suppress event if the remaining text is not readable
+        if (!IsReadable(sanitized))
+        {
+            return;
+        }
+
         auto dispatcher{ Dispatcher() };
         if (!dispatcher)
         {
@@ -157,7 +217,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
                                            AutomationNotificationProcessing::All,
-                                           newOutput,
+                                           sanitized,
                                            L"TerminalTextOutput");
                 }
                 CATCH_LOG();

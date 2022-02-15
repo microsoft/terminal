@@ -93,7 +93,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _CursorChangedHandlers(*this, nullptr);
     }
 
-    void InteractivityAutomationPeer::NotifyNewOutput(const std::wstring_view newOutput)
+    void InteractivityAutomationPeer::NotifyNewOutput(std::wstring newOutput)
     {
         _NewOutputHandlers(*this, hstring{ newOutput });
     }

@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateControlBounds();
         void SetControlPadding(const Core::Padding padding);
+        void RecordKeyEvent(const WORD vkey);
 
 #pragma region FrameworkElementAutomationPeer
         hstring GetClassNameCore() const;
@@ -64,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SignalSelectionChanged() override;
         void SignalTextChanged() override;
         void SignalCursorChanged() override;
-        void NotifyNewOutput(const std::wstring_view newOutput) override;
+        void NotifyNewOutput(std::wstring newOutput) override;
 #pragma endregion
 
 #pragma region ITextProvider Pattern
@@ -79,5 +80,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         winrt::Microsoft::Terminal::Control::implementation::TermControl* _termControl;
         Control::InteractivityAutomationPeer _contentAutomationPeer;
+        std::deque<wchar_t> _keyEvents;
     };
 }
