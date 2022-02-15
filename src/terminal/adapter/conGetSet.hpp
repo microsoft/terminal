@@ -15,7 +15,6 @@ Author(s):
 
 #pragma once
 
-#include "../input/terminalInput.hpp"
 #include "../parser/stateMachine.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 #include "../../buffer/out/LineRendition.hpp"
@@ -48,7 +47,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) = 0;
 
-        virtual bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) = 0;
         virtual void SetParserMode(const StateMachine::Mode mode, const bool enabled) = 0;
         virtual bool GetParserMode(const StateMachine::Mode mode) const = 0;
         virtual void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) = 0;

@@ -40,7 +40,6 @@ public:
 
     void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
 
-    bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
     void SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
     bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
     void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;

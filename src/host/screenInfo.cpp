@@ -254,8 +254,10 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 {
     try
     {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
         auto getset = std::make_unique<ConhostInternalGetSet>(*this);
-        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset));
+        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), terminalInput);
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's

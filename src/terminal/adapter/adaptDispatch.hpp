@@ -18,14 +18,15 @@ Author(s):
 #include "conGetSet.hpp"
 #include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
-#include "..\..\types\inc\sgrStack.hpp"
+#include "../input/terminalInput.hpp"
+#include "../../types/inc/sgrStack.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public ITermDispatch
     {
     public:
-        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi);
+        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi, TerminalInput& terminalInput);
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
@@ -178,6 +179,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _CursorPositionReport() const;
 
         void _WriteResponse(const std::wstring_view reply) const;
+        bool _SetInputMode(const TerminalInput::Mode mode, const bool enable);
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
@@ -193,6 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _initDefaultTabStops = true;
 
         std::unique_ptr<ConGetSet> _pConApi;
+        TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::optional<unsigned int> _initialCodePage;

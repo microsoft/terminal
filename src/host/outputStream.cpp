@@ -17,7 +17,6 @@
 using namespace Microsoft::Console;
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::StateMachine;
-using Microsoft::Console::VirtualTerminal::TerminalInput;
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
     _io{ io }
@@ -129,31 +128,6 @@ void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
 {
     eventsWritten = _io.GetActiveInputBuffer()->Write(events);
-}
-
-// Routine Description:
-// - Sets the various terminal input modes.
-//   SetInputMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - mode - the input mode to change.
-// - enabled - set to true to enable the mode, false to disable it.
-// Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const bool enabled)
-{
-    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.SetInputMode(mode, enabled);
-
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input.
-    // The original comment said, "Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911". Unfortunately, time has shown
-    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-    // impact on the actual connected terminal. We can't remove this check,
-    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return !(IsConsolePty() && IsVtInputEnabled());
 }
 
 // Routine Description:
