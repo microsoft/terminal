@@ -152,6 +152,11 @@ jobs:
         $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
       pwsh: true
   - task: PowerShell@2
+    displayName: Copy the Context Menu Loc Resources to CascadiaPackage
+    inputs:
+      filePath: ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
+      pwsh: true
+  - task: PowerShell@2
     displayName: Generate NOTICE.html from NOTICE.md
     inputs:
       filePath: .\build\scripts\Generate-ThirdPartyNotices.ps1

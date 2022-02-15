@@ -21,7 +21,7 @@
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>ms-resource:TerminalApp/ContextMenu/AppStoreName</DisplayName>
+    <DisplayName>ms-resource:AppStoreName</DisplayName>
     <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -127,8 +127,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="ms-resource:TerminalApp/ContextMenu/AppName"
-        Description="ms-resource:TerminalApp/ContextMenu/AppDescription"
+        DisplayName="ms-resource:AppName"
+        Description="ms-resource:AppDescription"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
         Square44x44Logo="Images\Square44x44Logo.png">
@@ -136,7 +136,7 @@
           Wide310x150Logo="Images\Wide310x150Logo.png"
           Square71x71Logo="Images\SmallTile.png"
           Square310x310Logo="Images\LargeTile.png"
-          ShortName="ms-resource:TerminalApp/ContextMenu/AppShortName">
+          ShortName="ms-resource:AppShortName">
           <uap:ShowNameOnTiles>
             <uap:ShowOn Tile="square150x150Logo"/>
             <uap:ShowOn Tile="wide310x150Logo"/>
@@ -160,7 +160,7 @@
           <uap5:StartupTask
             TaskId="StartTerminalOnLoginTask"
             Enabled="false"
-            DisplayName="ms-resource:TerminalApp/ContextMenu/AppName" />
+            DisplayName="ms-resource:AppName" />
         </uap5:Extension>
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.console.host"
