@@ -12,6 +12,7 @@
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
 #include "FoundResultsArgs.g.h"
+#include "ShowWindowArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
