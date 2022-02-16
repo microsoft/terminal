@@ -57,6 +57,17 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 }
 
 // Routine Description:
+// - Retrieves the state machine for the active output buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the StateMachine instance.
+StateMachine& ConhostInternalGetSet::GetStateMachine()
+{
+    return _io.GetActiveOutputBuffer().GetStateMachine();
+}
+
+// Routine Description:
 // - Retrieves the text buffer for the active output buffer.
 // Arguments:
 // - <none>
@@ -128,35 +139,6 @@ void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
 {
     eventsWritten = _io.GetActiveInputBuffer()->Write(events);
-}
-
-// Routine Description:
-// - Sets the various StateMachine parser modes.
-//   SetParserMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - mode - the parser mode to change.
-// - enabled - set to true to enable the mode, false to disable it.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
-{
-    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
-    stateMachine.SetParserMode(mode, enabled);
-}
-
-// Routine Description:
-// - Retrieves the various StateMachine parser modes.
-//   GetParserMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - mode - the parser mode to query.
-// Return Value:
-// - true if the mode is enabled. false if disabled.
-bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const
-{
-    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
-    return stateMachine.GetParserMode(mode);
 }
 
 // Routine Description:

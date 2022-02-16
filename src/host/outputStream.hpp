@@ -31,6 +31,7 @@ public:
 
     void PrintString(const std::wstring_view string) override;
 
+    Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
     TextBuffer& GetTextBuffer() override;
     SMALL_RECT GetViewport() const override;
     void SetViewportPosition(const COORD position) override;
@@ -40,8 +41,6 @@ public:
 
     void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
 
-    void SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
-    bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
     void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
 
     void SetAutoWrapMode(const bool wrapAtEOL) override;

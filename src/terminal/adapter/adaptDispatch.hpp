@@ -179,6 +179,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _CursorPositionReport() const;
 
         void _WriteResponse(const std::wstring_view reply) const;
+        bool _GetParserMode(const StateMachine::Mode mode) const;
+        void _SetParserMode(const StateMachine::Mode mode, const bool enable);
         bool _SetInputMode(const TerminalInput::Mode mode, const bool enable);
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);

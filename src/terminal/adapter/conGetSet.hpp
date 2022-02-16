@@ -36,6 +36,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void PrintString(const std::wstring_view string) = 0;
 
+        virtual StateMachine& GetStateMachine() = 0;
         virtual TextBuffer& GetTextBuffer() = 0;
         virtual SMALL_RECT GetViewport() const = 0;
         virtual void SetViewportPosition(const COORD position) = 0;
@@ -47,8 +48,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) = 0;
 
-        virtual void SetParserMode(const StateMachine::Mode mode, const bool enabled) = 0;
-        virtual bool GetParserMode(const StateMachine::Mode mode) const = 0;
         virtual void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) = 0;
 
         virtual void SetAutoWrapMode(const bool wrapAtEOL) = 0;

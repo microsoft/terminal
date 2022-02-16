@@ -320,7 +320,7 @@ bool AdaptDispatch::CursorSaveState()
     savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
-    savedCursorState.C1ControlsAccepted = _pConApi->GetParserMode(StateMachine::Mode::AcceptC1);
+    savedCursorState.C1ControlsAccepted = _GetParserMode(StateMachine::Mode::AcceptC1);
     savedCursorState.CodePage = _pConApi->GetConsoleOutputCP();
 
     return true;
@@ -949,6 +949,29 @@ bool AdaptDispatch::_DoDECCOLMHelper(const size_t columns)
     return true;
 }
 
+// Routine Description :
+// - Retrieves the various StateMachine parser modes.
+// Arguments:
+// - mode - the parser mode to query.
+// Return Value:
+// - true if the mode is enabled. false if disabled.
+bool AdaptDispatch::_GetParserMode(const StateMachine::Mode mode) const
+{
+    return _pConApi->GetStateMachine().GetParserMode(mode);
+}
+
+// Routine Description:
+// - Sets the various StateMachine parser modes.
+// Arguments:
+// - mode - the parser mode to change.
+// - enable - set to true to enable the mode, false to disable it.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SetParserMode(const StateMachine::Mode mode, const bool enable)
+{
+    _pConApi->GetStateMachine().SetParserMode(mode, enable);
+}
+
 // Routine Description:
 // - Sets the various terminal input modes.
 // Arguments:
@@ -1215,7 +1238,7 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    _pConApi->SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _SetParserMode(StateMachine::Mode::Ansi, ansiMode);
     _SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
     // We don't check the _SetInputMode return value, because we'll never want
@@ -1759,7 +1782,7 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 // - True.
 bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 {
-    _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+    _SetParserMode(StateMachine::Mode::AcceptC1, enabled);
     return true;
 }
 
