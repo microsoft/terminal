@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         SummonWindowBehavior() = default;
         WINRT_PROPERTY(bool, MoveToCurrentDesktop, true);
         WINRT_PROPERTY(bool, ToggleVisibility, true);
+        WINRT_PROPERTY(bool, DoNotActivate, false);
         WINRT_PROPERTY(uint32_t, DropdownDuration, 0);
         WINRT_PROPERTY(Remoting::MonitorBehavior, ToMonitor, Remoting::MonitorBehavior::ToCurrent);
 

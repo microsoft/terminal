@@ -50,6 +50,7 @@ namespace Microsoft.Terminal.Remoting
         Boolean ToggleVisibility;
         UInt32 DropdownDuration;
         MonitorBehavior ToMonitor;
+        Boolean DoNotActivate;
     }
 
     interface IPeasant

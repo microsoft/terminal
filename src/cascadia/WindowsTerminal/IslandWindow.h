@@ -54,6 +54,7 @@ public:
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
+    void InitShowWindow();
     void HideWindow();
 
     void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;

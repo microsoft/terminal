@@ -72,17 +72,18 @@ void IslandWindow::MakeWindow() noexcept
     WINRT_VERIFY(CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP | (_alwaysOnTop ? WS_EX_TOPMOST : 0),
                                 wc.lpszClassName,
                                 L"Windows Terminal",
-                                WS_OVERLAPPEDWINDOW,
+                                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                 CW_USEDEFAULT,
-                                CW_USEDEFAULT,
+                                SW_HIDE,
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,
                                 nullptr,
                                 nullptr,
                                 wc.hInstance,
                                 this));
-
     WINRT_ASSERT(_window);
+
+    InitShowWindow();
 }
 
 // Method Description:
@@ -132,6 +133,25 @@ void IslandWindow::SetSnapDimensionCallback(std::function<float(bool, float)> pf
     _pfnSnapDimensionCallback = pfn;
 }
 
+void IslandWindow::InitShowWindow()
+{
+    int nCmdShow = SW_SHOW;
+    //if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
+    {
+        nCmdShow = SW_MAXIMIZE;
+    }
+    //else if (WI_IsFlagSet(launchMode, LaunchMode::MinimizeMode))
+    {
+        nCmdShow = SW_SHOWMINNOACTIVE;
+    }
+
+    ShowWindow(_window.get(), nCmdShow);
+
+    UpdateWindow(_window.get());
+
+    UpdateWindowIconForActiveMetrics(_window.get());
+}
+
 // Method Description:
 // - Handles a WM_CREATE message. Calls our create callback, if one's been set.
 // Arguments:
@@ -154,18 +174,6 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     {
         _pfnCreateCallback(_window.get(), rc, launchMode);
     }
-
-    int nCmdShow = SW_SHOW;
-    if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
-    {
-        nCmdShow = SW_MAXIMIZE;
-    }
-
-    ShowWindow(_window.get(), nCmdShow);
-
-    UpdateWindow(_window.get());
-
-    UpdateWindowIconForActiveMetrics(_window.get());
 }
 
 // Method Description:
@@ -1268,7 +1276,7 @@ void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
             _globalDismissWindow(actualDropdownDuration);
         }
     }
-    else
+    else if (!args.DoNotActivate())
     {
         _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
     }

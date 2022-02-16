@@ -1320,13 +1320,15 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                     const winrt::Windows::Foundation::IInspectable&)
+                                     const winrt::Windows::Foundation::IInspectable& doNotActivate)
 {
     const Remoting::SummonWindowBehavior summonArgs{};
     summonArgs.MoveToCurrentDesktop(false);
     summonArgs.DropdownDuration(0);
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+    const auto value = winrt::unbox_value_or<bool>(doNotActivate, false);
+    summonArgs.DoNotActivate(value);
     _HandleSummon(sender, summonArgs);
 }
 

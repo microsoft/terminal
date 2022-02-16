@@ -25,7 +25,8 @@ namespace Microsoft.Terminal.Settings.Model
         MaximizedMode = 1,
         FullscreenMode = 2,
         FocusMode = 4,
-        MaximizedFocusMode = 5
+        MaximizedFocusMode = 5,
+        MinimizedMode = 6
     };
 
     enum WindowingMode

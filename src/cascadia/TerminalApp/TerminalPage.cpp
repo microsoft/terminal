@@ -3103,7 +3103,8 @@ namespace winrt::TerminalApp::implementation
             _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, connection));
 
             // Request a summon of this window to the foreground
-            _SummonWindowRequestedHandlers(*this, nullptr);
+            const auto doNotActivate = winrt::box_value(true);
+            _SummonWindowRequestedHandlers(*this, doNotActivate);
             return S_OK;
         }
         CATCH_RETURN()
