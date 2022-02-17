@@ -110,6 +110,9 @@ private:
     void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args);
 
+    void _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args);
+
     void _CreateNotificationIcon();
     void _DestroyNotificationIcon();
     void _ShowNotificationIconRequested();
