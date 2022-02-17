@@ -253,6 +253,37 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 }
 
 // Function Description:
+// - TODO!
+HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent)
+{
+    if (pPty == nullptr)
+    {
+        return E_INVALIDARG;
+    }
+
+#pragma pack(push, 1)
+    struct _signal
+    {
+        const unsigned short id; // = PTY_SIGNAL_RESIZE_WINDOW;
+        const uint64_t hwnd; // = reinterpret_cast<uint64_t>(newParent);
+    } data{ PTY_SIGNAL_REPARENT_WINDOW, reinterpret_cast<uint64_t>(newParent) };
+#pragma pack(pop)
+
+    // unsigned short signalPacket[5];
+    // signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;
+    // // hwnd is a uint64_t.
+    // signalPacket[1] = size.X;
+    // signalPacket[2] = size.Y;
+    // signalPacket[3] = size.Y;
+    // signalPacket[4] = size.Y;
+    // static_assert(sizeof(data) == (10));
+    // static_assert(sizeof(data) == (sizeof(unsigned short) + sizeof(HWND)));
+
+    const BOOL fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
+// Function Description:
 // - This closes each of the members of a PseudoConsole. It does not free the
 //      data associated with the PseudoConsole. This is helpful for testing,
 //      where we might stack allocate a PseudoConsole (instead of getting a
@@ -419,6 +450,19 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
     if (SUCCEEDED(hr))
     {
         hr = _ClearPseudoConsole(pPty);
+    }
+    return hr;
+}
+
+// Function Description:
+// - TODO!
+extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newParent)
+{
+    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    if (SUCCEEDED(hr))
+    {
+        hr = _ReparentPseudoConsole(pPty, newParent);
     }
     return hr;
 }

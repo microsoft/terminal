@@ -334,12 +334,12 @@ using namespace Microsoft::Console::Interactivity;
 // - hwnd: Receives the value of the newly created window's HWND.
 // Return Value:
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
-[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
+[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd, const HWND owner)
 {
     hwnd = nullptr;
     ApiLevel level;
     NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);
-    ;
+
     if (NT_SUCCESS(status))
     {
         try
@@ -349,20 +349,24 @@ using namespace Microsoft::Console::Interactivity;
             switch (level)
             {
             case ApiLevel::Win32:
+            {
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
                 pseudoClass.lpfnWndProc = DefWindowProc;
                 RegisterClass(&pseudoClass);
+
+                const auto windowStyle = (owner == HWND_DESKTOP) ? WS_OVERLAPPEDWINDOW : WS_CHILD;
+
                 // Attempt to create window
                 hwnd = CreateWindowExW(
                     0,
                     PSEUDO_WINDOW_CLASS,
                     nullptr,
-                    WS_CHILD, //WS_OVERLAPPEDWINDOW,
+                    windowStyle, //WS_CHILD, //WS_OVERLAPPEDWINDOW,
                     0,
                     0,
                     0,
                     0,
-                    (HWND)0x00070C6A, //HWND_DESKTOP,// parent
+                    owner /*(HWND)0x00070C6A*/ /*HWND_DESKTOP*/, // parent
                     nullptr,
                     nullptr,
                     nullptr);
@@ -371,8 +375,13 @@ using namespace Microsoft::Console::Interactivity;
                     DWORD const gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
-                break;
 
+                const auto awareness{GetThreadDpiAwarenessContext()};
+                awareness;
+                SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+                break;
+            }
 #ifdef BUILD_ONECORE_INTERACTIVITY
             case ApiLevel::OneCore:
                 hwnd = 0;

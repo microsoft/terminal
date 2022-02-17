@@ -41,6 +41,11 @@ IslandWindow::~IslandWindow()
     _source.Close();
 }
 
+HWND IslandWindow::GetInteropHandle() const
+{
+    return _interopWindowHandle;
+}
+
 // Method Description:
 // - Create the actual window that we'll use for the application.
 // Arguments:

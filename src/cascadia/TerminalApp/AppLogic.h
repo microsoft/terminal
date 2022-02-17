@@ -65,6 +65,8 @@ namespace winrt::TerminalApp::implementation
         void LoadSettings();
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
+        void SetOwnerHwnd(uint64_t owner) { _root->SetOwnerHwnd(owner); }
+
         void Quit();
 
         bool HasCommandlineArguments() const noexcept;

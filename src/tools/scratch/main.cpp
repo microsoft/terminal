@@ -57,10 +57,19 @@ HWND find_main_window(unsigned long process_id)
 
 static LRESULT __stdcall WndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
+    static bool gotKeyDown{ false };
     switch (message)
     {
     case WM_DESTROY:
         PostQuitMessage(0);
+        return 0;
+
+    case WM_KEYDOWN:
+        gotKeyDown = true;
+        return 0;
+    case WM_KEYUP:
+        if (gotKeyDown)
+            DestroyWindow(window);
         return 0;
     }
     return DefWindowProc(window, message, wparam, lparam);
@@ -71,44 +80,53 @@ int doTheWindowThing(HWND hwndToUseAsParent)
     const auto hInst{ GetModuleHandle(NULL) };
     wprintf(fmt::format(L"Creating a Window, then a MessageBox, using {} as the parent HWND\n", reinterpret_cast<unsigned long long>(hwndToUseAsParent)).c_str());
 
-    // Create the window.
-    HWND hwnd = CreateWindowEx(
-        0, // Optional window styles.
-        CLASS_NAME, // Window class
-        L"Learn to Program Windows", // Window text
-        WS_OVERLAPPEDWINDOW, // Window style
+    auto doWindowCreateLoop = [&](bool child) {
+        // Create the window.
+        HWND hwnd = CreateWindowEx(
+            0, // Optional window styles.
+            CLASS_NAME, // Window class
+            L"Learn to Program Windows", // Window text
+            WS_OVERLAPPEDWINDOW | (child ? WS_CHILD : 0), // Window style
 
-        // Size and position
-        200,
-        200,
-        200,
-        200,
+            // Size and position
+            200,
+            200,
+            200,
+            200,
 
-        hwndToUseAsParent, // Parent window
-        NULL, // Menu
-        hInst, // Instance handle
-        NULL // Additional application data
-    );
+            hwndToUseAsParent, // Parent window
+            NULL, // Menu
+            hInst, // Instance handle
+            NULL // Additional application data
+        );
 
-    // wprintf(fmt::format(L"hwnd: {}\n", reinterpret_cast<unsigned long long>(hwnd)).c_str());
+        // wprintf(fmt::format(L"hwnd: {}\n", reinterpret_cast<unsigned long long>(hwnd)).c_str());
 
-    // const auto newHwnd{ find_main_window(pid) };
-    // wprintf(fmt::format(L"newHwnd: {}\n", reinterpret_cast<unsigned long long>(newHwnd)).c_str());
+        // const auto newHwnd{ find_main_window(pid) };
+        // wprintf(fmt::format(L"newHwnd: {}\n", reinterpret_cast<unsigned long long>(newHwnd)).c_str());
 
-    if (hwnd == NULL)
-    {
+        if (hwnd == NULL)
+        {
+            return 0;
+        }
+
+        ShowWindow(hwnd, SW_SHOW);
+        MSG msg = {};
+        while (GetMessage(&msg, NULL, 0, 0) > 0)
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        wprintf(fmt::format(L"window was closed\n").c_str());
         return 0;
-    }
+    };
 
-    ShowWindow(hwnd, SW_SHOW);
-    MSG msg = {};
-    while (GetMessage(&msg, NULL, 0, 0) > 0)
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+    wprintf(fmt::format(L"create an unowned window...\n").c_str());
+    doWindowCreateLoop(false);
 
-    wprintf(fmt::format(L"window was closed\n").c_str());
+    // wprintf(fmt::format(L"create a child  window...\n").c_str());
+    // doWindowCreateLoop(true);
 
     wprintf(fmt::format(L"Opening a messagebox...\n").c_str());
     MessageBoxW(hwndToUseAsParent, L"foo", L"bar", MB_OK);

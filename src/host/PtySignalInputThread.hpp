@@ -41,6 +41,7 @@ namespace Microsoft::Console
         enum class PtySignal : unsigned short
         {
             ClearBuffer = 2,
+            SetParent = 3,
             ResizeWindow = 8
         };
 
@@ -49,10 +50,15 @@ namespace Microsoft::Console
             unsigned short sx;
             unsigned short sy;
         };
+        struct SetParentData
+        {
+            uint64_t handle;
+        };
 
         [[nodiscard]] HRESULT _InputThread();
         bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
         void _DoResizeWindow(const ResizeWindowData& data);
+        void _DoSetWindowParent(const SetParentData& data);
         void _DoClearBuffer();
         void _Shutdown();
 
@@ -61,6 +67,7 @@ namespace Microsoft::Console
         DWORD _dwThreadId;
         bool _consoleConnected;
         std::optional<ResizeWindowData> _earlyResize;
+        std::optional<SetParentData> _earlyReparent;
         std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
     };
 }

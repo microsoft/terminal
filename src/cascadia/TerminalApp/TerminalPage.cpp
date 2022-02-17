@@ -2410,6 +2410,9 @@ namespace winrt::TerminalApp::implementation
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
+        if (_hostingHwnd.has_value())
+            term.OwningHwnd(_ownerHwnd);
+            // term.OwningHwnd(reinterpret_cast<uint64_t>(_ownerHwnd));
         return term;
     }
 
