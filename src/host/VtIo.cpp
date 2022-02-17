@@ -254,6 +254,16 @@ bool VtIo::IsUsingVt() const
 
     if (_pPtySignalInputThread)
     {
+        // IMPORTANT! Start the pseudo window on this thread. This thread has a
+        // message pump. If you DON'T, then a DPI change in the parent hwnd will
+        // cause us to get a dpi change as well, which we'll never deque and
+        // handle, effectively HANGING THE PARENT HWND. super bad.
+        //
+        // TODO! clean this up
+        if (_pPtySignalInputThread->_earlyReparent.has_value())
+        {
+            ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(_pPtySignalInputThread->_earlyReparent.value().handle));
+        }
         // Let the signal thread know that the console is connected
         _pPtySignalInputThread->ConnectConsole();
     }

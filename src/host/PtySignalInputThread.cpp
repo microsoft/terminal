@@ -132,14 +132,14 @@ void PtySignalInputThread::ConnectConsole() noexcept
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
             // todo
-            // if (!_consoleConnected)
-            // {
-            // _earlyReparent = reparentMessage;
-            // }
-            // else
-            // {
-            _DoSetWindowParent(reparentMessage);
-            // }
+            if (!_consoleConnected)
+            {
+                _earlyReparent = reparentMessage;
+            }
+            else
+            {
+                _DoSetWindowParent(reparentMessage);
+            }
 
             break;
         }

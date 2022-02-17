@@ -78,7 +78,7 @@ static LRESULT __stdcall WndProc(HWND const window, UINT const message, WPARAM c
 int doTheWindowThing(HWND hwndToUseAsParent)
 {
     const auto hInst{ GetModuleHandle(NULL) };
-    wprintf(fmt::format(L"Creating a Window, then a MessageBox, using {} as the parent HWND\n", reinterpret_cast<unsigned long long>(hwndToUseAsParent)).c_str());
+    wprintf(fmt::format(L"=====Creating a Window, then a MessageBox, using {} as the parent HWND=====\n", reinterpret_cast<unsigned long long>(hwndToUseAsParent)).c_str());
 
     auto doWindowCreateLoop = [&](bool child) {
         // Create the window.
@@ -109,6 +109,7 @@ int doTheWindowThing(HWND hwndToUseAsParent)
         {
             return 0;
         }
+        wprintf(fmt::format(L"    created window\n").c_str());
 
         ShowWindow(hwnd, SW_SHOW);
         MSG msg = {};
@@ -118,19 +119,19 @@ int doTheWindowThing(HWND hwndToUseAsParent)
             DispatchMessage(&msg);
         }
 
-        wprintf(fmt::format(L"window was closed\n").c_str());
+        wprintf(fmt::format(L"    window was closed\n").c_str());
         return 0;
     };
 
-    wprintf(fmt::format(L"create an unowned window...\n").c_str());
+    wprintf(fmt::format(L"  create an unowned window...\n").c_str());
     doWindowCreateLoop(false);
 
-    // wprintf(fmt::format(L"create a child  window...\n").c_str());
-    // doWindowCreateLoop(true);
+    wprintf(fmt::format(L"  create a child  window...\n").c_str());
+    doWindowCreateLoop(true);
 
-    wprintf(fmt::format(L"Opening a messagebox...\n").c_str());
+    wprintf(fmt::format(L"  Opening a messagebox...\n").c_str());
     MessageBoxW(hwndToUseAsParent, L"foo", L"bar", MB_OK);
-    wprintf(fmt::format(L"closed a messagebox\n").c_str());
+    wprintf(fmt::format(L"  closed a messagebox\n").c_str());
     return 0;
 }
 
