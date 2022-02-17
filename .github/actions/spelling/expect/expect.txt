@@ -1061,6 +1061,7 @@ ico
 IComponent
 ICONERROR
 Iconified
+Iconify
 ICONINFORMATION
 IConsole
 ICONSTOP
