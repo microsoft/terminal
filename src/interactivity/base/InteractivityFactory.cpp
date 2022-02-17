@@ -389,6 +389,15 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstri
 
 [[nodiscard]] LRESULT CALLBACK InteractivityFactory::s_PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
+    // Save the pointer here to the specific window instance when one is created
+    if (Message == WM_CREATE)
+    {
+        const CREATESTRUCT* const pCreateStruct = reinterpret_cast<CREATESTRUCT*>(lParam);
+
+        InteractivityFactory* const pFactory = reinterpret_cast<InteractivityFactory*>(pCreateStruct->lpCreateParams);
+        SetWindowLongPtrW(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pFactory));
+    }
+
     // Dispatch the message to the specific class instance
     InteractivityFactory* const pFactory = reinterpret_cast<InteractivityFactory*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
     if (pFactory != nullptr)
