@@ -691,6 +691,17 @@ namespace winrt::TerminalApp::implementation
                    valueFromSettings;
     }
 
+    ConsoleHostStartupMode AppLogic::GetConsoleHostStartupMode()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings.GlobalSettings().ConsoleHostStartupMode();
+    }
+
     // Method Description:
     // - Get the user defined initial position from Json settings file.
     //   This position represents the top left corner of the Terminal window.

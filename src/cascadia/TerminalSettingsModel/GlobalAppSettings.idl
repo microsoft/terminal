@@ -42,6 +42,7 @@ namespace Microsoft.Terminal.Settings.Model
         PersistedWindowLayout,
     };
 
+    [flags]
     enum ConsoleHostStartupMode
     {
         Default = 0x00,
