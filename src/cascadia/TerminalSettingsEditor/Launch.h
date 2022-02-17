@@ -37,7 +37,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings().LaunchMode);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Settings().GlobalSettings().WindowingBehavior);
         GETSET_BINDABLE_ENUM_SETTING(ConsoleHostStartupMode, Model::ConsoleHostStartupMode, State().Settings().GlobalSettings().ConsoleHostStartupMode);
-
     };
 }
 

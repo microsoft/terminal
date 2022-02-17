@@ -134,7 +134,7 @@ void IslandWindow::SetSnapDimensionCallback(std::function<float(bool, float)> pf
 void IslandWindow::InitShowWindow(LaunchMode launchMode)
 {
     int nCmdShow = SW_SHOW;
-    
+
     if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;
