@@ -19,6 +19,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         INITIALIZE_BINDABLE_ENUM_SETTING(FirstWindowPreference, FirstWindowPreference, FirstWindowPreference, L"Globals_FirstWindowPreference", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_LaunchMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(ConsoleHostStartupMode, ConsoleHostStartupMode, ConsoleHostStartupMode, L"Globals_ConsoleHostStartupMode", L"Content");
+
         // More options were added to the JSON mapper when the enum was made into [Flags]
         // but we want to preserve the previous set of options in the UI.
         _LaunchModeList.RemoveAt(7); // maximizedFullscreenFocus

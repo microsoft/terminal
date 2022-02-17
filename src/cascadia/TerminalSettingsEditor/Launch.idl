@@ -29,6 +29,9 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentLaunchMode;
         IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
 
+        IInspectable CurrentConsoleHostStartupMode;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ConsoleHostStartupModeList { get; };
+
         IInspectable CurrentWindowingBehavior;
         IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> WindowingBehaviorList { get; };
     }

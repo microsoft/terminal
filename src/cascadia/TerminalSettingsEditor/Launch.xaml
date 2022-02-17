@@ -202,6 +202,17 @@
                                         Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
                     </Grid>
                 </local:SettingContainer>
+
+                <!--  ConsoleHost startup mode  -->
+                <local:SettingContainer x:Name="Globals_ConsoleHostStartupMode"
+                                        x:Uid="Globals_ConsoleHostStartupMode"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                       ItemsSource="{x:Bind ConsoleHostStartupModeList}"
+                                       SelectedItem="{x:Bind CurrentConsoleHostStartupMode, Mode=TwoWay}" />
+                </local:SettingContainer>
+
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
