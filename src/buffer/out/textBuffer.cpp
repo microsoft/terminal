@@ -388,6 +388,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     const auto written = newIt.GetCellDistance(givenIt);
     const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
     _NotifyPaint(paint);
+
     return newIt;
 }
 

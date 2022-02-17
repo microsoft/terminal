@@ -211,26 +211,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        dispatcher
-            .RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [&]() {
+        // IMPORTANT:
+        // [1] make sure the scope returns a copy of "sanitized" so that it isn't accidentally deleted
+        // [2] AutomationNotificationProcessing::All --> ensures it can be interrupted by keyboard events
+        // [3] Do not "RunAsync(...).get()". For whatever reason, this causes NVDA to just not receive "SignalTextChanged()"'s events.
+        dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, sanitizedCopy{ hstring{ sanitized } }]() {
+            if (auto strongThis{ weakThis.get() })
+            {
                 try
                 {
-                    RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
-                                           AutomationNotificationProcessing::All,
-                                           sanitized,
-                                           L"TerminalTextOutput");
+                    strongThis->RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
+                                                       AutomationNotificationProcessing::All,
+                                                       sanitizedCopy,
+                                                       L"TerminalTextOutput");
                 }
                 CATCH_LOG();
-            })
-            .get();
+            }
+        });
     }
 
     hstring TermControlAutomationPeer::GetClassNameCore() const
     {
-        // After major UIA changes, we need to update the name.
-        // This is a simple way to let screen readers know what "version"
-        // of UIA they are interacting with (i.e. notifications supported).
-        return L"TermControl2";
+        // IMPORTANT: Do NOT change the name. Screen readers like JAWS may be dependent on this being "TermControl".
+        return L"TermControl";
     }
 
     AutomationControlType TermControlAutomationPeer::GetAutomationControlTypeCore() const
