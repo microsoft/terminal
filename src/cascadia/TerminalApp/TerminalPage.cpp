@@ -316,7 +316,7 @@ namespace winrt::TerminalApp::implementation
         // elevated window.
         if (!_startupActions || IsElevated() || _shouldStartInboundListener)
         {
-            // there arent startup actions, or we're elevated. In that case, go for it.
+            // there aren't startup actions, or we're elevated. In that case, go for it.
             return false;
         }
 
@@ -1219,7 +1219,7 @@ namespace winrt::TerminalApp::implementation
         // message without vkey or scanCode if a user drags a tab.
         // The KeyChord constructor has a debug assertion ensuring that all KeyChord
         // either have a valid vkey/scanCode. This is important, because this prevents
-        // accidential insertion of invalid KeyChords into classes like ActionMap.
+        // accidental insertion of invalid KeyChords into classes like ActionMap.
         if (!vkey && !scanCode)
         {
             return;
