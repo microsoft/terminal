@@ -75,7 +75,7 @@ namespace Microsoft.Terminal.Control
         Boolean FoundMatch { get; };
     }
 
-    runtime class ShowWindowArgs
+    runtimeclass ShowWindowArgs
     {
         Boolean ShowOrHide { get; };
     }

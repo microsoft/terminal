@@ -149,13 +149,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>
     {
-        public:
-            ShowWindowArgs(const bool showOrHide) :
+    public:
+        ShowWindowArgs(const bool showOrHide) :
             _ShowOrHide(showOrHide)
-            {
+        {
+        }
 
-            }
-
-            WINRT_PROPERTY(bool, ShowOrHide);
-    }
+        WINRT_PROPERTY(bool, ShowOrHide);
+    };
 }

@@ -384,6 +384,11 @@ using namespace Microsoft::Console::Interactivity;
     return status;
 }
 
+void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstring_view)> func)
+{
+    _pseudoWindowMessageCallback = func;
+}
+
 [[nodiscard]] LRESULT CALLBACK InteractivityFactory::s_PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
       // Dispatch the message to the specific class instance

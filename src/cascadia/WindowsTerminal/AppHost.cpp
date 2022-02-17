@@ -1320,10 +1320,10 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
     args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
-void AppHost:: _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
+void AppHost:: _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                   const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
 {
-    _window->ShowWindowChanged(args.ShowOrHide);
+    _window->ShowWindowChanged(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
