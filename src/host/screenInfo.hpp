@@ -225,8 +225,6 @@ public:
     void UpdateBottom();
     void MoveToBottom();
 
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
-
     FontInfo& GetCurrentFont() noexcept;
     const FontInfo& GetCurrentFont() const noexcept;
 

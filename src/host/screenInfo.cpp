@@ -2127,7 +2127,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     // because the text attributes changed.
     if (!(gci.IsInVtIoMode()))
     {
-        GetRenderTarget().TriggerRedrawAll();
+        _renderTarget.TriggerRedrawAll();
     }
 
     gci.ConsoleIme.RefreshAreaAttributes();
@@ -2678,17 +2678,6 @@ bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
     const auto position = buffer.GetCursor().GetPosition();
     TextBufferTextIterator it(TextBufferCellIterator(buffer, position));
     return IsGlyphFullWidth(*it);
-}
-
-// Method Description:
-// - Retrieves this buffer's current render target.
-// Arguments:
-// - <none>
-// Return Value:
-// - This buffer's current render target.
-IRenderTarget& SCREEN_INFORMATION::GetRenderTarget() noexcept
-{
-    return _renderTarget;
 }
 
 // Method Description:

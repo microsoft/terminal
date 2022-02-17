@@ -535,8 +535,10 @@ std::list<short> _GetTabStops(SCREEN_INFORMATION& screenInfo)
 void ScreenBufferTests::TestResetClearTabStops()
 {
     // Reset the screen buffer to test the defaults.
+    m_state->CleanupNewTextBufferInfo();
     m_state->CleanupGlobalScreenBuffer();
     m_state->PrepareGlobalScreenBuffer();
+    m_state->PrepareNewTextBufferInfo();
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
