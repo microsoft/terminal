@@ -42,6 +42,13 @@ namespace Microsoft.Terminal.Settings.Model
         PersistedWindowLayout,
     };
 
+    enum ConsoleHostStartupMode
+    {
+        Default = 0x00,
+        Minimized = 0x01,
+        Hidden = 0x02,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
 
@@ -88,6 +95,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
+        INHERITABLE_SETTING(ConsoleHostStartupMode, ConsoleHostStartupMode);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

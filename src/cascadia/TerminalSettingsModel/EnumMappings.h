@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, TabSwitcherMode> TabSwitcherMode();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::CopyFormat> CopyFormat();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, WindowingMode> WindowingMode();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, ConsoleHostStartupMode> ConsoleHostStartupMode();
 
         // Profile Settings
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, CloseOnExitMode> CloseOnExitMode();

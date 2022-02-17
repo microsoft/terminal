@@ -231,6 +231,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "default", ValueType::Default },
+        pair_type{ "minimized", ValueType::Minimized },
+        pair_type{ "hidden", ValueType::Hidden },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
 {
     JSON_MAPPINGS(3) = {
