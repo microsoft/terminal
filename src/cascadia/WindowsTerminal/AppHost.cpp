@@ -87,6 +87,14 @@ AppHost::AppHost() noexcept :
     _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
     _window->MakeWindow();
 
+    const auto consoleHostMode = _logic.GetConsoleHostStartupMode();
+    const auto isNewConsoleHost = true;
+    const auto overrideLaunchMode =
+        (isNewConsoleHost && consoleHostMode == winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode::Minimized) ?
+            LaunchMode::MinimizedMode :
+            _logic.GetLaunchMode();
+    _window->InitShowWindow(overrideLaunchMode);
+
     _GetWindowLayoutRequestedToken = _windowManager.GetWindowLayoutRequested([this](auto&&, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& args) {
         // The peasants are running on separate threads, so they'll need to
         // swap what context they are in to the ui thread to get the actual layout.

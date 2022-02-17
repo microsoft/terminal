@@ -54,7 +54,7 @@ public:
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
-    void InitShowWindow();
+    void InitShowWindow(winrt::Microsoft::Terminal::Settings::Model::LaunchMode launchMode);
     void HideWindow();
 
     void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;

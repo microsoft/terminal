@@ -82,8 +82,6 @@ void IslandWindow::MakeWindow() noexcept
                                 wc.hInstance,
                                 this));
     WINRT_ASSERT(_window);
-
-    InitShowWindow();
 }
 
 // Method Description:
@@ -133,14 +131,15 @@ void IslandWindow::SetSnapDimensionCallback(std::function<float(bool, float)> pf
     _pfnSnapDimensionCallback = pfn;
 }
 
-void IslandWindow::InitShowWindow()
+void IslandWindow::InitShowWindow(LaunchMode launchMode)
 {
     int nCmdShow = SW_SHOW;
-    //if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
+    
+    if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;
     }
-    //else if (WI_IsFlagSet(launchMode, LaunchMode::MinimizeMode))
+    else if (WI_IsFlagSet(launchMode, LaunchMode::MinimizedMode))
     {
         nCmdShow = SW_SHOWMINNOACTIVE;
     }

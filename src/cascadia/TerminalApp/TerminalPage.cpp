@@ -3103,7 +3103,8 @@ namespace winrt::TerminalApp::implementation
             _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, connection));
 
             // Request a summon of this window to the foreground
-            const auto doNotActivate = winrt::box_value(true);
+            const auto consoleHostMode = _settings.GlobalSettings().ConsoleHostStartupMode();
+            const auto doNotActivate = winrt::box_value(consoleHostMode == winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode::Minimized);
             _SummonWindowRequestedHandlers(*this, doNotActivate);
             return S_OK;
         }
