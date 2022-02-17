@@ -2279,7 +2279,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _pConApi->RefreshWindow();
+        _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         _pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));

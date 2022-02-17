@@ -60,7 +60,6 @@ public:
 
     CursorType GetUserDefaultCursorStyle() const override;
 
-    void RefreshWindow() override;
     bool ResizeWindow(const size_t width, const size_t height) override;
 
     void SetConsoleOutputCP(const unsigned int codepage) override;

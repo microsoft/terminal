@@ -61,7 +61,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void UseMainScreenBuffer() = 0;
 
         virtual CursorType GetUserDefaultCursorStyle() const = 0;
-        virtual void RefreshWindow() = 0;
 
         virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;
         virtual unsigned int GetConsoleOutputCP() const = 0;

@@ -104,7 +104,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _pConApi->RefreshWindow();
+        _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
