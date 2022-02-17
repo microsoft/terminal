@@ -688,7 +688,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            presenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
+            if (presenter.CanShowDialog())
+            {
+                presenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
+            }
         }
     }
 
@@ -709,6 +712,15 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
+    void TerminalPage::_DialogCloseClick(const IInspectable&,
+                                         const ContentDialogButtonClickEventArgs&)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.DismissDialog();
+        }
+    }
+
     // Method Description:
     // - Displays a dialog to warn the user that they are about to close all open windows.
     //   Once the user clicks the OK button, shut down the application.
@@ -719,7 +731,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            co_return co_await presenter.ShowDialog(FindName(L"QuitDialog").try_as<WUX::Controls::ContentDialog>());
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(L"QuitDialog").try_as<WUX::Controls::ContentDialog>());
+            }
         }
         co_return ContentDialogResult::None;
     }
@@ -735,7 +750,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+            }
         }
         co_return ContentDialogResult::None;
     }
@@ -746,7 +764,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
+            }
         }
         co_return ContentDialogResult::None;
     }
@@ -763,7 +784,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            co_return co_await presenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
+            }
         }
         co_return ContentDialogResult::None;
     }
@@ -778,7 +802,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
+            }
         }
         co_return ContentDialogResult::None;
     }
