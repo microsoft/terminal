@@ -784,7 +784,11 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     summonArgs.DropdownDuration(0);
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
-    summonArgs.DoNotActivate(true);
+
+    const auto consoleHostMode = _logic.GetConsoleHostStartupMode();
+    const auto isNewConsoleHost = true;
+    const auto dotNotActivate = (isNewConsoleHost && consoleHostMode == winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode::Minimized);
+    summonArgs.DoNotActivate(dotNotActivate);
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
     _HandleSummon(sender, summonArgs);
