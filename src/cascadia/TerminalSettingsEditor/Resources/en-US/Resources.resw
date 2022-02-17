@@ -365,11 +365,11 @@
   </data>
   <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
     <value>Use acrylic material in the tab row (requires relaunch)</value>
-    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term.</comment>
+    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
     <value>When checked, the tab row will have the acrylic material.</value>
-    <comment>A description for the "Globals_AcrylicTabRow.Header" setting does. "Acrylic material" is a Microsoft-specific term.</comment>
+    <comment>A description for the "Globals_AcrylicTabRow.Header" setting does. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
@@ -969,7 +969,7 @@
   </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
     <value>Enable acrylic material</value>
-    <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term.</comment>
+    <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
     <value>Applies a translucent texture to the background of the window.</value>
