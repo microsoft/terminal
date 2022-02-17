@@ -301,7 +301,7 @@ void ServiceLocator::SetPseudoWindowCallback(std::function<void(std::wstring_vie
     // Force the whole window to be put together first.
     // We don't really need the handle, we just want to leverage the setup steps.
     (void)LocatePseudoWindow();
-    
+
     if (s_interactivityFactory)
     {
         s_interactivityFactory->SetPseudoWindowCallback(func);

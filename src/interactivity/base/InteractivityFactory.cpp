@@ -324,8 +324,6 @@ using namespace Microsoft::Console::Interactivity;
     return status;
 }
 
-
-
 // Method Description:
 // - Attempts to instantiate a "pseudo window" for when we're operating in
 //      pseudoconsole mode. There are some tools (cygwin & derivatives) that use
@@ -341,7 +339,7 @@ using namespace Microsoft::Console::Interactivity;
     hwnd = nullptr;
     ApiLevel level;
     NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);
-    
+
     if (NT_SUCCESS(status))
     {
         try
@@ -391,7 +389,7 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstri
 
 [[nodiscard]] LRESULT CALLBACK InteractivityFactory::s_PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
-      // Dispatch the message to the specific class instance
+    // Dispatch the message to the specific class instance
     InteractivityFactory* const pFactory = reinterpret_cast<InteractivityFactory*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
     if (pFactory != nullptr)
     {
@@ -406,18 +404,18 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstri
 {
     switch (Message)
     {
-        case WM_SHOWWINDOW:
-            if (lParam == 0) // Message came directly from someone calling ShowWindow on us.
+    case WM_SHOWWINDOW:
+        if (lParam == 0) // Message came directly from someone calling ShowWindow on us.
+        {
+            if (wParam) // If TRUE, we're being shown
             {
-                if (wParam) // If TRUE, we're being shown
-                {
-                    _WritePseudoWindowCallback(L"\x1b[1t");
-                }
-                else // If FALSE, we're being hidden
-                {
-                    _WritePseudoWindowCallback(L"\x1b[2t");
-                }
+                _WritePseudoWindowCallback(L"\x1b[1t");
             }
+            else // If FALSE, we're being hidden
+            {
+                _WritePseudoWindowCallback(L"\x1b[2t");
+            }
+        }
         break;
     }
     // If we get this far, call the default window proc

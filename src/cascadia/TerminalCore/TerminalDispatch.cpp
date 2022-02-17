@@ -729,13 +729,13 @@ bool TerminalDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 {
     switch (function)
     {
-        case DispatchTypes::WindowManipulationType::DeIconifyWindow:
-            _terminalApi.ShowWindow(true);
-            return true;
-        case DispatchTypes::WindowManipulationType::IconifyWindow:
-            _terminalApi.ShowWindow(false);
-            return true;
-        default:
-            return false;
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _terminalApi.ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _terminalApi.ShowWindow(false);
+        return true;
+    default:
+        return false;
     }
 }

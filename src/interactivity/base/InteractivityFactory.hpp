@@ -39,7 +39,7 @@ namespace Microsoft::Console::Interactivity
                                                         _In_ UINT uMsg,
                                                         _In_ WPARAM wParam,
                                                         _In_ LPARAM lParam);
-        
+
     private:
         void _WritePseudoWindowCallback(std::wstring_view text);
         std::function<void(std::wstring_view)> _pseudoWindowMessageCallback;

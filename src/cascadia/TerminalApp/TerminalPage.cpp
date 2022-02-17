@@ -1424,7 +1424,7 @@ namespace winrt::TerminalApp::implementation
 
         term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
 
-        term.ShowWindowChanged({get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+        term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
     }
 
     // Method Description:

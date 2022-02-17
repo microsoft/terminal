@@ -364,7 +364,7 @@ void AppHost::Initialize()
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
     _logic.OpenSystemMenu({ this, &AppHost::_OpenSystemMenu });
     _logic.QuitRequested({ this, &AppHost::_RequestQuitAll });
-    _logic.ShowWindowChanged({ this, &AppHost::_ShowWindowChanged});
+    _logic.ShowWindowChanged({ this, &AppHost::_ShowWindowChanged });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -1320,8 +1320,8 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
     args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
-void AppHost:: _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
-                                  const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
+void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
 {
     _window->ShowWindowChanged(args.ShowOrHide());
 }
