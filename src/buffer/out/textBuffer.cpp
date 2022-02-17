@@ -389,7 +389,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     // Take the cell distance written and notify that it needs to be repainted.
     const auto written = newIt.GetCellDistance(givenIt);
     const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
-    _NotifyPaint(paint);
+    TriggerRedraw(paint);
 
     return newIt;
 }
@@ -827,7 +827,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
-        _NotifyPaint(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
+        TriggerRedraw(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
     }
 }
 
@@ -965,6 +965,31 @@ bool TextBuffer::IsActiveBuffer() const noexcept
     return _isActiveBuffer;
 }
 
+void TextBuffer::TriggerRedraw(const Viewport& viewport)
+{
+    _renderTarget.TriggerRedraw(viewport);
+}
+
+void TextBuffer::TriggerRedrawCursor(const COORD position)
+{
+    _renderTarget.TriggerRedrawCursor(&position);
+}
+
+void TextBuffer::TriggerRedrawAll()
+{
+    _renderTarget.TriggerRedrawAll();
+}
+
+void TextBuffer::TriggerScroll()
+{
+    _renderTarget.TriggerScroll();
+}
+
+void TextBuffer::TriggerScroll(const COORD delta)
+{
+    _renderTarget.TriggerScroll(&delta);
+}
+
 // Routine Description:
 // - Method to help refresh all the Row IDs after manipulating the row
 //   by shuffling pointers around.
@@ -999,11 +1024,6 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
 
     // Give the new mapping to Unicode Storage
     _unicodeStorage.Remap(rowMap, newRowWidth);
-}
-
-void TextBuffer::_NotifyPaint(const Viewport& viewport) const
-{
-    _renderTarget.TriggerRedraw(viewport);
 }
 
 // Routine Description:

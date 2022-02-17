@@ -2297,7 +2297,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     auto fillData = OutputCellIterator{ fillAttributes, fillLength };
     Write(fillData, fillPosition, false);
 
-    _textBuffer->GetRenderTarget().TriggerRedrawAll();
+    _textBuffer->TriggerRedrawAll();
 
     // Also reset the line rendition for the erased rows.
     _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());

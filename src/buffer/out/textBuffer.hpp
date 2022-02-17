@@ -145,6 +145,12 @@ public:
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
+    void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
+    void TriggerRedrawCursor(const COORD position);
+    void TriggerRedrawAll();
+    void TriggerScroll();
+    void TriggerScroll(const COORD delta);
+
     const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
@@ -233,8 +239,6 @@ private:
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);
-
-    void _NotifyPaint(const Microsoft::Console::Types::Viewport& viewport) const;
 
     // Assist with maintaining proper buffer state for Double Byte character sequences
     bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);

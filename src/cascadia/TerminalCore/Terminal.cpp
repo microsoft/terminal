@@ -420,7 +420,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
     try
     {
-        _buffer->GetRenderTarget().TriggerRedrawAll();
+        _buffer->TriggerRedrawAll();
     }
     CATCH_LOG();
     _NotifyScrollEvent();
@@ -732,7 +732,7 @@ void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
     if (start.Y == end.Y)
     {
         SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
-        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        _buffer->TriggerRedraw(Viewport::FromInclusive(region));
     }
     else
     {
@@ -740,18 +740,18 @@ void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
 
         // invalidate the first line
         SMALL_RECT region{ start.X, start.Y, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(start.Y) };
-        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        _buffer->TriggerRedraw(Viewport::FromInclusive(region));
 
         if ((end.Y - start.Y) > 1)
         {
             // invalidate the lines in between the first and last line
             region = SMALL_RECT{ 0, start.Y + 1, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(end.Y - 1) };
-            _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+            _buffer->TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
         region = SMALL_RECT{ 0, end.Y, end.X, end.Y };
-        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        _buffer->TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
 
@@ -1106,7 +1106,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
         COORD delta{ 0, gsl::narrow_cast<short>(-rowsPushedOffTopOfBuffer) };
-        _buffer->GetRenderTarget().TriggerScroll(&delta);
+        _buffer->TriggerScroll(delta);
     }
 }
 
@@ -1125,7 +1125,7 @@ void Terminal::UserScrollViewport(const int viewTop)
     // We can use the void variant of TriggerScroll here because
     // we adjusted the viewport so it can detect the difference
     // from the previous frame drawn.
-    _buffer->GetRenderTarget().TriggerScroll();
+    _buffer->TriggerScroll();
 }
 
 int Terminal::GetScrollOffset() noexcept
