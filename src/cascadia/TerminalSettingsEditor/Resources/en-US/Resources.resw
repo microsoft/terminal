@@ -519,14 +519,6 @@
     <value>Actions</value>
     <comment>Tooltip for the "actions" menu item.</comment>
   </data>
-  <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
-    <value>Acrylic material translucency</value>
-    <comment>Header for a control to determine the level of translucency of the acrylic material. The user can choose to make the background of the app more or less translucent. "Acrylic material" is a Microsoft-specific term.</comment>
-  </data>
-  <data name="Profile_AcrylicOpacity.HelpText" xml:space="preserve">
-    <value>Sets the translucency of the window.</value>
-    <comment>A description for what the "Profile_AcrylicOpacity.Header" setting does.</comment>
-  </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
     <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -1167,8 +1159,8 @@
     <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
-    <value>Translucency</value>
-    <comment>Header for a group of settings related to the transparency or translucency of the app.</comment>
+    <value>Transparency</value>
+    <comment>Header for a group of settings related to transparency, including the acrylic material background of the app.</comment>
   </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
