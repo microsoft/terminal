@@ -21,22 +21,24 @@ using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 // Routine Description:
 // - Creates a new instance of TextBuffer
 // Arguments:
-// - fontInfo - The font to use for this text buffer as specified in the global font cache
 // - screenBufferSize - The X by Y dimensions of the new screen buffer
-// - fill - Uses the .Attributes property to decide which default color to apply to all text in this buffer
+// - defaultAttributes - The attributes with which the buffer will be initialized
 // - cursorSize - The height of the cursor within this buffer
+// - isActiveBuffer - Whether this is the currently active buffer
 // Return Value:
 // - constructed object
 // Note: may throw exception
 TextBuffer::TextBuffer(const COORD screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
+                       const bool isActiveBuffer,
                        Microsoft::Console::Render::IRenderTarget& renderTarget) :
     _firstRow{ 0 },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
     _unicodeStorage{},
+    _isActiveBuffer{ isActiveBuffer },
     _renderTarget{ renderTarget },
     _size{},
     _currentHyperlinkId{ 1 },
@@ -951,6 +953,16 @@ const UnicodeStorage& TextBuffer::GetUnicodeStorage() const noexcept
 UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
 {
     return _unicodeStorage;
+}
+
+void TextBuffer::SetAsActiveBuffer(const bool isActiveBuffer) noexcept
+{
+    _isActiveBuffer = isActiveBuffer;
+}
+
+bool TextBuffer::IsActiveBuffer() const noexcept
+{
+    return _isActiveBuffer;
 }
 
 // Routine Description:

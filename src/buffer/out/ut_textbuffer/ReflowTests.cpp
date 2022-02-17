@@ -735,7 +735,7 @@ class ReflowTests
     static DummyRenderTarget target;
     static std::unique_ptr<TextBuffer> _textBufferFromTestBuffer(const TestBuffer& testBuffer)
     {
-        auto buffer = std::make_unique<TextBuffer>(testBuffer.size, TextAttribute{ 0x7 }, 0, target);
+        auto buffer = std::make_unique<TextBuffer>(testBuffer.size, TextAttribute{ 0x7 }, 0, false, target);
 
         size_t i{};
         for (const auto& testRow : testBuffer.rows)
@@ -773,7 +773,7 @@ class ReflowTests
 
     static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const COORD newSize)
     {
-        auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, target);
+        auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, target);
         TextBuffer::Reflow(originalBuffer, *buffer, std::nullopt, std::nullopt);
         return buffer;
     }

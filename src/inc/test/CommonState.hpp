@@ -165,6 +165,7 @@ public:
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                                                   initialAttributes,
                                                                                   uiCursorSize,
+                                                                                  true,
                                                                                   gci.pCurrentScreenBuffer->GetRenderTarget());
             if (textBuffer.get() == nullptr)
             {

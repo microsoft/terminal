@@ -85,7 +85,7 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
                             Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
-    _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
+    _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderTarget);
 }
 
 // Method Description:
@@ -269,6 +269,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
                                                      TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
+                                                     _buffer->IsActiveBuffer(),
                                                      _buffer->GetRenderTarget());
 
         newTextBuffer->GetCursor().StartDeferDrawing();

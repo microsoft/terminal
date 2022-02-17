@@ -120,6 +120,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         pScreen->_textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                             defaultAttributes,
                                                             uiCursorSize,
+                                                            pScreen->IsActiveScreenBuffer(),
                                                             pScreen->_renderTarget);
 
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1444,6 +1445,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
                                                      TextAttribute{},
                                                      0,
+                                                     _textBuffer->IsActiveBuffer(),
                                                      _renderTarget); // temporarily set size to 0 so it won't render.
     }
     catch (...)

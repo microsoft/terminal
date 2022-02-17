@@ -68,6 +68,7 @@ public:
     TextBuffer(const COORD screenBufferSize,
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
+               const bool isActiveBuffer,
                Microsoft::Console::Render::IRenderTarget& renderTarget);
     TextBuffer(const TextBuffer& a) = delete;
 
@@ -138,6 +139,9 @@ public:
 
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
     UnicodeStorage& GetUnicodeStorage() noexcept;
+
+    void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
+    bool IsActiveBuffer() const noexcept;
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
@@ -212,6 +216,8 @@ private:
 
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
+
+    bool _isActiveBuffer;
 
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;

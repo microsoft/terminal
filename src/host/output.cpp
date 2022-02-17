@@ -464,7 +464,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.pCurrentScreenBuffer = &screenInfo;
+    gci.SetActiveOutputBuffer(screenInfo);
 
     // initialize cursor GH#4102 - Typically, the cursor is set to on by the
     // cursor blinker. Unfortunately, in conpty mode, there is no cursor
