@@ -364,12 +364,12 @@
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>Show acrylic in tab row (requires relaunch)</value>
-    <comment>Header for a control to toggle whether acrylic shows in the tab row. Changing this setting requires the user to relaunch the app.</comment>
+    <value>Use acrylic material in the tab row (requires relaunch)</value>
+    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
     <value>When checked, the tab row will have the acrylic material.</value>
-    <comment>A description for what the "use acrylic in tab row" setting does. Presented near "Globals_AcrylicTabRow.Header".</comment>
+    <comment>A description for the "Globals_AcrylicTabRow.Header" setting does. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
@@ -518,14 +518,6 @@
   <data name="Nav_Actions.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Actions</value>
     <comment>Tooltip for the "actions" menu item.</comment>
-  </data>
-  <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
-    <value>Acrylic opacity</value>
-    <comment>Header for a control to determine the level of opacity for the acrylic rendering material. The user can choose to make the acrylic background of the app more or less opaque.</comment>
-  </data>
-  <data name="Profile_AcrylicOpacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the window.</value>
-    <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
   </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
@@ -976,12 +968,12 @@
     <comment>Button label that deletes the unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
-    <value>Enable acrylic</value>
-    <comment>Header for a control to toggle the acrylic-like rendering of the background. The acrylic material creates a translucent texture.</comment>
+    <value>Enable acrylic material</value>
+    <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
     <value>Applies a translucent texture to the background of the window.</value>
-    <comment>A description for what the "enable acrylic" setting does. Presented near "Profile_UseAcrylic".</comment>
+    <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
   <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
     <value>Use desktop wallpaper</value>
@@ -1166,13 +1158,9 @@
     <value>Name</value>
     <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
   </data>
-  <data name="Profile_AcrylicHeader.Text" xml:space="preserve">
-    <value>Acrylic</value>
-    <comment>Header for a group of settings related to the acrylic texture rendering on the background of the app.</comment>
-  </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>Transparency</value>
-    <comment>Header for a group of settings related to transparency, including the acrylic texture rendering on the background of the app.</comment>
+    <comment>Header for a group of settings related to transparency, including the acrylic material background of the app.</comment>
   </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
