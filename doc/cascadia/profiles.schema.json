@@ -1761,7 +1761,7 @@
         },
         "useAcrylicInTabRow": {
           "default": false,
-          "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
+          "description": "When set to true, the tab row will have an acrylic material background with 50% opacity.",
           "type": "boolean"
         },
         "actions": {
@@ -2224,7 +2224,7 @@
         },
         "useAcrylic": {
           "default": false,
-          "description": "When set to true, the window will have an acrylic background. When set to false, the window will have a plain, untextured background.",
+          "description": "When set to true, the window will have an acrylic material background. When set to false, the window will have a plain, untextured background.",
           "type": "boolean"
         }
       },

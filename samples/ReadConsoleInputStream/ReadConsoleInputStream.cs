@@ -136,7 +136,7 @@ namespace Samples.Terminal
                                 if (record.EventType != Kernel32.EVENT_TYPE.FOCUS_EVENT)
                                 {
                                     // I assume success adding records - this is not so critical
-                                    // if it is critical to you, loop on this with a miniscule delay
+                                    // if it is critical to you, loop on this with a minuscule delay
                                     _nonKeyEvents.TryAdd(record);
                                 }
                             }

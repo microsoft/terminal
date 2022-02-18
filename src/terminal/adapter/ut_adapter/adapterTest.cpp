@@ -1684,7 +1684,7 @@ public:
             Log::Comment(L"Test 2: Verify multiple CPRs with a cursor move between them");
             _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
-            // enable retention so that the two DSR responses don't delete eachother
+            // enable retention so that the two DSR responses don't delete each other
             auto retentionScope{ _testGetSet->EnableInputRetentionInScope() };
 
             // start with the cursor position in the buffer.

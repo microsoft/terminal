@@ -20,9 +20,6 @@ namespace Microsoft.Terminal.Settings.Editor
         //   https://github.com/microsoft/microsoft-ui-xaml/issues/5395
         IObservableVector<IInspectable> DefaultProfiles { get; };
 
-
-        Boolean ShowFirstWindowPreference { get; };
-
         IInspectable CurrentFirstWindowPreference;
         IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FirstWindowPreferenceList { get; };
 

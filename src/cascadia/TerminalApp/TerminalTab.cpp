@@ -1415,7 +1415,7 @@ namespace winrt::TerminalApp::implementation
         selectedTabBrush.Color(color);
 
         // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
+        // signified by using the same color with a bit of transparency
         auto deselectedTabColor = color;
         deselectedTabColor.A = 64;
         deselectedTabBrush.Color(deselectedTabColor);

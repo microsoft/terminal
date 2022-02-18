@@ -4536,7 +4536,7 @@ void ScreenBufferTests::ScrollLines256Colors()
 
     int scrollType;
     int colorStyle;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollType", scrollType), L"controls whether to use InsertLines, DeleteLines ot ReverseLineFeed");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollType", scrollType), L"controls whether to use InsertLines, DeleteLines or ReverseLineFeed");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"colorStyle", colorStyle), L"controls whether to use the 16 color table, 256 table, or RGB colors");
 
     // This test is largely taken from repro code from
