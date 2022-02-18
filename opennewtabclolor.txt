@@ -1,0 +1,15 @@
+from tkinter import *
+import random
+
+def set_color():
+  root.configure(background = random.choice(['blue', 'red', 'yellow']))
+
+root = Tk()
+root.title("Random Color Tool")
+root.resizable(False, False)
+root.geometry('{}x{}'.format(400, 400))
+
+button = Button(root, text="Generate Random Color", command=set_color)
+button.place(relx=0.5, rely=0.5, anchor=CENTER)   
+
+root.mainloop()
