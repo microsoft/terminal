@@ -5,6 +5,8 @@
 
 #include "InteractivityFactory.hpp"
 
+#include <dwmapi.h>
+
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "..\onecore\AccessibilityNotifier.hpp"
 #include "..\onecore\ConsoleControl.hpp"
@@ -349,18 +351,25 @@ using namespace Microsoft::Console::Interactivity;
             switch (level)
             {
             case ApiLevel::Win32:
+            {
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
                 pseudoClass.lpfnWndProc = s_PseudoWindowProc;
                 RegisterClass(&pseudoClass);
+
                 // Attempt to create window
                 hwnd = CreateWindowExW(
-                    0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, this);
+                    WS_EX_TOOLWINDOW, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPED, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, this);
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
+
+                BOOL const cloak = TRUE;
+                DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &cloak, sizeof(cloak));
+
                 break;
+            }
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
             case ApiLevel::OneCore:
@@ -413,7 +422,56 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstri
 {
     switch (Message)
     {
+    // It can be fun to toggle WM_QUERYOPEN but DefWindowProc returns TRUE so we don't need this strictly.
+    case WM_QUERYOPEN:
+        return TRUE;
+    // As long as user32 didn't eat the `ShowWindow` call because the window state requested
+    // matches the existing WS_VISIBLE state of the HWND... we should hear from it in WM_WINDOWPOSCHANGING.
+    case WM_WINDOWPOSCHANGING:
+    {
+        // We're trying to discern what people are asking of us when they called
+        // `ShowWindow` on our HWND. Since we're a ConPTY, our window isn't the
+        // place where the content is presented. The actual attached terminal is
+        // that place. Our goal, therefore, is to try to communicate to the
+        // final presentation.
+        // I've observed the following from `ShowWindow`:
+        // (reference https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow)
+        // SW_HIDE (0)              
+        // SW_NORMAL(1)             
+        // SW_SHOWMINIMIZED (2)     
+        // SW_SHOWMAXIMIZED (3)     
+        // SW_SHOWNOACTIVATE (4)    
+        // SW_SHOW (5)              
+        // SW_MINIMIZE (6)          
+        // SW_SHOWMINNOACTIVE (7)   
+        // SW_SHOWNA (8)            
+        // SW_RESTORE (9)           
+        // SW_SHOWDEFAULT (10)      
+        // SW_FORCEMINIMIZE (11)    
+
+        // Dig information out of the message so we know what someone is asking for
+        auto pWindowPos = (PWINDOWPOS)lParam;
+        const auto minimizing = IsIconic(hWnd);
+        // Other potentially useful flags.
+        /*const auto maximizing = IsZoomed(hWnd);
+        const auto showing = WI_IsFlagSet(pWindowPos->flags, SWP_SHOWWINDOW);
+        const auto hiding = WI_IsFlagSet(pWindowPos->flags, SWP_HIDEWINDOW);
+        const auto activating = WI_IsFlagClear(pWindowPos->flags, SWP_NOACTIVATE);*/
+
+        if (minimizing)
+        {
+            _WritePseudoWindowCallback(L"\x1b[2t");
+        }
+
+        // On the way out, stop activation and showing so we remain hidden.
+        /*WI_ClearFlag(pWindowPos->flags, SWP_SHOWWINDOW);
+        WI_SetFlag(pWindowPos->flags, SWP_NOACTIVATE);*/
+        return 0;
+    }
+    // WM_SYSCOMMAND will not come through. Don't try.
+    // WM_SHOWWINDOW comes through on some of the messages.
     case WM_SHOWWINDOW:
+    {
         if (lParam == 0) // Message came directly from someone calling ShowWindow on us.
         {
             if (wParam) // If TRUE, we're being shown
@@ -424,8 +482,10 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstri
             {
                 _WritePseudoWindowCallback(L"\x1b[2t");
             }
+            return 0;
         }
         break;
+    }
     }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);

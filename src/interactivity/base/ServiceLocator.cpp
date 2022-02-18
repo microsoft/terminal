@@ -330,6 +330,7 @@ HWND ServiceLocator::LocatePseudoWindow()
             status = s_interactivityFactory->CreatePseudoWindow(hwnd);
             s_pseudoWindow.reset(hwnd);
         }
+
         s_pseudoWindowInitialized = true;
     }
     LOG_IF_NTSTATUS_FAILED(status);
