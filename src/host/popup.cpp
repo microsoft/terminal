@@ -26,7 +26,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - Creates an object representing an interactive popup overlay during cooked mode command line editing.
 // - NOTE: Modifies global popup count (and adjusts cursor visibility as appropriate.)
 // Arguments:
-// - screenInfo - Reference to screen on which the popup should be drawn/overlayed.
+// - screenInfo - Reference to screen on which the popup should be drawn/overlaid.
 // - proposedSize - Suggested size of the popup. May be adjusted based on screen size.
 Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     _screenInfo(screenInfo),

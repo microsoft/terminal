@@ -628,7 +628,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     //  It's a numeric key,  a text mode buffer and the color selection regkey is set,
-    //  then check to see if the user want's to color the selection or search and
+    //  then check to see if the user wants to color the selection or search and
     //  highlight the selection.
     bool fAltPressed = pInputKeyInfo->IsAltPressed();
     bool fShiftPressed = pInputKeyInfo->IsShiftPressed();

@@ -340,7 +340,7 @@ bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR* const pwch)
     {
         switch (*pwch)
         {
-            // swallow tabs to prevent inadvertant tab expansion
+            // swallow tabs to prevent inadvertent tab expansion
         case UNICODE_TAB:
         {
             fAllowChar = false;

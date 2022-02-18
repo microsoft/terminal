@@ -2,7 +2,7 @@
 :: #
 :: #   This file echoes a bunch of color codes to the
 :: #   terminal to demonstrate what's available.  Each
-:: #   line is the color code of one forground color,
+:: #   line is the color code of one foreground color,
 :: #   out of 17 (default + 16 escapes), followed by a
 :: #   test use of that color on all nine background
 :: #   colors (default + 8 escapes).
