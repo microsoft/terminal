@@ -33,6 +33,8 @@ namespace TerminalApp
         SystemMenuItemHandler Handler { get; };
     };
 
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -105,11 +107,6 @@ namespace TerminalApp
         FindTargetWindowResult FindTargetWindow(String[] args);
 
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
-
-        // See IDialogPresenter and TerminalPage's DialogPresenter for more
-        // information.
-        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
-        void DismissDialog();
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
