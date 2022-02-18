@@ -34,7 +34,7 @@ static inline std::wstring Sanitize(std::wstring_view text)
 {
     std::wstring sanitized;
     std::for_each(text.begin(), text.end(), [&sanitized](auto&& c) {
-        if (c > UNICODE_SPACE || c == UNICODE_NEWLINE)
+        if (c >= UNICODE_SPACE || c == UNICODE_NEWLINE)
         {
             sanitized += c;
         }
