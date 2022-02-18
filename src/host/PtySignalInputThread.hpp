@@ -37,7 +37,6 @@ namespace Microsoft::Console
 
         void ConnectConsole() noexcept;
 
-
     private:
         enum class PtySignal : unsigned short
         {
@@ -70,7 +69,7 @@ namespace Microsoft::Console
         std::optional<ResizeWindowData> _earlyResize;
         std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
 
-        public:
+    public:
         std::optional<SetParentData> _earlyReparent;
     };
 }

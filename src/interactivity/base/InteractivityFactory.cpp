@@ -376,7 +376,7 @@ using namespace Microsoft::Console::Interactivity;
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
 
-                const auto awareness{GetThreadDpiAwarenessContext()};
+                const auto awareness{ GetThreadDpiAwarenessContext() };
                 awareness;
                 SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 

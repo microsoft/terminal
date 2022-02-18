@@ -2412,7 +2412,7 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
         if (_hostingHwnd.has_value())
             term.OwningHwnd(_ownerHwnd);
-            // term.OwningHwnd(reinterpret_cast<uint64_t>(_ownerHwnd));
+        // term.OwningHwnd(reinterpret_cast<uint64_t>(_ownerHwnd));
         return term;
     }
 
