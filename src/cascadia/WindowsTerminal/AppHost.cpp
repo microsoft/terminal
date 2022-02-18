@@ -310,7 +310,8 @@ void AppHost::Initialize()
     if (auto withWindow{ _logic.try_as<IInitializeWithWindow>() })
     {
         withWindow->Initialize(_window->GetHandle());
-        _logic.SetOwnerHwnd(reinterpret_cast<uint64_t>(_window->GetInteropHandle()));
+        // _logic.SetOwnerHwnd(reinterpret_cast<uint64_t>(_window->GetInteropHandle()));
+        _logic.SetOwnerHwnd(reinterpret_cast<uint64_t>(_window->GetHandle()));
     }
 
     if (_useNonClientArea)
