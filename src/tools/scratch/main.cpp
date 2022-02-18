@@ -135,18 +135,8 @@ int doTheWindowThing(HWND hwndToUseAsParent)
     return 0;
 }
 
-// This wmain exists for help in writing scratch programs while debugging.
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+int createSomeWindows(const HWND& consolwHwnd)
 {
-    const auto pid{ GetCurrentProcessId() };
-    const auto dumb{ GetConsoleWindow() };
-
-    wprintf(fmt::format(L"pid: {}\n", pid).c_str());
-    wprintf(fmt::format(L"dumb: {}\n", reinterpret_cast<unsigned long long>(dumb)).c_str());
-
-    // const auto mainHwnd{ find_main_window(pid) };
-    // wprintf(fmt::format(L"mainHwnd: {}\n", reinterpret_cast<unsigned long long>(mainHwnd)).c_str());
-
     WNDCLASS wc = {};
     const auto hInst{ GetModuleHandle(NULL) };
     wc.lpfnWndProc = WndProc;
@@ -159,7 +149,35 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     doTheWindowThing(nullptr);
     wprintf(fmt::format(L"Now, with the console window handle.\n").c_str());
-    doTheWindowThing(dumb);
+    doTheWindowThing(consolwHwnd);
+
+    return 0;
+}
+
+// This wmain exists for help in writing scratch programs while debugging.
+int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+{
+    const auto pid{ GetCurrentProcessId() };
+    const auto consoleWindow{ GetConsoleWindow() };
+    // createSomeWindows(consoleWindow);
+
+    wprintf(fmt::format(L"pid: {}\n", pid).c_str());
+
+    wprintf(fmt::format(L"consoleWindow: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleWindow)).c_str());
+
+    const auto mainHwnd{ find_main_window(pid) };
+    wprintf(fmt::format(L"mainHwnd: {0:#010x}\n", reinterpret_cast<unsigned long long>(mainHwnd)).c_str());
+
+    const auto consoleParent{ GetParent(consoleWindow) };
+    wprintf(fmt::format(L"parent: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleParent)).c_str());
+    const auto consoleOwner{ GetWindow(consoleWindow, GW_OWNER) };
+    wprintf(fmt::format(L"owner: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleOwner)).c_str());
+    const auto consoleAncestor_PARENT{ GetAncestor(consoleWindow, GA_PARENT) };
+    const auto consoleAncestor_ROOT{ GetAncestor(consoleWindow, GA_ROOT) };
+    const auto consoleAncestor_ROOTOWNER{ GetAncestor(consoleWindow, GA_ROOTOWNER) };
+    wprintf(fmt::format(L"Ancestor_PARENT: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleAncestor_PARENT)).c_str());
+    wprintf(fmt::format(L"Ancestor_ROOT: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleAncestor_ROOT)).c_str());
+    wprintf(fmt::format(L"Ancestor_ROOTOWNER: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleAncestor_ROOTOWNER)).c_str());
 
     return 0;
 }
