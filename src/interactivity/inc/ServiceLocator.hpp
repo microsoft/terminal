@@ -89,7 +89,7 @@ namespace Microsoft::Console::Interactivity
 
         static Globals& LocateGlobals();
 
-        static HWND LocatePseudoWindow(const HWND owner = 0/*HNWD_DESKTOP*/);
+        static HWND LocatePseudoWindow(const HWND owner = 0 /*HWND_DESKTOP*/);
 
     protected:
         ServiceLocator(ServiceLocator const&) = delete;

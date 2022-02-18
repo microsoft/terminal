@@ -129,13 +129,13 @@ int doTheWindowThing(HWND hwndToUseAsParent)
     wprintf(fmt::format(L"  create a child  window...\n").c_str());
     doWindowCreateLoop(true);
 
-    wprintf(fmt::format(L"  Opening a messagebox...\n").c_str());
+    wprintf(fmt::format(L"  Opening a MessageBoxW...\n").c_str());
     MessageBoxW(hwndToUseAsParent, L"foo", L"bar", MB_OK);
-    wprintf(fmt::format(L"  closed a messagebox\n").c_str());
+    wprintf(fmt::format(L"  closed a MessageBoxW\n").c_str());
     return 0;
 }
 
-int createSomeWindows(const HWND& consolwHwnd)
+int createSomeWindows(const HWND& consoleHwnd)
 {
     WNDCLASS wc = {};
     const auto hInst{ GetModuleHandle(NULL) };
@@ -149,7 +149,7 @@ int createSomeWindows(const HWND& consolwHwnd)
 
     doTheWindowThing(nullptr);
     wprintf(fmt::format(L"Now, with the console window handle.\n").c_str());
-    doTheWindowThing(consolwHwnd);
+    doTheWindowThing(consoleHwnd);
 
     return 0;
 }

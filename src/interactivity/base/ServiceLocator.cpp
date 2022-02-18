@@ -326,7 +326,7 @@ HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
 
 // void ServiceLocator::ReparentPseudoHwnd(HWND newParent)
 // {
-//     // This will initialize s_interactivityFactory for us. It will also convniently return 0 when we're on OneCore.
+//     // This will initialize s_interactivityFactory for us. It will also conveniently return 0 when we're on OneCore.
 //     if (const auto psuedoHwnd{ LocatePseudoWindow() })
 //     {
 //         ::SetParent(psuedoHwnd, newParent);
