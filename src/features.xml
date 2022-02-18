@@ -58,15 +58,6 @@
     </feature>
 
     <feature>
-        <name>Feature_PersistedWindowLayout</name>
-        <description>Whether to allow the user to enable persisted window layout saving and loading</description>
-        <id>766</id>
-        <stage>AlwaysEnabled</stage>
-        <!-- This feature will not ship to Stable until it is complete. -->
-        <alwaysDisabledReleaseTokens />
-    </feature>
-
-    <feature>
         <name>Feature_AtlasEngine</name>
         <description>If enabled, AtlasEngine and the experimental.useAtlasEngine setting are compiled into the project</description>
         <stage>AlwaysEnabled</stage>

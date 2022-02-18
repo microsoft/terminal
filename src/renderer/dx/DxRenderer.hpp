@@ -231,7 +231,7 @@ namespace Microsoft::Console::Render
         // Experimental and deprecated retro terminal effect
         //  Preserved for backwards compatibility
         //  Implemented in terms of the more generic pixel shader effect
-        //  Has precendence over pixel shader effect
+        //  Has precedence over pixel shader effect
         bool _retroTerminalEffect;
 
         // Experimental and pixel shader effect

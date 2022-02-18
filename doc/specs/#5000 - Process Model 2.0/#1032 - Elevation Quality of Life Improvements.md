@@ -552,7 +552,7 @@ following behaviors:
 * `false`: If the current window is elevated, try to create a new unelevated
   window to host this connection.
 
-We could always re-introduce this setting, to supercede `elevate`.
+We could always re-introduce this setting, to supersede `elevate`.
 
 ### Change profile appearance for elevated windows
 
