@@ -442,6 +442,58 @@ bool TerminalDispatch::ResetMode(const DispatchTypes::ModeParams param)
     return _ModeParamsHelper(param, false);
 }
 
+// Routine Description:
+// - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
+//       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
+// Arguments:
+// - statusType - ANSI status type indicating what property we should report back
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
+{
+    bool success = false;
+
+    switch (statusType)
+    {
+    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+        success = _OperatingStatus();
+        break;
+    case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
+        success = _CursorPositionReport();
+        break;
+    }
+
+    return success;
+}
+
+// Routine Description:
+// - DSR-OS - Reports the operating status back to the input channel
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::_OperatingStatus() const
+{
+    // We always report a good operating condition.
+    return _WriteResponse(L"\x1b[0n");
+}
+
+// Routine Description:
+// - DSR-CPR - Reports the current cursor position within the viewport back to the input channel
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::_CursorPositionReport() const
+{
+    // Now send it back into the input channel of the console.
+    // First format the response string.
+    const auto pos = _terminalApi.GetCursorPosition();
+    // VT has origin at 1,1 where as we use 0,0 internally
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", pos.Y + 1, pos.X + 1);
+    return _WriteResponse(response);
+}
+
 // Method Description:
 // - Start a hyperlink
 // Arguments:
@@ -543,6 +595,18 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string)
     }
 
     return false;
+}
+
+// Routine Description:
+// - Helper to send a string reply to the input stream of the console.
+// - Used by various commands where the program attached would like a reply to one of the commands issued.
+// Arguments:
+// - reply - The reply string to transmit back to the input stream
+// Return Value:
+// - True if the string was sent to the connected application. False otherwise.
+bool TerminalDispatch::_WriteResponse(const std::wstring_view reply) const
+{
+    return _terminalApi.ReturnResponse(reply);
 }
 
 // Routine Description:

@@ -450,7 +450,7 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstri
         // SW_FORCEMINIMIZE (11)    
 
         // Dig information out of the message so we know what someone is asking for
-        auto pWindowPos = (PWINDOWPOS)lParam;
+        /*auto pWindowPos = (PWINDOWPOS)lParam;*/
         const auto minimizing = IsIconic(hWnd);
         // Other potentially useful flags.
         /*const auto maximizing = IsZoomed(hWnd);
