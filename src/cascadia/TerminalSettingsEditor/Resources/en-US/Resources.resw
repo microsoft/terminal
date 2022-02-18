@@ -973,7 +973,7 @@
   </data>
   <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
     <value>Applies a translucent texture to the background of the window.</value>
-    <comment>A description for what the "Profile_UseAcrylic" setting goes.</comment>
+    <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
   <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
     <value>Use desktop wallpaper</value>
