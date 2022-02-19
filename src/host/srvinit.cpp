@@ -801,12 +801,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-    NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
     // No matter what, create a renderer.
     try
     {
@@ -823,9 +817,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
         THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
 
-        // Allow the renderer to paint.
-        g.pRender->EnablePainting();
-
         // Set up the renderer to be used to calculate the width of a glyph,
         //      should we be unable to figure out its width another way.
         auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
@@ -833,8 +824,17 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     }
     catch (...)
     {
-        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
+
+    NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    // Allow the renderer to paint.
+    g.pRender->EnablePainting();
 
     if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {

@@ -34,9 +34,8 @@ Renderer::Renderer(const RenderSettings& renderSettings,
                    const size_t cEngines,
                    std::unique_ptr<RenderThread> thread) :
     _renderSettings(renderSettings),
-    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
-    _pThread{ std::move(thread) },
-    _viewport{ pData->GetViewport() }
+    _pData(pData),
+    _pThread{ std::move(thread) }
 {
     for (size_t i = 0; i < cEngines; i++)
     {
@@ -623,6 +622,9 @@ bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
 // - <none>
 void Renderer::EnablePainting()
 {
+    // When the renderer is constructed, the initial viewport won't be available yet,
+    // but once EnablePainting is called it should be safe to retrieve.
+    _viewport = _pData->GetViewport();
     _pThread->EnablePainting();
 }
 

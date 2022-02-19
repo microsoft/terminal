@@ -60,7 +60,10 @@ filling in the last row, and updating the screen.
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
 
-#include "../renderer/inc/IRenderTarget.hpp"
+namespace Microsoft::Console::Render
+{
+    class Renderer;
+}
 
 class TextBuffer final
 {
@@ -69,7 +72,7 @@ public:
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
                const bool isActiveBuffer,
-               Microsoft::Console::Render::IRenderTarget& renderTarget);
+               Microsoft::Console::Render::Renderer& renderer);
     TextBuffer(const TextBuffer& a) = delete;
 
     // Used for duplicating properties to another text buffer
@@ -143,7 +146,7 @@ public:
     void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
     bool IsActiveBuffer() const noexcept;
 
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
+    Microsoft::Console::Render::Renderer& GetRenderer() noexcept;
 
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
     void TriggerRedrawCursor(const COORD position);
@@ -224,14 +227,13 @@ private:
     UnicodeStorage _unicodeStorage;
 
     bool _isActiveBuffer;
+    Microsoft::Console::Render::Renderer& _renderer;
 
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
     uint16_t _currentHyperlinkId;
 
     void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
-
-    Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 

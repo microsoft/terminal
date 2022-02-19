@@ -6,29 +6,23 @@ Module Name:
 - DummyRenderTarget.hpp
 
 Abstract:
-- Provides an empty implementation of the IRenderTarget interface.
+- Provides a minimal instantiation of the Renderer class.
     This is needed for some tests, where certain objects need a reference to a
-    IRenderTarget
+    Renderer
 
 Author(s):
 - Mike Griese (migrie) Nov 2018
 --*/
 
 #pragma once
-#include "IRenderTarget.hpp"
+#include "../base/renderer.hpp"
 
-class DummyRenderTarget final : public Microsoft::Console::Render::IRenderTarget
+class DummyRenderTarget final : public Microsoft::Console::Render::Renderer
 {
 public:
-    DummyRenderTarget() {}
-    void TriggerRedraw(const Microsoft::Console::Types::Viewport& /*region*/) override {}
-    void TriggerRedraw(const COORD* const /*pcoord*/) override {}
-    void TriggerRedrawCursor(const COORD* const /*pcoord*/) override {}
-    void TriggerRedrawAll() override {}
-    void TriggerTeardown() noexcept override {}
-    void TriggerSelection() override {}
-    void TriggerScroll() override {}
-    void TriggerScroll(const COORD* const /*pcoordDelta*/) override {}
-    void TriggerCircling() override {}
-    void TriggerTitleChange() override {}
+    DummyRenderTarget(Microsoft::Console::Render::IRenderData* pData = nullptr) :
+        Microsoft::Console::Render::Renderer(_renderSettings, pData, nullptr, 0, nullptr) {}
+
+private:
+    Microsoft::Console::Render::RenderSettings _renderSettings;
 };

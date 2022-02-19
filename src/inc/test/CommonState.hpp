@@ -166,7 +166,7 @@ public:
                                                                                   initialAttributes,
                                                                                   uiCursorSize,
                                                                                   true,
-                                                                                  m_backupTextBufferInfo->GetRenderTarget());
+                                                                                  m_backupTextBufferInfo->GetRenderer());
             if (textBuffer.get() == nullptr)
             {
                 m_hrTextBufferInfo = E_OUTOFMEMORY;

@@ -6,6 +6,7 @@
 #include "textBuffer.hpp"
 #include "CharRow.hpp"
 
+#include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
@@ -25,6 +26,7 @@ using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 // - defaultAttributes - The attributes with which the buffer will be initialized
 // - cursorSize - The height of the cursor within this buffer
 // - isActiveBuffer - Whether this is the currently active buffer
+// - renderer - The renderer to use for triggering a redraw
 // Return Value:
 // - constructed object
 // Note: may throw exception
@@ -32,14 +34,14 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
-                       Microsoft::Console::Render::IRenderTarget& renderTarget) :
+                       Microsoft::Console::Render::Renderer& renderer) :
     _firstRow{ 0 },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
     _unicodeStorage{},
     _isActiveBuffer{ isActiveBuffer },
-    _renderTarget{ renderTarget },
+    _renderer{ renderer },
     _size{},
     _currentHyperlinkId{ 1 },
     _currentPatternId{ 0 }
@@ -558,7 +560,10 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    _renderTarget.TriggerCircling();
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerCircling();
+    }
 
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();
@@ -965,29 +970,49 @@ bool TextBuffer::IsActiveBuffer() const noexcept
     return _isActiveBuffer;
 }
 
+Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
+{
+    return _renderer;
+}
+
 void TextBuffer::TriggerRedraw(const Viewport& viewport)
 {
-    _renderTarget.TriggerRedraw(viewport);
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedraw(viewport);
+    }
 }
 
 void TextBuffer::TriggerRedrawCursor(const COORD position)
 {
-    _renderTarget.TriggerRedrawCursor(&position);
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedrawCursor(&position);
+    }
 }
 
 void TextBuffer::TriggerRedrawAll()
 {
-    _renderTarget.TriggerRedrawAll();
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedrawAll();
+    }
 }
 
 void TextBuffer::TriggerScroll()
 {
-    _renderTarget.TriggerScroll();
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerScroll();
+    }
 }
 
 void TextBuffer::TriggerScroll(const COORD delta)
 {
-    _renderTarget.TriggerScroll(&delta);
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerScroll(&delta);
+    }
 }
 
 // Routine Description:
@@ -1056,17 +1081,6 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 
     THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
     return _storage.at(prevRowIndex);
-}
-
-// Method Description:
-// - Retrieves this buffer's current render target.
-// Arguments:
-// - <none>
-// Return Value:
-// - This buffer's current render target.
-Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcept
-{
-    return _renderTarget;
 }
 
 // Method Description:

@@ -359,7 +359,7 @@ void TextBufferTests::TestCopyProperties()
                                                                               otherTbi._currentAttributes,
                                                                               12,
                                                                               otherTbi.IsActiveBuffer(),
-                                                                              otherTbi._renderTarget);
+                                                                              otherTbi._renderer);
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values

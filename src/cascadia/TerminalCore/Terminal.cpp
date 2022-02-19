@@ -77,7 +77,7 @@ Terminal::Terminal() :
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
 
-void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
+void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, Renderer& renderer)
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
@@ -85,22 +85,22 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
                             Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
-    _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderTarget);
+    _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
 }
 
 // Method Description:
 // - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
-// - renderTarget: A render target the terminal can use for paint invalidation.
+// - renderer: the Renderer that the terminal can use for paint invalidation.
 void Terminal::CreateFromSettings(ICoreSettings settings,
-                                  IRenderTarget& renderTarget)
+                                  Renderer& renderer)
 {
     const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                               Utils::ClampToShortMax(settings.InitialRows(), 1) };
 
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
+    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
 
     UpdateSettings(settings);
 }
@@ -270,7 +270,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
                                                      TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->IsActiveBuffer(),
-                                                     _buffer->GetRenderTarget());
+                                                     _buffer->GetRenderer());
 
         newTextBuffer->GetCursor().StartDeferDrawing();
 
