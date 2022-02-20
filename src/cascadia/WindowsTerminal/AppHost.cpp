@@ -87,10 +87,9 @@ AppHost::AppHost() noexcept :
     _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
     _window->MakeWindow();
 
-    const auto consoleHostMode = _logic.GetConsoleHostStartupMode();
-    const auto isNewConsoleHost = true;
+    const auto consoleHostMode = _logic.GetConsoleHostStartupMode(winrt::array_view<const winrt::hstring>());
     const auto overrideLaunchMode =
-        (isNewConsoleHost && consoleHostMode == winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode::Minimized) ?
+        (consoleHostMode == winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode::Minimized) ?
             LaunchMode::MinimizedMode :
             _logic.GetLaunchMode();
     _window->InitShowWindow(overrideLaunchMode);
@@ -785,9 +784,8 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
 
-    const auto consoleHostMode = _logic.GetConsoleHostStartupMode();
-    const auto isNewConsoleHost = true;
-    const auto dotNotActivate = (isNewConsoleHost && consoleHostMode == winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode::Minimized);
+    const auto consoleHostMode = _logic.GetConsoleHostStartupMode(args.Commandline());
+    const auto dotNotActivate = (consoleHostMode == winrt::Microsoft::Terminal::Settings::Model::ConsoleHostStartupMode::Minimized);
     summonArgs.DoNotActivate(dotNotActivate);
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.

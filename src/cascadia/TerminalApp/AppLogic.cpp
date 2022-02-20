@@ -691,7 +691,7 @@ namespace winrt::TerminalApp::implementation
                    valueFromSettings;
     }
 
-    ConsoleHostStartupMode AppLogic::GetConsoleHostStartupMode()
+    ConsoleHostStartupMode AppLogic::GetConsoleHostStartupMode(array_view<const winrt::hstring> args)
     {
         if (!_loadedInitialSettings)
         {
@@ -699,7 +699,21 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings.GlobalSettings().ConsoleHostStartupMode();
+        bool isHandoffListener = _appArgs.IsHandoffListener();
+        if (!isHandoffListener && args.size()>0)
+        {
+            ::TerminalApp::AppCommandlineArgs appArgs;
+            const auto result = appArgs.ParseArgs(args);
+            isHandoffListener = (result == 0 && appArgs.IsHandoffListener());
+        }
+        if (isHandoffListener)
+        {
+            return _settings.GlobalSettings().ConsoleHostStartupMode();
+        }
+        else
+        {
+            return ConsoleHostStartupMode::Default;
+        }
     }
 
     // Method Description:

@@ -84,7 +84,7 @@ namespace TerminalApp
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
-        Microsoft.Terminal.Settings.Model.ConsoleHostStartupMode GetConsoleHostStartupMode();
+        Microsoft.Terminal.Settings.Model.ConsoleHostStartupMode GetConsoleHostStartupMode(String[] args);
         Boolean GetShowTabsInTitlebar();
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
