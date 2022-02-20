@@ -751,7 +751,7 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
         }
         // If the file path couldn't be found by SearchPathW this could be the result of us being given a commandLine
         // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"},
-        // or we were erroenously given a directory to execute (e.g. someone ran `wt .`).
+        // or we were erroneously given a directory to execute (e.g. someone ran `wt .`).
         // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
         // Of course we can only do that if we have at least 2 remaining arguments in argv.
         if ((argc - startOfArguments) < 2)
