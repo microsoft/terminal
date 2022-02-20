@@ -44,7 +44,7 @@ namespace winrt::TerminalApp::implementation
         static std::wregex regex{ L"sc\\(([0-9]+)\\)" };
 
         std::wstring key_chord_text{ input.begin(), input.end() };
-        
+
         std::wstring result;
 
         std::wsregex_token_iterator end;
