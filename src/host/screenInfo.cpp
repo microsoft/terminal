@@ -56,7 +56,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _fAltWindowChanged{ false },
     _PopupAttributes{ popupAttributes },
     _virtualBottom{ 0 },
-    _renderTarget{ *this },
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo },
     _ignoreLegacyEquivalentVTAttributes{ false }
@@ -2127,7 +2126,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     // because the text attributes changed.
     if (!(gci.IsInVtIoMode()))
     {
-        _renderTarget.TriggerRedrawAll();
+        _textBuffer->TriggerRedrawAll();
     }
 
     gci.ConsoleIme.RefreshAreaAttributes();

@@ -22,7 +22,6 @@ Revision History:
 #include "conapi.h"
 #include "settings.hpp"
 #include "outputStream.hpp"
-#include "ScreenBufferRenderTarget.hpp"
 
 #include "../buffer/out/OutputCellRect.hpp"
 #include "../buffer/out/TextAttribute.hpp"
@@ -295,8 +294,6 @@ private:
     //  affected by the user scrolling the viewport, only when API calls cause
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     short _virtualBottom;
-
-    ScreenBufferRenderTarget _renderTarget;
 
     bool _ignoreLegacyEquivalentVTAttributes;
 
