@@ -12,7 +12,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/convert.hpp"
 
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
@@ -87,7 +87,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     {
         // STEP 1: Set up the Terminal
         term = std::make_unique<Terminal>();
-        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, emptyRT);
+        emptyRenderer = std::make_unique<DummyRenderer>(term.get());
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, *emptyRenderer);
 
         // STEP 2: Set up the Conpty
 
@@ -100,14 +101,14 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
         gci.CalculateDefaultColorIndices();
 
+        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
+
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
-
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
 
         // Set up an xterm-256 renderer for conpty
         wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
@@ -158,6 +159,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Tests should drain all the output they push into the expected output buffer.");
 
+        emptyRenderer = nullptr;
         term = nullptr;
 
         return true;
@@ -237,7 +239,7 @@ private:
     bool _checkConptyOutput{ true }; // If true, the test class will check that the output from conpty was expected
     bool _logConpty{ false }; // If true, the test class will log all the output from conpty. Helpful for debugging.
 
-    DummyRenderTarget emptyRT;
+    std::unique_ptr<DummyRenderer> emptyRenderer;
     std::unique_ptr<Terminal> term;
 
     ApiRoutines _apiRoutines;

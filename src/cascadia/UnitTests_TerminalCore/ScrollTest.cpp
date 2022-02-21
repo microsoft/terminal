@@ -6,7 +6,7 @@
 
 #include <DefaultSettings.h>
 
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "../renderer/base/Renderer.hpp"
 #include "../renderer/dx/DxRenderer.hpp"
 
@@ -119,9 +119,9 @@ class TerminalCoreUnitTests::ScrollTest final
         });
 
         _renderEngine = std::make_unique<MockScrollRenderEngine>();
-        _renderTarget = std::make_unique<DummyRenderTarget>(_term.get());
-        _renderTarget->AddRenderEngine(_renderEngine.get());
-        _term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *_renderTarget);
+        _renderer = std::make_unique<DummyRenderer>(_term.get());
+        _renderer->AddRenderEngine(_renderEngine.get());
+        _term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *_renderer);
         return true;
     }
 
@@ -134,7 +134,7 @@ class TerminalCoreUnitTests::ScrollTest final
 private:
     std::unique_ptr<Terminal> _term;
     std::unique_ptr<MockScrollRenderEngine> _renderEngine;
-    std::unique_ptr<DummyRenderTarget> _renderTarget;
+    std::unique_ptr<DummyRenderer> _renderer;
     std::shared_ptr<std::optional<ScrollBarNotification>> _scrollBarNotification;
 };
 
@@ -201,17 +201,17 @@ void ScrollTest::TestNotifyScrolling()
         if (scrolled && circledBuffer)
         {
             VERIFY_IS_TRUE(_renderEngine->TriggerScrollDelta().has_value(),
-                           fmt::format(L"Expected a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+                           fmt::format(L"Expected a 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
 
             COORD expectedDelta;
             expectedDelta.X = 0;
             expectedDelta.Y = -1;
-            VERIFY_ARE_EQUAL(expectedDelta, _renderEngine->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+            VERIFY_ARE_EQUAL(expectedDelta, _renderEngine->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
         }
         else
         {
             VERIFY_IS_FALSE(_renderEngine->TriggerScrollDelta().has_value(),
-                            fmt::format(L"Expected to not see a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+                            fmt::format(L"Expected to not see a 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
         }
 
         if (_scrollBarNotification->has_value())
