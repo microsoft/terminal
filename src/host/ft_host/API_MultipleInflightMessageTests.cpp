@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+using namespace WEX::Logging;
+
 class MultipleInflightMessageTests
 {
     BEGIN_TEST_CLASS(MultipleInflightMessageTests)
@@ -14,6 +16,15 @@ class MultipleInflightMessageTests
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method") // Don't pollute other tests by isolating our potential crash and buffer resizing to this test.
         END_TEST_METHOD_PROPERTIES()
+
+        // OneCore systems can't adjust the window/buffer size, so we'll skip making it smaller.
+        // On Desktop systems, make it smaller so the test runs faster.
+        if (!OneCoreDelay::IsIsWindowPresent())
+        {
+            Log::Comment(L"This scenario requires a large buffer size, which OneCore does not provide.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
 
         using namespace std::string_view_literals;
 

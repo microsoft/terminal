@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     const bool isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
                     if (isMDL2Icon)
                     {
-                        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe MDL2 Assets" });
+                        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
                     }
                     else
                     {

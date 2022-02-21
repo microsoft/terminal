@@ -104,6 +104,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
+
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
     profile->_DefaultAppearance = *defaultAppearance;
@@ -178,6 +179,7 @@ void Profile::LayerJson(const Json::Value& json)
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);
+
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
 
@@ -318,6 +320,7 @@ Json::Value Profile::ToJson() const
 
 #define PROFILE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
+
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
 

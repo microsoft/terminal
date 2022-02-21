@@ -8,7 +8,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../types/inc/sgrStack.hpp"
-#include "../../renderer/inc/BlinkingState.hpp"
+#include "../../renderer/inc/RenderSettings.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
 
@@ -55,6 +55,8 @@ class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Console::Render::IRenderData,
     public Microsoft::Console::Types::IUiaData
 {
+    using RenderSettings = Microsoft::Console::Render::RenderSettings;
+
 public:
     Terminal();
     ~Terminal(){};
@@ -88,48 +90,51 @@ public:
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
 
+    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
+    const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    bool PrintString(std::wstring_view stringView) noexcept override;
-    bool ExecuteChar(wchar_t wch) noexcept override;
-    TextAttribute GetTextAttributes() const noexcept override;
-    void SetTextAttributes(const TextAttribute& attrs) noexcept override;
-    Microsoft::Console::Types::Viewport GetBufferSize() noexcept override;
-    bool SetCursorPosition(short x, short y) noexcept override;
-    COORD GetCursorPosition() noexcept override;
-    bool SetCursorVisibility(const bool visible) noexcept override;
-    bool EnableCursorBlinking(const bool enable) noexcept override;
-    bool CursorLineFeed(const bool withReturn) noexcept override;
-    bool DeleteCharacter(const size_t count) noexcept override;
-    bool InsertCharacter(const size_t count) noexcept override;
-    bool EraseCharacters(const size_t numChars) noexcept override;
-    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
-    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
-    bool WarningBell() noexcept override;
-    bool SetWindowTitle(std::wstring_view title) noexcept override;
-    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
-    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
+    void PrintString(std::wstring_view stringView) override;
+    TextAttribute GetTextAttributes() const override;
+    void SetTextAttributes(const TextAttribute& attrs) override;
+    Microsoft::Console::Types::Viewport GetBufferSize() override;
+    void SetCursorPosition(short x, short y) override;
+    COORD GetCursorPosition() override;
+    void SetCursorVisibility(const bool visible) override;
+    void EnableCursorBlinking(const bool enable) override;
+    void CursorLineFeed(const bool withReturn) override;
+    void DeleteCharacter(const size_t count) override;
+    void InsertCharacter(const size_t count) override;
+    void EraseCharacters(const size_t numChars) override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
+    void WarningBell() override;
+    void SetWindowTitle(std::wstring_view title) override;
+    COLORREF GetColorTableEntry(const size_t tableIndex) const override;
+    void SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
+    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
+    void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
 
-    bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;
+    void SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
+    void SetRenderMode(const ::Microsoft::Console::Render::RenderSettings::Mode mode, const bool enabled) override;
 
-    bool SetScreenMode(const bool reverseMode) noexcept override;
-    bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
-    bool IsXtermBracketedPasteModeEnabled() const noexcept override;
+    void EnableXtermBracketedPasteMode(const bool enabled) override;
+    bool IsXtermBracketedPasteModeEnabled() const override;
 
-    bool IsVtInputEnabled() const noexcept override;
+    bool IsVtInputEnabled() const override;
 
-    bool CopyToClipboard(std::wstring_view content) noexcept override;
+    void CopyToClipboard(std::wstring_view content) override;
 
-    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
-    bool EndHyperlink() noexcept override;
+    void AddHyperlink(std::wstring_view uri, std::wstring_view params) override;
+    void EndHyperlink() override;
 
-    bool SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) noexcept override;
-    bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
-    std::wstring_view GetWorkingDirectory() noexcept override;
+    void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
+    void SetWorkingDirectory(std::wstring_view uri) override;
+    std::wstring_view GetWorkingDirectory() override;
 
-    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
-    bool PopGraphicsRendition() noexcept override;
+    void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
+    void PopGraphicsRendition() override;
 
 #pragma endregion
 
@@ -156,7 +161,6 @@ public:
     COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
@@ -164,16 +168,13 @@ public:
 
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
-    const TextAttribute GetDefaultBrushColors() noexcept override;
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
-    COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const override;
-    bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
@@ -182,6 +183,7 @@ public:
 #pragma endregion
 
 #pragma region IUiaData
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
@@ -214,8 +216,6 @@ public:
 
     winrt::Microsoft::Terminal::Core::Scheme GetColorScheme() const noexcept;
     void ApplyScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
-
-    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
 
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
@@ -273,6 +273,7 @@ private:
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
 
+    RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
@@ -281,19 +282,13 @@ private:
     std::optional<til::color> _tabColor;
     std::optional<til::color> _startingTabColor;
 
-    // This is still stored as a COLORREF because it interacts with some code in ConTypes
-    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
     CursorType _defaultCursorShape;
-    bool _screenReversed;
-    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
 
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
-    bool _intenseIsBright;
-    bool _adjustIndistinguishableColors;
 
     size_t _taskbarState;
     size_t _taskbarProgress;
@@ -370,8 +365,6 @@ private:
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
 
-    void _InitializeColorTable();
-
     void _WriteBuffer(const std::wstring_view& stringView);
 
     void _AdjustCursorPosition(const COORD proposedPosition);
@@ -393,9 +386,6 @@ private:
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
-
-    void _MakeAdjustedColorArray();
-    std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

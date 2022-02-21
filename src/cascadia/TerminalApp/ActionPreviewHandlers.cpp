@@ -49,8 +49,9 @@ namespace winrt::TerminalApp::implementation
         switch (_lastPreviewedCommand.ActionAndArgs().Action())
         {
         case ShortcutAction::SetColorScheme:
+        case ShortcutAction::AdjustOpacity:
         {
-            _EndPreviewColorScheme();
+            _RunRestorePreviews();
             break;
         }
         }
@@ -58,24 +59,25 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Revert any changes from the preview on a SetColorScheme action. This
-    //   will remove the preview TerminalSettings we inserted into the control's
-    //   TerminalSettings graph, and update the control.
+    // - Revert any changes from the preview action. This will run the restore
+    //   function that the preview added to _restorePreviewFuncs
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_EndPreviewColorScheme()
+    void TerminalPage::_RunRestorePreviews()
     {
         // Apply the reverts in reverse order - If we had multiple previews
         // stacked on top of each other, then this will ensure the first one in
         // is the last one out.
-        for (auto i{ _restorePreviewFuncs.rbegin() }; i < _restorePreviewFuncs.rend(); i++)
+        const auto cleanup = wil::scope_exit([this]() {
+            _restorePreviewFuncs.clear();
+        });
+
+        for (const auto& f : _restorePreviewFuncs)
         {
-            auto f = *i;
             f();
         }
-        _restorePreviewFuncs.clear();
     }
 
     // Method Description:
@@ -94,6 +96,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
+            const auto backup = _restorePreviewFuncs.empty();
+
             _ApplyToActiveControls([&](const auto& control) {
                 // Stash a copy of the current scheme.
                 auto originalScheme{ control.ColorScheme() };
@@ -101,14 +105,39 @@ namespace winrt::TerminalApp::implementation
                 // Apply the new scheme.
                 control.ColorScheme(scheme.ToCoreScheme());
 
-                // Each control will emplace a revert into the
-                // _restorePreviewFuncs for itself.
-                _restorePreviewFuncs.emplace_back([=]() {
-                    // On dismiss, restore the original scheme.
-                    control.ColorScheme(originalScheme);
-                });
+                if (backup)
+                {
+                    // Each control will emplace a revert into the
+                    // _restorePreviewFuncs for itself.
+                    _restorePreviewFuncs.emplace_back([=]() {
+                        // On dismiss, restore the original scheme.
+                        control.ColorScheme(originalScheme);
+                    });
+                }
             });
         }
+    }
+
+    void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
+    {
+        const auto backup = _restorePreviewFuncs.empty();
+
+        _ApplyToActiveControls([&](const auto& control) {
+            // Stash a copy of the original opacity.
+            auto originalOpacity{ control.BackgroundOpacity() };
+
+            // Apply the new opacity
+            control.AdjustOpacity(args.Opacity() / 100.0, args.Relative());
+
+            if (backup)
+            {
+                _restorePreviewFuncs.emplace_back([=]() {
+                    // On dismiss:
+                    // Don't adjust relatively, just set outright.
+                    control.AdjustOpacity(originalOpacity, false);
+                });
+            }
+        });
     }
 
     // Method Description:
@@ -140,6 +169,11 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::SetColorScheme:
             {
                 _PreviewColorScheme(args.ActionAndArgs().Args().try_as<SetColorSchemeArgs>());
+                break;
+            }
+            case ShortcutAction::AdjustOpacity:
+            {
+                _PreviewAdjustOpacity(args.ActionAndArgs().Args().try_as<AdjustOpacityArgs>());
                 break;
             }
             }

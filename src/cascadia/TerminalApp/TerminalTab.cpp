@@ -463,6 +463,17 @@ namespace winrt::TerminalApp::implementation
             state.args.emplace_back(std::move(setColorAction));
         }
 
+        if (!_runtimeTabText.empty())
+        {
+            ActionAndArgs renameTabAction{};
+            renameTabAction.Action(ShortcutAction::RenameTab);
+
+            RenameTabArgs renameTabArgs{ _runtimeTabText };
+            renameTabAction.Args(renameTabArgs);
+
+            state.args.emplace_back(std::move(renameTabAction));
+        }
+
         // If we only have one arg, we only have 1 pane so we don't need any
         // special focus logic
         if (state.args.size() > 1 && state.focusedPaneId.has_value())
@@ -1167,7 +1178,7 @@ namespace winrt::TerminalApp::implementation
         // "Color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         Controls::FontIcon colorPickSymbol;
-        colorPickSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        colorPickSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
         colorPickSymbol.Glyph(L"\xE790");
 
         chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1198,7 +1209,7 @@ namespace winrt::TerminalApp::implementation
         {
             // "Rename Tab"
             Controls::FontIcon renameTabSymbol;
-            renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             renameTabSymbol.Glyph(L"\xE8AC"); // Rename
 
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1215,7 +1226,7 @@ namespace winrt::TerminalApp::implementation
         {
             // "Duplicate Tab"
             Controls::FontIcon duplicateTabSymbol;
-            duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             duplicateTabSymbol.Glyph(L"\xF5ED");
 
             duplicateTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1232,7 +1243,7 @@ namespace winrt::TerminalApp::implementation
         {
             // "Split Tab"
             Controls::FontIcon splitTabSymbol;
-            splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
 
             splitTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1249,7 +1260,7 @@ namespace winrt::TerminalApp::implementation
         {
             // "Split Tab"
             Controls::FontIcon exportTabSymbol;
-            exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
 
             exportTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1404,7 +1415,7 @@ namespace winrt::TerminalApp::implementation
         selectedTabBrush.Color(color);
 
         // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
+        // signified by using the same color with a bit of transparency
         auto deselectedTabColor = color;
         deselectedTabColor.A = 64;
         deselectedTabBrush.Color(deselectedTabColor);

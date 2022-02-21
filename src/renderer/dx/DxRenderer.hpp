@@ -106,6 +106,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
                                                    const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
@@ -116,7 +117,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
 
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
@@ -129,7 +130,6 @@ namespace Microsoft::Console::Render
         void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept override;
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
         void EnableTransparentBackground(const bool isTransparent) noexcept override;
-        void SetIntenseIsBold(const bool opacity) noexcept override;
 
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept override;
 
@@ -177,7 +177,7 @@ namespace Microsoft::Console::Render
         bool _allInvalid;
 
         bool _presentReady;
-        std::vector<RECT> _presentDirty;
+        std::vector<til::rect> _presentDirty;
         RECT _presentScroll;
         POINT _presentOffset;
         DXGI_PRESENT_PARAMETERS _presentParams;
@@ -231,7 +231,7 @@ namespace Microsoft::Console::Render
         // Experimental and deprecated retro terminal effect
         //  Preserved for backwards compatibility
         //  Implemented in terms of the more generic pixel shader effect
-        //  Has precendence over pixel shader effect
+        //  Has precedence over pixel shader effect
         bool _retroTerminalEffect;
 
         // Experimental and pixel shader effect
@@ -258,7 +258,6 @@ namespace Microsoft::Console::Render
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
         bool _defaultBackgroundIsTransparent;
-        bool _intenseIsBold;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
@@ -298,7 +297,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] til::size _GetClientSize() const;
 
-        void _InvalidateRectangle(const til::rectangle& rc);
+        void _InvalidateRectangle(const til::rect& rc);
         bool _IsAllInvalid() const noexcept;
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;

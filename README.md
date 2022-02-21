@@ -21,7 +21,7 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> 🔴 Note: Windows Terminal requires Windows 10 1903 (build 18362) or later
+> 🔴 Note: Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
 
@@ -284,14 +284,14 @@ If you would like to ask a question that you feel doesn't warrant an issue
 
 ## Prerequisites
 
-* You must be running Windows 1903 (build >= 10.0.18362.0) or later to run
+* You must be running Windows 10 2004 (build >= 10.0.19041.0) or later to run
   Windows Terminal
 * You must [enable Developer Mode in the Windows Settings
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
 * You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
-* You must have the [Windows 10 1903
-  SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
+* You must have the [Windows 11 (10.0.22000.0)
+  SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
   installed
 * You must have at least [VS
   2019](https://visualstudio.microsoft.com/downloads/) installed

@@ -24,6 +24,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // --> "und" is synonymous for "Use system language".
     constexpr std::wstring_view systemLanguageTag{ L"und" };
 
+    static constexpr std::array appLanguageTags{
+        L"en-US",
+        L"de-DE",
+        L"es-ES",
+        L"fr-FR",
+        L"it-IT",
+        L"ja",
+        L"ko",
+        L"pt-BR",
+        L"qps-PLOC",
+        L"qps-PLOCA",
+        L"qps-PLOCM",
+        L"ru",
+        L"zh-Hans-CN",
+        L"zh-Hant-TW",
+    };
+
     GlobalAppearance::GlobalAppearance()
     {
         InitializeComponent();
@@ -88,43 +105,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // [1]:
         {
             // ManifestLanguages contains languages the app ships with.
-            //
-            // Languages is a computed list that merges the ManifestLanguages with the
-            // user's ranked list of preferred languages taken from the system settings.
-            // As is tradition the API documentation is incomplete though, as it can also
-            // contain regional language variants. If our app supports en-US, but the user
-            // has en-GB or en-DE in their system's preferred language list, Languages will
-            // contain those as well, as they're variants from a supported language. We should
-            // allow a user to select those, as regional formattings can vary significantly.
-            const std::array tagSources{
-                winrt::Windows::Globalization::ApplicationLanguages::ManifestLanguages(),
-                winrt::Windows::Globalization::ApplicationLanguages::Languages()
-            };
-
-            // tags will hold all the flattened results from tagSources.
-            // We resize() the vector to the proper size in order to efficiently GetMany() all items.
-            tags.resize(std::accumulate(
-                tagSources.begin(),
-                tagSources.end(),
-                // tags[0] will be "und" - the "Use system language" item
-                // tags[1..n] will contain tags from tagSources.
-                // --> totalTags is offset by 1
-                1,
-                [](uint32_t sum, const auto& v) -> uint32_t {
-                    return sum + v.Size();
-                }));
+            // Unfortunately, we cannot use this source. Our manifest must contain the
+            // ~100 languages that are localized for the shell extension and start menu
+            // presentation so we align with Windows display languages for those surfaces.
+            // However, the actual content of our application is limited to a much smaller
+            // subset of approximately 14 languages. As such, we will code the limited
+            // subset of languages that we support for selection within the Settings
+            // dropdown to steer users towards the ones that we can display in the app.
 
             // As per the function definition, the first item
             // is always "Use system language" ("und").
-            auto data = tags.data();
-            *data++ = systemLanguageTag;
+            tags.emplace_back(systemLanguageTag);
 
-            // Finally GetMany() all the tags from tagSources.
-            for (const auto& v : tagSources)
+            // Add our hardcoded languages after the system definition.
+            for (const auto& v : appLanguageTags)
             {
-                const auto size = v.Size();
-                v.GetMany(0, winrt::array_view(data, size));
-                data += size;
+                tags.push_back(v);
             }
         }
 
@@ -199,8 +195,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool GlobalAppearance::FeatureNotificationIconEnabled() const noexcept
-    {
-        return Feature_NotificationIcon::IsEnabled();
-    }
 }

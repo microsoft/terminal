@@ -16,8 +16,6 @@ Author(s):
 #pragma once
 
 #include "../inc/RenderEngineBase.hpp"
-#include "../../inc/ITerminalOutputConnection.hpp"
-#include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "tracing.hpp"
 #include <string>
@@ -31,9 +29,14 @@ namespace TerminalCoreUnitTests
 };
 #endif
 
+namespace Microsoft::Console::VirtualTerminal
+{
+    class VtIo;
+}
+
 namespace Microsoft::Console::Render
 {
-    class VtEngine : public RenderEngineBase, public Microsoft::Console::ITerminalOutputConnection
+    class VtEngine : public RenderEngineBase
     {
     public:
         // See _PaintUtf8BufferLine for explanation of this value.
@@ -63,7 +66,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(SMALL_RECT srNewViewport) noexcept override;
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept override;
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
 
@@ -73,7 +76,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InheritCursor(const COORD coordCursor) noexcept;
         [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string_view str) noexcept;
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
-        void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
+        void SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const terminalOwner);
         void BeginResizeRequest();
         void EndResizeRequest();
         void SetResizeQuirk(const bool resizeQuirk);
@@ -113,7 +116,7 @@ namespace Microsoft::Console::Render
 
         bool _pipeBroken;
         HRESULT _exitResult;
-        Microsoft::Console::ITerminalOwner* _terminalOwner;
+        Microsoft::Console::VirtualTerminal::VtIo* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
         bool _inResizeRequest{ false };
@@ -168,7 +171,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
 
-        [[nodiscard]] HRESULT _SetBold(const bool isBold) noexcept;
+        [[nodiscard]] HRESULT _SetIntense(const bool isIntense) noexcept;
         [[nodiscard]] HRESULT _SetFaint(const bool isFaint) noexcept;
         [[nodiscard]] HRESULT _SetUnderlined(const bool isUnderlined) noexcept;
         [[nodiscard]] HRESULT _SetDoublyUnderlined(const bool isUnderlined) noexcept;

@@ -1123,7 +1123,7 @@ elevated windows, when they trust the extension. We could have an additional set
 of settings the user could use to enable certain extensions in elevated windows.
 However, this setting cannot live in the normal `settings.json` or even
 `state.json` (see [#7972], since those files are writable by any medium-IL
-process. Instead, this setting would ned to live in a separate file that's
+process. Instead, this setting would need to live in a separate file that's
 protected to only be writable by elevated processes. This would ensure that an
 attacker could not just add their extension to the list of white-listed
 extensions. When the settings UI wants to modify that setting, it'll need to

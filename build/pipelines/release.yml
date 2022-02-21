@@ -18,6 +18,10 @@ parameters:
     displayName: "Build Windows Terminal MSIX"
     type: boolean
     default: true
+  - name: runCompliance
+    displayName: "Run Compliance and Security Build"
+    type: boolean
+    default: true
   - name: buildTerminalVPack
     displayName: "Build Windows Terminal VPack"
     type: boolean
@@ -34,7 +38,6 @@ parameters:
       - Optimize
       - Instrument
       - None
-
   - name: buildConfigurations
     type: object
     default:
@@ -65,11 +68,11 @@ jobs:
             BuildConfiguration: ${{ config }}
             BuildPlatform: ${{ platform }}
   displayName: Build
+  timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
   steps:
   - checkout: self
     clean: true
-    fetchDepth: 1
     submodules: true
     persistCredentials: True
   - task: PkgESSetupBuild@12
@@ -90,6 +93,17 @@ jobs:
     displayName: Use NuGet 5.10
     inputs:
       versionSpec: 5.10
+  - task: NuGetAuthenticate@0
+  # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
+  # This should be `task: NuGetCommand@2`
+  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+    displayName: Restore NuGet packages for extraneous build actions
+    inputs:
+      command: restore
+      feedsToUse: config
+      configPath: NuGet.config
+      restoreSolution: build/packages.config
+      restoreDirectory: '$(Build.SourcesDirectory)\packages'
   - task: NuGetCommand@2
     displayName: NuGet custom
     inputs:
@@ -114,6 +128,8 @@ jobs:
       resourceFilePath: >-
         src\cascadia\TerminalApp\Resources\en-US\Resources.resw
 
+        src\cascadia\TerminalApp\Resources\en-US\ContextMenu.resw
+
         src\cascadia\TerminalControl\Resources\en-US\Resources.resw
 
         src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
@@ -121,8 +137,6 @@ jobs:
         src\cascadia\TerminalSettingsModel\Resources\en-US\Resources.resw
 
         src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
-
-        src\cascadia\WindowsTerminalUniversal\Resources\en-US\Resources.resw
 
         src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
       appendRelativeDir: true
@@ -138,24 +152,24 @@ jobs:
         $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
       pwsh: true
   - task: PowerShell@2
+    displayName: Copy the Context Menu Loc Resources to CascadiaPackage
+    inputs:
+      filePath: ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
+      pwsh: true
+  - task: PowerShell@2
     displayName: Generate NOTICE.html from NOTICE.md
     inputs:
       filePath: .\build\scripts\Generate-ThirdPartyNotices.ps1
       arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
       pwsh: true
-  - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
-    - task: PowerShell@2
-      displayName: Restore PGO Database
-      inputs:
-        filePath: tools/PGODatabase/restore-pgodb.ps1
-        workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln
+      condition: true
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
         clean: true
@@ -167,20 +181,6 @@ jobs:
       inputs:
         PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
         ArtifactName: binlog-$(BuildPlatform)
-    - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
-      - task: PowerShell@2
-        displayName: Validate binaries are optimized
-        condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
-        inputs:
-          targetType: inline
-          script: >-
-            $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
-
-            foreach ($BinFile in $Binaries) {
-
-              & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile"
-
-            }
     - task: PowerShell@2
       displayName: Check MSIX for common regressions
       inputs:
@@ -206,8 +206,6 @@ jobs:
       filePath: build\scripts\Index-Pdbs.ps1
       arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
       errorActionPreference: silentlyContinue
-  - task: ComponentGovernanceComponentDetection@0
-    displayName: Component Detection
   - task: PowerShell@2
     displayName: Run Unit Tests
     condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
@@ -264,6 +262,7 @@ jobs:
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
+
   - task: PublishSymbols@2
     displayName: Publish symbols path
     continueOnError: True
@@ -275,6 +274,9 @@ jobs:
       IndexSources: false
       SymbolServerType: TeamServices
 
+- ${{ if eq(parameters.runCompliance, true) }}:
+  - template: ./templates/build-console-compliance-job.yml
+  
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
     displayName: Create and sign AppX/MSIX bundles
@@ -290,24 +292,22 @@ jobs:
       inputs:
         disableOutputRedirect: true
     - task: DownloadBuildArtifacts@0
-      displayName: Download Artifacts (*.appx, *.msix)
+      displayName: Download Artifacts (*.appx, *.msix, *.appxsym)
       inputs:
         downloadType: specific
         itemPattern: >-
           **/*.msix
 
           **/*.appx
+
+          **/*.appxsym
         extractTars: false
+
     - task: PowerShell@2
       displayName: Create WindowsTerminal*.msixbundle
       inputs:
         filePath: build\scripts\Create-AppxBundle.ps1
         arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-    - task: PowerShell@2
-      displayName: Create WindowsTerminalUniversal*.msixbundle
-      inputs:
-        filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName WindowsTerminalUniversal -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalUniversal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:
@@ -342,6 +342,51 @@ jobs:
                   "ToolVersion": "1.0"
               }
           ]
+
+    # It seems easier to do this -- download every appxsym -- then enumerate all the PDBs in the build directory for the
+    # public symbol push. Otherwise, we would have to list all of the PDB files one by one.
+    - pwsh: |-
+        mkdir $(Build.SourcesDirectory)/appxsym-temp
+        Get-ChildItem "$(System.ArtifactsDirectory)" -Filter *.appxsym -Recurse | % {
+          $src = $_.FullName
+          $dest = Join-Path "$(Build.SourcesDirectory)/appxsym-temp/" $_.Name
+
+          mkdir $dest
+          Write-Host "Extracting $src to $dest..."
+          tar -x -v -f $src -C $dest
+        }
+      displayName: Extract symbols for public consumption
+
+    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
+    - template: .\templates\install-winsdk-steps.yml
+    - task: PowerShell@2
+      displayName: Source Index PDBs (the public ones)
+      inputs:
+        filePath: build\scripts\Index-Pdbs.ps1
+        arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-temp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+
+    # Publish the app symbols to the public MSDL symbol server
+    # accessible via https://msdl.microsoft.com/download/symbols
+    - task: PublishSymbols@2
+      displayName: 'Publish app symbols to MSDL'
+      inputs:
+        symbolsFolder: '$(Build.SourcesDirectory)/appxsym-temp'
+        searchPattern: '**/*.pdb'
+        SymbolsMaximumWaitTime: 30
+        SymbolServerType: 'TeamServices'
+        SymbolsProduct: 'Windows Terminal Application Binaries'
+        SymbolsVersion: '$(XES_APPXMANIFESTVERSION)'
+        # The ADO task does not support indexing of GitHub sources.
+        indexSources: false
+        detailedLog: true
+      # There is a bug which causes this task to fail if LIB includes an inaccessible path (even though it does not depend on it).
+      # To work around this issue, we just force LIB to be any dir that we know exists.
+      # Copied from https://github.com/microsoft/icu/blob/f869c214adc87415dfe751d81f42f1bca55dcf5f/build/azure-nuget.yml#L564-L583
+      env:
+        LIB: $(Build.SourcesDirectory)
+        ArtifactServices_Symbol_AccountName: microsoftpublicsymbols
+        ArtifactServices_Symbol_PAT: $(ADO_microsoftpublicsymbols_PAT)
+
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
       inputs:
@@ -497,7 +542,18 @@ jobs:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       inputs:
         sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed\WindowsTerminal.app
-        description: Windows Terminal pre-install application
+        description: VPack for the Windows Terminal Application
         pushPkgName: WindowsTerminal.app
-        owner: condev
+        owner: conhost
+    - task: PublishPipelineArtifact@1
+      displayName: 'Copy VPack Manifest to Drop'
+      inputs:
+        targetPath: $(XES_VPACKMANIFESTDIRECTORY)
+        artifactName: VPackManifest
+    - task: PkgESFCIBGit@12
+      displayName: 'Submit VPack Manifest to Windows'
+      inputs:
+        configPath: '$(Build.SourcesDirectory)\build\config\GitCheckin.json'
+        artifactsDirectory: $(XES_VPACKMANIFESTDIRECTORY)
+        prTimeOut: 5
 ...

@@ -51,7 +51,6 @@ using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Render;
 
 ATOM Window::s_atomWindowClass = 0;
-Window* Window::s_Instance = nullptr;
 
 Window::Window() :
     _fIsInFullscreen(false),
@@ -68,10 +67,13 @@ Window::Window() :
 
 Window::~Window()
 {
-    if (ServiceLocator::LocateGlobals().pRender != nullptr)
-    {
-        delete ServiceLocator::LocateGlobals().pRender;
-    }
+    delete pGdiEngine;
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+    delete pDxEngine;
+#endif
+#if TIL_FEATURE_ATLASENGINE_ENABLED
+    delete pAtlasEngine;
+#endif
 }
 
 // Routine Description:
@@ -98,7 +100,6 @@ Window::~Window()
 
             if (NT_SUCCESS(status))
             {
-                Window::s_Instance = pNewWindow;
                 LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(pNewWindow));
             }
         }
@@ -210,13 +211,6 @@ void Window::_UpdateSystemMetrics() const
     _UpdateSystemMetrics();
 
     const auto useDx = pSettings->GetUseDx();
-    GdiEngine* pGdiEngine = nullptr;
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-    DxEngine* pDxEngine = nullptr;
-#endif
-#if TIL_FEATURE_ATLASENGINE_ENABLED
-    AtlasEngine* pAtlasEngine = nullptr;
-#endif
     try
     {
         switch (useDx)
@@ -243,6 +237,7 @@ void Window::_UpdateSystemMetrics() const
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
             break;
+#pragma warning(suppress : 4065)
         }
     }
     catch (...)

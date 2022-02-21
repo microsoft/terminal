@@ -114,9 +114,9 @@ class TextBufferTests
 
     TEST_METHOD(TestRgbEraseLine);
 
-    TEST_METHOD(TestUnBold);
-    TEST_METHOD(TestUnBoldRgb);
-    TEST_METHOD(TestComplexUnBold);
+    TEST_METHOD(TestUnintense);
+    TEST_METHOD(TestUnintenseRgb);
+    TEST_METHOD(TestComplexUnintense);
 
     TEST_METHOD(CopyAttrs);
 
@@ -126,8 +126,8 @@ class TextBufferTests
 
     TEST_METHOD(CopyLastAttr);
 
-    TEST_METHOD(TestRgbThenBold);
-    TEST_METHOD(TestResetClearsBoldness);
+    TEST_METHOD(TestRgbThenIntense);
+    TEST_METHOD(TestResetClearsIntensity);
 
     TEST_METHOD(TestBackspaceRightSideVt);
 
@@ -641,6 +641,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     // Case 1 -
     //      Write '\E[m\E[38;2;64;128;255mX\E[49mX\E[m'
@@ -670,10 +671,10 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     const auto fgColor = RGB(64, 128, 255);
-    const auto bgColor = gci.LookupAttributeColors(si.GetAttributes()).second;
+    const auto bgColor = renderSettings.GetAttributeColors(si.GetAttributes()).second;
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
     const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -686,6 +687,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     // Case 2 -
     //      \E[m\E[48;2;64;128;255mX\E[39mX\E[m
@@ -714,10 +716,10 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     const auto bgColor = RGB(64, 128, 255);
-    const auto fgColor = gci.LookupAttributeColors(si.GetAttributes()).first;
+    const auto fgColor = renderSettings.GetAttributeColors(si.GetAttributes()).first;
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
     const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -730,6 +732,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     // Case 3 -
     //      '\E[m\E[48;2;64;128;255mX\E[4mX\E[m'
@@ -756,10 +759,10 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     const auto bgColor = RGB(64, 128, 255);
-    const auto fgColor = gci.LookupAttributeColors(si.GetAttributes()).first;
+    const auto fgColor = renderSettings.GetAttributeColors(si.GetAttributes()).first;
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
     VERIFY_ARE_EQUAL(attrA.IsUnderlined(), false);
     VERIFY_ARE_EQUAL(attrB.IsUnderlined(), true);
@@ -775,6 +778,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
+
     // Case 4 -
     //      '\E[m\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
@@ -803,8 +808,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, bright_green);
 
     const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -817,6 +822,7 @@ void TextBufferTests::TestRgbEraseLine()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -854,27 +860,28 @@ void TextBufferTests::TestRgbEraseLine()
         const auto attr0 = attrs[0];
 
         VERIFY_ARE_EQUAL(attr0.IsLegacy(), false);
-        VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr0).second, RGB(64, 128, 255));
+        VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr0).second, RGB(64, 128, 255));
 
         for (auto i = 1; i < len; i++)
         {
             const auto attr = attrs[i];
             LOG_ATTR(attr);
             VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
-            VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr).second, RGB(128, 128, 255));
+            VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr).second, RGB(128, 128, 255));
         }
         std::wstring reset = L"\x1b[0m";
         stateMachine.ProcessString(reset);
     }
 }
 
-void TextBufferTests::TestUnBold()
+void TextBufferTests::TestUnintense()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -911,20 +918,21 @@ void TextBufferTests::TestUnBold()
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, dark_green);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestUnBoldRgb()
+void TextBufferTests::TestUnintenseRgb()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -965,20 +973,21 @@ void TextBufferTests::TestUnBoldRgb()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, dark_green);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestComplexUnBold()
+void TextBufferTests::TestComplexUnintense()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -1037,23 +1046,23 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(attrE.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrF.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(bright_green, RGB(1, 2, 3)));
-    VERIFY_IS_TRUE(attrA.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(bright_green, RGB(1, 2, 3)));
+    VERIFY_IS_TRUE(attrA.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(dark_green, RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrB.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(dark_green, RGB(1, 2, 3)));
+    VERIFY_IS_FALSE(attrB.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(RGB(32, 32, 32), RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrC.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC), std::make_pair(RGB(32, 32, 32), RGB(1, 2, 3)));
+    VERIFY_IS_FALSE(attrC.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrD), gci.LookupAttributeColors(attrC));
-    VERIFY_IS_TRUE(attrD.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrD), renderSettings.GetAttributeColors(attrC));
+    VERIFY_IS_TRUE(attrD.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrE), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
-    VERIFY_IS_TRUE(attrE.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrE), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
+    VERIFY_IS_TRUE(attrE.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrF), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrF.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrF), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
+    VERIFY_IS_FALSE(attrF.IsIntense());
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -1066,6 +1075,7 @@ void TextBufferTests::CopyAttrs()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -1103,8 +1113,8 @@ void TextBufferTests::CopyAttrs()
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_blue);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_magenta);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, dark_blue);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, dark_magenta);
 }
 
 void TextBufferTests::EmptySgrTest()
@@ -1114,6 +1124,7 @@ void TextBufferTests::EmptySgrTest()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     cursor.SetXPosition(0);
@@ -1121,7 +1132,7 @@ void TextBufferTests::EmptySgrTest()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
 
     // Case 1 -
     //      Write '\x1b[0mX\x1b[31mX\x1b[31;m'
@@ -1156,11 +1167,11 @@ void TextBufferTests::EmptySgrTest()
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(defaultFg, defaultBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(defaultFg, defaultBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(darkRed, defaultBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(darkRed, defaultBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(defaultFg, defaultBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC), std::make_pair(defaultFg, defaultBg));
 
     stateMachine.ProcessString(reset);
 }
@@ -1172,6 +1183,7 @@ void TextBufferTests::TestReverseReset()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
@@ -1180,7 +1192,7 @@ void TextBufferTests::TestReverseReset()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
 
     // Case 1 -
     //      Write '\E[42m\E[38;2;128;5;255mX\E[7mX\E[27mX'
@@ -1217,11 +1229,11 @@ void TextBufferTests::TestReverseReset()
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(rgbColor, dark_green));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(rgbColor, dark_green));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(dark_green, rgbColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(dark_green, rgbColor));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(rgbColor, dark_green));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC), std::make_pair(rgbColor, dark_green));
 
     stateMachine.ProcessString(reset);
 }
@@ -1235,6 +1247,7 @@ void TextBufferTests::CopyLastAttr()
     TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     Cursor& cursor = tbi.GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
@@ -1243,7 +1256,7 @@ void TextBufferTests::CopyLastAttr()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
 
     const COLORREF solFg = RGB(101, 123, 131);
     const COLORREF solBg = RGB(0, 43, 54);
@@ -1330,31 +1343,33 @@ void TextBufferTests::CopyLastAttr()
     LOG_ATTR(attr3B);
     LOG_ATTR(attr3C);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr1A), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr1A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr2A), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr2A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr2B), std::make_pair(solCyan, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr2B), std::make_pair(solCyan, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3A), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr3A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3B), std::make_pair(solCyan, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr3B), std::make_pair(solCyan, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3C), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr3C), std::make_pair(solFg, solBg));
 
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestRgbThenBold()
+void TextBufferTests::TestRgbThenIntense()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
+
     // See MSFT:16398982
     Log::Comment(NoThrowString().Format(
-        L"Test that a bold following a RGB color doesn't remove the RGB color"));
+        L"Test that an intense attribute following a RGB color doesn't remove the RGB color"));
     Log::Comment(L"\"\\x1b[38;2;40;40;40m\\x1b[48;2;168;153;132mX\\x1b[1mX\\x1b[m\"");
     const auto foreground = RGB(40, 40, 40);
     const auto background = RGB(168, 153, 132);
@@ -1373,7 +1388,7 @@ void TextBufferTests::TestRgbThenBold()
         x,
         y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT intense"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1381,22 +1396,24 @@ void TextBufferTests::TestRgbThenBold()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(foreground, background));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(foreground, background));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(foreground, background));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(foreground, background));
 
     const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestResetClearsBoldness()
+void TextBufferTests::TestResetClearsIntensity()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
+
     Log::Comment(NoThrowString().Format(
-        L"Test that resetting bold attributes clears the boldness."));
+        L"Test that resetting intense attributes clears the intensity."));
     const auto x0 = cursor.GetPosition().X;
 
     // Test assumes that the background/foreground were default attribute when it starts up,
@@ -1404,7 +1421,7 @@ void TextBufferTests::TestResetClearsBoldness()
     TextAttribute defaultAttribute;
     si.SetAttributes(defaultAttribute);
 
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
     const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
     const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
@@ -1426,22 +1443,22 @@ void TextBufferTests::TestResetClearsBoldness()
         x,
         y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT intense"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
     LOG_ATTR(attrD);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC).first, defaultFg);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrD).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC).first, defaultFg);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrD).first, dark_green);
 
-    VERIFY_IS_FALSE(attrA.IsBold());
-    VERIFY_IS_TRUE(attrB.IsBold());
-    VERIFY_IS_FALSE(attrC.IsBold());
-    VERIFY_IS_FALSE(attrD.IsBold());
+    VERIFY_IS_FALSE(attrA.IsIntense());
+    VERIFY_IS_TRUE(attrB.IsIntense());
+    VERIFY_IS_FALSE(attrC.IsIntense());
+    VERIFY_IS_FALSE(attrD.IsIntense());
 
     const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -2196,7 +2213,7 @@ void TextBufferTests::MoveByWord()
         Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
         auto pos{ test.startPos };
         const auto result = movingForwards ?
-                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
+                                _buffer->MoveToNextWord(pos, delimiters, til::point{ lastCharPos }) :
                                 _buffer->MoveToPreviousWord(pos, delimiters);
         const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
         VERIFY_ARE_EQUAL(expected, pos);
@@ -2250,7 +2267,7 @@ void TextBufferTests::GetGlyphBoundaries()
     {
         Log::Comment(test.name.c_str());
         auto target = test.start;
-        _buffer->Write(iter, target);
+        _buffer->Write(iter, target.to_win32_coord());
 
         auto start = _buffer->GetGlyphStart(target);
         auto end = _buffer->GetGlyphEnd(target, true);

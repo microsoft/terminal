@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
 
@@ -39,6 +40,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _HelpTextProperty =
                 DependencyProperty::Register(
                     L"HelpText",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
+        if (!_CurrentValueProperty)
+        {
+            _CurrentValueProperty =
+                DependencyProperty::Register(
+                    L"CurrentValue",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });
@@ -135,6 +145,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         }
+
+        if (HelpText().empty())
+        {
+            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            {
+                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
+                {
+                    textBlock.Visibility(Visibility::Collapsed);
+                }
+            }
+        }
     }
 
     // Method Description:
@@ -192,25 +213,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             originTag = profile.Origin();
         }
 
-        if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
+        // We will display arrows for all origins, and informative tooltips for Fragments and Generated
+        if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
         {
-            // EXPERIMENTAL FEATURE
-            // We will display arrows for all origins, and informative tooltips for Fragments and Generated
-            if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
-            {
-                // from a fragment extension or generated profile
-                return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
-            }
-            return RS_(L"SettingContainer_OverrideMessageBaseLayer");
-        }
-
-        // STABLE FEATURE
-        // We will only display arrows and informative tooltips for Fragments
-        if (originTag == Model::OriginTag::Fragment)
-        {
-            // from a fragment extension
+            // from a fragment extension or generated profile
             return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
         }
-        return {}; // no tooltip
+        return RS_(L"SettingContainer_OverrideMessageBaseLayer");
     }
 }

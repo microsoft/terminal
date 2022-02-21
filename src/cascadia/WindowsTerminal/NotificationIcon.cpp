@@ -82,8 +82,8 @@ void NotificationIcon::CreateNotificationIcon()
 
     nid.uCallbackMessage = CM_NOTIFY_FROM_NOTIFICATION_AREA;
 
-    // AppName happens to be in CascadiaPackage's Resources.
-    ScopedResourceLoader loader{ L"Resources" };
+    // AppName happens to be in the ContextMenu's Resources, see GH#12264
+    ScopedResourceLoader loader{ L"TerminalApp/ContextMenu" };
     const auto appNameLoc = loader.GetLocalizedString(L"AppName");
 
     nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
@@ -109,7 +109,7 @@ void NotificationIcon::CreateNotificationIcon()
 // - peasants: The map of all peasants that should be available in the context menu.
 // Return Value:
 // - <none>
-void NotificationIcon::ShowContextMenu(const til::point& coord,
+void NotificationIcon::ShowContextMenu(const til::point coord,
                                        const IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants)
 {
     if (const auto hMenu = _CreateContextMenu(peasants))
@@ -132,7 +132,7 @@ void NotificationIcon::ShowContextMenu(const til::point& coord,
             uFlags |= TPM_LEFTALIGN;
         }
 
-        TrackPopupMenuEx(hMenu, uFlags, gsl::narrow_cast<int>(coord.x()), gsl::narrow_cast<int>(coord.y()), _owningHwnd, NULL);
+        TrackPopupMenuEx(hMenu, uFlags, coord.x, coord.y, _owningHwnd, NULL);
     }
 }
 

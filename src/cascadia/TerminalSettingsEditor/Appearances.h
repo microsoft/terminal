@@ -106,6 +106,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Appearances();
 
+        bool ShowIndistinguishableColorsItem() const noexcept;
+
         // font face
         Windows::Foundation::IInspectable CurrentFontFace() const;
 
@@ -129,16 +131,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsCustomFontWeight();
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
-        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance(), CursorShape);
+        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
 
-        GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance(), BackgroundImageStretchMode);
+        GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
-        GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance(), IntenseTextStyle);
+        GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
         bool _ShowAllFonts;

@@ -11,6 +11,7 @@
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
     X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
+    X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
     X(bool, AdjustIndistinguishableColors, true)
 
@@ -24,7 +25,6 @@
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill)            \
     X(winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center) \
     X(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center)       \
-    X(bool, IntenseIsBold)                                                                                                                      \
     X(bool, RetroTerminalEffect, false)                                                                                                         \
     X(winrt::hstring, PixelShaderPath)
 
@@ -42,6 +42,9 @@
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr) \
     X(bool, TrimBlockSelection, false)                                                                            \
+    X(bool, SuppressApplicationTitle)                                                                             \
+    X(bool, ForceVTInput, false)                                                                                  \
+    X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)
 
 // --------------------------- Control Settings ---------------------------
@@ -59,12 +62,9 @@
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
-    X(winrt::hstring, StartingTitle)                                                                                                                     \
-    X(bool, SuppressApplicationTitle)                                                                                                                    \
     X(winrt::hstring, EnvironmentVariables)                                                                                                              \
     X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
-    X(bool, ForceVTInput, false)                                                                                                                         \
     X(bool, UseAtlasEngine, false)

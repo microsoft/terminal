@@ -14,6 +14,7 @@
 #include "SearchBoxControl.h"
 
 #include "ControlInteractivity.h"
+#include "ControlSettings.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -56,6 +57,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool BracketedPasteEnabled() const noexcept;
+
+        double BackgroundOpacity() const;
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -106,6 +109,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
+
+        void AdjustOpacity(const double opacity, const bool relative);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -270,6 +275,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
+        void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
     };
 }
 

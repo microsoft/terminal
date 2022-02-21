@@ -134,6 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring GetSerializationErrorMessage() const;
 
         // defterm
+        static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
         static bool IsDefaultTerminalAvailable() noexcept;
         static bool IsDefaultTerminalSet() noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
@@ -142,7 +143,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         static const std::filesystem::path& _settingsPath();
-        static std::wstring _normalizeCommandLine(LPCWSTR commandLine);
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
         Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
@@ -155,6 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateMediaResources();
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
+        void _validateCorrectDefaultShellPaths() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
 
         // user settings

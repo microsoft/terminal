@@ -30,6 +30,7 @@ namespace Microsoft.Terminal.Control
     runtimeclass PasteFromClipboardEventArgs
     {
         void HandleClipboardData(String data);
+        Boolean BracketedPasteEnabled { get; };
     }
 
     runtimeclass OpenHyperlinkEventArgs
@@ -66,5 +67,11 @@ namespace Microsoft.Terminal.Control
     runtimeclass TransparencyChangedEventArgs
     {
         Double Opacity { get; };
+    }
+
+
+    runtimeclass FoundResultsArgs
+    {
+        Boolean FoundMatch { get; };
     }
 }

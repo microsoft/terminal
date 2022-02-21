@@ -8,7 +8,6 @@
 #include "output.h"
 #include "handle.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../terminal/adapter/DispatchCommon.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
@@ -137,15 +136,15 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - <none>
 void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
-    if (DispatchCommon::s_ResizeWindow(*_pConApi, data.sx, data.sy))
+    if (_pConApi->ResizeWindow(data.sx, data.sy))
     {
-        DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+        _pConApi->SuppressResizeRepaint();
     }
 }
 
 void PtySignalInputThread::_DoClearBuffer()
 {
-    _pConApi->PrivateClearBuffer();
+    _pConApi->ClearBuffer();
 }
 
 // Method Description:
@@ -170,7 +169,6 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();
-            return false;
         }
         else
         {
@@ -180,7 +178,6 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     else if (dwRead != cbBuffer)
     {
         _Shutdown();
-        return false;
     }
 
     return true;
@@ -233,6 +230,7 @@ void PtySignalInputThread::_Shutdown()
     //      happens if this method is called outside of lock, but if we're
     //      currently locked, we want to make sure ctrl events are handled
     //      _before_ we RundownAndExit.
+    LockConsole();
     ProcessCtrlEvents();
 
     // Make sure we terminate.

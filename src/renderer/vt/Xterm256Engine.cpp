@@ -19,6 +19,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 //      color sequences.
 // Arguments:
 // - textAttributes - Text attributes to use for the colors and character rendition
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
 // - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes: indicates if we should change the background color of
@@ -26,6 +27,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const RenderSettings& /*renderSettings*/,
                                                            const gsl::not_null<IRenderData*> pData,
                                                            const bool /*usingSoftFont*/,
                                                            const bool /*isSettingDefaultBrushes*/) noexcept
@@ -41,28 +43,28 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // Routine Description:
 // - Write a VT sequence to update the character rendition attributes.
 // Arguments:
-// - textAttributes - text attributes (bold, italic, underline, etc.) to use.
+// - textAttributes - text attributes (intense, italic, underline, etc.) to use.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT Xterm256Engine::_UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept
 {
-    // Turning off Bold and Faint must be handled at the same time,
+    // Turning off Intense and Faint must be handled at the same time,
     // since there is only one sequence that resets both of them.
-    const auto boldTurnedOff = !textAttributes.IsBold() && _lastTextAttributes.IsBold();
+    const auto intenseTurnedOff = !textAttributes.IsIntense() && _lastTextAttributes.IsIntense();
     const auto faintTurnedOff = !textAttributes.IsFaint() && _lastTextAttributes.IsFaint();
-    if (boldTurnedOff || faintTurnedOff)
+    if (intenseTurnedOff || faintTurnedOff)
     {
-        RETURN_IF_FAILED(_SetBold(false));
-        _lastTextAttributes.SetBold(false);
+        RETURN_IF_FAILED(_SetIntense(false));
+        _lastTextAttributes.SetIntense(false);
         _lastTextAttributes.SetFaint(false);
     }
 
     // Once we've handled the cases where they need to be turned off,
     // we can then check if either should be turned back on again.
-    if (textAttributes.IsBold() && !_lastTextAttributes.IsBold())
+    if (textAttributes.IsIntense() && !_lastTextAttributes.IsIntense())
     {
-        RETURN_IF_FAILED(_SetBold(true));
-        _lastTextAttributes.SetBold(true);
+        RETURN_IF_FAILED(_SetIntense(true));
+        _lastTextAttributes.SetIntense(true);
     }
     if (textAttributes.IsFaint() && !_lastTextAttributes.IsFaint())
     {

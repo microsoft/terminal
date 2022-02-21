@@ -16,14 +16,14 @@ using namespace Microsoft::Console::Render;
 //      This is an Inclusive rect.
 // Return Value:
 // - S_OK or math failure
-[[nodiscard]] HRESULT GdiEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT GdiEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     RECT rc = _psInvalidData.rcPaint;
 
     SMALL_RECT sr = { 0 };
     RETURN_IF_FAILED(_ScaleByFont(&rc, &sr));
 
-    _invalidCharacters = sr;
+    _invalidCharacters = til::rect{ sr };
 
     area = { &_invalidCharacters, 1 };
 

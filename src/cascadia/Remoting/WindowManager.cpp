@@ -252,8 +252,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (_peasant)
         {
-            // Inform the monarch of the time we were last activated
-            _monarch.HandleActivatePeasant(_peasant.GetLastActivatedArgs());
+            if (const auto& lastActivated{ _peasant.GetLastActivatedArgs() })
+            {
+                // Inform the monarch of the time we were last activated
+                _monarch.HandleActivatePeasant(lastActivated);
+            }
         }
 
         if (!_isKing)
@@ -539,10 +542,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::SummonAllWindows()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
-        {
-            _monarch.SummonAllWindows();
-        }
+        _monarch.SummonAllWindows();
     }
 
     Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetPeasantInfos()

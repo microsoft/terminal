@@ -61,10 +61,15 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMa
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,            SET_FIELD_AND_SIZE(_fInterceptCopyPaste)         },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_TERMINALSCROLLING,             SET_FIELD_AND_SIZE(_TerminalScrolling)           },
     { _RegPropertyType::Dword,          CONSOLE_REGISTRY_USEDX,                         SET_FIELD_AND_SIZE(_fUseDx)                      },
-    { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_COPYCOLOR,                     SET_FIELD_AND_SIZE(_fCopyColor)                  },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_DEFAULTFOREGROUND,             SET_FIELD_AND_SIZE(_colorTable[TextColor::DEFAULT_FOREGROUND]) },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_DEFAULTBACKGROUND,             SET_FIELD_AND_SIZE(_colorTable[TextColor::DEFAULT_BACKGROUND]) },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORCOLOR,                   SET_FIELD_AND_SIZE(_colorTable[TextColor::CURSOR_COLOR]) }
+    { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_COPYCOLOR,                     SET_FIELD_AND_SIZE(_fCopyColor)                  }
+
+    // Special cases that are handled manually in Registry::LoadFromRegistry:
+    // - CONSOLE_REGISTRY_WINDOWPOS
+    // - CONSOLE_REGISTRY_CODEPAGE
+    // - CONSOLE_REGISTRY_COLORTABLE
+    // - CONSOLE_REGISTRY_DEFAULTFOREGROUND
+    // - CONSOLE_REGISTRY_DEFAULTBACKGROUND
+    // - CONSOLE_REGISTRY_CURSORCOLOR
 
 };
 const size_t RegistrySerialization::s_PropertyMappingsSize = ARRAYSIZE(s_PropertyMappings);

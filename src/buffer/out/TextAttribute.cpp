@@ -91,7 +91,7 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
     const auto bg{ attribute.GetBackground() };
     auto copy{ attribute };
     if (fg.IsIndex16() &&
-        attribute.IsBold() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
+        attribute.IsIntense() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
         fg.GetIndex() == (s_ansiDefaultForeground & ~FOREGROUND_INTENSITY))
     {
         // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
@@ -115,48 +115,13 @@ WORD TextAttribute::GetLegacyAttributes() const noexcept
     const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
     const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = IsBold() && _foreground.CanBeBrightened();
+    const bool brighten = IsIntense() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 
 bool TextAttribute::IsLegacy() const noexcept
 {
     return _foreground.IsLegacy() && _background.IsLegacy();
-}
-
-// Routine Description:
-// - Calculates rgb colors based off of current color table and active modification attributes.
-// Arguments:
-// - colorTable: the current color table rgb values.
-// - defaultFgIndex: the color table index of the default foreground color.
-// - defaultBgIndex: the color table index of the default background color.
-// - reverseScreenMode: true if the screen mode is reversed.
-// - blinkingIsFaint: true if blinking should be interpreted as faint. (defaults to false)
-// - boldIsBright: true if "bold" should be interpreted as bright. (defaults to true)
-// Return Value:
-// - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable,
-                                                                const size_t defaultFgIndex,
-                                                                const size_t defaultBgIndex,
-                                                                const bool reverseScreenMode,
-                                                                const bool blinkingIsFaint,
-                                                                const bool boldIsBright) const noexcept
-{
-    auto fg = _foreground.GetColor(colorTable, defaultFgIndex, boldIsBright && IsBold());
-    auto bg = _background.GetColor(colorTable, defaultBgIndex);
-    if (IsFaint() || (IsBlinking() && blinkingIsFaint))
-    {
-        fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
-    }
-    if (IsReverseVideo() ^ reverseScreenMode)
-    {
-        std::swap(fg, bg);
-    }
-    if (IsInvisible())
-    {
-        fg = bg;
-    }
-    return { fg, bg };
 }
 
 // Method description:
@@ -290,9 +255,9 @@ void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
 }
 
-bool TextAttribute::IsBold() const noexcept
+bool TextAttribute::IsIntense() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Intense);
 }
 
 bool TextAttribute::IsFaint() const noexcept
@@ -340,9 +305,9 @@ bool TextAttribute::IsReverseVideo() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
 }
 
-void TextAttribute::SetBold(bool isBold) noexcept
+void TextAttribute::SetIntense(bool isIntense) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Intense, isIntense);
 }
 
 void TextAttribute::SetFaint(bool isFaint) noexcept

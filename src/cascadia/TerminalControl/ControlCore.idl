@@ -54,6 +54,7 @@ namespace Microsoft.Terminal.Control
         String FontFaceName { get; };
         UInt16 FontWeight { get; };
         Double Opacity { get; };
+        Boolean UseAcrylic { get; };
 
         Boolean TrySendKeyEvent(Int16 vkey,
                              Int16 scanCode,
@@ -98,6 +99,8 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
 
+        void AdjustOpacity(Double Opacity, Boolean relative);
+
         event FontSizeChangedEventArgs FontSizeChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
@@ -116,6 +119,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, TransparencyChangedEventArgs> TransparencyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReceivedOutput;
+        event Windows.Foundation.TypedEventHandler<Object, FoundResultsArgs> FoundMatch;
 
     };
 }

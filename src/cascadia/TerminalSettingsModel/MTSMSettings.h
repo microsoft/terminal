@@ -74,7 +74,18 @@ Author(s):
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Graceful)                                                                                  \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
-    X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)
+    X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)                                                                                              \
+    X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
+    X(bool, Elevate, "elevate", false)
+
+// Intentionally omitted Profile settings:
+// * Name
+// * Updates
+// * Guid
+// * Hidden
+// * Source
+// * Padding: needs special FromJson parsing
+// * TabColor: is an optional setting, so needs to be set with INHERITABLE_NULLABLE_SETTING
 
 #define MTSM_FONT_SETTINGS(X)                                                          \
     X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \
@@ -95,3 +106,7 @@ Author(s):
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
     X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", true)
+
+// Intentionally omitted Appearance settings:
+// * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
+// * Opacity: needs special parsing

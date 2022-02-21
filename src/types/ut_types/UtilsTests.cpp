@@ -26,6 +26,10 @@ class UtilsTests
     TEST_METHOD(TestStringToUint);
     TEST_METHOD(TestColorFromXTermColor);
 
+#if !__INSIDE_WINDOWS
+    TEST_METHOD(TestMangleWSLPaths);
+#endif
+
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
 };
@@ -332,3 +336,172 @@ void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)
     std::optional<til::color> color = ColorFromXTermColor(wstr);
     VERIFY_IS_FALSE(color.has_value());
 }
+
+#if !__INSIDE_WINDOWS
+// Windows' compiler dislikes these raw strings...
+void UtilsTests::TestMangleWSLPaths()
+{
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    const auto startingDirectory{ L"SENTINEL" };
+    // MUST MANGLE
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d X ~/bin/sh)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" -d X ~/bin/sh)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl.exe)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl.exe -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl.exe -d X ~/bin/sh)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" -d X ~/bin/sh)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl")", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl.exe")", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl.exe" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("C:\Windows\system32\wsl.exe" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("C:\Windows\system32\wsl.exe" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("C:\windows\system32\wsl" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("C:\windows\system32\wsl" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~/bin)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" ~/bin)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    // MUST NOT MANGLE
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("C:\wsl.exe" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("C:\wsl.exe" -d X)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(C:\wsl.exe)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(C:\wsl.exe)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl --cd C:\)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(wsl --cd C:\)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(wsl ~)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~ -d Ubuntu)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(wsl ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        // Test for GH#11994 - make sure `//wsl$/` paths get mangled back to
+        // `\\wsl$\`, to workaround a potential bug in `wsl --cd`
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(//wsl$/Ubuntu/home/user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl$\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(\\wsl$\Ubuntu\home\user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl$\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        // Same, but with `wsl.localhost`
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(//wsl.localhost/Ubuntu/home/user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl.localhost\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(\\wsl.localhost\Ubuntu\home\user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl.localhost\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    /// Tests for GH #12353
+
+    const auto expectedUserProfilePath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%");
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "~" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~ -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"(wsl ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(ubuntu ~ -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"(ubuntu ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(powershell.exe)", L"~");
+        VERIFY_ARE_EQUAL(LR"(powershell.exe)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+}
+#endif

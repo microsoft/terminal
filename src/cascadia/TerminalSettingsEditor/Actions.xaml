@@ -375,28 +375,30 @@
     </Page.Resources>
 
     <ScrollViewer ViewChanging="ViewChanging">
-        <StackPanel MaxWidth="600"
-                    Spacing="8"
-                    Style="{StaticResource SettingsStackStyle}">
-            <!--  Add New Button  -->
-            <Button x:Name="AddNewButton"
-                    Click="AddNew_Click">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                  Glyph="&#xE710;" />
-                        <TextBlock x:Uid="Actions_AddNewTextBlock"
-                                   Style="{StaticResource IconButtonTextBlockStyle}" />
-                    </StackPanel>
-                </Button.Content>
-            </Button>
+        <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+            <StackPanel MaxWidth="600"
+                        HorizontalAlignment="Left"
+                        Spacing="8"
+                        Style="{StaticResource SettingsStackStyle}">
+                <!--  Add New Button  -->
+                <Button x:Name="AddNewButton"
+                        Click="AddNew_Click">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE710;" />
+                            <TextBlock x:Uid="Actions_AddNewTextBlock"
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
 
-            <!--  Keybindings  -->
-            <ListView x:Name="KeyBindingsListView"
-                      ItemTemplate="{StaticResource KeyBindingTemplate}"
-                      ItemsSource="{x:Bind KeyBindingList, Mode=OneWay}"
-                      SelectionMode="None" />
-        </StackPanel>
-
+                <!--  Keybindings  -->
+                <ListView x:Name="KeyBindingsListView"
+                          ItemTemplate="{StaticResource KeyBindingTemplate}"
+                          ItemsSource="{x:Bind KeyBindingList, Mode=OneWay}"
+                          SelectionMode="None" />
+            </StackPanel>
+        </Border>
     </ScrollViewer>
 </Page>

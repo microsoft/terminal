@@ -15,7 +15,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), initialViewport),
     _fUseAsciiOnly(fUseAsciiOnly),
     _needToDisableCursor(false),
-    _lastCursorIsVisible(false),
+    // GH#12401: Ensure a DECTCEM cursor show/hide sequence
+    // is emitted on the first frame no matter what.
+    _lastCursorIsVisible(Tribool::Invalid),
     _nextCursorIsVisible(true)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
@@ -37,7 +39,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     RETURN_IF_FAILED(VtEngine::StartPaint());
 
-    _trace.TraceLastText(_lastText);
+    _trace.TraceLastText(til::point{ _lastText });
 
     // Prep us to think that the cursor is not visible this frame. If it _is_
     // visible, then PaintCursor will be called, and we'll set this to true
@@ -57,16 +59,16 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        gsl::span<const til::rectangle> dirty;
+        gsl::span<const til::rect> dirty;
         RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
-        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0).to_small_rect());
 
         // If there's more than 1, union them all up with the 1 we already have.
         for (size_t i = 1; i < dirty.size(); ++i)
         {
-            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i).to_small_rect()));
         }
     }
 
@@ -98,31 +100,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     {
         // If the cursor was previously visible, let's hide it for this frame,
         // by prepending a cursor off.
-        if (_lastCursorIsVisible)
+        if (_lastCursorIsVisible != Tribool::False)
         {
             _buffer.insert(0, "\x1b[?25l");
-            _lastCursorIsVisible = false;
+            _lastCursorIsVisible = Tribool::False;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
         // need to worry, it's already off.
     }
 
-    // If the cursor is moving from off -> on (including cases where we just
-    // disabled if for this frame), show the cursor at the end of the frame
-    if (_nextCursorIsVisible && !_lastCursorIsVisible)
+    if (_lastCursorIsVisible != static_cast<Tribool>(_nextCursorIsVisible))
     {
-        RETURN_IF_FAILED(_ShowCursor());
+        RETURN_IF_FAILED(_nextCursorIsVisible ? _ShowCursor() : _HideCursor());
+        _lastCursorIsVisible = static_cast<Tribool>(_nextCursorIsVisible);
     }
-    // Otherwise, if the cursor previously was visible, and it should be hidden
-    // (on -> off), hide it at the end of the frame.
-    else if (!_nextCursorIsVisible && _lastCursorIsVisible)
-    {
-        RETURN_IF_FAILED(_HideCursor());
-    }
-
-    // Update our tracker of what we thought the last cursor state of the
-    // terminal was.
-    _lastCursorIsVisible = _nextCursorIsVisible;
 
     RETURN_IF_FAILED(VtEngine::EndPaint());
 
@@ -136,6 +127,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      16-color attributes.
 // Arguments:
 // - textAttributes - Text attributes to use for the colors and character rendition
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
 // - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes: indicates if we should change the background color of
@@ -143,6 +135,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                        const RenderSettings& /*renderSettings*/,
                                                         const gsl::not_null<IRenderData*> /*pData*/,
                                                         const bool /*usingSoftFont*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
@@ -237,7 +230,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     HRESULT hr = S_OK;
     const auto originalPos = _lastText;
-    _trace.TraceMoveCursor(_lastText, coord);
+    _trace.TraceMoveCursor(til::point{ _lastText }, til::point{ coord });
     bool performedSoftWrap = false;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
@@ -348,18 +341,18 @@ try
 {
     _trace.TraceScrollFrame(_scrollDelta);
 
-    if (_scrollDelta.x() != 0)
+    if (_scrollDelta.x != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
         return InvalidateAll();
     }
-    if (_scrollDelta.y() == 0)
+    if (_scrollDelta.y == 0)
     {
         // There's nothing to do here. Do nothing.
         return S_OK;
     }
 
-    const short dy = _scrollDelta.y<short>();
+    const short dy = _scrollDelta.narrow_y<short>();
     const short absDy = static_cast<short>(abs(dy));
 
     // Save the old wrap state here. We're going to clear it so that
@@ -411,7 +404,7 @@ try
     // position we think we left the cursor.
     //
     // See GH#5113
-    _trace.TraceLastText(_lastText);
+    _trace.TraceLastText(til::point{ _lastText });
     if (_wrappedRow.has_value())
     {
         _wrappedRow.value() += dy;
@@ -430,7 +423,7 @@ try
         // one frame, and the second line in another frame that included other
         // changes _above_ the wrapped line, that we maintain the wrap state in
         // the Terminal.
-        const til::rectangle lastCellOfWrappedRow{
+        const til::rect lastCellOfWrappedRow{
             til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
             til::size{ 1, 1 }
         };
@@ -512,7 +505,7 @@ CATCH_RETURN();
 }
 
 // Method Description:
-// - Wrapper for ITerminalOutputConnection. Write either an ascii-only, or a
+// - Wrapper for _Write. Write either an ascii-only, or a
 //      proper utf-8 string, depending on our mode.
 // Arguments:
 // - wstr - wstring of text to be written

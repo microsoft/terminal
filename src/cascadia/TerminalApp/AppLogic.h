@@ -77,9 +77,12 @@ namespace winrt::TerminalApp::implementation
 
         bool FocusMode() const;
         bool Fullscreen() const;
+        void Maximized(bool newMaximized);
         bool AlwaysOnTop() const;
 
         bool ShouldUsePersistedLayout();
+        bool ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
         hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
         void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
         void IdentifyWindow();
@@ -119,6 +122,7 @@ namespace winrt::TerminalApp::implementation
         bool GetShowTitleInTitlebar();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
+        bool CanShowDialog();
         void DismissDialog();
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
@@ -193,6 +197,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
         FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
         FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
+        FORWARDED_TYPED_EVENT(ChangeMaximizeRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, ChangeMaximizeRequested);
         FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
         FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);

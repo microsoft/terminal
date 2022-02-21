@@ -33,6 +33,8 @@ namespace TerminalApp
         SystemMenuItemHandler Handler { get; };
     };
 
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -66,6 +68,7 @@ namespace TerminalApp
 
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
+        void Maximized(Boolean newMaximized); 
         Boolean AlwaysOnTop { get; };
 
         void IdentifyWindow();
@@ -92,6 +95,8 @@ namespace TerminalApp
         TaskbarState TaskbarState{ get; };
 
         Boolean ShouldUsePersistedLayout();
+        Boolean ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
         String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
         void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
@@ -103,17 +108,13 @@ namespace TerminalApp
 
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
-        // See IDialogPresenter and TerminalPage's DialogPresenter for more
-        // information.
-        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
-        void DismissDialog();
-
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ChangeMaximizeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;

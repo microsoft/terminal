@@ -72,5 +72,14 @@ namespace Microsoft.Terminal.Control
         void ToggleReadOnly();
 
         String ReadEntireBuffer();
+
+        void AdjustOpacity(Double Opacity, Boolean relative);
+
+        // You'd think this should just be "Opacity", but UIElement already
+        // defines an "Opacity", which we're actually not setting at all. We're
+        // not overriding or changing _that_ value. Callers that want the
+        // opacity set by the settings should call this instead.
+        Double BackgroundOpacity { get; };
+
     }
 }

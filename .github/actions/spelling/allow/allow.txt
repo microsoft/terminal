@@ -2,7 +2,10 @@ admins
 apc
 Apc
 bsd
+breadcrumb
+breadcrumbs
 calt
+CMMI
 ccmp
 changelog
 clickable
@@ -37,9 +40,11 @@ img
 inlined
 It'd
 kje
+libfuzzer
 liga
 lje
 Llast
+llvm
 Lmid
 locl
 lorem
@@ -48,11 +53,13 @@ maxed
 mkmk
 mnt
 mru
+noreply
 nje
 noreply
 ogonek
 ok'd
 overlined
+pipeline
 postmodern
 ptys
 qof
@@ -82,3 +89,4 @@ We'd
 wildcards
 yeru
 zhe
+allcolors

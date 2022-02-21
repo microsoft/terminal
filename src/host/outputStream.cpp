@@ -8,6 +8,7 @@
 #include "_stream.h"
 #include "getset.h"
 #include "directio.h"
+#include "output.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -18,21 +19,9 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::StateMachine;
 using Microsoft::Console::VirtualTerminal::TerminalInput;
 
-WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
-    _io{ io },
-    _ntstatus{ STATUS_INVALID_DEVICE_STATE }
+ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
+    _io{ io }
 {
-}
-
-// Routine Description:
-// - Handles the print action from the state machine
-// Arguments:
-// - wch - The character to be printed.
-// Return Value:
-// - <none>
-void WriteBuffer::Print(const wchar_t wch)
-{
-    _DefaultCase(wch);
 }
 
 // Routine Description:
@@ -41,40 +30,7 @@ void WriteBuffer::Print(const wchar_t wch)
 // - string - The string to be printed.
 // Return Value:
 // - <none>
-void WriteBuffer::PrintString(const std::wstring_view string)
-{
-    _DefaultStringCase(string);
-}
-
-// Routine Description:
-// - Handles the execute action from the state machine
-// Arguments:
-// - wch - The C0 control character to be executed.
-// Return Value:
-// - <none>
-void WriteBuffer::Execute(const wchar_t wch)
-{
-    _DefaultCase(wch);
-}
-
-// Routine Description:
-// - Default text editing/printing handler for all characters that were not routed elsewhere by other state machine intercepts.
-// Arguments:
-// - wch - The character to be processed by our default text editing/printing mechanisms.
-// Return Value:
-// - <none>
-void WriteBuffer::_DefaultCase(const wchar_t wch)
-{
-    _DefaultStringCase({ &wch, 1 });
-}
-
-// Routine Description:
-// - Default text editing/printing handler for all characters that were not routed elsewhere by other state machine intercepts.
-// Arguments:
-// - string - The string to be processed by our default text editing/printing mechanisms.
-// Return Value:
-// - <none>
-void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
+void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 {
     size_t dwNumBytes = string.size() * sizeof(wchar_t);
 
@@ -87,21 +43,18 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
     // Defer the cursor drawing while we are iterating the string, for a better performance.
     // We can not waste time displaying a cursor event when we know more text is coming right behind it.
     cursor.StartDeferDrawing();
-    _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
-                                 string.data(),
-                                 string.data(),
-                                 string.data(),
-                                 &dwNumBytes,
-                                 nullptr,
-                                 _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                 WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
-                                 nullptr);
+    const auto ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
+                                           string.data(),
+                                           string.data(),
+                                           string.data(),
+                                           &dwNumBytes,
+                                           nullptr,
+                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
+                                           WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
+                                           nullptr);
     cursor.EndDeferDrawing();
-}
 
-ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
-    _io{ io }
-{
+    THROW_IF_NTSTATUS_FAILED(ntstatus);
 }
 
 // Routine Description:
@@ -109,11 +62,10 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // Arguments:
 // - screenBufferInfo - Structure to hold screen buffer information like the public API call.
 // Return Value:
-// - true if successful (see DoSrvGetConsoleScreenBufferInfo). false otherwise.
-bool ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const
+// - <none>
+void ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const
 {
     ServiceLocator::LocateGlobals().api.GetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo);
-    return true;
 }
 
 // Routine Description:
@@ -121,35 +73,34 @@ bool ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_I
 // Arguments:
 // - screenBufferInfo - Structure containing screen buffer information like the public API call.
 // Return Value:
-// - true if successful (see DoSrvSetConsoleScreenBufferInfo). false otherwise.
-bool ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo)
+// - <none>
+void ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo)
 {
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo));
 }
 
 // Routine Description:
-// - Connects the SetConsoleCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
+// - Connects the SetCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - position - new cursor position to set like the public API call.
 // Return Value:
-// - true if successful (see DoSrvSetConsoleCursorPosition). false otherwise.
-bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
+// - <none>
+void ConhostInternalGetSet::SetCursorPosition(const COORD position)
 {
     auto& info = _io.GetActiveOutputBuffer();
     const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
 }
 
 // Method Description:
 // - Retrieves the current TextAttribute of the active screen buffer.
 // Arguments:
-// - attrs: Receives the TextAttribute value.
+// - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateGetTextAttributes(TextAttribute& attrs) const
+// - the TextAttribute value.
+TextAttribute ConhostInternalGetSet::GetTextAttributes() const
 {
-    attrs = _io.GetActiveOutputBuffer().GetAttributes();
-    return true;
+    return _io.GetActiveOutputBuffer().GetAttributes();
 }
 
 // Method Description:
@@ -158,11 +109,10 @@ bool ConhostInternalGetSet::PrivateGetTextAttributes(TextAttribute& attrs) const
 // Arguments:
 // - attrs: The new TextAttribute to use
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
+// - <none>
+void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 {
     _io.GetActiveOutputBuffer().SetAttributes(attrs);
-    return true;
 }
 
 // Method Description:
@@ -171,12 +121,11 @@ bool ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
 // Arguments:
 // - lineRendition: The new LineRendition attribute to use
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition lineRendition)
+// - <none>
+void ConhostInternalGetSet::SetCurrentLineRendition(const LineRendition lineRendition)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.SetCurrentLineRendition(lineRendition);
-    return true;
 }
 
 // Method Description:
@@ -186,12 +135,11 @@ bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition l
 // - startRow: The row number of first line to be modified
 // - endRow: The row number following the last line to be modified
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow)
+// - <none>
+void ConhostInternalGetSet::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
 {
     auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     textBuffer.ResetLineRenditionRange(startRow, endRow);
-    return true;
 }
 
 // Method Description:
@@ -201,41 +149,35 @@ bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow
 // - row: The row number of the line to measure
 // Return Value:
 // - the number of cells that will fit on the line
-SHORT ConhostInternalGetSet::PrivateGetLineWidth(const size_t row) const
+SHORT ConhostInternalGetSet::GetLineWidth(const size_t row) const
 {
     const auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
     return textBuffer.GetLineWidth(row);
 }
 
 // Routine Description:
-// - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// - Writes events to the input buffer already formed into IInputEvents
 // Arguments:
 // - events - the input events to be copied into the head of the input
 //            buffer for the underlying attached process
 // - eventsWritten - on output, the number of events written
 // Return Value:
-// - true if successful (see DoSrvWriteConsoleInput). false otherwise.
-bool ConhostInternalGetSet::PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                      size_t& eventsWritten)
+// - <none>
+void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
 {
-    eventsWritten = 0;
-
-    return SUCCEEDED(DoSrvPrivateWriteConsoleInputW(_io.GetActiveInputBuffer(),
-                                                    events,
-                                                    eventsWritten,
-                                                    true)); // append
+    eventsWritten = _io.GetActiveInputBuffer()->Write(events);
 }
 
 // Routine Description:
-// - Connects the SetConsoleWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
+// - Connects the SetWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - absolute - Should the window be moved to an absolute position? If false, the movement is relative to the current pos.
 // - window - Info about how to move the viewport
 // Return Value:
-// - true if successful (see DoSrvSetConsoleWindowInfo). false otherwise.
-bool ConhostInternalGetSet::SetConsoleWindowInfo(const bool absolute, const SMALL_RECT& window)
+// - <none>
+void ConhostInternalGetSet::SetWindowInfo(const bool absolute, const SMALL_RECT& window)
 {
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
 }
 
 // Routine Description:
@@ -260,7 +202,7 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
     // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return !(IsConsolePty() && PrivateIsVtInputEnabled());
+    return !(IsConsolePty() && IsVtInputEnabled());
 }
 
 // Routine Description:
@@ -271,12 +213,11 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
 // - mode - the parser mode to change.
 // - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
+// - <none>
+void ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
 {
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
     stateMachine.SetParserMode(mode, enabled);
-    return true;
 }
 
 // Routine Description:
@@ -294,79 +235,91 @@ bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTermi
 }
 
 // Routine Description:
-// - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
+// - Sets the various render modes.
 // Arguments:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// - mode - the render mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetScreenMode). false otherwise.
-bool ConhostInternalGetSet::PrivateSetScreenMode(const bool reverseMode)
+// - <none>
+void ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
 {
-    return NT_SUCCESS(DoSrvPrivateSetScreenMode(reverseMode));
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderSettings = g.getConsoleInformation().GetRenderSettings();
+    renderSettings.SetRenderMode(mode, enabled);
+
+    if (g.pRender)
+    {
+        g.pRender->TriggerRedrawAll();
+    }
 }
 
 // Routine Description:
-// - Connects the PrivateSetAutoWrapMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetAutoWrapMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
+//     to the beginning of the next row when it reaches the end of the current row.
 // Arguments:
 // - wrapAtEOL - set to true to wrap, false to overwrite the last character.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetAutoWrapMode). false otherwise.
-bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
+// - <none>
+void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 {
-    return NT_SUCCESS(DoSrvPrivateSetAutoWrapMode(wrapAtEOL));
+    auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
+    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
 }
 
 // Routine Description:
-// - Connects the PrivateShowCursor call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateShowCursor is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Makes the cursor visible or hidden. Does not modify blinking state.
 // Arguments:
-// - show - set to true to make the cursor visible, false to hide.
+// - visible - set to true to make the cursor visible, false to hide.
 // Return Value:
-// - true if successful (see DoSrvPrivateShowCursor). false otherwise.
-bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
+// - <none>
+void ConhostInternalGetSet::SetCursorVisibility(const bool visible)
 {
-    DoSrvPrivateShowCursor(_io.GetActiveOutputBuffer(), show);
-    return true;
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.GetCursor().SetIsVisible(visible);
 }
 
 // Routine Description:
-// - Connects the PrivateAllowCursorBlinking call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateAllowCursorBlinking is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Enables or disables the cursor blinking.
 // Arguments:
 // - fEnable - set to true to enable blinking, false to disable
 // Return Value:
-// - true if successful (see DoSrvPrivateAllowCursorBlinking). false otherwise.
-bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::EnableCursorBlinking(const bool fEnable)
 {
-    DoSrvPrivateAllowCursorBlinking(_io.GetActiveOutputBuffer(), fEnable);
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.GetCursor().SetBlinkingAllowed(fEnable);
 
-    bool isPty;
-    DoSrvIsConsolePty(isPty);
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    textBuffer.GetCursor().SetIsOn(true);
+
     // If we are connected to a pty, return that we could not handle this
     // so that the VT sequence gets flushed to terminal.
-    // Note: we technically don't need to handle it ourselves at all if
-    // we are connected to a pty (i.e. we could have just returned false
-    // immediately without needing to call DoSrvPrivateAllowCursorBlinking),
-    // but we call it anyway for consistency, just in case.
-    return !isPty;
+    return !IsConsolePty();
 }
 
 // Routine Description:
-// - Connects the PrivateSetScrollingRegion call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetScrollingRegion is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Sets the top and bottom scrolling margins for the current page. This creates
+//     a subsection of the screen that scrolls when input reaches the end of the
+//     region, leaving the rest of the screen untouched.
 // Arguments:
-// - scrollMargins - The bounds of the region to be the scrolling region of the viewport.
+// - scrollMargins - A rect who's Top and Bottom members will be used to set
+//     the new values of the top and bottom margins. If (0,0), then the margins
+//     will be disabled. NOTE: This is a rect in the case that we'll need the
+//     left and right margins in the future.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetScrollingRegion). false otherwise.
-bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins)
+// - <none>
+void ConhostInternalGetSet::SetScrollingRegion(const SMALL_RECT& scrollMargins)
 {
-    return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_io.GetActiveOutputBuffer(), scrollMargins));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
+    srScrollMargins.Top = scrollMargins.Top;
+    srScrollMargins.Bottom = scrollMargins.Bottom;
+    screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
 }
 
 // Method Description:
@@ -375,146 +328,214 @@ bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMa
 // - None
 // Return Value:
 // - true if a line feed also produces a carriage return. false otherwise.
-bool ConhostInternalGetSet::PrivateGetLineFeedMode() const
+bool ConhostInternalGetSet::GetLineFeedMode() const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.IsReturnOnNewlineAutomatic();
 }
 
 // Routine Description:
-// - Connects the PrivateLineFeed call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateLineFeed is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
+// - Performs a line feed, possibly preceded by carriage return.
 // Arguments:
 // - withReturn - Set to true if a carriage return should be performed as well.
 // Return Value:
-// - true if successful (see DoSrvPrivateLineFeed). false otherwise.
-bool ConhostInternalGetSet::PrivateLineFeed(const bool withReturn)
+// - <none>
+void ConhostInternalGetSet::LineFeed(const bool withReturn)
 {
-    return NT_SUCCESS(DoSrvPrivateLineFeed(_io.GetActiveOutputBuffer(), withReturn));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+
+    // We turn the cursor on before an operation that might scroll the viewport, otherwise
+    // that can result in an old copy of the cursor being left behind on the screen.
+    textBuffer.GetCursor().SetIsOn(true);
+
+    // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
+    textBuffer.GetRowByOffset(cursorPosition.Y).SetWrapForced(false);
+
+    cursorPosition.Y += 1;
+    if (withReturn)
+    {
+        cursorPosition.X = 0;
+    }
+    else
+    {
+        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
+    }
+
+    THROW_IF_NTSTATUS_FAILED(AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr));
 }
 
 // Routine Description:
 // - Sends a notify message to play the "SystemHand" sound event.
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateWarningBell()
+// - <none>
+void ConhostInternalGetSet::WarningBell()
 {
-    return _io.GetActiveOutputBuffer().SendNotifyBeep();
+    _io.GetActiveOutputBuffer().SendNotifyBeep();
 }
 
 // Routine Description:
-// - Connects the PrivateReverseLineFeed call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateReverseLineFeed is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Performs a "Reverse line feed", essentially, the opposite of '\n'.
 // Return Value:
-// - true if successful (see DoSrvPrivateReverseLineFeed). false otherwise.
-bool ConhostInternalGetSet::PrivateReverseLineFeed()
+// - <none>
+void ConhostInternalGetSet::ReverseLineFeed()
 {
-    return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_io.GetActiveOutputBuffer()));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    const SMALL_RECT viewport = screenInfo.GetViewport().ToInclusive();
+    const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    newCursorPosition = screenInfo.GetTextBuffer().ClampPositionWithinLine(newCursorPosition);
+
+    // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
+    // We want it to stay exactly where it is.
+    // In that case, shift the buffer contents down, to emulate inserting a line
+    //      at the top of the buffer.
+    if (oldCursorPosition.Y > viewport.Top)
+    {
+        // Cursor is below the top line of the viewport
+        THROW_IF_NTSTATUS_FAILED(AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr));
+    }
+    else
+    {
+        // If we don't have margins, or the cursor is within the boundaries of the margins
+        // It's important to check if the cursor is in the margins,
+        //      If it's not, but the margins are set, then we don't want to scroll anything
+        if (screenInfo.IsCursorInMargins(oldCursorPosition))
+        {
+            // Cursor is at the top of the viewport
+            // Rectangle to cut out of the existing buffer. This is inclusive.
+            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+            SMALL_RECT srScroll;
+            srScroll.Left = 0;
+            srScroll.Right = SHORT_MAX;
+            srScroll.Top = viewport.Top;
+            srScroll.Bottom = viewport.Bottom;
+            // Clip to the DECSTBM margin boundary
+            if (screenInfo.AreMarginsSet())
+            {
+                srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+            }
+            // Paste coordinate for cut text above
+            COORD coordDestination;
+            coordDestination.X = 0;
+            coordDestination.Y = viewport.Top + 1;
+
+            // Note the revealed lines are filled with the standard erase attributes.
+            ScrollRegion(srScroll, srScroll, coordDestination, true);
+        }
+    }
 }
 
 // Routine Description:
-// - Connects the SetConsoleTitleW API call directly into our Driver Message servicing call inside Conhost.exe
+// - Sets the title of the console window.
 // Arguments:
 // - title - The null-terminated string to set as the window title
 // Return Value:
-// - true if successful (see DoSrvSetConsoleTitle). false otherwise.
-bool ConhostInternalGetSet::SetConsoleTitleW(std::wstring_view title)
+// - <none>
+void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 {
-    return SUCCEEDED(DoSrvSetConsoleTitleW(title));
+    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
 }
 
 // Routine Description:
-// - Connects the PrivateUseAlternateScreenBuffer call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateUseAlternateScreenBuffer is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
+//     screen buffer and an alternate. This creates a new alternate, and switches to it.
+//     If there is an already existing alternate, it is discarded.
 // Return Value:
-// - true if successful (see DoSrvPrivateUseAlternateScreenBuffer). false otherwise.
-bool ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
+// - <none>
+void ConhostInternalGetSet::UseAlternateScreenBuffer()
 {
-    return NT_SUCCESS(DoSrvPrivateUseAlternateScreenBuffer(_io.GetActiveOutputBuffer()));
+    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
 }
 
 // Routine Description:
-// - Connects the PrivateUseMainScreenBuffer call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateUseMainScreenBuffer is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Swaps to the main screen buffer. From the alternate buffer, returns to the main screen
+//     buffer. From the main screen buffer, does nothing. The alternate is discarded.
 // Return Value:
-// - true if successful (see DoSrvPrivateUseMainScreenBuffer). false otherwise.
-bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
+// - <none>
+void ConhostInternalGetSet::UseMainScreenBuffer()
 {
-    DoSrvPrivateUseMainScreenBuffer(_io.GetActiveOutputBuffer());
-    return true;
+    _io.GetActiveOutputBuffer().UseMainScreenBuffer();
 }
 
 // Routine Description:
-// - Connects the PrivateEraseAll call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEraseAll is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
-// Arguments:
-// <none>
+// - Performs a VT-style erase all operation on the buffer.
+//      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Return Value:
-// - true if successful (see DoSrvPrivateEraseAll). false otherwise.
-bool ConhostInternalGetSet::PrivateEraseAll()
+// - <none>
+void ConhostInternalGetSet::EraseAll()
 {
-    return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
+    THROW_IF_FAILED(_io.GetActiveOutputBuffer().VtEraseAll());
 }
 
-bool ConhostInternalGetSet::PrivateClearBuffer()
+// Routine Description:
+// - Clears the entire contents of the viewport, except for the cursor's row,
+//     which is moved to the top line of the viewport.
+//     See SCREEN_INFORMATION::ClearBuffer's description for details.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ClearBuffer()
 {
-    return SUCCEEDED(DoSrvPrivateClearBuffer(_io.GetActiveOutputBuffer()));
+    THROW_IF_FAILED(_io.GetActiveOutputBuffer().ClearBuffer());
 }
 
 // Method Description:
 // - Retrieves the current user default cursor style.
 // Arguments:
-// - style - Structure to receive cursor style.
+// - <none>
 // Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::GetUserDefaultCursorStyle(CursorType& style)
+// - the default cursor style.
+CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    style = gci.GetCursorType();
-    return true;
+    return gci.GetCursorType();
 }
 
 // Routine Description:
-// - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
-//   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
+// - Sets the current cursor style.
 // Arguments:
 // - style: The style of cursor to change the cursor to.
 // Return Value:
-// - true if successful (see DoSrvSetCursorStyle). false otherwise.
-bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
+// - <none>
+void ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 {
-    DoSrvSetCursorStyle(_io.GetActiveOutputBuffer(), style);
-    return true;
+    _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetType(style);
 }
 
 // Routine Description:
-// - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// - Forces the renderer to repaint the screen. If the input screen buffer is
+//      not the active one, then just do nothing. We only want to redraw the
+//      screen buffer that requested the repaint, and switching screen buffers
+//      will already force a repaint.
 // Arguments:
 // - <none>
 // Return Value:
-// - true if successful (see DoSrvPrivateRefreshWindow). false otherwise.
-bool ConhostInternalGetSet::PrivateRefreshWindow()
+// - <none>
+void ConhostInternalGetSet::RefreshWindow()
 {
-    DoSrvPrivateRefreshWindow(_io.GetActiveOutputBuffer());
-    return true;
+    auto& g = ServiceLocator::LocateGlobals();
+    if (&_io.GetActiveOutputBuffer() == &g.getConsoleInformation().GetActiveOutputBuffer())
+    {
+        g.pRender->TriggerRedrawAll();
+    }
 }
 
 // Routine Description:
-// - Connects the PrivateWriteConsoleControlInput API call directly into our Driver Message servicing call inside Conhost.exe
+// - Writes the input KeyEvent to the console as a console control event. This
+//      can be used for potentially generating Ctrl-C events, as
+//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in
+//      the same way that it'd be handled from the window proc, with the proper
+//      processed vs raw input handling.
+//  If the input key is *not* a Ctrl-C key, then it will get written to the
+//      buffer just the same as any other KeyEvent.
 // Arguments:
-// - key - a KeyEvent representing a special type of keypress, typically Ctrl-C
+// - key - The keyevent to send to the console.
 // Return Value:
-// - true if successful (see DoSrvPrivateWriteConsoleControlInput). false otherwise.
-bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
+// - <none>
+void ConhostInternalGetSet::WriteControlInput(const KeyEvent key)
 {
-    return SUCCEEDED(DoSrvPrivateWriteConsoleControlInput(_io.GetActiveInputBuffer(),
-                                                          key));
+    HandleGenericKeyEvent(key, false);
 }
 
 // Routine Description:
@@ -522,74 +543,165 @@ bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
 // Arguments:
 // - codepage - the new output codepage of the console.
 // Return Value:
-// - true if successful (see DoSrvSetConsoleOutputCodePage). false otherwise.
-bool ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
+// - <none>
+void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
 {
-    return SUCCEEDED(DoSrvSetConsoleOutputCodePage(codepage));
+    THROW_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
 }
 
 // Routine Description:
-// - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
-// - codepage - receives the outputCP of the console.
+// - <none>
 // Return Value:
-// - true if successful (see DoSrvPrivateWriteConsoleControlInput). false otherwise.
-bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
+// - the outputCP of the console.
+unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 {
-    DoSrvGetConsoleOutputCodePage(codepage);
+    return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+}
+
+// Routine Description:
+// - Resizes the window to the specified dimensions, in characters.
+// Arguments:
+// - width: The new width of the window, in columns
+// - height: The new height of the window, in rows
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height)
+{
+    SHORT sColumns = 0;
+    SHORT sRows = 0;
+
+    THROW_IF_FAILED(SizeTToShort(width, &sColumns));
+    THROW_IF_FAILED(SizeTToShort(height, &sRows));
+    // We should do nothing if 0 is passed in for a size.
+    RETURN_BOOL_IF_FALSE(width > 0 && height > 0);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    GetConsoleScreenBufferInfoEx(csbiex);
+
+    const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
+    const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    // Always resize the width of the console
+    csbiex.dwSize.X = sColumns;
+    // Only set the screen buffer's height if it's currently less than
+    //  what we're requesting.
+    if (sRows > csbiex.dwSize.Y)
+    {
+        csbiex.dwSize.Y = sRows;
+    }
+
+    // SetWindowInfo expect inclusive rects
+    const auto sri = newViewport.ToInclusive();
+
+    // SetConsoleScreenBufferInfoEx however expects exclusive rects
+    const auto sre = newViewport.ToExclusive();
+    csbiex.srWindow = sre;
+
+    SetConsoleScreenBufferInfoEx(csbiex);
+    SetWindowInfo(true, sri);
     return true;
 }
 
 // Routine Description:
-// - Connects the PrivateSuppressResizeRepaint API call directly into our Driver
-//      Message servicing call inside Conhost.exe
+// - Forces the VT Renderer to NOT paint the next resize event. This is used by
+//      InteractDispatch, to prevent resizes from echoing between terminal and host.
 // Arguments:
 // - <none>
 // Return Value:
-// - true if successful (see DoSrvPrivateSuppressResizeRepaint). false otherwise.
-bool ConhostInternalGetSet::PrivateSuppressResizeRepaint()
+// - <none>
+void ConhostInternalGetSet::SuppressResizeRepaint()
 {
-    return SUCCEEDED(DoSrvPrivateSuppressResizeRepaint());
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
 }
 
 // Routine Description:
-// - Connects the IsConsolePty call directly into our Driver Message servicing call inside Conhost.exe
-// - NOTE: This ONE method behaves differently! The rest of the methods on this
-//   interface return true if successful. This one just returns the result.
+// - Checks if the console host is acting as a pty.
 // Arguments:
-// - isPty: receives the bool indicating whether or not we're in pty mode.
+// - <none>
 // Return Value:
 // - true if we're in pty mode.
 bool ConhostInternalGetSet::IsConsolePty() const
 {
-    bool isPty = false;
-    DoSrvIsConsolePty(isPty);
-    return isPty;
+    return ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode();
 }
 
-bool ConhostInternalGetSet::DeleteLines(const size_t count)
+// Routine Description:
+// - Deletes lines in the active screen buffer.
+// Parameters:
+// - count - the number of lines to delete
+void ConhostInternalGetSet::DeleteLines(const size_t count)
 {
-    DoSrvPrivateDeleteLines(count);
-    return true;
+    _modifyLines(count, false);
 }
 
-bool ConhostInternalGetSet::InsertLines(const size_t count)
+// Routine Description:
+// - Inserts lines in the active screen buffer.
+// Parameters:
+// - count - the number of lines to insert
+void ConhostInternalGetSet::InsertLines(const size_t count)
 {
-    DoSrvPrivateInsertLines(count);
-    return true;
+    _modifyLines(count, true);
+}
+
+// Routine Description:
+// - internal logic for adding or removing lines in the active screen buffer
+//   this also moves the cursor to the left margin, which is expected behavior for IL and DL
+// Parameters:
+// - count - the number of lines to modify
+// - insert - true if inserting lines, false if deleting lines
+void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
+{
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    if (screenInfo.IsCursorInMargins(cursorPosition))
+    {
+        // Rectangle to cut out of the existing buffer. This is inclusive.
+        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+        SMALL_RECT srScroll;
+        srScroll.Left = 0;
+        srScroll.Right = SHORT_MAX;
+        srScroll.Top = cursorPosition.Y;
+        srScroll.Bottom = screenInfo.GetViewport().BottomInclusive();
+        // Clip to the DECSTBM margin boundary
+        if (screenInfo.AreMarginsSet())
+        {
+            srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+        }
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        if (insert)
+        {
+            coordDestination.Y = (cursorPosition.Y) + gsl::narrow<short>(count);
+        }
+        else
+        {
+            coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
+        }
+
+        // Note the revealed lines are filled with the standard erase attributes.
+        ScrollRegion(srScroll, srScroll, coordDestination, true);
+
+        // The IL and DL controls are also expected to move the cursor to the left margin.
+        // For now this is just column 0, since we don't yet support DECSLRM.
+        THROW_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition({ 0, cursorPosition.Y }, false));
+    }
 }
 
 // Method Description:
-// - Connects the MoveToBottom call directly into our Driver Message servicing
-//      call inside Conhost.exe
+// - Snaps the screen buffer's viewport to the "virtual bottom", the last place
+//      the viewport was before the user scrolled it (with the mouse or scrollbar)
 // Arguments:
-// <none>
+// - <none>
 // Return Value:
-// - true if successful (see DoSrvPrivateMoveToBottom). false otherwise.
-bool ConhostInternalGetSet::MoveToBottom() const
+// - <none>
+void ConhostInternalGetSet::MoveToBottom()
 {
-    DoSrvPrivateMoveToBottom(_io.GetActiveOutputBuffer());
-    return true;
+    _io.GetActiveOutputBuffer().MoveToBottom();
 }
 
 // Method Description:
@@ -598,17 +710,11 @@ bool ConhostInternalGetSet::MoveToBottom() const
 // - tableIndex: the index of the color table to retrieve.
 // Return Value:
 // - the COLORREF value for the color at that index in the table.
-COLORREF ConhostInternalGetSet::GetColorTableEntry(const size_t tableIndex) const noexcept
-try
+COLORREF ConhostInternalGetSet::GetColorTableEntry(const size_t tableIndex) const
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-
     return gci.GetColorTableEntry(tableIndex);
-}
-catch (...)
-{
-    return INVALID_COLOR;
 }
 
 // Method Description:
@@ -619,24 +725,11 @@ catch (...)
 // - color: the new COLORREF to use as that color table value.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
-try
+bool ConhostInternalGetSet::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-
     gci.SetColorTableEntry(tableIndex, color);
-
-    // If we're setting the default foreground or background colors
-    // we need to make sure the index is correctly set as well.
-    if (tableIndex == TextColor::DEFAULT_FOREGROUND)
-    {
-        gci.SetDefaultForegroundIndex(TextColor::DEFAULT_FOREGROUND);
-    }
-    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
-    {
-        gci.SetDefaultBackgroundIndex(TextColor::DEFAULT_BACKGROUND);
-    }
 
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
@@ -645,41 +738,75 @@ try
         g.pRender->TriggerRedrawAll();
     }
 
-    return true;
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    return !gci.IsInVtIoMode();
 }
-CATCH_RETURN_FALSE()
 
 // Routine Description:
-// - Connects the PrivateFillRegion call directly into our Driver Message servicing
-//    call inside Conhost.exe
-//   PrivateFillRegion is an internal-only "API" call that the vt commands can execute,
-//    but it is not represented as a function call on our public API surface.
+// - Sets the position in the color table for the given color alias.
 // Arguments:
-// - screenInfo - Reference to screen buffer info.
+// - alias: the color alias to update.
+// - tableIndex: the new position of the alias in the color table.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex)
+{
+    auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    renderSettings.SetColorAliasIndex(alias, tableIndex);
+}
+
+// Routine Description:
+// - Fills a region of the screen buffer.
+// Arguments:
 // - startPosition - The position to begin filling at.
 // - fillLength - The number of characters to fill.
 // - fillChar - Character to fill the target region with.
 // - standardFillAttrs - If true, fill with the standard erase attributes.
 //                       If false, fill with the default attributes.
 // Return value:
-// - true if successful (see DoSrvPrivateScrollRegion). false otherwise.
-bool ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
-                                              const size_t fillLength,
-                                              const wchar_t fillChar,
-                                              const bool standardFillAttrs) noexcept
+// - <none>
+void ConhostInternalGetSet::FillRegion(const COORD startPosition,
+                                       const size_t fillLength,
+                                       const wchar_t fillChar,
+                                       const bool standardFillAttrs)
 {
-    return SUCCEEDED(DoSrvPrivateFillRegion(_io.GetActiveOutputBuffer(),
-                                            startPosition,
-                                            fillLength,
-                                            fillChar,
-                                            standardFillAttrs));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+
+    if (fillLength == 0)
+    {
+        return;
+    }
+
+    // For most VT erasing operations, the standard requires that the
+    // erased area be filled with the current background color, but with
+    // no additional meta attributes set. For all other cases, we just
+    // fill with the default attributes.
+    auto fillAttrs = TextAttribute{};
+    if (standardFillAttrs)
+    {
+        fillAttrs = screenInfo.GetAttributes();
+        fillAttrs.SetStandardErase();
+    }
+
+    const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
+    screenInfo.Write(fillData, startPosition, false);
+
+    // Notify accessibility
+    if (screenInfo.HasAccessibilityEventing())
+    {
+        auto endPosition = startPosition;
+        const auto bufferSize = screenInfo.GetBufferSize();
+        bufferSize.MoveInBounds(fillLength - 1, endPosition);
+        screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+    }
 }
 
 // Routine Description:
-// - Connects the PrivateScrollRegion call directly into our Driver Message servicing
-//    call inside Conhost.exe
-//   PrivateScrollRegion is an internal-only "API" call that the vt commands can execute,
-//    but it is not represented as a function call on our public API surface.
+// - Moves a block of data in the screen buffer, optionally limiting the effects
+//      of the move to a clipping rectangle.
 // Arguments:
 // - scrollRect - Region to copy/move (source and size).
 // - clipRect - Optional clip region to contain buffer change effects.
@@ -687,28 +814,37 @@ bool ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
 // - standardFillAttrs - If true, fill with the standard erase attributes.
 //                       If false, fill with the default attributes.
 // Return value:
-// - true if successful (see DoSrvPrivateScrollRegion). false otherwise.
-bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
-                                                const std::optional<SMALL_RECT> clipRect,
-                                                const COORD destinationOrigin,
-                                                const bool standardFillAttrs) noexcept
+// - <none>
+void ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
+                                         const std::optional<SMALL_RECT> clipRect,
+                                         const COORD destinationOrigin,
+                                         const bool standardFillAttrs)
 {
-    return SUCCEEDED(DoSrvPrivateScrollRegion(_io.GetActiveOutputBuffer(),
-                                              scrollRect,
-                                              clipRect,
-                                              destinationOrigin,
-                                              standardFillAttrs));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+
+    // For most VT scrolling operations, the standard requires that the
+    // erased area be filled with the current background color, but with
+    // no additional meta attributes set. For all other cases, we just
+    // fill with the default attributes.
+    auto fillAttrs = TextAttribute{};
+    if (standardFillAttrs)
+    {
+        fillAttrs = screenInfo.GetAttributes();
+        fillAttrs.SetStandardErase();
+    }
+
+    ::ScrollRegion(screenInfo, scrollRect, clipRect, destinationOrigin, UNICODE_SPACE, fillAttrs);
 }
 
 // Routine Description:
 // - Checks if the InputBuffer is willing to accept VT Input directly
-//   PrivateIsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
+//   IsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
 //    but it is not represented as a function call on our public API surface.
 // Arguments:
 // - <none>
 // Return value:
 // - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
-bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
+bool ConhostInternalGetSet::IsVtInputEnabled() const
 {
     return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
 }
@@ -719,17 +855,23 @@ bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
 // Arguments:
 // - The hyperlink URI
 // Return Value:
-// - true
-bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
+// - <none>
+void ConhostInternalGetSet::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
 {
-    DoSrvAddHyperlink(_io.GetActiveOutputBuffer(), uri, params);
-    return true;
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto attr = screenInfo.GetAttributes();
+    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(uri, params);
+    attr.SetHyperlinkId(id);
+    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
+    screenInfo.GetTextBuffer().AddHyperlinkToMap(uri, id);
 }
 
-bool ConhostInternalGetSet::PrivateEndHyperlink() const
+void ConhostInternalGetSet::EndHyperlink() const
 {
-    DoSrvEndHyperlink(_io.GetActiveOutputBuffer());
-    return true;
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto attr = screenInfo.GetAttributes();
+    attr.SetHyperlinkId(0);
+    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
 }
 
 // Routine Description:
@@ -739,10 +881,14 @@ bool ConhostInternalGetSet::PrivateEndHyperlink() const
 // - cellSize - The cell size for an individual glyph.
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
-// - true if successful (see DoSrvUpdateSoftFont). false otherwise.
-bool ConhostInternalGetSet::PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                                  const SIZE cellSize,
-                                                  const size_t centeringHint) noexcept
+// - <none>
+void ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                           const SIZE cellSize,
+                                           const size_t centeringHint)
 {
-    return SUCCEEDED(DoSrvUpdateSoftFont(bitPattern, cellSize, centeringHint));
+    auto* pRender = ServiceLocator::LocateGlobals().pRender;
+    if (pRender)
+    {
+        pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+    }
 }

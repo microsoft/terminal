@@ -156,7 +156,6 @@ namespace winrt::TerminalApp::implementation
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const auto res = Application::Current().Resources();
-
             const auto lightKey = winrt::box_value(L"Light");
             const auto darkKey = winrt::box_value(L"Dark");
             const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
@@ -224,7 +223,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                page->_OpenNewTerminal(NewTerminalArgs());
+                page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
         });
         _newTabButton.Drop([weakThis{ get_weak() }](Windows::Foundation::IInspectable const&, winrt::Windows::UI::Xaml::DragEventArgs e) {
@@ -298,8 +297,118 @@ namespace winrt::TerminalApp::implementation
     // - true if the ApplicationState should be used.
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
-        return Feature_PersistedWindowLayout::IsEnabled() &&
-               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+        return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    }
+
+    // Method Description:
+    // - This is a bit of trickiness: If we're running unelevated, and the user
+    //   passed in only --elevate actions, the we don't _actually_ want to
+    //   restore the layouts here. We're not _actually_ about to create the
+    //   window. We're simply going to toss the commandlines
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if we're not elevated but all relevant pane-spawning actions are elevated
+    bool TerminalPage::ShouldImmediatelyHandoffToElevated(const CascadiaSettings& settings) const
+    {
+        // GH#12267: Don't forget about defterm handoff here. If we're being
+        // created for embedding, then _yea_, we don't need to handoff to an
+        // elevated window.
+        if (!_startupActions || IsElevated() || _shouldStartInboundListener)
+        {
+            // there aren't startup actions, or we're elevated. In that case, go for it.
+            return false;
+        }
+
+        // Check that there's at least one action that's not just an elevated newTab action.
+        for (const auto& action : _startupActions)
+        {
+            NewTerminalArgs newTerminalArgs{ nullptr };
+
+            if (action.Action() == ShortcutAction::NewTab)
+            {
+                const auto& args{ action.Args().try_as<NewTabArgs>() };
+                if (args)
+                {
+                    newTerminalArgs = args.TerminalArgs();
+                }
+                else
+                {
+                    // This was a nt action that didn't have any args. The default
+                    // profile may want to be elevated, so don't just early return.
+                }
+            }
+            else if (action.Action() == ShortcutAction::SplitPane)
+            {
+                const auto& args{ action.Args().try_as<SplitPaneArgs>() };
+                if (args)
+                {
+                    newTerminalArgs = args.TerminalArgs();
+                }
+                else
+                {
+                    // This was a nt action that didn't have any args. The default
+                    // profile may want to be elevated, so don't just early return.
+                }
+            }
+            else
+            {
+                // This was not a new tab or split pane action.
+                // This doesn't affect the outcome
+                continue;
+            }
+
+            // It's possible that newTerminalArgs is null here.
+            // GetProfileForArgs should be resilient to that.
+            const auto profile{ settings.GetProfileForArgs(newTerminalArgs) };
+            if (profile.Elevate())
+            {
+                continue;
+            }
+
+            // The profile didn't want to be elevated, and we aren't elevated.
+            // We're going to open at least one tab, so return false.
+            return false;
+        }
+        return true;
+    }
+
+    // Method Description:
+    // - Escape hatch for immediately dispatching requests to elevated windows
+    //   when first launched. At this point in startup, the window doesn't exist
+    //   yet, XAML hasn't been started, but we need to dispatch these actions.
+    //   We can't just go through ProcessStartupActions, because that processes
+    //   the actions async using the XAML dispatcher (which doesn't exist yet)
+    // - DON'T CALL THIS if you haven't already checked
+    //   ShouldImmediatelyHandoffToElevated. If you're thinking about calling
+    //   this outside of the one place it's used, that's probably the wrong
+    //   solution.
+    // Arguments:
+    // - settings: the settings we should use for dispatching these actions. At
+    //   this point in startup, we hadn't otherwise been initialized with these,
+    //   so use them now.
+    // Return Value:
+    // - <none>
+    void TerminalPage::HandoffToElevated(const CascadiaSettings& settings)
+    {
+        if (!_startupActions)
+        {
+            return;
+        }
+
+        // Hookup our event handlers to the ShortcutActionDispatch
+        _settings = settings;
+        _HookupKeyBindings(_settings.ActionMap());
+        _RegisterActionCallbacks();
+
+        for (const auto& action : _startupActions)
+        {
+            // only process new tabs and split panes. They're all going to the elevated window anyways.
+            if (action.Action() == ShortcutAction::NewTab || action.Action() == ShortcutAction::SplitPane)
+            {
+                _actionDispatch->DoAction(action);
+            }
+        }
     }
 
     // Method Description;
@@ -347,7 +456,7 @@ namespace winrt::TerminalApp::implementation
 
             NewTerminalArgs args;
             args.StartingDirectory(winrt::hstring{ path.wstring() });
-            this->_OpenNewTerminal(args);
+            this->_OpenNewTerminalViaDropdown(args);
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider,
@@ -546,7 +655,28 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
-        _InitializedHandlers(*this, nullptr);
+
+        // GH#632 - It's possible that the user tried to create the terminal
+        // with only one tab, with only an elevated profile. If that happens,
+        // we'll create _another_ process to host the elevated version of that
+        // profile. This can happen from the jumplist, or if the default profile
+        // is `elevate:true`, or from the commandline.
+        //
+        // However, we need to make sure to close this window in that scenario.
+        // Since there aren't any _tabs_ in this window, we won't ever get a
+        // closed event. So do it manually.
+        //
+        // GH#12267: Make sure that we don't instantly close ourselves when
+        // we're readying to accept a defterm connection. In that case, we don't
+        // have a tab yet, but will once we're initialized.
+        if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
+        {
+            _LastTabClosedHandlers(*this, nullptr);
+        }
+        else
+        {
+            _InitializedHandlers(*this, nullptr);
+        }
     }
 
     // Method Description:
@@ -555,10 +685,7 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            presenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
-        }
+        _ShowDialogHelper(L"AboutDialog");
     }
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
@@ -578,6 +705,33 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
+    // Method description:
+    // - Called when the user closes a content dialog
+    // - Tells the presenter to update its knowledge of whether there is a content dialog open
+    void TerminalPage::_DialogCloseClick(const IInspectable&,
+                                         const ContentDialogButtonClickEventArgs&)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.DismissDialog();
+        }
+    }
+
+    // Method Description:
+    // - Helper to show a content dialog
+    // - We only open a content dialog if there isn't one open already
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowDialogHelper(const std::wstring_view& name)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(name).try_as<WUX::Controls::ContentDialog>());
+            }
+        }
+        co_return ContentDialogResult::None;
+    }
+
     // Method Description:
     // - Displays a dialog to warn the user that they are about to close all open windows.
     //   Once the user clicks the OK button, shut down the application.
@@ -586,11 +740,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"QuitDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"QuitDialog");
     }
 
     // Method Description:
@@ -602,22 +752,14 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"CloseAllDialog");
     }
 
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"CloseReadOnlyDialog");
     }
 
     // Method Description:
@@ -630,11 +772,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowMultiLinePasteWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"MultiLinePasteDialog");
     }
 
     // Method Description:
@@ -645,11 +783,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"LargePasteDialog");
     }
 
     // Method Description:
@@ -714,6 +848,9 @@ namespace winrt::TerminalApp::implementation
             auto newWindowRun = WUX::Documents::Run();
             newWindowRun.Text(RS_(L"NewWindowRun/Text"));
             newWindowRun.FontStyle(FontStyle::Italic);
+            auto elevatedRun = WUX::Documents::Run();
+            elevatedRun.Text(RS_(L"ElevatedRun/Text"));
+            elevatedRun.FontStyle(FontStyle::Italic);
 
             auto textBlock = WUX::Controls::TextBlock{};
             textBlock.Inlines().Append(newTabRun);
@@ -721,6 +858,8 @@ namespace winrt::TerminalApp::implementation
             textBlock.Inlines().Append(newPaneRun);
             textBlock.Inlines().Append(WUX::Documents::LineBreak{});
             textBlock.Inlines().Append(newWindowRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(elevatedRun);
 
             auto toolTip = WUX::Controls::ToolTip{};
             toolTip.Content(textBlock);
@@ -730,7 +869,7 @@ namespace winrt::TerminalApp::implementation
                 if (auto page{ weakThis.get() })
                 {
                     NewTerminalArgs newTerminalArgs{ profileIndex };
-                    page->_OpenNewTerminal(newTerminalArgs);
+                    page->_OpenNewTerminalViaDropdown(newTerminalArgs);
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -777,7 +916,7 @@ namespace winrt::TerminalApp::implementation
 
                 WUX::Controls::FontIcon commandPaletteIcon{};
                 commandPaletteIcon.Glyph(L"\xE945");
-                commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
                 commandPaletteFlyout.Icon(commandPaletteIcon);
 
                 commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
@@ -824,7 +963,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout().ShowAt(_newTabButton);
     }
 
-    void TerminalPage::_OpenNewTerminal(const NewTerminalArgs newTerminalArgs)
+    void TerminalPage::_OpenNewTerminalViaDropdown(const NewTerminalArgs newTerminalArgs)
     {
         // if alt is pressed, open a pane
         const CoreWindow window = CoreWindow::GetForCurrentThread();
@@ -840,12 +979,21 @@ namespace winrt::TerminalApp::implementation
                                  WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
                                  WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
 
+        const auto ctrlState{ window.GetKeyState(VirtualKey::Control) };
+        const auto rCtrlState = window.GetKeyState(VirtualKey::RightControl);
+        const auto lCtrlState = window.GetKeyState(VirtualKey::LeftControl);
+        const auto ctrlPressed{ WI_IsFlagSet(ctrlState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(rCtrlState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(lCtrlState, CoreVirtualKeyStates::Down) };
+
         // Check for DebugTap
         bool debugTap = this->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                         WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        if (shiftPressed && !debugTap)
+        const bool dispatchToElevatedWindow = ctrlPressed && !IsElevated();
+
+        if ((shiftPressed || dispatchToElevatedWindow) && !debugTap)
         {
             // Manually fill in the evaluated profile.
             if (newTerminalArgs.ProfileIndex() != nullptr)
@@ -857,11 +1005,26 @@ namespace winrt::TerminalApp::implementation
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
                 }
             }
-            this->_OpenNewWindow(false, newTerminalArgs);
+
+            if (dispatchToElevatedWindow)
+            {
+                _OpenElevatedWT(newTerminalArgs);
+            }
+            else
+            {
+                _OpenNewWindow(newTerminalArgs);
+            }
         }
         else
         {
             const auto newPane = _MakePane(newTerminalArgs);
+            // If the newTerminalArgs caused us to open an elevated window
+            // instead of creating a pane, it may have returned nullptr. Just do
+            // nothing then.
+            if (!newPane)
+            {
+                return;
+            }
             if (altPressed && !debugTap)
             {
                 this->_SplitPane(SplitDirection::Automatic,
@@ -941,8 +1104,8 @@ namespace winrt::TerminalApp::implementation
             // process until later, on another thread, after we've already
             // restored the CWD to it's original value.
             winrt::hstring newWorkingDirectory{ settings.StartingDirectory() };
-            if (newWorkingDirectory.size() <= 1 ||
-                !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
+            if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
+                                                       !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
             { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
                 std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
                 std::filesystem::path cwd{ cwdString };
@@ -1037,6 +1200,12 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called when the users pressed keyBindings while CommandPalette is open.
+    // - As of GH#8480, this is also bound to the TabRowControl's KeyUp event.
+    //   That should only fire when focus is in the tab row, which is hard to
+    //   do. Notably, that's possible:
+    //   - When you have enough tabs to make the little scroll arrows appear,
+    //     click one, then hit tab
+    //   - When Narrator is in Scan mode (which is the a11y bug we're fixing here)
     // - This method is effectively an extract of TermControl::_KeyHandler and TermControl::_TryHandleKeyBinding.
     // Arguments:
     // - e: the KeyRoutedEventArgs containing info about the keystroke.
@@ -1054,7 +1223,7 @@ namespace winrt::TerminalApp::implementation
         // message without vkey or scanCode if a user drags a tab.
         // The KeyChord constructor has a debug assertion ensuring that all KeyChord
         // either have a valid vkey/scanCode. This is important, because this prevents
-        // accidential insertion of invalid KeyChords into classes like ActionMap.
+        // accidental insertion of invalid KeyChords into classes like ActionMap.
         if (!vkey && !scanCode)
         {
             return;
@@ -1440,20 +1609,9 @@ namespace winrt::TerminalApp::implementation
 
         for (auto tab : _tabs)
         {
-            if (auto terminalTab = _GetTerminalTabImpl(tab))
-            {
-                auto tabActions = terminalTab->BuildStartupActions();
-                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
-            }
-            else if (tab.try_as<SettingsTab>())
-            {
-                ActionAndArgs action;
-                action.Action(ShortcutAction::OpenSettings);
-                OpenSettingsArgs args{ SettingsTarget::SettingsUI };
-                action.Args(args);
-
-                actions.emplace_back(std::move(action));
-            }
+            auto t = winrt::get_self<implementation::TabBase>(tab);
+            auto tabActions = t->BuildStartupActions();
+            actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 
         // if the focused tab was not the last tab, restore that
@@ -1481,6 +1639,13 @@ namespace winrt::TerminalApp::implementation
 
         WindowLayout layout{};
         layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+
+        LaunchMode mode = LaunchMode::DefaultMode;
+        WI_SetFlagIf(mode, LaunchMode::FullscreenMode, _isFullscreen);
+        WI_SetFlagIf(mode, LaunchMode::FocusMode, _isInFocusMode);
+        WI_SetFlagIf(mode, LaunchMode::MaximizedMode, _isMaximized);
+
+        layout.LaunchMode({ mode });
 
         // Only save the content size because the tab size will be added on load.
         const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
@@ -1619,13 +1784,29 @@ namespace winrt::TerminalApp::implementation
     {
         const auto focusedTab{ _GetFocusedTabImpl() };
 
-        // Do nothing if no TerminalTab is focused
-        if (!focusedTab)
+        // Clever hack for a crash in startup, with multiple sub-commands. Say
+        // you have the following commandline:
+        //
+        //   wtd nt -p "elevated cmd" ; sp -p "elevated cmd" ; sp -p "Command Prompt"
+        //
+        // Where "elevated cmd" is an elevated profile.
+        //
+        // In that scenario, we won't dump off the commandline immediately to an
+        // elevated window, because it's got the final unelevated split in it.
+        // However, when we get to that command, there won't be a tab yet. So
+        // we'd crash right about here.
+        //
+        // Instead, let's just promote this first split to be a tab instead.
+        // Crash avoided, and we don't need to worry about inserting a new-tab
+        // command in at the start.
+        if (!focusedTab && _tabs.Size() == 0)
         {
-            return;
+            _CreateNewTabFromPane(newPane);
         }
-
-        _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
+        else
+        {
+            _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
+        }
     }
 
     // Method Description:
@@ -1642,6 +1823,14 @@ namespace winrt::TerminalApp::implementation
                                   const float splitSize,
                                   std::shared_ptr<Pane> newPane)
     {
+        // If the caller is calling us with the return value of _MakePane
+        // directly, it's possible that nullptr was returned, if the connections
+        // was supposed to be launched in an elevated window. In that case, do
+        // nothing here. We don't have a pane with which to create the split.
+        if (!newPane)
+        {
+            return;
+        }
         const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
         const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
         const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
@@ -1729,11 +1918,11 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
-    //   isn't a control selected for any reason, returns "Windows Terminal"
+    //   isn't a control selected for any reason, returns "Terminal"
     // Arguments:
     // - <none>
     // Return Value:
-    // - the title of the focused control if there is one, else "Windows Terminal"
+    // - the title of the focused control if there is one, else "Terminal"
     hstring TerminalPage::Title()
     {
         if (_settings.GlobalSettings().ShowTitleInTitlebar())
@@ -1751,7 +1940,7 @@ namespace winrt::TerminalApp::implementation
                 CATCH_LOG();
             }
         }
-        return { L"Windows Terminal" };
+        return { L"Terminal" };
     }
 
     // Method Description:
@@ -1949,7 +2138,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
+            bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste() &&
+                                 !eventArgs.BracketedPasteEnabled();
             if (warnMultiLine)
             {
                 const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
@@ -1964,13 +2155,6 @@ namespace winrt::TerminalApp::implementation
             if (warnMultiLine || warnLargeText)
             {
                 co_await winrt::resume_foreground(Dispatcher());
-
-                if (warnMultiLine)
-                {
-                    const auto focusedTab = _GetFocusedTabImpl();
-                    // Do not warn about multi line pasting if the current tab has bracketed paste enabled.
-                    warnMultiLine = warnMultiLine && !focusedTab->GetActiveTerminalControl().BracketedPasteEnabled();
-                }
 
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
@@ -2244,7 +2428,13 @@ namespace winrt::TerminalApp::implementation
     //   a duplicate of the currently focused pane
     // - existingConnection: optionally receives a connection from the outside
     //   world instead of attempting to create one
-    std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs, const bool duplicate, TerminalConnection::ITerminalConnection existingConnection)
+    // Return Value:
+    // - If the newTerminalArgs required us to open the pane as a new elevated
+    //   connection, then we'll return nullptr. Otherwise, we'll return a new
+    //   Pane for this connection.
+    std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs,
+                                                  const bool duplicate,
+                                                  TerminalConnection::ITerminalConnection existingConnection)
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
@@ -2273,6 +2463,12 @@ namespace winrt::TerminalApp::implementation
         {
             profile = _settings.GetProfileForArgs(newTerminalArgs);
             controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+        }
+
+        // Try to handle auto-elevation
+        if (_maybeElevate(newTerminalArgs, controlSettings, profile))
+        {
+            return nullptr;
         }
 
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
@@ -2607,10 +2803,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFocusMode()
     {
-        _SetFocusMode(!_isInFocusMode);
+        SetFocusMode(!_isInFocusMode);
     }
 
-    void TerminalPage::_SetFocusMode(const bool inFocusMode)
+    void TerminalPage::SetFocusMode(const bool inFocusMode)
     {
         const bool newInFocusMode = inFocusMode;
         if (newInFocusMode != FocusMode())
@@ -2858,6 +3054,25 @@ namespace winrt::TerminalApp::implementation
         _FullscreenChangedHandlers(*this, nullptr);
     }
 
+    // Method Description:
+    // - Updates the page's state for isMaximized when the window changes externally.
+    void TerminalPage::Maximized(bool newMaximized)
+    {
+        _isMaximized = newMaximized;
+    }
+
+    // Method Description:
+    // - Asks the window to change its maximized state.
+    void TerminalPage::RequestSetMaximized(bool newMaximized)
+    {
+        if (_isMaximized == newMaximized)
+        {
+            return;
+        }
+        _isMaximized = newMaximized;
+        _ChangeMaximizeRequestedHandlers(*this, nullptr);
+    }
+
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
@@ -2882,9 +3097,12 @@ namespace winrt::TerminalApp::implementation
         {
             NewTerminalArgs newTerminalArgs;
             newTerminalArgs.Commandline(connection.Commandline());
-            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-            const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
-
+            // GH #12370: We absolutely cannot allow a defterm connection to
+            // auto-elevate. Defterm doesn't work for elevated scenarios in the
+            // first place. If we try accepting the connection, the spawning an
+            // elevated version of the Terminal with that profile... that's a
+            // recipe for disaster. We won't ever open up a tab in this window.
+            newTerminalArgs.Elevate(false);
             _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, connection));
 
             // Request a summon of this window to the foreground
@@ -3260,7 +3478,7 @@ namespace winrt::TerminalApp::implementation
                         // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
                         // If we're entering Quake Mode from Focus Mode, then this will do nothing
                         // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                        _SetFocusMode(true);
+                        SetFocusMode(true);
                         _IsQuakeWindowChangedHandlers(*this, nullptr);
                     }
                 }
@@ -3432,6 +3650,98 @@ namespace winrt::TerminalApp::implementation
         return profile;
     }
 
+    // Function Description:
+    // - Helper to launch a new WT instance elevated. It'll do this by spawning
+    //   a helper process, who will asking the shell to elevate the process for
+    //   us. This might cause a UAC prompt. The elevation is performed on a
+    //   background thread, as to not block the UI thread.
+    // Arguments:
+    // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
+    //   that should be spawned. The Profile should be filled in with the GUID
+    //   of the profile we want to launch.
+    // Return Value:
+    // - <none>
+    // Important: Don't take the param by reference, since we'll be doing work
+    // on another thread.
+    void TerminalPage::_OpenElevatedWT(NewTerminalArgs newTerminalArgs)
+    {
+        // BODGY
+        //
+        // We're going to construct the commandline we want, then toss it to a
+        // helper process called `elevate-shim.exe` that happens to live next to
+        // us. elevate-shim.exe will be the one to call ShellExecute with the
+        // args that we want (to elevate the given profile).
+        //
+        // We can't be the one to call ShellExecute ourselves. ShellExecute
+        // requires that the calling process stays alive until the child is
+        // spawned. However, in the case of something like `wt -p
+        // AlwaysElevateMe`, then the original WT will try to ShellExecute a new
+        // wt.exe (elevated) and immediately exit, preventing ShellExecute from
+        // successfully spawning the elevated WT.
+
+        std::filesystem::path exePath = wil::GetModuleFileNameW<std::wstring>(nullptr);
+        exePath.replace_filename(L"elevate-shim.exe");
+
+        // Build the commandline to pass to wt for this set of NewTerminalArgs
+        std::wstring cmdline{
+            fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str())
+        };
+
+        wil::unique_process_information pi;
+        STARTUPINFOW si{};
+        si.cb = sizeof(si);
+
+        LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(exePath.c_str(),
+                                               cmdline.data(),
+                                               nullptr,
+                                               nullptr,
+                                               FALSE,
+                                               0,
+                                               nullptr,
+                                               nullptr,
+                                               &si,
+                                               &pi));
+
+        // TODO: GH#8592 - It may be useful to pop a Toast here in the original
+        // Terminal window informing the user that the tab was opened in a new
+        // window.
+    }
+
+    // Method Description:
+    // - If the requested settings want us to elevate this new terminal
+    //   instance, and we're not currently elevated, then open the new terminal
+    //   as an elevated instance (using _OpenElevatedWT). Does nothing if we're
+    //   already elevated, or if the control settings don't want to be elevated.
+    // Arguments:
+    // - newTerminalArgs: The NewTerminalArgs for this terminal instance
+    // - controlSettings: The constructed TerminalSettingsCreateResult for this Terminal instance
+    // - profile: The Profile we're using to launch this Terminal instance
+    // Return Value:
+    // - true iff we tossed this request to an elevated window. Callers can use
+    //   this result to early-return if needed.
+    bool TerminalPage::_maybeElevate(const NewTerminalArgs& newTerminalArgs,
+                                     const TerminalSettingsCreateResult& controlSettings,
+                                     const Profile& profile)
+    {
+        // Try to handle auto-elevation
+        const bool requestedElevation = controlSettings.DefaultSettings().Elevate();
+        const bool currentlyElevated = IsElevated();
+
+        // We aren't elevated, but we want to be.
+        if (requestedElevation && !currentlyElevated)
+        {
+            // Manually set the Profile of the NewTerminalArgs to the guid we've
+            // resolved to. If there was a profile in the NewTerminalArgs, this
+            // will be that profile's GUID. If there wasn't, then we'll use
+            // whatever the default profile's GUID is.
+
+            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+            _OpenElevatedWT(newTerminalArgs);
+            return true;
+        }
+        return false;
+    }
+
     // Method Description:
     // - Handles the change of connection state.
     // If the connection state is failure show information bar suggesting to configure termination behavior
@@ -3567,4 +3877,5 @@ namespace winrt::TerminalApp::implementation
 
         applicationState.DismissedMessages(std::move(messages));
     }
+
 }

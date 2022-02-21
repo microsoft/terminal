@@ -59,6 +59,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
                                                    const bool usingSoftFont,
                                                    bool const isSettingDefaultBrushes) noexcept override;
@@ -68,7 +69,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
@@ -81,7 +82,7 @@ namespace Microsoft::Console::Render
 
         LONG _displayHeight;
         LONG _displayWidth;
-        til::rectangle _dirtyArea;
+        til::rect _dirtyArea;
 
         COORD _fontSize;
 

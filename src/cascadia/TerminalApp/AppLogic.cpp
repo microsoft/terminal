@@ -279,23 +279,22 @@ namespace winrt::TerminalApp::implementation
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
-            //
-            // We know at the start, that the root TerminalPage definitely isn't
-            // in focus nor fullscreen mode. So "Toggle" here will always work
-            // to "enable".
             const auto launchMode = this->GetLaunchMode();
-            if (IsQuakeWindow())
+            if (IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
             {
-                _root->ToggleFocusMode();
+                _root->SetFocusMode(true);
             }
-            else if (launchMode == LaunchMode::FullscreenMode)
+
+            // The IslandWindow handles (creating) the maximized state
+            // we just want to record it here on the page as well.
+            if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
             {
-                _root->ToggleFullscreen();
+                _root->Maximized(true);
             }
-            else if (launchMode == LaunchMode::FocusMode ||
-                     launchMode == LaunchMode::MaximizedFocusMode)
+
+            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode))
             {
-                _root->ToggleFocusMode();
+                _root->SetFullscreen(true);
             }
         });
         _root->Create();
@@ -395,6 +394,14 @@ namespace winrt::TerminalApp::implementation
         {
             localDialog.Hide();
         }
+    }
+
+    // Method Description:
+    // - Returns true if there is no dialog currently being shown (meaning that we can show a dialog)
+    // - Returns false if there is a dialog currently being shown (meaning that we cannot show another dialog)
+    bool AppLogic::CanShowDialog()
+    {
+        return (_dialog == nullptr);
     }
 
     // Method Description:
@@ -505,7 +512,25 @@ namespace winrt::TerminalApp::implementation
             if (keyboardServiceIsDisabled)
             {
                 _root->ShowKeyboardServiceWarning();
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "KeyboardServiceWasDisabled",
+                    TraceLoggingDescription("Event emitted when the keyboard service is disabled, and we warned them about it"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             }
+        }
+        else
+        {
+            // For when the warning was disabled in the settings
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "KeyboardServiceWarningWasDisabledBySetting",
+                TraceLoggingDescription("Event emitted when the user has disabled the KB service warning"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
 
         if (FAILED(_settingsLoadedResult))
@@ -662,6 +687,13 @@ namespace winrt::TerminalApp::implementation
         // commandline, then use that to override the value from the settings.
         const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
+        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        {
+            if (layout.LaunchMode())
+            {
+                return layout.LaunchMode().Value();
+            }
+        }
         return valueFromCommandlineArgs.has_value() ?
                    valueFromCommandlineArgs.value() :
                    valueFromSettings;
@@ -1068,18 +1100,18 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
-    //   isn't a control selected for any reason, returns "Windows Terminal"
+    //   isn't a control selected for any reason, returns "Terminal"
     // Arguments:
     // - <none>
     // Return Value:
-    // - the title of the focused control if there is one, else "Windows Terminal"
+    // - the title of the focused control if there is one, else "Terminal"
     hstring AppLogic::Title()
     {
         if (_root)
         {
             return _root->Title();
         }
-        return { L"Windows Terminal" };
+        return { L"Terminal" };
     }
 
     // Method Description:
@@ -1443,6 +1475,14 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->Fullscreen() : false;
     }
 
+    void AppLogic::Maximized(bool newMaximized)
+    {
+        if (_root)
+        {
+            _root->Maximized(newMaximized);
+        }
+    }
+
     bool AppLogic::AlwaysOnTop() const
     {
         return _root ? _root->AlwaysOnTop() : false;
@@ -1456,6 +1496,24 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::ShouldUsePersistedLayout()
     {
         return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
+    }
+
+    bool AppLogic::ShouldImmediatelyHandoffToElevated()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;
+    }
+    void AppLogic::HandoffToElevated()
+    {
+        if (_root)
+        {
+            _root->HandoffToElevated(_settings);
+        }
     }
 
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
@@ -1555,38 +1613,24 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::GetMinimizeToNotificationArea()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            LoadSettings();
+        }
 
-            return _settings.GlobalSettings().MinimizeToNotificationArea();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().MinimizeToNotificationArea();
     }
 
     bool AppLogic::GetAlwaysShowNotificationIcon()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            LoadSettings();
+        }
 
-            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().AlwaysShowNotificationIcon();
     }
 
     bool AppLogic::GetShowTitleInTitlebar()

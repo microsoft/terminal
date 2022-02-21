@@ -37,8 +37,7 @@
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->
-                <local:SettingContainer x:Uid="Globals_DefaultProfile"
-                                        Margin="0">
+                <local:SettingContainer x:Uid="Globals_DefaultProfile">
                     <ComboBox x:Name="DefaultProfile"
                               ItemsSource="{x:Bind DefaultProfiles}"
                               SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
@@ -110,15 +109,18 @@
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Text="{x:Bind Name}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}" />
 
@@ -130,12 +132,13 @@
 
                 <!--  Start on User Login  -->
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
-                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
                 <!--  First Window Behavior  -->
                 <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
-                                        Visibility="{x:Bind ShowFirstWindowPreference}">
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind FirstWindowPreferenceList}"
@@ -145,7 +148,8 @@
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Name="Globals_LaunchMode"
-                                        x:Uid="Globals_LaunchMode">
+                                        x:Uid="Globals_LaunchMode"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind LaunchModeList}"
@@ -153,32 +157,49 @@
                 </local:SettingContainer>
 
                 <!--  Launch Mode  -->
-                <local:SettingContainer x:Uid="Globals_WindowingBehavior">
+                <local:SettingContainer x:Uid="Globals_WindowingBehavior"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind WindowingBehaviorList}"
                                        SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}" />
                 </local:SettingContainer>
-            </StackPanel>
 
-            <!--  Launch Size  -->
-            <StackPanel Style="{StaticResource SettingsStackStyle}">
-                <!--  Header  -->
-                <TextBlock x:Uid="Globals_LaunchSize"
-                           Style="{StaticResource SubtitleTextBlockStyle}" />
-
-                <!--  Columns  -->
-                <local:SettingContainer x:Uid="Globals_InitialCols"
-                                        Margin="0">
-                    <muxc:NumberBox x:Uid="Globals_InitialColsBox"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
-                </local:SettingContainer>
-                <!--  Rows  -->
-                <local:SettingContainer x:Uid="Globals_InitialRows">
-                    <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
+                <local:SettingContainer x:Uid="Globals_LaunchSize"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <Grid ColumnSpacing="10"
+                          RowSpacing="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Uid="Globals_InitialCols"
+                                   Grid.Row="0"
+                                   Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource SettingsPageItemHeaderStyle}" />
+                        <muxc:NumberBox x:Uid="Globals_InitialColsBox"
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
+                        <TextBlock x:Uid="Globals_InitialRows"
+                                   Grid.Row="1"
+                                   Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource SettingsPageItemHeaderStyle}" />
+                        <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
+                    </Grid>
                 </local:SettingContainer>
             </StackPanel>
         </StackPanel>

@@ -14,24 +14,22 @@ Author(s):
 
 #pragma once
 
-#include "../inc/IRenderer.hpp"
-#include "../inc/IRenderThread.hpp"
-
 namespace Microsoft::Console::Render
 {
-    class RenderThread final : public IRenderThread
+    class Renderer;
+
+    class RenderThread
     {
     public:
         RenderThread();
-        virtual ~RenderThread() override;
+        ~RenderThread();
 
-        [[nodiscard]] HRESULT Initialize(_In_ IRenderer* const pRendererParent) noexcept;
+        [[nodiscard]] HRESULT Initialize(Renderer* const pRendererParent) noexcept;
 
-        void NotifyPaint() override;
-
-        void EnablePainting() override;
-        void DisablePainting() override;
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
+        void NotifyPaint() noexcept;
+        void EnablePainting() noexcept;
+        void DisablePainting() noexcept;
+        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) noexcept;
 
     private:
         static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
@@ -43,7 +41,7 @@ namespace Microsoft::Console::Render
         HANDLE _hPaintEnabledEvent;
         HANDLE _hPaintCompletedEvent;
 
-        IRenderer* _pRenderer; // Non-ownership pointer
+        Renderer* _pRenderer; // Non-ownership pointer
 
         bool _fKeepRunning;
         std::atomic<bool> _fNextFrameRequested;

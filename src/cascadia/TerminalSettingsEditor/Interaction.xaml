@@ -27,13 +27,14 @@
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Copy On Select  -->
-            <local:SettingContainer x:Uid="Globals_CopyOnSelect"
-                                    Margin="0">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}" />
+            <local:SettingContainer x:Uid="Globals_CopyOnSelect">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Copy Format  -->
-            <local:SettingContainer x:Uid="Globals_CopyFormat">
+            <local:SettingContainer x:Uid="Globals_CopyFormat"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
@@ -42,16 +43,20 @@
 
             <!--  Trim Block Selection  -->
             <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Trim Paste  -->
             <local:SettingContainer x:Uid="Globals_TrimPaste">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimPaste, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimPaste, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Word Delimiters  -->
-            <local:SettingContainer x:Uid="Globals_WordDelimiters">
+            <local:SettingContainer x:Uid="Globals_WordDelimiters"
+                                    CurrentValue="{x:Bind State.Globals.WordDelimiters, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <TextBox IsSpellCheckEnabled="False"
                          Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" />
@@ -59,11 +64,13 @@
 
             <!--  Snap On Resize  -->
             <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Tab Switcher Mode  -->
-            <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
+            <local:SettingContainer x:Uid="Globals_TabSwitcherMode"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
@@ -72,12 +79,14 @@
 
             <!--  Focus Follow Mouse Mode  -->
             <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Detect URLs  -->
             <local:SettingContainer x:Uid="Globals_DetectURLs">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.DetectURLs, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind State.Globals.DetectURLs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>

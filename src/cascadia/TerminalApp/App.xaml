@@ -21,7 +21,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <!--  Include the MUX Controls resources  -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"
-                                       ControlsResourcesVersion="Version1" />
+                                       ControlsResourcesVersion="Version2" />
                 <ResourceDictionary>
 
                     <!--
@@ -54,20 +54,34 @@
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!--  Define resources for Dark mode here  -->
-                            <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#FF333333" />
 
-                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
-                                             Color="#FF333333" />
+                            <!--
+                                This is the color of
+                                ApplicationPageBackgroundThemeBrush, which is
+                                evaluated as SolidBackgroundFillColorBase. If we try
+                                to use those resources directly though, we don't get
+                                the properly themed versions. Presumably because the
+                                App itself can't have it's RequestedTheme changed at
+                                runtime.
+                                
+                                See GH #12356 for more history on the subject.
+                            -->
+                            <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#202020" />
+
+                            <StaticResource x:Key="UnfocusedBorderBrush"
+                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!--  Define resources for Light mode here  -->
                             <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#FFCCCCCC" />
+                                             Color="#F3F3F3" />
 
-                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
-                                             Color="#FFCCCCCC" />
+                            <StaticResource x:Key="UnfocusedBorderBrush"
+                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

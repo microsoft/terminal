@@ -18,9 +18,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Guid ProfileGuid { get; };
     }
 
-    enum ProfilesPivots
+    enum ProfileSubPage
     {
-        General = 0,
+        Base = 0,
         Appearance = 1,
         Advanced = 2
     };
@@ -29,7 +29,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         static Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
         static Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
-        static ProfilesPivots LastActivePivot;
 
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
@@ -54,6 +53,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
+        ProfileSubPage CurrentPage;
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };
         AppearanceViewModel DefaultAppearance { get; };
@@ -93,5 +93,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAtlasEngine);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
     }
 }

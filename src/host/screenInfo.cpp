@@ -105,7 +105,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         IWindowMetrics* pMetrics = ServiceLocator::LocateWindowMetrics();
         THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
-        IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        const auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         // It is possible for pNotifier to be null and that's OK.
         // For instance, the PTY doesn't need to send events. Just pass it along
         // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
@@ -255,8 +255,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     try
     {
         auto getset = std::make_unique<ConhostInternalGetSet>(*this);
-        auto defaults = std::make_unique<WriteBuffer>(*this);
-        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), std::move(defaults));
+        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset));
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
@@ -1020,6 +1019,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
         // 1. Delete input string if necessary (see menu.c)
         commandLine.Hide(FALSE);
+
+        const auto savedCursorVisibility = _textBuffer->GetCursor().IsVisible();
         _textBuffer->GetCursor().SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
@@ -1028,7 +1029,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // MSFT:19976291 Don't re-show the commandline here. We need to wait for
         //      the viewport to also get resized before we can re-show the commandline.
         //      ProcessResizeWindow will call commandline.Show() for us.
-        _textBuffer->GetCursor().SetIsVisible(true);
+        _textBuffer->GetCursor().SetIsVisible(savedCursorVisibility);
 
         // Return S_OK, to indicate we succeeded and actually did something.
         hr = S_OK;
@@ -2310,7 +2311,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 //      sequence we didn't understand to.
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* const pTtyConnection)
+void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnection)
 {
     OutputStateMachineEngine& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     if (pTtyConnection)
@@ -2710,7 +2711,7 @@ const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 // - Gets the desired font of the screen buffer. If we try loading this font and
 //      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
 //      We store this separately, so that if we need to reload the font, we can
-//      try again with our prefered font info (in the desired font info) instead
+//      try again with our preferred font info (in the desired font info) instead
 //      of re-using the looked up value from before.
 // Arguments:
 // - <none>

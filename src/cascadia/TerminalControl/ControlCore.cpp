@@ -122,7 +122,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto* const localPointerToThread = renderThread.get();
 
             // Now create the renderer and initialize the render thread.
-            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
+            const auto& renderSettings = _terminal->GetRenderSettings();
+            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
 
             _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
                 if (auto strongThis{ weakThis.get() })
@@ -281,7 +282,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
             _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
-            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
 
             _updateAntiAliasingMode();
 
@@ -423,7 +423,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const short wheelDelta,
                                      const TerminalInput::MouseButtonState state)
     {
-        return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
+        return _terminal->SendMouseEvent(viewportPos.to_win32_coord(), uiButton, states, wheelDelta, state);
     }
 
     void ControlCore::UserScrollViewport(const int viewTop)
@@ -445,11 +445,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto newOpacity = std::clamp(Opacity() + adjustment,
-                                     0.0,
-                                     1.0);
+        _setOpacity(Opacity() + adjustment);
+    }
 
-        auto lock = _terminal->LockForWriting();
+    void ControlCore::_setOpacity(const double opacity)
+    {
+        const auto newOpacity = std::clamp(opacity,
+                                           0.0,
+                                           1.0);
+
+        if (newOpacity == Opacity())
+        {
+            return;
+        }
+
         // Update our runtime opacity value
         Opacity(newOpacity);
 
@@ -469,6 +478,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _renderer->NotifyPaintFrame();
         }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
@@ -537,12 +547,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
-        decltype(_terminal->GetHyperlinkIntervalFromPosition(til::point{})) newInterval{ std::nullopt };
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
-            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
-            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+            newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition->to_win32_coord());
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition->to_win32_coord());
         }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
@@ -568,11 +578,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::hstring ControlCore::GetHyperlink(const til::point pos) const
+    winrt::hstring ControlCore::GetHyperlink(const Core::Point pos) const
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(pos) };
+        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }.to_win32_coord()) };
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -580,14 +590,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
+            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(_lastHoveredCell->to_win32_coord()) };
         }
         return {};
     }
 
     Windows::Foundation::IReference<Core::Point> ControlCore::HoveredCell() const
     {
-        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value() } : nullptr;
+        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value().to_core_point() } : nullptr;
     }
 
     // Method Description:
@@ -668,7 +678,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
-            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
             _renderer->TriggerRedrawAll();
         }
     }
@@ -908,16 +917,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto dpi = (float)(scale * USER_DEFAULT_SCREEN_DPI);
-
         const auto actualFontOldSize = _actualFont.GetSize();
 
         auto lock = _terminal->LockForWriting();
         _compositionScale = scale;
 
-        _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi),
-                                     _desiredFont,
-                                     _actualFont);
+        // _updateFont relies on the new _compositionScale set above
+        _updateFont();
 
         const auto actualFontNewSize = _actualFont.GetSize();
         if (actualFontNewSize != actualFontOldSize)
@@ -929,7 +935,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::SetSelectionAnchor(til::point const& position)
     {
         auto lock = _terminal->LockForWriting();
-        _terminal->SetSelectionAnchor(position);
+        _terminal->SetSelectionAnchor(position.to_win32_coord());
     }
 
     // Method Description:
@@ -947,16 +953,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // you move its endpoints while it is generating a frame.
         auto lock = _terminal->LockForWriting();
 
-        const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
-        const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
-
         til::point terminalPosition{
-            std::clamp<short>(position.x<short>(), 0, lastVisibleCol),
-            std::clamp<short>(position.y<short>(), 0, lastVisibleRow)
+            std::clamp(position.x, 0, _terminal->GetViewport().Width() - 1),
+            std::clamp(position.y, 0, _terminal->GetViewport().Height() - 1)
         };
 
         // save location (for rendering) + render
-        _terminal->SetSelectionEnd(terminalPosition);
+        _terminal->SetSelectionEnd(terminalPosition.to_win32_coord());
         _renderer->TriggerSelection();
     }
 
@@ -995,6 +998,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             textData += text;
         }
 
+        const auto bgColor = _terminal->GetAttributeColors({}).second;
+
         // convert text to HTML format
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
@@ -1003,7 +1008,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      til::color{ _settings->DefaultBackground() }) :
+                                                      bgColor) :
                                   "";
 
         // convert to RTF format
@@ -1011,7 +1016,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    til::color{ _settings->DefaultBackground() }) :
+                                                    bgColor) :
                                  "";
 
         if (!_settings->CopyOnSelect())
@@ -1101,7 +1106,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return til::color{ _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
+        return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultBackground);
     }
 
     // Method Description:
@@ -1308,12 +1313,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
-        if (search.FindNext())
+        const bool foundMatch{ search.FindNext() };
+        if (foundMatch)
         {
             _terminal->SetBlockSelection(false);
             search.Select();
             _renderer->TriggerSelection();
         }
+
+        // Raise a FoundMatch event, which the control will use to notify
+        // narrator if there was any results in the buffer
+        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
+        _FoundMatchHandlers(*this, *foundResults);
     }
 
     // Method Description:
@@ -1387,8 +1398,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         auto& renderTarget = *_renderer;
-        auto& blinkingState = _terminal->GetBlinkingState();
-        blinkingState.ToggleBlinkingRendition(renderTarget);
+        auto& renderSettings = _terminal->GetRenderSettings();
+        renderSettings.ToggleBlinkRendition(renderTarget);
     }
 
     void ControlCore::BlinkCursor()
@@ -1422,7 +1433,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal != nullptr && _terminal->IsTrackingMouseInput();
     }
 
-    til::point ControlCore::CursorPosition() const
+    Core::Point ControlCore::CursorPosition() const
     {
         // If we haven't been initialized yet, then fake it.
         if (!_initializedTerminal)
@@ -1431,7 +1442,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForReading();
-        return _terminal->GetCursorPosition();
+        return til::point{ _terminal->GetCursorPosition() }.to_core_point();
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
@@ -1483,7 +1494,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If shift is pressed and there is a selection we extend it using
             // the selection mode (expand the "end" selection point)
-            _terminal->SetSelectionEnd(terminalPosition, mode);
+            _terminal->SetSelectionEnd(terminalPosition.to_win32_coord(), mode);
             selectionNeedsToBeCopied = true;
         }
         else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
@@ -1491,7 +1502,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
             // (expand both "start" and "end" selection points)
-            _terminal->MultiClickSelection(terminalPosition, mode);
+            _terminal->MultiClickSelection(terminalPosition.to_win32_coord(), mode);
             selectionNeedsToBeCopied = true;
         }
 
@@ -1699,6 +1710,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _settings->FocusedAppearance()->SetColorTableEntry(15, scheme.BrightWhite);
 
         _terminal->ApplyScheme(scheme);
+
         _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
         _renderer->TriggerRedrawAll();
@@ -1708,6 +1720,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::HasUnfocusedAppearance() const
     {
         return _settings->HasUnfocusedAppearance();
+    }
+
+    void ControlCore::AdjustOpacity(const double opacityAdjust, const bool relative)
+    {
+        if (relative)
+        {
+            AdjustOpacity(opacityAdjust);
+        }
+        else
+        {
+            _setOpacity(opacityAdjust);
+        }
     }
 
     bool ControlCore::_isBackgroundTransparent()

@@ -20,9 +20,9 @@ Revision History:
 #include <til/bit.h>
 
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
-#define INIT_TEST_PROPERTY(type, identifer, description) \
-    type identifer;                                      \
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L## #identifer, identifer), description);
+#define INIT_TEST_PROPERTY(type, identifier, description) \
+    type identifier;                                      \
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L## #identifier, identifier), description);
 
 // Thinking of adding a new VerifyOutputTraits for a new type? MAKE SURE that
 // you include this header (or at least the relevant definition) before _every_
@@ -242,65 +242,13 @@ namespace WEX::TestExecution
     public:
         static bool AreEqual(const CONSOLE_SCREEN_BUFFER_INFOEX& expected, const CONSOLE_SCREEN_BUFFER_INFOEX& actual)
         {
-            return expected.bFullscreenSupported == actual.bFullscreenSupported &&
-                   expected.wAttributes == actual.wAttributes &&
-                   expected.wPopupAttributes == actual.wPopupAttributes &&
-                   VerifyCompareTraits<COORD>::AreEqual(expected.dwCursorPosition, actual.dwCursorPosition) &&
-                   VerifyCompareTraits<COORD>::AreEqual(expected.dwSize, actual.dwSize) &&
-                   VerifyCompareTraits<COORD>::AreEqual(expected.dwMaximumWindowSize, actual.dwMaximumWindowSize) &&
-                   VerifyCompareTraits<SMALL_RECT>::AreEqual(expected.srWindow, actual.srWindow) &&
-                   expected.ColorTable[0] == actual.ColorTable[0] &&
-                   expected.ColorTable[1] == actual.ColorTable[1] &&
-                   expected.ColorTable[2] == actual.ColorTable[2] &&
-                   expected.ColorTable[3] == actual.ColorTable[3] &&
-                   expected.ColorTable[4] == actual.ColorTable[4] &&
-                   expected.ColorTable[5] == actual.ColorTable[5] &&
-                   expected.ColorTable[6] == actual.ColorTable[6] &&
-                   expected.ColorTable[7] == actual.ColorTable[7] &&
-                   expected.ColorTable[8] == actual.ColorTable[8] &&
-                   expected.ColorTable[9] == actual.ColorTable[9] &&
-                   expected.ColorTable[10] == actual.ColorTable[10] &&
-                   expected.ColorTable[11] == actual.ColorTable[11] &&
-                   expected.ColorTable[12] == actual.ColorTable[12] &&
-                   expected.ColorTable[13] == actual.ColorTable[13] &&
-                   expected.ColorTable[14] == actual.ColorTable[14] &&
-                   expected.ColorTable[15] == actual.ColorTable[15];
+            static_assert(std::has_unique_object_representations_v<CONSOLE_SCREEN_BUFFER_INFOEX>);
+            return memcmp(&expected, &actual, sizeof(CONSOLE_SCREEN_BUFFER_INFOEX)) == 0;
         }
 
         static bool AreSame(const CONSOLE_SCREEN_BUFFER_INFOEX& expected, const CONSOLE_SCREEN_BUFFER_INFOEX& actual)
         {
             return &expected == &actual;
-        }
-
-        static bool IsLessThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater) = delete;
-
-        static bool IsGreaterThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess) = delete;
-
-        static bool IsNull(const CONSOLE_SCREEN_BUFFER_INFOEX& object)
-        {
-            return object.bFullscreenSupported == 0 &&
-                   object.wAttributes == 0 &&
-                   object.wPopupAttributes == 0 &&
-                   VerifyCompareTraits<COORD>::IsNull(object.dwCursorPosition) &&
-                   VerifyCompareTraits<COORD>::IsNull(object.dwSize) &&
-                   VerifyCompareTraits<COORD>::IsNull(object.dwMaximumWindowSize) &&
-                   VerifyCompareTraits<SMALL_RECT>::IsNull(object.srWindow) &&
-                   object.ColorTable[0] == 0x0 &&
-                   object.ColorTable[1] == 0x0 &&
-                   object.ColorTable[2] == 0x0 &&
-                   object.ColorTable[3] == 0x0 &&
-                   object.ColorTable[4] == 0x0 &&
-                   object.ColorTable[5] == 0x0 &&
-                   object.ColorTable[6] == 0x0 &&
-                   object.ColorTable[7] == 0x0 &&
-                   object.ColorTable[8] == 0x0 &&
-                   object.ColorTable[9] == 0x0 &&
-                   object.ColorTable[10] == 0x0 &&
-                   object.ColorTable[11] == 0x0 &&
-                   object.ColorTable[12] == 0x0 &&
-                   object.ColorTable[13] == 0x0 &&
-                   object.ColorTable[14] == 0x0 &&
-                   object.ColorTable[15] == 0x0;
         }
     };
 

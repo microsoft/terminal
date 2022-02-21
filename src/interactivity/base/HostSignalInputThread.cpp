@@ -163,7 +163,6 @@ bool HostSignalInputThread::_GetData(gsl::span<gsl::byte> buffer)
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();
-            return false;
         }
 
         THROW_WIN32(lastError);
@@ -172,7 +171,6 @@ bool HostSignalInputThread::_GetData(gsl::span<gsl::byte> buffer)
     if (bytesRead != buffer.size())
     {
         _Shutdown();
-        return false;
     }
 
     return true;

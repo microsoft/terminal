@@ -11,6 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\CodepointWidthDetector.cpp" />
+    <ClCompile Include="..\ColorFix.cpp" />
     <ClCompile Include="..\convert.cpp" />
     <ClCompile Include="..\colorTable.cpp" />
     <ClCompile Include="..\Environment.cpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="..\IBaseData.h" />
     <ClInclude Include="..\IControlAccessibilityInfo.h" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
+    <ClInclude Include="..\inc\ColorFix.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\inc\colorTable.hpp" />
     <ClInclude Include="..\inc\Environment.hpp" />

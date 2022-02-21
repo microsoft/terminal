@@ -241,6 +241,9 @@ private:
 
     bool _zoomed{ false };
 
+    winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
+    winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
@@ -291,6 +294,8 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
+
+    winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

@@ -13,6 +13,20 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    enum BreadcrumbSubPage
+    {
+        None = 0,
+        Profile_Appearance,
+        Profile_Advanced
+    };
+
+    runtimeclass Breadcrumb
+    {
+        IInspectable Tag;
+        String Label;
+        BreadcrumbSubPage SubPage;
+    }
+
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
     {
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
@@ -24,6 +38,6 @@ namespace Microsoft.Terminal.Settings.Editor
         // Let's just smuggle the HWND in as a UInt64 :|
         void SetHostingWindow(UInt64 window);
 
-        Boolean ShowBaseLayerMenuItem { get; };
+        Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
     }
 }
