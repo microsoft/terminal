@@ -910,7 +910,7 @@ Viewport Viewport::ToOrigin() const noexcept
 }
 
 // Function Description:
-// - Creates a viewport from the intersection fo both the parameter viewports.
+// - Creates a viewport from the intersection of both the parameter viewports.
 //      The result will be the smallest area that fits within both rectangles.
 // Arguments:
 // - lhs: one of the viewports to intersect

@@ -85,7 +85,8 @@ namespace SettingsModelLocalTests
         for (int i = 0; i < expectedArgc; ++i)
         {
             const bool useQuotes = static_cast<bool>(rng(2));
-            const auto count = static_cast<size_t>(rng(64));
+            // We need to ensure there is at least one character
+            const auto count = static_cast<size_t>(rng(64) + 1);
             const auto ch = static_cast<wchar_t>(rng('z' - 'a' + 1) + 'a');
 
             if (i != 0)
@@ -107,6 +108,7 @@ namespace SettingsModelLocalTests
                 input.push_back(L'"');
             }
         }
+        Log::Comment(NoThrowString().Format(input.c_str()));
 
         int argc;
         wil::unique_hlocal_ptr<PWSTR[]> argv{ ::CommandLineToArgvW(input.c_str(), &argc) };
@@ -168,10 +170,18 @@ namespace SettingsModelLocalTests
         touch(file1);
         touch(file2);
 
-        const auto commandLine = file2.native() + LR"( -foo "bar1 bar2" -baz)"s;
-        const auto expected = file2.native() + L"\0-foo\0bar1 bar2\0-baz"s;
-        const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine.c_str());
-        VERIFY_ARE_EQUAL(expected, actual);
+        {
+            const auto commandLine = file2.native() + LR"( -foo "bar1 bar2" -baz)"s;
+            const auto expected = file2.native() + L"\0-foo\0bar1 bar2\0-baz"s;
+            const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine.c_str());
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+        {
+            const auto commandLine = L"C:\\";
+            const auto expected = L"C:\\";
+            const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine);
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
     }
 
     void TerminalSettingsTests::GetProfileForArgsWithCommandline()

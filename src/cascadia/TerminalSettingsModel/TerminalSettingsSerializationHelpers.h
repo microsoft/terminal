@@ -133,7 +133,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 };
 
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
-// value type (unsinged int) and return type (FontWeight struct). JSON_ENUM_MAPPER
+// value type (unsigned int) and return type (FontWeight struct). JSON_ENUM_MAPPER
 // expects that the value type _is_ the return type.
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight> :

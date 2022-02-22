@@ -936,7 +936,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // message without vkey or scanCode if a user drags a tab.
         // The KeyChord constructor has a debug assertion ensuring that all KeyChord
         // either have a valid vkey/scanCode. This is important, because this prevents
-        // accidential insertion of invalid KeyChords into classes like ActionMap.
+        // accidental insertion of invalid KeyChords into classes like ActionMap.
         if (!vkey && !scanCode)
         {
             e.Handled(true);

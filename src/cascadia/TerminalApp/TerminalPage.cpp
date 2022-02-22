@@ -297,8 +297,7 @@ namespace winrt::TerminalApp::implementation
     // - true if the ApplicationState should be used.
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
-        return Feature_PersistedWindowLayout::IsEnabled() &&
-               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+        return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
     }
 
     // Method Description:
@@ -317,7 +316,7 @@ namespace winrt::TerminalApp::implementation
         // elevated window.
         if (!_startupActions || IsElevated() || _shouldStartInboundListener)
         {
-            // there arent startup actions, or we're elevated. In that case, go for it.
+            // there aren't startup actions, or we're elevated. In that case, go for it.
             return false;
         }
 
@@ -686,10 +685,7 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            presenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
-        }
+        _ShowDialogHelper(L"AboutDialog");
     }
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
@@ -709,6 +705,33 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
+    // Method description:
+    // - Called when the user closes a content dialog
+    // - Tells the presenter to update its knowledge of whether there is a content dialog open
+    void TerminalPage::_DialogCloseClick(const IInspectable&,
+                                         const ContentDialogButtonClickEventArgs&)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.DismissDialog();
+        }
+    }
+
+    // Method Description:
+    // - Helper to show a content dialog
+    // - We only open a content dialog if there isn't one open already
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowDialogHelper(const std::wstring_view& name)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(name).try_as<WUX::Controls::ContentDialog>());
+            }
+        }
+        co_return ContentDialogResult::None;
+    }
+
     // Method Description:
     // - Displays a dialog to warn the user that they are about to close all open windows.
     //   Once the user clicks the OK button, shut down the application.
@@ -717,11 +740,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"QuitDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"QuitDialog");
     }
 
     // Method Description:
@@ -733,22 +752,14 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"CloseAllDialog");
     }
 
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"CloseReadOnlyDialog");
     }
 
     // Method Description:
@@ -761,11 +772,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowMultiLinePasteWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"MultiLinePasteDialog");
     }
 
     // Method Description:
@@ -776,11 +783,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"LargePasteDialog");
     }
 
     // Method Description:
@@ -1220,7 +1223,7 @@ namespace winrt::TerminalApp::implementation
         // message without vkey or scanCode if a user drags a tab.
         // The KeyChord constructor has a debug assertion ensuring that all KeyChord
         // either have a valid vkey/scanCode. This is important, because this prevents
-        // accidential insertion of invalid KeyChords into classes like ActionMap.
+        // accidental insertion of invalid KeyChords into classes like ActionMap.
         if (!vkey && !scanCode)
         {
             return;

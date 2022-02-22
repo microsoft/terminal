@@ -1751,7 +1751,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 
                 if (copyTextColor)
                 {
-                    // cant see CR/LF so just use black FG & BK
+                    // can't see CR/LF so just use black FG & BK
                     COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
                     selectionFgAttr.push_back(Blackness);
                     selectionFgAttr.push_back(Blackness);
