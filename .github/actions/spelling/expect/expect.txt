@@ -668,6 +668,7 @@ dwl
 DWLP
 dwm
 dwmapi
+DWMWA
 dword
 dwrite
 dwriteglyphrundescriptionclustermap
@@ -1936,6 +1937,7 @@ qos
 QRSTU
 qsort
 queryable
+QUERYOPEN
 QUESTIONMARK
 quickedit
 QUZ
@@ -2426,6 +2428,7 @@ toolbars
 TOOLINFO
 Toolset
 tooltip
+TOOLWINDOW
 TOPDOWNDIB
 TOPLEFT
 toplevel

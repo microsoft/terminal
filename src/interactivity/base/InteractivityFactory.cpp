@@ -447,7 +447,7 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
     // WM_SHOWWINDOW comes through on some of the messages.
     case WM_SHOWWINDOW:
     {
-        if (0 == lParam) // Someone explictly called ShowWindow on us.
+        if (0 == lParam) // Someone explicitly called ShowWindow on us.
         {
             _WritePseudoWindowCallback((bool)wParam);
         }
