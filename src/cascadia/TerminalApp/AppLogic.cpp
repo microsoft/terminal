@@ -700,7 +700,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         bool isHandoffListener = _appArgs.IsHandoffListener();
-        if (!isHandoffListener && args.size()>0)
+        if (!isHandoffListener && args.size() > 0)
         {
             ::TerminalApp::AppCommandlineArgs appArgs;
             const auto result = appArgs.ParseArgs(args);
