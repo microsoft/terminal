@@ -1745,6 +1745,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::WindowVisibilityChanged(const bool showOrHide)
+    {
+        _terminal->UpdateVisibility(showOrHide);
+    }
+
     bool ControlCore::_isBackgroundTransparent()
     {
         // If we're:

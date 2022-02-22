@@ -74,6 +74,7 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void UpdateVisibility(const bool visible);
     void SetFontInfo(const FontInfo& fontInfo);
 
     // Write comes from the PTY and goes to our parser to be stored in the output buffer

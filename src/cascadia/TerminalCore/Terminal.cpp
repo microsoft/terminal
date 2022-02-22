@@ -221,6 +221,11 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _defaultCursorShape = cursorShape;
 }
 
+void Terminal::UpdateVisibility(const bool visible)
+{
+    ReturnResponse(visible ? L"\x1b[1t" : L"\x1b[2t");
+}
+
 // Method Description:
 // - Resize the terminal as the result of some user interaction.
 // Arguments:

@@ -215,7 +215,11 @@ bool VtIo::IsUsingVt() const
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
-            ServiceLocator::SetPseudoWindowCallback([&](std::wstring_view text) { LOG_IF_FAILED(_pVtRenderEngine->WriteTerminalW(text)); });
+            ServiceLocator::SetPseudoWindowCallback([&](bool showOrHide) -> void
+            {
+                // Set the remote window visibility to the request
+                LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide)); 
+            });
         }
         CATCH_RETURN();
     }

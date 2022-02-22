@@ -530,6 +530,25 @@ CATCH_RETURN();
     return _Flush();
 }
 
+[[nodiscard]] HRESULT XtermEngine::SetWindowVisibility(const bool showOrHide) noexcept
+{
+    if (showOrHide)
+    {
+        RETURN_IF_FAILED(_Write("\x1b[1t"));
+    }
+    else
+    {
+        RETURN_IF_FAILED(_Write("\x1b[2t"));
+    }
+    return _Flush();
+}
+
+[[nodiscard]] HRESULT XtermEngine::RequestWindowVisibility() noexcept
+{
+    RETURN_IF_FAILED(_Write("\x1b[11t"));
+    return _Flush();
+}
+
 // Method Description:
 // - Updates the window's title string. Emits the VT sequence to SetWindowTitle.
 // Arguments:

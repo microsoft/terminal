@@ -511,8 +511,9 @@ void ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 // - <none>
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
-    auto hwnd = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-    LOG_IF_WIN32_BOOL_FALSE(PostMessageW(hwnd, WM_SHOWWINDOW, showOrHide, 0));
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    ::ShowWindow(hwnd, showOrHide ? SW_NORMAL : SW_MINIMIZE);
 }
 
 // Routine Description:

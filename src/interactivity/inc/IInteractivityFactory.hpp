@@ -42,7 +42,7 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] virtual NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider) = 0;
         [[nodiscard]] virtual NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services) = 0;
 
-        virtual void SetPseudoWindowCallback(std::function<void(std::wstring_view)> func) = 0;
+        virtual void SetPseudoWindowCallback(std::function<void(bool)> func) = 0;
         [[nodiscard]] virtual NTSTATUS CreatePseudoWindow(HWND& hwnd) = 0;
     };
 

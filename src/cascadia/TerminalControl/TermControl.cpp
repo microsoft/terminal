@@ -2055,6 +2055,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return cells * fontDimension + nonTerminalArea;
     }
 
+    void TermControl::WindowVisibilityChanged(const bool showOrHide)
+    {
+        _core.WindowVisibilityChanged(showOrHide);
+    }
+
     // Method Description:
     // - Create XAML Thickness object based on padding props provided.
     //   Used for controlling the TermControl XAML Grid container's Padding prop.

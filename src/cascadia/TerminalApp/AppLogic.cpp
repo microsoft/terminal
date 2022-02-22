@@ -1123,6 +1123,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void AppLogic::WindowVisibilityChanged(const bool showOrHide)
+    {
+        if (_root)
+        {
+            _root->WindowVisibilityChanged(showOrHide);
+        }
+    }
+
     // Method Description:
     // - Implements the F7 handler (per GH#638)
     // - Implements the Alt handler (per GH#6421)

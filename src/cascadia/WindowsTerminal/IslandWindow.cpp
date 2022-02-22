@@ -471,13 +471,18 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED)
         {
+            _WindowVisibilityChangedHandlers(true);
             _MaximizeChangedHandlers(wparam == SIZE_MAXIMIZED);
         }
 
-        if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
+        if (wparam == SIZE_MINIMIZED)
         {
-            ShowWindow(GetHandle(), SW_HIDE);
-            return 0;
+            _WindowVisibilityChangedHandlers(false);
+            if (_isQuakeWindow)
+            {
+                ShowWindow(GetHandle(), SW_HIDE);
+                return 0;
+            }
         }
         break;
     }
@@ -538,13 +543,14 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         return 0;
     case WM_WINDOWPOSCHANGING:
     {
+        // Pull out the parameters from the call.
+        auto lpwpos = (LPWINDOWPOS)lparam;
+
         // GH#10274 - if the quake window gets moved to another monitor via aero
         // snap (win+shift+arrows), then re-adjust the size for the new monitor.
         if (IsQuakeWindow())
         {
             // Retrieve the suggested dimensions and make a rect and size.
-            LPWINDOWPOS lpwpos = (LPWINDOWPOS)lparam;
-
             // We only need to apply restrictions if the position is changing.
             // The SWP_ flags are confusing to read. This is
             // "if we're not moving the window, do nothing."

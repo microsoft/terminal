@@ -100,6 +100,7 @@ namespace Microsoft.Terminal.Control
         String ReadEntireBuffer();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
+        void WindowVisibilityChanged(Boolean showOrHide);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

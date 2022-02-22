@@ -391,7 +391,7 @@ using namespace Microsoft::Console::Interactivity;
     return status;
 }
 
-void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstring_view)> func)
+void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> func)
 {
     _pseudoWindowMessageCallback = func;
 }
@@ -427,75 +427,41 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(std::wstri
         return TRUE;
     // As long as user32 didn't eat the `ShowWindow` call because the window state requested
     // matches the existing WS_VISIBLE state of the HWND... we should hear from it in WM_WINDOWPOSCHANGING.
-    case WM_WINDOWPOSCHANGING:
+    case WM_SIZE:
     {
-        // We're trying to discern what people are asking of us when they called
-        // `ShowWindow` on our HWND. Since we're a ConPTY, our window isn't the
-        // place where the content is presented. The actual attached terminal is
-        // that place. Our goal, therefore, is to try to communicate to the
-        // final presentation.
-        // I've observed the following from `ShowWindow`:
-        // (reference https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow)
-        // SW_HIDE (0)              
-        // SW_NORMAL(1)             
-        // SW_SHOWMINIMIZED (2)     
-        // SW_SHOWMAXIMIZED (3)     
-        // SW_SHOWNOACTIVATE (4)    
-        // SW_SHOW (5)              
-        // SW_MINIMIZE (6)          
-        // SW_SHOWMINNOACTIVE (7)   
-        // SW_SHOWNA (8)            
-        // SW_RESTORE (9)           
-        // SW_SHOWDEFAULT (10)      
-        // SW_FORCEMINIMIZE (11)    
-
-        // Dig information out of the message so we know what someone is asking for
-        /*auto pWindowPos = (PWINDOWPOS)lParam;*/
-        const auto minimizing = IsIconic(hWnd);
-        // Other potentially useful flags.
-        /*const auto maximizing = IsZoomed(hWnd);
-        const auto showing = WI_IsFlagSet(pWindowPos->flags, SWP_SHOWWINDOW);
-        const auto hiding = WI_IsFlagSet(pWindowPos->flags, SWP_HIDEWINDOW);
-        const auto activating = WI_IsFlagClear(pWindowPos->flags, SWP_NOACTIVATE);*/
-
-        if (minimizing)
+        if (wParam == SIZE_RESTORED)
         {
-            _WritePseudoWindowCallback(L"\x1b[2t");
+            _WritePseudoWindowCallback(true);
         }
 
-        // On the way out, stop activation and showing so we remain hidden.
-        /*WI_ClearFlag(pWindowPos->flags, SWP_SHOWWINDOW);
-        WI_SetFlag(pWindowPos->flags, SWP_NOACTIVATE);*/
-        return 0;
+        if (wParam == SIZE_MINIMIZED)
+        {
+            _WritePseudoWindowCallback(false);
+        }
+        break;
     }
+    // WM_WINDOWPOSCHANGING can tell us a bunch through the flags fields.
+    // We can also check IsIconic/IsZoomed on the HWND during the message
+    // and we could suppress the change to prevent things from happening.
     // WM_SYSCOMMAND will not come through. Don't try.
     // WM_SHOWWINDOW comes through on some of the messages.
     case WM_SHOWWINDOW:
     {
-        if (lParam == 0) // Message came directly from someone calling ShowWindow on us.
+        if (0 == lParam) // Someone explictly called ShowWindow on us.
         {
-            if (wParam) // If TRUE, we're being shown
-            {
-                _WritePseudoWindowCallback(L"\x1b[1t");
-            }
-            else // If FALSE, we're being hidden
-            {
-                _WritePseudoWindowCallback(L"\x1b[2t");
-            }
-            return 0;
+            _WritePseudoWindowCallback((bool)wParam);
         }
-        break;
     }
     }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
 
-void InteractivityFactory::_WritePseudoWindowCallback(std::wstring_view text)
+void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
 {
     if (_pseudoWindowMessageCallback)
     {
-        _pseudoWindowMessageCallback(text);
+        _pseudoWindowMessageCallback(showOrHide);
     }
 }
 

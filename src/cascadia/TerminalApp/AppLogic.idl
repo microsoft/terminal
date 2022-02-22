@@ -89,6 +89,7 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void WindowVisibilityChanged(Boolean showOrHide);
 
         TaskbarState TaskbarState{ get; };
 

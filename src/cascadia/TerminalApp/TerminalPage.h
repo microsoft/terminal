@@ -75,6 +75,7 @@ namespace winrt::TerminalApp::implementation
         hstring Title();
 
         void TitlebarClicked();
+        void WindowVisibilityChanged(const bool showOrHide);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 

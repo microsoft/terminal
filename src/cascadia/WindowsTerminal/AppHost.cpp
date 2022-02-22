@@ -337,6 +337,8 @@ void AppHost::Initialize()
     // application layer.
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
+    _window->WindowVisibilityChanged([this](bool showOrHide) { _logic.WindowVisibilityChanged(showOrHide); });
+
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
     _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });

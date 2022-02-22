@@ -2788,6 +2788,29 @@ namespace winrt::TerminalApp::implementation
         _DismissTabContextMenus();
     }
 
+    void TerminalPage::WindowVisibilityChanged(const bool showOrHide)
+    {
+        for (const auto& tab : _tabs)
+        {
+            if (auto terminalTab{ _GetTerminalTabImpl(tab) })
+            {
+                // Manually enumerate the panes in each tab; this will let us recycle TerminalSettings
+                // objects but only have to iterate one time.
+                terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                    if (const auto profile{ pane->GetProfile() })
+                    {
+                        if (auto control = pane->GetTerminalControl())
+                        {
+                            control.WindowVisibilityChanged(showOrHide);
+                        }
+                    }
+                });
+
+            }
+        }
+
+    }
+
     // Method Description:
     // - Called when the user tries to do a search using keybindings.
     //   This will tell the current focused terminal control to create

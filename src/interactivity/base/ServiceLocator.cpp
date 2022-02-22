@@ -296,7 +296,7 @@ Globals& ServiceLocator::LocateGlobals()
     return s_globals;
 }
 
-void ServiceLocator::SetPseudoWindowCallback(std::function<void(std::wstring_view)> func)
+void ServiceLocator::SetPseudoWindowCallback(std::function<void(bool)> func)
 {
     // Force the whole window to be put together first.
     // We don't really need the handle, we just want to leverage the setup steps.
