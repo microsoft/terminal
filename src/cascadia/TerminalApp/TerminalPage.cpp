@@ -2805,10 +2805,8 @@ namespace winrt::TerminalApp::implementation
                         }
                     }
                 });
-
             }
         }
-
     }
 
     // Method Description:

@@ -14,6 +14,6 @@ int __cdecl wmain(int argc, WCHAR* /*argv[]*/)
     ::SetLastError(S_OK);
     auto retVal = ShowWindow(hwnd, verb);
     auto lastError = ::GetLastError();
-    std::cout << "Returned: " << retVal << " with error code " << lastError <<std::endl;
+    std::cout << "Returned: " << retVal << " with error code " << lastError << std::endl;
     return 0;
 }
