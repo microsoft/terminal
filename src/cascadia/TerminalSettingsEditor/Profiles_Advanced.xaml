@@ -134,7 +134,8 @@
                                         HasSettingValue="{x:Bind Profile.HasVtPassthrough, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.VtPassthroughOverrideSource, Mode=OneWay}"
                                         Visibility="{x:Bind Profile.VtPassthroughAvailable}">
-                    <ToggleSwitch IsOn="{x:Bind Profile.VtPassthrough, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Profile.VtPassthrough, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
         </ScrollViewer>
