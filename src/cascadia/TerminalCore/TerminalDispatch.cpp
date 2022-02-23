@@ -735,7 +735,7 @@ bool TerminalDispatch::HardReset()
 // - True.
 bool TerminalDispatch::UseAlternateScreenBuffer()
 {
-    // TODO!
+    // TODO GH#3849: When deduplicating this, the AdaptDispatch version of this calls:
     // CursorSaveState();
     _terminalApi.UseAlternateScreenBuffer();
     _usingAltBuffer = true;
@@ -753,7 +753,7 @@ bool TerminalDispatch::UseMainScreenBuffer()
 {
     _terminalApi.UseMainScreenBuffer();
     _usingAltBuffer = false;
-    // TODO!
+    // TODO GH#3849: When deduplicating this, the AdaptDispatch version of this calls:
     // CursorRestoreState();
     return true;
 }
