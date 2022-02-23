@@ -587,40 +587,44 @@ void Terminal::PopGraphicsRendition()
 
 void Terminal::UseAlternateScreenBuffer()
 {
+    // Short-circuit: do nothing.
     if (_inAltBuffer())
     {
         return;
     }
-    _activeBuffer().GetCursor().StartDeferDrawing();
-    // we're capturing _buffer by reference here because when we exit, we want to EndDefer on the current active buffer.
-    // TODO! this ^ statement is not accurate.
-    auto endDefer = wil::scope_exit([&]() noexcept { _activeBuffer().GetCursor().EndDeferDrawing(); });
 
-    // auto lock = LockForWriting();
-
+    // the new alt buffer is exactly the size of the viewport.
     const COORD bufferSize{ _mutableViewport.Dimensions() };
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
-    _altBuffer = std::make_unique<TextBuffer>(bufferSize, TextAttribute{}, cursorSize, _mainBuffer->GetRenderTarget());
+    // Create a new alt buffer
+    _altBuffer = std::make_unique<TextBuffer>(bufferSize,
+                                              TextAttribute{},
+                                              cursorSize,
+                                              _mainBuffer->GetRenderTarget());
+
+    // Copy our cursor state to the new buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = _mainBuffer->GetCursor();
-        auto& altCursor = _altBuffer->GetCursor();
-        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
-        altCursor.SetIsVisible(myCursor.IsVisible());
-        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        auto& tgtCursor = _altBuffer->GetCursor();
+        tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
+        tgtCursor.SetIsVisible(myCursor.IsVisible());
+        tgtCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
 
         // The new position should match the viewport-relative position of the main buffer.
-        auto altCursorPos = myCursor.GetPosition();
-        altCursorPos.Y -= _mutableViewport.Top();
-        altCursor.SetPosition(altCursorPos);
+        auto tgtCursorPos = myCursor.GetPosition();
+        tgtCursorPos.Y -= _mutableViewport.Top();
+        tgtCursor.SetPosition(tgtCursorPos);
     }
 
-    // _mutableViewport = Viewport::FromDimensions({ 0, 0 }, _mutableViewport.Dimensions());
-    // _scrollbackLines = 0;
-
+    // update all the hyperlinks on the screen
     UpdatePatternsUnderLock();
+
+    // Update scrollbars
     _NotifyScrollEvent();
+
+    // redraw the screen
     try
     {
         _activeBuffer().GetRenderTarget().TriggerRedrawAll();
@@ -629,35 +633,38 @@ void Terminal::UseAlternateScreenBuffer()
 }
 void Terminal::UseMainScreenBuffer()
 {
+    // Short-circuit: do nothing.
     if (!_inAltBuffer())
     {
         return;
     }
-    _activeBuffer().GetCursor().StartDeferDrawing();
-    // we're capturing _buffer by reference here because when we exit, we want to EndDefer on the current active buffer.
-    // TODO! this ^ statement is not accurate.
-    auto endDefer = wil::scope_exit([&]() noexcept { _activeBuffer().GetCursor().EndDeferDrawing(); });
 
-    // auto lock = LockForWriting();
-
+    // Copy our cursor state back to the main buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = _altBuffer->GetCursor();
-        auto& altCursor = _mainBuffer->GetCursor();
-        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
-        altCursor.SetIsVisible(myCursor.IsVisible());
-        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        auto& tgtCursor = _mainBuffer->GetCursor();
+        tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
+        tgtCursor.SetIsVisible(myCursor.IsVisible());
+        tgtCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
 
         // The new position should match the viewport-relative position of the main buffer.
-        auto altCursorPos = myCursor.GetPosition();
-        altCursorPos.Y += _mutableViewport.Top();
-        altCursor.SetPosition(altCursorPos);
+        // This is the equal and opposite effect of what we did in UseAlternateScreenBuffer
+        auto tgtCursorPos = myCursor.GetPosition();
+        tgtCursorPos.Y += _mutableViewport.Top();
+        tgtCursor.SetPosition(tgtCursorPos);
     }
 
+    // destroy the alt buffer
     _altBuffer = nullptr;
 
+    // update all the hyperlinks on the screen
     UpdatePatternsUnderLock();
+
+    // Update scrollbars
     _NotifyScrollEvent();
+
+    // redraw the screen
     try
     {
         _activeBuffer().GetRenderTarget().TriggerRedrawAll();

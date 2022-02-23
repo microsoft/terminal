@@ -237,7 +237,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 //      appropriate HRESULT for failing to resize.
 [[nodiscard]] HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
 {
-    // TODO! MAKE THIS WORK IN THE ALT BUFFER!
     const auto oldDimensions = _mutableViewport.Dimensions();
     if (viewportSize == oldDimensions)
     {
@@ -258,12 +257,10 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // bottom in the new buffer as well. Track that case now.
     const bool originalOffsetWasZero = _scrollOffset == 0;
 
-    // auto activeBuffer{_activeBuffer()};
     // skip any drawing updates that might occur until we swap _buffer with the new buffer or if we exit early.
     _mainBuffer->GetCursor().StartDeferDrawing();
-    // we're capturing _buffer by reference here because when we exit, we want to EndDefer on the current active buffer.
-    // TODO! this ^ statement is not accurate.
-    auto endDefer = wil::scope_exit([&]() noexcept { _mainBuffer->GetCursor().EndDeferDrawing(); });
+    // we're capturing `this` here because when we exit, we want to EndDefer on the (newly created) active buffer.
+    auto endDefer = wil::scope_exit([this]() noexcept { _mainBuffer->GetCursor().EndDeferDrawing(); });
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
@@ -280,6 +277,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _mainBuffer->GetRenderTarget());
 
+        // start defer drawing on the new buffer
         newTextBuffer->GetCursor().StartDeferDrawing();
 
         // Build a PositionInformation to track the position of both the top of
@@ -424,6 +422,47 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
     _scrollOffset = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
+
+    // Now that we've finished the hard work of resizing the main buffer and
+    // getting the viewport back into the right spot, we need to ALSO resize the
+    // alt buffer, if one exists. Fortunately, this is easy. We don't need to
+    // worry about the viewport and scrollback at all! The alt buffer never has
+    // any scrollback, so we just need to resize it and presto, we're done.
+    if (_inAltBuffer())
+    {
+        _altBuffer->GetCursor().StartDeferDrawing();
+        // we're capturing `this` here because when we exit, we want to EndDefer on the (newly created) active buffer.
+        auto endDefer = wil::scope_exit([this]() noexcept { _altBuffer->GetCursor().EndDeferDrawing(); });
+
+        // First allocate a new text buffer to take the place of the current one.
+        std::unique_ptr<TextBuffer> newTextBuffer;
+        try
+        {
+            // GH#3848 - Stash away the current attributes
+            const auto oldBufferAttributes = _mainBuffer->GetCurrentAttributes();
+            newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
+                                                         TextAttribute{},
+                                                         0, // temporarily set size to 0 so it won't render.
+                                                         _mainBuffer->GetRenderTarget());
+
+            // start defer drawing on the new buffer
+            newTextBuffer->GetCursor().StartDeferDrawing();
+
+            // We don't need any fancy position information. We're just gonna
+            // resize the buffer, it's gonna be in exactly the place it is now.
+            // There's no scrollback to worry about!
+
+            RETURN_IF_FAILED(TextBuffer::Reflow(*_altBuffer.get(),
+                                                *newTextBuffer.get(),
+                                                _GetMutableViewport(),
+                                                std::nullopt));
+
+            // Restore the active text attributes
+            newTextBuffer->SetCurrentAttributes(oldBufferAttributes);
+            _altBuffer.swap(newTextBuffer);
+        }
+        CATCH_RETURN();
+    }
 
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
     try
