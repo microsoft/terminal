@@ -394,7 +394,7 @@ using namespace Microsoft::Console::Interactivity;
 // Method Description:
 // - Gives the pseudo console window a target to relay show/hide window messages
 // Arguments:
-// - func - A function that will take a true for "show" and false for "hide" and 
+// - func - A function that will take a true for "show" and false for "hide" and
 //          relay that information to the attached terminal to adjust its window state.
 // Return Value:
 // - <none>
@@ -453,7 +453,7 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
     //       during prototyping and didn't give quite the results needed to determine show/hide window
     //       state. The notes are left here for future expeditions into message queues.
     // case WM_QUERYOPEN:
-        // It can be fun to toggle WM_QUERYOPEN but DefWindowProc returns TRUE.
+    // It can be fun to toggle WM_QUERYOPEN but DefWindowProc returns TRUE.
     case WM_SIZE:
     {
         if (wParam == SIZE_RESTORED)
@@ -467,22 +467,22 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
         }
         break;
     }
-    // case WM_WINDOWPOSCHANGING:
+        // case WM_WINDOWPOSCHANGING:
         // As long as user32 didn't eat the `ShowWindow` call because the window state requested
         // matches the existing WS_VISIBLE state of the HWND... we should hear from it in WM_WINDOWPOSCHANGING.
         // WM_WINDOWPOSCHANGING can tell us a bunch through the flags fields.
         // We can also check IsIconic/IsZoomed on the HWND during the message
         // and we could suppress the change to prevent things from happening.
     // case WM_SYSCOMMAND:
-        // WM_SYSCOMMAND will not come through. Don't try.
+    // WM_SYSCOMMAND will not come through. Don't try.
     case WM_SHOWWINDOW:
-    // WM_SHOWWINDOW comes through on some of the messages.
-    {
-        if (0 == lParam) // Someone explicitly called ShowWindow on us.
+        // WM_SHOWWINDOW comes through on some of the messages.
         {
-            _WritePseudoWindowCallback((bool)wParam);
+            if (0 == lParam) // Someone explicitly called ShowWindow on us.
+            {
+                _WritePseudoWindowCallback((bool)wParam);
+            }
         }
-    }
     }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);

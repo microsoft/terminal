@@ -2789,7 +2789,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Notifies all attached console controls that the visibility of the 
+    // - Notifies all attached console controls that the visibility of the
     //   hosting window has changed. The underlying PTYs may need to know this
     //   for the proper response to `::GetConsoleWindow()` from a Win32 console app.
     // Arguments:

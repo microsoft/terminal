@@ -298,7 +298,7 @@ Globals& ServiceLocator::LocateGlobals()
 
 // Method Description:
 // - Installs a callback method to receive notifications when the pseudo console
-//   window is shown or hidden by an attached client application (so we can 
+//   window is shown or hidden by an attached client application (so we can
 //   translate it and forward it to the attached terminal, in case it would like
 //   to react accordingly.)
 // Arguments:
