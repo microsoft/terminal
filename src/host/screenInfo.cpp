@@ -1941,6 +1941,9 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
+        // GH#381: When we switch into the alt buffer:
+        //  * flush the current frame, to clear out anything that we prepared for this buffer.
+        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
         if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
         {
             ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
@@ -1978,6 +1981,9 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->_fAltWindowChanged = false;
         }
 
+        // GH#381: When we switch into the alt buffer:
+        //  * flush the current frame, to clear out anything that we prepared for this buffer.
+        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
         if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
         {
             ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
