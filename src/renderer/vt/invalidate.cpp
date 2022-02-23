@@ -105,7 +105,7 @@ CATCH_RETURN();
 // - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept
 {
     // If we're in the middle of a resize request, don't try to immediately start a frame.
     if (_inResizeRequest)
@@ -118,7 +118,7 @@ CATCH_RETURN();
 
         // Keep track of the fact that we circled, we'll need to do some work on
         //      end paint to specifically handle this.
-        _circled = true;
+        _circled = circled;
     }
 
     _trace.TraceTriggerCircling(*pForcePaint);

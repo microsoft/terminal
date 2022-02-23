@@ -36,6 +36,8 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
+        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
+
         void CloseInput();
         void CloseOutput();
 

@@ -91,13 +91,13 @@ void ScreenBufferRenderTarget::TriggerScroll(const COORD* const pcoordDelta)
     }
 }
 
-void ScreenBufferRenderTarget::TriggerCircling()
+void ScreenBufferRenderTarget::TriggerFlush(const bool circling)
 {
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
     const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)
     {
-        pRenderer->TriggerCircling();
+        pRenderer->TriggerFlush(circling);
     }
 }
 

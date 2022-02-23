@@ -556,7 +556,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    _renderTarget.TriggerCircling();
+    _renderTarget.TriggerFlush(true);
 
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();

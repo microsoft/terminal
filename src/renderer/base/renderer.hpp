@@ -51,7 +51,7 @@ namespace Microsoft::Console::Render
         void TriggerScroll() override;
         void TriggerScroll(const COORD* const pcoordDelta) override;
 
-        void TriggerCircling() override;
+        void TriggerFlush(const bool circling) override;
         void TriggerTitleChange() override;
 
         void TriggerFontChange(const int iDpi,

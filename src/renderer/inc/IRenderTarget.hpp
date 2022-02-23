@@ -43,7 +43,7 @@ namespace Microsoft::Console::Render
         virtual void TriggerSelection() = 0;
         virtual void TriggerScroll() = 0;
         virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
-        virtual void TriggerCircling() = 0;
+        virtual void TriggerFlush(const bool circling) = 0;
         virtual void TriggerTitleChange() = 0;
     };
 

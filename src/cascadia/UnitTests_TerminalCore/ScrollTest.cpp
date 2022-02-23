@@ -51,7 +51,7 @@ namespace
         {
             _triggerScrollDelta = { *delta };
         };
-        virtual void TriggerCircling(){};
+        virtual void TriggerFlush(const bool circling){};
         void TriggerTitleChange(){};
 
     private:
