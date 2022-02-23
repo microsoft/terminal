@@ -2788,6 +2788,14 @@ namespace winrt::TerminalApp::implementation
         _DismissTabContextMenus();
     }
 
+    // Method Description:
+    // - Notifies all attached console controls that the visibility of the 
+    //   hosting window has changed. The underlying PTYs may need to know this
+    //   for the proper response to `::GetConsoleWindow()` from a Win32 console app.
+    // Arguments:
+    // - showOrHide: Show is true; hide is false.
+    // Return Value:
+    // - <none>
     void TerminalPage::WindowVisibilityChanged(const bool showOrHide)
     {
         for (const auto& tab : _tabs)

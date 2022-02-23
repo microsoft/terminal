@@ -221,6 +221,16 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _defaultCursorShape = cursorShape;
 }
 
+// Method Description:
+// - Notifies the attached PTY that the window has changed visibility state
+// - NOTE: Most VT commands are generated in `TerminalDispatch` and sent to this
+//         class as the target for transmission. But since this message isn't
+//         coming in via VT parsing (and rather from a window state transition)
+//         we generate and send it here.
+// Arguments:
+// - visible: True for visible; false for not visible.
+// Return Value:
+// - <none>
 void Terminal::UpdateVisibility(const bool visible)
 {
     ReturnResponse(visible ? L"\x1b[1t" : L"\x1b[2t");
@@ -1217,6 +1227,10 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
+// Method Description:
+// - Propagates an incoming set window visibility call from the PTY up into our window control layers
+// Arguments:
+// - pfn: a function callback that accepts true as "make window visible" and false as "hide window"
 void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
 {
     _pfnShowWindowChanged.swap(pfn);

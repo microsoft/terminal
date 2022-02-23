@@ -83,7 +83,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
         [[nodiscard]] HRESULT RequestWin32Input() noexcept;
         [[nodiscard]] virtual HRESULT SetWindowVisibility(const bool showOrHide) noexcept = 0;
-        [[nodiscard]] virtual HRESULT RequestWindowVisibility() noexcept = 0;
 
     protected:
         wil::unique_hfile _hFile;

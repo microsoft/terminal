@@ -530,6 +530,12 @@ CATCH_RETURN();
     return _Flush();
 }
 
+// Method Description:
+// - Sends a command to set the terminal's window to visible or hidden
+// Arguments:
+// - showOrHide - True if show; false if hide.
+// Return Value:
+// - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]] HRESULT XtermEngine::SetWindowVisibility(const bool showOrHide) noexcept
 {
     if (showOrHide)
@@ -540,12 +546,6 @@ CATCH_RETURN();
     {
         RETURN_IF_FAILED(_Write("\x1b[2t"));
     }
-    return _Flush();
-}
-
-[[nodiscard]] HRESULT XtermEngine::RequestWindowVisibility() noexcept
-{
-    RETURN_IF_FAILED(_Write("\x1b[11t"));
     return _Flush();
 }
 

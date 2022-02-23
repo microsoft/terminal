@@ -2055,6 +2055,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return cells * fontDimension + nonTerminalArea;
     }
 
+    // Method Description:
+    // - Forwards window visibility changing event down into the control core
+    //   to eventually let the hosting PTY know whether the window is visible or
+    //   not (which can be relevant to `::GetConsoleWindow()` calls.)
+    // Arguments:
+    // - showOrHide: Show is true; hide is false.
+    // Return Value:
+    // - <none>
     void TermControl::WindowVisibilityChanged(const bool showOrHide)
     {
         _core.WindowVisibilityChanged(showOrHide);

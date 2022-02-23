@@ -391,11 +391,29 @@ using namespace Microsoft::Console::Interactivity;
     return status;
 }
 
+// Method Description:
+// - Gives the pseudo console window a target to relay show/hide window messages
+// Arguments:
+// - func - A function that will take a true for "show" and false for "hide" and 
+//          relay that information to the attached terminal to adjust its window state.
+// Return Value:
+// - <none>
 void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> func)
 {
     _pseudoWindowMessageCallback = func;
 }
 
+// Method Description:
+// - Static window procedure for pseudo console windows
+// - Processes set-up on create to stow the "this" pointer to specific instantiations and routes
+//   to the specific object on future calls.
+// Arguments:
+// - hWnd - Associated window handle from message
+// - Message - ID of message in queue
+// - wParam - Variable wParam depending on message type
+// - lParam - Variable lParam depending on message type
+// Return Value:
+// - 0 if we processed this message. See details on how a WindowProc is implemented.
 [[nodiscard]] LRESULT CALLBACK InteractivityFactory::s_PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     // Save the pointer here to the specific window instance when one is created
@@ -418,15 +436,24 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
 
+// Method Description:
+// - Per-object winodw procedure for pseudo console windows
+// Arguments:
+// - hWnd - Associated window handle from message
+// - Message - ID of message in queue
+// - wParam - Variable wParam depending on message type
+// - lParam - Variable lParam depending on message type
+// Return Value:
+// - 0 if we processed this message. See details on how a WindowProc is implemented.
 [[nodiscard]] LRESULT CALLBACK InteractivityFactory::PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     switch (Message)
     {
-    // It can be fun to toggle WM_QUERYOPEN but DefWindowProc returns TRUE so we don't need this strictly.
-    case WM_QUERYOPEN:
-        return TRUE;
-    // As long as user32 didn't eat the `ShowWindow` call because the window state requested
-    // matches the existing WS_VISIBLE state of the HWND... we should hear from it in WM_WINDOWPOSCHANGING.
+    // NOTE: To the future reader, all window messages that are talked about but unused were tested
+    //       during prototyping and didn't give quite the results needed to determine show/hide window
+    //       state. The notes are left here for future expeditions into message queues.
+    // case WM_QUERYOPEN:
+        // It can be fun to toggle WM_QUERYOPEN but DefWindowProc returns TRUE.
     case WM_SIZE:
     {
         if (wParam == SIZE_RESTORED)
@@ -440,12 +467,16 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
         }
         break;
     }
-    // WM_WINDOWPOSCHANGING can tell us a bunch through the flags fields.
-    // We can also check IsIconic/IsZoomed on the HWND during the message
-    // and we could suppress the change to prevent things from happening.
-    // WM_SYSCOMMAND will not come through. Don't try.
-    // WM_SHOWWINDOW comes through on some of the messages.
+    // case WM_WINDOWPOSCHANGING:
+        // As long as user32 didn't eat the `ShowWindow` call because the window state requested
+        // matches the existing WS_VISIBLE state of the HWND... we should hear from it in WM_WINDOWPOSCHANGING.
+        // WM_WINDOWPOSCHANGING can tell us a bunch through the flags fields.
+        // We can also check IsIconic/IsZoomed on the HWND during the message
+        // and we could suppress the change to prevent things from happening.
+    // case WM_SYSCOMMAND:
+        // WM_SYSCOMMAND will not come through. Don't try.
     case WM_SHOWWINDOW:
+    // WM_SHOWWINDOW comes through on some of the messages.
     {
         if (0 == lParam) // Someone explicitly called ShowWindow on us.
         {
@@ -457,6 +488,14 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
 
+// Method Description:
+// - Helper for the pseudo console message loop to send a notification
+//   when it realizes we should be showing or hiding the window.
+// - Simply skips if no callback is installed.
+// Arguments:
+// - showOrHide: Show is true; hide is false.
+// Return Value:
+// - <none>
 void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
 {
     if (_pseudoWindowMessageCallback)

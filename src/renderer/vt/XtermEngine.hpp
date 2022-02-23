@@ -54,7 +54,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
         [[nodiscard]] HRESULT SetWindowVisibility(const bool showOrHide) noexcept override;
-        [[nodiscard]] HRESULT RequestWindowVisibility() noexcept override;
 
     protected:
         // I'm using a non-class enum here, so that the values
