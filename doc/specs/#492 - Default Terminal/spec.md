@@ -264,4 +264,7 @@ COM doesn't inherently expose a way for us to pass handles directly between proc
 
 ## Resources
 
-(link here to default app spec)
+- [Windows Terminal Process Model 2.0 spec](https://github.com/microsoft/terminal/pull/7240)
+- [Windows Terminal 2.0 Process Model Improvements](https://github.com/microsoft/terminal/issues/5000)
+- [Console allocation policy specifications](https://github.com/microsoft/terminal/pull/7337)
+- [Fine-grained console allocation policy feature](https://github.com/microsoft/terminal/issues/7335)
