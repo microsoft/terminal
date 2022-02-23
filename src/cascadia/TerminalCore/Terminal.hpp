@@ -136,6 +136,8 @@ public:
     void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
     void PopGraphicsRendition() override;
 
+    void UseAlternateScreenBuffer() override;
+    void UseMainScreenBuffer() override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -319,7 +321,8 @@ private:
 
     // TODO: These members are not shared by an alt-buffer. They should be
     //      encapsulated, such that a Terminal can have both a main and alt buffer.
-    std::unique_ptr<TextBuffer> _buffer;
+    std::unique_ptr<TextBuffer> _mainBuffer;
+    std::unique_ptr<TextBuffer> _altBuffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
     SHORT _scrollbackLines;
 
@@ -372,6 +375,9 @@ private:
     void _NotifyScrollEvent() noexcept;
 
     void _NotifyTerminalCursorPositionChanged() noexcept;
+
+    bool _inAltBuffer() const noexcept;
+    TextBuffer& _activeBuffer() const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

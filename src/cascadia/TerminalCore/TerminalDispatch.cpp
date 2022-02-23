@@ -594,6 +594,9 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
+        success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -720,5 +723,37 @@ bool TerminalDispatch::HardReset()
     // Delete all current tab stops and reapply
     _ResetTabStops();
 
+    return true;
+}
+
+// - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
+//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
+//     existing alternate, it is discarded.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool TerminalDispatch::UseAlternateScreenBuffer()
+{
+    // TODO!
+    // CursorSaveState();
+    _terminalApi.UseAlternateScreenBuffer();
+    _usingAltBuffer = true;
+    return true;
+}
+
+// Routine Description:
+// - ASBRST - From the alternate buffer, returns to the main screen buffer.
+//     From the main screen buffer, does nothing. The alternate is discarded.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool TerminalDispatch::UseMainScreenBuffer()
+{
+    _terminalApi.UseMainScreenBuffer();
+    _usingAltBuffer = false;
+    // TODO!
+    // CursorRestoreState();
     return true;
 }

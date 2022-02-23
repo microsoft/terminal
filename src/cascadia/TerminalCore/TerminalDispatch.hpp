@@ -39,6 +39,9 @@ public:
     bool CarriageReturn() override;
     bool SetWindowTitle(std::wstring_view title) override;
 
+    bool UseAlternateScreenBuffer() override; // ASBSET
+    bool UseMainScreenBuffer() override; // ASBRST
+
     bool HorizontalTabSet() override; // HTS
     bool ForwardTab(const size_t numTabs) override; // CHT, HT
     bool BackwardsTab(const size_t numTabs) override; // CBT
@@ -85,6 +88,7 @@ private:
 
     std::vector<bool> _tabStopColumns;
     bool _initDefaultTabStops = true;
+    bool _usingAltBuffer = false;
 
     size_t _SetRgbColorsHelper(const ::Microsoft::Console::VirtualTerminal::VTParameters options,
                                TextAttribute& attr,
