@@ -303,7 +303,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
-                WI_SetFlag(flags, PSEUDOCONSOLE_PASSTHROUGH_MODE);
+                if (_passthroughMode)
+                {
+                    WI_SetFlag(flags, PSEUDOCONSOLE_PASSTHROUGH_MODE);
+                }
             }
 
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, flags, &_inPipe, &_outPipe, &_hPC));
