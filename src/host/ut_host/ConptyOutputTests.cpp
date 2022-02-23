@@ -384,7 +384,7 @@ void ConptyOutputTests::SetConsoleTitleWithControlChars()
 
     std::wstringstream titleText;
     titleText << L"Hello " << wchar_t(control) << L"World!";
-    VERIFY_SUCCEEDED(DoSrvSetConsoleTitleW(titleText.str()));
+    g.getConsoleInformation().SetTitle(titleText.str());
 
     // This is the standard init sequences for the first frame.
     expectedOutput.push_back("\x1b[2J");

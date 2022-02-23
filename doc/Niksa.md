@@ -163,7 +163,7 @@ Given that we're using Xaml islands to host a modern UI and stitching a DirectX 
 
 Now, the obvious followup question is _"why can't you have one elevated connection in a tab next to a non-elevated connection?"_ This is where @sba923 should pick up reading (:smile:). I'm probably going to cover some things that you (@robomac) know already.
 
-[2] When you have two windows on the same desktop in the same window station, they can communicate with eachother. I can use `SendKeys` easily through `WScript.Shell` to send keyboard input to any window that the shell can see.
+[2] When you have two windows on the same desktop in the same window station, they can communicate with each other. I can use `SendKeys` easily through `WScript.Shell` to send keyboard input to any window that the shell can see.
 
 Running a process elevated _severs_ that connection. The shell can't see the elevated window. No other program at the same integrity level as the shell can see the elevated window. Even if it has its window handle, it can't really interact with it. This is also why you can't drag/drop from explorer into notepad if notepad is running elevated. Only another elevated process can interact with another elevated window.
 

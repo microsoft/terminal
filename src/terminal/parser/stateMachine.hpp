@@ -61,25 +61,26 @@ namespace Microsoft::Console::VirtualTerminal
 
         void ResetState() noexcept;
 
-        bool FlushToTerminal();
+        bool FlushToTerminal() noexcept;
 
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
 
     private:
-        void _ActionExecute(const wchar_t wch);
-        void _ActionExecuteFromEscape(const wchar_t wch);
-        void _ActionPrint(const wchar_t wch);
-        void _ActionEscDispatch(const wchar_t wch);
-        void _ActionVt52EscDispatch(const wchar_t wch);
+        void _ActionExecute(const wchar_t wch) noexcept;
+        void _ActionExecuteFromEscape(const wchar_t wch) noexcept;
+        void _ActionPrint(const wchar_t wch) noexcept;
+        void _ActionPrintString(const std::wstring_view string);
+        void _ActionEscDispatch(const wchar_t wch) noexcept;
+        void _ActionVt52EscDispatch(const wchar_t wch) noexcept;
         void _ActionCollect(const wchar_t wch) noexcept;
         void _ActionParam(const wchar_t wch);
-        void _ActionCsiDispatch(const wchar_t wch);
+        void _ActionCsiDispatch(const wchar_t wch) noexcept;
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
-        void _ActionOscDispatch(const wchar_t wch);
-        void _ActionSs3Dispatch(const wchar_t wch);
-        void _ActionDcsDispatch(const wchar_t wch);
+        void _ActionOscDispatch(const wchar_t wch) noexcept;
+        void _ActionSs3Dispatch(const wchar_t wch) noexcept;
+        void _ActionDcsDispatch(const wchar_t wch) noexcept;
 
         void _ActionClear();
         void _ActionIgnore() noexcept;
@@ -105,12 +106,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsPassThrough() noexcept;
         void _EnterSosPmApcString() noexcept;
 
-        void _EventGround(const wchar_t wch);
+        void _EventGround(const wchar_t wch) noexcept;
         void _EventEscape(const wchar_t wch);
-        void _EventEscapeIntermediate(const wchar_t wch);
+        void _EventEscapeIntermediate(const wchar_t wch) noexcept;
         void _EventCsiEntry(const wchar_t wch);
-        void _EventCsiIntermediate(const wchar_t wch);
-        void _EventCsiIgnore(const wchar_t wch);
+        void _EventCsiIntermediate(const wchar_t wch) noexcept;
+        void _EventCsiIgnore(const wchar_t wch) noexcept;
         void _EventCsiParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
@@ -120,12 +121,17 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventVt52Param(const wchar_t wch);
         void _EventDcsEntry(const wchar_t wch);
         void _EventDcsIgnore() noexcept;
-        void _EventDcsIntermediate(const wchar_t wch);
+        void _EventDcsIntermediate(const wchar_t wch) noexcept;
         void _EventDcsParam(const wchar_t wch);
         void _EventDcsPassThrough(const wchar_t wch);
         void _EventSosPmApcString(const wchar_t wch) noexcept;
 
         void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
+
+        template<typename TLambda>
+        bool _SafeExecute(TLambda&& lambda) noexcept;
+        template<typename TLambda>
+        bool _SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda) noexcept;
 
         enum class VTStates
         {

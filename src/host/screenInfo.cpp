@@ -255,8 +255,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
     try
     {
         auto getset = std::make_unique<ConhostInternalGetSet>(*this);
-        auto defaults = std::make_unique<WriteBuffer>(*this);
-        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), std::move(defaults));
+        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset));
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
@@ -2712,7 +2711,7 @@ const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 // - Gets the desired font of the screen buffer. If we try loading this font and
 //      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
 //      We store this separately, so that if we need to reload the font, we can
-//      try again with our prefered font info (in the desired font info) instead
+//      try again with our preferred font info (in the desired font info) instead
 //      of re-using the looked up value from before.
 // Arguments:
 // - <none>

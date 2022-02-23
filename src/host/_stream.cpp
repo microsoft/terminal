@@ -1221,7 +1221,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             wstr.resize((dbcsLength + mbPtrLength) / sizeof(wchar_t));
         }
 
-        // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
+        // Hold the specific version of the waiter locally so we can tinker with it if we have to store additional context.
         std::unique_ptr<WriteData> writeDataWaiter{};
 
         // Make the W version of the call

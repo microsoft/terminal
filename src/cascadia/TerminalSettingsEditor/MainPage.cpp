@@ -477,15 +477,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args)
     {
-        const auto tag = args.Item().as<Breadcrumb>()->Tag();
-        const auto subPage = args.Item().as<Breadcrumb>()->SubPage();
-        if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
+        if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
-            _Navigate(*profileViewModel, subPage);
-        }
-        else
-        {
-            _Navigate(tag.as<hstring>(), subPage);
+            const auto tag = args.Item().as<Breadcrumb>()->Tag();
+            const auto subPage = args.Item().as<Breadcrumb>()->SubPage();
+            if (const auto profileViewModel = tag.try_as<ProfileViewModel>())
+            {
+                _Navigate(*profileViewModel, subPage);
+            }
+            else
+            {
+                _Navigate(tag.as<hstring>(), subPage);
+            }
         }
     }
 
@@ -502,6 +505,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!profile.Deleted())
             {
                 auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile, _settingsClone));
+                Controls::ToolTipService::SetToolTip(navItem, box_value(profile.Name()));
                 menuItems.Append(navItem);
             }
         }
@@ -509,6 +513,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Top off (the end of the nav view) with the Add Profile item
         MUX::Controls::NavigationViewItem addProfileItem;
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
+        Controls::ToolTipService::SetToolTip(addProfileItem, box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(addProfileTag));
 
         FontIcon icon;

@@ -48,19 +48,19 @@
         -->
         <FontIcon x:Name="HeaderBellIndicator"
                   Margin="0,0,8,0"
-                  FontFamily="Segoe MDL2 Assets"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                   FontSize="12"
                   Glyph="&#xEA8F;"
                   Visibility="{x:Bind TabStatus.BellIndicator, Mode=OneWay}" />
         <FontIcon x:Name="HeaderZoomIcon"
                   Margin="0,0,8,0"
-                  FontFamily="Segoe MDL2 Assets"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                   FontSize="12"
                   Glyph="&#xE8A3;"
                   Visibility="{x:Bind TabStatus.IsPaneZoomed, Mode=OneWay}" />
         <FontIcon x:Name="HeaderLockIcon"
                   Margin="0,0,8,0"
-                  FontFamily="Segoe MDL2 Assets"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                   FontSize="12"
                   Glyph="&#xE72E;"
                   Visibility="{x:Bind TabStatus.IsReadOnlyActive, Mode=OneWay}" />

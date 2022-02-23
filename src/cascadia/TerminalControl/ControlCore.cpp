@@ -917,16 +917,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto dpi = (float)(scale * USER_DEFAULT_SCREEN_DPI);
-
         const auto actualFontOldSize = _actualFont.GetSize();
 
         auto lock = _terminal->LockForWriting();
         _compositionScale = scale;
 
-        _renderer->TriggerFontChange(::base::saturated_cast<int>(dpi),
-                                     _desiredFont,
-                                     _actualFont);
+        // _updateFont relies on the new _compositionScale set above
+        _updateFont();
 
         const auto actualFontNewSize = _actualFont.GetSize();
         if (actualFontNewSize != actualFontOldSize)

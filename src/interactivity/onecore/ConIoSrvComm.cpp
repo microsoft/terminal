@@ -71,12 +71,11 @@ ConIoSrvComm::~ConIoSrvComm()
 
 [[nodiscard]] NTSTATUS ConIoSrvComm::Connect()
 {
-    BOOL Ret = TRUE;
     NTSTATUS Status = STATUS_SUCCESS;
 
     // Port handle and name.
     HANDLE PortHandle;
-    UNICODE_STRING PortName;
+    static UNICODE_STRING PortName = RTL_CONSTANT_STRING(CIS_ALPC_PORT_NAME);
 
     // Generic Object Manager attributes for the port object and ALPC-specific
     // port attributes.
@@ -97,13 +96,6 @@ ConIoSrvComm::~ConIoSrvComm()
 
     // Structure used to iterate over the handles given to us by the server.
     ALPC_MESSAGE_HANDLE_INFORMATION HandleInfo;
-
-    // Initialize the server port name.
-    Ret = RtlCreateUnicodeString(&PortName, CIS_ALPC_PORT_NAME);
-    if (!Ret)
-    {
-        return STATUS_NO_MEMORY;
-    }
 
     // Initialize the attributes of the port object.
     InitializeObjectAttributes(&ObjectAttributes,

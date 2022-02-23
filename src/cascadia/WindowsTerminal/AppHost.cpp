@@ -392,7 +392,7 @@ void AppHost::Initialize()
 }
 
 // Method Description:
-// - Called everytime when the active tab's title changes. We'll also fire off
+// - Called every time when the active tab's title changes. We'll also fire off
 //   a window message so we can update the window's title on the main thread,
 //   though we'll only do so if the settings are configured for that.
 // Arguments:
