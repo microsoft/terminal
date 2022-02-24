@@ -320,7 +320,7 @@ void ConptyRoundtripTests::_clearConpty()
 
     // After we resize, make sure to get the new textBuffers
     return { &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetTextBuffer(),
-             term->_buffer.get() };
+             term->_mainBuffer.get() };
 }
 
 void ConptyRoundtripTests::ConptyOutputTestCanary()
@@ -342,7 +342,7 @@ void ConptyRoundtripTests::SimpleWriteOutputTest()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -365,7 +365,7 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -400,7 +400,7 @@ void ConptyRoundtripTests::WriteAFewSimpleLines()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -441,7 +441,7 @@ void ConptyRoundtripTests::TestWrappingALongString()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
     _checkConptyOutput = false;
@@ -492,7 +492,7 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto initialTermView = term->GetViewport();
 
     _flushFirstFrame();
@@ -557,7 +557,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     const auto initialTermView = term->GetViewport();
 
@@ -619,7 +619,7 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto initialTermView = term->GetViewport();
 
     _flushFirstFrame();
@@ -681,7 +681,7 @@ void ConptyRoundtripTests::MoveCursorAtEOL()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     _flushFirstFrame();
 
     Log::Comment(NoThrowString().Format(
@@ -760,7 +760,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
     const auto initialHostView = si.GetViewport();
     const auto initialTermView = term->GetViewport();
     const auto initialTerminalBufferHeight = term->GetTextBuffer().GetSize().Height();
@@ -960,7 +960,7 @@ void ConptyRoundtripTests::PassthroughCursorShapeImmediately()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -987,7 +987,7 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
 
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1064,7 +1064,7 @@ void ConptyRoundtripTests::PassthroughClearAll()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     auto& sm = si.GetStateMachine();
 
@@ -1151,7 +1151,7 @@ void ConptyRoundtripTests::PassthroughHardReset()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
 
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1215,7 +1215,7 @@ void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1263,7 +1263,7 @@ void ConptyRoundtripTests::OutputWrappedLinesAtBottomOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1396,7 +1396,7 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1497,7 +1497,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto initialTermView = term->GetViewport();
 
     Log::Comment(L"Flush first frame.");
@@ -1741,7 +1741,7 @@ void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1834,7 +1834,7 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -1942,7 +1942,7 @@ void ConptyRoundtripTests::OverstrikeAtBottomOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -2020,7 +2020,7 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -2111,7 +2111,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpace()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -2177,7 +2177,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -2332,8 +2332,6 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
 
-    auto& termTb = *term->_buffer;
-
     _flushFirstFrame();
 
     // Any of the cursor movements that use a LF will actually hard break the
@@ -2473,8 +2471,9 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state ==========");
-
-    verifyBuffer(termTb, til::rect{ term->_mutableViewport.ToInclusive() });
+    // GH#3492: Now that we support the alt buffer, make sure to validate the
+    // _alt buffer's_ contents.
+    verifyBuffer(*term->_altBuffer, til::rect{ term->_mutableViewport.ToInclusive() });
 }
 
 void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
@@ -2486,7 +2485,7 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
     auto& hostSm = si.GetStateMachine();
 
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     const auto termView = term->GetViewport();
 
     _flushFirstFrame();
@@ -2547,7 +2546,7 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -2676,7 +2675,7 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     auto& sm = si.GetStateMachine();
 
@@ -2831,7 +2830,7 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -2892,7 +2891,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -3019,7 +3018,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -3189,7 +3188,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -3347,7 +3346,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -3531,7 +3530,7 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 
@@ -3623,7 +3622,7 @@ void ConptyRoundtripTests::HyperlinkIdConsistency()
     auto& si = gci.GetActiveOutputBuffer();
     auto& hostSm = si.GetStateMachine();
     auto& hostTb = si.GetTextBuffer();
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
 
     _flushFirstFrame();
 
@@ -3688,7 +3687,7 @@ void ConptyRoundtripTests::ClearBufferSignal()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
     auto* hostTb = &si.GetTextBuffer();
-    auto* termTb = term->_buffer.get();
+    auto* termTb = term->_mainBuffer.get();
 
     _flushFirstFrame();
 

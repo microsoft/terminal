@@ -138,29 +138,29 @@ void TerminalApiTest::CursorVisibility()
     DummyRenderTarget emptyRT;
     term.Create({ 100, 100 }, 0, emptyRT);
 
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 
     term.SetCursorOn(false);
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsVisible());
-    VERIFY_IS_FALSE(term._buffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
+    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsOn());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 
     term.SetCursorOn(true);
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 
     term.SetCursorVisibility(false);
-    VERIFY_IS_FALSE(term._buffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 
     term.SetCursorOn(false);
-    VERIFY_IS_FALSE(term._buffer->GetCursor().IsVisible());
-    VERIFY_IS_FALSE(term._buffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._buffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
+    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsOn());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 }
 
 void TerminalApiTest::CursorVisibilityViaStateMachine()
@@ -170,7 +170,7 @@ void TerminalApiTest::CursorVisibilityViaStateMachine()
     DummyRenderTarget emptyRT;
     term.Create({ 100, 100 }, 0, emptyRT);
 
-    auto& tbi = *(term._buffer);
+    auto& tbi = *(term._mainBuffer);
     auto& stateMachine = *(term._stateMachine);
     auto& cursor = tbi.GetCursor();
 
@@ -222,7 +222,7 @@ void TerminalApiTest::CheckDoubleWidthCursor()
     Terminal term;
     term.Create({ 100, 100 }, 0, renderTarget);
 
-    auto& tbi = *(term._buffer);
+    auto& tbi = *(term._mainBuffer);
     auto& stateMachine = *(term._stateMachine);
     auto& cursor = tbi.GetCursor();
 
@@ -266,7 +266,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
     DummyRenderTarget emptyRT;
     term.Create({ 100, 100 }, 0, emptyRT);
 
-    auto& tbi = *(term._buffer);
+    auto& tbi = *(term._mainBuffer);
     auto& stateMachine = *(term._stateMachine);
 
     // Process the opening osc 8 sequence
@@ -292,7 +292,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomId()
     DummyRenderTarget emptyRT;
     term.Create({ 100, 100 }, 0, emptyRT);
 
-    auto& tbi = *(term._buffer);
+    auto& tbi = *(term._mainBuffer);
     auto& stateMachine = *(term._stateMachine);
 
     // Process the opening osc 8 sequence
@@ -320,7 +320,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
     DummyRenderTarget emptyRT;
     term.Create({ 100, 100 }, 0, emptyRT);
 
-    auto& tbi = *(term._buffer);
+    auto& tbi = *(term._mainBuffer);
     auto& stateMachine = *(term._stateMachine);
 
     // Process the opening osc 8 sequence
