@@ -138,6 +138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
+        bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
 
         bool HasSelection() const;
