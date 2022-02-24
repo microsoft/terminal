@@ -21,14 +21,10 @@ parameters:
       # Dev is built automatically
       # WindowsInbox does not typically build with VS.
 
-stages:
+jobs:
   - ${{ each branding in parameters.buildBrandings }}
-    - stage: Build_x64_${{ branding }}
+    - template: ./templates/build-console-ci.yml
       displayName: Build x64 ${{ branding }}
-      dependsOn: []
-      condition: succeeded()
-      jobs:
-        - template: ./templates/build-console-ci.yml
-          parameters:
-            platform: x64
-            branding: ${{ branding }}
+      parameters:
+        platform: x64
+        branding: ${{ branding }}
