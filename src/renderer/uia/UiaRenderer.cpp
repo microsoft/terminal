@@ -298,7 +298,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
         // Break up the output into 1000 character chunks to ensure
         // the output isn't cut off.
         static constexpr size_t sapiLimit{ 1000 };
-        std::wstring_view output{ _queuedOutput };
+        const std::wstring_view output{ _queuedOutput };
         for (size_t offset = 0;; offset += sapiLimit)
         {
             const auto croppedText{ output.substr(offset, sapiLimit) };
