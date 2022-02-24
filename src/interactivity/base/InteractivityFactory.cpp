@@ -437,7 +437,7 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
 }
 
 // Method Description:
-// - Per-object winodw procedure for pseudo console windows
+// - Per-object window procedure for pseudo console windows
 // Arguments:
 // - hWnd - Associated window handle from message
 // - Message - ID of message in queue
