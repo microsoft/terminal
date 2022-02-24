@@ -187,10 +187,8 @@ try
 {
     if (!newText.empty())
     {
-        static constexpr std::wstring_view newline{ L"\n" };
-        _newOutput.reserve(_newOutput.size() + newText.size() + 1);
         _newOutput.append(newText);
-        _newOutput.append(newline);
+        _newOutput.push_back(L'\n');
     }
     return S_OK;
 }
@@ -308,7 +306,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
             {
                 break;
             }
-            _dispatcher->NotifyNewOutput(_queuedOutput);
+            _dispatcher->NotifyNewOutput(croppedText);
         }
     }
     CATCH_LOG();
