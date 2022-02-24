@@ -24,7 +24,6 @@ parameters:
 jobs:
   - ${{ each branding in parameters.buildBrandings }}:
     - template: ./templates/build-console-ci.yml
-      displayName: Build x64 ${{ branding }}
       parameters:
         platform: x64
         branding: ${{ branding }}
