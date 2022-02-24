@@ -1,0 +1,34 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/features.xml
+
+variables:
+  - name: runCodesignValidationInjectionBG
+    value: false
+
+parameters:
+  - name: buildBrandings
+    type: object
+    default:
+      - Release
+      - Preview
+      # Dev is built automatically
+      # WindowsInbox does not typically build with VS.
+
+stages:
+  - ${{ each branding in parameters.buildBrandings }}
+    - stage: Build_x64_${{ branding }}
+      displayName: Build x64 ${{ branding }}
+      dependsOn: []
+      condition: succeeded()
+      jobs:
+        - template: ./templates/build-console-ci.yml
+          parameters:
+            platform: x64
+            branding: ${{ branding }}

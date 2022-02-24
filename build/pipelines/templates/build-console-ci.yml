@@ -1,5 +1,6 @@
 parameters:
   configuration: 'Release'
+  branding: 'Dev'
   platform: ''
   additionalBuildArguments: ''
 
@@ -9,6 +10,7 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
+    WindowsTerminalBranding: ${{ parameters.branding }}
   pool: 
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPoolOSS-L
