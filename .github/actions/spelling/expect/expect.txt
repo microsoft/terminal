@@ -2736,6 +2736,7 @@ windowsdeveloper
 windowsinternalstring
 WINDOWSIZE
 windowsx
+windowsterminal
 WINDOWTEXT
 windowtheme
 WINDOWTITLE
@@ -2878,6 +2879,7 @@ xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
+XTWINOPS
 Xzn
 yact
 YAML
