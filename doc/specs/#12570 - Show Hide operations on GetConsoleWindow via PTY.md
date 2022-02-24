@@ -29,7 +29,7 @@ denominator that would work cross-platform in all scenarios, avoiding situations
 dependent on Windows-isms like `user32k` including the full knowledge of how windowing occurs
 specific to the Windows platform.
 
-We also understood that on Windows, the `::CreateProcess` API provides ample flags specifically
+We also understood that on Windows, the [**CreateProcess**](https://docs.microsoft.com/windows/win32/procthread/process-creation-flags) API provides ample flags specifically
 for command-line applications to command the need for (or lack thereof) a window on startup
 such as `CREATE_NEW_CONSOLE`, `CREATE_NO_WINDOW`, and `DETACHED_PROCESS`. The understanding
 was that people who didn't need or want a window, or otherwise needed to manipulate the
@@ -365,5 +365,6 @@ behavior is engrained in some Windows tooling due to its ease of use.
 
 ## Resources
 
-[Default Terminal spec](https://github.com/microsoft/terminal/pull/7414)
-[Z-ordering issue](https://github.com/microsoft/terminal/issues/2988)
+- [Default Terminal spec](https://github.com/microsoft/terminal/pull/7414)
+- [Z-ordering issue](https://github.com/microsoft/terminal/issues/2988)
+- See all the embedded links in this document to Windows API resources
