@@ -187,7 +187,10 @@ try
 {
     if (!newText.empty())
     {
-        _newOutput += newText;
+        static constexpr std::wstring_view newline{ L"\n" };
+        _newOutput.reserve(_newOutput.size() + newText.size() + 1);
+        _newOutput.append(newText);
+        _newOutput.append(newline);
     }
     return S_OK;
 }
@@ -218,7 +221,7 @@ CATCH_LOG_RETURN_HR(E_FAIL);
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged;
+    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged || !_queuedOutput.empty();
 
     // If there's nothing to do, quick return
     RETURN_HR_IF(S_FALSE, !somethingToDo);
@@ -235,11 +238,15 @@ CATCH_LOG_RETURN_HR(E_FAIL);
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::EndPaint() noexcept
 {
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
+    RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
+
     // Snap this now while we're still under lock
     // so present can work on the copy while another
     // thread might start filling the next "frame"
     // worth of text data.
-    _queuedOutput = std::move(_newOutput);
+    std::swap(_queuedOutput, _newOutput);
+    _newOutput.clear();
     return S_OK;
 }
 
@@ -261,7 +268,6 @@ void UiaEngine::WaitUntilCanRender() noexcept
 [[nodiscard]] HRESULT UiaEngine::Present() noexcept
 {
     RETURN_HR_IF(S_FALSE, !_isEnabled);
-    RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
     // Fire UIA Events here
     if (_selectionChanged)
@@ -288,24 +294,24 @@ void UiaEngine::WaitUntilCanRender() noexcept
         }
         CATCH_LOG();
     }
-    if (!_queuedOutput.empty())
+    try
     {
-        try
+        // The speech API is limited to 1000 characters at a time.
+        // Break up the output into 1000 character chunks to ensure
+        // the output isn't cut off.
+        static constexpr size_t sapiLimit{ 1000 };
+        std::wstring_view output{ _queuedOutput };
+        for (size_t offset = 0;; offset += sapiLimit)
         {
-            // The speech API is limited to 1000 characters at a time.
-            // Break up the output into 1000 character chunks to ensure
-            // the output isn't cut off.
-            static const size_t sapiLimit{ 1000 };
-            while (_queuedOutput.size() > sapiLimit)
+            const auto croppedText{ output.substr(offset, sapiLimit) };
+            if (croppedText.empty())
             {
-                const auto croppedText{ _queuedOutput.substr(0, sapiLimit) };
-                _dispatcher->NotifyNewOutput(croppedText);
-                _queuedOutput = _queuedOutput.substr(sapiLimit);
+                break;
             }
             _dispatcher->NotifyNewOutput(_queuedOutput);
         }
-        CATCH_LOG();
     }
+    CATCH_LOG();
 
     _selectionChanged = false;
     _textBufferChanged = false;

@@ -1005,8 +1005,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     // Notify UIA of new text.
     // It's important to do this here instead of in TextBuffer, because here you have access to the entire line of text,
     // whereas TextBuffer writes it one character at a time via the OutputCellIterator.
-    static std::wstring newline{ L"\n" };
-    _buffer->GetRenderTarget().TriggerNewTextNotification(std::wstring{ stringView } + newline);
+    _buffer->GetRenderTarget().TriggerNewTextNotification(stringView);
 
     cursor.EndDeferDrawing();
 }

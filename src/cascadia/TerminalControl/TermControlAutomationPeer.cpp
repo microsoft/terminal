@@ -30,18 +30,29 @@ namespace XamlAutomation
 
 static constexpr wchar_t UNICODE_NEWLINE{ L'\n' };
 
-static inline std::wstring Sanitize(std::wstring_view text)
+// Method Description:
+// - creates a copy of the provided text with all of the control characters removed
+// Arguments:
+// - text: the string we're sanitizing
+// Return Value:
+// - a copy of "sanitized" with all of the control characters removed
+static std::wstring Sanitize(std::wstring_view text)
 {
-    std::wstring sanitized;
-    std::for_each(text.begin(), text.end(), [&sanitized](auto&& c) {
-        if (c >= UNICODE_SPACE || c == UNICODE_NEWLINE)
-        {
-            sanitized += c;
-        }
-    });
+    std::wstring sanitized{ text };
+    sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](wchar_t c) {
+                        return (c < UNICODE_SPACE && c != UNICODE_NEWLINE) || c == 0x7F /*DEL*/;
+                    }),
+                    sanitized.end());
     return sanitized;
 }
 
+// Method Description:
+// - verifies if a given string has text that would be read by a screen reader.
+// - a string of control characters, for example, would not be read.
+// Arguments:
+// - text: the string we're validating
+// Return Value:
+// - true, if the text is readable. false, otherwise.
 static constexpr bool IsReadable(std::wstring_view text)
 {
     for (const auto c : text)
@@ -71,7 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contentAutomationPeer.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
         _contentAutomationPeer.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
         _contentAutomationPeer.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
-        _contentAutomationPeer.NewOutput([this](auto&&, hstring newOutput) { NotifyNewOutput(std::wstring{ newOutput }); });
+        _contentAutomationPeer.NewOutput([this](auto&&, hstring newOutput) { NotifyNewOutput(newOutput); });
         _contentAutomationPeer.ParentProvider(*this);
     };
 
@@ -99,7 +110,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (const auto charCode{ MapVirtualKey(vkey, MAPVK_VK_TO_CHAR) })
         {
-            _keyEvents.emplace_back(gsl::narrow_cast<wchar_t>(charCode));
+            if (const auto keyEventChar{ gsl::narrow_cast<wchar_t>(charCode) }; IsReadable({ &keyEventChar, 1 }))
+            {
+                _keyEvents.emplace_back(keyEventChar);
+            }
         }
     }
 
@@ -177,15 +191,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
     }
 
-    void TermControlAutomationPeer::NotifyNewOutput(std::wstring newOutput)
+    void TermControlAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
     {
         // Try to suppress any events (or event data)
         // that is just the keypress the user made
         auto sanitized{ Sanitize(newOutput) };
         while (!_keyEvents.empty() && IsReadable(sanitized))
         {
-            if (towupper(sanitized.front()) == _keyEvents.back())
+            if (til::toupper_ascii(sanitized.front()) == _keyEvents.front())
             {
+                // the key event's character (i.e. the "A" key) matches
+                // the output character (i.e. "a" or "A" text).
+                // We can assume that the output character resulted from
+                // the pressed key, so we can ignore it.
                 sanitized = sanitized.substr(1);
                 _keyEvents.pop_front();
             }
