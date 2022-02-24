@@ -77,8 +77,16 @@
 
                         <ResourceDictionary x:Key="Light">
                             <!--  Define resources for Light mode here  -->
+
+                            <!--
+                                The Dark mode BG uses
+                                ApplicationPageBackgroundThemeBrush, but we're
+                                manually setting the Light BG to e8e8e8 here, at the
+                                guidance of the WinUI team. Otherwise, there's just
+                                not enough contrast in light mode. GH #12398
+                            -->
                             <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#F3F3F3" />
+                                             Color="#E8E8E8" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
