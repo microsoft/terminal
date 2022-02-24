@@ -434,34 +434,11 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         // we're capturing `this` here because when we exit, we want to EndDefer on the (newly created) active buffer.
         auto endDefer = wil::scope_exit([this]() noexcept { _altBuffer->GetCursor().EndDeferDrawing(); });
 
-        // First allocate a new text buffer to take the place of the current one.
-        std::unique_ptr<TextBuffer> newTextBuffer;
-        try
-        {
-            // GH#3848 - Stash away the current attributes
-            const auto oldBufferAttributes = _mainBuffer->GetCurrentAttributes();
-            newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
-                                                         TextAttribute{},
-                                                         0, // temporarily set size to 0 so it won't render.
-                                                         _mainBuffer->GetRenderTarget());
-
-            // start defer drawing on the new buffer
-            newTextBuffer->GetCursor().StartDeferDrawing();
-
-            // We don't need any fancy position information. We're just gonna
-            // resize the buffer, it's gonna be in exactly the place it is now.
-            // There's no scrollback to worry about!
-
-            RETURN_IF_FAILED(TextBuffer::Reflow(*_altBuffer.get(),
-                                                *newTextBuffer.get(),
-                                                _GetMutableViewport(),
-                                                std::nullopt));
-
-            // Restore the active text attributes
-            newTextBuffer->SetCurrentAttributes(oldBufferAttributes);
-            _altBuffer.swap(newTextBuffer);
-        }
-        CATCH_RETURN();
+        // GH#3494: We don't need to reflow the alt buffer. Apps that use the
+        // alt buffer will redraw themselves. This prevents graphical artifacts.
+        //
+        // This is consistent with VTE
+        RETURN_IF_FAILED(_altBuffer->ResizeTraditional(bufferSize));
     }
 
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.

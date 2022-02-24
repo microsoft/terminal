@@ -1531,7 +1531,15 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     CommandLine::Instance().EndAllPopups();
 
     const bool fWrapText = gci.GetWrapText();
-    if (fWrapText)
+    // GH#3493: Don't reflow the alt buffer.
+    //
+    // VTE only rewraps the contents of the (normal screen + its scrollback
+    // buffer) on a resize event. It doesn't rewrap the contents of the
+    // alternate screen. The alternate screen is used by applications which
+    // repaint it after a resize event. So it doesn't really matter. However, in
+    // that short time window, after resizing the terminal but before the
+    // application catches up, this prevents vertical lines
+    if (fWrapText && !_IsAltBuffer())
     {
         status = ResizeWithReflow(coordNewScreenSize);
     }
