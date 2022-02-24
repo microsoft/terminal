@@ -22,7 +22,7 @@ parameters:
       # WindowsInbox does not typically build with VS.
 
 jobs:
-  - ${{ each branding in parameters.buildBrandings }}
+  - ${{ each branding in parameters.buildBrandings }}:
     - template: ./templates/build-console-ci.yml
       displayName: Build x64 ${{ branding }}
       parameters:
