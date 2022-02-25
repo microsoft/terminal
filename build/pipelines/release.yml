@@ -22,6 +22,10 @@ parameters:
     displayName: "Run Compliance and Security Build"
     type: boolean
     default: true
+  - name: publishSymbolsToPublic
+    displayName: "Publish Symbols to MSDL"
+    type: boolean
+    default: true
   - name: buildTerminalVPack
     displayName: "Build Windows Terminal VPack"
     type: boolean
@@ -48,6 +52,11 @@ parameters:
       - x64
       - x86
       - arm64
+  - name: buildWindowsVersions
+    type: object
+    default:
+      - Win10
+      - Win11
 
 variables:
   TerminalInternalPackageVersion: "0.0.7"
@@ -64,9 +73,11 @@ jobs:
     matrix:
       ${{ each config in parameters.buildConfigurations }}:
         ${{ each platform in parameters.buildPlatforms }}:
-          ${{ config }}_${{ platform }}:
-            BuildConfiguration: ${{ config }}
-            BuildPlatform: ${{ platform }}
+          ${{ each windowsVersion in parameters.buildWindowsVersions }}:
+            ${{ config }}_${{ platform }}_${{ windowsVersion }}:
+              BuildConfiguration: ${{ config }}
+              BuildPlatform: ${{ platform }}
+              TerminalTargetWindowsVersion: ${{ windowsVersion }}
   displayName: Build
   timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
@@ -163,6 +174,10 @@ jobs:
       arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
       pwsh: true
   - ${{ if eq(parameters.buildTerminal, true) }}:
+    - pwsh: |-
+        ./build/scripts/Patch-ManifestsToWindowsVersion.ps1 -NewWindowsVersion "10.0.22000.0"
+      displayName: Update manifest target version to Win11 (if necessary)
+      condition: and(succeeded(), eq(variables['TerminalTargetWindowsVersion'], 'Win11'))
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln
       condition: true
@@ -180,7 +195,7 @@ jobs:
       continueOnError: True
       inputs:
         PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
-        ArtifactName: binlog-$(BuildPlatform)
+        ArtifactName: binlog-$(BuildPlatform)-$(TerminalTargetWindowsVersion)
     - task: PowerShell@2
       displayName: Check MSIX for common regressions
       inputs:
@@ -243,7 +258,7 @@ jobs:
       displayName: Publish Artifact (appx)
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
-        ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
+        ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
       displayName: Copy PublicTerminalCore.dll to Artifacts
@@ -261,7 +276,7 @@ jobs:
       condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
-        ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
+        ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
 
   - task: PublishSymbols@2
     displayName: Publish symbols path
@@ -279,6 +294,11 @@ jobs:
   
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
+    strategy:
+      matrix:
+        ${{ each windowsVersion in parameters.buildWindowsVersions }}:
+          ${{ windowsVersion }}:
+            TerminalTargetWindowsVersion: ${{ windowsVersion }}
     displayName: Create and sign AppX/MSIX bundles
     dependsOn: Build
     steps:
@@ -291,23 +311,16 @@ jobs:
       displayName: Package ES - Setup Build
       inputs:
         disableOutputRedirect: true
-    - task: DownloadBuildArtifacts@0
-      displayName: Download Artifacts (*.appx, *.msix, *.appxsym)
-      inputs:
-        downloadType: specific
-        itemPattern: >-
-          **/*.msix
-
-          **/*.appx
-
-          **/*.appxsym
-        extractTars: false
-
+    - ${{ each platform in parameters.buildPlatforms }}:
+      - task: DownloadBuildArtifacts@0
+        displayName: Download Artifacts ${{ platform }} $(TerminalTargetWindowsVersion)
+        inputs:
+          artifactName: appx-${{ platform }}-Release-$(TerminalTargetWindowsVersion)
     - task: PowerShell@2
       displayName: Create WindowsTerminal*.msixbundle
       inputs:
         filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:
@@ -343,55 +356,11 @@ jobs:
               }
           ]
 
-    # It seems easier to do this -- download every appxsym -- then enumerate all the PDBs in the build directory for the
-    # public symbol push. Otherwise, we would have to list all of the PDB files one by one.
-    - pwsh: |-
-        mkdir $(Build.SourcesDirectory)/appxsym-temp
-        Get-ChildItem "$(System.ArtifactsDirectory)" -Filter *.appxsym -Recurse | % {
-          $src = $_.FullName
-          $dest = Join-Path "$(Build.SourcesDirectory)/appxsym-temp/" $_.Name
-
-          mkdir $dest
-          Write-Host "Extracting $src to $dest..."
-          tar -x -v -f $src -C $dest
-        }
-      displayName: Extract symbols for public consumption
-
-    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
-    - template: .\templates\install-winsdk-steps.yml
-    - task: PowerShell@2
-      displayName: Source Index PDBs (the public ones)
-      inputs:
-        filePath: build\scripts\Index-Pdbs.ps1
-        arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-temp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
-
-    # Publish the app symbols to the public MSDL symbol server
-    # accessible via https://msdl.microsoft.com/download/symbols
-    - task: PublishSymbols@2
-      displayName: 'Publish app symbols to MSDL'
-      inputs:
-        symbolsFolder: '$(Build.SourcesDirectory)/appxsym-temp'
-        searchPattern: '**/*.pdb'
-        SymbolsMaximumWaitTime: 30
-        SymbolServerType: 'TeamServices'
-        SymbolsProduct: 'Windows Terminal Application Binaries'
-        SymbolsVersion: '$(XES_APPXMANIFESTVERSION)'
-        # The ADO task does not support indexing of GitHub sources.
-        indexSources: false
-        detailedLog: true
-      # There is a bug which causes this task to fail if LIB includes an inaccessible path (even though it does not depend on it).
-      # To work around this issue, we just force LIB to be any dir that we know exists.
-      # Copied from https://github.com/microsoft/icu/blob/f869c214adc87415dfe751d81f42f1bca55dcf5f/build/azure-nuget.yml#L564-L583
-      env:
-        LIB: $(Build.SourcesDirectory)
-        ArtifactServices_Symbol_AccountName: microsoftpublicsymbols
-        ArtifactServices_Symbol_PAT: $(ADO_microsoftpublicsymbols_PAT)
-
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
       inputs:
         PathtoPublish: $(System.ArtifactsDirectory)
-        ArtifactName: appxbundle-signed
+        ArtifactName: appxbundle-signed-$(TerminalTargetWindowsVersion)
 
 - ${{ if eq(parameters.buildWPF, true) }}:
   - job: PackageAndSignWPF
@@ -415,14 +384,14 @@ jobs:
     - task: DownloadBuildArtifacts@0
       displayName: Download x86 PublicTerminalCore
       inputs:
-        artifactName: wpf-dll-x86-$(BuildConfiguration)
+        artifactName: wpf-dll-x86-$(BuildConfiguration)-Win10
         itemPattern: '**/*.dll'
         downloadPath: bin\Win32\$(BuildConfiguration)\
         extractTars: false
     - task: DownloadBuildArtifacts@0
       displayName: Download x64 PublicTerminalCore
       inputs:
-        artifactName: wpf-dll-x64-$(BuildConfiguration)
+        artifactName: wpf-dll-x64-$(BuildConfiguration)-Win10
         itemPattern: '**/*.dll'
         downloadPath: bin\x64\$(BuildConfiguration)\
         extractTars: false
@@ -504,6 +473,71 @@ jobs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)\nupkg
         ArtifactName: wpf-nupkg-$(BuildConfiguration)
 
+- ${{ if eq(parameters.publishSymbolsToPublic, true) }}:
+  - job: PublishSymbols
+    displayName: Publish Symbols
+    dependsOn: BundleAndSign
+    steps:
+    - checkout: self
+      clean: true
+      fetchDepth: 1
+      submodules: true
+    - task: PkgESSetupBuild@12
+      displayName: Package ES - Setup Build
+
+    # Download the appx-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
+    - ${{ each platform in parameters.buildPlatforms }}:
+      - ${{ each windowsVersion in parameters.buildWindowsVersions }}:
+        - task: DownloadBuildArtifacts@0
+          displayName: Download Symbols ${{ platform }} ${{ windowsVersion }}
+          inputs:
+            artifactName: appx-${{ platform }}-Release-${{ windowsVersion }}
+
+    # It seems easier to do this -- download every appxsym -- then enumerate all the PDBs in the build directory for the
+    # public symbol push. Otherwise, we would have to list all of the PDB files one by one.
+    - pwsh: |-
+        mkdir $(Build.SourcesDirectory)/appxsym-temp
+        Get-ChildItem "$(System.ArtifactsDirectory)" -Filter *.appxsym -Recurse | % {
+          $src = $_.FullName
+          $dest = Join-Path "$(Build.SourcesDirectory)/appxsym-temp/" $_.Name
+
+          mkdir $dest
+          Write-Host "Extracting $src to $dest..."
+          tar -x -v -f $src -C $dest
+        }
+      displayName: Extract symbols for public consumption
+
+    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
+    - template: .\templates\install-winsdk-steps.yml
+    - task: PowerShell@2
+      displayName: Source Index PDBs (the public ones)
+      inputs:
+        filePath: build\scripts\Index-Pdbs.ps1
+        arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-temp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+
+    # Publish the app symbols to the public MSDL symbol server
+    # accessible via https://msdl.microsoft.com/download/symbols
+    - task: PublishSymbols@2
+      displayName: 'Publish app symbols to MSDL'
+      inputs:
+        symbolsFolder: '$(Build.SourcesDirectory)/appxsym-temp'
+        searchPattern: '**/*.pdb'
+        SymbolsMaximumWaitTime: 30
+        SymbolServerType: 'TeamServices'
+        SymbolsProduct: 'Windows Terminal Application Binaries'
+        SymbolsVersion: '$(XES_APPXMANIFESTVERSION)'
+        # The ADO task does not support indexing of GitHub sources.
+        indexSources: false
+        detailedLog: true
+      # There is a bug which causes this task to fail if LIB includes an inaccessible path (even though it does not depend on it).
+      # To work around this issue, we just force LIB to be any dir that we know exists.
+      # Copied from https://github.com/microsoft/icu/blob/f869c214adc87415dfe751d81f42f1bca55dcf5f/build/azure-nuget.yml#L564-L583
+      env:
+        LIB: $(Build.SourcesDirectory)
+        ArtifactServices_Symbol_AccountName: microsoftpublicsymbols
+        ArtifactServices_Symbol_PAT: $(ADO_microsoftpublicsymbols_PAT)
+
+
 - ${{ if eq(parameters.buildTerminalVPack, true) }}:
   - job: VPack
     displayName: Create Windows vPack
@@ -518,7 +552,7 @@ jobs:
     - task: DownloadBuildArtifacts@0
       displayName: Download Build Artifacts
       inputs:
-        artifactName: appxbundle-signed
+        artifactName: appxbundle-signed-Win11
         extractTars: false
     - task: PowerShell@2
       displayName: Rename and stage packages for vpack
@@ -527,7 +561,7 @@ jobs:
         script: >-
           # Rename to known/fixed name for Windows build system
 
-          Get-ChildItem Microsoft.WindowsTerminal_*.msixbundle | Rename-Item -NewName { 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle' }
+          Get-ChildItem Microsoft.WindowsTerminal_Win11_*.msixbundle | Rename-Item -NewName { 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle' }
 
 
           # Create vpack directory and place item inside

@@ -43,17 +43,15 @@
   <!-- This is magic that tells msbuild to link against the Desktop platform
        instead of the App platform. This you definitely want, because we're not
        building a true universal "app", we're building a desktop application
-       with xaml. APIs like CreatePseudoConsole won't always be linkable without Desktop platform,
-       but we now carry our own copy of them in the winconpty library which works everywhere.
-       For future reference, _VC_Target_Library_Platform can be configured to say which CRT to link against.
-       Now that this doesn't say anything, the implicit is 'Store' which links against the App CRT.
-       The alternative is 'Desktop' which links against the usual CRT redistributable.
+       with xaml.
        Linking against the App CRT will require the VCRT forwarders to be dropped next to the final binary for
        desktop situations, but it will let non-desktop situations work since there is no redist off desktop.
        The forwarders can be found at https://github.com/microsoft/vcrt-forwarders and are already included
        in our CascadiaPackage project.
   -->
   <PropertyGroup>
+    <!-- We have to use the Desktop platform for Hybrid CRT to work. -->
+    <_VC_Target_Library_Platform>Desktop</_VC_Target_Library_Platform>
     <_NoWinAPIFamilyApp>true</_NoWinAPIFamilyApp>
   </PropertyGroup>
 
