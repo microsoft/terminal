@@ -967,6 +967,15 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
     co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
 
+    if (!_window)
+    {
+        // MSFT:36797001 There's a surprising number of hits of this callback
+        // getting triggered during teardown. As a best practice, we really
+        // should make sure _window exists before accessing it on any coroutine.
+        // We might be getting called back after the app already began getting
+        // cleaned up.
+        co_return;
+    }
     // Unregister all previously registered hotkeys.
     //
     // RegisterHotKey(), will not unregister hotkeys automatically.
