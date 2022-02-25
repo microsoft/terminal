@@ -354,7 +354,8 @@ using namespace Microsoft::Console::Interactivity;
                 pseudoClass.lpfnWndProc = DefWindowProc;
                 RegisterClass(&pseudoClass);
 
-                const auto windowStyle = (owner == HWND_DESKTOP) ? WS_OVERLAPPEDWINDOW : WS_CHILD;
+                // const auto windowStyle = (owner == HWND_DESKTOP) ? WS_OVERLAPPEDWINDOW : WS_CHILD;
+                const auto windowStyle = WS_OVERLAPPEDWINDOW;
 
                 // Attempt to create window
                 hwnd = CreateWindowExW(
@@ -376,9 +377,9 @@ using namespace Microsoft::Console::Interactivity;
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
 
-                const auto awareness{ GetThreadDpiAwarenessContext() };
-                awareness;
-                SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+                // const auto awareness{ GetThreadDpiAwarenessContext() };
+                // awareness;
+                // SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
                 break;
             }

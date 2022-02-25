@@ -154,15 +154,12 @@ int createSomeWindows(const HWND& consoleHwnd)
     return 0;
 }
 
-// This wmain exists for help in writing scratch programs while debugging.
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+int doDefaultOutput()
 {
     const auto pid{ GetCurrentProcessId() };
     const auto consoleWindow{ GetConsoleWindow() };
-    // createSomeWindows(consoleWindow);
 
     wprintf(fmt::format(L"pid: {}\n", pid).c_str());
-
     wprintf(fmt::format(L"consoleWindow: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleWindow)).c_str());
 
     const auto mainHwnd{ find_main_window(pid) };
@@ -178,6 +175,42 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     wprintf(fmt::format(L"Ancestor_PARENT: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleAncestor_PARENT)).c_str());
     wprintf(fmt::format(L"Ancestor_ROOT: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleAncestor_ROOT)).c_str());
     wprintf(fmt::format(L"Ancestor_ROOTOWNER: {0:#010x}\n", reinterpret_cast<unsigned long long>(consoleAncestor_ROOTOWNER)).c_str());
+
+    return 0;
+}
+
+// This wmain exists for help in writing scratch programs while debugging.
+int __cdecl wmain(int argc, WCHAR* argv[])
+{
+    doDefaultOutput();
+
+    const auto consoleWindow{ GetConsoleWindow() };
+
+    if (argc <= 1)
+    {
+        return 0;
+    }
+
+    HWND target = consoleWindow;
+    std::wstring arg{ argv[1] };
+    if (arg == L"--parent" && argc > 2)
+    {
+        target = GetAncestor(consoleWindow, GA_ROOT);
+        arg = argv[2];
+    }
+
+    if (arg == L"messagebox")
+    {
+        MessageBoxW(target, L"foo", L"bar", MB_OK);
+    }
+    else if (arg == L"windows")
+    {
+        createSomeWindows(target);
+    }
+    else if (arg == L"hide")
+    {
+        ShowWindow(target, SW_HIDE);
+    }
 
     return 0;
 }
