@@ -326,6 +326,9 @@ private:
     Microsoft::Console::Types::Viewport _mutableViewport;
     SHORT _scrollbackLines;
 
+    til::size _altBufferSize;
+    std::optional<til::size> _deferredResize{ std::nullopt };
+
     // _scrollOffset is the number of lines above the viewport that are currently visible
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
     int _scrollOffset;

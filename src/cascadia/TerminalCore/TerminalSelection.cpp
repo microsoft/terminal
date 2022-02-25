@@ -426,15 +426,15 @@ void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
         break;
     case SelectionDirection::Up:
     {
-        const auto viewportHeight{ _mutableViewport.Height() };
+        const auto viewportHeight{ _GetMutableViewport().Height() };
         const auto newY{ base::ClampSub<short, short>(pos.Y, viewportHeight) };
         pos = newY < bufferSize.Top() ? bufferSize.Origin() : COORD{ pos.X, newY };
         break;
     }
     case SelectionDirection::Down:
     {
-        const auto viewportHeight{ _mutableViewport.Height() };
-        const auto mutableBottom{ _mutableViewport.BottomInclusive() };
+        const auto viewportHeight{ _GetMutableViewport().Height() };
+        const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
         const auto newY{ base::ClampAdd<short, short>(pos.Y, viewportHeight) };
         pos = newY > mutableBottom ? COORD{ bufferSize.RightInclusive(), mutableBottom } : COORD{ pos.X, newY };
         break;
@@ -453,7 +453,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
         break;
     case SelectionDirection::Right:
     case SelectionDirection::Down:
-        pos = { bufferSize.RightInclusive(), _mutableViewport.BottomInclusive() };
+        pos = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
         break;
     }
 }

@@ -594,11 +594,13 @@ void Terminal::UseAlternateScreenBuffer()
     }
 
     // the new alt buffer is exactly the size of the viewport.
-    const COORD bufferSize{ _mutableViewport.Dimensions() };
+    _altBufferSize = til::size{ _mutableViewport.Dimensions() };
+    _deferredResize = std::nullopt;
+
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
     // Create a new alt buffer
-    _altBuffer = std::make_unique<TextBuffer>(bufferSize,
+    _altBuffer = std::make_unique<TextBuffer>(_altBufferSize.to_win32_coord(),
                                               TextAttribute{},
                                               cursorSize,
                                               _mainBuffer->GetRenderTarget());
@@ -620,6 +622,10 @@ void Terminal::UseAlternateScreenBuffer()
 
     // update all the hyperlinks on the screen
     UpdatePatternsUnderLock();
+
+    // GH#3321: Make sure we let the TerminalInput know that we switched
+    // buffers. This might affect how we interpret certain mouse events.
+    _terminalInput->UseAlternateScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -658,8 +664,18 @@ void Terminal::UseMainScreenBuffer()
     // destroy the alt buffer
     _altBuffer = nullptr;
 
+    if (_deferredResize.has_value())
+    {
+        LOG_IF_FAILED(UserResize(_deferredResize.value().to_win32_coord()));
+        _deferredResize = std::nullopt;
+    }
+
     // update all the hyperlinks on the screen
     UpdatePatternsUnderLock();
+
+    // GH#3321: Make sure we let the TerminalInput know that we switched
+    // buffers. This might affect how we interpret certain mouse events.
+    _terminalInput->UseMainScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();

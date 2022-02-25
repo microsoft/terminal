@@ -1996,6 +1996,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         {
             const COORD newSize = _psiMainBuffer->_deferredPtyResize.value().to_win32_coord();
             _psiMainBuffer->SetViewportSize(&newSize);
+            _psiMainBuffer->_deferredPtyResize = std::nullopt;
         }
 
         // GH#381: When we switch into the alt buffer:
