@@ -76,4 +76,3 @@
         </alwaysEnabledBrandingTokens>
     </feature>
 </featureStaging>
-<!-- revert this commit, you are testing features.xml changes triggering a build... -->
