@@ -302,6 +302,8 @@ private:
 
     bool _ignoreLegacyEquivalentVTAttributes;
 
+    std::optional<til::size> _deferredPtyResize{ std::nullopt };
+
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;
     friend class ScreenBufferTests;

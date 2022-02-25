@@ -718,9 +718,11 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
         if (_psiMainBuffer)
         {
-            const auto bufferSize = GetBufferSize().Dimensions();
+            _psiMainBuffer->_fAltWindowChanged = false;
+            _psiMainBuffer->_deferredPtyResize = til::size{ GetBufferSize().Dimensions() };
 
-            _psiMainBuffer->SetViewportSize(&bufferSize);
+            // const auto bufferSize = GetBufferSize().Dimensions();
+            // _psiMainBuffer->SetViewportSize(&bufferSize);
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
@@ -1488,6 +1490,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
+    _textBuffer->GetCursor().StartDeferDrawing();
+    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(coordNewScreenSize));
 }
 
@@ -1987,6 +1991,11 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         {
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
             psiMain->_fAltWindowChanged = false;
+        }
+        else if (_psiMainBuffer->_deferredPtyResize.has_value())
+        {
+            const COORD newSize = _psiMainBuffer->_deferredPtyResize.value().to_win32_coord();
+            _psiMainBuffer->SetViewportSize(&newSize);
         }
 
         // GH#381: When we switch into the alt buffer:
