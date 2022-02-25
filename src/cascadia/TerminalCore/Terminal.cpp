@@ -243,13 +243,13 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         return S_FALSE;
     }
 
-    // Now that we've finished the hard work of resizing the main buffer and
-    // getting the viewport back into the right spot, we need to ALSO resize the
-    // alt buffer, if one exists. Fortunately, this is easy. We don't need to
+    // Shortcut: if we're in the alt buffer, just resize the
+    // alt buffer and put off resizing the main buffer till we switch back. Fortunately, this is easy. We don't need to
     // worry about the viewport and scrollback at all! The alt buffer never has
     // any scrollback, so we just need to resize it and presto, we're done.
     if (_inAltBuffer())
     {
+        // stach this resize for the future.
         _deferredResize = til::size{ viewportSize };
 
         _altBuffer->GetCursor().StartDeferDrawing();
@@ -261,6 +261,10 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         //
         // This is consistent with VTE
         RETURN_IF_FAILED(_altBuffer->ResizeTraditional(viewportSize));
+
+        // Since the _mutableViewport is no longer the size of the actual
+        // viewport, then update our _altBufferSize tracker we're using to help
+        // us out here.
         _altBufferSize = til::size{ viewportSize };
         return S_OK;
     }
@@ -925,6 +929,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 
 Viewport Terminal::_GetMutableViewport() const noexcept
 {
+    // GH#3493: if we're in the alt buffer, then it's possible that the mutable
+    // viewport's size hasn't been updated yet. In that case, use the
+    // temporarily stashed _altBufferSize instead.
     return _inAltBuffer() ? Viewport::FromDimensions(_altBufferSize.to_win32_coord()) :
                             _mutableViewport;
 }
@@ -960,6 +967,9 @@ int Terminal::_VisibleEndIndex() const noexcept
 
 Viewport Terminal::_GetVisibleViewport() const noexcept
 {
+    // GH#3493: if we're in the alt buffer, then it's possible that the mutable
+    // viewport's size hasn't been updated yet. In that case, use the
+    // temporarily stashed _altBufferSize instead.
     const COORD origin{ 0, gsl::narrow<short>(_VisibleStartIndex()) };
     const COORD size{ _inAltBuffer() ? _altBufferSize.to_win32_coord() :
                                        _mutableViewport.Dimensions() };

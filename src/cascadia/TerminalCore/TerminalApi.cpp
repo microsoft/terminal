@@ -595,7 +595,6 @@ void Terminal::UseAlternateScreenBuffer()
 
     // the new alt buffer is exactly the size of the viewport.
     _altBufferSize = til::size{ _mutableViewport.Dimensions() };
-    _deferredResize = std::nullopt;
 
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
