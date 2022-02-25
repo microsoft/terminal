@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2020-08-04
+last updated: 2022-25-02
 issue id: 1571
 ---
 
@@ -76,6 +76,11 @@ There are five `type`s of objects in this menu:
   - The `"entries"` property specifies a list of menu entries that will appear
     nested under this entry. This can contain other `"type":"folder"` groups as
     well!
+  - The `allowEmpty` property will force this entry to show up in the menu, even
+    if it doesn't have any profiles in it. This defaults to `false`, meaning
+    that folders without any entries in them will just be ignored when
+    generating the menu. This will be more useful with the `matchProfile` entry,
+    below.
 * `"type":"action"`: This represents a menu entry that should execute a specific
   `ShortcutAction`.
   - the `id` property will specify the global action ID (see [#6899], [#7175])
@@ -85,6 +90,12 @@ There are five `type`s of objects in this menu:
     either provided as the `"name"` in the global list of actions, or the
     generated name if no `name` was provided)
   - The icon for this entry will similarly re-use the action's `icon`.
+* `"type": "matchProfile"`: Expands to all the profiles that match a given
+  regex. This lets the user easily specify a whole collection of profiles for a
+  folder, without needing to add them all manually.
+  - `"on"`: One of `"name"`, `"commandline"` or `"source"`, used to identify the
+    property of the profile to match against.
+  - `"match"`: a regex to string compare the given `on` with.
 * `"type":"remainingProfiles"`: This is a special type of entry that will be
   expanded to contain one `"type":"profile"` entry for every profile that was
   not already listed in the menu. This will allow users to add one entry for
@@ -97,6 +108,7 @@ There are five `type`s of objects in this menu:
     enabling all other profiles to also be accessible.
   - The "name" of these entries will simply be the name of the profile
   - The "icon" of these entries will simply be the profile's icon
+  - This won't include any profiles that have been included via `match` entries.
 
 The "default" new tab menu could be imagined as the following blob of json:
 
@@ -107,6 +119,42 @@ The "default" new tab menu could be imagined as the following blob of json:
     ]
 }
 ```
+
+Alternatively, we could consider something like the following. This would place
+CMD, PowerShell, and all PowerShell cores in the root at the top, followed by
+nested entries for each subsequent dynamic profile generator.
+
+```jsonc
+{
+    "newTabMenu": [
+        { "type":"profile", "profile": "cmd" },
+        { "type":"profile", "profile": "Windows PowerShell" },
+        { "type": "matchProfile", "on": "source", "match": "Microsoft.Terminal.PowerShellCore" }
+        {
+            "type": "folder",
+            "name": "WSL",
+            "entries": [ { "type": "matchProfile", "on": "source", "match": "Microsoft.Terminal.Wsl" } ]
+        },
+        {
+            "type": "folder",
+            "name": "Visual Studio",
+            "entries": [ { "type": "matchProfile", "on": "source", "match": "Microsoft.Terminal.VisualStudio" } ]
+        },
+        // ... etc for other profile generators
+        { "type": "remainingProfiles" }
+    ]
+}
+```
+
+I might only recommend that for `userDefaults.json`, which is the json files
+used as a template for a user's new settings file. This would prevent us from
+moving the user's cheese too much, if they're already using the Terminal and
+happy with their list as is. Especially consider someone who's default profile
+is a WSL distro, which would now need two clicks to get to.
+
+> _note_: We will also want to support the same `{ "key": "SomeResoureString"}`
+> syntax used by the Command Palette commands
+> for specifying localizable names, if we chose to pursue this route.
 
 ### Other considerations
 
@@ -290,6 +338,17 @@ And assuming the user has bound:
     - Close Other Tabs: `{ "action": "closeTabs", "otherThan": "${selectedTab.index}" }`
     - Close Tabs to the Right: `{ "action": "closeTabs", "after": "${selectedTab.index}" }`
 
+## Updates
+
+_Feburary 2022_: Doc updated in response to some discussion in [#11326] and
+[#7774]. In those PRs, it became clear that there needs to be a simple way of
+collecting up a whole group of profiles automatically for sorting in these
+menus. Although discussion centered on how hard it would be for extensions to
+provide that customization themselves, the `match` statement was added as a way
+to allow the user to easily filter those profiles themselves.
+
+This was something we had originally considered as a "future consideration", but
+ultimately deemed it to be out of scope for the initial spec review.
 
 <!-- Footnotes -->
 [#2046]: https://github.com/microsoft/terminal/issues/2046
@@ -298,3 +357,5 @@ And assuming the user has bound:
 [#3337]: https://github.com/microsoft/terminal/issues/3337
 [#6899]: https://github.com/microsoft/terminal/issues/6899
 [#7175]: https://github.com/microsoft/terminal/issues/7175
+[#11326]: https://github.com/microsoft/terminal/issues/11326
+[#7774]: https://github.com/microsoft/terminal/issues/7774
