@@ -2142,13 +2142,13 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
         {
             switch (codeUnit)
             {
-            case '\\':
-            case '{':
-            case '}':
-                contentBuilder << "\\" << static_cast<char>(codeUnit);
+            case L'\\':
+            case L'{':
+            case L'}':
+                contentBuilder << "\\" << gsl::narrow<char>(codeUnit);
                 break;
             default:
-                contentBuilder << static_cast<char>(codeUnit);
+                contentBuilder << gsl::narrow<char>(codeUnit);
             }
         }
         else if (codeUnit <= 32767)
