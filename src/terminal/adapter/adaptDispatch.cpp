@@ -5,6 +5,7 @@
 
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../renderer/base/renderer.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
@@ -26,8 +27,10 @@ bool NoOp() noexcept
 }
 
 // Note: AdaptDispatch will take ownership of pConApi and pDefaults
-AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi, TerminalInput& terminalInput) :
+AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
     _pConApi{ std::move(pConApi) },
+    _renderer{ renderer },
+    _renderSettings{ renderSettings },
     _terminalInput{ terminalInput },
     _usingAltBuffer(false),
     _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
@@ -1260,8 +1263,8 @@ bool AdaptDispatch::SetScreenMode(const bool reverseMode)
     {
         return false;
     }
-
-    _pConApi->SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
+    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
+    _renderer.TriggerRedrawAll();
     return true;
 }
 
@@ -1901,7 +1904,7 @@ bool AdaptDispatch::HardReset()
     _ResetTabStops();
 
     // Clear the soft font in the renderer and delete the font buffer.
-    _pConApi->UpdateSoftFont({}, {}, false);
+    _renderer.UpdateSoftFont({}, {}, false);
     _fontBuffer = nullptr;
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
@@ -2207,7 +2210,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
-    return _pConApi->SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
+    return SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
 }
 
 // Routine Description:
@@ -2230,7 +2233,21 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    return _pConApi->SetColorTableEntry(tableIndex, dwColor);
+    _renderSettings.SetColorTableEntry(tableIndex, dwColor);
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
+    // Update the screen colors if we're not a pty
+    // No need to force a redraw in pty mode.
+    _renderer.TriggerRedrawAll();
+    return true;
 }
 
 // Method Description:
@@ -2241,8 +2258,8 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
-    _pConApi->SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
-    return _pConApi->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
+    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
+    return SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 }
 
 // Method Description:
@@ -2253,8 +2270,8 @@ bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
-    _pConApi->SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
-    return _pConApi->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
+    _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
+    return SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 }
 
 //Routine Description:
@@ -2405,7 +2422,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber
             const auto bitPattern = _fontBuffer->GetBitPattern();
             const auto cellSize = _fontBuffer->GetCellSize();
             const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _pConApi->UpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
+            _renderer.UpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
         }
         return true;
     };

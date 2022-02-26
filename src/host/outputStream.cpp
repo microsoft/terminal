@@ -142,25 +142,6 @@ void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>&
 }
 
 // Routine Description:
-// - Sets the various render modes.
-// Arguments:
-// - mode - the render mode to change.
-// - enabled - set to true to enable the mode, false to disable it.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
-{
-    auto& g = ServiceLocator::LocateGlobals();
-    auto& renderSettings = g.getConsoleInformation().GetRenderSettings();
-    renderSettings.SetRenderMode(mode, enabled);
-
-    if (g.pRender)
-    {
-        g.pRender->TriggerRedrawAll();
-    }
-}
-
-// Routine Description:
 // - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
 //     to the beginning of the next row when it reaches the end of the current row.
 // Arguments:
@@ -370,60 +351,6 @@ bool ConhostInternalGetSet::IsConsolePty() const
     return ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode();
 }
 
-// Method Description:
-// - Retrieves the value in the colortable at the specified index.
-// Arguments:
-// - tableIndex: the index of the color table to retrieve.
-// Return Value:
-// - the COLORREF value for the color at that index in the table.
-COLORREF ConhostInternalGetSet::GetColorTableEntry(const size_t tableIndex) const
-{
-    auto& g = ServiceLocator::LocateGlobals();
-    auto& gci = g.getConsoleInformation();
-    return gci.GetColorTableEntry(tableIndex);
-}
-
-// Method Description:
-// - Updates the value in the colortable at index tableIndex to the new color
-//   color. color is a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - tableIndex: the index of the color table to update.
-// - color: the new COLORREF to use as that color table value.
-// Return Value:
-// - true if successful. false otherwise.
-bool ConhostInternalGetSet::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
-{
-    auto& g = ServiceLocator::LocateGlobals();
-    auto& gci = g.getConsoleInformation();
-    gci.SetColorTableEntry(tableIndex, color);
-
-    // Update the screen colors if we're not a pty
-    // No need to force a redraw in pty mode.
-    if (g.pRender && !gci.IsInVtIoMode())
-    {
-        g.pRender->TriggerRedrawAll();
-    }
-
-    // If we're a conpty, always return false, so that we send the updated color
-    //      value to the terminal. Still handle the sequence so apps that use
-    //      the API or VT to query the values of the color table still read the
-    //      correct color.
-    return !gci.IsInVtIoMode();
-}
-
-// Routine Description:
-// - Sets the position in the color table for the given color alias.
-// Arguments:
-// - alias: the color alias to update.
-// - tableIndex: the new position of the alias in the color table.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex)
-{
-    auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
-    renderSettings.SetColorAliasIndex(alias, tableIndex);
-}
-
 // Routine Description:
 // - Fills a region of the screen buffer.
 // Arguments:
@@ -513,23 +440,4 @@ void ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
 bool ConhostInternalGetSet::IsVtInputEnabled() const
 {
     return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
-}
-
-// Routine Description:
-// - Replaces the active soft font with the given bit pattern.
-// Arguments:
-// - bitPattern - An array of scanlines representing all the glyphs in the font.
-// - cellSize - The cell size for an individual glyph.
-// - centeringHint - The horizontal extent that glyphs are offset from center.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                           const SIZE cellSize,
-                                           const size_t centeringHint)
-{
-    auto* pRender = ServiceLocator::LocateGlobals().pRender;
-    if (pRender)
-    {
-        pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
-    }
 }

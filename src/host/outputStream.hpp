@@ -41,8 +41,6 @@ public:
 
     void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
 
-    void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
-
     void SetAutoWrapMode(const bool wrapAtEOL) override;
 
     void SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
@@ -67,10 +65,6 @@ public:
 
     bool IsConsolePty() const override;
 
-    COLORREF GetColorTableEntry(const size_t tableIndex) const override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
-    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
-
     void FillRegion(const COORD startPosition,
                     const size_t fillLength,
                     const wchar_t fillChar,
@@ -82,10 +76,6 @@ public:
                       const bool standardFillAttrs) override;
 
     bool IsVtInputEnabled() const override;
-
-    void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                        const SIZE cellSize,
-                        const size_t centeringHint) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

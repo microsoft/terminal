@@ -48,8 +48,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) = 0;
 
-        virtual void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) = 0;
-
         virtual void SetAutoWrapMode(const bool wrapAtEOL) = 0;
 
         virtual void SetScrollingRegion(const SMALL_RECT& scrollMargins) = 0;
@@ -68,10 +66,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ResizeWindow(const size_t width, const size_t height) = 0;
         virtual bool IsConsolePty() const = 0;
 
-        virtual COLORREF GetColorTableEntry(const size_t tableIndex) const = 0;
-        virtual bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) = 0;
-        virtual void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) = 0;
-
         virtual void FillRegion(const COORD startPosition,
                                 const size_t fillLength,
                                 const wchar_t fillChar,
@@ -81,9 +75,5 @@ namespace Microsoft::Console::VirtualTerminal
                                   const std::optional<SMALL_RECT> clipRect,
                                   const COORD destinationOrigin,
                                   const bool standardFillAttrs) = 0;
-
-        virtual void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                    const SIZE cellSize,
-                                    const size_t centeringHint) = 0;
     };
 }
