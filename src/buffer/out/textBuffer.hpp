@@ -247,6 +247,8 @@ private:
 
     void _PruneHyperlinks();
 
+    static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
+
     std::unordered_map<size_t, std::wstring> _idsAndPatterns;
     size_t _currentPatternId;
 
