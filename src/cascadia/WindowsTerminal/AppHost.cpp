@@ -751,7 +751,7 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
 {
     // MSFT:34662459
     //
-    // Although we're manully revoking the event handler now in the dtor before
+    // Although we're manually revoking the event handler now in the dtor before
     // we null out the window, let's be extra careful and check JUST IN CASE.
     if (_window == nullptr)
     {
@@ -922,7 +922,7 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
 {
     // MSFT:35726322
     //
-    // Although we're manully revoking the event handler now in the dtor before
+    // Although we're manually revoking the event handler now in the dtor before
     // we null out the window, let's be extra careful and check JUST IN CASE.
     if (_window == nullptr)
     {
