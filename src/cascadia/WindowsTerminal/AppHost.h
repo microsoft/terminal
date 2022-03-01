@@ -127,12 +127,7 @@ private:
     winrt::event_token _WindowCreatedToken;
     winrt::event_token _WindowClosedToken;
 
-    // winrt::event_revoker _MouseScrolledRevoker;
-    // winrt::event_revoker _WindowActivatedRevoker;
-    // winrt::event_revoker _WindowMovedRevoker;
-    // winrt::event_revoker _HotkeyPressedRevoker;
-    // winrt::event_revoker _SetAlwaysOnTopRevoker;
-    // winrt::event_revoker _ShouldExitFullscreenRevoker;
+    // Event handlers to revoke in ~AppHost, before calling App.Close
     winrt::Microsoft::Terminal::Remoting::WindowManager::BecameMonarch_revoker _BecameMonarchRevoker;
     winrt::Microsoft::Terminal::Remoting::Peasant::ExecuteCommandlineRequested_revoker _peasantExecuteCommandlineRequestedRevoker;
     winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker _peasantSummonRequestedRevoker;

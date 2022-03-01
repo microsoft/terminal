@@ -88,12 +88,19 @@ AppHost::AppHost() noexcept :
     // If you don't, then it's possible for them to get triggered as the app is
     // tearing down, after we've nulled out the window, during the dtor. That
     // can cause unexpected AV's everywhere.
-    /*_MouseScrolledRevoker = */ _window->MouseScrolled(/*winrt::auto_revoke, */ { this, &AppHost::_WindowMouseWheeled });
-    /*_WindowActivatedRevoker = */ _window->WindowActivated(/*winrt::auto_revoke, */ { this, &AppHost::_WindowActivated });
-    /*_WindowMovedRevoker = */ _window->WindowMoved(/*winrt::auto_revoke, */ { this, &AppHost::_WindowMoved });
-    /*_HotkeyPressedRevoker = */ _window->HotkeyPressed(/*winrt::auto_revoke, */ { this, &AppHost::_GlobalHotkeyPressed });
-    /*_SetAlwaysOnTopRevoker = */ _window->SetAlwaysOnTop(/*winrt::auto_revoke, */ _logic.GetInitialAlwaysOnTop());
-    /*_ShouldExitFullscreenRevoker = */ _window->ShouldExitFullscreen(/*winrt::auto_revoke, */ { &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
+    //
+    // _window callbacks don't need to be treated this way, because:
+    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
+    // * This particular bug scenario applies when we've already freed the window.
+    //
+    // (Most of these events are actually set up in AppHost::Initialize)
+    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->WindowMoved({ this, &AppHost::_WindowMoved });
+    _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
+    _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
+
+    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
 
     _window->MakeWindow();
 
@@ -113,12 +120,11 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
-    // _MouseScrolledRevoker.revoke();
-    // _WindowActivatedRevoker.revoke();
-    // _WindowMovedRevoker.revoke();
-    // _HotkeyPressedRevoker.revoke();
-    // _SetAlwaysOnTopRevoker.revoke();
-    // _ShouldExitFullscreenRevoker.revoke();
+
+    // revoke ALL our event handlers. There's a large class of bugs where we
+    // might get a callback to one of these when we call app.Close() below. Make
+    // sure to revoke these first, so we won't get any more callbacks, then null
+    // out the window, then close the app.
     _BecameMonarchRevoker.revoke();
     _peasantExecuteCommandlineRequestedRevoker.revoke();
     _peasantSummonRequestedRevoker.revoke();
@@ -364,7 +370,18 @@ void AppHost::Initialize()
         _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
-    // MORE EVENT HANDLERS HERE! Same rules as the ones above.
+    // MORE EVENT HANDLERS HERE!
+    // MAKE SURE THEY ARE ALL:
+    // * winrt::auto_revoke
+    // * revoked manually in the dtor before the window is nulled out.
+    //
+    // If you don't, then it's possible for them to get triggered as the app is
+    // tearing down, after we've nulled out the window, during the dtor. That
+    // can cause unexpected AV's everywhere.
+    //
+    // _window callbacks don't need to be treated this way, because:
+    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
+    // * This particular bug scenario applies when we've already freed the window.
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
@@ -732,6 +749,15 @@ void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspec
 void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
                                   const winrt::Windows::Foundation::IInspectable&)
 {
+    // MSFT:34662459
+    //
+    // Although we're manully revoking the event handler now in the dtor before
+    // we null out the window, let's be extra careful and check JUST IN CASE.
+    if (_window == nullptr)
+    {
+        return;
+    }
+
     _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
 
@@ -894,6 +920,15 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
+    // MSFT:35726322
+    //
+    // Although we're manully revoking the event handler now in the dtor before
+    // we null out the window, let's be extra careful and check JUST IN CASE.
+    if (_window == nullptr)
+    {
+        return;
+    }
+
     _setupGlobalHotkeys();
 
     if (_windowManager.DoesQuakeWindowExist() ||
