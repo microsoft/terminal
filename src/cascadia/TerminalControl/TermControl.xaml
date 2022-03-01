@@ -30,6 +30,29 @@
              Tapped="_TappedHandler"
              mc:Ignorable="d">
     <UserControl.Resources>
+
+        <!--
+            BODGY: Controlsv2 changed the size of the scrollbars from 16dips to
+            12dips. This is harder for folks to hit with the mouse, and isn't
+            consistent with the rest of the scrollbars on the platform (as much
+            as they can be).
+            
+            To work around this, we have to entirely copy the template for the
+            ScrollBar into our XAML file. We're then also re-defining
+            ScrollBarSize here to 16, so that the new template will pick up on
+            the new value.
+            
+            This is kinda a pain, and we have to be careful to be sure to ingest
+            an updated version of the template any time we update MUX. The
+            latest Controlsv2 version of the template can be found at:
+            https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/ScrollBar_themeresources.xaml#L218
+            
+            We're also planning on making this adjustable in the future
+            (GH#9218), where we might need this anyways.
+        -->
+
+        <x:Double x:Key="ScrollBarSize">16</x:Double>
+
         <Style x:Key="ForkedScrollbarTemplate"
                TargetType="ScrollBar">
             <Setter Property="MinWidth" Value="{StaticResource ScrollBarSize}" />
