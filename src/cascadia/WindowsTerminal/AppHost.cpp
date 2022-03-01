@@ -110,7 +110,7 @@ AppHost::AppHost() noexcept :
         args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
     });
 
-    _BecameMonarchRevoker = _windowManager.BecameMonarch(winrt::auto_revoke, { this, &AppHost::_BecomeMonarch });
+    _revokers.BecameMonarch = _windowManager.BecameMonarch(winrt::auto_revoke, { this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
     {
         _BecomeMonarch(nullptr, nullptr);
@@ -125,32 +125,7 @@ AppHost::~AppHost()
     // might get a callback to one of these when we call app.Close() below. Make
     // sure to revoke these first, so we won't get any more callbacks, then null
     // out the window, then close the app.
-    _BecameMonarchRevoker.revoke();
-    _peasantExecuteCommandlineRequestedRevoker.revoke();
-    _peasantSummonRequestedRevoker.revoke();
-    _peasantDisplayWindowIdRequestedRevoker.revoke();
-    _peasantQuitRequestedRevoker.revoke();
-    _CloseRequestedRevoker.revoke();
-    _RequestedThemeChangedRevoker.revoke();
-    _FullscreenChangedRevoker.revoke();
-    _FocusModeChangedRevoker.revoke();
-    _AlwaysOnTopChangedRevoker.revoke();
-    _RaiseVisualBellRevoker.revoke();
-    _SystemMenuChangeRequestedRevoker.revoke();
-    _ChangeMaximizeRequestedRevoker.revoke();
-    _TitleChangedRevoker.revoke();
-    _LastTabClosedRevoker.revoke();
-    _SetTaskbarProgressRevoker.revoke();
-    _IdentifyWindowsRequestedRevoker.revoke();
-    _RenameWindowRequestedRevoker.revoke();
-    _SettingsChangedRevoker.revoke();
-    _IsQuakeWindowChangedRevoker.revoke();
-    _SummonWindowRequestedRevoker.revoke();
-    _OpenSystemMenuRevoker.revoke();
-    _QuitRequestedRevoker.revoke();
-    _ShowNotificationIconRequestedRevoker.revoke();
-    _HideNotificationIconRequestedRevoker.revoke();
-    _QuitAllRequestedRevoker.revoke();
+    _revokers = {};
 
     _window = nullptr;
     _app.Close();
@@ -283,10 +258,10 @@ void AppHost::_HandleCommandlineArgs()
         // use to send the actions to the app.
         //
         // MORE EVENT HANDLERS, same rules as the ones above.
-        _peasantExecuteCommandlineRequestedRevoker = peasant.ExecuteCommandlineRequested(winrt::auto_revoke, { this, &AppHost::_DispatchCommandline });
-        _peasantSummonRequestedRevoker = peasant.SummonRequested(winrt::auto_revoke, { this, &AppHost::_HandleSummon });
-        _peasantDisplayWindowIdRequestedRevoker = peasant.DisplayWindowIdRequested(winrt::auto_revoke, { this, &AppHost::_DisplayWindowId });
-        _peasantQuitRequestedRevoker = peasant.QuitRequested(winrt::auto_revoke, { this, &AppHost::_QuitRequested });
+        _revokers.peasantExecuteCommandlineRequested = peasant.ExecuteCommandlineRequested(winrt::auto_revoke, { this, &AppHost::_DispatchCommandline });
+        _revokers.peasantSummonRequested = peasant.SummonRequested(winrt::auto_revoke, { this, &AppHost::_HandleSummon });
+        _revokers.peasantDisplayWindowIdRequested = peasant.DisplayWindowIdRequested(winrt::auto_revoke, { this, &AppHost::_DisplayWindowId });
+        _revokers.peasantQuitRequested = peasant.QuitRequested(winrt::auto_revoke, { this, &AppHost::_QuitRequested });
 
         // We need this property to be set before we get the InitialSize/Position
         // and BecameMonarch which normally sets it is only run after the window
@@ -390,19 +365,19 @@ void AppHost::Initialize()
     });
     // If the user requests a close in another way handle the same as if the 'X'
     // was clicked.
-    _CloseRequestedRevoker = _logic.CloseRequested(winrt::auto_revoke, { this, &AppHost::_CloseRequested });
+    _revokers.CloseRequested = _logic.CloseRequested(winrt::auto_revoke, { this, &AppHost::_CloseRequested });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
-    _RequestedThemeChangedRevoker = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
-    _FullscreenChangedRevoker = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
-    _FocusModeChangedRevoker = _logic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
-    _AlwaysOnTopChangedRevoker = _logic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
-    _RaiseVisualBellRevoker = _logic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
-    _SystemMenuChangeRequestedRevoker = _logic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
-    _ChangeMaximizeRequestedRevoker = _logic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
+    _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
+    _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
+    _revokers.FocusModeChanged = _logic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
+    _revokers.AlwaysOnTopChanged = _logic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
+    _revokers.RaiseVisualBell = _logic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
+    _revokers.SystemMenuChangeRequested = _logic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
+    _revokers.ChangeMaximizeRequested = _logic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
 
     _window->MaximizeChanged([this](bool newMaximize) {
         if (_logic)
@@ -413,16 +388,16 @@ void AppHost::Initialize()
 
     _logic.Create();
 
-    _TitleChangedRevoker = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
-    _LastTabClosedRevoker = _logic.LastTabClosed(winrt::auto_revoke, { this, &AppHost::LastTabClosed });
-    _SetTaskbarProgressRevoker = _logic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
-    _IdentifyWindowsRequestedRevoker = _logic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
-    _RenameWindowRequestedRevoker = _logic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
-    _SettingsChangedRevoker = _logic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
-    _IsQuakeWindowChangedRevoker = _logic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
-    _SummonWindowRequestedRevoker = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
-    _OpenSystemMenuRevoker = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
-    _QuitRequestedRevoker = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
+    _revokers.TitleChanged = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
+    _revokers.LastTabClosed = _logic.LastTabClosed(winrt::auto_revoke, { this, &AppHost::LastTabClosed });
+    _revokers.SetTaskbarProgress = _logic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
+    _revokers.IdentifyWindowsRequested = _logic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
+    _revokers.RenameWindowRequested = _logic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
+    _revokers.SettingsChanged = _logic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
+    _revokers.IsQuakeWindowChanged = _logic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
+    _revokers.SummonWindowRequested = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
+    _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
+    _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -957,11 +932,11 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     });
 
     // These events are coming from peasants that become or un-become quake windows.
-    _ShowNotificationIconRequestedRevoker = _windowManager.ShowNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_ShowNotificationIconRequested });
-    _HideNotificationIconRequestedRevoker = _windowManager.HideNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_HideNotificationIconRequested });
+    _revokers.ShowNotificationIconRequested = _windowManager.ShowNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_ShowNotificationIconRequested });
+    _revokers.HideNotificationIconRequested = _windowManager.HideNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_HideNotificationIconRequested });
     // If the monarch receives a QuitAll event it will signal this event to be
     // ran before each peasant is closed.
-    _QuitAllRequestedRevoker = _windowManager.QuitAllRequested(winrt::auto_revoke, { this, &AppHost::_QuitAllRequested });
+    _revokers.QuitAllRequested = _windowManager.QuitAllRequested(winrt::auto_revoke, { this, &AppHost::_QuitAllRequested });
 
     // The monarch should be monitoring if it should save the window layout.
     if (!_getWindowLayoutThrottler.has_value())

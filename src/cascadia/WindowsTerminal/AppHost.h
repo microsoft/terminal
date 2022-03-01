@@ -127,31 +127,38 @@ private:
     winrt::event_token _WindowCreatedToken;
     winrt::event_token _WindowClosedToken;
 
-    // Event handlers to revoke in ~AppHost, before calling App.Close
-    winrt::Microsoft::Terminal::Remoting::WindowManager::BecameMonarch_revoker _BecameMonarchRevoker;
-    winrt::Microsoft::Terminal::Remoting::Peasant::ExecuteCommandlineRequested_revoker _peasantExecuteCommandlineRequestedRevoker;
-    winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker _peasantSummonRequestedRevoker;
-    winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker _peasantDisplayWindowIdRequestedRevoker;
-    winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker _peasantQuitRequestedRevoker;
-    winrt::TerminalApp::AppLogic::CloseRequested_revoker _CloseRequestedRevoker;
-    winrt::TerminalApp::AppLogic::RequestedThemeChanged_revoker _RequestedThemeChangedRevoker;
-    winrt::TerminalApp::AppLogic::FullscreenChanged_revoker _FullscreenChangedRevoker;
-    winrt::TerminalApp::AppLogic::FocusModeChanged_revoker _FocusModeChangedRevoker;
-    winrt::TerminalApp::AppLogic::AlwaysOnTopChanged_revoker _AlwaysOnTopChangedRevoker;
-    winrt::TerminalApp::AppLogic::RaiseVisualBell_revoker _RaiseVisualBellRevoker;
-    winrt::TerminalApp::AppLogic::SystemMenuChangeRequested_revoker _SystemMenuChangeRequestedRevoker;
-    winrt::TerminalApp::AppLogic::ChangeMaximizeRequested_revoker _ChangeMaximizeRequestedRevoker;
-    winrt::TerminalApp::AppLogic::TitleChanged_revoker _TitleChangedRevoker;
-    winrt::TerminalApp::AppLogic::LastTabClosed_revoker _LastTabClosedRevoker;
-    winrt::TerminalApp::AppLogic::SetTaskbarProgress_revoker _SetTaskbarProgressRevoker;
-    winrt::TerminalApp::AppLogic::IdentifyWindowsRequested_revoker _IdentifyWindowsRequestedRevoker;
-    winrt::TerminalApp::AppLogic::RenameWindowRequested_revoker _RenameWindowRequestedRevoker;
-    winrt::TerminalApp::AppLogic::SettingsChanged_revoker _SettingsChangedRevoker;
-    winrt::TerminalApp::AppLogic::IsQuakeWindowChanged_revoker _IsQuakeWindowChangedRevoker;
-    winrt::TerminalApp::AppLogic::SummonWindowRequested_revoker _SummonWindowRequestedRevoker;
-    winrt::TerminalApp::AppLogic::OpenSystemMenu_revoker _OpenSystemMenuRevoker;
-    winrt::TerminalApp::AppLogic::QuitRequested_revoker _QuitRequestedRevoker;
-    winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker _ShowNotificationIconRequestedRevoker;
-    winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker _HideNotificationIconRequestedRevoker;
-    winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker _QuitAllRequestedRevoker;
+    // Helper struct. By putting these all into one struct, we can revoke them
+    // all at once, by assigning _revokers to a fresh Revokers instance. That'll
+    // cause us to dtor the old one, which will immediately call revoke on all
+    // the members as a part of their own dtors.
+    struct Revokers
+    {
+        // Event handlers to revoke in ~AppHost, before calling App.Close
+        winrt::Microsoft::Terminal::Remoting::WindowManager::BecameMonarch_revoker BecameMonarch;
+        winrt::Microsoft::Terminal::Remoting::Peasant::ExecuteCommandlineRequested_revoker peasantExecuteCommandlineRequested;
+        winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker peasantSummonRequested;
+        winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker peasantDisplayWindowIdRequested;
+        winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker peasantQuitRequested;
+        winrt::TerminalApp::AppLogic::CloseRequested_revoker CloseRequested;
+        winrt::TerminalApp::AppLogic::RequestedThemeChanged_revoker RequestedThemeChanged;
+        winrt::TerminalApp::AppLogic::FullscreenChanged_revoker FullscreenChanged;
+        winrt::TerminalApp::AppLogic::FocusModeChanged_revoker FocusModeChanged;
+        winrt::TerminalApp::AppLogic::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
+        winrt::TerminalApp::AppLogic::RaiseVisualBell_revoker RaiseVisualBell;
+        winrt::TerminalApp::AppLogic::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
+        winrt::TerminalApp::AppLogic::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;
+        winrt::TerminalApp::AppLogic::TitleChanged_revoker TitleChanged;
+        winrt::TerminalApp::AppLogic::LastTabClosed_revoker LastTabClosed;
+        winrt::TerminalApp::AppLogic::SetTaskbarProgress_revoker SetTaskbarProgress;
+        winrt::TerminalApp::AppLogic::IdentifyWindowsRequested_revoker IdentifyWindowsRequested;
+        winrt::TerminalApp::AppLogic::RenameWindowRequested_revoker RenameWindowRequested;
+        winrt::TerminalApp::AppLogic::SettingsChanged_revoker SettingsChanged;
+        winrt::TerminalApp::AppLogic::IsQuakeWindowChanged_revoker IsQuakeWindowChanged;
+        winrt::TerminalApp::AppLogic::SummonWindowRequested_revoker SummonWindowRequested;
+        winrt::TerminalApp::AppLogic::OpenSystemMenu_revoker OpenSystemMenu;
+        winrt::TerminalApp::AppLogic::QuitRequested_revoker QuitRequested;
+        winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
+        winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
+        winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
+    } _revokers{};
 };
