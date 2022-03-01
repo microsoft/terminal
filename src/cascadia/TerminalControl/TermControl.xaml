@@ -921,7 +921,6 @@
                                                              To="1"
                                                              Duration="{StaticResource ScrollBarOpacityChangeDuration}" />
 
-                                            <!--  Because of the blurriness caused by SCALE animation performed on the object with rounded corners, we have to use dependent animation on width to re-rasterize the mask on every tick of the animation.  -->
                                             <DoubleAnimationUsingKeyFrames BeginTime="{StaticResource ScrollBarExpandBeginTime}"
                                                                            EnableDependentAnimation="True"
                                                                            Storyboard.TargetName="VerticalThumb"
