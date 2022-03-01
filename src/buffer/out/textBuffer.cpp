@@ -2151,10 +2151,6 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
                 contentBuilder << gsl::narrow<char>(codeUnit);
             }
         }
-        else if (codeUnit <= 32767)
-        {
-            contentBuilder << "\\u" << std::to_string(codeUnit) << "?";
-        }
         else
         {
             // Windows uses unsigned wchar_t - RTF uses signed ones.
