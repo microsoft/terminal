@@ -106,14 +106,18 @@ private:
 
     void _RequestQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
                          const winrt::Windows::Foundation::IInspectable& args);
+    void _CloseRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                         const winrt::Windows::Foundation::IInspectable& args);
 
     void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args);
 
     void _CreateNotificationIcon();
     void _DestroyNotificationIcon();
-    void _ShowNotificationIconRequested();
-    void _HideNotificationIconRequested();
+    void _ShowNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                        const winrt::Windows::Foundation::IInspectable& args);
+    void _HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                        const winrt::Windows::Foundation::IInspectable& args);
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;
     winrt::event_token _NotificationIconPressedToken;
@@ -122,4 +126,37 @@ private:
     winrt::event_token _GetWindowLayoutRequestedToken;
     winrt::event_token _WindowCreatedToken;
     winrt::event_token _WindowClosedToken;
+
+    // winrt::event_revoker _MouseScrolledRevoker;
+    // winrt::event_revoker _WindowActivatedRevoker;
+    // winrt::event_revoker _WindowMovedRevoker;
+    // winrt::event_revoker _HotkeyPressedRevoker;
+    // winrt::event_revoker _SetAlwaysOnTopRevoker;
+    // winrt::event_revoker _ShouldExitFullscreenRevoker;
+    winrt::Microsoft::Terminal::Remoting::WindowManager::BecameMonarch_revoker _BecameMonarchRevoker;
+    winrt::Microsoft::Terminal::Remoting::Peasant::ExecuteCommandlineRequested_revoker _peasantExecuteCommandlineRequestedRevoker;
+    winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker _peasantSummonRequestedRevoker;
+    winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker _peasantDisplayWindowIdRequestedRevoker;
+    winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker _peasantQuitRequestedRevoker;
+    winrt::TerminalApp::AppLogic::CloseRequested_revoker _CloseRequestedRevoker;
+    winrt::TerminalApp::AppLogic::RequestedThemeChanged_revoker _RequestedThemeChangedRevoker;
+    winrt::TerminalApp::AppLogic::FullscreenChanged_revoker _FullscreenChangedRevoker;
+    winrt::TerminalApp::AppLogic::FocusModeChanged_revoker _FocusModeChangedRevoker;
+    winrt::TerminalApp::AppLogic::AlwaysOnTopChanged_revoker _AlwaysOnTopChangedRevoker;
+    winrt::TerminalApp::AppLogic::RaiseVisualBell_revoker _RaiseVisualBellRevoker;
+    winrt::TerminalApp::AppLogic::SystemMenuChangeRequested_revoker _SystemMenuChangeRequestedRevoker;
+    winrt::TerminalApp::AppLogic::ChangeMaximizeRequested_revoker _ChangeMaximizeRequestedRevoker;
+    winrt::TerminalApp::AppLogic::TitleChanged_revoker _TitleChangedRevoker;
+    winrt::TerminalApp::AppLogic::LastTabClosed_revoker _LastTabClosedRevoker;
+    winrt::TerminalApp::AppLogic::SetTaskbarProgress_revoker _SetTaskbarProgressRevoker;
+    winrt::TerminalApp::AppLogic::IdentifyWindowsRequested_revoker _IdentifyWindowsRequestedRevoker;
+    winrt::TerminalApp::AppLogic::RenameWindowRequested_revoker _RenameWindowRequestedRevoker;
+    winrt::TerminalApp::AppLogic::SettingsChanged_revoker _SettingsChangedRevoker;
+    winrt::TerminalApp::AppLogic::IsQuakeWindowChanged_revoker _IsQuakeWindowChangedRevoker;
+    winrt::TerminalApp::AppLogic::SummonWindowRequested_revoker _SummonWindowRequestedRevoker;
+    winrt::TerminalApp::AppLogic::OpenSystemMenu_revoker _OpenSystemMenuRevoker;
+    winrt::TerminalApp::AppLogic::QuitRequested_revoker _QuitRequestedRevoker;
+    winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker _ShowNotificationIconRequestedRevoker;
+    winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker _HideNotificationIconRequestedRevoker;
+    winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker _QuitAllRequestedRevoker;
 };
