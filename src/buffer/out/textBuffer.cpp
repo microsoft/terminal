@@ -2157,7 +2157,8 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
         }
         else
         {
-            contentBuilder << "\\u" << std::to_string(codeUnit - 65536) << "?";
+            // Windows uses unsigned wchar_t - RTF uses signed ones.
+            contentBuilder << "\\u" << std::to_string(til::bit_cast<int16_t>(codeUnit)) << "?";
         }
     }
 }
