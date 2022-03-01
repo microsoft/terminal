@@ -32,7 +32,7 @@
     <UserControl.Resources>
 
         <!--
-            BODGY: Controlsv2 changed the size of the scrollbars from 16dips to
+            BODGY: ControlsV2 changed the size of the scrollbars from 16dips to
             12dips. This is harder for folks to hit with the mouse, and isn't
             consistent with the rest of the scrollbars on the platform (as much
             as they can be).
@@ -44,7 +44,7 @@
             
             This is kinda a pain, and we have to be careful to be sure to ingest
             an updated version of the template any time we update MUX. The
-            latest Controlsv2 version of the template can be found at:
+            latest ControlsV2 version of the template can be found at:
             https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/ScrollBar_themeresources.xaml#L218
             
             We're also planning on making this adjustable in the future
@@ -921,7 +921,7 @@
                                                              To="1"
                                                              Duration="{StaticResource ScrollBarOpacityChangeDuration}" />
 
-                                            <!--  Because of the blurriness caused by SCALE animation performed on the object with rounded corners, we have to use dependent animation on width to rerasterize the mask on every tick of the animation.  -->
+                                            <!--  Because of the blurriness caused by SCALE animation performed on the object with rounded corners, we have to use dependent animation on width to re-rasterize the mask on every tick of the animation.  -->
                                             <DoubleAnimationUsingKeyFrames BeginTime="{StaticResource ScrollBarExpandBeginTime}"
                                                                            EnableDependentAnimation="True"
                                                                            Storyboard.TargetName="VerticalThumb"
