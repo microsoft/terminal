@@ -76,6 +76,8 @@ runtimes
 shcha
 slnt
 Sos
+timeline
+timelines
 timestamped
 TLDR
 tokenizes
