@@ -2241,7 +2241,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Loop through every character in the current row (up to
         // the "right" boundary, which is one past the final valid
         // character)
-        for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
+        short iOldCol = 0;
+        for (; iOldCol < iRight; iOldCol++)
         {
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
@@ -2264,6 +2265,31 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
             CATCH_RETURN();
         }
+
+        // GH#32: Copy the attributes from the rest of the row into this new buffer.
+        // - if the new buffer is smaller,
+        //   * ~If we wrapped onto the line below, then we'll continue copying attributes from the original row onto the then we'll only copy the attributes TODO THIS IS WRONG~
+        //
+        // - if the
+        const auto minWidth = std::min(oldBuffer.GetSize().Width(), newBuffer.GetSize().Width());
+        auto newAttrColumn = newCursor.GetPosition().X;
+        for (short copyAttrCol = iOldCol; copyAttrCol < minWidth; copyAttrCol++)
+        {
+            try
+            {
+                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
+                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
+                auto& newRow = newBuffer.GetRowByOffset(newCursor.GetPosition().Y);
+                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
+                {
+                    // hr = E_OUTOFMEMORY;
+                    break;
+                }
+            }
+            CATCH_LOG(); // TODO! Clearly I've got some condidtional wrong here. Just logging seems to make it work though. That's obviously wrong.
+            newAttrColumn++;
+        }
+        // TODO! Maybe also try to leave a default-attributes-to-the-end attr here, for the case where the line had color, then flowed onto the subsequent row.
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the

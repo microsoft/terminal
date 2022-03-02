@@ -722,3 +722,4 @@ bool TerminalDispatch::HardReset()
 
     return true;
 }
+git grep - z - l Microsoft.UI.Xaml | xargs - 0 sed - i - e 's/2.4.0-prerelease.200506002/2.5.0-prerelease.200812002/g'
