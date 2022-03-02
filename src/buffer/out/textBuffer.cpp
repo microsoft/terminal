@@ -2267,30 +2267,51 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         }
 
         // GH#32: Copy the attributes from the rest of the row into this new buffer.
-        // - if the new buffer is smaller,
-        //   * ~If we wrapped onto the line below, then we'll continue copying attributes from the original row onto the then we'll only copy the attributes TODO THIS IS WRONG~
-        //
-        // - if the
-        const auto minWidth = std::min(oldBuffer.GetSize().Width(), newBuffer.GetSize().Width());
+        // From where we are in the old buffer, to the end of the row, copy the
+        // remaining attributes.
+        // - if the old buffer is smaller than the new buffer, then just copy
+        //   what we have. as it was. The last attr in the row will be extended
+        //   to the end of the row in the new buffer.
+        // - if the old buffer is BIGGER, than we might have wrapped onto a new
+        //   line. Use the cursor's position's Y so that we know where the new
+        //   row is, and start writing st the cursor position. Again, the attr
+        //   in the last colum of the old row will be extended to the end of the
+        //   row that the text was flowed onto.
+        //   - if we the text in the old buffer didn't actually fill the whole
+        //     line in the new buffer, then we didn't wrap. That's fine. just
+        //     copy attributes from the old row till the end of the new row, and
+        //     move on.
+        const auto newWidth = newBuffer.GetSize().Width();
+        const auto minWidth = std::min(oldBuffer.GetSize().Width(), newWidth);
         auto newAttrColumn = newCursor.GetPosition().X;
-        for (short copyAttrCol = iOldCol; copyAttrCol < minWidth; copyAttrCol++)
+        const auto newRowY = newCursor.GetPosition().Y;
+        // Stop when we get to the end of the buffer width, or the new position
+        // for inserting an attr would be past the right of the new buffer.
+        for (short copyAttrCol = iOldCol;
+             copyAttrCol < minWidth && newAttrColumn < newWidth;
+             copyAttrCol++)
         {
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
                 const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
-                auto& newRow = newBuffer.GetRowByOffset(newCursor.GetPosition().Y);
+                auto& newRow = newBuffer.GetRowByOffset(newRowY);
                 if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
                 {
-                    // hr = E_OUTOFMEMORY;
                     break;
                 }
             }
-            CATCH_LOG(); // TODO! Clearly I've got some condidtional wrong here. Just logging seems to make it work though. That's obviously wrong.
+            CATCH_LOG(); // Not worth dying over.
+
             newAttrColumn++;
         }
-        // TODO! Maybe also try to leave a default-attributes-to-the-end attr here, for the case where the line had color, then flowed onto the subsequent row.
-        // TODO! Maybe also try doing this sort of thing with the colors below the last printable char in the buffer. That we'd need for the `color 2f` scenario, ala GH#12567
+        // TODO! Maybe also try to leave a default-attributes-to-the-end attr
+        // here, for the case where the line had color, then flowed onto the
+        // subsequent row.
+        //
+        // TODO! Maybe also try doing this sort of thing with the colors below
+        // the last printable char in the buffer. That we'd need for the `color
+        // 2f` scenario, ala GH#12567
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
