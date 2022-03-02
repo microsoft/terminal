@@ -2708,6 +2708,9 @@ void TextBufferTests::NoHyperlinkTrim()
 
 void TextBufferTests::TestMeasureRightIsh()
 {
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const TextBuffer& tbi = si.GetTextBuffer();
@@ -2718,7 +2721,7 @@ void TextBufferTests::TestMeasureRightIsh()
     // const auto foreground = RGB(40, 40, 40);
     // const auto background = RGB(168, 153, 132);
 
-    // const wchar_t* const sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
+    // TODO! version of the test without the clear and reset to default colors.
     const wchar_t* const sequence = L"\x1b[0m\x1b[2J\x1b[3JFoo\nBar Baz\n\x1b[41mFoo\n\x1b[42m bar \x1b[44m baz \n\x1b[48m foo \x1b[m";
     stateMachine.ProcessString(sequence);
     // const auto x = cursor.GetPosition().X;

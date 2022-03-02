@@ -29,6 +29,7 @@ class ATTR_ROW final
 
 public:
     using const_iterator = rle_vector::const_iterator;
+    using const_reverse_iterator = rle_vector::const_reverse_iterator;
 
     ATTR_ROW(uint16_t width, TextAttribute attr);
 
@@ -52,7 +53,9 @@ public:
     const_iterator end() const noexcept;
 
     const_iterator cbegin() const noexcept;
+    const_reverse_iterator crbegin() const noexcept;
     const_iterator cend() const noexcept;
+    const_reverse_iterator crend() const noexcept;
 
     friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
     friend class ROW;

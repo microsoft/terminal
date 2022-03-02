@@ -76,6 +76,10 @@ typename CharRow::const_iterator CharRow::cbegin() const noexcept
 {
     return _data.cbegin();
 }
+typename CharRow::const_reverse_iterator CharRow::crbegin() const noexcept
+{
+    return _data.crbegin();
+}
 
 typename CharRow::iterator CharRow::end() noexcept
 {
@@ -85,6 +89,10 @@ typename CharRow::iterator CharRow::end() noexcept
 typename CharRow::const_iterator CharRow::cend() const noexcept
 {
     return _data.cend();
+}
+typename CharRow::const_reverse_iterator CharRow::crend() const noexcept
+{
+    return _data.crend();
 }
 
 // Routine Description:

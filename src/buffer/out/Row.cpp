@@ -205,16 +205,18 @@ size_t ROW::MeasureRightIsh() const
     //     ++it;
     // }
     // return _data.crend() - it;
-    auto charIter = _charRow.cbegin();
-    auto attrIter = _attrRow.cbegin();
+    auto charIter = _charRow.crbegin();
+    auto attrIter = _attrRow.crbegin();
     const TextAttribute defaultColor{};
-    while (charIter != _charRow.cend() &&
-           attrIter != _attrRow.cend() &&
+    while (charIter != _charRow.crend() &&
+           attrIter != _attrRow.crend() &&
            // (!charIter->IsSpace() || *attrIter != defaultColor))
-           (!charIter->IsSpace() || !attrIter->HasIdenticalVisualRepresentationForBlankSpace(defaultColor)))
+           // (!charIter->IsSpace() || !attrIter->HasIdenticalVisualRepresentationForBlankSpace(defaultColor)))
+           (charIter->IsSpace() && attrIter->HasIdenticalVisualRepresentationForBlankSpace(defaultColor)))
     {
         ++charIter;
         ++attrIter;
     }
-    return charIter - _charRow.cbegin() - 1;
+    // return charIter - _charRow.cbegin() - 1;
+    return _charRow.crend() - charIter;
 }

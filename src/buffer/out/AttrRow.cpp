@@ -122,10 +122,18 @@ ATTR_ROW::const_iterator ATTR_ROW::cbegin() const noexcept
 {
     return _data.cbegin();
 }
+ATTR_ROW::const_reverse_iterator ATTR_ROW::crbegin() const noexcept
+{
+    return _data.crbegin();
+}
 
 ATTR_ROW::const_iterator ATTR_ROW::cend() const noexcept
 {
     return _data.cend();
+}
+ATTR_ROW::const_reverse_iterator ATTR_ROW::crend() const noexcept
+{
+    return _data.crend();
 }
 
 bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept

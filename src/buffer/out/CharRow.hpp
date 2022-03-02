@@ -75,10 +75,12 @@ public:
     iterator begin() noexcept;
     const_iterator cbegin() const noexcept;
     const_iterator begin() const noexcept { return cbegin(); }
+    const_reverse_iterator crbegin() const noexcept;
 
     iterator end() noexcept;
     const_iterator cend() const noexcept;
     const_iterator end() const noexcept { return cend(); }
+    const_reverse_iterator crend() const noexcept;
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
