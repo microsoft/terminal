@@ -2290,6 +2290,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             newAttrColumn++;
         }
         // TODO! Maybe also try to leave a default-attributes-to-the-end attr here, for the case where the line had color, then flowed onto the subsequent row.
+        // TODO! Maybe also try doing this sort of thing with the colors below the last printable char in the buffer. That we'd need for the `color 2f` scenario, ala GH#12567
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
