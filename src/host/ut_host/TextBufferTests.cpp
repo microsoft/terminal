@@ -158,6 +158,8 @@ class TextBufferTests
 
     TEST_METHOD(HyperlinkTrim);
     TEST_METHOD(NoHyperlinkTrim);
+
+    TEST_METHOD(TestMeasureRightIsh);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2702,4 +2704,87 @@ void TextBufferTests::NoHyperlinkTrim()
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
+}
+
+void TextBufferTests::TestMeasureRightIsh()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const TextBuffer& tbi = si.GetTextBuffer();
+    StateMachine& stateMachine = si.GetStateMachine();
+    // const Cursor& cursor = tbi.GetCursor();
+    // const auto& renderSettings = gci.GetRenderSettings();
+
+    // const auto foreground = RGB(40, 40, 40);
+    // const auto background = RGB(168, 153, 132);
+
+    // const wchar_t* const sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
+    const wchar_t* const sequence = L"\x1b[0m\x1b[2J\x1b[3JFoo\nBar Baz\n\x1b[41mFoo\n\x1b[42m bar \x1b[44m baz \n\x1b[48m foo \x1b[m";
+    stateMachine.ProcessString(sequence);
+    // const auto x = cursor.GetPosition().X;
+    // const auto y = cursor.GetPosition().Y;
+
+    {
+        const auto& row = tbi.GetRowByOffset(0);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[3];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(2, row.MeasureRightIsh());
+    }
+    {
+        const auto& row = tbi.GetRowByOffset(1);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        LOG_ATTR(attrA);
+        VERIFY_ARE_EQUAL(6, row.MeasureRightIsh());
+    }
+    {
+        const auto& row = tbi.GetRowByOffset(2);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[3];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(2, row.MeasureRightIsh());
+    }
+    {
+        const auto& row = tbi.GetRowByOffset(3);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[5];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(10, row.MeasureRightIsh());
+    }
+    {
+        const auto& row = tbi.GetRowByOffset(4);
+        const auto attrRow = &row.GetAttrRow();
+        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const auto attrA = attrs[0];
+        const auto attrB = attrs[5];
+        LOG_ATTR(attrA);
+        LOG_ATTR(attrB);
+        VERIFY_ARE_EQUAL(5, row.MeasureRightIsh());
+    }
+    // Log::Comment(NoThrowString().Format(
+    //     L"cursor={X:%d,Y:%d}",
+    //     x,
+    //     y));
+    // Log::Comment(NoThrowString().Format(
+    //     L"attrA should be RGB, and attrB should be the same as attrA, NOT intense"));
+
+    // VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
+    // VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
+
+    // VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(foreground, background));
+    // VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(foreground, background));
+
+    const auto reset = L"\x1b[0m";
+    stateMachine.ProcessString(reset);
 }

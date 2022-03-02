@@ -2202,8 +2202,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
         const short cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
-        const CharRow& charRow = row.GetCharRow();
-        short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+        // const CharRow& charRow = row.GetCharRow();
+        // short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+        short iRight = gsl::narrow_cast<short>(row.MeasureRightIsh());
 
         // If we're starting a new row, try and preserve the line rendition
         // from the row in the original buffer.

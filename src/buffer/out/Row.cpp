@@ -196,3 +196,25 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     return it;
 }
+
+size_t ROW::MeasureRightIsh() const
+{
+    // const_reverse_iterator it = _data.crbegin();
+    // while (it != _data.crend() && it->IsSpace())
+    // {
+    //     ++it;
+    // }
+    // return _data.crend() - it;
+    auto charIter = _charRow.cbegin();
+    auto attrIter = _attrRow.cbegin();
+    const TextAttribute defaultColor{};
+    while (charIter != _charRow.cend() &&
+           attrIter != _attrRow.cend() &&
+           // (!charIter->IsSpace() || *attrIter != defaultColor))
+           (!charIter->IsSpace() || !attrIter->HasIdenticalVisualRepresentationForBlankSpace(defaultColor)))
+    {
+        ++charIter;
+        ++attrIter;
+    }
+    return charIter - _charRow.cbegin() - 1;
+}
