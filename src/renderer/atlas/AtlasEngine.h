@@ -563,7 +563,7 @@ namespace Microsoft::Console::Render
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
-            alignas(sizeof(u32)) u32 useClearType = 0;
+            alignas(sizeof(u32)) bool useClearType = 0;
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
         };
 

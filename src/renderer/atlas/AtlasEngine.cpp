@@ -788,8 +788,6 @@ void AtlasEngine::_createSwapChain()
 
         if (_api.hwnd)
         {
-            desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
             if (FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put())))
             {
                 // Platform Update for Windows 7:
