@@ -150,6 +150,7 @@ Bksp
 blog
 Blt
 BLUESCROLL
+Bluloco
 bmp
 BODGY
 BOLDFONT
@@ -1374,6 +1375,7 @@ LVERTICAL
 LWA
 LWIN
 lwkmvj
+Macbook
 mailto
 majorly
 makeappx
