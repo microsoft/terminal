@@ -47,11 +47,15 @@
             latest ControlsV2 version of the template can be found at:
             https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/ScrollBar_themeresources.xaml#L218
             
+            We're also removing the corner radius, cause that should be flush
+            with the top of the window above the TermControl.
+            
             We're also planning on making this adjustable in the future
             (GH#9218), where we might need this anyways.
         -->
 
         <x:Double x:Key="ScrollBarSize">16</x:Double>
+        <CornerRadius x:Key="ScrollBarCornerRadius">0</CornerRadius>
 
         <Style x:Key="ForkedScrollbarTemplate"
                TargetType="ScrollBar">
