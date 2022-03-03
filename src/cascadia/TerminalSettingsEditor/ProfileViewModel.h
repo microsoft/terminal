@@ -72,7 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool ShowUnfocusedAppearance();
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
-        bool AtlasEngineAvailable() const noexcept;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
 
@@ -101,7 +100,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);

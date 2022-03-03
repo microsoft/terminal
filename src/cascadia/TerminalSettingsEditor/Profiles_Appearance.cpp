@@ -17,7 +17,7 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles_Appearance::Profiles_Appearance() :
-        _previewControl{ Control::TermControl(Model::TerminalSettings{}, nullptr, make<PreviewConnection>()) }
+        _previewControl{ Control::TermControl(Model::TerminalSettings{}, make<PreviewConnection>()) }
     {
         InitializeComponent();
 
@@ -41,20 +41,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // These changes should force us to update our own set of "Current<Setting>" members,
         // and propagate those changes to the UI
         _ViewModelChangedRevoker = _Profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
-            _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
+            _previewControl.Settings(_Profile.TermSettings());
+            _previewControl.UpdateSettings();
         });
 
         // The Appearances object handles updating the values in the settings UI, but
         // we still need to listen to the changes here just to update the preview control
         _AppearanceViewModelChangedRevoker = _Profile.DefaultAppearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
-            _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
+            _previewControl.Settings(_Profile.TermSettings());
+            _previewControl.UpdateSettings();
         });
 
         // There is a possibility that the control has not fully initialized yet,
         // so wait for it to initialize before updating the settings (so we know
         // that the renderer is set up)
         _previewControl.Initialized([&](auto&& /*s*/, auto&& /*e*/) {
-            _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
+            _previewControl.UpdateSettings();
         });
     }
 

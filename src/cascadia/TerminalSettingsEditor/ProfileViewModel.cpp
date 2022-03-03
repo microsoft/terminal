@@ -347,11 +347,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _unfocusedAppearanceViewModel;
     }
 
-    bool ProfileViewModel::AtlasEngineAvailable() const noexcept
-    {
-        return Feature_AtlasEngine::IsEnabled();
-    }
-
     bool ProfileViewModel::UseParentProcessDirectory()
     {
         return StartingDirectory().empty();
