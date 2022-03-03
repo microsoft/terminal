@@ -569,13 +569,13 @@ jobs:
           mkdir WindowsTerminal.app
 
           mv Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle .\WindowsTerminal.app\
-        workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed
+        workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed-Win11
     - task: PkgESVPack@12
       displayName: 'Package ES - VPack'
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       inputs:
-        sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed\WindowsTerminal.app
+        sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed-Win11\WindowsTerminal.app
         description: VPack for the Windows Terminal Application
         pushPkgName: WindowsTerminal.app
         owner: conhost
