@@ -1,3 +1,5 @@
+parameters:
+  artifactName: 'drop'
 
 jobs:
 - job: CodeNavIndexer
@@ -9,6 +11,10 @@ jobs:
     fetchDepth: 1
     submodules: false
     clean: true
+
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
 
   - task: RichCodeNavIndexer@0
     inputs:
