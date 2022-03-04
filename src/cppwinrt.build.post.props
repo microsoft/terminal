@@ -4,6 +4,7 @@
 
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="$(OpenConsoleDir)\packages\Microsoft.CodeIndex.EnvVarDump.0.1.2212-alpha\build\Microsoft.CodeIndex.EnvVarDump.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.CodeIndex.EnvVarDump.0.1.2212-alpha\build\Microsoft.CodeIndex.EnvVarDump.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -11,5 +12,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.CodeIndex.EnvVarDump.0.1.2212-alpha\build\Microsoft.CodeIndex.EnvVarDump.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.CodeIndex.EnvVarDump.0.1.2212-alpha\build\Microsoft.CodeIndex.EnvVarDump.targets'))" />
   </Target>
 </Project>
