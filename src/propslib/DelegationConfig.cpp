@@ -15,6 +15,8 @@
 
 #include "../inc/conint.h"
 
+#include <initguid.h>
+
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation;
@@ -27,8 +29,8 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 #define DELEGATION_CONSOLE_KEY_NAME L"DelegationConsole"
 #define DELEGATION_TERMINAL_KEY_NAME L"DelegationTerminal"
 
-#define SYSTEM_DELEGATION_CONSOLE_KEY_NAME L"SystemDelegationConsole"
-#define SYSTEM_DELEGATION_TERMINAL_KEY_NAME L"SystemDelegationTerminal"
+DEFINE_GUID(CLSID_SystemDelegationConsole, 0x2eaca947, 0x7f5f, 0x4cfa, 0xba, 0x87, 0x8f, 0x7f, 0xbe, 0xef, 0xbe, 0x69);
+DEFINE_GUID(CLSID_SystemDelegationTerminal, 0xe12cff52, 0xa866, 0x4c77, 0x9a, 0x90, 0xf5, 0x70, 0xa7, 0xaa, 0x2c, 0x6b);
 
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
@@ -275,9 +277,10 @@ CATCH_RETURN()
     {
         if (FAILED(hr))
         {
-            // If we can't find a user-defined delegation console/terminal, use the system-defined
+            // If we can't find a user-defined delegation console/terminal, use the hardcoded
             // delegation console/terminal instead.
-            hr = s_Get(SYSTEM_DELEGATION_CONSOLE_KEY_NAME, iid);
+            iid = CLSID_SystemDelegationConsole;
+            hr = S_OK;
         }
     }
 
@@ -295,9 +298,10 @@ CATCH_RETURN()
     {
         if (FAILED(hr))
         {
-            // If we can't find a user-defined delegation console/terminal, use the system-defined
+            // If we can't find a user-defined delegation console/terminal, use the hardcoded
             // delegation console/terminal instead.
-            hr = s_Get(SYSTEM_DELEGATION_TERMINAL_KEY_NAME, iid);
+            iid = CLSID_SystemDelegationTerminal;
+            hr = S_OK;
         }
     }
 

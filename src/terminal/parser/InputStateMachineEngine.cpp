@@ -276,19 +276,12 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
         // similar to TerminalInput::_SendInputSequence
         if (!string.empty())
         {
-            try
+            std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+            for (const auto& wch : string)
             {
-                std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-                for (const auto& wch : string)
-                {
-                    inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
-                }
-                return _pDispatch->WriteInput(inputEvents);
+                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
             }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-            }
+            return _pDispatch->WriteInput(inputEvents);
         }
     }
     return ActionPrintString(string);
@@ -1059,58 +1052,6 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
     vkey = key;
     modifierState = modifierFlags;
 
-    return true;
-}
-
-// Method Description:
-// - Returns true if the engine should attempt to parse a control sequence
-//      following an SS3 escape prefix.
-//   If this is false, an SS3 escape sequence should be dispatched as soon
-//      as it is encountered.
-// Return Value:
-// - True iff we should parse a control sequence following an SS3.
-bool InputStateMachineEngine::ParseControlSequenceAfterSs3() const noexcept
-{
-    return true;
-}
-
-// Method Description:
-// - Returns true if the engine should dispatch on the last character of a string
-//      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist its state across calls to
-//      ProcessString, and dispatch only at the end of the sequence.
-// Return Value:
-// - True iff we should manually dispatch on the last character of a string.
-bool InputStateMachineEngine::FlushAtEndOfString() const noexcept
-{
-    return true;
-}
-
-// Routine Description:
-// - Returns true if the engine should dispatch control characters in the Escape
-//      state. Typically, control characters are immediately executed in the
-//      Escape state without returning to ground. If this returns true, the
-//      state machine will instead call ActionExecuteFromEscape and then enter
-//      the Ground state when a control character is encountered in the escape
-//      state.
-// Return Value:
-// - True iff we should return to the Ground state when the state machine
-//      encounters a Control (C0) character in the Escape state.
-bool InputStateMachineEngine::DispatchControlCharsFromEscape() const noexcept
-{
-    return true;
-}
-
-// Routine Description:
-// - Returns false if the engine wants to be able to collect intermediate
-//   characters in the Escape state. We do _not_ want to buffer any characters
-//   as intermediates, because we use ESC as a prefix to indicate a key was
-//   pressed while Alt was pressed.
-// Return Value:
-// - True iff we should dispatch in the Escape state when we encounter a
-//   Intermediate character.
-bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
-{
     return true;
 }
 

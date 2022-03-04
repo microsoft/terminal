@@ -265,22 +265,10 @@ try
         try
         {
             static const auto compile = [](const std::filesystem::path& path, const char* target) {
-                const wil::unique_hfile fileHandle{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
-                THROW_LAST_ERROR_IF(!fileHandle);
-
-                const auto fileSize = GetFileSize(fileHandle.get(), nullptr);
-                const wil::unique_handle mappingHandle{ CreateFileMappingW(fileHandle.get(), nullptr, PAGE_READONLY, 0, fileSize, nullptr) };
-                THROW_LAST_ERROR_IF(!mappingHandle);
-
-                const wil::unique_mapview_ptr<void> dataBeg{ MapViewOfFile(mappingHandle.get(), FILE_MAP_READ, 0, 0, 0) };
-                THROW_LAST_ERROR_IF(!dataBeg);
-
                 wil::com_ptr<ID3DBlob> error;
                 wil::com_ptr<ID3DBlob> blob;
-                const auto hr = D3DCompile(
-                    /* pSrcData    */ dataBeg.get(),
-                    /* SrcDataSize */ fileSize,
-                    /* pFileName   */ nullptr,
+                const auto hr = D3DCompileFromFile(
+                    /* pFileName   */ path.c_str(),
                     /* pDefines    */ nullptr,
                     /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
                     /* pEntrypoint */ "main",
@@ -600,7 +588,7 @@ try
         }
 
         const u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
-        const AtlasKeyAttributes attributes{ 0, textAttributes.IsBold(), textAttributes.IsItalic(), 0 };
+        const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense(), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
         {
@@ -916,6 +904,8 @@ void AtlasEngine::_recreateSizeDependentResources()
         _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ projectedTextSize };
         _api.glyphIndices = Buffer<u16>{ projectedGlyphSize };
         _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ projectedGlyphSize };
+        _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
+        _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
 
         D3D11_BUFFER_DESC desc;
         desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
@@ -1201,10 +1191,9 @@ void AtlasEngine::_flushBufferLine()
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
-        float scale = 1.0f;
-
         if (_sr.systemFontFallback)
         {
+            float scale = 1.0f;
             u32 mappedLength = 0;
 
             if (textFormatAxis)
@@ -1268,7 +1257,7 @@ void AtlasEngine::_flushBufferLine()
                 {
                     if (const auto col2 = _api.bufferLineColumn[pos2]; col1 != col2)
                     {
-                        _emplaceGlyph(nullptr, scale, pos1, pos2);
+                        _emplaceGlyph(nullptr, pos1, pos2);
                         pos1 = pos2;
                         col1 = col2;
                     }
@@ -1306,7 +1295,7 @@ void AtlasEngine::_flushBufferLine()
             {
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
-                    _emplaceGlyph(mappedFontFace.get(), scale, idx + i, idx + i + 1u);
+                    _emplaceGlyph(mappedFontFace.get(), idx + i, idx + i + 1u);
                 }
             }
             else
@@ -1383,6 +1372,37 @@ void AtlasEngine::_flushBufferLine()
                         break;
                     }
 
+                    if (_api.glyphAdvances.size() < actualGlyphCount)
+                    {
+                        // Grow the buffer by at least 1.5x and at least of `actualGlyphCount` items.
+                        // The 1.5x growth ensures we don't reallocate every time we need 1 more slot.
+                        auto size = _api.glyphAdvances.size();
+                        size = size + (size >> 1);
+                        size = std::max<size_t>(size, actualGlyphCount);
+                        _api.glyphAdvances = Buffer<f32>{ size };
+                        _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ size };
+                    }
+
+                    THROW_IF_FAILED(_sr.textAnalyzer->GetGlyphPlacements(
+                        /* textString          */ _api.bufferLine.data() + a.textPosition,
+                        /* clusterMap          */ _api.clusterMap.data(),
+                        /* textProps           */ _api.textProps.data(),
+                        /* textLength          */ a.textLength,
+                        /* glyphIndices        */ _api.glyphIndices.data(),
+                        /* glyphProps          */ _api.glyphProps.data(),
+                        /* glyphCount          */ actualGlyphCount,
+                        /* fontFace            */ mappedFontFace.get(),
+                        /* fontEmSize          */ _api.fontMetrics.fontSizeInDIP,
+                        /* isSideways          */ false,
+                        /* isRightToLeft       */ a.bidiLevel & 1,
+                        /* scriptAnalysis      */ &scriptAnalysis,
+                        /* localeName          */ nullptr,
+                        /* features            */ &features,
+                        /* featureRangeLengths */ &featureRangeLengths,
+                        /* featureRanges       */ featureRanges,
+                        /* glyphAdvances       */ _api.glyphAdvances.data(),
+                        /* glyphOffsets        */ _api.glyphOffsets.data()));
+
                     _api.textProps[a.textLength - 1].canBreakShapingAfter = 1;
 
                     size_t beg = 0;
@@ -1390,7 +1410,7 @@ void AtlasEngine::_flushBufferLine()
                     {
                         if (_api.textProps[i].canBreakShapingAfter)
                         {
-                            _emplaceGlyph(mappedFontFace.get(), scale, a.textPosition + beg, a.textPosition + i + 1);
+                            _emplaceGlyph(mappedFontFace.get(), a.textPosition + beg, a.textPosition + i + 1);
                             beg = i + 1;
                         }
                     }
@@ -1400,7 +1420,7 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
-void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2)
+void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2)
 {
     static constexpr auto replacement = L'\uFFFD';
 
@@ -1459,7 +1479,7 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t b
             coords[i] = _allocateAtlasTile();
         }
 
-        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value, scale });
+        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value });
         _r.maxEncounteredCellCount = std::max(_r.maxEncounteredCellCount, cellCount);
     }
 

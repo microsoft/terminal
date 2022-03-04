@@ -15,7 +15,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), initialViewport),
     _fUseAsciiOnly(fUseAsciiOnly),
     _needToDisableCursor(false),
-    _lastCursorIsVisible(false),
+    // GH#12401: Ensure a DECTCEM cursor show/hide sequence
+    // is emitted on the first frame no matter what.
+    _lastCursorIsVisible(Tribool::Invalid),
     _nextCursorIsVisible(true)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
@@ -98,31 +100,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     {
         // If the cursor was previously visible, let's hide it for this frame,
         // by prepending a cursor off.
-        if (_lastCursorIsVisible)
+        if (_lastCursorIsVisible != Tribool::False)
         {
             _buffer.insert(0, "\x1b[?25l");
-            _lastCursorIsVisible = false;
+            _lastCursorIsVisible = Tribool::False;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
         // need to worry, it's already off.
     }
 
-    // If the cursor is moving from off -> on (including cases where we just
-    // disabled if for this frame), show the cursor at the end of the frame
-    if (_nextCursorIsVisible && !_lastCursorIsVisible)
+    if (_lastCursorIsVisible != static_cast<Tribool>(_nextCursorIsVisible))
     {
-        RETURN_IF_FAILED(_ShowCursor());
+        RETURN_IF_FAILED(_nextCursorIsVisible ? _ShowCursor() : _HideCursor());
+        _lastCursorIsVisible = static_cast<Tribool>(_nextCursorIsVisible);
     }
-    // Otherwise, if the cursor previously was visible, and it should be hidden
-    // (on -> off), hide it at the end of the frame.
-    else if (!_nextCursorIsVisible && _lastCursorIsVisible)
-    {
-        RETURN_IF_FAILED(_HideCursor());
-    }
-
-    // Update our tracker of what we thought the last cursor state of the
-    // terminal was.
-    _lastCursorIsVisible = _nextCursorIsVisible;
 
     RETURN_IF_FAILED(VtEngine::EndPaint());
 

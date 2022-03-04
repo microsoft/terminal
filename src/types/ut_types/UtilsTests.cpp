@@ -479,5 +479,29 @@ void UtilsTests::TestMangleWSLPaths()
         VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl.localhost\Ubuntu\home\user" -d Ubuntu)", commandline);
         VERIFY_ARE_EQUAL(L"", path);
     }
+
+    /// Tests for GH #12353
+
+    const auto expectedUserProfilePath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%");
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "~" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~ -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"(wsl ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(ubuntu ~ -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"(ubuntu ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(powershell.exe)", L"~");
+        VERIFY_ARE_EQUAL(LR"(powershell.exe)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
 }
 #endif

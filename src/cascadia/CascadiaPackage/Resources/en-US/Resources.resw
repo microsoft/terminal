@@ -117,13 +117,52 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AppName" xml:space="preserve">
+    <value>Terminal</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppNameDev" xml:space="preserve">
+    <value>Terminal Dev</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppNamePre" xml:space="preserve">
+    <value>Terminal Preview</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppStoreName" xml:space="preserve">
+    <value>Windows Terminal</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppStoreNameDev" xml:space="preserve">
+    <value>Windows Terminal Dev</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppStoreNamePre" xml:space="preserve">
+    <value>Windows Terminal Preview</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppShortName" xml:space="preserve">
+    <value>Terminal</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppShortNameDev" xml:space="preserve">
+    <value>Terminal Dev</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppShortNamePre" xml:space="preserve">
+    <value>Terminal Preview</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="AppDescription" xml:space="preserve">
     <value>The New Windows Terminal</value>
+    <comment>{Locked}</comment>
   </data>
   <data name="AppDescriptionDev" xml:space="preserve">
     <value>The Windows Terminal, but Unofficial</value>
+    <comment>{Locked}</comment>
   </data>
   <data name="AppDescriptionPre" xml:space="preserve">
     <value>Windows Terminal with a preview of upcoming features</value>
+    <comment>{Locked}</comment>
   </data>
 </root>

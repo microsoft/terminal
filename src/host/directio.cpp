@@ -444,24 +444,6 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 // Routine Description:
-// - Writes events to the input buffer already formed into IInputEvents (private call)
-// Arguments:
-// - context - the input buffer to write to
-// - events - the events to written
-// - written  - on output, the number of events written
-// - append - true if events should be written to the end of the input
-// buffer, false if they should be written to the front
-// Return Value:
-// - HRESULT indicating success or failure
-[[nodiscard]] HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
-                                                     _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                     _Out_ size_t& eventsWritten,
-                                                     const bool append) noexcept
-{
-    return _WriteConsoleInputWImplHelper(*pInputBuffer, events, eventsWritten, append);
-}
-
-// Routine Description:
 // - Writes events to the input buffer, translating from codepage to unicode first
 // Arguments:
 // - context - the input buffer to write to
@@ -532,32 +514,6 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         return _WriteConsoleInputWImplHelper(context, events, written, append);
     }
     CATCH_RETURN();
-}
-
-// Function Description:
-// - Writes the input KeyEvent to the console as a console control event. This
-//      can be used for potentially generating Ctrl-C events, as
-//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in
-//      the same way that it'd be handled from the window proc, with the proper
-//      processed vs raw input handling.
-//  If the input key is *not* a Ctrl-C key, then it will get written to the
-//      buffer just the same as any other KeyEvent.
-// Arguments:
-// - pInputBuffer - the input buffer to write to. Currently unused, as
-//      HandleGenericKeyEvent just gets the global input buffer, but all
-//      ConGetSet API's require an input or output object.
-// - key - The keyevent to send to the console.
-// Return Value:
-// - HRESULT indicating success or failure
-[[nodiscard]] HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInputBuffer*/,
-                                                           _In_ KeyEvent key)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    HandleGenericKeyEvent(key, false);
-
-    return S_OK;
 }
 
 // Routine Description:

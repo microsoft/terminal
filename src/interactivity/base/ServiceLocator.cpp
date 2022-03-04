@@ -17,13 +17,12 @@ using namespace Microsoft::Console::Interactivity;
 std::unique_ptr<IInteractivityFactory> ServiceLocator::s_interactivityFactory;
 std::unique_ptr<IConsoleControl> ServiceLocator::s_consoleControl;
 std::unique_ptr<IConsoleInputThread> ServiceLocator::s_consoleInputThread;
+std::unique_ptr<IConsoleWindow> ServiceLocator::s_consoleWindow;
 std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
 std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
 std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
-
-IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 
 Globals ServiceLocator::s_globals;
 
@@ -45,6 +44,10 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
         s_globals.pRender->TriggerTeardown();
     }
 
+    // By locking the console, we ensure no background tasks are accessing the
+    // classes we're going to destruct down below (for instance: CursorBlinker).
+    s_globals.getConsoleInformation().LockConsole();
+
     // A History Lesson from MSFT: 13576341:
     // We introduced RundownAndExit to give services that hold onto important handles
     // an opportunity to let those go when we decide to exit from the console for various reasons.
@@ -62,10 +65,9 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
-    if (s_inputServices.get() != nullptr)
-    {
-        s_inputServices.reset(nullptr);
-    }
+    delete s_globals.pRender;
+    s_inputServices.reset(nullptr);
+    s_consoleWindow.reset(nullptr);
 
     ExitProcess(hr);
 }
@@ -154,7 +156,7 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
     }
     else
     {
-        s_consoleWindow = window;
+        s_consoleWindow.reset(window);
     }
 
     return status;
@@ -166,7 +168,7 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 IConsoleWindow* ServiceLocator::LocateConsoleWindow()
 {
-    return s_consoleWindow;
+    return s_consoleWindow.get();
 }
 
 IConsoleControl* ServiceLocator::LocateConsoleControl()

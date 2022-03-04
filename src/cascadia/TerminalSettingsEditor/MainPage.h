@@ -4,10 +4,23 @@
 #pragma once
 
 #include "MainPage.g.h"
+#include "Breadcrumb.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct Breadcrumb : BreadcrumbT<Breadcrumb>
+    {
+        Breadcrumb(IInspectable tag, winrt::hstring label, BreadcrumbSubPage subPage) :
+            _Tag{ tag },
+            _Label{ label },
+            _SubPage{ subPage } {}
+
+        WINRT_PROPERTY(IInspectable, Tag);
+        WINRT_PROPERTY(winrt::hstring, Label);
+        WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
+    };
+
     struct MainPage : MainPageT<MainPage>
     {
         MainPage() = delete;
@@ -21,14 +34,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SettingsNav_ItemInvoked(Microsoft::UI::Xaml::Controls::NavigationView const& sender, Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args);
         void SaveButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void ResetButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& sender, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args);
 
         void SetHostingWindow(uint64_t hostingWindow) noexcept;
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
         uint64_t GetHostingWindow() const noexcept;
 
+        Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
+
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
 
     private:
+        Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
 
@@ -40,10 +57,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
         void _AddProfileHandler(const winrt::guid profileGuid);
 
-        void _Navigate(hstring clickedItemTag);
-        void _Navigate(const Editor::ProfileViewModel& profile);
+        void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState state);
+
+        void _PreNavigateHelper();
+        void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
+        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
     };
 }
 

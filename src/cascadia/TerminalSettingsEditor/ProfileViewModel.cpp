@@ -70,7 +70,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
-    ProfilesPivots ProfileViewModel::_LastActivePivot{ ProfilesPivots::General };
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
@@ -114,6 +113,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     Opacity(1.0);
                 }
+            }
+            else if (viewModelProperty == L"AntialiasingMode")
+            {
+                _NotifyChanges(L"CurrentAntiAliasingMode");
+            }
+            else if (viewModelProperty == L"CloseOnExit")
+            {
+                _NotifyChanges(L"CurrentCloseOnExitMode");
+            }
+            else if (viewModelProperty == L"BellStyle")
+            {
+                _NotifyChanges(L"IsBellStyleFlagSet");
+            }
+            else if (viewModelProperty == L"ScrollState")
+            {
+                _NotifyChanges(L"CurrentScrollState");
             }
         });
 

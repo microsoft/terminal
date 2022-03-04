@@ -241,7 +241,8 @@ private:
 
     bool _zoomed{ false };
 
-    static winrt::Windows::Media::Playback::MediaPlayer s_bellPlayer;
+    winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
+    winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;

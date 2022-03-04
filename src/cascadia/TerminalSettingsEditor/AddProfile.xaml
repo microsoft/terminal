@@ -23,27 +23,29 @@
 
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <Button x:Uid="AddProfile_AddNewButton"
-                    AutomationProperties.AutomationId="AddProfile_AddNewButton"
-                    AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
-                    Click="AddNewClick"
-                    Style="{StaticResource AccentButtonStyle}">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                  Glyph="&#xE710;" />
-                        <TextBlock x:Uid="AddProfile_AddNewTextBlock"
-                                   Style="{StaticResource IconButtonTextBlockStyle}" />
-                    </StackPanel>
-                </Button.Content>
-            </Button>
+            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                <Button x:Name="AddNewButton"
+                        Click="AddNewClick"
+                        Style="{StaticResource AccentButtonStyle}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE710;" />
+                            <TextBlock x:Uid="AddProfile_AddNewTextBlock"
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+            </Border>
             <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
-                    <muxc:RadioButtons x:Name="Profiles"
-                                       AutomationProperties.AccessibilityView="Content"
-                                       ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
-                                       SelectionChanged="ProfilesSelectionChanged">
-                        <muxc:RadioButtons.ItemTemplate>
+                    <ComboBox x:Name="Profiles"
+                              AutomationProperties.AccessibilityView="Content"
+                              ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
+                              SelectedIndex="0"
+                              SelectionChanged="ProfilesSelectionChanged"
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="model:Profile">
                                 <Grid HorizontalAlignment="Stretch"
                                       ColumnSpacing="8">
@@ -65,25 +67,25 @@
 
                                 </Grid>
                             </DataTemplate>
-                        </muxc:RadioButtons.ItemTemplate>
-                    </muxc:RadioButtons>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </local:SettingContainer>
-                <Button x:Uid="AddProfile_DuplicateButton"
-                        Margin="{StaticResource StandardControlMargin}"
-                        AutomationProperties.AutomationId="AddProfile_DuplicateButton"
-                        AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
-                        Click="DuplicateClick"
-                        IsEnabled="{x:Bind IsProfileSelected, Mode=OneWay}"
-                        Style="{StaticResource AccentButtonStyle}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE8C8;" />
-                            <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
-                                       Style="{StaticResource IconButtonTextBlockStyle}" />
-                        </StackPanel>
-                    </Button.Content>
-                </Button>
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    <Button x:Name="DuplicateButton"
+                            Margin="{StaticResource StandardControlMargin}"
+                            Click="DuplicateClick"
+                            IsEnabled="{x:Bind IsProfileSelected, Mode=OneWay}"
+                            Style="{StaticResource AccentButtonStyle}">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE8C8;" />
+                                <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
+                                           Style="{StaticResource IconButtonTextBlockStyle}" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+                </Border>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

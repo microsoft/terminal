@@ -114,9 +114,9 @@ class TextBufferTests
 
     TEST_METHOD(TestRgbEraseLine);
 
-    TEST_METHOD(TestUnBold);
-    TEST_METHOD(TestUnBoldRgb);
-    TEST_METHOD(TestComplexUnBold);
+    TEST_METHOD(TestUnintense);
+    TEST_METHOD(TestUnintenseRgb);
+    TEST_METHOD(TestComplexUnintense);
 
     TEST_METHOD(CopyAttrs);
 
@@ -126,8 +126,8 @@ class TextBufferTests
 
     TEST_METHOD(CopyLastAttr);
 
-    TEST_METHOD(TestRgbThenBold);
-    TEST_METHOD(TestResetClearsBoldness);
+    TEST_METHOD(TestRgbThenIntense);
+    TEST_METHOD(TestResetClearsIntensity);
 
     TEST_METHOD(TestBackspaceRightSideVt);
 
@@ -145,6 +145,8 @@ class TextBufferTests
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
     TEST_METHOD(TestBurrito);
+
+    TEST_METHOD(TestAppendRTFText);
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
@@ -874,7 +876,7 @@ void TextBufferTests::TestRgbEraseLine()
     }
 }
 
-void TextBufferTests::TestUnBold()
+void TextBufferTests::TestUnintense()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -925,7 +927,7 @@ void TextBufferTests::TestUnBold()
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestUnBoldRgb()
+void TextBufferTests::TestUnintenseRgb()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -980,7 +982,7 @@ void TextBufferTests::TestUnBoldRgb()
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestComplexUnBold()
+void TextBufferTests::TestComplexUnintense()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1047,22 +1049,22 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(attrF.IsLegacy(), false);
 
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(bright_green, RGB(1, 2, 3)));
-    VERIFY_IS_TRUE(attrA.IsBold());
+    VERIFY_IS_TRUE(attrA.IsIntense());
 
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(dark_green, RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrB.IsBold());
+    VERIFY_IS_FALSE(attrB.IsIntense());
 
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC), std::make_pair(RGB(32, 32, 32), RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrC.IsBold());
+    VERIFY_IS_FALSE(attrC.IsIntense());
 
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrD), renderSettings.GetAttributeColors(attrC));
-    VERIFY_IS_TRUE(attrD.IsBold());
+    VERIFY_IS_TRUE(attrD.IsIntense());
 
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrE), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
-    VERIFY_IS_TRUE(attrE.IsBold());
+    VERIFY_IS_TRUE(attrE.IsIntense());
 
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrF), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrF.IsBold());
+    VERIFY_IS_FALSE(attrF.IsIntense());
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -1358,7 +1360,7 @@ void TextBufferTests::CopyLastAttr()
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestRgbThenBold()
+void TextBufferTests::TestRgbThenIntense()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1369,7 +1371,7 @@ void TextBufferTests::TestRgbThenBold()
 
     // See MSFT:16398982
     Log::Comment(NoThrowString().Format(
-        L"Test that a bold following a RGB color doesn't remove the RGB color"));
+        L"Test that an intense attribute following a RGB color doesn't remove the RGB color"));
     Log::Comment(L"\"\\x1b[38;2;40;40;40m\\x1b[48;2;168;153;132mX\\x1b[1mX\\x1b[m\"");
     const auto foreground = RGB(40, 40, 40);
     const auto background = RGB(168, 153, 132);
@@ -1388,7 +1390,7 @@ void TextBufferTests::TestRgbThenBold()
         x,
         y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT intense"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1403,7 +1405,7 @@ void TextBufferTests::TestRgbThenBold()
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestResetClearsBoldness()
+void TextBufferTests::TestResetClearsIntensity()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1413,7 +1415,7 @@ void TextBufferTests::TestResetClearsBoldness()
     const auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(
-        L"Test that resetting bold attributes clears the boldness."));
+        L"Test that resetting intense attributes clears the intensity."));
     const auto x0 = cursor.GetPosition().X;
 
     // Test assumes that the background/foreground were default attribute when it starts up,
@@ -1443,7 +1445,7 @@ void TextBufferTests::TestResetClearsBoldness()
         x,
         y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT intense"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1455,10 +1457,10 @@ void TextBufferTests::TestResetClearsBoldness()
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC).first, defaultFg);
     VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrD).first, dark_green);
 
-    VERIFY_IS_FALSE(attrA.IsBold());
-    VERIFY_IS_TRUE(attrB.IsBold());
-    VERIFY_IS_FALSE(attrC.IsBold());
-    VERIFY_IS_FALSE(attrD.IsBold());
+    VERIFY_IS_FALSE(attrA.IsIntense());
+    VERIFY_IS_TRUE(attrB.IsIntense());
+    VERIFY_IS_FALSE(attrC.IsIntense());
+    VERIFY_IS_FALSE(attrD.IsIntense());
 
     const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -2009,6 +2011,37 @@ void TextBufferTests::TestBurrito()
     _buffer->IncrementCursor();
     _buffer->IncrementCursor();
     VERIFY_IS_FALSE(afterBurritoIter);
+}
+
+void TextBufferTests::TestAppendRTFText()
+{
+    {
+        std::ostringstream contentStream;
+        const auto ascii = L"This is some Ascii \\ {}";
+        TextBuffer::_AppendRTFText(contentStream, ascii);
+        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "Low code units: á é í ó ú ⮁ ⮂" in UTF-16
+        const auto lowCodeUnits = L"Low code units: \x00E1 \x00E9 \x00ED \x00F3 \x00FA \x2B81 \x2B82";
+        TextBuffer::_AppendRTFText(contentStream, lowCodeUnits);
+        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "High code units: ꞵ ꞷ" in UTF-16
+        const auto highCodeUnits = L"High code units: \xA7B5 \xA7B7";
+        TextBuffer::_AppendRTFText(contentStream, highCodeUnits);
+        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "Surrogates: 🍦 👾 👀" in UTF-16
+        const auto surrogates = L"Surrogates: \xD83C\xDF66 \xD83D\xDC7E \xD83D\xDC40";
+        TextBuffer::_AppendRTFText(contentStream, surrogates);
+        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream.str());
+    }
 }
 
 void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer)

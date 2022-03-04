@@ -82,11 +82,6 @@ public:
 
     bool ActionSs3Dispatch(const wchar_t /* wch */, const VTParameters /* parameters */) override { return true; };
 
-    bool ParseControlSequenceAfterSs3() const override { return false; }
-    bool FlushAtEndOfString() const override { return false; };
-    bool DispatchControlCharsFromEscape() const override { return false; };
-    bool DispatchIntermediatesFromEscape() const override { return false; };
-
     // ActionCsiDispatch is the only method that's actually implemented.
     bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override
     {
@@ -154,7 +149,7 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
         return true;
     }
 
-    TEST_METHOD(TwoStateMachinesDoNotInterfereWithEachother);
+    TEST_METHOD(TwoStateMachinesDoNotInterfereWithEachOther);
 
     TEST_METHOD(PassThroughUnhandled);
     TEST_METHOD(RunStorageBeforeEscape);
@@ -164,7 +159,7 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(DcsDataStringsReceivedByHandler);
 };
 
-void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachother()
+void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachOther()
 {
     auto firstEnginePtr{ std::make_unique<TestStateMachineEngine>() };
     // this dance is required because StateMachine presumes to take ownership of its engine.

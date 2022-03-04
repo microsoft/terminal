@@ -416,6 +416,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     auto& stateMachine = screenInfo.GetStateMachine();
     auto& cursor = screenInfo._textBuffer->GetCursor();
     auto viewport = screenInfo.GetViewport();
+    const auto reverseLineFeed = L"\033M";
 
     VERIFY_ARE_EQUAL(viewport.Top(), 0);
 
@@ -427,7 +428,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
     VERIFY_ARE_EQUAL(viewport.Top(), 0);
 
-    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
+    stateMachine.ProcessString(reverseLineFeed);
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
@@ -448,7 +449,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
     VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 0);
 
-    VERIFY_SUCCEEDED(DoSrvPrivateReverseLineFeed(screenInfo));
+    stateMachine.ProcessString(reverseLineFeed);
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
@@ -473,7 +474,7 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 5);
 
-    LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(screenInfo));
+    stateMachine.ProcessString(reverseLineFeed);
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 8);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
@@ -4535,7 +4536,7 @@ void ScreenBufferTests::ScrollLines256Colors()
 
     int scrollType;
     int colorStyle;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollType", scrollType), L"controls whether to use InsertLines, DeleteLines ot ReverseLineFeed");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollType", scrollType), L"controls whether to use InsertLines, DeleteLines or ReverseLineFeed");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"colorStyle", colorStyle), L"controls whether to use the 16 color table, 256 table, or RGB colors");
 
     // This test is largely taken from repro code from
@@ -5076,7 +5077,7 @@ void ScreenBufferTests::TestExtendedTextAttributes()
 
     // Run this test for each and every possible combination of states.
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:intense", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:faint", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:underlined", L"{false, true}")
@@ -5086,8 +5087,8 @@ void ScreenBufferTests::TestExtendedTextAttributes()
         TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
     END_TEST_METHOD_PROPERTIES()
 
-    bool bold, faint, italics, underlined, doublyUnderlined, blink, invisible, crossedOut;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
+    bool intense, faint, italics, underlined, doublyUnderlined, blink, invisible, crossedOut;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"intense", intense));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"faint", faint));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"underlined", underlined));
@@ -5107,9 +5108,9 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     std::wstring vtSeq = L"";
 
     // Collect up a VT sequence to set the state given the method properties
-    if (bold)
+    if (intense)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Bold);
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::Intense);
         vtSeq += L"\x1b[1m";
     }
     if (faint)
@@ -5184,10 +5185,10 @@ void ScreenBufferTests::TestExtendedTextAttributes()
 
     // One-by-one, turn off each of these states with VT, then check that the
     // state matched.
-    if (bold || faint)
+    if (intense || faint)
     {
-        // The bold and faint attributes share the same reset sequence.
-        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Bold | ExtendedAttributes::Faint);
+        // The intense and faint attributes share the same reset sequence.
+        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Intense | ExtendedAttributes::Faint);
         vtSeq = L"\x1b[22m";
         validate(expectedAttrs, vtSeq);
     }
@@ -5238,7 +5239,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
 
     // Run this test for each and every possible combination of states.
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:intense", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:faint", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:underlined", L"{false, true}")
@@ -5257,8 +5258,8 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     const int Use256Color = 2;
     const int UseRGBColor = 3;
 
-    bool bold, faint, italics, underlined, doublyUnderlined, blink, invisible, crossedOut;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
+    bool intense, faint, italics, underlined, doublyUnderlined, blink, invisible, crossedOut;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"intense", intense));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"faint", faint));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"underlined", underlined));
@@ -5282,9 +5283,9 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     std::wstring vtSeq = L"";
 
     // Collect up a VT sequence to set the state given the method properties
-    if (bold)
+    if (intense)
     {
-        expectedAttr.SetBold(true);
+        expectedAttr.SetIntense(true);
         vtSeq += L"\x1b[1m";
     }
     if (faint)
@@ -5403,10 +5404,10 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
 
     // One-by-one, turn off each of these states with VT, then check that the
     // state matched.
-    if (bold || faint)
+    if (intense || faint)
     {
-        // The bold and faint attributes share the same reset sequence.
-        expectedAttr.SetBold(false);
+        // The intense and faint attributes share the same reset sequence.
+        expectedAttr.SetIntense(false);
         expectedAttr.SetFaint(false);
         vtSeq = L"\x1b[22m";
         validate(expectedAttr, vtSeq);
@@ -6222,7 +6223,7 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
         TextAttribute vtBrightWhiteOnBlackAttribute{};
         vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
         vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
-        vtBrightWhiteOnBlackAttribute.SetBold(true);
+        vtBrightWhiteOnBlackAttribute.SetIntense(true);
 
         TextAttribute vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
         vtBrightWhiteOnDefaultAttribute.SetDefaultBackground();
@@ -6248,7 +6249,7 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
         vtWhiteOnBlack256Attribute.SetForeground(TextColor{ TextColor::DARK_WHITE, true });
         vtWhiteOnBlack256Attribute.SetBackground(TextColor{ TextColor::DARK_BLACK, true });
 
-        // reset (disable bold from the last test) before setting both colors
+        // reset (disable intense from the last test) before setting both colors
         seq = L"\x1b[m\x1b[38;5;7;48;5;0m"; // the quirk should *not* suppress this (!)
         seqCb = 2 * seq.size();
         VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, useQuirk, waiter));

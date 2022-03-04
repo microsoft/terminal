@@ -397,6 +397,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Returns true if there is no dialog currently being shown (meaning that we can show a dialog)
+    // - Returns false if there is a dialog currently being shown (meaning that we cannot show another dialog)
+    bool AppLogic::CanShowDialog()
+    {
+        return (_dialog == nullptr);
+    }
+
+    // Method Description:
     // - Displays a dialog for errors found while loading or validating the
     //   settings. Uses the resources under the provided  title and content keys
     //   as the title and first content of the dialog, then also displays a
@@ -504,7 +512,25 @@ namespace winrt::TerminalApp::implementation
             if (keyboardServiceIsDisabled)
             {
                 _root->ShowKeyboardServiceWarning();
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "KeyboardServiceWasDisabled",
+                    TraceLoggingDescription("Event emitted when the keyboard service is disabled, and we warned them about it"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             }
+        }
+        else
+        {
+            // For when the warning was disabled in the settings
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "KeyboardServiceWarningWasDisabledBySetting",
+                TraceLoggingDescription("Event emitted when the user has disabled the KB service warning"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
 
         if (FAILED(_settingsLoadedResult))
@@ -1074,18 +1100,18 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
-    //   isn't a control selected for any reason, returns "Windows Terminal"
+    //   isn't a control selected for any reason, returns "Terminal"
     // Arguments:
     // - <none>
     // Return Value:
-    // - the title of the focused control if there is one, else "Windows Terminal"
+    // - the title of the focused control if there is one, else "Terminal"
     hstring AppLogic::Title()
     {
         if (_root)
         {
             return _root->Title();
         }
-        return { L"Windows Terminal" };
+        return { L"Terminal" };
     }
 
     // Method Description:

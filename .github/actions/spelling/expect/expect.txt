@@ -237,6 +237,7 @@ charlespetzold
 charset
 CHARSETINFO
 chcp
+Checkin
 checkbox
 checkboxes
 chh
@@ -318,6 +319,7 @@ concat
 concfg
 conclnt
 conddkrefs
+condev
 condrv
 conechokey
 conemu
@@ -471,6 +473,7 @@ cygwin
 CYHSCROLL
 CYMIN
 CYPADDEDBORDER
+CYRL
 CYSIZE
 CYSIZEFRAME
 CYSMICON
@@ -671,10 +674,10 @@ dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxp
 dxsm
 dxttbmp
 Dyreen
-eachother
 eaf
 EASTEUROPE
 ECH
@@ -825,7 +828,6 @@ FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FORCEV
 foreach
-forground
 fprintf
 framebuffer
 FRAMECHANGED
@@ -1151,6 +1153,7 @@ ioctl
 iomanip
 iostream
 iot
+ipa
 ipch
 ipconfig
 IPersist
@@ -1238,12 +1241,14 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KOK
 KPRIORITY
 KVM
 langid
 LANGUAGELIST
 lasterror
 lastexitcode
+LATN
 LAYOUTRTL
 LBN
 LBound
@@ -1460,6 +1465,7 @@ msctls
 msdata
 msdn
 msft
+MSDL
 MSGCMDLINEF
 MSGF
 MSGFILTER
@@ -1471,6 +1477,7 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
+mspartners
 msrc
 msvcrt
 MSVCRTD
@@ -1689,7 +1696,6 @@ outfile
 Outof
 OUTOFCONTEXT
 OUTOFMEMORY
-outout
 Outptr
 outstr
 OVERLAPPEDWINDOW
@@ -1792,6 +1798,9 @@ placeholders
 platforming
 playsound
 plist
+PLOC
+PLOCA
+PLOCM
 PLOGICAL
 plugin
 PMv
@@ -1838,7 +1847,6 @@ pragma
 prc
 prealigned
 prebuilt
-precendence
 precomp
 prect
 prefast
@@ -1925,6 +1933,7 @@ qsort
 queryable
 QUESTIONMARK
 quickedit
+QUZ
 QWER
 qzmp
 RAII
@@ -2437,6 +2446,7 @@ TREX
 triaged
 triaging
 TRIANGLESTRIP
+Tribool
 TRIMZEROHEADINGS
 truetype
 trx
@@ -2508,6 +2518,7 @@ UNICRT
 uninit
 uninitialize
 uninstall
+unintense
 Uniscribe
 unittest
 unittesting
@@ -2658,6 +2669,7 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
+wdx
 webclient
 webpage
 website
@@ -2692,6 +2704,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windev
 WINDIR
 windll
 WINDOWALPHA

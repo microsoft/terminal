@@ -20,7 +20,7 @@ using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 // - The number of options consumed, not including the initial 38/48.
 size_t TerminalDispatch::_SetRgbColorsHelper(const VTParameters options,
                                              TextAttribute& attr,
-                                             const bool isForeground) noexcept
+                                             const bool isForeground)
 {
     size_t optionsConsumed = 1;
     const DispatchTypes::GraphicsOptions typeOpt = options.at(0);
@@ -67,7 +67,7 @@ size_t TerminalDispatch::_SetRgbColorsHelper(const VTParameters options,
 //   one at a time by setting or removing flags in the font style properties.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool TerminalDispatch::SetGraphicsRendition(const VTParameters options) noexcept
+bool TerminalDispatch::SetGraphicsRendition(const VTParameters options)
 {
     TextAttribute attr = _terminalApi.GetTextAttributes();
 
@@ -88,14 +88,14 @@ bool TerminalDispatch::SetGraphicsRendition(const VTParameters options) noexcept
         case BackgroundDefault:
             attr.SetDefaultBackground();
             break;
-        case BoldBright:
-            attr.SetBold(true);
+        case Intense:
+            attr.SetIntense(true);
             break;
         case RGBColorOrFaint:
             attr.SetFaint(true);
             break;
-        case NotBoldOrFaint:
-            attr.SetBold(false);
+        case NotIntenseOrFaint:
+            attr.SetIntense(false);
             attr.SetFaint(false);
             break;
         case Italics:
@@ -254,12 +254,14 @@ bool TerminalDispatch::SetGraphicsRendition(const VTParameters options) noexcept
     return true;
 }
 
-bool TerminalDispatch::PushGraphicsRendition(const VTParameters options) noexcept
+bool TerminalDispatch::PushGraphicsRendition(const VTParameters options)
 {
-    return _terminalApi.PushGraphicsRendition(options);
+    _terminalApi.PushGraphicsRendition(options);
+    return true;
 }
 
-bool TerminalDispatch::PopGraphicsRendition() noexcept
+bool TerminalDispatch::PopGraphicsRendition()
 {
-    return _terminalApi.PopGraphicsRendition();
+    _terminalApi.PopGraphicsRendition();
+    return true;
 }

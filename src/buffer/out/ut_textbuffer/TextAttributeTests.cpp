@@ -24,7 +24,7 @@ class TextAttributeTests
     TEST_METHOD(TestTextAttributeColorGetters);
     TEST_METHOD(TestReverseDefaultColors);
     TEST_METHOD(TestRoundtripDefaultColors);
-    TEST_METHOD(TestBoldAsBright);
+    TEST_METHOD(TestIntenseAsBright);
 
     RenderSettings _renderSettings;
     const COLORREF _defaultFg = RGB(1, 2, 3);
@@ -257,7 +257,7 @@ void TextAttributeTests::TestRoundtripDefaultColors()
     TextAttribute::SetLegacyDefaultAttributes(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 }
 
-void TextAttributeTests::TestBoldAsBright()
+void TextAttributeTests::TestIntenseAsBright()
 {
     const auto& colorTable = _renderSettings.GetColorTable();
     const COLORREF darkBlack = til::at(colorTable, 0);
@@ -267,8 +267,8 @@ void TextAttributeTests::TestBoldAsBright()
     TextAttribute attr{};
 
     // verify that calculated foreground/background are the same as the direct
-    //      values when not bold
-    VERIFY_IS_FALSE(attr.IsBold());
+    //      values when not intense
+    VERIFY_IS_FALSE(attr.IsIntense());
 
     VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(colorTable, _defaultFgIndex));
     VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(colorTable, _defaultBgIndex));
@@ -277,46 +277,46 @@ void TextAttributeTests::TestBoldAsBright()
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, false);
     VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), _renderSettings.GetAttributeColors(attr));
 
-    // with bold set, calculated foreground/background values shouldn't change for the default colors.
-    attr.SetBold(true);
-    VERIFY_IS_TRUE(attr.IsBold());
+    // with intense set, calculated foreground/background values shouldn't change for the default colors.
+    attr.SetIntense(true);
+    VERIFY_IS_TRUE(attr.IsIntense());
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, true);
     VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), _renderSettings.GetAttributeColors(attr));
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, false);
     VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), _renderSettings.GetAttributeColors(attr));
 
     attr.SetIndexedForeground(TextColor::DARK_BLACK);
-    VERIFY_IS_TRUE(attr.IsBold());
+    VERIFY_IS_TRUE(attr.IsIntense());
 
-    Log::Comment(L"Foreground should be bright black when bold is bright is enabled");
+    Log::Comment(L"Foreground should be bright black when intense is bright is enabled");
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, true);
     VERIFY_ARE_EQUAL(std::make_pair(brightBlack, _defaultBg), _renderSettings.GetAttributeColors(attr));
 
-    Log::Comment(L"Foreground should be dark black when bold is bright is disabled");
+    Log::Comment(L"Foreground should be dark black when intense is bright is disabled");
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, false);
     VERIFY_ARE_EQUAL(std::make_pair(darkBlack, _defaultBg), _renderSettings.GetAttributeColors(attr));
 
     attr.SetIndexedBackground(TextColor::DARK_GREEN);
-    VERIFY_IS_TRUE(attr.IsBold());
+    VERIFY_IS_TRUE(attr.IsIntense());
 
-    Log::Comment(L"background should be unaffected by 'bold is bright'");
+    Log::Comment(L"background should be unaffected by 'intense is bright'");
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, true);
     VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), _renderSettings.GetAttributeColors(attr));
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, false);
     VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), _renderSettings.GetAttributeColors(attr));
 
-    attr.SetBold(false);
-    VERIFY_IS_FALSE(attr.IsBold());
-    Log::Comment(L"when not bold, 'bold is bright' changes nothing");
+    attr.SetIntense(false);
+    VERIFY_IS_FALSE(attr.IsIntense());
+    Log::Comment(L"when not intense, 'intense is bright' changes nothing");
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, true);
     VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), _renderSettings.GetAttributeColors(attr));
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, false);
     VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), _renderSettings.GetAttributeColors(attr));
 
-    Log::Comment(L"When set to a bright color, and bold, 'bold is bright' changes nothing");
-    attr.SetBold(true);
+    Log::Comment(L"When set to a bright color, and intense, 'intense is bright' changes nothing");
+    attr.SetIntense(true);
     attr.SetIndexedForeground(TextColor::BRIGHT_BLACK);
-    VERIFY_IS_TRUE(attr.IsBold());
+    VERIFY_IS_TRUE(attr.IsIntense());
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, true);
     VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), _renderSettings.GetAttributeColors(attr));
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, false);

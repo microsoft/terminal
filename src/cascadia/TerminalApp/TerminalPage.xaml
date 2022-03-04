@@ -75,6 +75,7 @@
         <ContentDialog x:Name="AboutDialog"
                        x:Uid="AboutDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Close">
             <StackPanel Orientation="Vertical">
                 <TextBlock IsTextSelectionEnabled="True">
@@ -96,21 +97,25 @@
         <ContentDialog x:Name="QuitDialog"
                        x:Uid="QuitDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseAllDialog"
                        x:Uid="CloseAllDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Close" />
 
         <ContentDialog x:Name="MultiLinePasteDialog"
                        x:Uid="MultiLinePasteDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <StackPanel>
                 <TextBlock x:Uid="MultiLineWarningText"
@@ -130,11 +135,13 @@
         <ContentDialog x:Name="LargePasteDialog"
                        x:Uid="LargePasteDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="ControlNoticeDialog"
                        x:Uid="ControlNoticeDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
                        TextWrapping="WrapWholeWords">
@@ -145,6 +152,7 @@
         <ContentDialog x:Name="CouldNotOpenUriDialog"
                        x:Uid="CouldNotOpenUriDialog"
                        x:Load="False"
+                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
                        TextWrapping="WrapWholeWords">

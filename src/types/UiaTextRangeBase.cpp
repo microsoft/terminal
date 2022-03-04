@@ -42,9 +42,15 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pData);
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
+    // GH#8730: The cursor position may be in a delayed state, resulting in it being out of bounds.
+    // If that's the case, clamp it to be within bounds.
+    // TODO GH#12440: We should be able to just check some fields off of the Cursor object,
+    // but Windows Terminal isn't updating those flags properly.
     _start = cursor.GetPosition();
+    pData->GetTextBuffer().GetSize().Clamp(_start);
     _end = _start;
 
     UiaTracing::TextRange::Constructor(*this);
@@ -361,18 +367,18 @@ std::optional<bool> UiaTextRangeBase::_verifyAttr(TEXTATTRIBUTEID attributeId, V
 
         // The font weight can be any value from 0 to 900.
         // The text buffer doesn't store the actual value,
-        // we just store "IsBold" and "IsFaint".
+        // we just store "IsIntense" and "IsFaint".
         const auto queryFontWeight{ val.lVal };
 
         if (queryFontWeight > FW_NORMAL)
         {
             // we're looking for a bold font weight
-            return attr.IsBold();
+            return attr.IsIntense();
         }
         else
         {
             // we're looking for "normal" font weight
-            return !attr.IsBold();
+            return !attr.IsIntense();
         }
     }
     case UIA_ForegroundColorAttributeId:
@@ -687,10 +693,10 @@ bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT
     {
         // The font weight can be any value from 0 to 900.
         // The text buffer doesn't store the actual value,
-        // we just store "IsBold" and "IsFaint".
+        // we just store "IsIntense" and "IsFaint".
         // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
         pRetVal->vt = VT_I4;
-        pRetVal->lVal = attr.IsBold() ? FW_BOLD : FW_NORMAL;
+        pRetVal->lVal = attr.IsIntense() ? FW_BOLD : FW_NORMAL;
         return true;
     }
     case UIA_ForegroundColorAttributeId:

@@ -2,10 +2,22 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- This file is read by XES, which we use in our Release builds. -->
   <PropertyGroup Label="Version">
+    <!--
+      The Windows 11 build is going to have the same package name, so it *must* have a different version.
+      The easiest way for us to do this is to add 1 to the revision field.
+      In short, for a given Terminal build 1.11, we will emit two different versions (assume this is build
+      4 on day 23 of the year):
+        - 1.11.234.0 for Windows 10
+        - 1.11.235.0 for Windows 11
+      This presents a potential for conflicts if we want to ship two builds produced back to back on the
+      same day... which is terribly unlikely.
+    -->
+    <VersionBuildRevision Condition="'$(TerminalTargetWindowsVersion)'=='Win11' and '$(VersionBuildRevision)'!=''">$([MSBuild]::Add($(VersionBuildRevision), 1))</VersionBuildRevision>
+
     <XesUseOneStoreVersioning>true</XesUseOneStoreVersioning>
-    <XesBaseYearForStoreVersion>2021</XesBaseYearForStoreVersion>
+    <XesBaseYearForStoreVersion>2022</XesBaseYearForStoreVersion>
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>13</VersionMinor>
+    <VersionMinor>14</VersionMinor>
     <VersionInfoProductName>Windows Terminal</VersionInfoProductName>
   </PropertyGroup>
 </Project>
