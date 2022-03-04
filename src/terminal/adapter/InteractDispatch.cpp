@@ -140,7 +140,8 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
 
     // First retrieve some information about the buffer
     const auto viewport = _pConApi->GetViewport();
-    auto coordCursor = _pConApi->GetTextBuffer().GetCursor().GetPosition();
+    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    auto coordCursor = cursor.GetPosition();
 
     // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
     THROW_IF_FAILED(SizeTToShort(rowFixed, &coordCursor.Y));
@@ -154,8 +155,13 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
     coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, gsl::narrow<SHORT>(viewport.Bottom - 1));
     coordCursor.X = std::clamp(coordCursor.X, viewport.Left, gsl::narrow<SHORT>(viewport.Right - 1));
 
+    // MSFT: 15813316 - Try to use this MoveCursor call to inherit the cursor position.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursor));
+
     // Finally, attempt to set the adjusted cursor position back into the console.
-    _pConApi->SetCursorPosition(coordCursor);
+    cursor.SetPosition(coordCursor);
+    cursor.SetHasMoved(true);
     return true;
 }
 

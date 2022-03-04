@@ -40,7 +40,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual TextBuffer& GetTextBuffer() = 0;
         virtual SMALL_RECT GetViewport() const = 0;
         virtual void SetViewportPosition(const COORD position) = 0;
-        virtual void SetCursorPosition(const COORD position) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
 

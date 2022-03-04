@@ -175,8 +175,9 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 {
     // First retrieve some information about the buffer
     const auto viewport = _pConApi->GetViewport();
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
 
     // Calculate the absolute margins of the scrolling area.
     const int topMargin = viewport.Top + _scrollMargins.Top;
@@ -233,7 +234,10 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 
     // Finally, attempt to set the adjusted cursor position back into the console.
     const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
-    _pConApi->SetCursorPosition(newPos);
+    cursor.SetPosition(textBuffer.ClampPositionWithinLine(newPos));
+    cursor.SetDelay(false);
+    cursor.SetIsOn(true);
+    cursor.SetHasMoved(true);
 
     return true;
 }
@@ -1156,9 +1160,10 @@ bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 void AdaptDispatch::_InsertDeleteLineHelper(const size_t count, const bool isInsert)
 {
     const auto viewport = _pConApi->GetViewport();
-    const auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& textBuffer = _pConApi->GetTextBuffer();
 
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    auto& cursor = textBuffer.GetCursor();
+    const auto row = cursor.GetPosition().Y;
     const auto relativeRow = row - viewport.Top;
 
     const bool marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
@@ -1194,7 +1199,10 @@ void AdaptDispatch::_InsertDeleteLineHelper(const size_t count, const bool isIns
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
-        _pConApi->SetCursorPosition({ 0, row });
+        cursor.SetXPosition(0);
+        cursor.SetDelay(false);
+        cursor.SetIsOn(true);
+        cursor.SetHasMoved(true);
     }
 }
 
@@ -1436,8 +1444,9 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 bool AdaptDispatch::ReverseLineFeed()
 {
     const auto viewport = _pConApi->GetViewport();
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
 
     // Calculate the absolute margins of the scrolling area.
     // If margins aren't set, we use the full viewport.
@@ -1461,7 +1470,10 @@ bool AdaptDispatch::ReverseLineFeed()
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
         const COORD newCursorPosition{ cursorPosition.X, cursorPosition.Y - 1 };
-        _pConApi->SetCursorPosition(newCursorPosition);
+        cursor.SetPosition(textBuffer.ClampPositionWithinLine(newCursorPosition));
+        cursor.SetDelay(false);
+        cursor.SetIsOn(true);
+        cursor.SetHasMoved(true);
     }
     return true;
 }
@@ -1537,10 +1549,10 @@ bool AdaptDispatch::HorizontalTabSet()
 // - True.
 bool AdaptDispatch::ForwardTab(const size_t numTabs)
 {
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto width = textBuffer.GetSize().Dimensions().X;
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    auto column = textBuffer.GetCursor().GetPosition().X;
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
+    auto column = cursor.GetPosition().X;
     auto tabsPerformed = 0u;
 
     _InitTabStopsForWidth(width);
@@ -1553,7 +1565,10 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
         }
     }
 
-    _pConApi->SetCursorPosition({ column, row });
+    cursor.SetXPosition(column);
+    cursor.SetDelay(false);
+    cursor.SetIsOn(true);
+    cursor.SetHasMoved(true);
     return true;
 }
 
@@ -1566,10 +1581,10 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
 // - True.
 bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 {
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto width = textBuffer.GetSize().Dimensions().X;
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    auto column = textBuffer.GetCursor().GetPosition().X;
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
+    auto column = cursor.GetPosition().X;
     auto tabsPerformed = 0u;
 
     _InitTabStopsForWidth(width);
@@ -1582,7 +1597,10 @@ bool AdaptDispatch::BackwardsTab(const size_t numTabs)
         }
     }
 
-    _pConApi->SetCursorPosition({ column, row });
+    cursor.SetXPosition(column);
+    cursor.SetDelay(false);
+    cursor.SetIsOn(true);
+    cursor.SetHasMoved(true);
     return true;
 }
 
@@ -1967,7 +1985,8 @@ void AdaptDispatch::_EraseScrollback()
     THROW_HR_IF(E_UNEXPECTED, height <= 0);
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
-    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    auto& cursor = textBuffer.GetCursor();
+    const auto row = cursor.GetPosition().Y;
 
     // Rectangle to cut out of the existing buffer
     // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
@@ -1992,8 +2011,8 @@ void AdaptDispatch::_EraseScrollback()
     // Move the viewport
     _pConApi->SetViewportPosition({ screen.Left, 0 });
     // Move the cursor to the same relative location.
-    const COORD newcursor = { cursorPosition.X, cursorPosition.Y - screen.Top };
-    _pConApi->SetCursorPosition(newcursor);
+    cursor.SetYPosition(row - screen.Top);
+    cursor.SetHasMoved(true);
 }
 
 //Routine Description:
@@ -2018,8 +2037,8 @@ void AdaptDispatch::_EraseAll()
     // Stash away the current position of the cursor within the viewport.
     // We'll need to restore the cursor to that same relative position, after
     //      we move the viewport.
-    auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    cursorPosition.Y -= viewport.Top;
+    auto& cursor = textBuffer.GetCursor();
+    const auto row = cursor.GetPosition().Y - viewport.Top;
 
     // Calculate new viewport position
     short newViewportTop = textBuffer.GetLastNonSpaceCharacter().Y + 1;
@@ -2032,8 +2051,8 @@ void AdaptDispatch::_EraseAll()
     // Move the viewport
     _pConApi->SetViewportPosition({ viewport.Left, newViewportTop });
     // Restore the relative cursor position
-    cursorPosition.Y += newViewportTop;
-    _pConApi->SetCursorPosition(cursorPosition);
+    cursor.SetYPosition(row + newViewportTop);
+    cursor.SetHasMoved(true);
 
     // Update all the rows in the current viewport with the standard erase attributes,
     // i.e. the current background color, but with no meta attributes set.

@@ -103,19 +103,6 @@ void ConhostInternalGetSet::SetViewportPosition(const COORD position)
     THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
 }
 
-// Routine Description:
-// - Connects the SetCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - position - new cursor position to set like the public API call.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetCursorPosition(const COORD position)
-{
-    auto& info = _io.GetActiveOutputBuffer();
-    const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleCursorPositionImpl(info, clampedPosition));
-}
-
 // Method Description:
 // - Sets the current TextAttribute of the active screen buffer. Text
 //   written to this buffer will be written with these attributes.

@@ -35,7 +35,6 @@ public:
     TextBuffer& GetTextBuffer() override;
     SMALL_RECT GetViewport() const override;
     void SetViewportPosition(const COORD position) override;
-    void SetCursorPosition(const COORD position) override;
 
     void SetTextAttributes(const TextAttribute& attrs) override;
 
