@@ -65,14 +65,11 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ResizeWindow(const size_t width, const size_t height) = 0;
         virtual bool IsConsolePty() const = 0;
 
-        virtual void FillRegion(const COORD startPosition,
-                                const size_t fillLength,
-                                const wchar_t fillChar,
-                                const bool standardFillAttrs) = 0;
-
         virtual void ScrollRegion(const SMALL_RECT scrollRect,
                                   const std::optional<SMALL_RECT> clipRect,
                                   const COORD destinationOrigin,
                                   const bool standardFillAttrs) = 0;
+
+        virtual void NotifyAccessibilityChange(const til::rect changedRect) = 0;
     };
 }

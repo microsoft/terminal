@@ -64,17 +64,14 @@ public:
 
     bool IsConsolePty() const override;
 
-    void FillRegion(const COORD startPosition,
-                    const size_t fillLength,
-                    const wchar_t fillChar,
-                    const bool standardFillAttrs) override;
-
     void ScrollRegion(const SMALL_RECT scrollRect,
                       const std::optional<SMALL_RECT> clipRect,
                       const COORD destinationOrigin,
                       const bool standardFillAttrs) override;
 
     bool IsVtInputEnabled() const override;
+
+    void NotifyAccessibilityChange(const til::rect changedRect) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

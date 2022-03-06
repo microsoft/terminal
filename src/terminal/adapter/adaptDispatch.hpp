@@ -167,9 +167,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const;
-        void _EraseSingleLineHelper(const TextBuffer& textBuffer,
-                                    const DispatchTypes::EraseType eraseType,
-                                    const size_t lineId) const;
+        void _FillRect(TextBuffer& textBuffer, const til::rect fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _EraseScrollback();
         void _EraseAll();
         void _InsertDeleteCharacterHelper(const size_t count, const bool isInsert);

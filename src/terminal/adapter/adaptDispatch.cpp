@@ -465,53 +465,27 @@ bool AdaptDispatch::DeleteCharacter(const size_t count)
 }
 
 // Routine Description:
-// - Internal helper to erase one particular line of the buffer. Either from beginning to the cursor, from the cursor to the end, or the entire line.
-// - Used by both erase line (used just once) and by erase screen (used in a loop) to erase a portion of the buffer.
+// - Fills an area of the buffer with a given character and attributes.
 // Arguments:
-// - textBuffer - the text buffer that we will be erasing (and getting cursor data from within)
-// - eraseType - Enumeration mode of which kind of erase to perform: beginning to cursor, cursor to end, or entire line.
-// - lineId - The line number (array index value, starts at 0) of the line to operate on within the buffer.
-//           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
+// - textBuffer - Target buffer to be filled.
+// - fillRect - Area of the buffer that will be affected.
+// - fillChar - Character to be written to the buffer.
+// - fillAttrs - Attributes to be written to the buffer.
 // Return Value:
 // - <none>
-void AdaptDispatch::_EraseSingleLineHelper(const TextBuffer& textBuffer,
-                                           const DispatchTypes::EraseType eraseType,
-                                           const size_t lineId) const
+void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect fillRect, const wchar_t fillChar, const TextAttribute fillAttrs)
 {
-    COORD coordStartPosition = { 0 };
-    THROW_IF_FAILED(SizeTToShort(lineId, &coordStartPosition.Y));
-
-    // determine start position from the erase type
-    // remember that erases are inclusive of the current cursor position.
-    switch (eraseType)
+    if (fillRect.left < fillRect.right && fillRect.top < fillRect.bottom)
     {
-    case DispatchTypes::EraseType::FromBeginning:
-    case DispatchTypes::EraseType::All:
-        coordStartPosition.X = 0; // from beginning and the whole line start from the left most edge of the buffer.
-        break;
-    case DispatchTypes::EraseType::ToEnd:
-        coordStartPosition.X = textBuffer.GetCursor().GetPosition().X; // from the current cursor position (including it)
-        break;
+        const auto fillWidth = gsl::narrow_cast<size_t>(fillRect.right - fillRect.left);
+        const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillWidth };
+        const auto col = gsl::narrow_cast<short>(fillRect.left);
+        for (auto row = gsl::narrow_cast<short>(fillRect.top); row < fillRect.bottom; row++)
+        {
+            textBuffer.WriteLine(fillData, COORD{ col, row }, false);
+        }
+        _pConApi->NotifyAccessibilityChange(fillRect);
     }
-
-    DWORD nLength = 0;
-
-    // determine length of erase from erase type
-    switch (eraseType)
-    {
-    case DispatchTypes::EraseType::FromBeginning:
-        // +1 because if cursor were at the left edge, the length would be 0 and we want to paint at least the 1 character the cursor is on.
-        nLength = textBuffer.GetCursor().GetPosition().X + 1;
-        break;
-    case DispatchTypes::EraseType::ToEnd:
-    case DispatchTypes::EraseType::All:
-        // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = textBuffer.GetLineWidth(lineId) - coordStartPosition.X;
-        break;
-    }
-
-    // Note that the region is filled with the standard erase attributes.
-    _pConApi->FillRegion(coordStartPosition, nLength, L' ', true);
 }
 
 // Routine Description:
@@ -525,16 +499,14 @@ void AdaptDispatch::_EraseSingleLineHelper(const TextBuffer& textBuffer,
 // - True.
 bool AdaptDispatch::EraseCharacters(const size_t numChars)
 {
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const COORD startPosition = textBuffer.GetCursor().GetPosition();
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto startCol = textBuffer.GetCursor().GetPosition().X;
+    const auto endCol = std::min<size_t>(startCol + numChars, textBuffer.GetLineWidth(row));
 
-    const SHORT remainingSpaces = textBuffer.GetSize().Dimensions().X - startPosition.X;
-    const size_t actualRemaining = gsl::narrow_cast<size_t>((remainingSpaces < 0) ? 0 : remainingSpaces);
-    // erase at max the number of characters remaining in the line from the current position.
-    const auto eraseLength = (numChars <= actualRemaining) ? numChars : actualRemaining;
-
-    // Note that the region is filled with the standard erase attributes.
-    _pConApi->FillRegion(startPosition, eraseLength, L' ', true);
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
+    _FillRect(textBuffer, { startCol, row, gsl::narrow_cast<til::CoordType>(endCol), row + 1 }, L' ', eraseAttributes);
 
     return true;
 }
@@ -581,7 +553,12 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
     const auto viewport = _pConApi->GetViewport();
     auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
+
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
 
     // When erasing the display, every line that is erased in full should be
     // reset to single width. When erasing to the end, this could include
@@ -591,46 +568,15 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     // the line is double width).
     if (eraseType == DispatchTypes::EraseType::FromBeginning)
     {
-        const auto endRow = cursorPosition.Y;
-        textBuffer.ResetLineRenditionRange(viewport.Top, endRow);
+        textBuffer.ResetLineRenditionRange(viewport.Top, row);
+        _FillRect(textBuffer, { 0, viewport.Top, bufferWidth, row }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { 0, row, col + 1, row + 1 }, L' ', eraseAttributes);
     }
     if (eraseType == DispatchTypes::EraseType::ToEnd)
     {
-        const auto startRow = cursorPosition.Y + (cursorPosition.X > 0 ? 1 : 0);
-        textBuffer.ResetLineRenditionRange(startRow, viewport.Bottom);
-    }
-
-    // What we need to erase is grouped into 3 types:
-    // 1. Lines before cursor
-    // 2. Cursor Line
-    // 3. Lines after cursor
-    // We erase one or more of these based on the erase type:
-    // A. FromBeginning - Erase 1 and Some of 2.
-    // B. ToEnd - Erase some of 2 and 3.
-    // C. All - Erase 1, 2, and 3.
-
-    // 1. Lines before cursor line
-    if (eraseType == DispatchTypes::EraseType::FromBeginning)
-    {
-        // For beginning and all, erase all complete lines before (above vertically) from the cursor position.
-        for (SHORT startLine = viewport.Top; startLine < cursorPosition.Y; startLine++)
-        {
-            _EraseSingleLineHelper(textBuffer, DispatchTypes::EraseType::All, startLine);
-        }
-    }
-
-    // 2. Cursor Line
-    _EraseSingleLineHelper(textBuffer, eraseType, cursorPosition.Y);
-
-    // 3. Lines after cursor line
-    if (eraseType == DispatchTypes::EraseType::ToEnd)
-    {
-        // For beginning and all, erase all complete lines after (below vertically) the cursor position.
-        // Remember that the viewport bottom value is 1 beyond the viewable area of the viewport.
-        for (SHORT startLine = cursorPosition.Y + 1; startLine < viewport.Bottom; startLine++)
-        {
-            _EraseSingleLineHelper(textBuffer, DispatchTypes::EraseType::All, startLine);
-        }
+        textBuffer.ResetLineRenditionRange(col > 0 ? row + 1 : row, viewport.Bottom);
+        _FillRect(textBuffer, { col, row, bufferWidth, row + 1 }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { 0, row + 1, bufferWidth, viewport.Bottom }, L' ', eraseAttributes);
     }
 
     return true;
@@ -644,13 +590,26 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
-    RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::All);
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
 
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    _EraseSingleLineHelper(textBuffer, eraseType, cursorPosition.Y);
-
-    return true;
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _FillRect(textBuffer, { 0, row, col + 1, row + 1 }, L' ', eraseAttributes);
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _FillRect(textBuffer, { col, row, textBuffer.GetLineWidth(row), row + 1 }, L' ', eraseAttributes);
+        return true;
+    case DispatchTypes::EraseType::All:
+        _FillRect(textBuffer, { 0, row, textBuffer.GetLineWidth(row), row + 1 }, L' ', eraseAttributes);
+        return true;
+    default:
+        return false;
+    }
 }
 
 // Routine Description:
@@ -1947,9 +1906,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     const auto bufferWidth = textBuffer.GetSize().Dimensions().X;
 
     // Fill the screen with the letter E using the default attributes.
-    auto fillPosition = COORD{ 0, viewport.Top };
-    const auto fillLength = (viewport.Bottom - viewport.Top) * bufferWidth;
-    _pConApi->FillRegion(fillPosition, fillLength, L'E', false);
+    _FillRect(textBuffer, { 0, viewport.Top, bufferWidth, viewport.Bottom }, L'E', {});
     // Reset the line rendition for all of these rows.
     textBuffer.ResetLineRenditionRange(viewport.Top, viewport.Bottom);
     // Reset the meta/extended attributes (but leave the colors unchanged).
@@ -2002,10 +1959,7 @@ void AdaptDispatch::_EraseScrollback()
     // this case we need to use the default attributes, hence standardFillAttrs is false.
     _pConApi->ScrollRegion(scroll, std::nullopt, destination, false);
     // Clear everything after the viewport.
-    const DWORD totalAreaBelow = bufferSize.X * (bufferSize.Y - height);
-    const COORD coordBelowStartPosition = { 0, height };
-    // Again we need to use the default attributes, hence standardFillAttrs is false.
-    _pConApi->FillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
+    _FillRect(textBuffer, { 0, height, bufferSize.X, bufferSize.Y }, L' ', {});
     // Also reset the line rendition for all of the cleared rows.
     textBuffer.ResetLineRenditionRange(height, bufferSize.Y);
     // Move the viewport
@@ -2042,7 +1996,8 @@ void AdaptDispatch::_EraseAll()
 
     // Calculate new viewport position
     short newViewportTop = textBuffer.GetLastNonSpaceCharacter().Y + 1;
-    const auto delta = (newViewportTop + viewportHeight) - (bufferSize.Height());
+    const short newViewportBottom = newViewportTop + viewportHeight;
+    const auto delta = newViewportBottom - (bufferSize.Height());
     for (auto i = 0; i < delta; i++)
     {
         textBuffer.IncrementCircularBuffer();
@@ -2054,17 +2009,13 @@ void AdaptDispatch::_EraseAll()
     cursor.SetYPosition(row + newViewportTop);
     cursor.SetHasMoved(true);
 
-    // Update all the rows in the current viewport with the standard erase attributes,
-    // i.e. the current background color, but with no meta attributes set.
-    auto fillAttributes = textBuffer.GetCurrentAttributes();
-    fillAttributes.SetStandardErase();
-    auto fillPosition = COORD{ 0, newViewportTop };
-    auto fillLength = gsl::narrow_cast<size_t>(viewportHeight * bufferSize.Width());
-    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
-    textBuffer.Write(fillData, fillPosition, false);
+    // Erase all the rows in the current viewport.
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
+    _FillRect(textBuffer, { 0, newViewportTop, bufferSize.Width(), newViewportBottom }, L' ', eraseAttributes);
 
     // Also reset the line rendition for the erased rows.
-    textBuffer.ResetLineRenditionRange(newViewportTop, newViewportTop + viewportHeight);
+    textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
 }
 
 // Routine Description:
