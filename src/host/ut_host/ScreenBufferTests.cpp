@@ -6272,17 +6272,22 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
 void ScreenBufferTests::TestReflowEndOfLineColor()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:shrinkX", L"{false, true}")
-        TEST_METHOD_PROPERTY(L"Data:shrinkY", L"{false, true}")
+        // TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, 10}")
+        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
+        // TEST_METHOD_PROPERTY(L"Data:dx", L"{1}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
+        // TEST_METHOD_PROPERTY(L"Data:dy", L"{0}")
     END_TEST_METHOD_PROPERTIES();
 
-    INIT_TEST_PROPERTY(bool, shrinkX, L"Shrink X = true, Grow X = false")
-    INIT_TEST_PROPERTY(bool, shrinkY, L"Shrink Y = true, Grow Y = false")
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+    INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
-    // auto& cursor = si.GetTextBuffer().GetCursor();
+
+    gci.SetWrapText(true);
 
     auto defaultAttrs = si.GetAttributes();
     auto red = defaultAttrs;
@@ -6291,6 +6296,8 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
     green.SetIndexedBackground(TextColor::DARK_GREEN);
     auto blue = defaultAttrs;
     blue.SetIndexedBackground(TextColor::DARK_BLUE);
+    auto yellow = defaultAttrs;
+    yellow.SetIndexedBackground(TextColor::DARK_YELLOW);
 
     Log::Comment(L"Make sure the viewport is at 0,0");
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -6303,83 +6310,40 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
     stateMachine.ProcessString(L"\nBBBBB\n"); // BBBBB
     stateMachine.ProcessString(L"\x1b[44m"); // Blue BG
     stateMachine.ProcessString(L" CCC \n"); // " abc " (with spaces on either side)
+    stateMachine.ProcessString(L"\x1b[43m"); // yellow BG
+    stateMachine.ProcessString(L"\x1b[K"); // Erase line
+    stateMachine.ProcessString(L"\x1b[2;6H"); // move the cursor to the end of the BBBBB's
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool /*before*/) {
-        const short width = viewport.narrow_width<short>();
-        // auto iter1 = tb.GetCellDataAt({ 0, 0 });
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool /*before*/) {
+        const short width = tb.GetSize().Width();
+        Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
 
-        auto iter = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 5u);
-        TestUtils::VerifyLineContains(iter, L' ', defaultAttrs, static_cast<size_t>(width - 5));
-        TestUtils::VerifyLineContains(iter, L'B', red, 5u);
-        TestUtils::VerifyLineContains(iter, L' ', defaultAttrs, static_cast<size_t>(width - 5));
-        TestUtils::VerifyLineContains(iter, L' ', blue, 1u);
-        TestUtils::VerifyLineContains(iter, L'C', blue, 3u);
-        TestUtils::VerifyLineContains(iter, L' ', blue, 1u);
-        TestUtils::VerifyLineContains(iter, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 5u);
+        TestUtils::VerifyLineContains(iter0, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+
+        auto iter1 = tb.GetCellLineDataAt({ 0, 1 });
+        TestUtils::VerifyLineContains(iter1, L'B', green, 5u);
+        TestUtils::VerifyLineContains(iter1, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+
+        auto iter2 = tb.GetCellLineDataAt({ 0, 2 });
+        TestUtils::VerifyLineContains(iter2, L' ', blue, 1u);
+        TestUtils::VerifyLineContains(iter2, L'C', blue, 3u);
+        TestUtils::VerifyLineContains(iter2, L' ', blue, 1u);
+        TestUtils::VerifyLineContains(iter2, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+
+        auto iter3 = tb.GetCellLineDataAt({ 0, 3 });
+        TestUtils::VerifyLineContains(iter3, L' ', yellow, static_cast<size_t>(width));
     };
 
     Log::Comment(L"========== Checking the buffer state (before) ==========");
     verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, true);
-    // Log::Comment(L"Resize to X and Y.");
-    // COORD newSize = smallSize;
 
-    // if (shrinkX)
-    // {
-    //     newSize.X -= 2;
-    // }
-    // else
-    // {
-    //     newSize.X += 2;
-    // }
+    Log::Comment(L"========== resize buffer ==========");
+    const til::point delta{ dx, dy };
+    const til::point oldSize{ si.GetBufferSize().Dimensions() };
+    const til::point newSize{ oldSize + delta };
+    VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
 
-    // if (shrinkY)
-    // {
-    //     newSize.Y -= 2;
-    // }
-    // else
-    // {
-    //     newSize.Y += 2;
-    // }
-
-    // // When we grow, we extend the last color. Therefore, this region covers the area colored the same as the letters but filled with a blank.
-    // const auto widthAdjustedView = Viewport::FromDimensions(writtenView.Origin(), { newSize.X, smallSize.Y });
-
-    // // When we resize, we expect the attributes to be unchanged, but the new cells
-    // //  to be filled with spaces
-    // wchar_t expectedSpace = UNICODE_SPACE;
-    // std::wstring_view expectedSpaceView(&expectedSpace, 1);
-
-    // VERIFY_SUCCEEDED(buffer.ResizeTraditional(newSize));
-
-    // Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
-    // {
-    //     TextBufferCellIterator viewIt(buffer, { 0, 0 });
-    //     while (viewIt)
-    //     {
-    //         Log::Comment(NoThrowString().Format(L"Checking cell (Y=%d, X=%d)", viewIt._pos.Y, viewIt._pos.X));
-    //         if (writtenView.IsInBounds(viewIt._pos))
-    //         {
-    //             Log::Comment(L"This position is inside our original write area. It should have the original character and color.");
-    //             // If the position is in bounds with what we originally wrote, it should have that character and color.
-    //             VERIFY_ARE_EQUAL(expectedView, viewIt->Chars());
-    //             VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
-    //         }
-    //         else if (widthAdjustedView.IsInBounds(viewIt._pos))
-    //         {
-    //             Log::Comment(L"This position is right of our original write area. It should have extended the color rightward and filled with a space.");
-    //             // If we missed the original fill, but we're still in region defined by the adjusted width, then
-    //             // the color was extended outward but without the character value.
-    //             VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
-    //             VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
-    //         }
-    //         else
-    //         {
-    //             Log::Comment(L"This position is below our original write area. It should have filled blank lines (space lines) with the default fill color.");
-    //             // Otherwise, we use the default.
-    //             VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
-    //             VERIFY_ARE_EQUAL(defaultAttr, viewIt->TextAttr());
-    //         }
-    //         viewIt++;
-    //     }
-    // }
+    Log::Comment(L"========== Checking the buffer state (after) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, false);
 }
