@@ -228,7 +228,7 @@ class ScreenBufferTests
 
     TEST_METHOD(TestReflowEndOfLineColor);
     TEST_METHOD(TestReflowSmallerLongLineWithColor);
-    // TEST_METHOD(TestReflowBiggerLongLineWithColor);
+    TEST_METHOD(TestReflowBiggerLongLineWithColor);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -6380,7 +6380,7 @@ void ScreenBufferTests::TestReflowSmallerLongLineWithColor()
     stateMachine.ProcessString(L"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // 35 more, 70 total
     stateMachine.ProcessString(L"\x1b[42m"); // Green BG
     stateMachine.ProcessString(L" BBB \n"); // " BBB " with spaces on either side).
-    // Attributes fill 70 red, 5 green, the last 5 are (whatever it was before)
+    // Attributes fill 70 red, 5 green, the last 5 are {whatever it was before}
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool before) {
         const short width = tb.GetSize().Width();
@@ -6422,7 +6422,89 @@ void ScreenBufferTests::TestReflowSmallerLongLineWithColor()
     const til::point newSize{ oldSize + delta };
     VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
 
-    // Buffer is now 65 wide. 65 A's that wrapped onto the next row, where there are also 3 B's wrapped in spaces.
+    // Buffer is now 65 wide. 65 A's that wrapped onto the next row, where there
+    // are also 3 B's wrapped in spaces.
+    Log::Comment(L"========== Checking the buffer state (after) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, false);
+}
+
+void ScreenBufferTests::TestReflowBiggerLongLineWithColor()
+{
+    Log::Comment(L"Reflow the buffer such that a wrapped line of text 'de-flows' onto the previous line.");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    gci.SetWrapText(true);
+
+    auto defaultAttrs = si.GetAttributes();
+    auto red = defaultAttrs;
+    red.SetIndexedBackground(TextColor::DARK_RED);
+    auto green = defaultAttrs;
+    green.SetIndexedBackground(TextColor::DARK_GREEN);
+    auto blue = defaultAttrs;
+    blue.SetIndexedBackground(TextColor::DARK_BLUE);
+    auto yellow = defaultAttrs;
+    yellow.SetIndexedBackground(TextColor::DARK_YELLOW);
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"Fill buffer with some data");
+    stateMachine.ProcessString(L"\x1b[H");
+    stateMachine.ProcessString(L"\x1b[41m"); // Red BG
+    stateMachine.ProcessString(L"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // 40 A's
+    stateMachine.ProcessString(L"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // 40 more, to wrap
+    stateMachine.ProcessString(L"AAAAA"); // 5 more. 85 total.
+    stateMachine.ProcessString(L"\x1b[42m"); // Green BG
+    stateMachine.ProcessString(L" BBB \n"); // " BBB " with spaces on either side).
+    // Attributes fill 85 red, 5 green, the rest are {whatever it was before}
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool before) {
+        const short width = tb.GetSize().Width();
+        Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
+
+        if (before)
+        {
+            auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 80u);
+
+            auto iter1 = tb.GetCellLineDataAt({ 0, 1 });
+            TestUtils::VerifyLineContains(iter1, L'A', red, 5u);
+            TestUtils::VerifyLineContains(iter1, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter1, L'B', green, 3u);
+            TestUtils::VerifyLineContains(iter1, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter1, L' ', defaultAttrs, static_cast<size_t>(width - 10));
+        }
+        else
+        {
+            auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 85u);
+            TestUtils::VerifyLineContains(iter0, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter0, L'B', green, 3u);
+            TestUtils::VerifyLineContains(iter0, L' ', green, 1u);
+
+            // We don't want to necessarily verify the contents of the rest of
+            // the line, but we will anyways. Differently than
+            // TestReflowSmallerLongLineWithColor: In this test, the since we're
+            // de-flowing row 1 onto row 0, and the trailing spaces in row 1 are
+            // default attrs, then that's the attrs we'll use to finish filling
+            // up the 0th row in the new buffer. Again, we may want to change
+            // that in the future. If we do, this check can always be changed.
+            TestUtils::VerifyLineContains(iter0, L' ', defaultAttrs, static_cast<size_t>(width - 90));
+        }
+    };
+
+    Log::Comment(L"========== Checking the buffer state (before) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, true);
+
+    Log::Comment(L"========== resize buffer ==========");
+    const til::point delta{ 15, 0 };
+    const til::point oldSize{ si.GetBufferSize().Dimensions() };
+    const til::point newSize{ oldSize + delta };
+    VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
+
+    // Buffer is now 95 wide. 85 A's that de-flowed onto the first row, where
+    // there are also 3 B's wrapped in spaces, and finally 5 trailing spaces.
     Log::Comment(L"========== Checking the buffer state (after) ==========");
     verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, false);
 }
