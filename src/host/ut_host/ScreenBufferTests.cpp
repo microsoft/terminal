@@ -17,6 +17,8 @@
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../../cascadia/UnitTests_TerminalCore/TestUtils.h"
+
 #include <sstream>
 
 using namespace WEX::Common;
@@ -26,6 +28,7 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
+using namespace TerminalCoreUnitTests;
 
 class ScreenBufferTests
 {
@@ -222,6 +225,8 @@ class ScreenBufferTests
     TEST_METHOD(RetainHorizontalOffsetWhenMovingToBottom);
 
     TEST_METHOD(TestWriteConsoleVTQuirkMode);
+
+    TEST_METHOD(TestReflowEndOfLineColor);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -6262,4 +6267,119 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
 
         verifyLastAttribute(vtWhiteOnBlack256Attribute);
     }
+}
+
+void ScreenBufferTests::TestReflowEndOfLineColor()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:shrinkX", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:shrinkY", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(bool, shrinkX, L"Shrink X = true, Grow X = false")
+    INIT_TEST_PROPERTY(bool, shrinkY, L"Shrink Y = true, Grow Y = false")
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    // auto& cursor = si.GetTextBuffer().GetCursor();
+
+    auto defaultAttrs = si.GetAttributes();
+    auto red = defaultAttrs;
+    red.SetIndexedBackground(TextColor::DARK_RED);
+    auto green = defaultAttrs;
+    green.SetIndexedBackground(TextColor::DARK_GREEN);
+    auto blue = defaultAttrs;
+    blue.SetIndexedBackground(TextColor::DARK_BLUE);
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"Fill buffer with some data");
+    stateMachine.ProcessString(L"\x1b[H");
+    stateMachine.ProcessString(L"\x1b[41m"); // Red BG
+    stateMachine.ProcessString(L"AAAAA"); // AAAAA
+    stateMachine.ProcessString(L"\x1b[42m"); // Green BG
+    stateMachine.ProcessString(L"\nBBBBB\n"); // BBBBB
+    stateMachine.ProcessString(L"\x1b[44m"); // Blue BG
+    stateMachine.ProcessString(L" CCC \n"); // " abc " (with spaces on either side)
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool /*before*/) {
+        const short width = viewport.narrow_width<short>();
+        // auto iter1 = tb.GetCellDataAt({ 0, 0 });
+
+        auto iter = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 5u);
+        TestUtils::VerifyLineContains(iter, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+        TestUtils::VerifyLineContains(iter, L'B', red, 5u);
+        TestUtils::VerifyLineContains(iter, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+        TestUtils::VerifyLineContains(iter, L' ', blue, 1u);
+        TestUtils::VerifyLineContains(iter, L'C', blue, 3u);
+        TestUtils::VerifyLineContains(iter, L' ', blue, 1u);
+        TestUtils::VerifyLineContains(iter, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+    };
+
+    Log::Comment(L"========== Checking the buffer state (before) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, true);
+    // Log::Comment(L"Resize to X and Y.");
+    // COORD newSize = smallSize;
+
+    // if (shrinkX)
+    // {
+    //     newSize.X -= 2;
+    // }
+    // else
+    // {
+    //     newSize.X += 2;
+    // }
+
+    // if (shrinkY)
+    // {
+    //     newSize.Y -= 2;
+    // }
+    // else
+    // {
+    //     newSize.Y += 2;
+    // }
+
+    // // When we grow, we extend the last color. Therefore, this region covers the area colored the same as the letters but filled with a blank.
+    // const auto widthAdjustedView = Viewport::FromDimensions(writtenView.Origin(), { newSize.X, smallSize.Y });
+
+    // // When we resize, we expect the attributes to be unchanged, but the new cells
+    // //  to be filled with spaces
+    // wchar_t expectedSpace = UNICODE_SPACE;
+    // std::wstring_view expectedSpaceView(&expectedSpace, 1);
+
+    // VERIFY_SUCCEEDED(buffer.ResizeTraditional(newSize));
+
+    // Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
+    // {
+    //     TextBufferCellIterator viewIt(buffer, { 0, 0 });
+    //     while (viewIt)
+    //     {
+    //         Log::Comment(NoThrowString().Format(L"Checking cell (Y=%d, X=%d)", viewIt._pos.Y, viewIt._pos.X));
+    //         if (writtenView.IsInBounds(viewIt._pos))
+    //         {
+    //             Log::Comment(L"This position is inside our original write area. It should have the original character and color.");
+    //             // If the position is in bounds with what we originally wrote, it should have that character and color.
+    //             VERIFY_ARE_EQUAL(expectedView, viewIt->Chars());
+    //             VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
+    //         }
+    //         else if (widthAdjustedView.IsInBounds(viewIt._pos))
+    //         {
+    //             Log::Comment(L"This position is right of our original write area. It should have extended the color rightward and filled with a space.");
+    //             // If we missed the original fill, but we're still in region defined by the adjusted width, then
+    //             // the color was extended outward but without the character value.
+    //             VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
+    //             VERIFY_ARE_EQUAL(expectedAttr, viewIt->TextAttr());
+    //         }
+    //         else
+    //         {
+    //             Log::Comment(L"This position is below our original write area. It should have filled blank lines (space lines) with the default fill color.");
+    //             // Otherwise, we use the default.
+    //             VERIFY_ARE_EQUAL(expectedSpaceView, viewIt->Chars());
+    //             VERIFY_ARE_EQUAL(defaultAttr, viewIt->TextAttr());
+    //         }
+    //         viewIt++;
+    //     }
+    // }
 }
