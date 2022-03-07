@@ -2282,21 +2282,20 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         //     line in the new buffer, then we didn't wrap. That's fine. just
         //     copy attributes from the old row till the end of the new row, and
         //     move on.
-        const auto newWidth = newBuffer.GetSize().Width();
-        const auto minWidth = std::min(oldBuffer.GetSize().Width(), newWidth);
-        auto newAttrColumn = newCursor.GetPosition().X;
         const auto newRowY = newCursor.GetPosition().Y;
+        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        auto newAttrColumn = newCursor.GetPosition().X;
+        const auto newWidth = newBuffer.GetLineWidth(newRowY);
         // Stop when we get to the end of the buffer width, or the new position
         // for inserting an attr would be past the right of the new buffer.
         for (short copyAttrCol = iOldCol;
-             copyAttrCol < minWidth && newAttrColumn < newWidth;
+             copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
              copyAttrCol++)
         {
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
                 const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
-                auto& newRow = newBuffer.GetRowByOffset(newRowY);
                 if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
                 {
                     break;
@@ -2306,13 +2305,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
             newAttrColumn++;
         }
-        // TODO! Maybe also try to leave a default-attributes-to-the-end attr
-        // here, for the case where the line had color, then flowed onto the
-        // subsequent row.
-        //
-        // TODO! Maybe also try doing this sort of thing with the colors below
-        // the last printable char in the buffer. That we'd need for the `color
-        // 2f` scenario, ala GH#12567
+        // FOR DISCUSSION: Maybe also try to leave a
+        // default-attributes-to-the-end attr here, for the case where the line
+        // had color, then flowed onto the subsequent row.
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
@@ -2416,8 +2411,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // the "right" boundary, which is one past the final valid
         // character)
 
-        const auto newWidth = newBuffer.GetSize().Width();
-        const auto minWidth = std::min(oldBuffer.GetSize().Width(), newWidth);
+        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        const auto newWidth = newBuffer.GetLineWidth(newRowY);
+        const auto minWidth = std::min(oldBuffer.GetLineWidth(iOldRow), newWidth);
         uint16_t newAttrColumn = 0u;
         // Stop when we get to the end of the buffer width, or the new position
         // for inserting an attr would be past the right of the new buffer.
@@ -2430,7 +2426,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter.
                 // May even just be faster to just copy the ATTR_ROW to the new row, then ATTR_ROW::Resize.
                 const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
-                auto& newRow = newBuffer.GetRowByOffset(newRowY);
                 if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
                 {
                     break;

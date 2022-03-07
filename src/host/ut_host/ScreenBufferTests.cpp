@@ -6409,7 +6409,7 @@ void ScreenBufferTests::TestReflowSmallerLongLineWithColor()
             // original row to fill the remainder of the row it flowed onto. We may
             // want to change that in the future. If we do, this check can always be
             // changed.
-            TestUtils::VerifyLineContains(iter1, L' ', green, static_cast<size_t>(width - 10));
+            TestUtils::VerifyLineContains(iter1, L' ', defaultAttrs, static_cast<size_t>(width - 10));
         }
     };
 
