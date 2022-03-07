@@ -6272,8 +6272,6 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
 void ScreenBufferTests::TestReflowEndOfLineColor()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        // TEST_METHOD_PROPERTY(L"Data:dx", L"{-10, -1, 0, 1, 10}")
-        // TEST_METHOD_PROPERTY(L"Data:dy", L"{-10, -1, 0, 1, 10}")
         TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
         // TEST_METHOD_PROPERTY(L"Data:dx", L"{1}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")

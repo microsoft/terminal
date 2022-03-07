@@ -2197,7 +2197,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     bool foundOldVisible = false;
     HRESULT hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
-    for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
+    short iOldRow = 0;
+    for (; iOldRow < cOldRowsTotal; iOldRow++)
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
@@ -2397,6 +2398,51 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
         }
     }
+
+    // Finish copying buffer attributes to remaining rows below the last
+    // printable character. This is to fix the `color 2f` scenario, where you
+    // change the buffer colors then resize and everything below the past
+    // printable char gets reset. See GH #12567
+    auto newRowY = newCursor.GetPosition().Y + 1;
+    const auto newHeight = newBuffer.GetSize().Height();
+    const auto oldHeight = oldBuffer.GetSize().Height();
+    for (;
+         iOldRow < oldHeight && newRowY < newHeight;
+         iOldRow++)
+    {
+        const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
+
+        // Loop through every character in the current row (up to
+        // the "right" boundary, which is one past the final valid
+        // character)
+
+        const auto newWidth = newBuffer.GetSize().Width();
+        const auto minWidth = std::min(oldBuffer.GetSize().Width(), newWidth);
+        uint16_t newAttrColumn = 0u;
+        // Stop when we get to the end of the buffer width, or the new position
+        // for inserting an attr would be past the right of the new buffer.
+        for (short copyAttrCol = 0;
+             copyAttrCol < minWidth;
+             copyAttrCol++)
+        {
+            try
+            {
+                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter.
+                // May even just be faster to just copy the ATTR_ROW to the new row, then ATTR_ROW::Resize.
+                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
+                auto& newRow = newBuffer.GetRowByOffset(newRowY);
+                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
+                {
+                    break;
+                }
+            }
+            CATCH_LOG(); // Not worth dying over.
+
+            newAttrColumn++;
+        }
+        newRowY++;
+    }
+
     if (SUCCEEDED(hr))
     {
         // Finish copying remaining parameters from the old text buffer to the new one
