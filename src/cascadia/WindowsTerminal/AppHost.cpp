@@ -79,12 +79,29 @@ AppHost::AppHost() noexcept :
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
+
+    // Event handlers:
+    // MAKE SURE THEY ARE ALL:
+    // * winrt::auto_revoke
+    // * revoked manually in the dtor before the window is nulled out.
+    //
+    // If you don't, then it's possible for them to get triggered as the app is
+    // tearing down, after we've nulled out the window, during the dtor. That
+    // can cause unexpected AV's everywhere.
+    //
+    // _window callbacks don't need to be treated this way, because:
+    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
+    // * This particular bug scenario applies when we've already freed the window.
+    //
+    // (Most of these events are actually set up in AppHost::Initialize)
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
-    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
+
+    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
+
     _window->MakeWindow();
 
     _GetWindowLayoutRequestedToken = _windowManager.GetWindowLayoutRequested([this](auto&&, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& args) {
@@ -93,7 +110,7 @@ AppHost::AppHost() noexcept :
         args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
     });
 
-    _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
+    _revokers.BecameMonarch = _windowManager.BecameMonarch(winrt::auto_revoke, { this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
     {
         _BecomeMonarch(nullptr, nullptr);
@@ -103,6 +120,13 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
+
+    // revoke ALL our event handlers. There's a large class of bugs where we
+    // might get a callback to one of these when we call app.Close() below. Make
+    // sure to revoke these first, so we won't get any more callbacks, then null
+    // out the window, then close the app.
+    _revokers = {};
+
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -232,11 +256,12 @@ void AppHost::_HandleCommandlineArgs()
         // future commandline invocations. When our peasant is told to execute a
         // commandline (in the future), it'll trigger this callback, that we'll
         // use to send the actions to the app.
-        peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
-        peasant.SummonRequested({ this, &AppHost::_HandleSummon });
-
-        peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
-        peasant.QuitRequested({ this, &AppHost::_QuitRequested });
+        //
+        // MORE EVENT HANDLERS, same rules as the ones above.
+        _revokers.peasantExecuteCommandlineRequested = peasant.ExecuteCommandlineRequested(winrt::auto_revoke, { this, &AppHost::_DispatchCommandline });
+        _revokers.peasantSummonRequested = peasant.SummonRequested(winrt::auto_revoke, { this, &AppHost::_HandleSummon });
+        _revokers.peasantDisplayWindowIdRequested = peasant.DisplayWindowIdRequested(winrt::auto_revoke, { this, &AppHost::_DisplayWindowId });
+        _revokers.peasantQuitRequested = peasant.QuitRequested(winrt::auto_revoke, { this, &AppHost::_QuitRequested });
 
         // We need this property to be set before we get the InitialSize/Position
         // and BecameMonarch which normally sets it is only run after the window
@@ -320,30 +345,39 @@ void AppHost::Initialize()
         _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
+    // MORE EVENT HANDLERS HERE!
+    // MAKE SURE THEY ARE ALL:
+    // * winrt::auto_revoke
+    // * revoked manually in the dtor before the window is nulled out.
+    //
+    // If you don't, then it's possible for them to get triggered as the app is
+    // tearing down, after we've nulled out the window, during the dtor. That
+    // can cause unexpected AV's everywhere.
+    //
+    // _window callbacks don't need to be treated this way, because:
+    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
+    // * This particular bug scenario applies when we've already freed the window.
+
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
     _window->WindowCloseButtonClicked([this]() {
-        const auto pos = _GetWindowLaunchPosition();
-        _logic.CloseWindow(pos);
+        _CloseRequested(nullptr, nullptr);
     });
     // If the user requests a close in another way handle the same as if the 'X'
     // was clicked.
-    _logic.CloseRequested([this](auto&&, auto&&) {
-        const auto pos = _GetWindowLaunchPosition();
-        _logic.CloseWindow(pos);
-    });
+    _revokers.CloseRequested = _logic.CloseRequested(winrt::auto_revoke, { this, &AppHost::_CloseRequested });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
-    _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
-    _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
-    _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
-    _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
-    _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
-    _logic.SystemMenuChangeRequested({ this, &AppHost::_SystemMenuChangeRequested });
-    _logic.ChangeMaximizeRequested({ this, &AppHost::_ChangeMaximizeRequested });
+    _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
+    _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
+    _revokers.FocusModeChanged = _logic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
+    _revokers.AlwaysOnTopChanged = _logic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
+    _revokers.RaiseVisualBell = _logic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
+    _revokers.SystemMenuChangeRequested = _logic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
+    _revokers.ChangeMaximizeRequested = _logic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
 
     _window->MaximizeChanged([this](bool newMaximize) {
         if (_logic)
@@ -354,16 +388,16 @@ void AppHost::Initialize()
 
     _logic.Create();
 
-    _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
-    _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
-    _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
-    _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
-    _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
-    _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
-    _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
-    _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
-    _logic.OpenSystemMenu({ this, &AppHost::_OpenSystemMenu });
-    _logic.QuitRequested({ this, &AppHost::_RequestQuitAll });
+    _revokers.TitleChanged = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
+    _revokers.LastTabClosed = _logic.LastTabClosed(winrt::auto_revoke, { this, &AppHost::LastTabClosed });
+    _revokers.SetTaskbarProgress = _logic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
+    _revokers.IdentifyWindowsRequested = _logic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
+    _revokers.RenameWindowRequested = _logic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
+    _revokers.SettingsChanged = _logic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
+    _revokers.IsQuakeWindowChanged = _logic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
+    _revokers.SummonWindowRequested = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
+    _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
+    _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -424,7 +458,7 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     }
     else if (_window->IsQuakeWindow())
     {
-        _HideNotificationIconRequested();
+        _HideNotificationIconRequested(nullptr, nullptr);
     }
 
     // We don't want to try to save layouts if we are about to close.
@@ -690,6 +724,15 @@ void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspec
 void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
                                   const winrt::Windows::Foundation::IInspectable&)
 {
+    // MSFT:34662459
+    //
+    // Although we're manually revoking the event handler now in the dtor before
+    // we null out the window, let's be extra careful and check JUST IN CASE.
+    if (_window == nullptr)
+    {
+        return;
+    }
+
     _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
 
@@ -852,6 +895,15 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
+    // MSFT:35726322
+    //
+    // Although we're manually revoking the event handler now in the dtor before
+    // we null out the window, let's be extra careful and check JUST IN CASE.
+    if (_window == nullptr)
+    {
+        return;
+    }
+
     _setupGlobalHotkeys();
 
     if (_windowManager.DoesQuakeWindowExist() ||
@@ -880,11 +932,11 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     });
 
     // These events are coming from peasants that become or un-become quake windows.
-    _windowManager.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequested(); });
-    _windowManager.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequested(); });
+    _revokers.ShowNotificationIconRequested = _windowManager.ShowNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_ShowNotificationIconRequested });
+    _revokers.HideNotificationIconRequested = _windowManager.HideNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_HideNotificationIconRequested });
     // If the monarch receives a QuitAll event it will signal this event to be
     // ran before each peasant is closed.
-    _windowManager.QuitAllRequested({ this, &AppHost::_QuitAllRequested });
+    _revokers.QuitAllRequested = _windowManager.QuitAllRequested(winrt::auto_revoke, { this, &AppHost::_QuitAllRequested });
 
     // The monarch should be monitoring if it should save the window layout.
     if (!_getWindowLayoutThrottler.has_value())
@@ -967,6 +1019,15 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
     co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
 
+    if (!_window)
+    {
+        // MSFT:36797001 There's a surprising number of hits of this callback
+        // getting triggered during teardown. As a best practice, we really
+        // should make sure _window exists before accessing it on any coroutine.
+        // We might be getting called back after the app already began getting
+        // cleaned up.
+        co_return;
+    }
     // Unregister all previously registered hotkeys.
     //
     // RegisterHotKey(), will not unregister hotkeys automatically.
@@ -1279,11 +1340,11 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     // specifically for the quake window. If not, it should not be destroyed.
     if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
     {
-        _ShowNotificationIconRequested();
+        _ShowNotificationIconRequested(nullptr, nullptr);
     }
     else if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
     {
-        _HideNotificationIconRequested();
+        _HideNotificationIconRequested(nullptr, nullptr);
     }
 
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
@@ -1392,7 +1453,8 @@ void AppHost::_DestroyNotificationIcon()
     _notificationIcon = nullptr;
 }
 
-void AppHost::_ShowNotificationIconRequested()
+void AppHost::_ShowNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     if (_windowManager.IsMonarch())
     {
@@ -1407,7 +1469,8 @@ void AppHost::_ShowNotificationIconRequested()
     }
 }
 
-void AppHost::_HideNotificationIconRequested()
+void AppHost::_HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     if (_windowManager.IsMonarch())
     {
@@ -1465,4 +1528,11 @@ void AppHost::_WindowMoved()
             }
         }
     }
+}
+
+void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                              const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    const auto pos = _GetWindowLaunchPosition();
+    _logic.CloseWindow(pos);
 }

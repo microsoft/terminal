@@ -83,12 +83,31 @@ public:
 
     bool DoConEmuAction(const std::wstring_view string) override;
 
+    bool CursorSaveState() override;
+    bool CursorRestoreState() override;
+
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 
+    // Dramatically simplified version of AdaptDispatch::CursorState
+    struct CursorState
+    {
+        unsigned int Row = 1;
+        unsigned int Column = 1;
+        TextAttribute Attributes = {};
+    };
+
     std::vector<bool> _tabStopColumns;
     bool _initDefaultTabStops = true;
+
+    // We have two instances of the saved cursor state, because we need
+    // one for the main buffer (at index 0), and another for the alt buffer
+    // (at index 1). The _usingAltBuffer property keeps tracks of which
+    // buffer is active, so can be used as an index into this array to
+    // obtain the saved state that should be currently active.
+    std::array<CursorState, 2> _savedCursorState;
     bool _usingAltBuffer = false;
+
 
     size_t _SetRgbColorsHelper(const ::Microsoft::Console::VirtualTerminal::VTParameters options,
                                TextAttribute& attr,
