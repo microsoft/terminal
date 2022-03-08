@@ -97,7 +97,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             //   - This is the case where the user provides `wt -w 1`, and
             //     there's no existing window 1
 
+            // TODO! If the monarch dies or otherwise fails, what do we do here?
+            //
+            // I suppose we could emulate this by sticking a breakpoint in
+            // TerminalApp!winrt::TerminalApp::implementation::AppLogic::_doFindTargetWindow,
+            // starting a terminal, starting a defterm, and when that BP gets
+            // hit, kill the original one and see what happens here.
             const auto result = _monarch.ProposeCommandline(args);
+            // Damn, killing the monarch exactly here still gets us -2147023170,
+            // RPC_S_CALL_FAILED, which is exactly what you'd expect
+
             _shouldCreateWindow = result.ShouldCreateWindow();
             if (result.Id())
             {
@@ -195,6 +204,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 _createPeasantThread();
             }
 
+            // This right here will just tell us to stash the args away for the
+            // future. The AppHost hasnt yet set up the callbacks, and the rest
+            // of the app hasn't started at all. We'll note them and come back
+            // later.
             _peasant.ExecuteCommandline(args);
         }
         // Otherwise, we'll do _nothing_.
