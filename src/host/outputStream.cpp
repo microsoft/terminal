@@ -339,38 +339,6 @@ bool ConhostInternalGetSet::IsConsolePty() const
 }
 
 // Routine Description:
-// - Moves a block of data in the screen buffer, optionally limiting the effects
-//      of the move to a clipping rectangle.
-// Arguments:
-// - scrollRect - Region to copy/move (source and size).
-// - clipRect - Optional clip region to contain buffer change effects.
-// - destinationOrigin - Upper left corner of target region.
-// - standardFillAttrs - If true, fill with the standard erase attributes.
-//                       If false, fill with the default attributes.
-// Return value:
-// - <none>
-void ConhostInternalGetSet::ScrollRegion(const SMALL_RECT scrollRect,
-                                         const std::optional<SMALL_RECT> clipRect,
-                                         const COORD destinationOrigin,
-                                         const bool standardFillAttrs)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-
-    // For most VT scrolling operations, the standard requires that the
-    // erased area be filled with the current background color, but with
-    // no additional meta attributes set. For all other cases, we just
-    // fill with the default attributes.
-    auto fillAttrs = TextAttribute{};
-    if (standardFillAttrs)
-    {
-        fillAttrs = screenInfo.GetAttributes();
-        fillAttrs.SetStandardErase();
-    }
-
-    ::ScrollRegion(screenInfo, scrollRect, clipRect, destinationOrigin, UNICODE_SPACE, fillAttrs);
-}
-
-// Routine Description:
 // - Checks if the InputBuffer is willing to accept VT Input directly
 //   IsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
 //    but it is not represented as a function call on our public API surface.

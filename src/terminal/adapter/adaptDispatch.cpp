@@ -394,48 +394,95 @@ bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 }
 
 // Routine Description:
+// - Scrolls an area of the buffer in a vertical direction.
+// Arguments:
+// - textBuffer - Target buffer to be scrolled.
+// - fillRect - Area of the buffer that will be affected.
+// - delta - Distance to move (positive is down, negative is up).
+// Return Value:
+// - <none>
+void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta)
+{
+    const auto absoluteDelta = std::min(std::abs(delta), scrollRect.height());
+    if (absoluteDelta < scrollRect.height())
+    {
+        // For now we're assuming the scrollRect is always the full width of the
+        // buffer, but this will likely need to be extended to support scrolling
+        // of arbitrary widths at some point in the future.
+        const auto top = gsl::narrow_cast<short>(delta > 0 ? scrollRect.top : (scrollRect.top + absoluteDelta));
+        const auto height = gsl::narrow_cast<short>(scrollRect.height() - absoluteDelta);
+        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+        textBuffer.ScrollRows(top, height, actualDelta);
+        textBuffer.TriggerRedraw(Viewport::FromInclusive(scrollRect.to_small_rect()));
+    }
+
+    // Rows revealed by the scroll are filled with standard erase attributes.
+    auto eraseRect = scrollRect;
+    eraseRect.top = delta > 0 ? scrollRect.top : (scrollRect.bottom - absoluteDelta);
+    eraseRect.bottom = eraseRect.top + absoluteDelta;
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
+    _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
+
+    // Also reset the line rendition for the erased rows.
+    textBuffer.ResetLineRenditionRange(eraseRect.top, eraseRect.bottom);
+}
+
+// Routine Description:
+// - Scrolls an area of the buffer in a horizontal direction.
+// Arguments:
+// - textBuffer - Target buffer to be scrolled.
+// - fillRect - Area of the buffer that will be affected.
+// - delta - Distance to move (positive is right, negative is left).
+// Return Value:
+// - <none>
+void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta)
+{
+    const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
+    if (absoluteDelta < scrollRect.width())
+    {
+        const auto left = gsl::narrow_cast<short>(delta > 0 ? scrollRect.left : (scrollRect.left + absoluteDelta));
+        const auto top = gsl::narrow_cast<short>(scrollRect.top);
+        const auto width = gsl::narrow_cast<short>(scrollRect.width() - absoluteDelta);
+        const auto height = gsl::narrow_cast<short>(scrollRect.height());
+        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+
+        const auto source = Viewport::FromDimensions({ left, top }, width, height);
+        const auto target = Viewport::Offset(source, { actualDelta, 0 });
+        const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
+        auto sourcePos = source.GetWalkOrigin(walkDirection);
+        auto targetPos = target.GetWalkOrigin(walkDirection);
+        do
+        {
+            const auto data = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
+            textBuffer.Write(OutputCellIterator({ &data, 1 }), targetPos);
+            source.WalkInBounds(sourcePos, walkDirection);
+        } while (target.WalkInBounds(targetPos, walkDirection));
+    }
+
+    // Columns revealed by the scroll are filled with standard erase attributes.
+    auto eraseRect = scrollRect;
+    eraseRect.left = delta > 0 ? scrollRect.left : (scrollRect.right - absoluteDelta);
+    eraseRect.right = eraseRect.left + absoluteDelta;
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
+    _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
+}
+
+// Routine Description:
 // - This helper will do the work of performing an insert or delete character operation
 // - Both operations are similar in that they cut text and move it left or right in the buffer, padding the leftover area with spaces.
 // Arguments:
-// - count - The number of characters to insert
-// - isInsert - TRUE if insert mode (cut and paste to the right, away from the cursor). FALSE if delete mode (cut and paste to the left, toward the cursor)
+// - delta - Number of characters to modify (positive if inserting, negative if deleting).
 // Return Value:
 // - <none>
-void AdaptDispatch::_InsertDeleteCharacterHelper(const size_t count, const bool isInsert)
+void AdaptDispatch::_InsertDeleteCharacterHelper(const int32_t delta)
 {
-    // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
-    SHORT distance;
-    THROW_IF_FAILED(SizeTToShort(count, &distance));
-
-    // get current cursor
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
-
-    // Rectangle to cut out of the existing buffer. This is inclusive.
-    SMALL_RECT srScroll;
-    srScroll.Left = cursorPosition.X;
-    srScroll.Right = textBuffer.GetLineWidth(cursorPosition.Y) - 1;
-    srScroll.Top = cursorPosition.Y;
-    srScroll.Bottom = srScroll.Top;
-
-    // Paste coordinate for cut text above
-    COORD coordDestination;
-    coordDestination.Y = cursorPosition.Y;
-    coordDestination.X = cursorPosition.X;
-
-    if (isInsert)
-    {
-        // Insert makes space by moving characters out to the right. So move the destination of the cut/paste region.
-        THROW_IF_FAILED(ShortAdd(coordDestination.X, distance, &coordDestination.X));
-    }
-    else
-    {
-        // Delete scrolls the affected region to the left, relying on the clipping rect to actually delete the characters.
-        THROW_IF_FAILED(ShortSub(coordDestination.X, distance, &coordDestination.X));
-    }
-
-    // Note the revealed characters are filled with the standard erase attributes.
-    _pConApi->ScrollRegion(srScroll, srScroll, coordDestination, true);
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto startCol = textBuffer.GetCursor().GetPosition().X;
+    const auto endCol = textBuffer.GetLineWidth(row);
+    _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
 }
 
 // Routine Description:
@@ -447,7 +494,7 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const size_t count, const bool 
 // - True.
 bool AdaptDispatch::InsertCharacter(const size_t count)
 {
-    _InsertDeleteCharacterHelper(count, true);
+    _InsertDeleteCharacterHelper(gsl::narrow_cast<int32_t>(count));
     return true;
 }
 
@@ -460,7 +507,7 @@ bool AdaptDispatch::InsertCharacter(const size_t count)
 // - True.
 bool AdaptDispatch::DeleteCharacter(const size_t count)
 {
-    _InsertDeleteCharacterHelper(count, false);
+    _InsertDeleteCharacterHelper(-gsl::narrow_cast<int32_t>(count));
     return true;
 }
 
@@ -819,39 +866,22 @@ void AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 // Routine Description:
 // - Generalizes scrolling movement for up/down
 // Arguments:
-// - scrollDirection - Specific direction to move
-// - distance - Magnitude of the move
+// - delta - Distance to move (positive is down, negative is up)
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollMovement(const ScrollDirection scrollDirection, const size_t distance) const
+void AdaptDispatch::_ScrollMovement(const int32_t delta)
 {
-    // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the size_t into a short first.
-    SHORT dist;
-    THROW_IF_FAILED(SizeTToShort(distance, &dist));
-
     const auto viewport = _pConApi->GetViewport();
+    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
 
-    // Rectangle to cut out of the existing buffer. This is inclusive.
-    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
-    SMALL_RECT srScreen;
-    srScreen.Left = 0;
-    srScreen.Right = SHORT_MAX;
-    srScreen.Top = viewport.Top;
-    srScreen.Bottom = viewport.Bottom - 1; // viewport is exclusive, hence the - 1
-    // Clip to the DECSTBM margin boundaries
-    if (_scrollMargins.Top < _scrollMargins.Bottom)
-    {
-        srScreen.Top = viewport.Top + _scrollMargins.Top;
-        srScreen.Bottom = viewport.Top + _scrollMargins.Bottom;
-    }
+    // Calculate the absolute margins of the scrolling area.
+    // If margins aren't set, we use the full viewport.
+    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
+    const auto topMargin = marginsSet ? viewport.Top + _scrollMargins.Top : viewport.Top;
+    const auto bottomMargin = marginsSet ? viewport.Top + _scrollMargins.Bottom + 1 : viewport.Bottom;
 
-    // Paste coordinate for cut text above
-    COORD coordDestination;
-    coordDestination.X = srScreen.Left;
-    coordDestination.Y = srScreen.Top + dist * (scrollDirection == ScrollDirection::Up ? -1 : 1);
-
-    // Note the revealed lines are filled with the standard erase attributes.
-    _pConApi->ScrollRegion(srScreen, srScreen, coordDestination, true);
+    _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin }, delta);
 }
 
 // Routine Description:
@@ -862,7 +892,7 @@ void AdaptDispatch::_ScrollMovement(const ScrollDirection scrollDirection, const
 // - True.
 bool AdaptDispatch::ScrollUp(const size_t uiDistance)
 {
-    _ScrollMovement(ScrollDirection::Up, uiDistance);
+    _ScrollMovement(-gsl::narrow_cast<int32_t>(uiDistance));
     return true;
 }
 
@@ -874,7 +904,7 @@ bool AdaptDispatch::ScrollUp(const size_t uiDistance)
 // - True.
 bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 {
-    _ScrollMovement(ScrollDirection::Down, uiDistance);
+    _ScrollMovement(gsl::narrow_cast<int32_t>(uiDistance));
     return true;
 }
 
@@ -1112,49 +1142,27 @@ bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 // - Internal logic for adding or removing lines in the active screen buffer.
 //   This also moves the cursor to the left margin, which is expected behavior for IL and DL.
 // Parameters:
-// - count - the number of lines to modify
-// - isInsert - true if inserting lines, false if deleting lines
+// - delta - Number of lines to modify (positive if inserting, negative if deleting).
 // Return Value:
 // - <none>
-void AdaptDispatch::_InsertDeleteLineHelper(const size_t count, const bool isInsert)
+void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
 {
     const auto viewport = _pConApi->GetViewport();
     auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
 
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y;
-    const auto relativeRow = row - viewport.Top;
+    const auto relativeRow = cursor.GetPosition().Y - viewport.Top;
 
-    const bool marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
+    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
     const auto rowInMargins = relativeRow >= _scrollMargins.Top && relativeRow <= _scrollMargins.Bottom;
     if (!marginsSet || rowInMargins)
     {
-        // Rectangle to cut out of the existing buffer. This is inclusive.
-        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
-        SMALL_RECT srScroll;
-        srScroll.Left = 0;
-        srScroll.Right = SHORT_MAX;
-        srScroll.Top = row;
-        srScroll.Bottom = viewport.Bottom - 1; // viewport is exclusive, hence the - 1
-        // Clip to the DECSTBM margin boundary
-        if (marginsSet)
-        {
-            srScroll.Bottom = viewport.Top + _scrollMargins.Bottom;
-        }
-        // Paste coordinate for cut text above
-        COORD coordDestination;
-        coordDestination.X = 0;
-        if (isInsert)
-        {
-            coordDestination.Y = row + gsl::narrow_cast<short>(count);
-        }
-        else
-        {
-            coordDestination.Y = row - gsl::narrow_cast<short>(count);
-        }
-
-        // Note the revealed lines are filled with the standard erase attributes.
-        _pConApi->ScrollRegion(srScroll, srScroll, coordDestination, true);
+        // We emulate inserting and deleting by scrolling the area between the cursor and the bottom margin.
+        // If margins aren't set, the area extends to the bottom of the viewport.
+        const auto top = cursor.GetPosition().Y;
+        const auto bottom = marginsSet ? viewport.Top + _scrollMargins.Bottom + 1 : viewport.Bottom;
+        _ScrollRectVertically(textBuffer, { 0, top, bufferWidth, bottom }, delta);
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
@@ -1175,7 +1183,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const size_t count, const bool isIns
 // - True.
 bool AdaptDispatch::InsertLine(const size_t distance)
 {
-    _InsertDeleteLineHelper(distance, true);
+    _InsertDeleteLineHelper(gsl::narrow_cast<int32_t>(distance));
     return true;
 }
 
@@ -1193,7 +1201,7 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 // - True.
 bool AdaptDispatch::DeleteLine(const size_t distance)
 {
-    _InsertDeleteLineHelper(distance, false);
+    _InsertDeleteLineHelper(-gsl::narrow_cast<int32_t>(distance));
     return true;
 }
 
@@ -1409,21 +1417,16 @@ bool AdaptDispatch::ReverseLineFeed()
 
     // Calculate the absolute margins of the scrolling area.
     // If margins aren't set, we use the full viewport.
-    const bool marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
-    const short topMargin = marginsSet ? viewport.Top + _scrollMargins.Top : viewport.Top;
-    const short bottomMargin = marginsSet ? viewport.Top + _scrollMargins.Bottom : viewport.Bottom - 1;
+    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
+    const auto topMargin = marginsSet ? viewport.Top + _scrollMargins.Top : viewport.Top;
+    const auto bottomMargin = marginsSet ? viewport.Top + _scrollMargins.Bottom + 1 : viewport.Bottom;
 
     // If the cursor is at the top of the margin area, we shift the buffer
     // contents down, to emulate inserting a line at that point.
     if (cursorPosition.Y == topMargin)
     {
-        // Rectangle to cut out of the existing buffer. This is inclusive.
-        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
-        const SMALL_RECT srScroll = { 0, topMargin, SHORT_MAX, bottomMargin };
-        // Paste coordinate for cut text above
-        const COORD coordDestination = { 0, topMargin + 1 };
-        // Note the revealed lines are filled with the standard erase attributes.
-        _pConApi->ScrollRegion(srScroll, srScroll, coordDestination, true);
+        const auto bufferWidth = textBuffer.GetSize().Width();
+        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin }, 1);
     }
     else if (cursorPosition.Y > viewport.Top)
     {
@@ -1937,35 +1940,23 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // - <none>
 void AdaptDispatch::_EraseScrollback()
 {
-    const SMALL_RECT screen = _pConApi->GetViewport();
-    const SHORT height = screen.Bottom - screen.Top;
-    THROW_HR_IF(E_UNEXPECTED, height <= 0);
+    const auto viewport = _pConApi->GetViewport();
+    const short height = viewport.Bottom - viewport.Top;
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().Y;
 
-    // Rectangle to cut out of the existing buffer
-    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
-    SMALL_RECT scroll = screen;
-    scroll.Left = 0;
-    scroll.Right = SHORT_MAX;
-    // Paste coordinate for cut text above
-    COORD destination;
-    destination.X = 0;
-    destination.Y = 0;
-
-    // Typically a scroll operation should fill with standard erase attributes, but in
-    // this case we need to use the default attributes, hence standardFillAttrs is false.
-    _pConApi->ScrollRegion(scroll, std::nullopt, destination, false);
+    // Scroll the viewport content to the top of the buffer.
+    textBuffer.ScrollRows(viewport.Top, height, -viewport.Top);
     // Clear everything after the viewport.
     _FillRect(textBuffer, { 0, height, bufferSize.X, bufferSize.Y }, L' ', {});
     // Also reset the line rendition for all of the cleared rows.
     textBuffer.ResetLineRenditionRange(height, bufferSize.Y);
     // Move the viewport
-    _pConApi->SetViewportPosition({ screen.Left, 0 });
+    _pConApi->SetViewportPosition({ viewport.Left, 0 });
     // Move the cursor to the same relative location.
-    cursor.SetYPosition(row - screen.Top);
+    cursor.SetYPosition(row - viewport.Top);
     cursor.SetHasMoved(true);
 }
 

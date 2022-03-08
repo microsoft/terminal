@@ -63,12 +63,6 @@ public:
     unsigned int GetConsoleOutputCP() const override;
 
     bool IsConsolePty() const override;
-
-    void ScrollRegion(const SMALL_RECT scrollRect,
-                      const std::optional<SMALL_RECT> clipRect,
-                      const COORD destinationOrigin,
-                      const bool standardFillAttrs) override;
-
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect changedRect) override;

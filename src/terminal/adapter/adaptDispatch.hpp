@@ -170,9 +170,11 @@ namespace Microsoft::Console::VirtualTerminal
         void _FillRect(TextBuffer& textBuffer, const til::rect fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _EraseScrollback();
         void _EraseAll();
-        void _InsertDeleteCharacterHelper(const size_t count, const bool isInsert);
-        void _InsertDeleteLineHelper(const size_t count, const bool isInsert);
-        void _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
+        void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta);
+        void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta);
+        void _InsertDeleteCharacterHelper(const int32_t delta);
+        void _InsertDeleteLineHelper(const int32_t delta);
+        void _ScrollMovement(const int32_t delta);
 
         void _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
