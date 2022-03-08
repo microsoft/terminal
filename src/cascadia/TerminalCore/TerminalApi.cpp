@@ -587,12 +587,6 @@ void Terminal::PopGraphicsRendition()
 
 void Terminal::UseAlternateScreenBuffer()
 {
-    // Short-circuit: do nothing.
-    if (_inAltBuffer())
-    {
-        return;
-    }
-
     // the new alt buffer is exactly the size of the viewport.
     const COORD bufferSize{ _mutableViewport.Dimensions() };
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();

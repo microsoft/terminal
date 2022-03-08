@@ -3754,7 +3754,9 @@ void ConptyRoundtripTests::ClearBufferSignal()
 
 void ConptyRoundtripTests::SimpleAltBufferTest()
 {
-    Log::Comment(L"TODO");
+    Log::Comment(L"A test for entering and exiting the alt buffer, via conpty. "
+                 L"Ensures cursor is in the right place, and contents are "
+                 L"restored accordingly.");
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
@@ -3851,6 +3853,7 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (InMainBufferBefore) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
     verifyBuffer(*termTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::InMainBufferBefore);
 
     Log::Comment(L"========== Switch to the alt buffer ==========");
@@ -3875,6 +3878,7 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (InAltBufferBefore) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
     verifyBuffer(*termAltTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::InAltBufferBefore);
 
     Log::Comment(L"========== Add some text to the alt buffer ==========");
@@ -3886,6 +3890,7 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state (InAltBufferAfter) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
     verifyBuffer(*termAltTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::InAltBufferAfter);
 
     Log::Comment(L"========== Back to the main buffer ==========");
@@ -3897,12 +3902,13 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"========== Checking the terminal buffer state (InMainBufferAfter) ==========");
+    VERIFY_ARE_EQUAL(0, term->_GetMutableViewport().Top());
     verifyBuffer(*termTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::InMainBufferAfter);
 }
 
 void ConptyRoundtripTests::AltBufferToAltBufferTest()
 {
-    Log::Comment(L"TODO");
+    Log::Comment(L"When we request the alt buffer when we're already in the alt buffer, we should still clear it out and replace it.");
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
