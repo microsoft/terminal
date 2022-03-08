@@ -220,6 +220,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(ClearBufferSignal);
 
+    TEST_METHOD(SimpleAltBufferTest);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -3702,12 +3704,11 @@ void ConptyRoundtripTests::ClearBufferSignal()
     // B's are in red-on-yellow
 
     sm.ProcessString(L"\x1b[?25l");
-    sm.ProcessString(L"\x1b[?34;42m");
+    sm.ProcessString(L"\x1b[34;42m");
     sm.ProcessString(std::wstring(50, L'A'));
     sm.ProcessString(L" ");
-    sm.ProcessString(L"\x1b[?31;43m");
+    sm.ProcessString(L"\x1b[31;43m");
     sm.ProcessString(std::wstring(50, L'B'));
-    sm.ProcessString(L"\x1b[?m");
     sm.ProcessString(L"\x1b[?25h");
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool before) {
@@ -3748,4 +3749,94 @@ void ConptyRoundtripTests::ClearBufferSignal()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, til::rect{ term->_mutableViewport.ToInclusive() }, false);
+}
+
+void ConptyRoundtripTests::SimpleAltBufferTest()
+{
+    Log::Comment(L"TODO");
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // Print two lines of text:
+    // |AAAAAAAA            | <break>
+    // |BBBBBBBB_           | <break>
+    // (cursor on the '_')
+    // A's are in blue-on-green,
+    // B's are in red-on-yellow
+
+    // printf "\x1b[?25l\x1b[34;42mAAAAAAAAAAAAAAAAAAAA\n\x1b[31;43mBBBBBBBBBBBBBBBBBBBB\x1b[?25h"
+    sm.ProcessString(L"\x1b[?25l");
+    sm.ProcessString(L"\x1b[34;42m");
+    sm.ProcessString(std::wstring(50, L'A'));
+    sm.ProcessString(L"\n");
+    sm.ProcessString(L"\x1b[31;43m");
+    sm.ProcessString(std::wstring(50, L'B'));
+    sm.ProcessString(L"\x1b[?25h");
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool inMainBuffer) {
+        const short width = viewport.narrow_width<short>();
+        auto iter0 = tb.GetCellDataAt({ 0, 0 });
+        auto iter1 = tb.GetCellDataAt({ 0, 1 });
+        if (inMainBuffer)
+        {
+            TestUtils::VerifySpanOfText(L"A", iter0, 0, 50);
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, static_cast<size_t>(width - 50));
+
+            TestUtils::VerifySpanOfText(L"B", iter1, 0, 50);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, static_cast<size_t>(width - 50));
+            COORD expectedCursor{ 50, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+        }
+        else
+        {
+            TestUtils::VerifySpanOfText(L" ", iter0, 0, 50u);
+            TestUtils::VerifySpanOfText(L" ", iter1, 0, 50u);
+
+            COORD expectedCursor{ 50, 1 };
+            VERIFY_ARE_EQUAL(expectedCursor, tb.GetCursor().GetPosition());
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, til::rect{ si.GetViewport().ToInclusive() }, true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, true);
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    sm.ProcessString(L"\x1b[?1049h");
+    // printf "\x1b[?1049h"
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    auto& siAlt = gci.GetActiveOutputBuffer();
+    auto* hostAltTb = &siAlt.GetTextBuffer();
+    auto* termAltTb = &term->_activeBuffer();
+
+    VERIFY_IS_TRUE(term->_inAltBuffer());
+    VERIFY_ARE_NOT_EQUAL(termAltTb, termTb);
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostAltTb, til::rect{ si.GetViewport().ToInclusive() }, false);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termAltTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, false);
 }
