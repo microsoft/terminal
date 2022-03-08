@@ -288,8 +288,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     LockConsole();
 
     const auto cleanup = wil::scope_exit([&]() noexcept {
-        UnlockConsole();
-
         if (!NT_SUCCESS(Status))
         {
             pReceiveMsg->SetReplyStatus(Status);
@@ -299,6 +297,9 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                 gci.ProcessHandleList.FreeProcessData(ProcessData);
             }
         }
+
+        // FreeProcessData() above requires the console to be locked.
+        UnlockConsole();
     });
 
     DWORD const dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
