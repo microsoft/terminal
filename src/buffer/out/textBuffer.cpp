@@ -2276,7 +2276,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // - if the old buffer is BIGGER, than we might have wrapped onto a new
         //   line. Use the cursor's position's Y so that we know where the new
         //   row is, and start writing st the cursor position. Again, the attr
-        //   in the last colum of the old row will be extended to the end of the
+        //   in the last column of the old row will be extended to the end of the
         //   row that the text was flowed onto.
         //   - if we the text in the old buffer didn't actually fill the whole
         //     line in the new buffer, then we didn't wrap. That's fine. just

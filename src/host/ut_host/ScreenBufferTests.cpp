@@ -6351,7 +6351,7 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
 void ScreenBufferTests::TestReflowSmallerLongLineWithColor()
 {
     Log::Comment(L"Reflow the buffer such that a long, line of text flows onto "
-                 L"the next line. Check that the triling attributes were copied"
+                 L"the next line. Check that the trailing attributes were copied"
                  L" to the new row.");
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
