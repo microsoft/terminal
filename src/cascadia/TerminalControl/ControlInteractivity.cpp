@@ -414,7 +414,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#3321: Alternate scroll mode is a special type of mouse input mode
         // where the terminal sends arrow keys when the user mouse wheels, but
         // the client app doesn't care for other mouse input. It's tracked
-        // seperately from _canSendVTMouseInput.
+        // separately from _canSendVTMouseInput.
         if (!_core->IsInReadOnlyMode() &&
             (_canSendVTMouseInput(modifiers) || _shouldSendAlternateScroll(modifiers, delta)))
         {
