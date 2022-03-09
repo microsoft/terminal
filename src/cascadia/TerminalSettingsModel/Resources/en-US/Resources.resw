@@ -464,10 +464,11 @@
     <value>Rename window...</value>
   </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
-    <value>Summon the Terminal window</value>
+    <value>Show/Hide the Terminal window</value>
   </data>
   <data name="QuakeModeCommandKey" xml:space="preserve">
-    <value>Summon Quake window</value>
+    <value>Show/Hide Quake window</value>
+    <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
   </data>
   <data name="FocusPaneCommandKey" xml:space="preserve">
     <value>Focus pane {0}</value>
