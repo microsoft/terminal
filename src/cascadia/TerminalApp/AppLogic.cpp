@@ -348,7 +348,11 @@ namespace winrt::TerminalApp::implementation
         }
 
         _dialog = dialog;
-
+        // GH#12622: After the dialog is displayed, always clear it out. If we
+        // don't, we won't be able to display another!
+        const auto cleanup = wil::scope_exit([this]() {
+            _dialog = nullptr;
+        });
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
         // Since we're hosting the dialog in a Xaml island, we need to connect it to the
         // xaml tree somehow.
@@ -380,11 +384,7 @@ namespace winrt::TerminalApp::implementation
         auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
 
         // Display the dialog.
-        const auto result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
-        // GH#12622: After the dialog is displayed, always clear it out. If we
-        // don't, we won't be able to display another!
-        _dialog = nullptr;
-        co_return result;
+        co_return co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown
