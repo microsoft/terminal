@@ -894,12 +894,6 @@ void CascadiaSettings::WriteSettingsToDisk() const
 {
     const auto settingsPath = _settingsPath();
 
-    {
-        // create a timestamped backup file
-        const auto backupSettingsPath = fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath.native(), fmt::localtime(std::time(nullptr)));
-        LOG_IF_WIN32_BOOL_FALSE(CopyFileW(settingsPath.c_str(), backupSettingsPath.c_str(), TRUE));
-    }
-
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
     wbuilder.settings_["indentation"] = "    ";
