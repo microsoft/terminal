@@ -21,6 +21,8 @@ downside
 downsides
 dze
 dzhe
+EDDB
+EDDC
 Enum'd
 Fitt
 formattings
@@ -74,6 +76,8 @@ runtimes
 shcha
 slnt
 Sos
+timeline
+timelines
 timestamped
 TLDR
 tokenizes
