@@ -176,7 +176,7 @@ namespace RemotingUnitTests
 
         TEST_METHOD(TestSummonAfterWindowClose);
 
-        TEST_METHOD(TestWhatHappens);
+        TEST_METHOD(TestProposeCommandlineWithDeadMonarch);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -2555,20 +2555,19 @@ namespace RemotingUnitTests
         VERIFY_IS_TRUE(args.FoundMatch());
     }
 
-    void RemotingTests::TestWhatHappens()
+    void RemotingTests::TestProposeCommandlineWithDeadMonarch()
     {
-        Log::Comment(L"TODO!");
+        Log::Comment(L"MSFT:32279047 - It's possible for a window to start "
+                     L"right as the monarch is exiting. In that case, "
+                     L"WindowManager relies on getting a "
+                     L"RPC_E_SERVER_UNAVAILABLE when the process dies. ");
 
         const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
         const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         constexpr auto monarch0PID = 12345u;
-        // constexpr auto peasant1PID = 23456u;
 
         auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
-        // auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
-        // p1->WindowName(L"one");
-        // VERIFY_ARE_EQUAL(0, p1->GetID());
 
         {
             Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" } };
@@ -2580,10 +2579,23 @@ namespace RemotingUnitTests
         auto m1 = make_self<DeadMonarch>();
         {
             Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" } };
-            DebugBreak();
-            const auto result = m1->ProposeCommandline(args);
-            auto shouldCreateWindow = result.ShouldCreateWindow();
-            VERIFY_IS_TRUE(shouldCreateWindow);
+
+            try
+            {
+                const auto result = m1->ProposeCommandline(args);
+                VERIFY_IS_FALSE(true, L"This should have thrown");
+            }
+            catch (const winrt::hresult_error& e)
+            {
+                // these two errors are Win32 errors, convert them to HRESULTS so we can actually compare here.
+                constexpr HRESULT RPC_SERVER_UNAVAILABLE_HR = HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
+                constexpr HRESULT RPC_CALL_FAILED_HR = HRESULT_FROM_WIN32(RPC_S_CALL_FAILED);
+
+                // This is the same check in WindowManager::_proposeToMonarch.
+                VERIFY_IS_TRUE(e.code() == RPC_SERVER_UNAVAILABLE_HR || e.code() == RPC_CALL_FAILED_HR);
+            }
+            // just don't catch other types of exceptions. They'll take out
+            // TAEF, which will count as a failure.
         }
     }
 
