@@ -144,6 +144,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                           "WindowManager_proposeToMonarch_becameKing",
                                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+                        // In WindowManager::ProposeCommandline, had we been the
+                        // king originally, we would have started by setting
+                        // this to true. We became the monarch here, so set it
+                        // here as well.
+                        _shouldCreateWindow = true;
                         return;
                     }
 
