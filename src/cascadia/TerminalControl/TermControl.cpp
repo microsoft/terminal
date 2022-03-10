@@ -2274,7 +2274,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_IsClosing())
         {
-            return;
+            co_return;
         }
 
         if (e.DataView().Contains(StandardDataFormats::ApplicationLink()))
