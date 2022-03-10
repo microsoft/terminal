@@ -94,7 +94,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //   - This is the case where the user provides `wt -w 1`, and
         //     there's no existing window 1
 
-        // You can emulate the monarh dying by: starting a terminal, sticking a
+        // You can emulate the monarch dying by: starting a terminal, sticking a
         // breakpoint in
         // TerminalApp!winrt::TerminalApp::implementation::AppLogic::_doFindTargetWindow,
         // starting a defterm, and when that BP gets hit, kill the original
@@ -119,9 +119,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // If the king returned some _other_ error here, than lets
                 // bubble that up because that's a real issue.
                 //
-                // I'm checking both these here. I had previously got
-                // RPC_S_CALL_FAILED about here, but I'm not sure that's
-                // actually possible. TODO!
+                // I'm checking both these here. I had previously got a
+                // RPC_S_CALL_FAILED about here once.
                 if (e.code() == RPC_SERVER_UNAVAILABLE_HR || e.code() == RPC_CALL_FAILED_HR)
                 {
                     TraceLoggingWrite(g_hRemotingProvider,
