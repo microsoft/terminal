@@ -68,6 +68,15 @@
     </feature>
 
     <feature>
+        <name>Feature_NearbyFontLoading</name>
+        <description>Controls whether fonts in the same directory as the binary are used during rendering. Disabled for conhost so that it doesn't iterate the entire system32 directory.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_AdjustIndistinguishableText</name>
         <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
         <stage>AlwaysDisabled</stage>

@@ -89,6 +89,9 @@
     <ClInclude Include="..\..\inc\RenderSettings.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
+    <ClInclude Include="..\FontCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />

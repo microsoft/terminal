@@ -2083,10 +2083,12 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                                                 FontInfo& pfiFontInfo,
                                                 int const iDpi) noexcept
+try
 {
     DxFontRenderData fontRenderData(_dwriteFactory);
     return fontRenderData.UpdateFont(pfiFontInfoDesired, pfiFontInfo, iDpi);
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Gets the area that we currently believe is dirty within the character cell grid
