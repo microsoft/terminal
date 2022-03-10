@@ -11,6 +11,8 @@
 #include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
+#include <til/bit.h>
+
 #pragma hdrstop
 
 using namespace Microsoft::Console;
