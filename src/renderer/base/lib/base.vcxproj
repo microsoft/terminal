@@ -35,6 +35,7 @@
     <ClInclude Include="..\..\inc\IRenderer.hpp" />
     <ClInclude Include="..\..\inc\IRenderTarget.hpp" />
     <ClInclude Include="..\..\inc\RenderEngineBase.hpp" />
+    <ClInclude Include="..\FontCache.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\renderer.hpp" />
     <ClInclude Include="..\thread.hpp" />

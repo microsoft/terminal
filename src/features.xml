@@ -85,4 +85,13 @@
         <!-- This feature will not ship to Stable until it is complete. -->
         <alwaysDisabledReleaseTokens />
     </feature>
+
+    <feature>
+        <name>Feature_NearbyFontLoading</name>
+        <description>Controls whether fonts in the same directory as the binary are used during rendering. Disabled for conhost so that it doesn't iterate the entire system32 directory.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
 </featureStaging>

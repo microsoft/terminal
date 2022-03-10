@@ -2,22 +2,21 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "DxFontRenderData.h"
-
-#include "unicode.hpp"
 
 #include <VersionHelpers.h>
 
+#include "../base/FontCache.h"
+
 static constexpr float POINTS_PER_INCH = 72.0f;
-static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 static constexpr size_t TAG_LENGTH = 4;
 
 using namespace Microsoft::Console::Render;
 
-DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) noexcept :
+DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) :
     _dwriteFactory(dwriteFactory),
+    _nearbyCollection{ FontCache::GetCached() },
     _fontSize{},
     _glyphCell{},
     _lineMetrics{},
@@ -165,7 +164,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         fontInfo.SetStretch(stretch);
 
         std::wstring fontLocaleName = UserLocaleName();
-        Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace = fontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
+        Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace = fontInfo.ResolveFontFaceWithFallback(_nearbyCollection.get(), fontLocaleName);
 
         _fontFaceMap.emplace(_ToMapKey(weight, style, stretch), fontFace);
         return fontFace;
@@ -711,7 +710,7 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
     // This is the first attempt to resolve font face after `UpdateFont`.
     // Note that the following line may cause property changes _inside_ `_defaultFontInfo` because the desired font may not exist.
     // See the implementation of `ResolveFontFaceWithFallback` for details.
-    const Microsoft::WRL::ComPtr<IDWriteFontFace1> face = _defaultFontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
+    const Microsoft::WRL::ComPtr<IDWriteFontFace1> face = _defaultFontInfo.ResolveFontFaceWithFallback(_nearbyCollection.get(), fontLocaleName);
 
     DWRITE_FONT_METRICS1 fontMetrics;
     face->GetMetrics(&fontMetrics);
@@ -898,7 +897,7 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontInfo.GetFamilyName().data(),
-                                                     fontInfo.GetNearbyCollection(),
+                                                     _nearbyCollection.get(),
                                                      fontInfo.GetWeight(),
                                                      fontInfo.GetStyle(),
                                                      fontInfo.GetStretch(),

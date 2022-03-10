@@ -7,55 +7,8 @@
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
-#include "..\WinRTUtils\inc\Utils.h"
-
-// This function is a copy of DxFontInfo::_NearbyCollection() with
-// * the call to DxFontInfo::s_GetNearbyFonts() inlined
-// * checkForUpdates for GetSystemFontCollection() set to true
-static wil::com_ptr<IDWriteFontCollection1> NearbyCollection(IDWriteFactory* dwriteFactory)
-{
-    // The convenience interfaces for loading fonts from files
-    // are only available on Windows 10+.
-    wil::com_ptr<IDWriteFactory6> factory6;
-    // wil's query() facilities don't work inside WinRT land at the moment.
-    // They produce a compilation error due to IUnknown and winrt::Windows::Foundation::IUnknown being ambiguous.
-    if (!SUCCEEDED(dwriteFactory->QueryInterface(__uuidof(IDWriteFactory6), factory6.put_void())))
-    {
-        return nullptr;
-    }
-
-    wil::com_ptr<IDWriteFontCollection1> systemFontCollection;
-    THROW_IF_FAILED(factory6->GetSystemFontCollection(false, systemFontCollection.addressof(), true));
-
-    wil::com_ptr<IDWriteFontSet> systemFontSet;
-    THROW_IF_FAILED(systemFontCollection->GetFontSet(systemFontSet.addressof()));
-
-    wil::com_ptr<IDWriteFontSetBuilder2> fontSetBuilder2;
-    THROW_IF_FAILED(factory6->CreateFontSetBuilder(fontSetBuilder2.addressof()));
-
-    THROW_IF_FAILED(fontSetBuilder2->AddFontSet(systemFontSet.get()));
-
-    {
-        const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-        const auto folder{ module.parent_path() };
-
-        for (const auto& p : std::filesystem::directory_iterator(folder))
-        {
-            if (til::ends_with(p.path().native(), L".ttf"))
-            {
-                fontSetBuilder2->AddFontFile(p.path().c_str());
-            }
-        }
-    }
-
-    wil::com_ptr<IDWriteFontSet> fontSet;
-    THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(fontSet.addressof()));
-
-    wil::com_ptr<IDWriteFontCollection1> fontCollection;
-    THROW_IF_FAILED(factory6->CreateFontCollectionFromFontSet(fontSet.get(), &fontCollection));
-
-    return fontCollection;
-}
+#include "../WinRTUtils/inc/Utils.h"
+#include "../../renderer/base/FontCache.h"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -166,15 +119,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::vector<Editor::Font> fontList;
         std::vector<Editor::Font> monospaceFontList;
 
-        // get a DWriteFactory
-        com_ptr<IDWriteFactory> factory;
-        THROW_IF_FAILED(DWriteCreateFactory(
-            DWRITE_FACTORY_TYPE_SHARED,
-            __uuidof(IDWriteFactory),
-            reinterpret_cast<::IUnknown**>(factory.put())));
-
         // get the font collection; subscribe to updates
-        const auto fontCollection = NearbyCollection(factory.get());
+        const auto fontCollection = ::Microsoft::Console::Render::FontCache::GetFresh();
 
         for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
         {
