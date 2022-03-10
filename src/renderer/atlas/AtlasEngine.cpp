@@ -7,6 +7,7 @@
 #include <shader_ps.h>
 #include <shader_vs.h>
 
+#include "../base/FontCache.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
 // #### NOTE ####
@@ -1023,7 +1024,7 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
-                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.get(), nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
+                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.get(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
                 textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
                 textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
