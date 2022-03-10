@@ -608,6 +608,18 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             gci.SetLegacyColorTableEntry(i, data.ColorTable[i]);
         }
 
+        // GH#399: Trigger a redraw, so that updated colors are repainted, but
+        // only do this if we're not in conpty mode. ConPTY will update the
+        // colors of the palette elsewhere (after TODO GH#10639)
+        if (!gci.IsInVtIoMode())
+        {
+            auto* pRender = ServiceLocator::LocateGlobals().pRender;
+            if (pRender)
+            {
+                pRender->TriggerRedrawAll();
+            }
+        }
+
         context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
         const Viewport requestedViewport = Viewport::FromExclusive(data.srWindow);
