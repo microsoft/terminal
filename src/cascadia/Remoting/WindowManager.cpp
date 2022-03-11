@@ -173,7 +173,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             catch (...)
             {
                 // If the monarch (maybe us) failed for _any other reason_ than
-                // them dying. This IS quite unexpected. We don't catch
+                // them dying. This IS quite unexpected. Let this bubble out. 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "WindowManager_proposeToMonarch_unexpectedExceptionFromKing",
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
