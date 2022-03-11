@@ -566,7 +566,9 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, const gsl::not_null<IRenderData*> /*pData*/, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
 try
 {
-    const auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
+    auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
+    fg |= 0xff000000;
+    bg |= _api.backgroundOpaqueMixin;
 
     if (!isSettingDefaultBrushes)
     {
@@ -588,7 +590,7 @@ try
             WI_ClearAllFlags(flags, CellFlags::UnderlineDotted | CellFlags::UnderlineDouble);
         }
 
-        const u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
+        const u32x2 newColors{ gsl::narrow_cast<u32>(fg), gsl::narrow_cast<u32>(bg) };
         const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense(), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
@@ -602,7 +604,7 @@ try
     }
     else if (textAttributes.BackgroundIsDefault() && bg != _r.backgroundColor)
     {
-        _r.backgroundColor = bg | _api.backgroundOpaqueMixin;
+        _r.backgroundColor = bg;
         WI_SetFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
     }
 
