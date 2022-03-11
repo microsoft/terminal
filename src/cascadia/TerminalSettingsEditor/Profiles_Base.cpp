@@ -38,8 +38,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
 
-        // Initialize the terminal only once the swapchainpanel is loaded - that
-        //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [state, this](auto /*s*/, auto /*e*/) {
             // This event fires every time the layout changes, but it is always the last one to fire
             // in any layout change chain. That gives us great flexibility in finding the right point
