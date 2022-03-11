@@ -61,6 +61,8 @@ namespace Microsoft::Console::Render
         void TriggerCircling() override;
         void TriggerTitleChange() override;
 
+        void TriggerNewTextNotification(const std::wstring_view newText) override;
+
         void TriggerFontChange(const int iDpi,
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo) override;

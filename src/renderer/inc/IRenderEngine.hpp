@@ -75,6 +75,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept = 0;
 
+        [[nodiscard]] virtual HRESULT NotifyNewText(const std::wstring_view newText) noexcept = 0;
+
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT ResetLineTransform() noexcept = 0;

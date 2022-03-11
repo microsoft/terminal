@@ -93,6 +93,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _CursorChangedHandlers(*this, nullptr);
     }
 
+    void InteractivityAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
+    {
+        _NewOutputHandlers(*this, hstring{ newOutput });
+    }
+
 #pragma region ITextProvider
     com_array<XamlAutomation::ITextRangeProvider> InteractivityAutomationPeer::GetSelection()
     {

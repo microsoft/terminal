@@ -1030,6 +1030,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                        keyDown) :
                                  true;
 
+        if (vkey && keyDown && _automationPeer)
+        {
+            get_self<TermControlAutomationPeer>(_automationPeer)->RecordKeyEvent(vkey);
+        }
+
         if (_cursorTimer)
         {
             // Manually show the cursor when a key is pressed. Restarting

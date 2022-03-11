@@ -54,6 +54,7 @@ namespace
         };
         virtual void TriggerCircling(){};
         void TriggerTitleChange(){};
+        void TriggerNewTextNotification(const std::wstring_view){};
 
     private:
         std::optional<COORD> _triggerScrollDelta;
