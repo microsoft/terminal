@@ -2084,6 +2084,7 @@ rxvt
 safearray
 SAFECAST
 safemath
+sapi
 sba
 SBCS
 SBCSDBCS

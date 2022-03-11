@@ -182,6 +182,18 @@ CATCH_RETURN();
     return S_FALSE;
 }
 
+[[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
+try
+{
+    if (!newText.empty())
+    {
+        _newOutput.append(newText);
+        _newOutput.push_back(L'\n');
+    }
+    return S_OK;
+}
+CATCH_LOG_RETURN_HR(E_FAIL);
+
 // Routine Description:
 // - This is unused by this renderer.
 // Arguments:
@@ -207,7 +219,7 @@ CATCH_RETURN();
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged;
+    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged || !_queuedOutput.empty();
 
     // If there's nothing to do, quick return
     RETURN_HR_IF(S_FALSE, !somethingToDo);
@@ -226,6 +238,34 @@ CATCH_RETURN();
 {
     RETURN_HR_IF(S_FALSE, !_isEnabled);
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
+
+    // Snap this now while we're still under lock
+    // so present can work on the copy while another
+    // thread might start filling the next "frame"
+    // worth of text data.
+    std::swap(_queuedOutput, _newOutput);
+    _newOutput.clear();
+    return S_OK;
+}
+
+// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
+// But UiaEngine is never the only engine running. Overriding this function prevents
+// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
+void UiaEngine::WaitUntilCanRender() noexcept
+{
+}
+
+// Routine Description:
+// - Used to perform longer running presentation steps outside the lock so the
+//      other threads can continue.
+// - Not currently used by UiaEngine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_FALSE since we do nothing.
+[[nodiscard]] HRESULT UiaEngine::Present() noexcept
+{
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // Fire UIA Events here
     if (_selectionChanged)
@@ -252,33 +292,32 @@ CATCH_RETURN();
         }
         CATCH_LOG();
     }
+    try
+    {
+        // The speech API is limited to 1000 characters at a time.
+        // Break up the output into 1000 character chunks to ensure
+        // the output isn't cut off.
+        static constexpr size_t sapiLimit{ 1000 };
+        const std::wstring_view output{ _queuedOutput };
+        for (size_t offset = 0;; offset += sapiLimit)
+        {
+            const auto croppedText{ output.substr(offset, sapiLimit) };
+            if (croppedText.empty())
+            {
+                break;
+            }
+            _dispatcher->NotifyNewOutput(croppedText);
+        }
+    }
+    CATCH_LOG();
 
     _selectionChanged = false;
     _textBufferChanged = false;
     _cursorChanged = false;
     _isPainting = false;
+    _queuedOutput.clear();
 
     return S_OK;
-}
-
-// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
-// But UiaEngine is never the only engine running. Overriding this function prevents
-// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
-void UiaEngine::WaitUntilCanRender() noexcept
-{
-}
-
-// Routine Description:
-// - Used to perform longer running presentation steps outside the lock so the
-//      other threads can continue.
-// - Not currently used by UiaEngine.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT UiaEngine::Present() noexcept
-{
-    return S_FALSE;
 }
 
 // Routine Description:

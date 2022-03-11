@@ -45,6 +45,8 @@ namespace Microsoft::Console::Render
         virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
         virtual void TriggerCircling() = 0;
         virtual void TriggerTitleChange() = 0;
+
+        virtual void TriggerNewTextNotification(const std::wstring_view newText) = 0;
     };
 
     inline Microsoft::Console::Render::IRenderTarget::~IRenderTarget() {}

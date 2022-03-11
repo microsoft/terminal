@@ -110,3 +110,13 @@ void ScreenBufferRenderTarget::TriggerTitleChange()
         pRenderer->TriggerTitleChange();
     }
 }
+
+void ScreenBufferRenderTarget::TriggerNewTextNotification(const std::wstring_view newText)
+{
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == &_owner)
+    {
+        pRenderer->TriggerNewTextNotification(newText);
+    }
+}

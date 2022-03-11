@@ -143,6 +143,11 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
+[[nodiscard]] HRESULT AtlasEngine::NotifyNewText(const std::wstring_view newText) noexcept
+{
+    return S_OK;
+}
+
 [[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, _Out_ FontInfo& fontInfo) noexcept
 {
     return UpdateFont(fontInfoDesired, fontInfo, {}, {});

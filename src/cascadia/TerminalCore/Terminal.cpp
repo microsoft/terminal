@@ -1002,6 +1002,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         _AdjustCursorPosition(proposedCursorPosition);
     }
 
+    // Notify UIA of new text.
+    // It's important to do this here instead of in TextBuffer, because here you have access to the entire line of text,
+    // whereas TextBuffer writes it one character at a time via the OutputCellIterator.
+    _buffer->GetRenderTarget().TriggerNewTextNotification(stringView);
+
     cursor.EndDeferDrawing();
 }
 
