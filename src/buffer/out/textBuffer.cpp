@@ -1751,7 +1751,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 
                 if (copyTextColor)
                 {
-                    // cant see CR/LF so just use black FG & BK
+                    // can't see CR/LF so just use black FG & BK
                     COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
                     selectionFgAttr.push_back(Blackness);
                     selectionFgAttr.push_back(Blackness);
@@ -2034,20 +2034,8 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col >= startOffset)
                     {
-                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
-                        for (const auto c : unescapedText)
-                        {
-                            switch (c)
-                            {
-                            case '\\':
-                            case '{':
-                            case '}':
-                                contentBuilder << "\\" << c;
-                                break;
-                            default:
-                                contentBuilder << c;
-                            }
-                        }
+                        const auto text = std::wstring_view{ rows.text.at(row) }.substr(startOffset, col - startOffset + includeCurrent);
+                        _AppendRTFText(contentBuilder, text);
 
                         startOffset = col;
                     }
@@ -2143,6 +2131,31 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
     {
         LOG_HR(wil::ResultFromCaughtException());
         return {};
+    }
+}
+
+void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text)
+{
+    for (const auto codeUnit : text)
+    {
+        if (codeUnit <= 127)
+        {
+            switch (codeUnit)
+            {
+            case L'\\':
+            case L'{':
+            case L'}':
+                contentBuilder << "\\" << gsl::narrow<char>(codeUnit);
+                break;
+            default:
+                contentBuilder << gsl::narrow<char>(codeUnit);
+            }
+        }
+        else
+        {
+            // Windows uses unsigned wchar_t - RTF uses signed ones.
+            contentBuilder << "\\u" << std::to_string(til::bit_cast<int16_t>(codeUnit)) << "?";
+        }
     }
 }
 

@@ -142,10 +142,13 @@ float4 main(float4 pos: SV_Position): SV_Target
     }
 
     // Layer 3 (optional):
-    // Uncolored cursors invert the cells color.
-    if ((cell.flags & CellFlags_Cursor) && cursorColor == INVALID_COLOR)
+    // Uncolored cursors are used as a mask that inverts the cells color.
+    [branch] if (cell.flags & CellFlags_Cursor)
     {
-        color.rgb = abs(glyphs[cellPos].rgb - color.rgb);
+        [flatten] if (cursorColor == INVALID_COLOR && glyphs[cellPos].a != 0)
+        {
+            color = float4(1 - color.rgb, 1);
+        }
     }
 
     // Layer 4:

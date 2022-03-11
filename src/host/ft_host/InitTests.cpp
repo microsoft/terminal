@@ -25,7 +25,7 @@ static FILE* std_in = nullptr;
 // This will automatically try to terminate the job object (and all of the
 // binaries under test that are children) whenever this class gets shut down.
 // also closes the FILE pointers created by reopening stdin and stdout.
-auto OnAppExitKillJob = wil::scope_exit([&] {
+auto OnAppExitKillJob = wil::scope_exit([] {
     if (std_out != nullptr)
     {
         fclose(std_out);

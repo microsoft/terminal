@@ -11,7 +11,6 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\adaptDispatch.cpp" />
-    <ClCompile Include="..\DispatchCommon.cpp" />
     <ClCompile Include="..\FontBuffer.cpp" />
     <ClCompile Include="..\InteractDispatch.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
@@ -23,11 +22,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\adaptDefaults.hpp" />
     <ClInclude Include="..\adaptDispatch.hpp" />
     <ClInclude Include="..\charsets.hpp" />
     <ClInclude Include="..\DispatchTypes.hpp" />
-    <ClInclude Include="..\DispatchCommon.hpp" />
     <ClInclude Include="..\FontBuffer.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\conGetSet.hpp" />

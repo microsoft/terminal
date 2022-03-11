@@ -591,7 +591,7 @@ try
     RETURN_IF_FAILED(_d3dDevice.As(&_dxgiDevice));
     RETURN_IF_FAILED(_d2dFactory->CreateDevice(_dxgiDevice.Get(), _d2dDevice.ReleaseAndGetAddressOf()));
 
-    // Create a device context out of it (supercedes render targets)
+    // Create a device context out of it (supersedes render targets)
     RETURN_IF_FAILED(_d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_d2dDeviceContext));
 
     if (createSwapChain)
@@ -2083,10 +2083,12 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                                                 FontInfo& pfiFontInfo,
                                                 int const iDpi) noexcept
+try
 {
     DxFontRenderData fontRenderData(_dwriteFactory);
     return fontRenderData.UpdateFont(pfiFontInfoDesired, pfiFontInfo, iDpi);
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Gets the area that we currently believe is dirty within the character cell grid

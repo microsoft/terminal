@@ -670,8 +670,15 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
         }
     } while (false);
 
+    // GH #12353: `~` is never a valid windows path. We can only accept that as
+    // a startingDirectory when the exe is specifically wsl.exe, because that
+    // can override the real startingDirectory. If the user set the
+    // startingDirectory to ~, but the commandline to something like pwsh.exe,
+    // that won't actually work. In that case, mangle the startingDirectory to
+    // %userprofile%, so it's at least something reasonable.
     return {
         std::wstring{ commandLine },
-        std::wstring{ startingDirectory }
+        startingDirectory == L"~" ? wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%") :
+                                    std::wstring{ startingDirectory }
     };
 }

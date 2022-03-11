@@ -255,7 +255,7 @@
                       Click="GoBackwardClicked"
                       IsChecked="True"
                       Style="{StaticResource ToggleButtonStyle}">
-            <FontIcon FontFamily="Segoe MDL2 Assets"
+            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                       Glyph="&#xE74A;"
                       Style="{ThemeResource FontIconStyle}" />
         </ToggleButton>
@@ -263,7 +263,7 @@
                       x:Uid="SearchBox_SearchForwards"
                       Click="GoForwardClicked"
                       Style="{StaticResource ToggleButtonStyle}">
-            <FontIcon FontFamily="Segoe MDL2 Assets"
+            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                       Glyph="&#xE74B;"
                       Style="{ThemeResource FontIconStyle}" />
         </ToggleButton>
@@ -278,7 +278,7 @@
                 x:Uid="SearchBox_Close"
                 Click="CloseClick"
                 Style="{ThemeResource ButtonStyle}">
-            <FontIcon FontFamily="Segoe MDL2 Assets"
+            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                       FontSize="12"
                       Glyph="&#xE711;" />
         </Button>

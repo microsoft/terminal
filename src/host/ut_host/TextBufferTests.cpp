@@ -146,6 +146,8 @@ class TextBufferTests
 
     TEST_METHOD(TestBurrito);
 
+    TEST_METHOD(TestAppendRTFText);
+
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
     TEST_METHOD(MoveByWord);
@@ -2009,6 +2011,37 @@ void TextBufferTests::TestBurrito()
     _buffer->IncrementCursor();
     _buffer->IncrementCursor();
     VERIFY_IS_FALSE(afterBurritoIter);
+}
+
+void TextBufferTests::TestAppendRTFText()
+{
+    {
+        std::ostringstream contentStream;
+        const auto ascii = L"This is some Ascii \\ {}";
+        TextBuffer::_AppendRTFText(contentStream, ascii);
+        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "Low code units: á é í ó ú ⮁ ⮂" in UTF-16
+        const auto lowCodeUnits = L"Low code units: \x00E1 \x00E9 \x00ED \x00F3 \x00FA \x2B81 \x2B82";
+        TextBuffer::_AppendRTFText(contentStream, lowCodeUnits);
+        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "High code units: ꞵ ꞷ" in UTF-16
+        const auto highCodeUnits = L"High code units: \xA7B5 \xA7B7";
+        TextBuffer::_AppendRTFText(contentStream, highCodeUnits);
+        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "Surrogates: 🍦 👾 👀" in UTF-16
+        const auto surrogates = L"Surrogates: \xD83C\xDF66 \xD83D\xDC7E \xD83D\xDC40";
+        TextBuffer::_AppendRTFText(contentStream, surrogates);
+        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream.str());
+    }
 }
 
 void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer)

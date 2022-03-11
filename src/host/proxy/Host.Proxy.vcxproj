@@ -60,7 +60,7 @@
       <PreprocessorDefinitions>PROXY_CLSID_IS={0x1833E661,0xCC81,0x4DD0,{0x87,0xC6,0xC2,0xF7,0x4B,0xD3,0x9E,0xFA}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'==''">
+  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">
     <ClCompile>
       <PreprocessorDefinitions>PROXY_CLSID_IS={0xDEC4804D,0x56D1,0x4F73,{0x9F,0xBE,0x68,0x28,0xE7,0xC8,0x5C,0x56}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>

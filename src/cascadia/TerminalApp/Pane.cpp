@@ -1044,7 +1044,12 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 
         if (!_bellPlayer)
         {
-            _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+            // The MediaPlayer might not exist on Windows N SKU.
+            try
+            {
+                _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+            }
+            CATCH_LOG();
         }
         if (_bellPlayer)
         {

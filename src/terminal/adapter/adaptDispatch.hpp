@@ -15,9 +15,7 @@ Author(s):
 #pragma once
 
 #include "termDispatch.hpp"
-#include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
-#include "adaptDefaults.hpp"
 #include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
 #include "..\..\types\inc\sgrStack.hpp"
@@ -27,16 +25,10 @@ namespace Microsoft::Console::VirtualTerminal
     class AdaptDispatch : public ITermDispatch
     {
     public:
-        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi,
-                      std::unique_ptr<AdaptDefaults> pDefaults);
+        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi);
 
-        void Execute(const wchar_t wchControl) override
-        {
-            _pDefaults->Execute(wchControl);
-        }
-
-        void PrintString(const std::wstring_view string) override;
         void Print(const wchar_t wchPrintable) override;
+        void PrintString(const std::wstring_view string) override;
 
         bool CursorUp(const size_t distance) override; // CUU
         bool CursorDown(const size_t distance) override; // CUD
@@ -171,25 +163,25 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const;
-        bool _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
+        void _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
                                     const DispatchTypes::EraseType eraseType,
                                     const size_t lineId) const;
-        bool _EraseScrollback();
-        bool _EraseAll();
-        bool _InsertDeleteHelper(const size_t count, const bool isInsert) const;
-        bool _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
+        void _EraseScrollback();
+        void _EraseAll();
+        void _InsertDeleteHelper(const size_t count, const bool isInsert) const;
+        void _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
 
-        bool _DoSetTopBottomScrollingMargins(const size_t topMargin,
+        void _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
-        bool _OperatingStatus() const;
-        bool _CursorPositionReport() const;
+        void _OperatingStatus() const;
+        void _CursorPositionReport() const;
 
-        bool _WriteResponse(const std::wstring_view reply) const;
+        void _WriteResponse(const std::wstring_view reply) const;
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
-        bool _ClearSingleTabStop();
-        bool _ClearAllTabStops() noexcept;
+        void _ClearSingleTabStop();
+        void _ClearAllTabStops() noexcept;
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
 
@@ -200,7 +192,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _initDefaultTabStops = true;
 
         std::unique_ptr<ConGetSet> _pConApi;
-        std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::optional<unsigned int> _initialCodePage;
