@@ -827,13 +827,17 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
+    // Note that the order of initialization is important here. SetUpConsole is
+    // where the TextBuffer is created (ultimately in the SCREEN_INFORMATION
+    // CreateInstance method), and the TextBuffer needs to be constructed with
+    // a reference to the renderer, so the renderer must be created first.
     NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
     {
         return Status;
     }
 
-    // Allow the renderer to paint.
+    // Allow the renderer to paint once the rest of the console is hooked up.
     g.pRender->EnablePainting();
 
     if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
