@@ -153,6 +153,7 @@ public:
     void TriggerRedrawAll();
     void TriggerScroll();
     void TriggerScroll(const COORD delta);
+    void TriggerNewTextNotification(const std::wstring_view newText);
 
     const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;

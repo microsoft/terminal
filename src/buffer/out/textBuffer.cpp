@@ -1015,6 +1015,14 @@ void TextBuffer::TriggerScroll(const COORD delta)
     }
 }
 
+void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerNewTextNotification(newText);
+    }
+}
+
 // Routine Description:
 // - Method to help refresh all the Row IDs after manipulating the row
 //   by shuffling pointers around.

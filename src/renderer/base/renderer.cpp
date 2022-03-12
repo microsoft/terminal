@@ -492,6 +492,14 @@ void Renderer::TriggerTitleChange()
     NotifyPaintFrame();
 }
 
+void Renderer::TriggerNewTextNotification(const std::wstring_view newText)
+{
+    FOREACH_ENGINE(pEngine)
+    {
+        LOG_IF_FAILED(pEngine->NotifyNewText(newText));
+    }
+}
+
 // Routine Description:
 // - Update the title for a particular engine.
 // Arguments:
@@ -684,8 +692,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
     for (const auto& dirtyRect : dirtyAreas)
     {
-        // Shortcut: don't bother redrawing if the width is 0.
-        if (dirtyRect.left == dirtyRect.right)
+        if (!dirtyRect)
         {
             continue;
         }

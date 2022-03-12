@@ -1007,7 +1007,7 @@ namespace winrt::TerminalApp::implementation
         const auto package{ GetCurrentPackageNoThrow() };
         if (package == nullptr)
         {
-            return;
+            co_return;
         }
 
         const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
