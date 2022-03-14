@@ -11,9 +11,11 @@
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
     <ApplicationType>Windows Store</ApplicationType>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <PropertyGroup>
@@ -87,5 +89,8 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
 </Project>

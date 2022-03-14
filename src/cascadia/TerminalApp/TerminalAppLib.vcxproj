@@ -16,8 +16,10 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <ItemDefinitionGroup>
@@ -399,6 +401,7 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />

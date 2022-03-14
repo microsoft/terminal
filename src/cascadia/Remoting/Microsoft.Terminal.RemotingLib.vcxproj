@@ -9,8 +9,10 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -139,5 +141,6 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

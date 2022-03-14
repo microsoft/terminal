@@ -15,9 +15,11 @@
     <WindowsAppContainer>false</WindowsAppContainer>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
     <PgoTarget>true</PgoTarget>
+    <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <ItemDefinitionGroup>
@@ -177,4 +179,6 @@
   </Target>
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
 </Project>

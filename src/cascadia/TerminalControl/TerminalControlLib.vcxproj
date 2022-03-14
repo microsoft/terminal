@@ -21,8 +21,11 @@
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
 
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <!-- ========================= Headers ======================== -->
@@ -140,7 +143,6 @@
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -173,6 +175,7 @@
     </Reference>
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />

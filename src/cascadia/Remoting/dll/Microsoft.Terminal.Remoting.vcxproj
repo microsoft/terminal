@@ -11,8 +11,10 @@
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <PgoTarget>true</PgoTarget>
+    <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -71,4 +73,5 @@
     </Reference>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>

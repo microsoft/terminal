@@ -8,8 +8,10 @@
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <PgoTarget>true</PgoTarget>
+    <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="AzureClientID.h" />
@@ -97,6 +99,8 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <!--
   BODGY:
