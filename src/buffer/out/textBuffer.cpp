@@ -6,6 +6,7 @@
 #include "textBuffer.hpp"
 #include "CharRow.hpp"
 
+#include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
@@ -21,23 +22,26 @@ using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 // Routine Description:
 // - Creates a new instance of TextBuffer
 // Arguments:
-// - fontInfo - The font to use for this text buffer as specified in the global font cache
 // - screenBufferSize - The X by Y dimensions of the new screen buffer
-// - fill - Uses the .Attributes property to decide which default color to apply to all text in this buffer
+// - defaultAttributes - The attributes with which the buffer will be initialized
 // - cursorSize - The height of the cursor within this buffer
+// - isActiveBuffer - Whether this is the currently active buffer
+// - renderer - The renderer to use for triggering a redraw
 // Return Value:
 // - constructed object
 // Note: may throw exception
 TextBuffer::TextBuffer(const COORD screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
-                       Microsoft::Console::Render::IRenderTarget& renderTarget) :
+                       const bool isActiveBuffer,
+                       Microsoft::Console::Render::Renderer& renderer) :
     _firstRow{ 0 },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
     _unicodeStorage{},
-    _renderTarget{ renderTarget },
+    _isActiveBuffer{ isActiveBuffer },
+    _renderer{ renderer },
     _size{},
     _currentHyperlinkId{ 1 },
     _currentPatternId{ 0 }
@@ -387,7 +391,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     // Take the cell distance written and notify that it needs to be repainted.
     const auto written = newIt.GetCellDistance(givenIt);
     const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
-    _NotifyPaint(paint);
+    TriggerRedraw(paint);
 
     return newIt;
 }
@@ -556,7 +560,10 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    _renderTarget.TriggerCircling();
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerCircling();
+    }
 
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();
@@ -825,7 +832,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
-        _NotifyPaint(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
+        TriggerRedraw(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
     }
 }
 
@@ -953,6 +960,69 @@ UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
     return _unicodeStorage;
 }
 
+void TextBuffer::SetAsActiveBuffer(const bool isActiveBuffer) noexcept
+{
+    _isActiveBuffer = isActiveBuffer;
+}
+
+bool TextBuffer::IsActiveBuffer() const noexcept
+{
+    return _isActiveBuffer;
+}
+
+Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
+{
+    return _renderer;
+}
+
+void TextBuffer::TriggerRedraw(const Viewport& viewport)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedraw(viewport);
+    }
+}
+
+void TextBuffer::TriggerRedrawCursor(const COORD position)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedrawCursor(&position);
+    }
+}
+
+void TextBuffer::TriggerRedrawAll()
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedrawAll();
+    }
+}
+
+void TextBuffer::TriggerScroll()
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerScroll();
+    }
+}
+
+void TextBuffer::TriggerScroll(const COORD delta)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerScroll(&delta);
+    }
+}
+
+void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerNewTextNotification(newText);
+    }
+}
+
 // Routine Description:
 // - Method to help refresh all the Row IDs after manipulating the row
 //   by shuffling pointers around.
@@ -989,11 +1059,6 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
     _unicodeStorage.Remap(rowMap, newRowWidth);
 }
 
-void TextBuffer::_NotifyPaint(const Viewport& viewport) const
-{
-    _renderTarget.TriggerRedraw(viewport);
-}
-
 // Routine Description:
 // - Retrieves the first row from the underlying buffer.
 // Arguments:
@@ -1024,17 +1089,6 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 
     THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
     return _storage.at(prevRowIndex);
-}
-
-// Method Description:
-// - Retrieves this buffer's current render target.
-// Arguments:
-// - <none>
-// Return Value:
-// - This buffer's current render target.
-Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcept
-{
-    return _renderTarget;
 }
 
 // Method Description:

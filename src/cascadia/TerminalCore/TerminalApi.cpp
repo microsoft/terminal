@@ -340,7 +340,7 @@ void Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
     }
 
     // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+    _buffer->TriggerRedrawAll();
 }
 
 // Method Description:
@@ -416,7 +416,7 @@ void Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled
     _renderSettings.SetRenderMode(mode, enabled);
 
     // Repaint everything - the colors will have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+    _buffer->TriggerRedrawAll();
 }
 
 void Terminal::EnableXtermBracketedPasteMode(const bool enabled)
