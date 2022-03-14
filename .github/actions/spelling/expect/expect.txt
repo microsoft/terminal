@@ -2575,6 +2575,7 @@ uuidv
 UVWX
 UVWXY
 UWA
+UWAs
 uwp
 uxtheme
 vals
