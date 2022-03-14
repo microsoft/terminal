@@ -27,6 +27,8 @@
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
 
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::ApplicationModel::AppExtensions;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
@@ -235,10 +237,29 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
         }
     }
 
-    // Search through app extensions
-    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings"
-    const auto catalog = winrt::Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(AppExtensionHostName);
-    const auto extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+    // Search through app extensions.
+    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings".
+    //
+    // GH#12305: Open() can throw an 0x80070490 "Element not found.".
+    // It's unclear to me under which circumstances this happens as no one on the team
+    // was able to reproduce the user's issue, even if the application was run unpackaged.
+    // The error originates from `CallerIdentity::GetCallingProcessAppId` which returns E_NOT_SET.
+    // A comment can be found, reading:
+    // > Gets the "strong" AppId from the process token. This works for UWAs and Centennial apps,
+    // > strongly named processes where the AppId is stored securely in the process token. [...]
+    // > E_NOT_SET is returned for processes without strong AppIds.
+    IVectorView<AppExtension> extensions;
+    try
+    {
+        const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
+        extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+    }
+    CATCH_LOG();
+
+    if (!extensions)
+    {
+        return;
+    }
 
     for (const auto& ext : extensions)
     {
