@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "adaptDispatch.hpp"
-#include "conGetSet.hpp"
 #include "../../renderer/base/renderer.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
@@ -26,7 +25,7 @@ bool NoOp() noexcept
     return false;
 }
 
-AdaptDispatch::AdaptDispatch(ConGetSet& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
+AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
     _api{ api },
     _renderer{ renderer },
     _renderSettings{ renderSettings },

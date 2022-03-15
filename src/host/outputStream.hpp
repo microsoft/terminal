@@ -14,7 +14,7 @@ Author:
 
 #pragma once
 
-#include "../terminal/adapter/conGetSet.hpp"
+#include "../terminal/adapter/ITerminalApi.hpp"
 #include "../types/inc/IInputEvent.hpp"
 #include "../inc/conattrs.hpp"
 #include "IIoProvider.hpp"
@@ -24,7 +24,7 @@ Author:
 // the kernelbase/32 exposed public APIs and routed by the console driver (condrv) to this console host.
 // But since we're trying to call them from *inside* the console host itself, we need to get in the way and route them straight to the
 // v-table inside this process instance.
-class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::ConGetSet
+class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::ITerminalApi
 {
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);

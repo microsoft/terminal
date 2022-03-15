@@ -3,11 +3,10 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- conGetSet.hpp
+- ITerminalApi.hpp
 
 Abstract:
-- This serves as an abstraction layer for the adapters to connect to the console API functions.
-- The abstraction allows for the substitution of the functions for internal/external to Conhost.exe use as well as easy testing.
+- This serves as an abstraction layer for the dispatch class to connect to conhost/terminal API functions.
 
 Author(s):
 - Michael Niksa (MiNiksa) 30-July-2015
@@ -20,19 +19,18 @@ Author(s):
 #include "../../buffer/out/LineRendition.hpp"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/RenderSettings.hpp"
-#include "../../inc/conattrs.hpp"
 
 #include <deque>
 #include <memory>
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    class ConGetSet
+    class ITerminalApi
     {
         using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
     public:
-        virtual ~ConGetSet() = default;
+        virtual ~ITerminalApi() = default;
 
         virtual void PrintString(const std::wstring_view string) = 0;
 

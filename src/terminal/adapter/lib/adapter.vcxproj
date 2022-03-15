@@ -28,7 +28,7 @@
     <ClInclude Include="..\DispatchTypes.hpp" />
     <ClInclude Include="..\FontBuffer.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
-    <ClInclude Include="..\conGetSet.hpp" />
+    <ClInclude Include="..\ITerminalApi.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\terminalOutput.hpp" />

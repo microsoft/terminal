@@ -57,7 +57,7 @@ enum class AbsolutePosition : Microsoft::Console::VirtualTerminal::VTInt
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-class TestGetSet final : public ConGetSet
+class TestGetSet final : public ITerminalApi
 {
 public:
     void PrintString(const std::wstring_view /*string*/) override

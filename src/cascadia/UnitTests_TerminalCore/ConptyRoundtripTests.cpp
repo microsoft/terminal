@@ -238,7 +238,7 @@ private:
     std::deque<std::string> expectedOutput;
 
     std::unique_ptr<CommonState> m_state;
-    std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+    std::unique_ptr<Microsoft::Console::VirtualTerminal::ITerminalApi> _pConApi;
 
     // Tests can set these variables how they link to configure the behavior of the test harness.
     bool _checkConptyOutput{ true }; // If true, the test class will check that the output from conpty was expected

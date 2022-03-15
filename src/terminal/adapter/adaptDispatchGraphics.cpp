@@ -4,7 +4,6 @@
 #include <precomp.h>
 
 #include "adaptDispatch.hpp"
-#include "conGetSet.hpp"
 #include "../../types/inc/utils.hpp"
 
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
