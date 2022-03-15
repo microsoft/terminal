@@ -35,6 +35,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* pForcePaint) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept override;
+        [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, size_t targetRow, size_t viewportLeft) noexcept override;
@@ -376,6 +377,7 @@ namespace Microsoft::Console::Render
 
         struct FontMetrics
         {
+            wil::com_ptr<IDWriteFontCollection> fontCollection;
             wil::unique_process_heap_string fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
@@ -563,7 +565,7 @@ namespace Microsoft::Console::Render
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
-            alignas(sizeof(u32)) u32 useClearType = 0;
+            alignas(sizeof(u32)) bool useClearType = 0;
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -615,7 +617,8 @@ namespace Microsoft::Console::Render
 
         // AtlasEngine.api.cpp
         void _resolveAntialiasingMode() noexcept;
-        void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
+        void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
+        void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
         void _setShaderResources() const;

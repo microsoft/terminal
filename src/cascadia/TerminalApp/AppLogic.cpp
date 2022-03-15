@@ -348,7 +348,11 @@ namespace winrt::TerminalApp::implementation
         }
 
         _dialog = dialog;
-
+        // GH#12622: After the dialog is displayed, always clear it out. If we
+        // don't, we won't be able to display another!
+        const auto cleanup = wil::scope_exit([this]() {
+            _dialog = nullptr;
+        });
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
         // Since we're hosting the dialog in a Xaml island, we need to connect it to the
         // xaml tree somehow.
@@ -1003,7 +1007,7 @@ namespace winrt::TerminalApp::implementation
         const auto package{ GetCurrentPackageNoThrow() };
         if (package == nullptr)
         {
-            return;
+            co_return;
         }
 
         const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();

@@ -2084,6 +2084,7 @@ rxvt
 safearray
 SAFECAST
 safemath
+sapi
 sba
 SBCS
 SBCSDBCS
@@ -2574,6 +2575,7 @@ uuidv
 UVWX
 UVWXY
 UWA
+UWAs
 uwp
 uxtheme
 vals

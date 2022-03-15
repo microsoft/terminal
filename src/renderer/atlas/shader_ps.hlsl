@@ -48,7 +48,7 @@ cbuffer ConstBuffer : register(b0)
     uint backgroundColor;
     uint cursorColor;
     uint selectionColor;
-    uint useClearType;
+    bool useClearType;
 };
 StructuredBuffer<Cell> cells : register(t0);
 Texture2D<float4> glyphs : register(t1);
@@ -76,17 +76,12 @@ float4 alphaBlendPremultiplied(float4 bottom, float4 top)
 float4 main(float4 pos: SV_Position): SV_Target
 // clang-format on
 {
-    if (any(pos.xy < viewport.xy) || any(pos.xy >= viewport.zw))
+    // We need to fill the entire render target with pixels, but only our "viewport"
+    // has cells we want to draw. The rest gets treated with the background color.
+    [branch] if (any(pos.xy < viewport.xy || pos.xy >= viewport.zw))
     {
         return decodeRGBA(backgroundColor);
     }
-
-    // If you want to write test a before/after change simultaneously
-    // you can turn the image into a checkerboard by writing:
-    //   if ((uint(pos.x) ^ uint(pos.y)) / 4 & 1) { return float4(1, 0, 0, 1); }
-    // This will generate a checkerboard of 4*4px red squares.
-    // Of course you wouldn't just return a red color there, but instead
-    // for instance run your new code and compare it with the old.
 
     uint2 viewportPos = pos.xy - viewport.xy;
     uint2 cellIndex = viewportPos / cellSize;
@@ -100,45 +95,69 @@ float4 main(float4 pos: SV_Position): SV_Target
 
     // Layer 1 (optional):
     // Colored cursors are drawn "in between" the background color and the text of a cell.
-    if ((cell.flags & CellFlags_Cursor) && cursorColor != INVALID_COLOR)
+    [branch] if (cell.flags & CellFlags_Cursor)
     {
-        // The cursor texture is stored at the top-left-most glyph cell.
-        // Cursor pixels are either entirely transparent or opaque.
-        // --> We can just use .a as a mask to flip cursor pixels on or off.
-        color = alphaBlendPremultiplied(color, decodeRGBA(cursorColor) * glyphs[cellPos].a);
+        [flatten] if (cursorColor != INVALID_COLOR)
+        {
+            // The cursor texture is stored at the top-left-most glyph cell.
+            // Cursor pixels are either entirely transparent or opaque.
+            // --> We can just use .a as a mask to flip cursor pixels on or off.
+            color = alphaBlendPremultiplied(color, decodeRGBA(cursorColor) * glyphs[cellPos].a);
+        }
     }
 
     // Layer 2:
     // Step 1: Underlines
-    if ((cell.flags & CellFlags_Underline) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y)
+    [branch] if (cell.flags & CellFlags_Underline)
     {
-        color = alphaBlendPremultiplied(color, fg);
+        [flatten] if (cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y)
+        {
+            color = alphaBlendPremultiplied(color, fg);
+        }
     }
-    if ((cell.flags & CellFlags_UnderlineDotted) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 3) == 0)
+    [branch] if (cell.flags & CellFlags_UnderlineDotted)
     {
-        color = alphaBlendPremultiplied(color, fg);
+        [flatten] if (cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 3) == 0)
+        {
+            color = alphaBlendPremultiplied(color, fg);
+        }
     }
     // Step 2: The cell's glyph, potentially drawn in the foreground color
     {
         float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
 
-        if (cell.flags & CellFlags_ColoredGlyph)
+        [branch] if (cell.flags & CellFlags_ColoredGlyph)
         {
             color = alphaBlendPremultiplied(color, glyph);
         }
-        else if (useClearType)
-        {
-            color = DWrite_CleartypeBlend(gammaRatios, enhancedContrast, false, color, fg, glyph);
-        }
         else
         {
-            color = alphaBlendPremultiplied(color, DWrite_GrayscaleBlend(gammaRatios, enhancedContrast, false, fg, glyph.a));
+            float3 foregroundStraight = DWrite_UnpremultiplyColor(fg);
+            float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, foregroundStraight);
+
+            [branch] if (useClearType)
+            {
+                // See DWrite_ClearTypeBlend
+                float3 contrasted = DWrite_EnhanceContrast3(glyph.rgb, blendEnhancedContrast);
+                float3 alphaCorrected = DWrite_ApplyAlphaCorrection3(contrasted, foregroundStraight, gammaRatios);
+                color = float4(lerp(color.rgb, foregroundStraight, alphaCorrected * fg.a), 1.0f);
+            }
+            else
+            {
+                // See DWrite_GrayscaleBlend
+                float intensity = DWrite_CalcColorIntensity(foregroundStraight);
+                float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
+                color = fg * DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+            }
         }
     }
     // Step 3: Lines, but not "under"lines
-    if ((cell.flags & CellFlags_Strikethrough) && cellPos.y >= strikethroughPos.x && cellPos.y < strikethroughPos.y)
+    [branch] if (cell.flags & CellFlags_Strikethrough)
     {
-        color = alphaBlendPremultiplied(color, fg);
+        [flatten] if (cellPos.y >= strikethroughPos.x && cellPos.y < strikethroughPos.y)
+        {
+            color = alphaBlendPremultiplied(color, fg);
+        }
     }
 
     // Layer 3 (optional):
@@ -153,7 +172,7 @@ float4 main(float4 pos: SV_Position): SV_Target
 
     // Layer 4:
     // The current selection is drawn semi-transparent on top.
-    if (cell.flags & CellFlags_Selected)
+    [branch] if (cell.flags & CellFlags_Selected)
     {
         color = alphaBlendPremultiplied(color, decodeRGBA(selectionColor));
     }

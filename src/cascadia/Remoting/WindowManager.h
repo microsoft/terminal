@@ -82,6 +82,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _waitOnMonarchThread();
         void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                              const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+
+        void _proposeToMonarch(const Remoting::CommandlineArgs& args,
+                               std::optional<uint64_t>& givenID,
+                               winrt::hstring& givenName);
     };
 }
 

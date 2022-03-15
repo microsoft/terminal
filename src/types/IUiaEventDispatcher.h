@@ -23,5 +23,6 @@ namespace Microsoft::Console::Types
         virtual void SignalSelectionChanged() = 0;
         virtual void SignalTextChanged() = 0;
         virtual void SignalCursorChanged() = 0;
+        virtual void NotifyNewOutput(std::wstring_view newOutput) = 0;
     };
 }

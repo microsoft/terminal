@@ -33,5 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+        WINRT_PROPERTY(bool, FocusDeleteButton, false);
     };
 };
