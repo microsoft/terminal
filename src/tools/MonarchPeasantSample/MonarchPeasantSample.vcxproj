@@ -56,10 +56,6 @@
     <Midl Include="SamplePeasant.idl" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-
   <!-- Dependencies -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />

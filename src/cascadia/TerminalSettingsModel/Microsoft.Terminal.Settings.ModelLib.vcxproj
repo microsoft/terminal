@@ -9,7 +9,10 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalVisualStudioSetup>true</TerminalVisualStudioSetup>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -278,7 +281,6 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets'))" />
   </Target>
   <!-- This target will take our defaults.json and stamp it into a .h file that
   we can include in the code directly. This way, we don't need to worry about
@@ -295,6 +297,5 @@
     <Exec Command="pwsh.exe -NoProfile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.h&quot; -VariableName UserSettingsJson" />
   </Target>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
-  <Import Project="..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="Exists('..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
 
 </Project>

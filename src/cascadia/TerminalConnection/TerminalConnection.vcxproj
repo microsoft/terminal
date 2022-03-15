@@ -65,7 +65,6 @@
       <SubType>Designer</SubType>
     </PRIResource>
     <OCResourceDirectory Include="Resources" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

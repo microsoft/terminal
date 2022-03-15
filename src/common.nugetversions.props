@@ -14,6 +14,29 @@
     <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002</TAEFPackagePathRoot>
   </PropertyGroup>
 
-  <!-- CppRestSDK -->
-
+  <!-- AppiumWebDriver -->
+  <PropertyGroup>
+    <AppiumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Appium.WebDriver.3.0.0.2</AppiumWebDriverPathRoot>
+  </PropertyGroup>
+  
+  <!-- CastleCore -->
+  <PropertyGroup>
+    <CastleCorePathRoot>$(MSBuildThisFileDirectory)..\packages\Castle.Core.4.1.1</CastleCorePathRoot>
+  </PropertyGroup>
+  
+  <!-- NewtonsoftJSON -->
+  <PropertyGroup>
+    <NewtonsoftJSONPathRoot>$(MSBuildThisFileDirectory)..\packages\Newtonsoft.Json.12.0.3</NewtonsoftJSONPathRoot>
+  </PropertyGroup>
+  
+  <!-- SeleniumWebDriver -->
+  <PropertyGroup>
+    <SeleniumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Selenium.WebDriver.3.5.0</SeleniumWebDriverPathRoot>
+  </PropertyGroup>
+  
+  <!-- SeleniumSupport -->
+  <PropertyGroup>
+    <SeleniumSupportPathRoot>$(MSBuildThisFileDirectory)..\packages\Selenium.Support.3.5.0</SeleniumSupportPathRoot>
+  </PropertyGroup>
+  
 </Project>

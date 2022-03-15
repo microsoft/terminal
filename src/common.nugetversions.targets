@@ -17,6 +17,15 @@
     <!-- CppRestSDK -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets" Condition="'$(TerminalCppRestSDK)' == 'true'" />
 
+    <!-- VCRTForwarders -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="'$(TerminalVCRTForwarders)' == 'true'" />
+
+    <!-- TerminalThemeHelpers -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="'$(TerminalThemeHelpers)' == 'true'" />
+
+    <!-- VisualStudioSetup -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="'$(TerminalVisualStudioSetup)' == 'true'" />
+
   </ImportGroup>
 
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -41,6 +50,15 @@
 
     <!-- CppRestSDK -->
     <Error Condition="'$(TerminalCppRestSDK)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets'))" />
+
+    <!-- VCRTForwarders -->
+    <Error Condition="'$(TerminalVCRTForwarders)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />
+
+    <!-- TerminalThemeHelpers -->
+    <Error Condition="'$(TerminalThemeHelpers)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />
+
+    <!-- VisualStudioSetup -->
+    <Error Condition="'$(TerminalVisualStudioSetup)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets'))" />
 
   </Target>
 

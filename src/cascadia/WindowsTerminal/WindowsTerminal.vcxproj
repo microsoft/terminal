@@ -19,6 +19,8 @@
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
+    <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -140,14 +142,11 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />
   </Target>
 
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
@@ -178,7 +177,6 @@
 
   </Target>
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-  <Import Project="..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.5.220218001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
 </Project>
