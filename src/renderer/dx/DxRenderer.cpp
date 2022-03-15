@@ -187,11 +187,7 @@ DxEngine::~DxEngine()
 // - entry - Entry function of shader
 // Return Value:
 // - Compiled binary. Errors are thrown and logged.
-inline Microsoft::WRL::ComPtr<ID3DBlob>
-_CompileShader(
-    std::string source,
-    std::string target,
-    std::string entry = "main")
+static Microsoft::WRL::ComPtr<ID3DBlob> _CompileShader(const std::string_view& source, const char* target)
 {
 #if !TIL_FEATURE_DXENGINESHADERSUPPORT_ENABLED
     THROW_HR(E_UNEXPECTED);
@@ -201,24 +197,24 @@ _CompileShader(
     Microsoft::WRL::ComPtr<ID3DBlob> error{};
 
     const HRESULT hr = D3DCompile(
-        source.c_str(),
+        source.data(),
         source.size(),
         nullptr,
         nullptr,
         nullptr,
-        entry.c_str(),
-        target.c_str(),
-        0,
+        "main",
+        target,
+        D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_OPTIMIZATION_LEVEL3,
         0,
         &code,
         &error);
 
     if (FAILED(hr))
     {
-        LOG_HR_MSG(hr, "D3DCompile failed with %x.", static_cast<int>(hr));
+        LOG_HR_MSG(hr, "D3DCompile failed with %08x", hr);
         if (error)
         {
-            LOG_HR_MSG(hr, "D3DCompile error\n%*S", static_cast<int>(error->GetBufferSize()), static_cast<PWCHAR>(error->GetBufferPointer()));
+            LOG_HR_MSG(hr, "D3DCompile error\n%S", static_cast<const char*>(error->GetBufferPointer()));
         }
 
         THROW_HR(hr);
@@ -351,15 +347,33 @@ HRESULT DxEngine::_SetupTerminalEffects()
     vp.TopLeftY = 0;
     _d3dDeviceContext->RSSetViewports(1, &vp);
 
+    const char* shaderTargetVS = nullptr;
+    const char* shaderTargetPS = nullptr;
+    switch (_d3dDevice->GetFeatureLevel())
+    {
+    case D3D_FEATURE_LEVEL_10_0:
+        shaderTargetVS = "vs_4_0";
+        shaderTargetPS = "ps_4_0";
+        break;
+    case D3D_FEATURE_LEVEL_10_1:
+        shaderTargetVS = "vs_4_1";
+        shaderTargetPS = "ps_4_1";
+        break;
+    default:
+        shaderTargetVS = "vs_5_0";
+        shaderTargetPS = "ps_5_0";
+        break;
+    }
+
     // Prepare shaders.
-    auto vertexBlob = _CompileShader(screenVertexShaderString, "vs_5_0");
+    auto vertexBlob = _CompileShader(&screenVertexShaderString[0], shaderTargetVS);
     Microsoft::WRL::ComPtr<ID3DBlob> pixelBlob;
     // As the pixel shader source is user provided it's possible there's a problem with it
     //  so load it inside a try catch, on any error log and fallback on the error pixel shader
     //  If even the error pixel shader fails to load rely on standard exception handling
     try
     {
-        pixelBlob = _CompileShader(pixelShaderSource, "ps_5_0");
+        pixelBlob = _CompileShader(pixelShaderSource, shaderTargetPS);
     }
     catch (...)
     {
@@ -542,11 +556,12 @@ try
                               // D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-    const std::array<D3D_FEATURE_LEVEL, 5> FeatureLevels{ D3D_FEATURE_LEVEL_11_1,
-                                                          D3D_FEATURE_LEVEL_11_0,
-                                                          D3D_FEATURE_LEVEL_10_1,
-                                                          D3D_FEATURE_LEVEL_10_0,
-                                                          D3D_FEATURE_LEVEL_9_1 };
+    static constexpr std::array FeatureLevels{
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0,
+    };
 
     // Trying hardware first for maximum performance, then trying WARP (software) renderer second
     // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
