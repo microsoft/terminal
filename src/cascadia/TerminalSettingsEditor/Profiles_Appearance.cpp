@@ -56,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // so wait for it to initialize before updating the settings (so we know
         // that the renderer is set up)
         _previewControl.Initialized([&](auto&& /*s*/, auto&& /*e*/) {
+            _previewControl.Settings(_Profile.TermSettings());
             _previewControl.UpdateSettings();
         });
     }
