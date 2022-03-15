@@ -14,4 +14,6 @@
     <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002</TAEFPackagePathRoot>
   </PropertyGroup>
 
+  <!-- CppRestSDK -->
+
 </Project>

@@ -13,6 +13,9 @@
 
     <!-- TAEF -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true'" />
+    
+    <!-- CppRestSDK -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets" Condition="'$(TerminalCppRestSDK)' == 'true'" />
 
   </ImportGroup>
 
@@ -35,6 +38,10 @@
 
     <!-- TAEF -->
     <Error Condition="'$(TerminalTAEF)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets'))" />
+
+    <!-- CppRestSDK -->
+    <Error Condition="'$(TerminalCppRestSDK)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets'))" />
+
   </Target>
 
 </Project>
