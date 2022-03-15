@@ -2325,14 +2325,19 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // From where we are in the old buffer, to the end of the row, copy the
         // remaining attributes.
         // - if the old buffer is smaller than the new buffer, then just copy
-        //   what we have. as it was. The last attr in the row will be extended
-        //   to the end of the row in the new buffer.
-        // - if the old buffer is BIGGER, than we might have wrapped onto a new
+        //   what we have, as it was. We already copied all _text_ with colors,
+        //   but it's possible for someone to just put some color into the
+        //   buffer to the right of that without any text (as just spaces). The
+        //   buffer looks weird to the user when we resize and it starts losing
+        //   those colors, so we need to copy them over too... as long as there
+        //   is space. The last attr in the row will be extended to the end of
+        //   the row in the new buffer.
+        // - if the old buffer is WIDER, than we might have wrapped onto a new
         //   line. Use the cursor's position's Y so that we know where the new
-        //   row is, and start writing st the cursor position. Again, the attr
+        //   row is, and start writing at the cursor position. Again, the attr
         //   in the last column of the old row will be extended to the end of the
         //   row that the text was flowed onto.
-        //   - if we the text in the old buffer didn't actually fill the whole
+        //   - if the text in the old buffer didn't actually fill the whole
         //     line in the new buffer, then we didn't wrap. That's fine. just
         //     copy attributes from the old row till the end of the new row, and
         //     move on.
@@ -2359,9 +2364,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
             newAttrColumn++;
         }
-        // FOR DISCUSSION: Maybe also try to leave a
-        // default-attributes-to-the-end attr here, for the case where the line
-        // had color, then flowed onto the subsequent row.
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
