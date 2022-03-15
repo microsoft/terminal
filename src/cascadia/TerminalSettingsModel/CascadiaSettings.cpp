@@ -31,6 +31,8 @@ using namespace Microsoft::Console;
 // which is why this unsafety wasn't further abstracted away.
 winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
+    // If you add more fields here, make sure to do the same in
+    // SettingsLoader::_addUserProfileParent().
     auto profile = winrt::make_self<Profile>();
     profile->Origin(OriginTag::User);
     profile->Name(parent->Name());
