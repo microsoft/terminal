@@ -19,7 +19,7 @@
     <TargetName>SettingsModel.LocalTests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
-    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <!-- TerminalCppWinrt is not set intentionally -->
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
