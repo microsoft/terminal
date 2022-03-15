@@ -94,11 +94,17 @@
     </Page.Resources>
 
     <ScrollViewer ViewChanging="ViewChanging">
-        <StackPanel Margin="{StaticResource StandardIndentMargin}"
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 
+            <TextBlock x:Uid="ColorSchemesDisclaimer"
+                       Margin="{StaticResource StandardIndentMargin}"
+                       Style="{StaticResource DisclaimerStyle}" />
+
             <!--  Select Color and Add New Button  -->
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Margin="0,5,0,0"
+                        Orientation="Horizontal">
 
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsRenaming), Mode=OneWay}">

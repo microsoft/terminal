@@ -158,7 +158,6 @@ namespace winrt::TerminalApp::implementation
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const auto res = Application::Current().Resources();
-
             const auto lightKey = winrt::box_value(L"Light");
             const auto darkKey = winrt::box_value(L"Dark");
             const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
@@ -562,10 +561,7 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            presenter.ShowDialog(FindName(L"AboutDialog").try_as<WUX::Controls::ContentDialog>());
-        }
+        _ShowDialogHelper(L"AboutDialog");
     }
 
     winrt::hstring TerminalPage::ApplicationDisplayName()
@@ -585,6 +581,33 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
+    // Method description:
+    // - Called when the user closes a content dialog
+    // - Tells the presenter to update its knowledge of whether there is a content dialog open
+    void TerminalPage::_DialogCloseClick(const IInspectable&,
+                                         const ContentDialogButtonClickEventArgs&)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.DismissDialog();
+        }
+    }
+
+    // Method Description:
+    // - Helper to show a content dialog
+    // - We only open a content dialog if there isn't one open already
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowDialogHelper(const std::wstring_view& name)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            if (presenter.CanShowDialog())
+            {
+                co_return co_await presenter.ShowDialog(FindName(name).try_as<WUX::Controls::ContentDialog>());
+            }
+        }
+        co_return ContentDialogResult::None;
+    }
+
     // Method Description:
     // - Displays a dialog to warn the user that they are about to close all open windows.
     //   Once the user clicks the OK button, shut down the application.
@@ -593,11 +616,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"QuitDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"QuitDialog");
     }
 
     // Method Description:
@@ -609,22 +628,14 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"CloseAllDialog");
     }
 
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"CloseReadOnlyDialog");
     }
 
     // Method Description:
@@ -637,11 +648,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowMultiLinePasteWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"MultiLinePasteDialog");
     }
 
     // Method Description:
@@ -652,11 +659,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
+        return _ShowDialogHelper(L"LargePasteDialog");
     }
 
     // Method Description:
@@ -784,7 +787,7 @@ namespace winrt::TerminalApp::implementation
 
                 WUX::Controls::FontIcon commandPaletteIcon{};
                 commandPaletteIcon.Glyph(L"\xE945");
-                commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+                commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
                 commandPaletteFlyout.Icon(commandPaletteIcon);
 
                 commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
