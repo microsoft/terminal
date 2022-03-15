@@ -347,8 +347,8 @@ HRESULT DxEngine::_SetupTerminalEffects()
     vp.TopLeftY = 0;
     _d3dDeviceContext->RSSetViewports(1, &vp);
 
-    const char* shaderTargetVS;
-    const char* shaderTargetPS;
+    const char* shaderTargetVS = nullptr;
+    const char* shaderTargetPS = nullptr;
     switch (_d3dDevice->GetFeatureLevel())
     {
     case D3D_FEATURE_LEVEL_10_0:
@@ -366,7 +366,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     }
 
     // Prepare shaders.
-    auto vertexBlob = _CompileShader(screenVertexShaderString, shaderTargetVS);
+    auto vertexBlob = _CompileShader(&screenVertexShaderString[0], shaderTargetVS);
     Microsoft::WRL::ComPtr<ID3DBlob> pixelBlob;
     // As the pixel shader source is user provided it's possible there's a problem with it
     //  so load it inside a try catch, on any error log and fallback on the error pixel shader
