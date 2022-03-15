@@ -164,6 +164,36 @@ bool AdaptDispatch::CursorPrevLine(const size_t distance)
 }
 
 // Routine Description:
+// - Returns the coordinates of the vertical scroll margins.
+// Arguments:
+// - viewport - The viewport rect (exclusive).
+// - absolute - Should coordinates be absolute or relative to the viewport.
+// Return Value:
+// - A std::pair containing the top and bottom coordinates (inclusive).
+std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const SMALL_RECT viewport, const bool absolute)
+{
+    // If the top is out of range, reset the margins completely.
+    const auto bottommostRow = viewport.Bottom - viewport.Top - 1;
+    if (_scrollMargins.Top >= bottommostRow)
+    {
+        _scrollMargins.Top = _scrollMargins.Bottom = 0;
+        _pConApi->SetScrollingRegion(_scrollMargins);
+    }
+    // If margins aren't set, use the full extent of the viewport.
+    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
+    auto topMargin = marginsSet ? _scrollMargins.Top : 0;
+    auto bottomMargin = marginsSet ? _scrollMargins.Bottom : bottommostRow;
+    // If the bottom is out of range, clamp it to the bottommost row.
+    bottomMargin = std::min(bottomMargin, bottommostRow);
+    if (absolute)
+    {
+        topMargin += viewport.Top;
+        bottomMargin += viewport.Top;
+    }
+    return { topMargin, bottomMargin };
+}
+
+// Routine Description:
 // - Generalizes cursor movement to a specific position, which can be absolute or relative.
 // Arguments:
 // - rowOffset - The row to move to
@@ -171,18 +201,14 @@ bool AdaptDispatch::CursorPrevLine(const size_t distance)
 // - clampInMargins - Should the position be clamped within the scrolling margins
 // Return Value:
 // - True.
-bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const
+bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins)
 {
     // First retrieve some information about the buffer
     const auto viewport = _pConApi->GetViewport();
     auto& textBuffer = _pConApi->GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto cursorPosition = cursor.GetPosition();
-
-    // Calculate the absolute margins of the scrolling area.
-    const int topMargin = viewport.Top + _scrollMargins.Top;
-    const int bottomMargin = viewport.Top + _scrollMargins.Bottom;
-    const bool marginsSet = topMargin < bottomMargin;
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
@@ -212,7 +238,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
     // may need to be adjusted further.
-    if (marginsSet && (clampInMargins || _isOriginModeRelative))
+    if (clampInMargins || _isOriginModeRelative)
     {
         // See microsoft/terminal#2929 - If the cursor is _below_ the top
         // margin, it should stay below the top margin. If it's _above_ the
@@ -348,12 +374,14 @@ bool AdaptDispatch::CursorRestoreState()
     auto row = savedCursorState.Row;
     const auto col = savedCursorState.Column;
 
-    // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
-    // we need to make sure the restored position is clamped within the margins.
-    if (savedCursorState.IsOriginModeRelative && _scrollMargins.Bottom != 0)
+    // If the origin mode is relative, we need to make sure the restored
+    // position is clamped within the margins.
+    if (savedCursorState.IsOriginModeRelative)
     {
+        const auto viewport = _pConApi->GetViewport();
+        const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
         // VT origin is at 1,1 so we need to add 1 to these margins.
-        row = std::clamp(row, _scrollMargins.Top + 1u, _scrollMargins.Bottom + 1u);
+        row = std::clamp(row, topMargin + 1u, bottomMargin + 1u);
     }
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
@@ -804,7 +832,7 @@ void AdaptDispatch::_OperatingStatus() const
 // - <none>
 // Return Value:
 // - <none>
-void AdaptDispatch::_CursorPositionReport() const
+void AdaptDispatch::_CursorPositionReport()
 {
     const auto viewport = _pConApi->GetViewport();
     const auto& textBuffer = _pConApi->GetTextBuffer();
@@ -822,7 +850,8 @@ void AdaptDispatch::_CursorPositionReport() const
     // If the origin mode is relative, line numbers start at top margin of the scrolling region.
     if (_isOriginModeRelative)
     {
-        cursorPosition.Y -= _scrollMargins.Top;
+        const auto topMargin = _GetVerticalMargins(viewport, false).first;
+        cursorPosition.Y -= gsl::narrow_cast<short>(topMargin);
     }
 
     // Now send it back into the input channel of the console.
@@ -874,14 +903,8 @@ void AdaptDispatch::_ScrollMovement(const int32_t delta)
     const auto viewport = _pConApi->GetViewport();
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
-
-    // Calculate the absolute margins of the scrolling area.
-    // If margins aren't set, we use the full viewport.
-    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
-    const auto topMargin = marginsSet ? viewport.Top + _scrollMargins.Top : viewport.Top;
-    const auto bottomMargin = marginsSet ? viewport.Top + _scrollMargins.Bottom + 1 : viewport.Bottom;
-
-    _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin }, delta);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, delta);
 }
 
 // Routine Description:
@@ -1152,17 +1175,13 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
     const auto bufferWidth = textBuffer.GetSize().Width();
 
     auto& cursor = textBuffer.GetCursor();
-    const auto relativeRow = cursor.GetPosition().Y - viewport.Top;
+    const auto row = cursor.GetPosition().Y;
 
-    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
-    const auto rowInMargins = relativeRow >= _scrollMargins.Top && relativeRow <= _scrollMargins.Bottom;
-    if (!marginsSet || rowInMargins)
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    if (row >= topMargin && row <= bottomMargin)
     {
         // We emulate inserting and deleting by scrolling the area between the cursor and the bottom margin.
-        // If margins aren't set, the area extends to the bottom of the viewport.
-        const auto top = cursor.GetPosition().Y;
-        const auto bottom = marginsSet ? viewport.Top + _scrollMargins.Bottom + 1 : viewport.Bottom;
-        _ScrollRectVertically(textBuffer, { 0, top, bufferWidth, bottom }, delta);
+        _ScrollRectVertically(textBuffer, { 0, row, bufferWidth, bottomMargin + 1 }, delta);
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
@@ -1414,19 +1433,14 @@ bool AdaptDispatch::ReverseLineFeed()
     auto& textBuffer = _pConApi->GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto cursorPosition = cursor.GetPosition();
-
-    // Calculate the absolute margins of the scrolling area.
-    // If margins aren't set, we use the full viewport.
-    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
-    const auto topMargin = marginsSet ? viewport.Top + _scrollMargins.Top : viewport.Top;
-    const auto bottomMargin = marginsSet ? viewport.Top + _scrollMargins.Bottom + 1 : viewport.Bottom;
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
 
     // If the cursor is at the top of the margin area, we shift the buffer
     // contents down, to emulate inserting a line at that point.
     if (cursorPosition.Y == topMargin)
     {
         const auto bufferWidth = textBuffer.GetSize().Width();
-        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin }, 1);
+        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, 1);
     }
     else if (cursorPosition.Y > viewport.Top)
     {
@@ -2506,7 +2520,7 @@ void AdaptDispatch::_ReportSGRSetting() const
 // - None
 // Return Value:
 // - None
-void AdaptDispatch::_ReportDECSTBMSetting() const
+void AdaptDispatch::_ReportDECSTBMSetting()
 {
     using namespace std::string_view_literals;
 
@@ -2514,18 +2528,10 @@ void AdaptDispatch::_ReportDECSTBMSetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    auto marginTop = _scrollMargins.Top + 1;
-    auto marginBottom = _scrollMargins.Bottom + 1;
-    // If the margin top is greater than or equal to the bottom, then the
-    // margins aren't actually set, so we need to return the full height
-    // of the window for the margin range.
-    if (marginTop >= marginBottom)
-    {
-        const auto viewport = _pConApi->GetViewport();
-        marginTop = 1;
-        marginBottom = viewport.Bottom - viewport.Top;
-    }
-    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop, marginBottom);
+    const auto viewport = _pConApi->GetViewport();
+    const auto [marginTop, marginBottom] = _GetVerticalMargins(viewport, false);
+    // VT origin is at 1,1 so we need to add 1 to these margins.
+    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop + 1, marginBottom + 1);
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);

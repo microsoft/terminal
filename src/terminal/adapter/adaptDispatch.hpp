@@ -166,7 +166,8 @@ namespace Microsoft::Console::VirtualTerminal
             static constexpr Offset Unchanged() { return Forward(0); };
         };
 
-        bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const;
+        std::pair<int, int> _GetVerticalMargins(const SMALL_RECT viewport, const bool absolute);
+        bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _FillRect(TextBuffer& textBuffer, const til::rect fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _EraseScrollback();
         void _EraseAll();
@@ -179,7 +180,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
         void _OperatingStatus() const;
-        void _CursorPositionReport() const;
+        void _CursorPositionReport();
 
         void _WriteResponse(const std::wstring_view reply) const;
         bool _GetParserMode(const StateMachine::Mode mode) const;
@@ -194,7 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _InitTabStopsForWidth(const size_t width);
 
         void _ReportSGRSetting() const;
-        void _ReportDECSTBMSetting() const;
+        void _ReportDECSTBMSetting();
 
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
