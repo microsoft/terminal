@@ -185,7 +185,7 @@ void SettingsLoader::MergeInboxIntoUserSettings()
 {
     for (const auto& profile : inboxSettings.profiles)
     {
-        _addParentProfile(profile, userSettings);
+        _addUserProfileParent(profile);
     }
 }
 
@@ -314,7 +314,17 @@ void SettingsLoader::FinalizeLayering()
     for (const auto& profile : userSettings.profiles)
     {
         profile->AddMostImportantParent(userSettings.baseLayerProfile);
+
+        // This completes the parenting process that was started in _addUserProfileParent().
         profile->_FinalizeInheritance();
+        if (profile->Origin() == OriginTag::None)
+        {
+            // If you add more fields here, make sure to do the same in
+            // implementation::CreateChild().
+            profile->Origin(OriginTag::User);
+            profile->Name(profile->Name());
+            profile->Hidden(profile->Hidden());
+        }
     }
 }
 
@@ -550,7 +560,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
         else
         {
-            _addParentProfile(fragmentProfile, userSettings);
+            _addUserProfileParent(fragmentProfile);
         }
     }
 
@@ -613,9 +623,9 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const win
 
 // If the given ParsedSettings instance contains a profile with the given profile's GUID,
 // the profile is added as a parent. Otherwise a new child profile is created.
-void SettingsLoader::_addParentProfile(const winrt::com_ptr<implementation::Profile>& profile, ParsedSettings& settings)
+void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile)
 {
-    if (const auto [it, inserted] = settings.profilesByGuid.emplace(profile->Guid(), profile); !inserted)
+    if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), nullptr); !inserted)
     {
         // If inserted is false, we got a matching user profile with identical GUID.
         // --> The generated profile is a parent of the existing user profile.
@@ -623,14 +633,36 @@ void SettingsLoader::_addParentProfile(const winrt::com_ptr<implementation::Prof
     }
     else
     {
-        // If inserted is true, then this is a generated profile that doesn't exist in the user's settings.
-        // While emplace() has already created an appropriate entry in .profilesByGuid, we still need to
-        // add it to .profiles (which is basically a sorted list of .profilesByGuid's values).
+        // If inserted is true, then this is a generated profile that doesn't exist
+        // in the user's settings (which makes this branch somewhat unlikely).
         //
         // When a user modifies a profile they shouldn't modify the (static/constant)
-        // inbox profile of course. That's why we need to call CreateChild here.
-        // But we don't need to call _FinalizeInheritance() yet as this is handled by SettingsLoader::FinalizeLayering().
-        settings.profiles.emplace_back(CreateChild(profile));
+        // inbox profile of course. That's why we need to create a child.
+        // And since we previously added the (now) parent profile into profilesByGuid
+        // we'll have to replace it->second with the (new) child profile.
+        //
+        // These additional things are required to complete a (user) profile:
+        // * A call to _FinalizeInheritance()
+        // * Every profile should at least have Origin(), Name() and Hidden() set
+        // They're handled by SettingsLoader::FinalizeLayering() and detected by
+        // the missing Origin(). Setting these fields as late as possible ensures
+        // that we pick up the correct, inherited values of all of the child's parents.
+        //
+        // If you add more fields here, make sure to do the same in
+        // implementation::CreateChild().
+        auto child = winrt::make_self<Profile>();
+        child->AddLeastImportantParent(profile);
+        child->Guid(profile->Guid());
+
+        // If profile is a dynamic/generated profile, a fragment's
+        // Source() should have no effect on this user profile.
+        if (profile->HasSource())
+        {
+            child->Source(profile->Source());
+        }
+
+        it->second = child;
+        userSettings.profiles.emplace_back(std::move(child));
     }
 }
 
