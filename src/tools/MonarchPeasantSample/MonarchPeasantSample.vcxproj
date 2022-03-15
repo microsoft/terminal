@@ -89,8 +89,8 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
 </Project>
