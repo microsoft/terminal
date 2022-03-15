@@ -46,6 +46,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
     _pAccessibilityNotifier{ pNotifier },
+    _api{ *this },
     _stateMachine{ nullptr },
     _scrollMargins{ Viewport::FromCoord({ 0 }) },
     _viewport(Viewport::Empty()),
@@ -259,8 +260,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
         auto& renderer = *g.pRender;
         auto& renderSettings = gci.GetRenderSettings();
         auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
-        auto getset = std::make_unique<ConhostInternalGetSet>(*this);
-        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), renderer, renderSettings, terminalInput);
+        auto adapter = std::make_unique<AdaptDispatch>(_api, renderer, renderSettings, terminalInput);
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's

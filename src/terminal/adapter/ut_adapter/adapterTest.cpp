@@ -422,12 +422,11 @@ public:
         fSuccess = api.get() != nullptr;
         if (fSuccess)
         {
-            // give AdaptDispatch ownership of _testGetSet
-            _testGetSet = api.get(); // keep a copy for us but don't manage its lifetime anymore.
+            _testGetSet = std::move(api);
             _terminalInput = TerminalInput{ nullptr };
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
-            auto adapter = std::make_unique<AdaptDispatch>(std::move(api), renderer, renderSettings, _terminalInput);
+            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -2256,7 +2255,7 @@ public:
 
 private:
     TerminalInput _terminalInput{ nullptr };
-    TestGetSet* _testGetSet; // non-ownership pointer
+    std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;
 };

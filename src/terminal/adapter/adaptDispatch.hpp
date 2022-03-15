@@ -29,7 +29,7 @@ namespace Microsoft::Console::VirtualTerminal
         using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
     public:
-        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
+        AdaptDispatch(ConGetSet& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
@@ -202,7 +202,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
-        std::unique_ptr<ConGetSet> _pConApi;
+        ConGetSet& _api;
         Renderer& _renderer;
         RenderSettings& _renderSettings;
         TerminalInput& _terminalInput;

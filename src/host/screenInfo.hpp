@@ -266,6 +266,8 @@ private:
     bool _IsInPtyMode() const;
     bool _IsInVTMode() const;
 
+    ConhostInternalGetSet _api;
+
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 
     Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
