@@ -2300,11 +2300,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         auto chars{ row.GetCharRow().cbegin() };
         auto attrs{ row.GetAttrRow().begin() };
         const auto copyRight = iRight;
-        // const auto oldWidth = oldBuffer.GetLineWidth(iOldRow);
-        // // const auto copyRight = std::min(oldWidth, iRight);
-        // const auto newRowY = newCursor.GetPosition().Y;
-        // const auto newWidth = newBuffer.GetLineWidth(newRowY);
-        // const auto copyRight = std::min(oldWidth, std::max(newWidth, iRight));
         for (; iOldCol < copyRight; iOldCol++)
         {
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
@@ -2352,7 +2347,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         //     line in the new buffer, then we didn't wrap. That's fine. just
         //     copy attributes from the old row till the end of the new row, and
         //     move on.
-        /*
         const auto newRowY = newCursor.GetPosition().Y;
         auto& newRow = newBuffer.GetRowByOffset(newRowY);
         auto newAttrColumn = newCursor.GetPosition().X;
@@ -2366,32 +2360,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
-                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
-                {
-                    break;
-                }
-            }
-            CATCH_LOG(); // Not worth dying over.
-
-            newAttrColumn++;
-        }
-        */
-
-        const auto newRowY = newCursor.GetPosition().Y;
-        auto& newRow = newBuffer.GetRowByOffset(newRowY);
-        auto newAttrColumn = newCursor.GetPosition().X;
-        const auto newWidth = newBuffer.GetLineWidth(newRowY);
-        // Stop when we get to the end of the buffer width, or the new position
-        // for inserting an attr would be past the right of the new buffer.
-        for (short copyAttrCol = iOldCol;
-             copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
-             copyAttrCol++)
-        {
-            try
-            {
-                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                // const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
                 const auto textAttr = *attrs;
                 if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
                 {
@@ -2400,7 +2368,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
             CATCH_LOG(); // Not worth dying over.
 
-            newAttrColumn++;
+            ++newAttrColumn;
             ++attrs;
         }
 
