@@ -2299,12 +2299,12 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         short iOldCol = 0;
         auto chars{ row.GetCharRow().cbegin() };
         auto attrs{ row.GetAttrRow().begin() };
-        // const auto copyRight = iRight;
-        const auto oldWidth = oldBuffer.GetLineWidth(iOldRow);
-        // const auto copyRight = std::min(oldWidth, iRight);
-        const auto newRowY = newCursor.GetPosition().Y;
-        const auto newWidth = newBuffer.GetLineWidth(newRowY);
-        const auto copyRight = std::min(oldWidth, std::max(newWidth, iRight));
+        const auto copyRight = iRight;
+        // const auto oldWidth = oldBuffer.GetLineWidth(iOldRow);
+        // // const auto copyRight = std::min(oldWidth, iRight);
+        // const auto newRowY = newCursor.GetPosition().Y;
+        // const auto newWidth = newBuffer.GetLineWidth(newRowY);
+        // const auto copyRight = std::min(oldWidth, std::max(newWidth, iRight));
         for (; iOldCol < copyRight; iOldCol++)
         {
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
@@ -2332,49 +2332,77 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             ++attrs;
         }
 
-        // // GH#32: Copy the attributes from the rest of the row into this new buffer.
-        // // From where we are in the old buffer, to the end of the row, copy the
-        // // remaining attributes.
-        // // - if the old buffer is smaller than the new buffer, then just copy
-        // //   what we have, as it was. We already copied all _text_ with colors,
-        // //   but it's possible for someone to just put some color into the
-        // //   buffer to the right of that without any text (as just spaces). The
-        // //   buffer looks weird to the user when we resize and it starts losing
-        // //   those colors, so we need to copy them over too... as long as there
-        // //   is space. The last attr in the row will be extended to the end of
-        // //   the row in the new buffer.
-        // // - if the old buffer is WIDER, than we might have wrapped onto a new
-        // //   line. Use the cursor's position's Y so that we know where the new
-        // //   row is, and start writing at the cursor position. Again, the attr
-        // //   in the last column of the old row will be extended to the end of the
-        // //   row that the text was flowed onto.
-        // //   - if the text in the old buffer didn't actually fill the whole
-        // //     line in the new buffer, then we didn't wrap. That's fine. just
-        // //     copy attributes from the old row till the end of the new row, and
-        // //     move on.
-        // const auto newRowY = newCursor.GetPosition().Y;
-        // auto& newRow = newBuffer.GetRowByOffset(newRowY);
-        // auto newAttrColumn = newCursor.GetPosition().X;
-        // const auto newWidth = newBuffer.GetLineWidth(newRowY);
-        // // Stop when we get to the end of the buffer width, or the new position
-        // // for inserting an attr would be past the right of the new buffer.
-        // for (short copyAttrCol = iOldCol;
-        //      copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
-        //      copyAttrCol++)
-        // {
-        //     try
-        //     {
-        //         // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-        //         const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
-        //         if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
-        //         {
-        //             break;
-        //         }
-        //     }
-        //     CATCH_LOG(); // Not worth dying over.
+        // GH#32: Copy the attributes from the rest of the row into this new buffer.
+        // From where we are in the old buffer, to the end of the row, copy the
+        // remaining attributes.
+        // - if the old buffer is smaller than the new buffer, then just copy
+        //   what we have, as it was. We already copied all _text_ with colors,
+        //   but it's possible for someone to just put some color into the
+        //   buffer to the right of that without any text (as just spaces). The
+        //   buffer looks weird to the user when we resize and it starts losing
+        //   those colors, so we need to copy them over too... as long as there
+        //   is space. The last attr in the row will be extended to the end of
+        //   the row in the new buffer.
+        // - if the old buffer is WIDER, than we might have wrapped onto a new
+        //   line. Use the cursor's position's Y so that we know where the new
+        //   row is, and start writing at the cursor position. Again, the attr
+        //   in the last column of the old row will be extended to the end of the
+        //   row that the text was flowed onto.
+        //   - if the text in the old buffer didn't actually fill the whole
+        //     line in the new buffer, then we didn't wrap. That's fine. just
+        //     copy attributes from the old row till the end of the new row, and
+        //     move on.
+        /*
+        const auto newRowY = newCursor.GetPosition().Y;
+        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        auto newAttrColumn = newCursor.GetPosition().X;
+        const auto newWidth = newBuffer.GetLineWidth(newRowY);
+        // Stop when we get to the end of the buffer width, or the new position
+        // for inserting an attr would be past the right of the new buffer.
+        for (short copyAttrCol = iOldCol;
+             copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
+             copyAttrCol++)
+        {
+            try
+            {
+                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
+                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
+                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
+                {
+                    break;
+                }
+            }
+            CATCH_LOG(); // Not worth dying over.
 
-        //     newAttrColumn++;
-        // }
+            newAttrColumn++;
+        }
+        */
+
+        const auto newRowY = newCursor.GetPosition().Y;
+        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        auto newAttrColumn = newCursor.GetPosition().X;
+        const auto newWidth = newBuffer.GetLineWidth(newRowY);
+        // Stop when we get to the end of the buffer width, or the new position
+        // for inserting an attr would be past the right of the new buffer.
+        for (short copyAttrCol = iOldCol;
+             copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
+             copyAttrCol++)
+        {
+            try
+            {
+                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
+                // const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
+                const auto textAttr = *attrs;
+                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
+                {
+                    break;
+                }
+            }
+            CATCH_LOG(); // Not worth dying over.
+
+            newAttrColumn++;
+            ++attrs;
+        }
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
