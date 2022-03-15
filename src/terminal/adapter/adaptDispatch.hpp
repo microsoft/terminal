@@ -166,7 +166,7 @@ namespace Microsoft::Console::VirtualTerminal
             static constexpr Offset Unchanged() { return Forward(0); };
         };
 
-        std::pair<int, int> _GetVerticalMargins(const SMALL_RECT viewport, const bool absolute);
+        std::pair<int, int> _GetVerticalMargins(const til::rect viewport, const bool absolute);
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _FillRect(TextBuffer& textBuffer, const til::rect fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _EraseScrollback();

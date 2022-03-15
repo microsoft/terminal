@@ -84,9 +84,9 @@ TextBuffer& ConhostInternalGetSet::GetTextBuffer()
 // - <none>
 // Return Value:
 // - the exclusive coordinates of the viewport.
-SMALL_RECT ConhostInternalGetSet::GetViewport() const
+til::rect ConhostInternalGetSet::GetViewport() const
 {
-    return _io.GetActiveOutputBuffer().GetVirtualViewport().ToExclusive();
+    return til::rect{ _io.GetActiveOutputBuffer().GetVirtualViewport().ToInclusive() };
 }
 
 // Routine Description:
@@ -95,11 +95,11 @@ SMALL_RECT ConhostInternalGetSet::GetViewport() const
 // - position - the new position of the viewport.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetViewportPosition(const COORD position)
+void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 {
     auto& info = _io.GetActiveOutputBuffer();
-    const auto dimensions = info.GetViewport().Dimensions();
-    const auto windowRect = Viewport::FromDimensions(position, dimensions).ToInclusive();
+    const auto dimensions = til::size{ info.GetViewport().Dimensions() };
+    const auto windowRect = til::rect{ position, dimensions }.to_small_rect();
     THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
 }
 

@@ -33,8 +33,8 @@ public:
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
     TextBuffer& GetTextBuffer() override;
-    SMALL_RECT GetViewport() const override;
-    void SetViewportPosition(const COORD position) override;
+    til::rect GetViewport() const override;
+    void SetViewportPosition(const til::point position) override;
 
     void SetTextAttributes(const TextAttribute& attrs) override;
 

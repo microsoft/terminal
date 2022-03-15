@@ -38,8 +38,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual StateMachine& GetStateMachine() = 0;
         virtual TextBuffer& GetTextBuffer() = 0;
-        virtual SMALL_RECT GetViewport() const = 0;
-        virtual void SetViewportPosition(const COORD position) = 0;
+        virtual til::rect GetViewport() const = 0;
+        virtual void SetViewportPosition(const til::point position) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
 

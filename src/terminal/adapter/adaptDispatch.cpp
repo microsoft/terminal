@@ -170,10 +170,10 @@ bool AdaptDispatch::CursorPrevLine(const size_t distance)
 // - absolute - Should coordinates be absolute or relative to the viewport.
 // Return Value:
 // - A std::pair containing the top and bottom coordinates (inclusive).
-std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const SMALL_RECT viewport, const bool absolute)
+std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect viewport, const bool absolute)
 {
     // If the top is out of range, reset the margins completely.
-    const auto bottommostRow = viewport.Bottom - viewport.Top - 1;
+    const auto bottommostRow = viewport.bottom - viewport.top - 1;
     if (_scrollMargins.Top >= bottommostRow)
     {
         _scrollMargins.Top = _scrollMargins.Bottom = 0;
@@ -187,8 +187,8 @@ std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const SMALL_RECT viewport
     bottomMargin = std::min(bottomMargin, bottommostRow);
     if (absolute)
     {
-        topMargin += viewport.Top;
-        bottomMargin += viewport.Top;
+        topMargin += viewport.top;
+        bottomMargin += viewport.top;
     }
     return { topMargin, bottomMargin };
 }
@@ -219,7 +219,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // viewport, or the top margin, depending on the origin mode.
     if (rowOffset.IsAbsolute)
     {
-        row = _isOriginModeRelative ? topMargin : viewport.Top;
+        row = _isOriginModeRelative ? topMargin : viewport.top;
     }
 
     // And if the column is absolute, it'll be relative to column 0.
@@ -232,7 +232,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // Adjust the base position by the given offsets and clamp the results.
     // The row is constrained within the viewport's vertical boundaries,
     // while the column is constrained by the buffer width.
-    row = std::clamp<int>(row + rowOffset.Value, viewport.Top, viewport.Bottom - 1);
+    row = std::clamp<int>(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
     col = std::clamp<int>(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
 
     // If the operation needs to be clamped inside the margins, or the origin
@@ -344,7 +344,7 @@ bool AdaptDispatch::CursorSaveState()
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    cursorPosition.Y -= viewport.Top;
+    cursorPosition.Y -= gsl::narrow_cast<short>(viewport.top);
 
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
@@ -643,15 +643,15 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     // the line is double width).
     if (eraseType == DispatchTypes::EraseType::FromBeginning)
     {
-        textBuffer.ResetLineRenditionRange(viewport.Top, row);
-        _FillRect(textBuffer, { 0, viewport.Top, bufferWidth, row }, L' ', eraseAttributes);
+        textBuffer.ResetLineRenditionRange(viewport.top, row);
+        _FillRect(textBuffer, { 0, viewport.top, bufferWidth, row }, L' ', eraseAttributes);
         _FillRect(textBuffer, { 0, row, col + 1, row + 1 }, L' ', eraseAttributes);
     }
     if (eraseType == DispatchTypes::EraseType::ToEnd)
     {
-        textBuffer.ResetLineRenditionRange(col > 0 ? row + 1 : row, viewport.Bottom);
+        textBuffer.ResetLineRenditionRange(col > 0 ? row + 1 : row, viewport.bottom);
         _FillRect(textBuffer, { col, row, bufferWidth, row + 1 }, L' ', eraseAttributes);
-        _FillRect(textBuffer, { 0, row + 1, bufferWidth, viewport.Bottom }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { 0, row + 1, bufferWidth, viewport.bottom }, L' ', eraseAttributes);
     }
 
     return true;
@@ -841,7 +841,7 @@ void AdaptDispatch::_CursorPositionReport()
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
     // Now adjust it for its position in respect to the current viewport top.
-    cursorPosition.Y -= viewport.Top;
+    cursorPosition.Y -= gsl::narrow_cast<short>(viewport.top);
 
     // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
     cursorPosition.X++;
@@ -942,7 +942,7 @@ bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 bool AdaptDispatch::SetColumns(const size_t columns)
 {
     const auto viewport = _pConApi->GetViewport();
-    const auto viewportHeight = viewport.Bottom - viewport.Top;
+    const auto viewportHeight = viewport.bottom - viewport.top;
     _pConApi->ResizeWindow(columns, viewportHeight);
     return true;
 }
@@ -1314,7 +1314,7 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
     THROW_IF_FAILED(SizeTToShort(bottomMargin, &actualBottom));
 
     const auto viewport = _pConApi->GetViewport();
-    const SHORT screenHeight = viewport.Bottom - viewport.Top;
+    const auto screenHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
     // The default top margin is line 1
     if (actualTop == 0)
     {
@@ -1442,7 +1442,7 @@ bool AdaptDispatch::ReverseLineFeed()
         const auto bufferWidth = textBuffer.GetSize().Width();
         _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, 1);
     }
-    else if (cursorPosition.Y > viewport.Top)
+    else if (cursorPosition.Y > viewport.top)
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
         const COORD newCursorPosition{ cursorPosition.X, cursorPosition.Y - 1 };
@@ -1923,9 +1923,9 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     const auto bufferWidth = textBuffer.GetSize().Dimensions().X;
 
     // Fill the screen with the letter E using the default attributes.
-    _FillRect(textBuffer, { 0, viewport.Top, bufferWidth, viewport.Bottom }, L'E', {});
+    _FillRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom }, L'E', {});
     // Reset the line rendition for all of these rows.
-    textBuffer.ResetLineRenditionRange(viewport.Top, viewport.Bottom);
+    textBuffer.ResetLineRenditionRange(viewport.top, viewport.bottom);
     // Reset the meta/extended attributes (but leave the colors unchanged).
     auto attr = textBuffer.GetCurrentAttributes();
     attr.SetStandardErase();
@@ -1955,22 +1955,23 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 void AdaptDispatch::_EraseScrollback()
 {
     const auto viewport = _pConApi->GetViewport();
-    const short height = viewport.Bottom - viewport.Top;
+    const auto top = gsl::narrow_cast<short>(viewport.top);
+    const auto height = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().Y;
 
     // Scroll the viewport content to the top of the buffer.
-    textBuffer.ScrollRows(viewport.Top, height, -viewport.Top);
+    textBuffer.ScrollRows(top, height, -top);
     // Clear everything after the viewport.
     _FillRect(textBuffer, { 0, height, bufferSize.X, bufferSize.Y }, L' ', {});
     // Also reset the line rendition for all of the cleared rows.
     textBuffer.ResetLineRenditionRange(height, bufferSize.Y);
     // Move the viewport
-    _pConApi->SetViewportPosition({ viewport.Left, 0 });
+    _pConApi->SetViewportPosition({ viewport.left, 0 });
     // Move the cursor to the same relative location.
-    cursor.SetYPosition(row - viewport.Top);
+    cursor.SetYPosition(row - top);
     cursor.SetHasMoved(true);
 }
 
@@ -1989,7 +1990,7 @@ void AdaptDispatch::_EraseScrollback()
 void AdaptDispatch::_EraseAll()
 {
     const auto viewport = _pConApi->GetViewport();
-    const short viewportHeight = viewport.Bottom - viewport.Top;
+    const auto viewportHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize();
 
@@ -1997,7 +1998,7 @@ void AdaptDispatch::_EraseAll()
     // We'll need to restore the cursor to that same relative position, after
     //      we move the viewport.
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y - viewport.Top;
+    const auto row = cursor.GetPosition().Y - viewport.top;
 
     // Calculate new viewport position
     short newViewportTop = textBuffer.GetLastNonSpaceCharacter().Y + 1;
@@ -2009,7 +2010,7 @@ void AdaptDispatch::_EraseAll()
         newViewportTop--;
     }
     // Move the viewport
-    _pConApi->SetViewportPosition({ viewport.Left, newViewportTop });
+    _pConApi->SetViewportPosition({ viewport.left, newViewportTop });
     // Restore the relative cursor position
     cursor.SetYPosition(row + newViewportTop);
     cursor.SetHasMoved(true);

@@ -139,7 +139,7 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
     const size_t colFixed = col - 1;
 
     // First retrieve some information about the buffer
-    const auto viewport = _pConApi->GetViewport();
+    const auto viewport = _pConApi->GetViewport().to_small_rect();
     auto& cursor = _pConApi->GetTextBuffer().GetCursor();
     auto coordCursor = cursor.GetPosition();
 
@@ -152,8 +152,8 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
     THROW_IF_FAILED(ShortAdd(coordCursor.X, viewport.Left, &coordCursor.X));
 
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-    coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, gsl::narrow<SHORT>(viewport.Bottom - 1));
-    coordCursor.X = std::clamp(coordCursor.X, viewport.Left, gsl::narrow<SHORT>(viewport.Right - 1));
+    coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, viewport.Bottom);
+    coordCursor.X = std::clamp(coordCursor.X, viewport.Left, viewport.Right);
 
     // MSFT: 15813316 - Try to use this MoveCursor call to inherit the cursor position.
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
