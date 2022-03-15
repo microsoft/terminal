@@ -33,8 +33,6 @@
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
-  <!--<Import Project="$(MSBuildThisFileDirectory)common.nugetversions.targets"/>-->
-
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
        set after we've imported Microsoft.Cpp.targets -->
   <PropertyGroup>
