@@ -37,24 +37,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             ProfileViewModel::UpdateFontList();
         }
 
+        auto weakThis{ get_weak() };
         // Subscribe to some changes in the view model
         // These changes should force us to update our own set of "Current<Setting>" members,
         // and propagate those changes to the UI
-        _ViewModelChangedRevoker = _Profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
-            _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
+        _ViewModelChangedRevoker = _Profile.PropertyChanged(winrt::auto_revoke, [weakThis](auto&&, const PropertyChangedEventArgs& /*args*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_previewControl.UpdateControlSettings(page->_Profile.TermSettings(), page->_Profile.TermSettings());
+            }
         });
 
         // The Appearances object handles updating the values in the settings UI, but
         // we still need to listen to the changes here just to update the preview control
-        _AppearanceViewModelChangedRevoker = _Profile.DefaultAppearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
-            _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
+        _AppearanceViewModelChangedRevoker = _Profile.DefaultAppearance().PropertyChanged(winrt::auto_revoke, [weakThis](auto&&, const PropertyChangedEventArgs& /*args*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_previewControl.UpdateControlSettings(page->_Profile.TermSettings(), page->_Profile.TermSettings());
+            }
         });
 
         // There is a possibility that the control has not fully initialized yet,
         // so wait for it to initialize before updating the settings (so we know
         // that the renderer is set up)
-        _previewControl.Initialized([&](auto&& /*s*/, auto&& /*e*/) {
-            _previewControl.UpdateControlSettings(_Profile.TermSettings(), _Profile.TermSettings());
+        _previewControl.Initialized([weakThis](auto&& /*s*/, auto&& /*e*/) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_previewControl.UpdateControlSettings(page->_Profile.TermSettings(), page->_Profile.TermSettings());
+            }
         });
     }
 
