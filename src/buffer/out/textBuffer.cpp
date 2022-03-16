@@ -2470,34 +2470,17 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     {
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
 
-        // Loop through every character in the current row (up to
-        // the "right" boundary, which is one past the final valid
-        // character)
-
+        // Optimization: Since all these rows are below the last printable char,
+        // we can reasonably assume that they are filled with just spaces.
+        // That's convenient, we can just copy the attr row from the old buffer
+        // into the new one, and resize the row to match. We'll rely on the
+        // behavior of ATTR_ROW::Resize to trim down when narrower, or extend
+        // the last attr when wider.
         auto& newRow = newBuffer.GetRowByOffset(newRowY);
         const auto newWidth = newBuffer.GetLineWidth(newRowY);
-        const auto minWidth = std::min(oldBuffer.GetLineWidth(iOldRow), newWidth);
-        uint16_t newAttrColumn = 0u;
-        // Stop when we get to the end of the buffer width, or the new position
-        // for inserting an attr would be past the right of the new buffer.
-        for (short copyAttrCol = 0;
-             copyAttrCol < minWidth;
-             copyAttrCol++)
-        {
-            try
-            {
-                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter.
-                // May even just be faster to just copy the ATTR_ROW to the new row, then ATTR_ROW::Resize.
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
-                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
-                {
-                    break;
-                }
-            }
-            CATCH_LOG(); // Not worth dying over.
+        newRow.GetAttrRow() = row.GetAttrRow();
+        newRow.GetAttrRow().Resize(newWidth);
 
-            newAttrColumn++;
-        }
         newRowY++;
     }
 

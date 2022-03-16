@@ -6281,9 +6281,7 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
-        // TEST_METHOD_PROPERTY(L"Data:dx", L"{1}")
         TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
-        // TEST_METHOD_PROPERTY(L"Data:dy", L"{0}")
     END_TEST_METHOD_PROPERTIES();
 
     INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
