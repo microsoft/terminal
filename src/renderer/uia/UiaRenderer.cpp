@@ -299,14 +299,9 @@ void UiaEngine::WaitUntilCanRender() noexcept
         // the output isn't cut off.
         static constexpr size_t sapiLimit{ 1000 };
         const std::wstring_view output{ _queuedOutput };
-        for (size_t offset = 0;; offset += sapiLimit)
+        for (size_t offset = 0; offset < output.size(); offset += sapiLimit)
         {
-            const auto croppedText{ output.substr(offset, sapiLimit) };
-            if (croppedText.empty())
-            {
-                break;
-            }
-            _dispatcher->NotifyNewOutput(croppedText);
+            _dispatcher->NotifyNewOutput(output.substr(offset, sapiLimit));
         }
     }
     CATCH_LOG();
