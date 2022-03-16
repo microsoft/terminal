@@ -79,7 +79,7 @@ float4 DWrite_GrayscaleBlend(float4 gammaRatios, float grayscaleEnhancedContrast
     float3 foregroundStraight = DWrite_UnpremultiplyColor(foregroundColor);
     float contrastBoost = isThinFont ? 0.5f : 0.0f;
     float blendEnhancedContrast = contrastBoost + DWrite_ApplyLightOnDarkContrastAdjustment(grayscaleEnhancedContrast, foregroundStraight);
-    float intensity = DWrite_CalcColorIntensity(foregroundColor.rgb);
+    float intensity = DWrite_CalcColorIntensity(foregroundStraight);
     float contrasted = DWrite_EnhanceContrast(glyphAlpha, blendEnhancedContrast);
     return foregroundColor * DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
 }
@@ -120,7 +120,7 @@ float4 DWrite_GrayscaleBlend(float4 gammaRatios, float grayscaleEnhancedContrast
 //   overscale (meaning: the glyph is rasterized with 6x the required resolution in the X axis) and thus
 //   only 7 different RGB combinations can exist in this texture (black/white and 5 states in between).
 //   If you wanted to you could just store these in a A8 texture and restore the RGB values in this shader.
-float4 DWrite_CleartypeBlend(float4 gammaRatios, float enhancedContrast, bool isThinFont, float4 backgroundColor, float4 foregroundColor, float4 glyphColor)
+float4 DWrite_ClearTypeBlend(float4 gammaRatios, float enhancedContrast, bool isThinFont, float4 backgroundColor, float4 foregroundColor, float4 glyphColor)
 {
     float3 foregroundStraight = DWrite_UnpremultiplyColor(foregroundColor);
     float contrastBoost = isThinFont ? 0.5f : 0.0f;

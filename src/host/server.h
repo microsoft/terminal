@@ -111,6 +111,7 @@ public:
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    void SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer);
     bool HasActiveOutputBuffer() const;
 
     InputBuffer* const GetActiveInputBuffer() const;

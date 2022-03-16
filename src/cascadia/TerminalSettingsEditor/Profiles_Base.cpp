@@ -37,6 +37,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
+
+        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [state, this](auto /*s*/, auto /*e*/) {
+            // This event fires every time the layout changes, but it is always the last one to fire
+            // in any layout change chain. That gives us great flexibility in finding the right point
+            // at which to initialize our renderer (and our terminal).
+            // Any earlier than the last layout update and we may not know the terminal's starting size.
+
+            // Only let this succeed once.
+            _layoutUpdatedRevoker.revoke();
+
+            if (state.FocusDeleteButton())
+            {
+                DeleteButton().Focus(FocusState::Programmatic);
+                state.FocusDeleteButton(false);
+                ProfilesBase_ScrollView().ChangeView(nullptr, ProfilesBase_ScrollView().ScrollableHeight(), nullptr);
+            }
+        });
     }
 
     void Profiles_Base::OnNavigatedFrom(const NavigationEventArgs& /*e*/)

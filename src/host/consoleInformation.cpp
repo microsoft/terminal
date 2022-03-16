@@ -146,7 +146,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
         goto ErrorExit2;
     }
 
-    gci.pCurrentScreenBuffer = gci.ScreenBuffers;
+    gci.SetActiveOutputBuffer(*gci.ScreenBuffers);
 
     gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
@@ -212,6 +212,16 @@ SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer()
 const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
 {
     return *pCurrentScreenBuffer;
+}
+
+void CONSOLE_INFORMATION::SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer)
+{
+    if (pCurrentScreenBuffer)
+    {
+        pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(false);
+    }
+    pCurrentScreenBuffer = &screenBuffer;
+    pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(true);
 }
 
 bool CONSOLE_INFORMATION::HasActiveOutputBuffer() const

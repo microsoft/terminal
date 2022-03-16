@@ -31,7 +31,6 @@
     <ClInclude Include="..\..\inc\IFontDefaultList.hpp" />
     <ClInclude Include="..\..\inc\IRenderData.hpp" />
     <ClInclude Include="..\..\inc\IRenderEngine.hpp" />
-    <ClInclude Include="..\..\inc\IRenderTarget.hpp" />
     <ClInclude Include="..\..\inc\RenderEngineBase.hpp" />
     <ClInclude Include="..\..\inc\RenderSettings.hpp" />
     <ClInclude Include="..\FontCache.h" />

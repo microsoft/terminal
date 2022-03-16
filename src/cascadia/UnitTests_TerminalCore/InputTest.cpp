@@ -5,7 +5,7 @@
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "consoletaeftemplates.hpp"
 
 using namespace WEX::Logging;
@@ -21,8 +21,8 @@ namespace TerminalCoreUnitTests
         TEST_CLASS(InputTest);
         TEST_CLASS_SETUP(ClassSetup)
         {
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer;
+            term.Create({ 100, 100 }, 0, renderer);
             auto inputFn = std::bind(&InputTest::_VerifyExpectedInput, this, std::placeholders::_1);
             term.SetWriteInputCallback(inputFn);
             return true;

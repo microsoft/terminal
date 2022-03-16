@@ -4,7 +4,7 @@
 #include "precomp.h"
 
 #include "../inc/RenderSettings.hpp"
-#include "../inc/IRenderTarget.hpp"
+#include "../base/renderer.hpp"
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/colorTable.hpp"
 
@@ -262,10 +262,10 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColorsWithAlpha(const 
 // Routine Description:
 // - Increments the position in the blink cycle, toggling the blink rendition
 //   state on every second call, potentially triggering a redraw of the given
-//   render target if there are blinking cells currently in view.
+//   renderer if there are blinking cells currently in view.
 // Arguments:
-// - renderTarget: the render target that will be redrawn.
-void RenderSettings::ToggleBlinkRendition(IRenderTarget& renderTarget) noexcept
+// - renderer: the renderer that will be redrawn.
+void RenderSettings::ToggleBlinkRendition(Renderer& renderer) noexcept
 try
 {
     if (GetRenderMode(Mode::BlinkAllowed))
@@ -283,7 +283,7 @@ try
             // We reset the _blinkIsInUse flag before redrawing, so we can
             // get a fresh assessment of the current blink attribute usage.
             _blinkIsInUse = false;
-            renderTarget.TriggerRedrawAll();
+            renderer.TriggerRedrawAll();
         }
     }
 }
