@@ -325,7 +325,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
             _scrollOffset -= amtBelowView;
         }
         _NotifyScrollEvent();
-        _activeBuffer().GetRenderTarget().TriggerScroll();
+        _activeBuffer().TriggerScroll();
     }
 }
 

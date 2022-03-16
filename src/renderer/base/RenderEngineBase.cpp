@@ -36,6 +36,11 @@ HRESULT RenderEngineBase::UpdateTitle(const std::wstring_view newTitle) noexcept
     return hr;
 }
 
+HRESULT RenderEngineBase::NotifyNewText(const std::wstring_view /*newText*/) noexcept
+{
+    return S_FALSE;
+}
+
 HRESULT RenderEngineBase::UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
                                          const SIZE /*cellSize*/,
                                          const size_t /*centeringHint*/) noexcept

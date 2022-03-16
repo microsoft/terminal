@@ -187,7 +187,7 @@ void Cursor::_RedrawCursorAlways() noexcept
 {
     try
     {
-        _parentBuffer.GetRenderTarget().TriggerRedrawCursor(&_cPosition);
+        _parentBuffer.TriggerRedrawCursor(_cPosition);
     }
     CATCH_LOG();
 }

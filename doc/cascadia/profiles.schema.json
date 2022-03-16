@@ -485,7 +485,7 @@
           "type": "boolean",
           "default": false,
           "description": "This will override the profile's `elevate` setting."
-        },
+        }
       },
       "type": "object"
     },
@@ -861,7 +861,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "SetFullScreenAction": {
       "description": "Arguments for a setFullScreen action",
@@ -881,7 +881,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "SetMaximizedAction": {
       "description": "Arguments for a setMaximized action",
@@ -901,7 +901,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",

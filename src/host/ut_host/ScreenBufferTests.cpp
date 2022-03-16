@@ -38,7 +38,8 @@ class ScreenBufferTests
         m_state = new CommonState();
 
         m_state->InitEvents();
-        m_state->PrepareGlobalFont();
+        m_state->PrepareGlobalFont({ 1, 1 });
+        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
 
@@ -48,6 +49,7 @@ class ScreenBufferTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
@@ -535,8 +537,12 @@ std::list<short> _GetTabStops(SCREEN_INFORMATION& screenInfo)
 void ScreenBufferTests::TestResetClearTabStops()
 {
     // Reset the screen buffer to test the defaults.
+    m_state->CleanupNewTextBufferInfo();
     m_state->CleanupGlobalScreenBuffer();
+    m_state->CleanupGlobalRenderer();
+    m_state->PrepareGlobalRenderer();
     m_state->PrepareGlobalScreenBuffer();
+    m_state->PrepareNewTextBufferInfo();
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();

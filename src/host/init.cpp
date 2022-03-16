@@ -32,7 +32,8 @@ void InitSideBySide()
     actctx.cbSize = sizeof(actctx);
     // We set ACTCTX_FLAG_HMODULE_VALID, but leave hModule as nullptr.
     // A nullptr HMODULE refers to the current process/executable.
-    actctx.dwFlags = ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
+    actctx.lpResourceName = MAKEINTRESOURCE(IDR_SYSTEM_MANIFEST);
+    actctx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
 
     HANDLE const hActCtx = CreateActCtxW(&actctx);
 
@@ -44,8 +45,9 @@ void InitSideBySide()
     {
         auto const error = GetLastError();
 
-        // Don't log if it's already set. This whole ordeal is to make sure one is set if there isn't one already.
-        // If one is already set... good!
+        // OpenConsole ships with a single manifest at ID 1, while conhost ships with 2 at ID 1
+        // and IDR_SYSTEM_MANIFEST. If we call CreateActCtxW() with IDR_SYSTEM_MANIFEST inside
+        // OpenConsole anyways, nothing happens and we get ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET.
         if (ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET != error)
         {
             RIPMSG1(RIP_WARNING, "InitSideBySide failed create an activation context. Error: %d\r\n", error);

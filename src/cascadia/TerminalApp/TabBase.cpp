@@ -176,7 +176,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_keyChord == keyChordText)
         {
-            return;
+            co_return;
         }
 
         _keyChord = keyChordText;

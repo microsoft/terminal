@@ -46,7 +46,12 @@ Viewport Viewport::FromDimensions(const COORD origin,
                                   const short width,
                                   const short height) noexcept
 {
-    return Viewport::FromExclusive({ origin.X, origin.Y, origin.X + width, origin.Y + height });
+    return Viewport::FromInclusive({
+        origin.X,
+        origin.Y,
+        base::saturated_cast<short>(origin.X + width - 1),
+        base::saturated_cast<short>(origin.Y + height - 1),
+    });
 }
 
 // Function Description:
@@ -60,7 +65,12 @@ Viewport Viewport::FromDimensions(const COORD origin,
 Viewport Viewport::FromDimensions(const COORD origin,
                                   const COORD dimensions) noexcept
 {
-    return Viewport::FromExclusive({ origin.X, origin.Y, origin.X + dimensions.X, origin.Y + dimensions.Y });
+    return Viewport::FromInclusive({
+        origin.X,
+        origin.Y,
+        base::saturated_cast<short>(origin.X + dimensions.X - 1),
+        base::saturated_cast<short>(origin.Y + dimensions.Y - 1),
+    });
 }
 
 // Function Description:

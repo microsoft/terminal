@@ -280,13 +280,13 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
         }
     }
 
-    // Get the render target and send it commands.
+    // Get the text buffer and send it commands.
     // It will figure out whether or not we're active and where the messages need to go.
-    auto& render = screenInfo.GetRenderTarget();
+    auto& textBuffer = screenInfo.GetTextBuffer();
     // Redraw anything in the target area
-    render.TriggerRedraw(target);
+    textBuffer.TriggerRedraw(target);
     // Also redraw anything that was filled.
-    render.TriggerRedraw(fill);
+    textBuffer.TriggerRedraw(fill);
 }
 
 // Routine Description:
@@ -464,7 +464,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.pCurrentScreenBuffer = &screenInfo;
+    gci.SetActiveOutputBuffer(screenInfo);
 
     // initialize cursor GH#4102 - Typically, the cursor is set to on by the
     // cursor blinker. Unfortunately, in conpty mode, there is no cursor
