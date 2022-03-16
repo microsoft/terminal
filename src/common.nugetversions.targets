@@ -10,7 +10,7 @@
         global location, its existence won't be known by default to Projects when they are opened/built.  As such,
         we need the following target that runs before Project References are resolved, which is responsible for
         downloading and using [NuGet.exe] to perform a manual restore operation on the global [packages.config]
-        file.  We run this target only for local developer inner loop scenarios (UES_IsLabBuild=false).  For
+        file.  We run this target only for local developer inner loop scenarios (BuildingInsideVisualStudio=true).  For
         Azure DevOps builds, a NuGet Restore pipeline task is run against the [packages.config] file instead.-->
 
   <PropertyGroup>
