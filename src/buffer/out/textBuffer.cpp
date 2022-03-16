@@ -2297,7 +2297,10 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // the "right" boundary, which is one past the final valid
         // character)
         short iOldCol = 0;
-        for (; iOldCol < iRight; iOldCol++)
+        auto chars{ row.GetCharRow().cbegin() };
+        auto attrs{ row.GetAttrRow().begin() };
+        const auto copyRight = iRight;
+        for (; iOldCol < copyRight; iOldCol++)
         {
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
@@ -2308,9 +2311,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto glyph = row.GetCharRow().GlyphAt(iOldCol);
-                const auto dbcsAttr = row.GetCharRow().DbcsAttrAt(iOldCol);
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(iOldCol);
+                const auto glyph = chars->Char();
+                const auto dbcsAttr = chars->DbcsAttr();
+                const auto textAttr = *attrs;
 
                 if (!newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr))
                 {
@@ -2319,6 +2322,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                 }
             }
             CATCH_RETURN();
+
+            ++chars;
+            ++attrs;
         }
 
         // GH#32: Copy the attributes from the rest of the row into this new buffer.
@@ -2354,7 +2360,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
+                const auto textAttr = *attrs;
                 if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
                 {
                     break;
@@ -2362,7 +2368,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
             CATCH_LOG(); // Not worth dying over.
 
-            newAttrColumn++;
+            ++newAttrColumn;
+            ++attrs;
         }
 
         // If we found the old row that the caller was interested in, set the
@@ -2398,7 +2405,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // only because we ran out of space.
             if (iRight < cOldColsTotal && !row.WasWrapForced())
             {
-                if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
+                if (!fFoundCursorPos && (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y))
                 {
                     cNewCursorPos = newCursor.GetPosition();
                     fFoundCursorPos = true;
