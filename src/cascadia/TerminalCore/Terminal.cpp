@@ -78,7 +78,7 @@ Terminal::Terminal() :
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
 
-void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
+void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, Renderer& renderer)
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
@@ -86,22 +86,22 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
                             Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
-    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
+    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
 }
 
 // Method Description:
 // - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
-// - renderTarget: A render target the terminal can use for paint invalidation.
+// - renderer: the Renderer that the terminal can use for paint invalidation.
 void Terminal::CreateFromSettings(ICoreSettings settings,
-                                  IRenderTarget& renderTarget)
+                                  Renderer& renderer)
 {
     const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                               Utils::ClampToShortMax(settings.InitialRows(), 1) };
 
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
+    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
 
     UpdateSettings(settings);
 }
@@ -301,7 +301,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
                                                      TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
-                                                     _mainBuffer->GetRenderTarget());
+                                                     _mainBuffer->IsActiveBuffer(),
+                                                     _mainBuffer->GetRenderer());
 
         // start defer drawing on the new buffer
         newTextBuffer->GetCursor().StartDeferDrawing();
@@ -452,7 +453,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
     try
     {
-        _mainBuffer->GetRenderTarget().TriggerRedrawAll();
+        _activeBuffer().TriggerRedrawAll();
     }
     CATCH_LOG();
     _NotifyScrollEvent();
@@ -764,7 +765,7 @@ void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
     if (start.Y == end.Y)
     {
         SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
-        _activeBuffer().GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
     }
     else
     {
@@ -772,18 +773,18 @@ void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
 
         // invalidate the first line
         SMALL_RECT region{ start.X, start.Y, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(start.Y) };
-        _activeBuffer().GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
 
         if ((end.Y - start.Y) > 1)
         {
             // invalidate the lines in between the first and last line
             region = SMALL_RECT{ 0, start.Y + 1, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(end.Y - 1) };
-            _activeBuffer().GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+            _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
         region = SMALL_RECT{ 0, end.Y, end.X, end.Y };
-        _activeBuffer().GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
 
@@ -1046,6 +1047,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         _AdjustCursorPosition(proposedCursorPosition);
     }
 
+    // Notify UIA of new text.
+    // It's important to do this here instead of in TextBuffer, because here you have access to the entire line of text,
+    // whereas TextBuffer writes it one character at a time via the OutputCellIterator.
+    _activeBuffer().TriggerNewTextNotification(stringView);
+
     cursor.EndDeferDrawing();
 }
 
@@ -1150,7 +1156,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
         COORD delta{ 0, gsl::narrow_cast<short>(-rowsPushedOffTopOfBuffer) };
-        _activeBuffer().GetRenderTarget().TriggerScroll(&delta);
+        _activeBuffer().TriggerScroll(delta);
     }
 }
 
@@ -1174,7 +1180,7 @@ void Terminal::UserScrollViewport(const int viewTop)
     // We can use the void variant of TriggerScroll here because
     // we adjusted the viewport so it can detect the difference
     // from the previous frame drawn.
-    _activeBuffer().GetRenderTarget().TriggerScroll();
+    _activeBuffer().TriggerScroll();
 }
 
 int Terminal::GetScrollOffset() noexcept

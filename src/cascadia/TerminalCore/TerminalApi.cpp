@@ -354,7 +354,7 @@ void Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
     }
 
     // Repaint everything - the colors might have changed
-    _activeBuffer().GetRenderTarget().TriggerRedrawAll();
+    _activeBuffer().TriggerRedrawAll();
 }
 
 // Method Description:
@@ -430,7 +430,7 @@ void Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled
     _renderSettings.SetRenderMode(mode, enabled);
 
     // Repaint everything - the colors will have changed
-    _activeBuffer().GetRenderTarget().TriggerRedrawAll();
+    _activeBuffer().TriggerRedrawAll();
 }
 
 void Terminal::EnableXtermBracketedPasteMode(const bool enabled)
@@ -596,7 +596,9 @@ void Terminal::UseAlternateScreenBuffer()
     _altBuffer = std::make_unique<TextBuffer>(_altBufferSize.to_win32_coord(),
                                               TextAttribute{},
                                               cursorSize,
-                                              _mainBuffer->GetRenderTarget());
+                                              true,
+                                              _mainBuffer->GetRenderer());
+    _mainBuffer->SetAsActiveBuffer(false);
 
     // Copy our cursor state to the new buffer's cursor
     {
@@ -626,7 +628,7 @@ void Terminal::UseAlternateScreenBuffer()
     // redraw the screen
     try
     {
-        _activeBuffer().GetRenderTarget().TriggerRedrawAll();
+        _activeBuffer().TriggerRedrawAll();
     }
     CATCH_LOG();
 }
@@ -654,6 +656,8 @@ void Terminal::UseMainScreenBuffer()
         tgtCursor.SetPosition(tgtCursorPos);
     }
 
+    _mainBuffer->SetAsActiveBuffer(true);
+
     // destroy the alt buffer
     _altBuffer = nullptr;
 
@@ -676,7 +680,7 @@ void Terminal::UseMainScreenBuffer()
     // redraw the screen
     try
     {
-        _activeBuffer().GetRenderTarget().TriggerRedrawAll();
+        _activeBuffer().TriggerRedrawAll();
     }
     CATCH_LOG();
 }

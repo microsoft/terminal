@@ -69,6 +69,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept = 0;
+        [[nodiscard]] virtual HRESULT NotifyNewText(const std::wstring_view newText) noexcept = 0;
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
         [[nodiscard]] virtual HRESULT ResetLineTransform() noexcept = 0;
         [[nodiscard]] virtual HRESULT PrepareLineTransform(LineRendition lineRendition, size_t targetRow, size_t viewportLeft) noexcept = 0;

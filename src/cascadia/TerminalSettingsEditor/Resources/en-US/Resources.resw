@@ -1210,6 +1210,10 @@
     <value>Cancel rename</value>
     <comment>Text label for a button that can be used to cancel a rename operation during the renaming process.</comment>
   </data>
+  <data name="ColorSchemesDisclaimer.Text" xml:space="preserve">
+    <value>Schemes defined here can be applied to your profiles under the "Appearances" section of the profile settings pages.</value>
+    <comment>A disclaimer presented at the top of a page. "Appearances" should match Profile_Appearance.Header.</comment>
+  </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
     <value>Settings defined here will apply to all profiles unless they are overridden by a profile's settings.</value>
     <comment>A disclaimer presented at the top of a page. See "Nav_ProfileDefaults.Content" for a description on what the defaults layer does in the app.</comment>

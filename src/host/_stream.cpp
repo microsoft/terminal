@@ -196,7 +196,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // back where it started, but everything else moved.
             // In this case, delta was 1. So the amount that moved is the entire viewport height minus the delta.
             Viewport invalid = Viewport::FromDimensions(viewport.Origin(), { viewport.Width(), viewport.Height() - delta });
-            screenInfo.GetRenderTarget().TriggerRedraw(invalid);
+            screenInfo.GetTextBuffer().TriggerRedraw(invalid);
         }
 
         // reset where our local viewport is, and recalculate the cursor and

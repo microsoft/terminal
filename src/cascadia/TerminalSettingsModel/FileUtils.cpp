@@ -12,7 +12,7 @@
 #include <sddl.h>
 #include <wil/token_helpers.h>
 
-static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
+static constexpr std::string_view Utf8Bom{ "\xEF\xBB\xBF", 3 };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model

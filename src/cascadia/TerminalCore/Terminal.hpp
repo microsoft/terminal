@@ -8,6 +8,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../types/inc/sgrStack.hpp"
+#include "../../renderer/inc/IRenderData.hpp"
 #include "../../renderer/inc/RenderSettings.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
@@ -67,10 +68,10 @@ public:
 
     void Create(COORD viewportSize,
                 SHORT scrollbackLines,
-                Microsoft::Console::Render::IRenderTarget& renderTarget);
+                Microsoft::Console::Render::Renderer& renderer);
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
-                            Microsoft::Console::Render::IRenderTarget& renderTarget);
+                            Microsoft::Console::Render::Renderer& renderer);
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);

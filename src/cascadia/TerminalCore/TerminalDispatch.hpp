@@ -108,7 +108,6 @@ private:
     std::array<CursorState, 2> _savedCursorState;
     bool _usingAltBuffer = false;
 
-
     size_t _SetRgbColorsHelper(const ::Microsoft::Console::VirtualTerminal::VTParameters options,
                                TextAttribute& attr,
                                const bool isForeground);

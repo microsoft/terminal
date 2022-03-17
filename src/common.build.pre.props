@@ -118,7 +118,8 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ConformanceMode>true</ConformanceMode>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard Condition="$(MSBuildVersion) &lt; '17.0.0'">stdcpp17</LanguageStandard>
+      <LanguageStandard Condition="$(MSBuildVersion) &gt;= '17.0.0'">stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
