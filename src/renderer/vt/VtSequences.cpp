@@ -435,12 +435,9 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Send a sequence to the connected terminal to request win32-input-mode from
-//   them. This will enable the connected terminal to send us full INPUT_RECORDs
-//   as input. If the terminal doesn't understand this sequence, it'll just
-//   ignore it.
+// - Send a sequence to the connected terminal to switch to the alternate or main screen buffer.
 // Arguments:
-// - <none>
+// - useAltBuffer: if true, switch to the malt buffer, otherwise to the main buffer.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SwitchScreenBuffer(const bool useAltBuffer) noexcept

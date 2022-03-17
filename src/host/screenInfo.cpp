@@ -1982,7 +1982,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->_fAltWindowChanged = false;
         }
 
-        // GH#381: When we switch into the alt buffer:
+        // GH#381: When we switch into the main buffer:
         //  * flush the current frame, to clear out anything that we prepared for this buffer.
         //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
         if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)

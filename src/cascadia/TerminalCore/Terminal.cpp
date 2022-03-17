@@ -440,7 +440,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         try
         {
             // GH#3848 - Stash away the current attributes
-            const auto oldBufferAttributes = _mainBuffer->GetCurrentAttributes();
+            const auto oldBufferAttributes = _altBuffer->GetCurrentAttributes();
             newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
                                                          TextAttribute{},
                                                          0, // temporarily set size to 0 so it won't render.
@@ -469,7 +469,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
     try
     {
-        _mainBuffer->TriggerRedrawAll();
+        _activeBuffer().TriggerRedrawAll();
     }
     CATCH_LOG();
     _NotifyScrollEvent();
