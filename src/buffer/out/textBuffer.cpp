@@ -2459,7 +2459,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
     // Finish copying buffer attributes to remaining rows below the last
     // printable character. This is to fix the `color 2f` scenario, where you
-    // change the buffer colors then resize and everything below the past
+    // change the buffer colors then resize and everything below the last
     // printable char gets reset. See GH #12567
     auto newRowY = newCursor.GetPosition().Y + 1;
     const auto newHeight = newBuffer.GetSize().Height();
