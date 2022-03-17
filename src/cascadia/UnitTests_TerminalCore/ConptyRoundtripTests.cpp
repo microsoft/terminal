@@ -3779,7 +3779,7 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     // A's are in blue-on-green,
     // B's are in red-on-yellow
 
-    // A oneline version: (more or less)
+    // A one line version: (more or less)
     //
     // printf "\x1b[2J\x1b[H" ; printf
     // "\x1b[?25l\x1b[34;42mAAAAA\n\x1b[31;43mBBBBB\x1b[?25h" ; sleep 2 ; printf
@@ -3931,7 +3931,7 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
     // A's are in blue-on-green,
     // B's are in red-on-yellow
 
-    // A oneline version: (more or less)
+    // A one line version: (more or less)
     //
     // printf "\x1b[2J\x1b[H" ; printf
     // "\x1b[?25l\x1b[34;42mAAAAA\n\x1b[31;43mBBBBB\x1b[?25h" ; sleep 2 ; printf
