@@ -555,6 +555,8 @@ namespace Microsoft::Console::Render
             // * Members cannot straddle 16 byte boundaries
             //   This means a structure like {u32; u32; u32; u32x2} would require
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
+            // * bool will probably not work the way you want it to,
+            //   because HLSL uses 32-bit bools and C++ doesn't.
             alignas(sizeof(f32x4)) f32x4 viewport;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
@@ -565,7 +567,7 @@ namespace Microsoft::Console::Render
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
-            alignas(sizeof(u32)) bool useClearType = 0;
+            alignas(sizeof(u32)) u32 useClearType = 0;
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
         };
 
