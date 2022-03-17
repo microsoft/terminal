@@ -64,6 +64,11 @@ public:
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
 
+    void EnableXtermBracketedPasteMode(const bool enabled) override;
+    void CopyToClipboard(const std::wstring_view content) override;
+    void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
+    void SetWorkingDirectory(const std::wstring_view uri) override;
+
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
 

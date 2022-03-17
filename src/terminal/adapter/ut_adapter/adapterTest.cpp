@@ -206,6 +206,26 @@ public:
         return _expectedOutputCP;
     }
 
+    void EnableXtermBracketedPasteMode(const bool /*enabled*/)
+    {
+        Log::Comment(L"EnableXtermBracketedPasteMode MOCK called...");
+    }
+
+    void CopyToClipboard(const std::wstring_view /*content*/)
+    {
+        Log::Comment(L"CopyToClipboard MOCK called...");
+    }
+
+    void SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+    {
+        Log::Comment(L"SetTaskbarProgress MOCK called...");
+    }
+
+    void SetWorkingDirectory(const std::wstring_view /*uri*/)
+    {
+        Log::Comment(L"SetWorkingDirectory MOCK called...");
+    }
+
     bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");

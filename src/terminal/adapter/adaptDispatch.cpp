@@ -14,17 +14,6 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 
-// Routine Description:
-// - No Operation helper. It's just here to make sure they're always all the same.
-// Arguments:
-// - <none>
-// Return Value:
-// - Always false to signify we didn't handle it.
-bool NoOp() noexcept
-{
-    return false;
-}
-
 AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
     _api{ api },
     _renderer{ renderer },
@@ -1107,6 +1096,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        success = EnableXtermBracketedPasteMode(enable);
+        break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
@@ -2151,9 +2143,15 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 // - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexcept
+bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool enabled)
 {
-    return NoOp();
+    // If we're a conpty, always return false
+    if (_api.IsConsolePty())
+    {
+        return false;
+    }
+    _api.EnableXtermBracketedPasteMode(enabled);
+    return true;
 }
 
 //Routine Description:
@@ -2234,8 +2232,14 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - content - The content to copy to clipboard. Must be null terminated.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
+bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 {
+    // If we're a conpty, always return false
+    if (_api.IsConsolePty())
+    {
+        return false;
+    }
+    _api.CopyToClipboard(content);
     return false;
 }
 
@@ -2258,6 +2262,9 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
     {
         return false;
     }
+
+    // TODO: In the Terminal we also need to call the _pfnBackgroundColorChanged
+    // handler when this is going to affect the background color.
 
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
@@ -2358,12 +2365,92 @@ bool AdaptDispatch::EndHyperlink()
 }
 
 // Method Description:
-// - Ascribes to the ITermDispatch interface
-// - Not actually used in conhost
+// - Performs a ConEmu action
+//   Currently, the only actions we support are setting the taskbar state/progress
+//   and setting the working directory.
+// Arguments:
+// - string - contains the parameters that define which action we do
 // Return Value:
-// - false (so that the command gets flushed to terminal)
-bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 {
+    // If we're a conpty, always return false
+    if (_api.IsConsolePty())
+    {
+        return false;
+    }
+
+    constexpr size_t TaskbarMaxState{ 4 };
+    constexpr size_t TaskbarMaxProgress{ 100 };
+
+    unsigned int state = 0;
+    unsigned int progress = 0;
+
+    const auto parts = Utils::SplitString(string, L';');
+    unsigned int subParam = 0;
+
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
+    {
+        return false;
+    }
+
+    // 4 is SetProgressBar, which sets the taskbar state/progress.
+    if (subParam == 4)
+    {
+        if (parts.size() >= 2)
+        {
+            // A state parameter is defined, parse it out
+            const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+            if (!stateSuccess && !til::at(parts, 1).empty())
+            {
+                return false;
+            }
+            if (parts.size() >= 3)
+            {
+                // A progress parameter is also defined, parse it out
+                const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+                if (!progressSuccess && !til::at(parts, 2).empty())
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (state > TaskbarMaxState)
+        {
+            // state is out of bounds, return false
+            return false;
+        }
+        if (progress > TaskbarMaxProgress)
+        {
+            // progress is greater than the maximum allowed value, clamp it to the max
+            progress = TaskbarMaxProgress;
+        }
+        _api.SetTaskbarProgress(static_cast<DispatchTypes::TaskbarState>(state), progress);
+        return true;
+    }
+    // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
+    else if (subParam == 9)
+    {
+        if (parts.size() >= 2)
+        {
+            const auto path = til::at(parts, 1);
+            // The path should be surrounded with '"' according to the documentation of ConEmu.
+            // An example: 9;"D:/"
+            if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+            {
+                _api.SetWorkingDirectory(path.substr(1, path.size() - 2));
+            }
+            else
+            {
+                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+                // ConEmu also does this.
+                _api.SetWorkingDirectory(path);
+            }
+            return true;
+        }
+    }
+
     return false;
 }
 

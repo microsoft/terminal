@@ -109,11 +109,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
         bool EnableFocusEventMode(const bool enabled) override; // ?1004
         bool EnableAlternateScroll(const bool enabled) override; // ?1007
-        bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override; // ?2004
+        bool EnableXtermBracketedPasteMode(const bool enabled) override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
-        bool SetClipboard(const std::wstring_view content) noexcept override; // OSCSetClipboard
+        bool SetClipboard(const std::wstring_view content) override; // OSCSetClipboard
 
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCColorTable
@@ -127,7 +127,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
 
-        bool DoConEmuAction(const std::wstring_view string) noexcept override;
+        bool DoConEmuAction(const std::wstring_view string) override;
 
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,

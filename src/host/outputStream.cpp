@@ -15,8 +15,8 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::VirtualTerminal;
 using Microsoft::Console::Interactivity::ServiceLocator;
-using Microsoft::Console::VirtualTerminal::StateMachine;
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
     _io{ io }
@@ -291,6 +291,51 @@ void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
 unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 {
     return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+}
+
+// Routine Description:
+// - Sets the XTerm bracketed paste mode. This controls whether pasted content is
+//     bracketed with control sequences to differentiate it from typed text.
+// Arguments:
+// - enable - set to true to enable bracketing, false to disable.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::EnableXtermBracketedPasteMode(const bool /*enabled*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Copies the given content to the clipboard.
+// Arguments:
+// - content - the text to be copied.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::CopyToClipboard(const std::wstring_view /*content*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Updates the taskbar progress indicator.
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Set the active working directory. Not used in conhost.
+// Arguments:
+// - content - the text to be copied.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
+{
 }
 
 // Routine Description:
