@@ -720,9 +720,6 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
         {
             _psiMainBuffer->_fAltWindowChanged = false;
             _psiMainBuffer->_deferredPtyResize = til::size{ GetBufferSize().Dimensions() };
-
-            // const auto bufferSize = GetBufferSize().Dimensions();
-            // _psiMainBuffer->SetViewportSize(&bufferSize);
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);

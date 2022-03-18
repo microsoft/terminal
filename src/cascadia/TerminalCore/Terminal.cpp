@@ -249,7 +249,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // any scrollback, so we just need to resize it and presto, we're done.
     if (_inAltBuffer())
     {
-        // stach this resize for the future.
+        // stash this resize for the future.
         _deferredResize = til::size{ viewportSize };
 
         _altBuffer->GetCursor().StartDeferDrawing();
