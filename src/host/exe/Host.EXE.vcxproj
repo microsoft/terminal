@@ -91,7 +91,7 @@
     </ClCompile>
     <Link>
       <AllowIsolation>true</AllowIsolation>
-      <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>WinMM.Lib;usp10.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
