@@ -450,20 +450,21 @@ class CommandLineTests
         VERIFY_SUCCEEDED(m_pHistory->Add(L"I'm a little teapot", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"short and stout", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"inflammable", false));
+        VERIFY_SUCCEEDED(m_pHistory->Add(L"Indestructible", false));
 
-        SetPrompt(cookedReadData, L"i");
+        SetPrompt(cookedReadData, L"I");
 
         auto& commandLine = CommandLine::Instance();
         commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
-        VerifyPromptText(cookedReadData, L"inflammable");
+        VerifyPromptText(cookedReadData, L"Indestructible");
 
-        // make sure we skip to the next "i" history item
+        // make sure we skip to the next "I" history item
         commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
         VerifyPromptText(cookedReadData, L"I'm a little teapot");
 
         // should cycle back to the start of the command history
         commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
-        VerifyPromptText(cookedReadData, L"inflammable");
+        VerifyPromptText(cookedReadData, L"Indestructible");
     }
 
     TEST_METHOD(CmdlineCtrlHomeFullwidthChars)
