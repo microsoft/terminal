@@ -10,6 +10,8 @@
     <SubSystem>Console</SubSystem>
     <!-- suppress a bunch of Windows Universal properties from cppwinrt.props -->
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

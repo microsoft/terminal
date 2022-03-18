@@ -10,8 +10,10 @@
 
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
 
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
 
   <!-- Imported WinRT generated files must go up here to get excluded from Audit correctly. -->
