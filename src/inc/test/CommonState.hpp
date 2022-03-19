@@ -86,8 +86,9 @@ public:
 
     void CleanupGlobalRenderer()
     {
-        const Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         delete g.pRender;
+        g.pRender = nullptr;
     }
 
     void PrepareGlobalScreenBuffer(const short viewWidth = s_csWindowWidth,
