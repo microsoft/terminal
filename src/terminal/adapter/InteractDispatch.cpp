@@ -3,6 +3,12 @@
 
 #include "precomp.h"
 
+// Some of the interactivity classes pulled in by ServiceLocator.hpp are not
+// yet audit-safe, so for now we'll need to disable a bunch of warnings.
+#pragma warning(disable : 26432)
+#pragma warning(disable : 26440)
+#pragma warning(disable : 26455)
+
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../host/conddkrefs.h"
