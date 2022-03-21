@@ -2962,7 +2962,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
             else if (leaveTrailingChar && row == 3)
             {
                 auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'#', greenAttrs, 1u);
-                TestUtils::VerifyLineContains(iter, L' ', (afterResize ? greenAttrs : actualDefaultAttrs), static_cast<size_t>(width - 1));
+                TestUtils::VerifyLineContains(iter, L' ', (actualDefaultAttrs), static_cast<size_t>(width - 1));
             }
             else
             {
