@@ -193,6 +193,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
+        _updateMenu = std::make_shared<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            UpdatePatternLocationsInterval,
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->_MenuChangedHandlers(*core, nullptr);
+                }
+            });
+
         UpdateSettings(settings, unfocusedAppearance);
     }
 
@@ -1261,7 +1271,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalMenuChanged()
     {
-        _MenuChangedHandlers(*this, nullptr);
+        _updateMenu->Run();
+        // _MenuChangedHandlers(*this, nullptr);
     }
 
     bool ControlCore::HasSelection() const

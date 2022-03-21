@@ -254,6 +254,15 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
         CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
+        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 200, 300 });
+        AutoCompleteMenu().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (AutoCompleteMenu().Visibility() == Visibility::Collapsed)
+            {
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        AutoCompleteMenu().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -3901,9 +3910,14 @@ namespace winrt::TerminalApp::implementation
             commandsCollection.Append(command);
         }
 
-        CommandPalette().SetCommands(commandsCollection);
-        // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
-        CommandPalette().Visibility(Visibility::Visible);
+        AutoCompleteMenu().SetCommands(commandsCollection);
+
+        // TODO! move to the cursor
+        // Arbitrary 8,8 on the top for now
+        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ 8, 8 }, Windows::Foundation::Size{ 300, 300 });
+
+        CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+        AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
 
 }

@@ -33,6 +33,8 @@ namespace TerminalApp
         void EnableTabSwitcherMode(UInt32 startIdx, Microsoft.Terminal.Settings.Model.TabSwitcherMode tabSwitcherMode);
         void EnableTabSearchMode();
 
+        void PositionManually(Windows.Foundation.Point origin, Windows.Foundation.Size size);
+
         event Windows.Foundation.TypedEventHandler<CommandPalette, TabBase> SwitchToTabRequested;
         event Windows.Foundation.TypedEventHandler<CommandPalette, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<CommandPalette, String> CommandLineExecutionRequested;

@@ -243,6 +243,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updateMenu;
 
         winrt::fire_and_forget _asyncCloseConnection();
 
