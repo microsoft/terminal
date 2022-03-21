@@ -93,6 +93,7 @@ public:
 
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& GetMenu() const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -213,6 +214,7 @@ public:
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
+    void MenuChangedCallback(std::function<void()> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -280,6 +282,7 @@ private:
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
+    std::function<void()> _pfnMenuChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
@@ -362,6 +365,8 @@ private:
         WORD ScanCode;
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
+
+    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry> _menu;
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

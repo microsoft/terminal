@@ -2777,4 +2777,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    Windows::Foundation::Collections::IVector<Control::MenuEntry> TermControl::MenuEntries() const
+    {
+        return _core.MenuEntries();
+    }
 }

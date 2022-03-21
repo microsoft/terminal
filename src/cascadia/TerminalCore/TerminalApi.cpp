@@ -687,18 +687,30 @@ void Terminal::UseMainScreenBuffer()
 
 void Terminal::ClearMenu()
 {
+    _menu.clear();
+
+    if (_pfnMenuChanged)
+    {
+        _pfnMenuChanged();
+    }
 }
-void Terminal::AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& menu)
+void Terminal::AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& entry)
 {
-    menu;
+    // entry;
     // for (const auto& entry : menu)
     // {
-    auto n = menu._name;
+    auto n = entry._name;
     n;
     auto a = 9;
     a++;
     a;
 
+    _menu.push_back(entry);
+
+    if (_pfnMenuChanged)
+    {
+        _pfnMenuChanged();
+    }
     // }
 }
 // void Terminal::InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu)

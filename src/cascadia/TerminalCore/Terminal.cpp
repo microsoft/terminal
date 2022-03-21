@@ -1268,6 +1268,11 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
+void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnMenuChanged.swap(pfn);
+}
+
 // Method Description:
 // - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor
@@ -1402,4 +1407,9 @@ bool Terminal::_inAltBuffer() const noexcept
 TextBuffer& Terminal::_activeBuffer() const noexcept
 {
     return _inAltBuffer() ? *_altBuffer : *_mainBuffer;
+}
+
+const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& Terminal::GetMenu() const
+{
+    return _menu;
 }

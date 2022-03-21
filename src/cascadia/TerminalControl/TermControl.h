@@ -59,6 +59,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool BracketedPasteEnabled() const noexcept;
 
         double BackgroundOpacity() const;
+
+        Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
+
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -121,6 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(MenuChanged           , IInspectable, IInspectable, _core, MenuChanged);
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 

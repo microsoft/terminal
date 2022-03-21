@@ -3,6 +3,14 @@
 
 namespace Microsoft.Terminal.Control
 {
+
+    struct MenuEntry
+    {
+        String Name;
+        String Comment;
+        String Input;
+    };
+
     // These are properties of the TerminalCore that should be queryable by the
     // rest of the app.
     interface ICoreState
@@ -24,5 +32,8 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
 
         Microsoft.Terminal.Core.Scheme ColorScheme { get; set; };
+
+        IVector<MenuEntry> MenuEntries { get; };
+
     };
 }

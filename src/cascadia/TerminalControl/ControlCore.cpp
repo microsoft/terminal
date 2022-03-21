@@ -108,6 +108,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
+        auto pfnMenuChanged = std::bind(&ControlCore::_terminalMenuChanged, this);
+        _terminal->MenuChangedCallback(pfnMenuChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -1256,6 +1259,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _TaskbarProgressChangedHandlers(*this, nullptr);
     }
 
+    void ControlCore::_terminalMenuChanged()
+    {
+        _MenuChangedHandlers(*this, nullptr);
+    }
+
     bool ControlCore::HasSelection() const
     {
         return _terminal->IsSelectionActive();
@@ -1745,4 +1753,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // transparency, or our acrylic, or our image.
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
     }
+
+    static Windows::Foundation::Collections::IVector<Control::MenuEntry> _internalMenuToWinRT(const std::vector<DispatchTypes::MenuEntry>& menu)
+    {
+        auto v = winrt::single_threaded_observable_vector<Control::MenuEntry>();
+        for (const auto& entry : menu)
+        {
+            Control::MenuEntry e{};
+            e.Name = winrt::hstring(entry._name);
+            e.Comment = winrt::hstring(entry._comment);
+            e.Input = winrt::hstring(entry._input);
+            v.Append(e);
+        }
+
+        return v;
+    }
+
+    Windows::Foundation::Collections::IVector<Control::MenuEntry> ControlCore::MenuEntries() const
+    {
+        return _internalMenuToWinRT(_terminal->GetMenu());
+    }
+
 }

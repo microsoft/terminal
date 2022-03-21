@@ -111,6 +111,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool BracketedPasteEnabled() const noexcept;
+
+        Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
+
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -192,6 +195,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
         TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
+        TYPED_EVENT(MenuChanged,               IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -261,6 +265,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const int bufferSize);
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
+        void _terminalMenuChanged();
 #pragma endregion
 
 #pragma region RendererCallbacks
