@@ -70,6 +70,8 @@ namespace Microsoft::Terminal::Core
         virtual void UseAlternateScreenBuffer() = 0;
         virtual void UseMainScreenBuffer() = 0;
 
+        virtual void InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu) = 0;
+
     protected:
         ITerminalApi() = default;
     };

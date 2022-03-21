@@ -139,6 +139,9 @@ public:
 
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
+
+    void InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu) override;
+
 #pragma endregion
 
 #pragma region ITerminalInput

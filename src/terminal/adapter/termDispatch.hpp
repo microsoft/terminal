@@ -125,6 +125,7 @@ public:
     bool EndHyperlink() override { return false; }
 
     bool DoConEmuAction(const std::wstring_view /*string*/) override { return false; }
+    bool DoWindowsTerminalAction(const std::wstring_view /*string*/) override { return false; }
 
     StringHandler DownloadDRCS(const size_t /*fontNumber*/,
                                const VTParameter /*startChar*/,

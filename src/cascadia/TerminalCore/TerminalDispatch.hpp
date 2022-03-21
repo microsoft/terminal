@@ -82,6 +82,7 @@ public:
     bool EndHyperlink() override;
 
     bool DoConEmuAction(const std::wstring_view string) override;
+    bool DoWindowsTerminalAction(const std::wstring_view string) override;
 
     bool CursorSaveState() override;
     bool CursorRestoreState() override;

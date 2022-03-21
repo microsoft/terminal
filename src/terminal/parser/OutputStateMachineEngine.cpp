@@ -829,6 +829,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _dispatch->DoConEmuAction(string);
         break;
     }
+    case OscActionCodes::WindowsTerminalAction:
+    {
+        success = _dispatch->DoWindowsTerminalAction(string);
+        break;
+    }
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;

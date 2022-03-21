@@ -477,4 +477,14 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     constexpr short s_sDECCOLMSetColumns = 132;
     constexpr short s_sDECCOLMResetColumns = 80;
 
+    struct MenuEntry
+    {
+        std::wstring _name;
+        std::wstring _comment;
+        std::wstring _input;
+        MenuEntry(std::wstring_view name, std::wstring_view comment, std::wstring_view input) :
+            _name{ name }, _comment{ comment }, _input{ input }
+        {
+        }
+    };
 }

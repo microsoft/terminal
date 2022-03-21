@@ -684,3 +684,18 @@ void Terminal::UseMainScreenBuffer()
     }
     CATCH_LOG();
 }
+
+void Terminal::InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu)
+{
+    menu;
+    for (const auto& entry : menu)
+    {
+        auto n = entry._name;
+        n;
+        auto a = 9;
+        a++;
+        a;
+
+    }
+    // DebugBreak();
+}

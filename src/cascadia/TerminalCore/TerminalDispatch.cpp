@@ -545,6 +545,124 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string)
     return false;
 }
 
+// Method Description:
+// - Performs a Windows Terminal action
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - true
+bool TerminalDispatch::DoWindowsTerminalAction(const std::wstring_view string)
+{
+    // unsigned int state = 0;
+    // unsigned int progress = 0;
+
+    const auto parts = Utils::SplitString(string, L';');
+    unsigned int subParam = 0;
+
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
+    {
+        return false;
+    }
+
+    static auto at_or_empty = [](const std::vector<std::wstring_view>& parts, const size_t i) -> std::wstring_view {
+        if (parts.size() > i)
+            return til::at(parts, i);
+        else
+            return std::wstring_view{};
+    };
+    // TODO! 1 is menucomplete
+    // sequence format is
+    //
+    //   OSC 9001 ; 1 ; [name GS comment GS input GS ... US ]* ST
+    //
+    // So `string` is "1;[name GS comment GS input GS ... US]*"
+    // * `string[2:]` is the list of records.
+    // * Split those by US, then iterate and construct entries
+    //   * split by GS and take whatever we have.
+    if (subParam == 1)
+    {
+        // if (parts.size() >= 2)
+        // {
+        //     // A state parameter is defined, parse it out
+        //     const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+        //     if (!stateSuccess && !til::at(parts, 1).empty())
+        //     {
+        //         return false;
+        //     }
+        //     if (parts.size() >= 3)
+        //     {
+        //         // A progress parameter is also defined, parse it out
+        //         const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+        // if (!progressSuccess && !til::at(parts, 2).empty())
+        //         {
+        //             return false;
+        //         }
+        //     }
+        // }
+
+        // if (state > TaskbarMaxState)
+        // {
+        //     // state is out of bounds, return false
+        //     return false;
+        // }
+        // if (progress > TaskbarMaxProgress)
+        // {
+        //     // progress is greater than the maximum allowed value, clamp it to the max
+        //     progress = TaskbarMaxProgress;
+        // }
+        // _terminalApi.SetTaskbarProgress(static_cast<DispatchTypes::TaskbarState>(state), progress);
+        // return true;
+
+        if (parts.size() <= 1)
+        {
+            // Shortcut: OSC 9001 ; 1 ST
+            // clear the entries.
+            const std::vector<DispatchTypes::MenuEntry> menu;
+            _terminalApi.InvokeMenu(menu);
+        }
+        else
+        {
+            std::vector<DispatchTypes::MenuEntry> menu;
+
+            const std::wstring_view entriesString{ string.substr(2) };
+            const auto entries = Utils::SplitString(string, L'\x1F'); // US - unit separator
+            for (const auto& entryString : entries)
+            {
+                const auto params{ Utils::SplitString(entryString, L'\x1D') }; // GS - group separator
+
+                DispatchTypes::MenuEntry entry{ at_or_empty(params, 0), at_or_empty(params, 1), at_or_empty(params, 2) };
+
+                menu.push_back(std::move(entry));
+            }
+
+            _terminalApi.InvokeMenu(menu);
+        }
+    }
+    // // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
+    // else if (subParam == 9)
+    // {
+    //     if (parts.size() >= 2)
+    //     {
+    //         const auto path = til::at(parts, 1);
+    //         // The path should be surrounded with '"' according to the documentation of ConEmu.
+    //         // An example: 9;"D:/"
+    //         if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+    //         {
+    //             _terminalApi.SetWorkingDirectory(path.substr(1, path.size() - 2));
+    //         }
+    //         else
+    //         {
+    //             // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+    //             // ConEmu also does this.
+    //             _terminalApi.SetWorkingDirectory(path);
+    //         }
+    //         return true;
+    //     }
+    // }
+
+    return false;
+}
+
 // Routine Description:
 // - Support routine for routing private mode parameters to be set/reset as flags
 // Arguments:

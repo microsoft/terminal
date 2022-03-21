@@ -123,6 +123,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EndHyperlink() override;
 
         bool DoConEmuAction(const std::wstring_view string) noexcept override;
+        bool DoWindowsTerminalAction(const std::wstring_view string) noexcept override;
 
         StringHandler DownloadDRCS(const size_t fontNumber,
                                    const VTParameter startChar,
