@@ -237,9 +237,9 @@ charlespetzold
 charset
 CHARSETINFO
 chcp
-Checkin
 checkbox
 checkboxes
+Checkin
 chh
 Childitem
 chk
@@ -917,6 +917,7 @@ getwriter
 GFEh
 Gfun
 gfx
+GGI
 GHIJK
 GHIJKL
 GHIJKLM
@@ -1094,6 +1095,7 @@ ifndef
 IFont
 ifstream
 IGNOREEND
+IGNORELANGUAGE
 IHigh
 IHosted
 iid
@@ -1463,9 +1465,9 @@ mscorlib
 msctf
 msctls
 msdata
+MSDL
 msdn
 msft
-MSDL
 MSGCMDLINEF
 MSGF
 MSGFILTER
@@ -2239,6 +2241,7 @@ srect
 srv
 srvinit
 srvpipe
+ssa
 ssh
 sstream
 stackoverflow
@@ -2565,6 +2568,7 @@ USESHOWWINDOW
 USESIZE
 USESTDHANDLES
 ushort
+usp
 USRDLL
 utf
 utils
