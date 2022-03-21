@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "inc/viewport.hpp"
+#include "../renderer/inc/FontInfo.hpp"
 
 class TextBuffer;
 

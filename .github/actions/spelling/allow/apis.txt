@@ -72,6 +72,7 @@ IFACEMETHOD
 IFile
 IInheritable
 IMap
+IMonarch
 IObject
 iosfwd
 IPackage

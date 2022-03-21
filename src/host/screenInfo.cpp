@@ -56,7 +56,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _fAltWindowChanged{ false },
     _PopupAttributes{ popupAttributes },
     _virtualBottom{ 0 },
-    _renderTarget{ *this },
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo },
     _ignoreLegacyEquivalentVTAttributes{ false }
@@ -120,7 +119,8 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         pScreen->_textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                             defaultAttributes,
                                                             uiCursorSize,
-                                                            pScreen->_renderTarget);
+                                                            pScreen->IsActiveScreenBuffer(),
+                                                            *ServiceLocator::LocateGlobals().pRender);
 
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
@@ -1443,8 +1443,9 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     {
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
                                                      TextAttribute{},
-                                                     0,
-                                                     _renderTarget); // temporarily set size to 0 so it won't render.
+                                                     0, // temporarily set size to 0 so it won't render.
+                                                     _textBuffer->IsActiveBuffer(),
+                                                     _textBuffer->GetRenderer());
     }
     catch (...)
     {
@@ -1471,7 +1472,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
 
-        _textBuffer->SetCurrentAttributes(oldPrimaryAttributes);
+        newTextBuffer->SetCurrentAttributes(oldPrimaryAttributes);
 
         _textBuffer.swap(newTextBuffer);
     }
@@ -2125,7 +2126,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(const TextAttribute& attributes,
     // because the text attributes changed.
     if (!(gci.IsInVtIoMode()))
     {
-        GetRenderTarget().TriggerRedrawAll();
+        _textBuffer->TriggerRedrawAll();
     }
 
     gci.ConsoleIme.RefreshAreaAttributes();
@@ -2295,7 +2296,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     auto fillData = OutputCellIterator{ fillAttributes, fillLength };
     Write(fillData, fillPosition, false);
 
-    _textBuffer->GetRenderTarget().TriggerRedrawAll();
+    _textBuffer->TriggerRedrawAll();
 
     // Also reset the line rendition for the erased rows.
     _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
@@ -2679,17 +2680,6 @@ bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
 }
 
 // Method Description:
-// - Retrieves this buffer's current render target.
-// Arguments:
-// - <none>
-// Return Value:
-// - This buffer's current render target.
-IRenderTarget& SCREEN_INFORMATION::GetRenderTarget() noexcept
-{
-    return _renderTarget;
-}
-
-// Method Description:
 // - Gets the current font of the screen buffer.
 // Arguments:
 // - <none>
@@ -2711,7 +2701,7 @@ const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 // - Gets the desired font of the screen buffer. If we try loading this font and
 //      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
 //      We store this separately, so that if we need to reload the font, we can
-//      try again with our prefered font info (in the desired font info) instead
+//      try again with our preferred font info (in the desired font info) instead
 //      of re-using the looked up value from before.
 // Arguments:
 // - <none>

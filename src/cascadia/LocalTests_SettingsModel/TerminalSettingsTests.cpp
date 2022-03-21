@@ -85,7 +85,8 @@ namespace SettingsModelLocalTests
         for (int i = 0; i < expectedArgc; ++i)
         {
             const bool useQuotes = static_cast<bool>(rng(2));
-            const auto count = static_cast<size_t>(rng(64));
+            // We need to ensure there is at least one character
+            const auto count = static_cast<size_t>(rng(64) + 1);
             const auto ch = static_cast<wchar_t>(rng('z' - 'a' + 1) + 'a');
 
             if (i != 0)
@@ -107,6 +108,7 @@ namespace SettingsModelLocalTests
                 input.push_back(L'"');
             }
         }
+        Log::Comment(NoThrowString().Format(input.c_str()));
 
         int argc;
         wil::unique_hlocal_ptr<PWSTR[]> argv{ ::CommandLineToArgvW(input.c_str(), &argc) };
@@ -168,10 +170,18 @@ namespace SettingsModelLocalTests
         touch(file1);
         touch(file2);
 
-        const auto commandLine = file2.native() + LR"( -foo "bar1 bar2" -baz)"s;
-        const auto expected = file2.native() + L"\0-foo\0bar1 bar2\0-baz"s;
-        const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine.c_str());
-        VERIFY_ARE_EQUAL(expected, actual);
+        {
+            const auto commandLine = file2.native() + LR"( -foo "bar1 bar2" -baz)"s;
+            const auto expected = file2.native() + L"\0-foo\0bar1 bar2\0-baz"s;
+            const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine.c_str());
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+        {
+            const auto commandLine = L"C:\\";
+            const auto expected = L"C:\\";
+            const auto actual = implementation::CascadiaSettings::NormalizeCommandLine(commandLine);
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
     }
 
     void TerminalSettingsTests::GetProfileForArgsWithCommandline()
@@ -199,6 +209,10 @@ namespace SettingsModelLocalTests
                         "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
                         "commandline": "cmd.exe /A /C",
                         "connectionType": "{9a9977a7-1fe0-49c0-b6c0-13a0cd1c98a1}"
+                    },
+                    {
+                        "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}",
+                        "commandline": "C:\\invalid.exe",
                     }
                 ]
             }
@@ -217,7 +231,7 @@ namespace SettingsModelLocalTests
             TestCase{ L"cmd.exe", 0 },
             // SearchPathW() normalization + case insensitive matching.
             TestCase{ L"cmd.exe /a", 1 },
-            TestCase{ L"C:\\Windows\\System32\\cmd.exe /A", 1 },
+            TestCase{ L"%SystemRoot%\\System32\\cmd.exe /A", 1 },
             // Test that we don't pick the equally long but different "/A /B" variant.
             TestCase{ L"C:\\Windows\\System32\\cmd.exe /A /C", 1 },
             // Test that we don't pick the shorter "/A" variant,
@@ -227,6 +241,9 @@ namespace SettingsModelLocalTests
             // Ignore profiles with a connection type, like the Azure cloud shell.
             // Instead it should pick any other prefix.
             TestCase{ L"C:\\Windows\\System32\\cmd.exe /A /C", 1 },
+            // Failure to normalize a path (e.g. because the path doesn't exist)
+            // should yield the unmodified input string (see NormalizeCommandLine).
+            TestCase{ L"C:\\invalid.exe /A /B", 4 },
             // Return base layer profile for missing profiles.
             TestCase{ L"C:\\Windows\\regedit.exe", -1 },
         };
@@ -778,11 +795,11 @@ namespace SettingsModelLocalTests
         const auto terminalSettings4 = createTerminalSettings(activeProfiles.GetAt(4), colorSchemes);
         const auto terminalSettings5 = createTerminalSettings(activeProfiles.GetAt(5), colorSchemes);
 
-        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
+        VERIFY_ARE_EQUAL(til::color(0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1->CursorColor()); // default
-        VERIFY_ARE_EQUAL(RGB(0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
-        VERIFY_ARE_EQUAL(RGB(0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
-        VERIFY_ARE_EQUAL(RGB(0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
+        VERIFY_ARE_EQUAL(til::color(0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
+        VERIFY_ARE_EQUAL(til::color(0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
+        VERIFY_ARE_EQUAL(til::color(0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5->CursorColor()); // default
     }
 

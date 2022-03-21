@@ -60,7 +60,10 @@ filling in the last row, and updating the screen.
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
 
-#include "../renderer/inc/IRenderTarget.hpp"
+namespace Microsoft::Console::Render
+{
+    class Renderer;
+}
 
 class TextBuffer final
 {
@@ -68,7 +71,8 @@ public:
     TextBuffer(const COORD screenBufferSize,
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
-               Microsoft::Console::Render::IRenderTarget& renderTarget);
+               const bool isActiveBuffer,
+               Microsoft::Console::Render::Renderer& renderer);
     TextBuffer(const TextBuffer& a) = delete;
 
     // Used for duplicating properties to another text buffer
@@ -139,7 +143,17 @@ public:
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
     UnicodeStorage& GetUnicodeStorage() noexcept;
 
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
+    void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
+    bool IsActiveBuffer() const noexcept;
+
+    Microsoft::Console::Render::Renderer& GetRenderer() noexcept;
+
+    void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
+    void TriggerRedrawCursor(const COORD position);
+    void TriggerRedrawAll();
+    void TriggerScroll();
+    void TriggerScroll(const COORD delta);
+    void TriggerNewTextNotification(const std::wstring_view newText);
 
     const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
     const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
@@ -213,13 +227,14 @@ private:
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
+    bool _isActiveBuffer;
+    Microsoft::Console::Render::Renderer& _renderer;
+
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
     uint16_t _currentHyperlinkId;
 
     void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
-
-    Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
@@ -227,8 +242,6 @@ private:
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);
-
-    void _NotifyPaint(const Microsoft::Console::Types::Viewport& viewport) const;
 
     // Assist with maintaining proper buffer state for Double Byte character sequences
     bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
@@ -246,6 +259,8 @@ private:
     const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
     void _PruneHyperlinks();
+
+    static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
 
     std::unordered_map<size_t, std::wstring> _idsAndPatterns;
     size_t _currentPatternId;

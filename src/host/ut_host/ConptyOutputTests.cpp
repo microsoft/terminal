@@ -72,14 +72,14 @@ class ConptyOutputTests
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
         gci.CalculateDefaultColorIndices();
 
+        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
+
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
-
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
 
         // Set up an xterm-256 renderer for conpty
         wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);

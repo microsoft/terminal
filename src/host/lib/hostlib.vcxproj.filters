@@ -177,9 +177,6 @@
     <ClCompile Include="..\CursorBlinker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ScreenBufferRenderTarget.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\VtApiRoutines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -351,9 +348,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\IIoProvider.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ScreenBufferRenderTarget.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\VtApiRoutines.h">

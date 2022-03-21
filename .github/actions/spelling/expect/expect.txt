@@ -679,7 +679,6 @@ dxp
 dxsm
 dxttbmp
 Dyreen
-eachother
 eaf
 EASTEUROPE
 ECH
@@ -830,7 +829,6 @@ FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FORCEV
 foreach
-forground
 fprintf
 framebuffer
 FRAMECHANGED
@@ -1699,7 +1697,6 @@ outfile
 Outof
 OUTOFCONTEXT
 OUTOFMEMORY
-outout
 Outptr
 outstr
 OVERLAPPEDWINDOW
@@ -1851,7 +1848,6 @@ pragma
 prc
 prealigned
 prebuilt
-precendence
 precomp
 prect
 prefast
@@ -2089,6 +2085,7 @@ rxvt
 safearray
 SAFECAST
 safemath
+sapi
 sba
 SBCS
 SBCSDBCS
@@ -2579,6 +2576,7 @@ uuidv
 UVWX
 UVWXY
 UWA
+UWAs
 uwp
 uxtheme
 vals

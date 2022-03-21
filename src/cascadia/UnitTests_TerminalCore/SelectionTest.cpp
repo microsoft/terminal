@@ -10,7 +10,7 @@
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "../cascadia/UnitTests_TerminalCore/MockTermSettings.h"
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "consoletaeftemplates.hpp"
 
 using namespace WEX::Logging;
@@ -47,8 +47,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectUnit)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -60,8 +60,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectArea)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Used for two things:
             //    - click y-pos
@@ -114,8 +114,8 @@ namespace TerminalCoreUnitTests
             // Behavior: clamp coord to viewport.
             auto ValidateSingleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
                 // NOTE: SetSelectionEnd(COORD) is called within SetSelectionAnchor(COORD)
                 term.SetSelectionAnchor(maxCoord);
@@ -127,8 +127,8 @@ namespace TerminalCoreUnitTests
             //           Then, do double click selection.
             auto ValidateDoubleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
                 term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Word);
                 ValidateSingleRowSelection(term, expected);
@@ -139,8 +139,8 @@ namespace TerminalCoreUnitTests
             //           Then, do triple click selection.
             auto ValidateTripleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
                 term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Line);
                 ValidateSingleRowSelection(term, expected);
@@ -172,8 +172,8 @@ namespace TerminalCoreUnitTests
             */
 
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 10, 10 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
             const SHORT leftBoundary = viewport.Left();
@@ -214,8 +214,8 @@ namespace TerminalCoreUnitTests
             */
 
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 10, 10 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
             const SHORT leftBoundary = 0;
@@ -300,8 +300,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectBoxArea)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Used for two things:
             //    - click y-pos
@@ -336,9 +336,9 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectAreaAfterScroll)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
+            DummyRenderer renderer{ &term };
             SHORT scrollbackLines = 5;
-            term.Create({ 100, 100 }, scrollbackLines, emptyRT);
+            term.Create({ 100, 100 }, scrollbackLines, renderer);
 
             // Used for two things:
             //    - click y-pos
@@ -386,8 +386,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
@@ -409,8 +409,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Leading)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
@@ -432,8 +432,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
@@ -487,8 +487,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClick_GeneralCase)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -510,8 +510,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClick_Delimiter)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -531,8 +531,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClick_DelimiterClass)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -559,8 +559,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClickDrag_Right)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -588,8 +588,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClickDrag_Left)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -617,8 +617,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(TripleClick_GeneralCase)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -631,8 +631,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(TripleClickDrag_Horizontal)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -648,8 +648,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(TripleClickDrag_Vertical)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -676,8 +676,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(ShiftClick)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -793,8 +793,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(Pivot)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Step 1: Create a selection
             {

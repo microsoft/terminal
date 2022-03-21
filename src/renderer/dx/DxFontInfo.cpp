@@ -2,11 +2,9 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "DxFontInfo.h"
 
-#include "unicode.hpp"
-
+#include <unicode.hpp>
 #include <VersionHelpers.h>
 
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
@@ -14,7 +12,6 @@ static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Luci
 using namespace Microsoft::Console::Render;
 
 DxFontInfo::DxFontInfo() noexcept :
-    _familyName(),
     _weight(DWRITE_FONT_WEIGHT_NORMAL),
     _style(DWRITE_FONT_STYLE_NORMAL),
     _stretch(DWRITE_FONT_STRETCH_NORMAL),
@@ -96,11 +93,6 @@ bool DxFontInfo::GetFallback() const noexcept
     return _didFallback;
 }
 
-IDWriteFontCollection* DxFontInfo::GetNearbyCollection() const noexcept
-{
-    return _nearbyCollection.Get();
-}
-
 void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
                                const DWRITE_FONT_WEIGHT weight,
                                const DWRITE_FONT_STYLE style,
@@ -122,8 +114,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - localeName - Locale to search for appropriate fonts
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(gsl::not_null<IDWriteFactory1*> dwriteFactory,
-                                                                                               std::wstring& localeName)
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(IDWriteFontCollection* fontCollection, std::wstring& localeName)
 {
     // First attempt to find exactly what the user asked for.
     _didFallback = false;
@@ -134,7 +125,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     // method. We still want to fall back to a font that's reasonable, below.
     try
     {
-        face = _FindFontFace(dwriteFactory, localeName, true);
+        face = _FindFontFace(fontCollection, localeName);
 
         if (!face)
         {
@@ -161,7 +152,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
                 _familyName = _familyName.substr(0, lastSpace);
 
                 // Try to find it with the shortened family name
-                face = _FindFontFace(dwriteFactory, localeName, true);
+                face = _FindFontFace(fontCollection, localeName);
             }
         }
     }
@@ -175,25 +166,8 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         for (const auto fallbackFace : FALLBACK_FONT_FACES)
         {
             _familyName = fallbackFace;
-            // With these fonts, don't attempt the nearby lookup. We're looking
-            // for system fonts only. If one of the nearby fonts is causing us
-            // problems (like in GH#10211), then we don't want to go anywhere
 
-            // near it in this part.
-            face = _FindFontFace(dwriteFactory, localeName, false);
-
-            if (face)
-            {
-                _didFallback = true;
-                break;
-            }
-
-            _familyName = fallbackFace;
-            _weight = DWRITE_FONT_WEIGHT_NORMAL;
-            _stretch = DWRITE_FONT_STRETCH_NORMAL;
-            _style = DWRITE_FONT_STYLE_NORMAL;
-            face = _FindFontFace(dwriteFactory, localeName, false);
-
+            face = _FindFontFace(fontCollection, localeName);
             if (face)
             {
                 _didFallback = true;
@@ -214,27 +188,15 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - localeName - Locale to search for appropriate fonts
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(gsl::not_null<IDWriteFactory1*> dwriteFactory, std::wstring& localeName, const bool withNearbyLookup)
+#pragma warning(suppress : 26429) // C26429: Symbol 'fontCollection' is never tested for nullness, it can be marked as not_null (f.23).
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(IDWriteFontCollection* fontCollection, std::wstring& localeName)
 {
     Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
-    Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
-    THROW_IF_FAILED(dwriteFactory->GetSystemFontCollection(&fontCollection, false));
-
     UINT32 familyIndex;
     BOOL familyExists;
-    THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
 
-    // If the system collection missed, try the files sitting next to our binary.
-    if (withNearbyLookup && !familyExists)
-    {
-        // May be null on OS below Windows 10. If null, just skip the attempt.
-        if (const auto nearbyCollection = _NearbyCollection(dwriteFactory))
-        {
-            THROW_IF_FAILED(nearbyCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
-            fontCollection = nearbyCollection;
-        }
-    }
+    THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
 
     if (familyExists)
     {
@@ -326,82 +288,4 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 
     // and return it.
     return retVal;
-}
-
-// Routine Description:
-// - Creates a DirectWrite font collection of font files that are sitting next to the running
-//   binary (in the same directory as the EXE).
-// Arguments:
-// - dwriteFactory - The DWrite factory to use
-// Return Value:
-// - DirectWrite font collection. May be null if one cannot be created.
-[[nodiscard]] IDWriteFontCollection* DxFontInfo::_NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory)
-{
-    if (_nearbyCollection)
-    {
-        return _nearbyCollection.Get();
-    }
-
-    // The convenience interfaces for loading fonts from files
-    // are only available on Windows 10+.
-    ::Microsoft::WRL::ComPtr<IDWriteFactory6> factory6;
-    if (FAILED(dwriteFactory->QueryInterface<IDWriteFactory6>(&factory6)))
-    {
-        return nullptr;
-    }
-
-    ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> systemFontCollection;
-    THROW_IF_FAILED(factory6->GetSystemFontCollection(false, &systemFontCollection, 0));
-
-    ::Microsoft::WRL::ComPtr<IDWriteFontSet> systemFontSet;
-    THROW_IF_FAILED(systemFontCollection->GetFontSet(&systemFontSet));
-
-    ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder2> fontSetBuilder2;
-    THROW_IF_FAILED(factory6->CreateFontSetBuilder(&fontSetBuilder2));
-
-    THROW_IF_FAILED(fontSetBuilder2->AddFontSet(systemFontSet.Get()));
-
-    // Magic static so we only attempt to grovel the hard disk once no matter how many instances
-    // of the font collection itself we require.
-    static const auto knownPaths = s_GetNearbyFonts();
-    for (auto& p : knownPaths)
-    {
-        fontSetBuilder2->AddFontFile(p.c_str());
-    }
-
-    ::Microsoft::WRL::ComPtr<IDWriteFontSet> fontSet;
-    THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(&fontSet));
-
-    ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> fontCollection;
-    THROW_IF_FAILED(factory6->CreateFontCollectionFromFontSet(fontSet.Get(), &fontCollection));
-
-    _nearbyCollection = fontCollection;
-    return _nearbyCollection.Get();
-}
-
-// Routine Description:
-// - Digs through the directory that the current executable is running within to find
-//   any TTF files sitting next to it.
-// Arguments:
-// - <none>
-// Return Value:
-// - Iterable collection of filesystem paths, one per font file that was found
-[[nodiscard]] std::vector<std::filesystem::path> DxFontInfo::s_GetNearbyFonts()
-{
-    std::vector<std::filesystem::path> paths;
-
-    // Find the directory we're running from then enumerate all the TTF files
-    // sitting next to us.
-    const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-    const auto folder{ module.parent_path() };
-
-    for (const auto& p : std::filesystem::directory_iterator(folder))
-    {
-        if (til::ends_with(p.path().native(), L".ttf"))
-        {
-            paths.push_back(p.path());
-        }
-    }
-
-    return paths;
 }

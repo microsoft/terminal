@@ -4,7 +4,7 @@
 // This test class creates an in-proc conpty host as well as a Terminal, to
 // validate that strings written to the conpty create the same response on the
 // terminal end. Tests can be written that validate both the contents of the
-// host buffer as well as the terminal buffer. Everytime that
+// host buffer as well as the terminal buffer. Every time that
 // `renderer.PaintFrame()` is called, the tests will validate the expected
 // output, and then flush the output of the VtEngine straight to the Terminal.
 
@@ -12,7 +12,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/convert.hpp"
 
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
@@ -87,7 +87,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     {
         // STEP 1: Set up the Terminal
         term = std::make_unique<Terminal>();
-        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, emptyRT);
+        emptyRenderer = std::make_unique<DummyRenderer>(term.get());
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, 100, *emptyRenderer);
 
         // STEP 2: Set up the Conpty
 
@@ -100,14 +101,14 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
         gci.CalculateDefaultColorIndices();
 
+        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
+
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
-
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
 
         // Set up an xterm-256 renderer for conpty
         wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
@@ -158,6 +159,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Tests should drain all the output they push into the expected output buffer.");
 
+        emptyRenderer = nullptr;
         term = nullptr;
 
         return true;
@@ -237,7 +239,7 @@ private:
     bool _checkConptyOutput{ true }; // If true, the test class will check that the output from conpty was expected
     bool _logConpty{ false }; // If true, the test class will log all the output from conpty. Helpful for debugging.
 
-    DummyRenderTarget emptyRT;
+    std::unique_ptr<DummyRenderer> emptyRenderer;
     std::unique_ptr<Terminal> term;
 
     ApiRoutines _apiRoutines;
@@ -392,7 +394,7 @@ void ConptyRoundtripTests::WriteTwoLinesUsesNewline()
 void ConptyRoundtripTests::WriteAFewSimpleLines()
 {
     Log::Comment(NoThrowString().Format(
-        L"Write more lines of outout. We should use \r\n to move the cursor"));
+        L"Write more lines of output. We should use \r\n to move the cursor"));
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -2962,7 +2964,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
             else if (leaveTrailingChar && row == 3)
             {
                 auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'#', greenAttrs, 1u);
-                TestUtils::VerifyLineContains(iter, L' ', (afterResize ? greenAttrs : actualDefaultAttrs), static_cast<size_t>(width - 1));
+                TestUtils::VerifyLineContains(iter, L' ', (actualDefaultAttrs), static_cast<size_t>(width - 1));
             }
             else
             {
@@ -3047,7 +3049,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         // Line 2 chars: ____#_________#___ (break)
         // Line 2 attrs: BBBBBBBBBBBBBBDDDD (First spacesToPrint+5 are blue BG, then default attrs)
         //                    [<----->]
-        //                      This number of spaces controled by spacesToPrint
+        //                      This number of spaces controlled by spacesToPrint
         if (i > 0)
         {
             sm.ProcessString(L"\r\n");
