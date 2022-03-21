@@ -1426,6 +1426,8 @@ namespace winrt::TerminalApp::implementation
         term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
+
+        term.MenuChanged({ get_weak(), &TerminalPage::_ControlMenuChangedHandler });
     }
 
     // Method Description:
@@ -3876,6 +3878,32 @@ namespace winrt::TerminalApp::implementation
         }
 
         applicationState.DismissedMessages(std::move(messages));
+    }
+
+    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        auto control{ _GetActiveControl() };
+        if (!control)
+            co_return;
+        auto entries = control.MenuEntries();
+
+        auto commandsCollection = winrt::single_threaded_vector<Command>();
+
+        for (const auto& entry : entries)
+        {
+            SendInputArgs args{ entry.Input };
+            ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+            Command command{};
+            command.ActionAndArgs(actionAndArgs);
+            command.Name(entry.Name);
+
+            commandsCollection.Append(command);
+        }
+
+        CommandPalette().SetCommands(commandsCollection);
+        // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+        CommandPalette().Visibility(Visibility::Visible);
     }
 
 }

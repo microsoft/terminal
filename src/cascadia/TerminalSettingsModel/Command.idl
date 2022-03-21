@@ -32,8 +32,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Command();
 
-        String Name { get; };
-        ActionAndArgs ActionAndArgs { get; };
+        String Name;
+        ActionAndArgs ActionAndArgs;
         Microsoft.Terminal.Control.KeyChord Keys { get; };
         void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);
         String KeyChordText { get; };
