@@ -6,3 +6,4 @@
 
 TARGETNAME              = ConRenderGdi
 TARGETTYPE              = LIBRARY
+TARGETLIBS              = $(SDK_LIB_PATH)\usp10.lib
