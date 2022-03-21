@@ -579,6 +579,10 @@ bool TerminalDispatch::DoWindowsTerminalAction(const std::wstring_view string)
     // * `string[2:]` is the list of records.
     // * Split those by US, then iterate and construct entries
     //   * split by GS and take whatever we have.
+    if (subParam == 0)
+    {
+        _terminalApi.ClearMenu();
+    }
     if (subParam == 1)
     {
         // if (parts.size() >= 2)
@@ -615,27 +619,27 @@ bool TerminalDispatch::DoWindowsTerminalAction(const std::wstring_view string)
 
         if (parts.size() <= 1)
         {
-            // Shortcut: OSC 9001 ; 1 ST
-            // clear the entries.
-            const std::vector<DispatchTypes::MenuEntry> menu;
-            _terminalApi.InvokeMenu(menu);
+            // // Shortcut: OSC 9001 ; 1 ST
+            // // clear the entries.
+            // const std::vector<DispatchTypes::MenuEntry> menu;
+            // _terminalApi.AppendToMenu(menu);
         }
         else
         {
-            std::vector<DispatchTypes::MenuEntry> menu;
+            // std::vector<DispatchTypes::MenuEntry> menu;
 
-            const std::wstring_view entriesString{ string.substr(2) };
-            const auto entries = Utils::SplitString(string, L'\x1F'); // US - unit separator
-            for (const auto& entryString : entries)
-            {
-                const auto params{ Utils::SplitString(entryString, L'\x1D') }; // GS - group separator
+            const std::wstring_view entryString{ string.substr(2) };
+            // const auto entries = Utils::SplitString(string, L'\x7F'); // US - unit separator
+            // for (const auto& entryString : entries)
+            // {
+            const auto params{ Utils::SplitString(entryString, L'\x7F') }; // DEL
 
-                DispatchTypes::MenuEntry entry{ at_or_empty(params, 0), at_or_empty(params, 1), at_or_empty(params, 2) };
+            DispatchTypes::MenuEntry entry{ at_or_empty(params, 0), at_or_empty(params, 1), at_or_empty(params, 2) };
 
-                menu.push_back(std::move(entry));
-            }
+            // menu.push_back(std::move(entry));
+            // }
 
-            _terminalApi.InvokeMenu(menu);
+            _terminalApi.AddToMenu(entry);
         }
     }
     // // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
