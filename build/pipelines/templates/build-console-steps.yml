@@ -110,6 +110,8 @@ steps:
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
      **/Microsoft.VCLibs.*.appx
+     **/*unit.test*.dll
+     **/*unit.test*.manifest
      **/TestHostApp/*.exe
      **/TestHostApp/*.dll
      **/TestHostApp/*.xml
