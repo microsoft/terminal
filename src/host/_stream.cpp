@@ -765,6 +765,11 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
             }
+            // Notify accessibility
+            if (screenInfo.HasAccessibilityEventing())
+            {
+                screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + 1, CursorPosition.Y);
+            }
             break;
         }
         case UNICODE_TAB:
