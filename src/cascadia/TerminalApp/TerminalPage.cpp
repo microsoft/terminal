@@ -3919,6 +3919,14 @@ namespace winrt::TerminalApp::implementation
         AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 300, 300 });
 
         CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+
+        const til::point cursorPos{ control.CursorPositionInDips() };
+        const auto characterSize{ control.CharacterDimensions() };
+
+        // TODO! position relative to the actual term control
+        AutoCompletePopup().HorizontalOffset(cursorPos.x);
+        AutoCompletePopup().VerticalOffset(cursorPos.y + characterSize.Height);
+
         AutoCompletePopup().IsOpen(true);
         AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
