@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
+        void PreviewInput(const winrt::hstring& text);
 
         void WindowVisibilityChanged(const bool showOrHide);
 
