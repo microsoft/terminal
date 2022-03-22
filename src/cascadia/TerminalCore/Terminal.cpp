@@ -1152,6 +1152,14 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     if (rowsPushedOffTopOfBuffer != 0)
     {
+        for (auto& mark : _scrollMarks)
+        {
+            mark.start.y -= rowsPushedOffTopOfBuffer;
+        }
+        _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
+                                          _scrollMarks.end(),
+                                          [](const VirtualTerminal::DispatchTypes::ScrollMark& m) { return m.start.y < 0; }),
+                           _scrollMarks.end());
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
@@ -1412,4 +1420,9 @@ TextBuffer& Terminal::_activeBuffer() const noexcept
 const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& Terminal::GetMenu() const
 {
     return _menu;
+}
+
+const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const
+{
+    return _scrollMarks;
 }

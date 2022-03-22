@@ -487,4 +487,27 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         {
         }
     };
+
+    enum class MarkCategory : size_t
+    {
+        Prompt = 0,
+        Error = 1,
+        Warning = 2,
+        Info = 3
+    };
+
+    struct ScrollMark
+    {
+        til::color color;
+        til::point start;
+        til::point end; // exclusive
+        uint64_t timestamp;
+        MarkCategory category;
+        std::wstring comment;
+        // shape? Does that even make sense?
+        // * Arrow (iterm2),
+        // * bracket (terminal.app prompts),
+        // * bar(terminal.app mark),
+        // * brace?
+    };
 }

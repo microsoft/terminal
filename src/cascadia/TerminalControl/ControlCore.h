@@ -113,6 +113,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool BracketedPasteEnabled() const noexcept;
 
         Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
+        Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
 
 #pragma endregion
 

@@ -132,6 +132,7 @@ public:
     virtual bool EndHyperlink() = 0;
 
     virtual bool DoConEmuAction(const std::wstring_view string) = 0;
+    virtual bool DoITerm2Action(const std::wstring_view string) = 0;
     virtual bool DoWindowsTerminalAction(const std::wstring_view string) = 0;
 
     virtual StringHandler DownloadDRCS(const size_t fontNumber,

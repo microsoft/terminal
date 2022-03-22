@@ -94,6 +94,7 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
     const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& GetMenu() const;
+    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -144,6 +145,8 @@ public:
     // void InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu) override;
     void ClearMenu();
     void AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& menu);
+
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark);
 
 #pragma endregion
 
@@ -367,6 +370,7 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry> _menu;
+    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

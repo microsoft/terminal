@@ -1785,4 +1785,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _internalMenuToWinRT(_terminal->GetMenu());
     }
 
+    Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
+    {
+        auto internalMarks{ _terminal->GetScrollMarks() };
+        auto v = winrt::single_threaded_observable_vector<Control::ScrollMark>();
+        for (const auto& mark : internalMarks)
+        {
+            Control::ScrollMark m{};
+            m.Color = winrt::Microsoft::Terminal::Core::Color(mark.color);
+            m.Start = mark.start.to_core_point();
+            m.End = mark.end.to_core_point();
+            // m.Category = (size_t)mark.category; // TODO! whatever
+            m.Comment = winrt::hstring(mark.comment);
+
+            v.Append(m);
+        }
+
+        return v;
+    }
+
 }

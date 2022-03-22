@@ -73,6 +73,8 @@ namespace Microsoft::Terminal::Core
         virtual void ClearMenu() = 0;
         virtual void AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& menu) = 0;
 
+        virtual void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
+
     protected:
         ITerminalApi() = default;
     };

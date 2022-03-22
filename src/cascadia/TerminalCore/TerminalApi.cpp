@@ -696,34 +696,23 @@ void Terminal::ClearMenu()
 }
 void Terminal::AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& entry)
 {
-    // entry;
-    // for (const auto& entry : menu)
-    // {
-    auto n = entry._name;
-    n;
-    auto a = 9;
-    a++;
-    a;
-
     _menu.push_back(entry);
 
     if (_pfnMenuChanged)
     {
         _pfnMenuChanged();
     }
-    // }
 }
-// void Terminal::InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu)
-// {
-//     menu;
-//     for (const auto& entry : menu)
-//     {
-//         auto n = entry._name;
-//         n;
-//         auto a = 9;
-//         a++;
-//         a;
 
-//     }
-//     // DebugBreak();
-// }
+void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
+{
+    DispatchTypes::ScrollMark m = mark;
+    // m.timestamp = now()
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+    m.start = m.end = cursorPos;
+
+    _scrollMarks.push_back(m);
+
+    // Tell the control that the scrollbar has somehow changed. Used as a hack.
+    _NotifyScrollEvent();
+}

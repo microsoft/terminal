@@ -2227,6 +2227,17 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
 // - Not actually used in conhost
 // Return Value:
 // - false (so that the command gets flushed to terminal)
+bool AdaptDispatch::DoITerm2Action(const std::wstring_view /*string*/) noexcept
+{
+    // TODO! may need to flush manually, to make sure marks end up on the right line, like alt buffer sequence. Maybe.
+    return false;
+}
+
+// Method Description:
+// - Ascribes to the ITermDispatch interface
+// - Not actually used in conhost
+// Return Value:
+// - false (so that the command gets flushed to terminal)
 bool AdaptDispatch::DoWindowsTerminalAction(const std::wstring_view /*string*/) noexcept
 {
     return false;

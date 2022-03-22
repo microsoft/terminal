@@ -1244,6 +1244,14 @@
                        Style="{StaticResource ForkedScrollbarTemplate}"
                        ValueChanged="_ScrollbarChangeHandler"
                        ViewportSize="10" />
+
+            <Canvas x:Name="ScrollBarCanvas"
+                    Grid.Column="1"
+                    Width="{StaticResource ScrollBarSize}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Stretch"
+                    Background="#01000000" />
+
         </Grid>
 
         <local:TSFInputControl x:Name="TSFInputControl"

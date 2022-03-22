@@ -545,6 +545,28 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string)
     return false;
 }
 
+bool TerminalDispatch::DoITerm2Action(const std::wstring_view string)
+{
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action{ parts[0] };
+
+    if (action == L"SetMark")
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        mark.color = til::color(255, 255, 255); // should this be configurable?
+        _terminalApi.AddMark(mark);
+        return true;
+    }
+    return false;
+}
+
 // Method Description:
 // - Performs a Windows Terminal action
 // Arguments:
