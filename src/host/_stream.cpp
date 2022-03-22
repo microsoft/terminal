@@ -765,7 +765,8 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
             }
-            // Notify accessibility
+            // Notify accessibility to read the backspaced character.
+            // See GH:12735, MSFT:31748387
             if (screenInfo.HasAccessibilityEventing())
             {
                 screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + 1, CursorPosition.Y);
