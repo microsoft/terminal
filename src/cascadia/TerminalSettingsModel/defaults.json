@@ -385,12 +385,10 @@
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
 
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=" }, "name": "Search for selected text" },
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=site%3Astackoverflow.com+" }, "name": "Search StackOverflow" },
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=site%3Agithub.com+" }, "name": "Search GitHub" },
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.google.com/search?q=" }, "name": "Google for selected text" },
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.google.com/search?q=site%3Astackoverflow.com+" }, "name": "Google StackOverflow" },
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.google.com/search?q=site%3Agithub.com+" }, "name": "Google GitHub" },
+        // Web Search
+        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=" }, "name": { "key": "SearchWebCommandKey" } },
+        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=site%3Agithub.com+" }, "name": { "key": "SearchGitHubCommandKey" } },
+        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=site%3Astackoverflow.com+" }, "name": { "key": "SearchStackOverflowCommandKey" } },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

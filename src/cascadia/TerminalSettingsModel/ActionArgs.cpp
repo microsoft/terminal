@@ -707,7 +707,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring SearchForTextArgs::GenerateName() const
     {
         return winrt::hstring{
-            fmt::format(L"search web with {}",
+            fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
                         QueryUrl().c_str())
         };
     }
