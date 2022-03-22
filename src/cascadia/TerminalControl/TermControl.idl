@@ -82,5 +82,7 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
+        void PreviewInput(String text);
+
     }
 }

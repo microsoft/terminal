@@ -50,6 +50,7 @@ namespace winrt::TerminalApp::implementation
         {
         case ShortcutAction::SetColorScheme:
         case ShortcutAction::AdjustOpacity:
+        case ShortcutAction::SendInput:
         {
             _RunRestorePreviews();
             break;
@@ -140,6 +141,27 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    void TerminalPage::_PreviewSendInput(const Settings::Model::SendInputArgs& args)
+    {
+        const auto backup = _restorePreviewFuncs.empty();
+
+        _ApplyToActiveControls([&](const auto& control) {
+            // // Stash a copy of the original opacity.
+            // auto originalOpacity{ control.BackgroundOpacity() };
+
+            // Apply the new opacity
+            control.PreviewInput(args.Input());
+
+            if (backup)
+            {
+                _restorePreviewFuncs.emplace_back([=]() {
+                    // On dismiss:
+                    control.PreviewInput(L"");
+                });
+            }
+        });
+    }
+
     // Method Description:
     // - Handler for the CommandPalette::PreviewAction event. The Command
     //   Palette will raise this even when an action is selected, but _not_
@@ -174,6 +196,11 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::AdjustOpacity:
             {
                 _PreviewAdjustOpacity(args.ActionAndArgs().Args().try_as<AdjustOpacityArgs>());
+                break;
+            }
+            case ShortcutAction::SendInput:
+            {
+                _PreviewSendInput(args.ActionAndArgs().Args().try_as<SendInputArgs>());
                 break;
             }
             }

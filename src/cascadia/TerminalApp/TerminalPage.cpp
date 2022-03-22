@@ -262,6 +262,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
         AutoCompleteMenu().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+        AutoCompleteMenu().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we

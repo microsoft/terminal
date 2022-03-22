@@ -322,6 +322,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
+        PreviewInput(L"");
         _core.SendInput(wstr);
     }
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
@@ -2781,4 +2782,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.MenuEntries();
     }
+
+    void TermControl::PreviewInput(const winrt::hstring& text)
+    {
+        TSFInputControl().ManuallyDisplayText(text);
+    }
+
 }
