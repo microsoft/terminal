@@ -72,6 +72,8 @@ namespace Microsoft::Terminal::Core
         virtual void UseAlternateScreenBuffer() = 0;
         virtual void UseMainScreenBuffer() = 0;
 
+        virtual void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
+
     protected:
         ITerminalApi() = default;
     };

@@ -3,6 +3,23 @@
 
 namespace Microsoft.Terminal.Control
 {
+    enum MarkCategory
+    {
+        Prompt = 0,
+        Error = 1,
+        Warning = 2,
+        Info = 3
+    };
+    struct ScrollMark
+    {
+        Microsoft.Terminal.Core.Color Color;
+        Microsoft.Terminal.Core.Point Start;
+        Microsoft.Terminal.Core.Point End; // exclusive
+        // UInt64 timestamp;
+        MarkCategory Category;
+        String Comment;
+    };
+
     // These are properties of the TerminalCore that should be queryable by the
     // rest of the app.
     interface ICoreState
@@ -30,6 +47,7 @@ namespace Microsoft.Terminal.Control
         void AddMark(ScrollMark mark);
         void ClearMark();
         void ClearAllMarks();
+        IVector<ScrollMark> ScrollMarks { get; };
 
     };
 }

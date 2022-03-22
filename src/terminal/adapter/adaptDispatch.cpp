@@ -2330,6 +2330,17 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
 }
 
 // Method Description:
+// - Ascribes to the ITermDispatch interface
+// - Not actually used in conhost
+// Return Value:
+// - false (so that the command gets flushed to terminal)
+bool AdaptDispatch::DoITerm2Action(const std::wstring_view /*string*/) noexcept
+{
+    // TODO! may need to flush manually, to make sure marks end up on the right line, like alt buffer sequence. Maybe.
+    return false;
+}
+
+// Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is
 //   transmitted in sixel format via the returned StringHandler function.

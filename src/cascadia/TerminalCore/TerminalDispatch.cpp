@@ -597,6 +597,12 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string)
     return false;
 }
 
+// Method Description:
+// - Performs a iTerm2 action
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - true
 bool TerminalDispatch::DoITerm2Action(const std::wstring_view string)
 {
     const auto parts = Utils::SplitString(string, L';');
@@ -613,7 +619,6 @@ bool TerminalDispatch::DoITerm2Action(const std::wstring_view string)
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
         mark.color = til::color(255, 255, 255); // should this be configurable?
-        // mark.start = mark.end = til::point{ _terminalApi.GetCursorPosition() };
         _terminalApi.AddMark(mark);
         return true;
     }

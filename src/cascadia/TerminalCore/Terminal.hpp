@@ -101,7 +101,8 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    void PrintString(std::wstring_view stringView) override;
+    void
+    PrintString(std::wstring_view stringView) override;
     bool ReturnResponse(std::wstring_view responseString) override;
     TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
@@ -369,6 +370,8 @@ private:
         WORD ScanCode;
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
+
+    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

@@ -85,6 +85,8 @@ public:
 
     bool DoConEmuAction(const std::wstring_view string) override;
 
+    bool DoITerm2Action(const std::wstring_view string) override;
+
     bool CursorSaveState() override;
     bool CursorRestoreState() override;
 
