@@ -266,6 +266,111 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleScrollToMark(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<ScrollToMarkArgs>())
+        {
+            _ApplyToActiveControls([realArgs](auto& control) {
+                const auto currentOffset = control.ScrollOffset();
+                const auto marks{ control.ScrollMarks() };
+
+                std::optional<Control::ScrollMark> tgt{ std::nullopt };
+
+                switch (realArgs.Direction())
+                {
+                case ScrollToMarkDirection::Last:
+                {
+                    int highest = 0;
+                    for (const auto& mark : marks)
+                    {
+                        const auto newY = mark.Start.Y;
+                        if (newY > highest)
+                        {
+                            tgt = mark;
+                            highest = newY;
+                        }
+                    }
+                    break;
+                }
+                case ScrollToMarkDirection::First:
+                {
+                    int lowest = currentOffset;
+                    for (const auto& mark : marks)
+                    {
+                        const auto newY = mark.Start.Y;
+                        if (newY < lowest)
+                        {
+                            tgt = mark;
+                            lowest = newY;
+                        }
+                    }
+                    break;
+                }
+                case ScrollToMarkDirection::Next:
+                {
+                    int minDistance = INT_MAX;
+                    for (const auto& mark : marks)
+                    {
+                        const auto delta = mark.Start.Y - currentOffset;
+                        if (delta > 0 && delta < minDistance)
+                        {
+                            tgt = mark;
+                            minDistance = delta;
+                        }
+                    }
+                    break;
+                }
+                case ScrollToMarkDirection::Previous:
+                default:
+                {
+                    int minDistance = INT_MAX;
+                    for (const auto& mark : marks)
+                    {
+                        const auto delta = currentOffset - mark.Start.Y;
+                        if (delta > 0 && delta < minDistance)
+                        {
+                            tgt = mark;
+                            minDistance = delta;
+                        }
+                    }
+                    break;
+                }
+                }
+
+                if (tgt.has_value())
+                {
+                    control.ScrollViewport(tgt->Start.Y);
+                }
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleAddMark(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<AddMarkArgs>())
+        {
+            _ApplyToActiveControls([realArgs](auto& /*control*/) {
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearMark(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& /*control*/) {
+        });
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearAllMarks(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& /*control*/) {
+        });
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleFindMatch(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {

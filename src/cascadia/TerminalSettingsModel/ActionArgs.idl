@@ -107,6 +107,14 @@ namespace Microsoft.Terminal.Settings.Model
         ToMouse,
     };
 
+    enum ScrollToMarkDirection
+    {
+        Previous,
+        Next,
+        First,
+        Last
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -288,6 +296,18 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ScrollDownArgs : IActionArgs
     {
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+
+    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
+    {
+        ScrollToMarkDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AddMarkArgs : IActionArgs
+    {
+        Microsoft.Terminal.Core.Color Color { get; };
+        // Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
     };
 
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
