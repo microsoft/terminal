@@ -110,6 +110,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int ViewHeight() const;
         int BufferHeight() const;
 
+        bool HasSelection() const;
+        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+
         bool BracketedPasteEnabled() const noexcept;
 #pragma endregion
 
@@ -140,9 +143,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool IsVtMouseModeEnabled() const;
         Core::Point CursorPosition() const;
 
-        bool HasSelection() const;
         bool CopyOnSelect() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         void SetSelectionAnchor(til::point const& position);
         void SetEndSelectionPoint(til::point const& position);
 

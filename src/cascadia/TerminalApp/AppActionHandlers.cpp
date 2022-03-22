@@ -860,6 +860,32 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSearchForText(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
+            {
+                const auto queryUrl = realArgs.QueryUrl();
+                if (const auto termControl{ _GetActiveControl() })
+                {
+                    if (termControl.HasSelection())
+                    {
+                        const auto selections{ termControl.SelectedText(true) };
+                        if (selections.Size() == 1) // TODO! should theoretically be able to work for multiple lines of selection
+                        {
+                            const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(selections.GetAt(0));
+                            winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ finalString };
+                            _OpenHyperlinkHandler(termControl, shortcut);
+                            args.Handled(true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     void TerminalPage::_HandleGlobalSummon(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {

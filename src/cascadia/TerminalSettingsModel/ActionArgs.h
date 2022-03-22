@@ -37,6 +37,7 @@
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
+#include "SearchForTextArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
 #include "ExportBufferArgs.g.h"
@@ -199,6 +200,12 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
     X(winrt::hstring, Name, "name", false, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define SEARCH_FOR_TEXT_ARGS(X) \
+    X(winrt::hstring, QueryUrl, "queryUrl", false, L"")
+//TODO! this should have some validation!
+// Maybe in post though. Maybe at runtime make sure QueryUrl starts with "http:"
 
 ////////////////////////////////////////////////////////////////////////////////
 #define GLOBAL_SUMMON_ARGS(X)                                                               \
@@ -621,6 +628,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS);
 
     ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS);
+
+    ACTION_ARGS_STRUCT(SearchForTextArgs, SEARCH_FOR_TEXT_ARGS);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
     {
