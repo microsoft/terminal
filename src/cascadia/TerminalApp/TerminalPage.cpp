@@ -258,6 +258,7 @@ namespace winrt::TerminalApp::implementation
         AutoCompleteMenu().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (AutoCompleteMenu().Visibility() == Visibility::Collapsed)
             {
+                AutoCompletePopup().IsOpen(false);
                 _FocusActiveControl(nullptr, nullptr);
             }
         });
@@ -3915,9 +3916,10 @@ namespace winrt::TerminalApp::implementation
 
         // TODO! move to the cursor
         // Arbitrary 8,8 on the top for now
-        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ 8, 8 }, Windows::Foundation::Size{ 300, 300 });
+        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 300, 300 });
 
         CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+        AutoCompletePopup().IsOpen(true);
         AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
 
