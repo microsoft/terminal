@@ -29,6 +29,8 @@
 #include "CloseTabsAfterArgs.g.cpp"
 #include "CloseTabArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
+#include "ScrollToMarkArgs.g.cpp"
+#include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
@@ -609,6 +611,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ScrollDownCommandKey");
+    }
+
+    winrt::hstring ScrollToMarkArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case ScrollToMarkDirection::Last:
+            return winrt::hstring{ RS_(L"ScrollToLastMarkCommandKey") };
+        case ScrollToMarkDirection::First:
+            return winrt::hstring{ RS_(L"ScrollToFirstMarkCommandKey") };
+        case ScrollToMarkDirection::Next:
+            return winrt::hstring{ RS_(L"ScrollToNextMarkCommandKey") };
+        case ScrollToMarkDirection::Previous:
+        default:
+            return winrt::hstring{ RS_(L"ScrollToPreviousMarkCommandKey") };
+        }
+        return winrt::hstring{ RS_(L"ScrollToPreviousMarkCommandKey") };
+    }
+
+    winrt::hstring AddMarkArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"AddMarkWithColorCommandKey")),
+                        til::color{ Color() }.ToHexString(true))
+        };
     }
 
     winrt::hstring MoveTabArgs::GenerateName() const
