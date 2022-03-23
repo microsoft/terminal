@@ -3912,11 +3912,8 @@ namespace winrt::TerminalApp::implementation
             commandsCollection.Append(command);
         }
 
-        AutoCompleteMenu().SetCommands(commandsCollection);
-
-        // TODO! move to the cursor
-        // Arbitrary 8,8 on the top for now
-        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 300, 300 });
+        // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
+        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
 
         CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
 
@@ -3929,6 +3926,7 @@ namespace winrt::TerminalApp::implementation
 
         AutoCompletePopup().IsOpen(true);
         AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+        AutoCompleteMenu().SetCommands(commandsCollection);
     }
 
 }
