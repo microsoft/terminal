@@ -9,10 +9,6 @@
 #include "../../inc/unicode.hpp"
 #include "ascii.hpp"
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 using namespace Microsoft::Console::VirtualTerminal;
 
 struct CsiToVkey

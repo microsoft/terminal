@@ -532,70 +532,6 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue)
-{
-    NTSTATUS Status;
-
-    Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
-    {
-        CIS_MSG Message = { 0 };
-        Message.Type = CIS_MSG_TYPE_MAPVIRTUALKEY;
-        Message.MapVirtualKeyParams.Code = uCode;
-        Message.MapVirtualKeyParams.MapType = uMapType;
-
-        Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
-        {
-            *puReturnValue = Message.MapVirtualKeyParams.ReturnValue;
-        }
-    }
-
-    return Status;
-}
-
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue)
-{
-    NTSTATUS Status;
-
-    Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
-    {
-        CIS_MSG Message = { 0 };
-        Message.Type = CIS_MSG_TYPE_VKKEYSCAN;
-        Message.VkKeyScanParams.Character = wCharacter;
-
-        Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
-        {
-            *psReturnValue = Message.VkKeyScanParams.ReturnValue;
-        }
-    }
-
-    return Status;
-}
-
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT* psReturnValue)
-{
-    NTSTATUS Status;
-
-    Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
-    {
-        CIS_MSG Message = { 0 };
-        Message.Type = CIS_MSG_TYPE_GETKEYSTATE;
-        Message.GetKeyStateParams.VirtualKey = iVirtualKey;
-
-        Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
-        {
-            *psReturnValue = Message.GetKeyStateParams.ReturnValue;
-        }
-    }
-
-    return Status;
-}
-
 [[nodiscard]] USHORT ConIoSrvComm::GetDisplayMode() const
 {
     return _displayMode;
@@ -609,54 +545,6 @@ PVOID ConIoSrvComm::GetSharedViewBase() const
 #pragma endregion
 
 #pragma region IInputServices Members
-
-UINT ConIoSrvComm::MapVirtualKeyW(UINT uCode, UINT uMapType)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    UINT ReturnValue;
-    Status = RequestMapVirtualKey(uCode, uMapType, &ReturnValue);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ReturnValue = 0;
-        SetLastError(ERROR_PROC_NOT_FOUND);
-    }
-
-    return ReturnValue;
-}
-
-SHORT ConIoSrvComm::VkKeyScanW(WCHAR ch)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    SHORT ReturnValue;
-    Status = RequestVkKeyScan(ch, &ReturnValue);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ReturnValue = 0;
-        SetLastError(ERROR_PROC_NOT_FOUND);
-    }
-
-    return ReturnValue;
-}
-
-SHORT ConIoSrvComm::GetKeyState(int nVirtKey)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    SHORT ReturnValue;
-    Status = RequestGetKeyState(nVirtKey, &ReturnValue);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ReturnValue = 0;
-        SetLastError(ERROR_PROC_NOT_FOUND);
-    }
-
-    return ReturnValue;
-}
 
 BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD* lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
 {

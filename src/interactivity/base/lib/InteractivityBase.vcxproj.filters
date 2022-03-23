@@ -77,9 +77,6 @@
     <ClInclude Include="..\..\inc\Module.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\VtApiRedirection.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\EventSynthesis.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
