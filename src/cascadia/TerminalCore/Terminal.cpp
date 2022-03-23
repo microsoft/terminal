@@ -48,7 +48,8 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false }
+    _trimBlockSelection{ false },
+    _autoMarkPrompts{ false }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -121,6 +122,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
+    _autoMarkPrompts = settings.AutoMarkPrompts();
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -681,6 +683,14 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         return false;
     }
 
+    //if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
+    //{
+    //    DispatchTypes::ScrollMark mark;
+    //    mark.category = DispatchTypes::MarkCategory::Prompt;
+    //    mark.color = til::color(255, 255, 255); // should this be configurable?
+    //    AddMark(mark);
+    //}
+
     KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
@@ -733,6 +743,15 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     if (vkey == 0)
     {
         vkey = _VirtualKeyFromCharacter(ch);
+    }
+
+    
+    if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        mark.color = til::color(255, 255, 255); // should this be configurable?
+        AddMark(mark);
     }
 
     // Unfortunately, the UI doesn't give us both a character down and a

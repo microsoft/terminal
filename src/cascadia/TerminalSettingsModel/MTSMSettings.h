@@ -77,7 +77,8 @@ Author(s):
     X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)                                                                                              \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
-    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)
+    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
+    X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)
 
 // Intentionally omitted Profile settings:
 // * Name

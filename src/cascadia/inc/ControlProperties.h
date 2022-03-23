@@ -46,7 +46,8 @@
     X(bool, ForceVTInput, false)                                                                                  \
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
-    X(bool, VtPassthrough, false)
+    X(bool, VtPassthrough, false)                                                                                 \
+    X(bool, AutoMarkPrompts)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
