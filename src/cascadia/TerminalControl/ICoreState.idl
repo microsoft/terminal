@@ -54,5 +54,9 @@ namespace Microsoft.Terminal.Control
         IVector<MenuEntry> MenuEntries { get; };
         IVector<ScrollMark> ScrollMarks { get; };
 
+        void AddMark(ScrollMark mark);
+        void ClearMark();
+        void ClearAllMarks();
+
     };
 }

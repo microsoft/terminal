@@ -1804,4 +1804,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return v;
     }
 
+    void ControlCore::AddMark(const Control::ScrollMark& mark)
+    {
+        ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark m{};
+        m.color = til::color{ mark.Color };
+        _terminal->AddMark(m);
+    }
+    void ControlCore::ClearMark() { _terminal->ClearMark(); }
+    void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
 }

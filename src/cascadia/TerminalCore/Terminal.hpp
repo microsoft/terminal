@@ -142,11 +142,12 @@ public:
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
 
-    // void InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu) override;
     void ClearMenu();
     void AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& menu);
 
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark);
+    void ClearMark();
+    void ClearAllMarks();
 
 #pragma endregion
 

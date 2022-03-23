@@ -351,7 +351,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<AddMarkArgs>())
         {
-            _ApplyToActiveControls([realArgs](auto& /*control*/) {
+            _ApplyToActiveControls([realArgs](auto& control) {
+                Control::ScrollMark mark;
+                mark.Color = realArgs.Color();
+                control.AddMark(mark);
             });
         }
         args.Handled(true);
@@ -359,14 +362,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleClearMark(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        _ApplyToActiveControls([](auto& /*control*/) {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearMark();
         });
         args.Handled(true);
     }
     void TerminalPage::_HandleClearAllMarks(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        _ApplyToActiveControls([](auto& /*control*/) {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearAllMarks();
         });
         args.Handled(true);
     }

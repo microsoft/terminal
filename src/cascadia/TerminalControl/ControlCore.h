@@ -114,6 +114,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
         Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
+        void AddMark(const Control::ScrollMark& mark);
+        void ClearMark();
+        void ClearAllMarks();
 
 #pragma endregion
 
