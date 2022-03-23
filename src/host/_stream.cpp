@@ -765,6 +765,15 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
             }
+            // Notify accessibility to read the backspaced character.
+            // See GH:12735, MSFT:31748387
+            if (screenInfo.HasAccessibilityEventing())
+            {
+                if (IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow())
+                {
+                    LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
+                }
+            }
             break;
         }
         case UNICODE_TAB:
