@@ -62,6 +62,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
+
+        Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
+        void AddMark(const Control::ScrollMark& mark);
+        void ClearMark();
+        void ClearAllMarks();
+
 #pragma endregion
 
         void ScrollViewport(int viewTop);

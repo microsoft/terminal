@@ -114,6 +114,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool BracketedPasteEnabled() const noexcept;
+
+        Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
+        void AddMark(const Control::ScrollMark& mark);
+        void ClearMark();
+        void ClearAllMarks();
+
 #pragma endregion
 
 #pragma region ITerminalInput

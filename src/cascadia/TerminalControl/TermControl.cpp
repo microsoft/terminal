@@ -2804,4 +2804,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.OwningHwnd();
     }
 
+    void TermControl::AddMark(const Control::ScrollMark& mark) { _core.AddMark(mark); }
+    void TermControl::ClearMark() { _core.ClearMark(); }
+    void TermControl::ClearAllMarks() { _core.ClearAllMarks(); }
 }

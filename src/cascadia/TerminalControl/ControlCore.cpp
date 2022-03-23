@@ -1729,4 +1729,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // transparency, or our acrylic, or our image.
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
     }
+
+    Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
+    {
+        auto internalMarks{ _terminal->GetScrollMarks() };
+        auto v = winrt::single_threaded_observable_vector<Control::ScrollMark>();
+        for (const auto& mark : internalMarks)
+        {
+            Control::ScrollMark m{};
+            m.Color = winrt::Microsoft::Terminal::Core::Color(mark.color);
+            m.Start = mark.start.to_core_point();
+            m.End = mark.end.to_core_point();
+            // m.Category = (size_t)mark.category; // TODO! whatever
+            m.Comment = winrt::hstring(mark.comment);
+
+            v.Append(m);
+        }
+
+        return v;
+    }
+
+    void ControlCore::AddMark(const Control::ScrollMark& mark)
+    {
+        ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark m{};
+        m.color = til::color{ mark.Color };
+        _terminal->AddMark(m);
+    }
+    void ControlCore::ClearMark() { _terminal->ClearMark(); }
+    void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
 }

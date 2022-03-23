@@ -140,6 +140,11 @@ public:
 
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
+
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark);
+    void ClearMark();
+    void ClearAllMarks();
+
 #pragma endregion
 
 #pragma region ITerminalInput

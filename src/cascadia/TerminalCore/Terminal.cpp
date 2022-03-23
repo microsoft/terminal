@@ -1427,3 +1427,18 @@ void Terminal::_updateUrlDetection()
         ClearPatternTree();
     }
 }
+
+void Terminal::ClearMark()
+{
+    // TODO! just look for one where the cursor is, or where the selection is
+
+    _scrollMarks.clear();
+    // Tell the control that the scrollbar has somehow changed. Used as a hack.
+    _NotifyScrollEvent();
+}
+void Terminal::ClearAllMarks()
+{
+    _scrollMarks.clear();
+    // Tell the control that the scrollbar has somehow changed. Used as a hack.
+    _NotifyScrollEvent();
+}
