@@ -1315,18 +1315,18 @@ namespace winrt::TerminalApp::implementation
         ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 
-    void CommandPalette::PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size)
+    void CommandPalette::PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size /*size*/)
     {
         Controls::Grid::SetRow(_backdrop(), 0);
         Controls::Grid::SetColumn(_backdrop(), 0);
         Controls::Grid::SetRowSpan(_backdrop(), 2);
         Controls::Grid::SetColumnSpan(_backdrop(), 3);
 
-        _backdrop().Width(size.Width);
-        _backdrop().Height(size.Height);
+        // _backdrop().Width(size.Width);
+        // _backdrop().Height(size.Height);
 
-        _backdrop().HorizontalAlignment(HorizontalAlignment::Left);
-        _backdrop().VerticalAlignment(VerticalAlignment::Top);
+        _backdrop().HorizontalAlignment(HorizontalAlignment::Stretch);
+        _backdrop().VerticalAlignment(VerticalAlignment::Stretch);
 
         Windows::UI::Xaml::Thickness margins{};
         margins.Left = origin.X;
