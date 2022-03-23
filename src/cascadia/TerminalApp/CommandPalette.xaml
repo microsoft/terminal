@@ -228,9 +228,21 @@
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
-                    <Style x:Key="CommandPaletteBackground"
+                    <Color x:Key="CommandPaletteBackgroundColor">#333333</Color>
+                    <SolidColorBrush x:Key="CommandPaletteSolidBackgroundBrush"
+                                     Color="{ThemeResource CommandPaletteBackgroundColor}" />
+                    <AcrylicBrush x:Key="CommandPaletteAcrylicBackgroundBrush"
+                                  BackgroundSource="HostBackdrop"
+                                  FallbackColor="{ThemeResource CommandPaletteBackgroundColor}"
+                                  TintColor="{ThemeResource CommandPaletteBackgroundColor}"
+                                  TintOpacity="0.5" />
+                    <Style x:Key="CommandPaletteSolidBackground"
                            TargetType="Grid">
-                        <Setter Property="Background" Value="#333333" />
+                        <Setter Property="Background" Value="{ThemeResource CommandPaletteSolidBackgroundBrush}" />
+                    </Style>
+                    <Style x:Key="CommandPaletteAcrylicBackground"
+                           TargetType="Grid">
+                        <Setter Property="Background" Value="{ThemeResource CommandPaletteAcrylicBackgroundBrush}" />
                     </Style>
                     <!--  TextBox colors !  -->
                     <SolidColorBrush x:Key="TextControlBackground"
@@ -291,9 +303,21 @@
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <Style x:Key="CommandPaletteBackground"
+                    <Color x:Key="CommandPaletteBackgroundColor">#CCCCCC</Color>
+                    <SolidColorBrush x:Key="CommandPaletteSolidBackgroundBrush"
+                                     Color="{ThemeResource CommandPaletteBackgroundColor}" />
+                    <AcrylicBrush x:Key="CommandPaletteAcrylicBackgroundBrush"
+                                  BackgroundSource="HostBackdrop"
+                                  FallbackColor="{ThemeResource CommandPaletteBackgroundColor}"
+                                  TintColor="{ThemeResource CommandPaletteBackgroundColor}"
+                                  TintOpacity="0.5" />
+                    <Style x:Key="CommandPaletteSolidBackground"
                            TargetType="Grid">
-                        <Setter Property="Background" Value="#CCCCCC" />
+                        <Setter Property="Background" Value="{ThemeResource CommandPaletteSolidBackgroundBrush}" />
+                    </Style>
+                    <Style x:Key="CommandPaletteAcrylicBackground"
+                           TargetType="Grid">
+                        <Setter Property="Background" Value="{ThemeResource CommandPaletteAcrylicBackgroundBrush}" />
                     </Style>
                     <!--  TextBox colors !  -->
                     <SolidColorBrush x:Key="TextControlBackground"
@@ -348,10 +372,13 @@
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <Style x:Key="CommandPaletteBackground"
+                    <Style x:Key="CommandPaletteSolidBackground"
                            TargetType="Grid">
                         <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
                     </Style>
+
+                    <StaticResource x:Key="CommandPaletteAcrylicBackground"
+                                    ResourceKey="CommandPaletteSolidBackground" />
 
                     <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
                     <Style x:Key="KeyChordBorderStyle"
@@ -409,7 +436,7 @@
               Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
               CornerRadius="{ThemeResource OverlayCornerRadius}"
               PointerPressed="_backdropPointerPressed"
-              Style="{ThemeResource CommandPaletteBackground}">
+              Style="{ThemeResource CommandPaletteSolidBackground}">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

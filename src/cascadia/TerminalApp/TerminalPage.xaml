@@ -177,6 +177,7 @@
                                   VerticalAlignment="Stretch"
                                   PreviewKeyDown="_KeyDownHandler"
                                   Visibility="Collapsed" />
+
         </Popup>
 
         <!--

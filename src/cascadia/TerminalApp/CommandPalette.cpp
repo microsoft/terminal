@@ -1315,18 +1315,25 @@ namespace winrt::TerminalApp::implementation
         ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 
-    void CommandPalette::PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size /*size*/)
+    void CommandPalette::PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size)
     {
         Controls::Grid::SetRow(_backdrop(), 0);
         Controls::Grid::SetColumn(_backdrop(), 0);
         Controls::Grid::SetRowSpan(_backdrop(), 2);
         Controls::Grid::SetColumnSpan(_backdrop(), 3);
 
-        // _backdrop().Width(size.Width);
-        // _backdrop().Height(size.Height);
+        // Set thie Max* versions here, otherwise when there are few results,
+        // the cmdpal will _still_ be 300x300 and filled with empty space
+        _backdrop().MaxWidth(size.Width);
+        _backdrop().MaxHeight(size.Height);
 
         _backdrop().HorizontalAlignment(HorizontalAlignment::Stretch);
         _backdrop().VerticalAlignment(VerticalAlignment::Stretch);
+
+        // We can fake this. We're only using this method for the autocomplete
+        // version of the cmdpal. Set the BG to acrylic.
+        const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"CommandPaletteAcrylicBackground")).as<Windows::UI::Xaml::Style>() };
+        _backdrop().Style(colorControlStyle);
 
         Windows::UI::Xaml::Thickness margins{};
         margins.Left = origin.X;

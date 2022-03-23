@@ -3897,10 +3897,12 @@ namespace winrt::TerminalApp::implementation
         auto control{ _GetActiveControl() };
         if (!control)
             co_return;
+
+        // May be able to fake this by not creating whole Commands for these
+        // actions, instead just binding them at the cmdpal layer (like tab item
+        // vs action item)
         auto entries = control.MenuEntries();
-
         auto commandsCollection = winrt::single_threaded_vector<Command>();
-
         for (const auto& entry : entries)
         {
             SendInputArgs args{ entry.Input };
@@ -3915,16 +3917,18 @@ namespace winrt::TerminalApp::implementation
         // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
         AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
 
-        CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+        // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
 
         const til::point cursorPos{ control.CursorPositionInDips() };
         const auto characterSize{ control.CharacterDimensions() };
 
-        // TODO! position relative to the actual term control
+        // Position relative to the actual term control
         AutoCompletePopup().HorizontalOffset(cursorPos.x);
         AutoCompletePopup().VerticalOffset(cursorPos.y + characterSize.Height);
 
         AutoCompletePopup().IsOpen(true);
+        // Make visible first, then set commands. Other way around and the list
+        // doesn't actually update the first time (weird)
         AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
         AutoCompleteMenu().SetCommands(commandsCollection);
     }
