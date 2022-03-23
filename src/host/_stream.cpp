@@ -769,7 +769,10 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // See GH:12735, MSFT:31748387
             if (screenInfo.HasAccessibilityEventing())
             {
-                screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + 1, CursorPosition.Y);
+                if (IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow())
+                {
+                    LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
+                }
             }
             break;
         }
