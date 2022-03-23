@@ -265,6 +265,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         _Elevate = profile.Elevate();
+        _AutoMarkPrompts = profile.AutoMarkPrompts();
     }
 
     // Method Description:

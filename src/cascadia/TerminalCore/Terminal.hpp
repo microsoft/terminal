@@ -304,6 +304,7 @@ private:
     bool _suppressApplicationTitle;
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
+    bool _autoMarkPrompts;
 
     size_t _taskbarState;
     size_t _taskbarProgress;
