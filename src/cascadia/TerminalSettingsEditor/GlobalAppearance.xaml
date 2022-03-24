@@ -40,13 +40,13 @@
             </local:SettingContainer>
 
             <!--  Theme  -->
-            <local:SettingContainer x:Uid="Globals_Theme"
+            <!-- <local:SettingContainer x:Uid="Globals_Theme"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}" />
-            </local:SettingContainer>
+            </local:SettingContainer>-->
 
             <!--  Always show tabs  -->
             <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
