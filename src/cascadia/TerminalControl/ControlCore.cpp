@@ -620,19 +620,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _runtimeUseAcrylic = true;
         }
 
-        // Initialize our font information.
-        const auto fontFace = _settings->FontFace();
-        const short fontHeight = ::base::saturated_cast<short>(_settings->FontSize());
-        const auto fontWeight = _settings->FontWeight();
-        // The font width doesn't terribly matter, we'll only be using the
-        //      height to look it up
-        // The other params here also largely don't matter.
-        //      The family is only used to determine if the font is truetype or
-        //      not, but DX doesn't use that info at all.
-        //      The Codepage is additionally not actually used by the DX engine at all.
-        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
-        _actualFontFaceName = { fontFace };
-        _desiredFont = { _actualFont };
+        const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
         // Update the terminal core with its new Core settings
         _terminal->UpdateSettings(*_settings);
@@ -651,11 +639,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _updateAntiAliasingMode();
 
-        // Refresh our font with the renderer
-        const auto actualFontOldSize = _actualFont.GetSize();
-        _updateFont();
-        const auto actualFontNewSize = _actualFont.GetSize();
-        if (actualFontNewSize != actualFontOldSize)
+        if (sizeChanged)
         {
             _refreshSizeUnderLock();
         }
@@ -768,30 +752,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Set the font size of the terminal control.
     // Arguments:
     // - fontSize: The size of the font.
-    void ControlCore::_setFontSize(int fontSize)
+    // Return Value:
+    // - Returns true if you need to call _refreshSizeUnderLock().
+    bool ControlCore::_setFontSizeUnderLock(int fontSize)
     {
-        try
-        {
-            // Make sure we have a non-zero font size
-            const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
-            const auto fontFace = _settings->FontFace();
-            const auto fontWeight = _settings->FontWeight();
-            _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
-            _actualFontFaceName = { fontFace };
-            _desiredFont = { _actualFont };
+        // Make sure we have a non-zero font size
+        const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
+        const auto fontFace = _settings->FontFace();
+        const auto fontWeight = _settings->FontWeight();
+        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+        _actualFontFaceName = { fontFace };
+        _desiredFont = { _actualFont };
 
-            auto lock = _terminal->LockForWriting();
-
-            // Refresh our font with the renderer
-            _updateFont();
-
-            // Resize the terminal's BUFFER to match the new font size. This does
-            // NOT change the size of the window, because that can lead to more
-            // problems (like what happens when you change the font size while the
-            // window is maximized?)
-            _refreshSizeUnderLock();
-        }
-        CATCH_LOG();
+        const auto before = _actualFont.GetSize();
+        _updateFont();
+        const auto after = _actualFont.GetSize();
+        return before != after;
     }
 
     // Method Description:
@@ -800,7 +776,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - none
     void ControlCore::ResetFontSize()
     {
-        _setFontSize(_settings->FontSize());
+        const auto lock = _terminal->LockForWriting();
+
+        if (_setFontSizeUnderLock(_settings->FontSize()))
+        {
+            _refreshSizeUnderLock();
+        }
     }
 
     // Method Description:
@@ -809,29 +790,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - fontSizeDelta: The amount to increase or decrease the font size by.
     void ControlCore::AdjustFontSize(int fontSizeDelta)
     {
-        const auto newSize = _desiredFont.GetEngineSize().Y + fontSizeDelta;
-        _setFontSize(newSize);
-    }
+        const auto lock = _terminal->LockForWriting();
 
-    // Method Description:
-    // - Perform a resize for the current size of the swapchainpanel. If the
-    //   font size changed, we'll need to resize the buffer to fit the existing
-    //   swapchain size. This helper will call _doResizeUnderLock with the
-    //   current size of the swapchain, accounting for scaling due to DPI.
-    // - Note that a DPI change will also trigger a font size change, and will
-    //   call into here.
-    // - The write lock should be held when calling this method, we might be
-    //   changing the buffer size in _doResizeUnderLock.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void ControlCore::_refreshSizeUnderLock()
-    {
-        const auto widthInPixels = _panelWidth * _compositionScale;
-        const auto heightInPixels = _panelHeight * _compositionScale;
-
-        _doResizeUnderLock(widthInPixels, heightInPixels);
+        if (_setFontSizeUnderLock(_desiredFont.GetEngineSize().Y + fontSizeDelta))
+        {
+            _refreshSizeUnderLock();
+        }
     }
 
     // Method Description:
@@ -839,39 +803,33 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   be due to the user resizing the window (causing the swapchain to
     //   resize) or due to the DPI changing (causing us to need to resize the
     //   buffer to match)
+    // - Note that a DPI change will also trigger a font size change, and will
+    //   call into here.
+    // - The write lock should be held when calling this method, we might be
+    //   changing the buffer size in _refreshSizeUnderLock.
     // Arguments:
-    // - newWidth: the new width of the swapchain, in pixels.
-    // - newHeight: the new height of the swapchain, in pixels.
-    void ControlCore::_doResizeUnderLock(const double newWidth,
-                                         const double newHeight)
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ControlCore::_refreshSizeUnderLock()
     {
-        SIZE size;
-        size.cx = static_cast<long>(newWidth);
-        size.cy = static_cast<long>(newHeight);
+        auto cx = gsl::narrow_cast<short>(_panelWidth * _compositionScale);
+        auto cy = gsl::narrow_cast<short>(_panelHeight * _compositionScale);
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
-        if (size.cx < _actualFont.GetSize().X || size.cy < _actualFont.GetSize().Y)
-        {
-            return;
-        }
+        cx = std::max(cx, _actualFont.GetSize().X);
+        cy = std::max(cy, _actualFont.GetSize().Y);
 
         // Convert our new dimensions to characters
-        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
         const auto currentVP = _terminal->GetViewport();
-
-        // Don't actually resize if viewport dimensions didn't change
-        if (vp.Height() == currentVP.Height() && vp.Width() == currentVP.Width())
-        {
-            return;
-        }
 
         _terminal->ClearSelection();
 
         // Tell the dx engine that our window is now the new size.
-        THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
+        THROW_IF_FAILED(_renderEngine->SetWindowSize({ cx, cy }));
 
         // Invalidate everything
         _renderer->TriggerRedrawAll();
@@ -888,15 +846,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::SizeChanged(const double width,
                                   const double height)
     {
+        // _refreshSizeUnderLock redraws the entire terminal.
+        // Don't call it if we don't have to.
+        if (_panelWidth == width && _panelHeight == height)
+        {
+            return;
+        }
+
         _panelWidth = width;
         _panelHeight = height;
 
         auto lock = _terminal->LockForWriting();
-        const auto currentEngineScale = _renderEngine->GetScaling();
-
-        auto scaledWidth = width * currentEngineScale;
-        auto scaledHeight = height * currentEngineScale;
-        _doResizeUnderLock(scaledWidth, scaledHeight);
+        _refreshSizeUnderLock();
     }
 
     void ControlCore::ScaleChanged(const double scale)
@@ -906,30 +867,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto currentEngineScale = _renderEngine->GetScaling();
-        // If we're getting a notification to change to the DPI we already
-        // have, then we're probably just beginning the DPI change. Since
-        // we'll get _another_ event with the real DPI, do nothing here for
-        // now. We'll also skip the next resize in _swapChainSizeChanged.
-        const bool dpiWasUnchanged = currentEngineScale == scale;
-        if (dpiWasUnchanged)
+        // _refreshSizeUnderLock redraws the entire terminal.
+        // Don't call it if we don't have to.
+        if (_compositionScale == scale)
         {
             return;
         }
 
-        const auto actualFontOldSize = _actualFont.GetSize();
-
-        auto lock = _terminal->LockForWriting();
         _compositionScale = scale;
 
+        auto lock = _terminal->LockForWriting();
         // _updateFont relies on the new _compositionScale set above
         _updateFont();
-
-        const auto actualFontNewSize = _actualFont.GetSize();
-        if (actualFontNewSize != actualFontOldSize)
-        {
-            _refreshSizeUnderLock();
-        }
+        _refreshSizeUnderLock();
     }
 
     void ControlCore::SetSelectionAnchor(til::point const& position)
