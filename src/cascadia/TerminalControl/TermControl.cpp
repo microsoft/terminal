@@ -148,6 +148,52 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ApplyUISettings();
     }
 
+    void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
+    {
+        // Assumptions:
+        // * we're already not closing
+        // * caller already checked weak ptr to make sure we're still alive
+
+        _isInternalScrollBarUpdate = true;
+
+        auto scrollBar = ScrollBar();
+        if (update.newValue)
+        {
+            scrollBar.Value(*update.newValue);
+        }
+        scrollBar.Maximum(update.newMaximum);
+        scrollBar.Minimum(update.newMinimum);
+        scrollBar.ViewportSize(update.newViewportSize);
+        // scroll one full screen worth at a time when the scroll bar is clicked
+        scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
+
+        _isInternalScrollBarUpdate = false;
+
+        if (_showMarksInScrollbar)
+        {
+            // Update scrollbar marks
+            ScrollBarCanvas().Children().Clear();
+            const auto marks{ _core.ScrollMarks() };
+            const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
+            const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
+
+            for (const auto m : marks)
+            {
+                Windows::UI::Xaml::Shapes::Rectangle r;
+                Media::SolidColorBrush brush{};
+                brush.Color(static_cast<til::color>(m.Color));
+                r.Fill(brush);
+                r.Width(16.0f / 3.0f); // pip width
+                r.Height(2);
+                const auto markRow = m.Start.Y;
+                const auto fractionalHeight = markRow / totalBufferRows;
+                const auto relativePos = fractionalHeight * fullHeight;
+                ScrollBarCanvas().Children().Append(r);
+                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+            }
+        }
+    }
+
     // Method Description:
     // - Loads the search box from the xaml UI and focuses it.
     void TermControl::CreateSearchBoxControl()
@@ -383,6 +429,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                              newMargin.Right,
                                                              newMargin.Bottom });
         }
+
+        _showMarksInScrollbar = settings.ShowMarks(); // TODO! hot reload me
     }
 
     // Method Description:

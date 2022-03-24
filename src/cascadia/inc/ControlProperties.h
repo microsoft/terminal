@@ -69,4 +69,5 @@
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
-    X(bool, UseAtlasEngine, false)
+    X(bool, UseAtlasEngine, false)                                                                                                                       \
+    X(bool, ShowMarks, false)

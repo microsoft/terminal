@@ -193,6 +193,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        bool _showMarksInScrollbar{ false };
 
         inline bool _IsClosing() const noexcept
         {
