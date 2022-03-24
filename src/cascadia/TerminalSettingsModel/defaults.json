@@ -11,7 +11,7 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
-    "trimBlockSelection": false,
+    "trimBlockSelection": true,
     "trimPaste": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
