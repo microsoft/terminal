@@ -1753,7 +1753,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark m{};
         m.color = til::color{ mark.Color };
-        _terminal->AddMark(m);
+
+        if (HasSelection())
+        {
+            m.start = til::point{ _terminal->GetSelectionAnchor() };
+            m.end = til::point{ _terminal->GetSelectionEnd() };
+        }
+        else
+        {
+            m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
+        }
+
+        // The version of this that only accepts a ScrollMark is buffer2
+        _terminal->AddMark(m, m.start, m.end);
     }
     void ControlCore::ClearMark() { _terminal->ClearMark(); }
     void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }

@@ -699,3 +699,9 @@ void Terminal::UseMainScreenBuffer()
     }
     CATCH_LOG();
 }
+
+void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+    AddMark(mark, cursorPos, cursorPos);
+}

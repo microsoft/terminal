@@ -94,6 +94,11 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
+    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const;
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+                 const til::point& start,
+                 const til::point& end);
+
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     void PrintString(std::wstring_view stringView) override;
