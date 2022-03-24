@@ -681,9 +681,10 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
+void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& /*arg*/)
 {
-    _window->OnApplicationThemeChanged(arg);
+    _updateTheme();
+    // _window->OnApplicationThemeChanged(arg);
 }
 
 void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -1300,6 +1301,9 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
 void AppHost::_updateTheme()
 {
     auto theme = _logic.Theme();
+
+    _window->OnApplicationThemeChanged(theme.RequestedTheme());
+
     if (_useNonClientArea)
     {
         auto* nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
@@ -1313,6 +1317,9 @@ void AppHost::_updateTheme()
             titlebar.Background(brush);
         }
     }
+
+    int attribute = theme.UseMica() ? /* DWMSBT_MAINWINDOW */ 2 : /*DWMSBT_NONE*/ 1;
+    DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
