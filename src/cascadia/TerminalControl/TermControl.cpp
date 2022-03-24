@@ -156,25 +156,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _isInternalScrollBarUpdate = false;
 
-        // Update scrollbar marks
-        ScrollBarCanvas().Children().Clear();
-        const auto marks{ _core.ScrollMarks() };
-        const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
-        const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
-
-        for (const auto m : marks)
+        if (_showMarksInScrollbar)
         {
-            Windows::UI::Xaml::Shapes::Rectangle r;
-            Media::SolidColorBrush brush{};
-            brush.Color(static_cast<til::color>(m.Color));
-            r.Fill(brush);
-            r.Width(16);
-            r.Height(2);
-            const auto markRow = m.Start.Y;
-            const auto fractionalHeight = markRow / totalBufferRows;
-            const auto relativePos = fractionalHeight * fullHeight;
-            ScrollBarCanvas().Children().Append(r);
-            Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+            // Update scrollbar marks
+            ScrollBarCanvas().Children().Clear();
+            const auto marks{ _core.ScrollMarks() };
+            const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
+            const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
+
+            for (const auto m : marks)
+            {
+                Windows::UI::Xaml::Shapes::Rectangle r;
+                Media::SolidColorBrush brush{};
+                brush.Color(static_cast<til::color>(m.Color));
+                r.Fill(brush);
+                r.Width(16.0f / 3.0f); // pip width
+                r.Height(2);
+                const auto markRow = m.Start.Y;
+                const auto fractionalHeight = markRow / totalBufferRows;
+                const auto relativePos = fractionalHeight * fullHeight;
+                ScrollBarCanvas().Children().Append(r);
+                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+            }
         }
     }
 
@@ -414,6 +417,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                              newMargin.Right,
                                                              newMargin.Bottom });
         }
+
+        _showMarksInScrollbar = settings.ShowMarks(); // TODO! hot reload me
     }
 
     // Method Description:
