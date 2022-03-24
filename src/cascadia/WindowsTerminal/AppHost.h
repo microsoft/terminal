@@ -118,6 +118,8 @@ private:
                                         const winrt::Windows::Foundation::IInspectable& args);
     void _HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& args);
+    void _updateTheme();
+
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;
     winrt::event_token _NotificationIconPressedToken;

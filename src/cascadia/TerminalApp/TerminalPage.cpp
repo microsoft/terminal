@@ -2610,7 +2610,9 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
-
+        
+        Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
+        _tabView.Background(transparent);
         // const auto theme = _settings.GlobalSettings().Theme();
         // if (const auto tabRowBg = theme.TabRowBackground())
         // {

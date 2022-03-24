@@ -1297,6 +1297,24 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
+void AppHost::_updateTheme()
+{
+    auto theme = _logic.Theme();
+    if (_useNonClientArea)
+    {
+        auto* nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        const auto titlebar{ nciw->TitlebarControl() };
+
+        if (const auto tabRowBg = theme.TabRowBackground())
+        {
+            const til::color backgroundColor = tabRowBg.Color();
+            const auto brush = Media::SolidColorBrush();
+            brush.Color(backgroundColor);
+            titlebar.Background(brush);
+        }
+    }
+}
+
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
@@ -1328,21 +1346,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
-
-    auto theme = _logic.Theme();
-    if (_useNonClientArea)
-    {
-        auto* nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
-        const auto titlebar{ nciw->TitlebarControl() };
-
-        if (const auto tabRowBg = theme.TabRowBackground())
-        {
-            const til::color backgroundColor = tabRowBg.Color();
-            const auto brush = Media::SolidColorBrush();
-            brush.Color(backgroundColor);
-            titlebar.Background(brush);
-        }
-    }
+    _updateTheme();
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
