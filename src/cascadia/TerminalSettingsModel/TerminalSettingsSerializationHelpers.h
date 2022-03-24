@@ -563,7 +563,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
         }
 
         const auto string{ Detail::GetStringView(json) };
-        return (string.length() == 7 || string.length() == 4) && string.front() == '#';
+        return (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
     }
 
     Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
@@ -573,6 +573,6 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
     std::string TypeDescription() const
     {
-        return "ThemeColor (#rrggbb, #rgb)";
+        return "ThemeColor (#rrggbb, #rgb, #aarrggbb)";
     }
 };
