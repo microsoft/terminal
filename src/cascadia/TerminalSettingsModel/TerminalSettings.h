@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
