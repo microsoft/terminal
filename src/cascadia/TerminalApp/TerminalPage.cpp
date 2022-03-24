@@ -2610,19 +2610,22 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
-        
+
         Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
         _tabView.Background(transparent);
-        // const auto theme = _settings.GlobalSettings().Theme();
-        // if (const auto tabRowBg = theme.TabRowBackground())
-        // {
-        //     const auto res = Application::Current().Resources();
-        //     const auto tabRowBackgroundKey = winrt::box_value(L"TabRowBackground");
-        //     const til::color backgroundColor = tabRowBg.Color();
-        //     const auto brush = Media::SolidColorBrush();
-        //     brush.Color(backgroundColor);
-        //     res.Insert(tabRowBackgroundKey, brush);
-        // }
+
+        const auto theme = _settings.GlobalSettings().Theme();
+        if (const auto tabRowBg = theme.TabRowBackground())
+        {
+            Windows::UI::Color newTabButtonColor = til::color{ tabRowBg.Color() };
+            _SetNewTabButtonColor(newTabButtonColor, newTabButtonColor);
+            // const auto res = Application::Current().Resources();
+            // const auto tabRowBackgroundKey = winrt::box_value(L"TabRowBackground");
+            // const til::color backgroundColor = tabRowBg.Color();
+            // const auto brush = Media::SolidColorBrush();
+            // brush.Color(backgroundColor);
+            // res.Insert(tabRowBackgroundKey, brush);
+        }
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
