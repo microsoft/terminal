@@ -1474,3 +1474,15 @@ void Terminal::ClearAllMarks()
     // Tell the control that the scrollbar has somehow changed. Used as a hack.
     _NotifyScrollEvent();
 }
+
+void Terminal::ColorSelection(const TextAttribute& attr)
+{
+    for (const auto view : GetSelectionRects())
+    {
+        try
+        {
+            _activeBuffer().Write(OutputCellIterator(attr, view.Width()), view.Origin());
+        }
+        CATCH_LOG();
+    }
+}

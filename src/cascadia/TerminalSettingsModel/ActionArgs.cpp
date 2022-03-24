@@ -837,6 +837,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring ColorSelectionArgs::GenerateName() const
     {
-        return winrt::hstring{ L"ColorSelectionArgs TODO!" };
+        return winrt::hstring{
+            fmt::format(L"Color selection, foreground:{}, background:{}",
+                        Foreground().TextColor(),
+                        Background().TextColor())
+        };
     }
 }

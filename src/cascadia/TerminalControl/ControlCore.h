@@ -44,6 +44,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         SelectionColor() = default;
         WINRT_PROPERTY(uint32_t, TextColor);
+
+    public:
+        til::color Color() const
+        {
+            return til::color(static_cast<uint8_t>((_TextColor & 0xff000000) >> 24),
+                              static_cast<uint8_t>((_TextColor & 0x00ff0000) >> 16),
+                              static_cast<uint8_t>((_TextColor & 0x0000ff00) >> 8));
+        };
     };
 
     struct ControlCore : ControlCoreT<ControlCore>

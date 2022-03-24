@@ -237,6 +237,8 @@ public:
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
+    void ColorSelection(const TextAttribute& attr);
+
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     enum class SelectionDirection

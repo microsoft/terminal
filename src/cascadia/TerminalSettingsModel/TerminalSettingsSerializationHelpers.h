@@ -566,7 +566,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         til::color rgb = ::Microsoft::Console::Utils::ColorFromHexString(Detail::GetStringView(json));
 
         winrt::Microsoft::Terminal::Control::SelectionColor selection{};
-        uint32_t val = (rgb.r << 24) | (rgb.r << 16) | (rgb.r << 8) | (0x03);
+        uint32_t val = (rgb.r << 24) | (rgb.g << 16) | (rgb.b << 8) | (0x03);
         selection.TextColor(val);
         return selection;
     }

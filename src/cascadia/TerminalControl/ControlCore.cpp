@@ -1830,8 +1830,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (HasSelection())
         {
-            fg;
-            bg;
+            auto fgColor = winrt::get_self<implementation::SelectionColor>(fg);
+            auto bgColor = winrt::get_self<implementation::SelectionColor>(bg);
+
+            TextAttribute attr(fgColor->Color(), bgColor->Color());
+            _terminal->ColorSelection(attr);
+            _terminal->ClearSelection();
         }
         // _core.ColorSelection(fg, bg);
     }
