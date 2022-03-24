@@ -828,12 +828,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
         const auto currentVP = _terminal->GetViewport();
 
-        // Don't actually resize if viewport dimensions didn't change
-        if (vp.Height() == currentVP.Height() && vp.Width() == currentVP.Width())
-        {
-            return;
-        }
-
         _terminal->ClearSelection();
 
         // Tell the dx engine that our window is now the new size.
