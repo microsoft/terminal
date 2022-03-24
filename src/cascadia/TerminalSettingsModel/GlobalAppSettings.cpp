@@ -17,6 +17,7 @@ using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
+static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 
@@ -140,6 +141,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     }
+
+    if (auto themeJson{ json[JsonKey(ThemeKey)] })
+    {
+        _theme->LayerJson(themeJson);
+    }
 }
 
 // Method Description:
@@ -191,4 +197,9 @@ Json::Value GlobalAppSettings::ToJson() const
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::Theme() noexcept
+{
+    return *_theme;
 }

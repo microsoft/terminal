@@ -3,6 +3,7 @@
 
 #include "IInheritable.idl.h"
 
+import "Theme.idl";
 import "ColorScheme.idl";
 import "ActionMap.idl";
 
@@ -54,7 +55,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
         INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
         INHERITABLE_SETTING(String, Language);
-        INHERITABLE_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
+        // INHERITABLE_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
         INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
@@ -93,5 +94,7 @@ namespace Microsoft.Terminal.Settings.Model
         void RemoveColorScheme(String schemeName);
 
         ActionMap ActionMap { get; };
+
+        Theme Theme { get; };
     }
 }

@@ -1,0 +1,21 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {
+        Theme();
+        Theme(Windows.UI.Xaml.ElementTheme requestedTheme);
+        // Theme(String name);
+
+        String Name;
+
+        // Microsoft.Terminal.Core.Color TabRowColor { get; };
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+        Boolean UseMica { get;};
+        // Microsoft.Terminal.Core.Color Foreground;
+        // Microsoft.Terminal.Core.Color Background;
+        // Microsoft.Terminal.Core.Color SelectionBackground;
+        // Microsoft.Terminal.Core.Color CursorColor;
+    }
+}
