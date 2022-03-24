@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "SelectionColor.g.h"
 #include "ControlCore.g.h"
 #include "ControlSettings.h"
 #include "../../renderer/base/Renderer.hpp"
@@ -39,6 +40,12 @@ public:                                                           \
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    struct SelectionColor : SelectionColorT<SelectionColor>
+    {
+        SelectionColor() = default;
+        WINRT_PROPERTY(uint32_t, TextColor);
+    };
+
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
@@ -93,6 +100,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+
+        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg);
 
         void Close();
 
@@ -309,5 +318,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
+    BASIC_FACTORY(SelectionColor);
     BASIC_FACTORY(ControlCore);
 }

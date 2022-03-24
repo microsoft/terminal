@@ -30,6 +30,14 @@ namespace Microsoft.Terminal.Control
         All
     };
 
+    [default_interface] runtimeclass SelectionColor
+    {
+        SelectionColor();
+        // UInt32 to literally be a TextColor from buffer/out/TextColor.h
+        UInt32 TextColor;
+    }
+
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -100,6 +108,8 @@ namespace Microsoft.Terminal.Control
         String ReadEntireBuffer();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
+
+        void ColorSelection(SelectionColor fg, SelectionColor bg);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

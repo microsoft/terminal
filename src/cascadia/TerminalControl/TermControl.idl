@@ -84,5 +84,6 @@ namespace Microsoft.Terminal.Control
 
         void PreviewInput(String text);
 
+        void ColorSelection(SelectionColor fg, SelectionColor bg);
     }
 }

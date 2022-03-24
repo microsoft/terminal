@@ -557,3 +557,39 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ScrollToMarkDire
         pair_type{ "last", ValueType::Last },
     };
 };
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
+{
+    ::winrt::Microsoft::Terminal::Control::SelectionColor FromJson(const Json::Value& json)
+    {
+        til::color rgb = ::Microsoft::Console::Utils::ColorFromHexString(Detail::GetStringView(json));
+
+        winrt::Microsoft::Terminal::Control::SelectionColor selection{};
+        uint32_t val = (rgb.r << 24) | (rgb.r << 16) | (rgb.r << 8) | (0x03);
+        selection.TextColor(val);
+        return selection;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (!json.isString())
+        {
+            return false;
+        }
+
+        const auto string{ Detail::GetStringView(json) };
+        return (string.length() == 7 || string.length() == 4) && string.front() == '#';
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Control::SelectionColor& /*val*/)
+    {
+        // return til::u16u8(val.ToHexString(true));
+        return L"";
+    }
+
+    std::string TypeDescription() const
+    {
+        return "TextColor(TODO!)";
+    }
+};

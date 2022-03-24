@@ -43,6 +43,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
         void PreviewInput(const winrt::hstring& text);
 
+        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg);
+
 #pragma region ICoreState
         const uint64_t TaskbarState() const noexcept;
         const uint64_t TaskbarProgress() const noexcept;

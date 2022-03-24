@@ -16,6 +16,7 @@
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/dx/DxRenderer.hpp"
 
+#include "SelectionColor.g.cpp"
 #include "ControlCore.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
@@ -1824,4 +1825,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::ClearMark() { _terminal->ClearMark(); }
     void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
+
+    void ControlCore::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg)
+    {
+        if (HasSelection())
+        {
+            fg;
+            bg;
+        }
+        // _core.ColorSelection(fg, bg);
+    }
 }

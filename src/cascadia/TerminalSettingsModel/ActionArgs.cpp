@@ -43,6 +43,7 @@
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 #include "AdjustOpacityArgs.g.cpp"
+#include "ColorSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -832,5 +833,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                             Opacity())
             };
         }
+    }
+
+    winrt::hstring ColorSelectionArgs::GenerateName() const
+    {
+        return winrt::hstring{ L"ColorSelectionArgs TODO!" };
     }
 }

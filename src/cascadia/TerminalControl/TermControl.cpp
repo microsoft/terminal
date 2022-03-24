@@ -2831,4 +2831,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::AddMark(const Control::ScrollMark& mark) { _core.AddMark(mark); }
     void TermControl::ClearMark() { _core.ClearMark(); }
     void TermControl::ClearAllMarks() { _core.ClearAllMarks(); }
+
+    void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg)
+    {
+        _core.ColorSelection(fg, bg);
+    }
+
 }
