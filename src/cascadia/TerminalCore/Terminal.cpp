@@ -740,7 +740,6 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
-    
     if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
     {
         DispatchTypes::ScrollMark mark;
@@ -1444,6 +1443,21 @@ const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>
 const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const
 {
     return _scrollMarks;
+}
+
+void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+                       const til::point& start,
+                       const til::point& end)
+{
+    DispatchTypes::ScrollMark m = mark;
+    m.start = start;
+    m.end = end;
+    // // m.timestamp = now()
+
+    _scrollMarks.push_back(m);
+
+    // Tell the control that the scrollbar has somehow changed. Used as a hack.
+    _NotifyScrollEvent();
 }
 
 void Terminal::ClearMark()

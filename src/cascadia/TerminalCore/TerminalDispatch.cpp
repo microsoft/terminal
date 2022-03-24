@@ -561,6 +561,7 @@ bool TerminalDispatch::DoITerm2Action(const std::wstring_view string)
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
         mark.color = til::color(255, 255, 255); // should this be configurable?
+        // mark.start = mark.end = til::point{ _terminalApi.GetCursorPosition() };
         _terminalApi.AddMark(mark);
         return true;
     }

@@ -706,13 +706,6 @@ void Terminal::AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchType
 
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
 {
-    DispatchTypes::ScrollMark m = mark;
-    // m.timestamp = now()
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    m.start = m.end = cursorPos;
-
-    _scrollMarks.push_back(m);
-
-    // Tell the control that the scrollbar has somehow changed. Used as a hack.
-    _NotifyScrollEvent();
+    AddMark(mark, cursorPos, cursorPos);
 }
