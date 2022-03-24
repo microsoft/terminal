@@ -21,9 +21,10 @@ std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
 std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
-std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
 
 IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
+
+void (*ServiceLocator::s_oneCoreTeardownFunction)() = nullptr;
 
 Globals ServiceLocator::s_globals;
 
@@ -33,6 +34,12 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 #pragma endregion
 
 #pragma region Public Methods
+
+void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
+{
+    FAIL_FAST_IF(nullptr != s_oneCoreTeardownFunction);
+    s_oneCoreTeardownFunction = pfn;
+}
 
 [[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
@@ -59,13 +66,12 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
     // We don't want to have other execution in the system get stuck, so this is a great
     // place to clean up and notify any objects or threads in the system that have to cleanup safely before
     // we head into TerminateProcess and tear everything else down less gracefully.
+    if (s_oneCoreTeardownFunction)
+    {
+        s_oneCoreTeardownFunction();
+    }
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
-
-    if (s_inputServices.get() != nullptr)
-    {
-        s_inputServices.reset(nullptr);
-    }
 
     ExitProcess(hr);
 }
@@ -265,28 +271,6 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
     LOG_IF_NTSTATUS_FAILED(status);
 
     return s_systemConfigurationProvider.get();
-}
-
-IInputServices* ServiceLocator::LocateInputServices()
-{
-    NTSTATUS status = STATUS_SUCCESS;
-
-    if (!s_inputServices)
-    {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            status = s_interactivityFactory->CreateInputServices(s_inputServices);
-        }
-    }
-
-    LOG_IF_NTSTATUS_FAILED(status);
-
-    return s_inputServices.get();
 }
 
 Globals& ServiceLocator::LocateGlobals()

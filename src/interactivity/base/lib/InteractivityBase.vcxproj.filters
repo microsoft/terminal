@@ -62,9 +62,6 @@
     <ClInclude Include="..\..\inc\IHighDpiApi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\IInputServices.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\IInteractivityFactory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

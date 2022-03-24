@@ -87,7 +87,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     PVOID OldRunBase;
     PVOID NewRunBase;
 
-    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestUpdateDisplay(0);
+    Status = ConIoSrvComm::GetConIoSrvComm()->RequestUpdateDisplay(0);
 
     if (NT_SUCCESS(Status))
     {
@@ -189,7 +189,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     CursorInfo.Height = options.ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
-    NTSTATUS Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
+    NTSTATUS Status = ConIoSrvComm::GetConIoSrvComm()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
 }

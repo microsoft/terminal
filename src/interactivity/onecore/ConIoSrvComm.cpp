@@ -24,6 +24,19 @@ extern void UnlockConsole();
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
+static std::unique_ptr<ConIoSrvComm> s_conIoSrvComm;
+ConIoSrvComm* ConIoSrvComm::GetConIoSrvComm()
+{
+    static bool initialized = []() {
+        s_conIoSrvComm = std::make_unique<ConIoSrvComm>();
+        ServiceLocator::SetOneCoreTeardownFunction([] {
+            s_conIoSrvComm.reset(nullptr);
+        });
+        return true;
+    }();
+    return s_conIoSrvComm.get();
+}
+
 ConIoSrvComm::ConIoSrvComm() :
     _inputPipeThreadHandle(nullptr),
     _pipeReadHandle(INVALID_HANDLE_VALUE),
@@ -532,40 +545,6 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
 PVOID ConIoSrvComm::GetSharedViewBase() const
 {
     return _alpcSharedViewBase;
-}
-
-#pragma endregion
-
-#pragma region IInputServices Members
-
-BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD* lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
-{
-    SetLastError(ERROR_SUCCESS);
-
-    if (TCI_SRCCODEPAGE == dwFlags)
-    {
-        *lpCs = { 0 };
-
-        DWORD dwSrc = (DWORD)lpSrc;
-        switch (dwSrc)
-        {
-        case CP_JAPANESE:
-            lpCs->ciCharset = SHIFTJIS_CHARSET;
-            return TRUE;
-        case CP_CHINESE_SIMPLIFIED:
-            lpCs->ciCharset = GB2312_CHARSET;
-            return TRUE;
-        case CP_KOREAN:
-            lpCs->ciCharset = HANGEUL_CHARSET;
-            return TRUE;
-        case CP_CHINESE_TRADITIONAL:
-            lpCs->ciCharset = CHINESEBIG5_CHARSET;
-            return TRUE;
-        }
-    }
-
-    SetLastError(ERROR_NOT_SUPPORTED);
-    return FALSE;
 }
 
 #pragma endregion

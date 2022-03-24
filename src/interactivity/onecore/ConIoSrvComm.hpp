@@ -17,7 +17,6 @@ Author(s):
 #include <condrv.h>
 
 #include "ConIoSrv.h"
-#include "../../inc/IInputServices.hpp"
 
 #include "BgfxEngine.hpp"
 #include "../../renderer/wddmcon/wddmconrenderer.hpp"
@@ -26,11 +25,13 @@ Author(s):
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class ConIoSrvComm final : public IInputServices
+    class ConIoSrvComm final
     {
     public:
         ConIoSrvComm();
-        ~ConIoSrvComm() override;
+        ~ConIoSrvComm();
+
+        static ConIoSrvComm* GetConIoSrvComm();
 
         [[nodiscard]] NTSTATUS Connect();
         VOID ServiceInputPipe();
@@ -45,9 +46,6 @@ namespace Microsoft::Console::Interactivity::OneCore
         PVOID GetSharedViewBase() const;
 
         VOID CleanupForHeadless(const NTSTATUS status);
-
-        // IInputServices Members
-        BOOL TranslateCharsetInfo(DWORD* lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
 
         [[nodiscard]] NTSTATUS InitializeBgfx();
         [[nodiscard]] NTSTATUS InitializeWddmCon();

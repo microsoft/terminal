@@ -36,7 +36,6 @@
     <ClInclude Include="..\..\inc\IConsoleInputThread.hpp" />
     <ClInclude Include="..\..\inc\IConsoleWindow.hpp" />
     <ClInclude Include="..\..\inc\IHighDpiApi.hpp" />
-    <ClInclude Include="..\..\inc\IInputServices.hpp" />
     <ClInclude Include="..\..\inc\IInteractivityFactory.hpp" />
     <ClInclude Include="..\..\inc\ISystemConfigurationProvider.hpp" />
     <ClInclude Include="..\..\inc\IWindowMetrics.hpp" />
