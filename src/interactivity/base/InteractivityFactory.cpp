@@ -18,7 +18,6 @@
 #include "../win32/AccessibilityNotifier.hpp"
 #include "../win32/ConsoleControl.hpp"
 #include "../win32/ConsoleInputThread.hpp"
-#include "../win32/InputServices.hpp"
 #include "../win32/WindowDpiApi.hpp"
 #include "../win32/WindowMetrics.hpp"
 #include "../win32/SystemConfigurationProvider.hpp"
@@ -276,48 +275,6 @@ using namespace Microsoft::Console::Interactivity;
         if (NT_SUCCESS(status))
         {
             provider.swap(NewProvider);
-        }
-    }
-
-    return status;
-}
-
-[[nodiscard]] NTSTATUS InteractivityFactory::CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services)
-{
-    NTSTATUS status = STATUS_SUCCESS;
-
-    ApiLevel level;
-    status = ApiDetector::DetectNtUserWindow(&level);
-
-    if (NT_SUCCESS(status))
-    {
-        std::unique_ptr<IInputServices> newServices;
-        try
-        {
-            switch (level)
-            {
-            case ApiLevel::Win32:
-                newServices = std::make_unique<Microsoft::Console::Interactivity::Win32::InputServices>();
-                break;
-
-#ifdef BUILD_ONECORE_INTERACTIVITY
-            case ApiLevel::OneCore:
-                newServices = std::make_unique<Microsoft::Console::Interactivity::OneCore::ConIoSrvComm>();
-                break;
-#endif
-            default:
-                status = STATUS_INVALID_LEVEL;
-                break;
-            }
-        }
-        catch (...)
-        {
-            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            services.swap(newServices);
         }
     }
 
