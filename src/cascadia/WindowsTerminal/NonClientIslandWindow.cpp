@@ -1130,3 +1130,8 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !(_fullscreen || _borderless);
 }
+
+winrt::TerminalApp::TitlebarControl NonClientIslandWindow::TitlebarControl()
+{
+    return _titlebar;
+}

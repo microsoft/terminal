@@ -9,6 +9,7 @@
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
+#include "ThemeColor.g.cpp"
 #include "Theme.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -91,4 +92,13 @@ Json::Value Theme::ToJson() const
 #undef THEME_SETTINGS_TO_JSON
 
     return json;
+}
+
+ThemeColor::ThemeColor() noexcept
+{
+}
+
+ThemeColor::ThemeColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept :
+    _Color{ coreColor }
+{
 }

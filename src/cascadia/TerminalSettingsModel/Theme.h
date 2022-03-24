@@ -19,10 +19,22 @@ Author(s):
 #include "IInheritable.h"
 #include "MTSMSettings.h"
 
+#include "ThemeColor.g.h"
 #include "Theme.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    struct ThemeColor : ThemeColorT<ThemeColor>
+    {
+    public:
+        ThemeColor() noexcept;
+        ThemeColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept;
+
+        WINRT_PROPERTY(til::color, Color);
+
+    private:
+    };
+
     struct Theme : ThemeT<Theme>
     {
     public:
@@ -54,5 +66,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
+    BASIC_FACTORY(ThemeColor);
     BASIC_FACTORY(Theme);
 }

@@ -112,4 +112,5 @@ Author(s):
 
 #define MTSM_THEME_SETTINGS(X)                                                                                                          \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "window.requestedTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
-    X(bool, UseMica, "window.useMica", false)
+    X(bool, UseMica, "window.useMica", false)                                                                                           \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, TabRowBackground, "tabRow.background", nullptr)

@@ -1642,4 +1642,15 @@ namespace winrt::TerminalApp::implementation
     {
         return _settings.GlobalSettings().ShowTitleInTitlebar();
     }
+
+    Microsoft::Terminal::Settings::Model::Theme AppLogic::Theme()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().Theme();
+    }
+
 }

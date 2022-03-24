@@ -47,6 +47,8 @@ public:
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
+    winrt::TerminalApp::TitlebarControl TitlebarControl();
+
 private:
     std::optional<COORD> _oldIslandPos;
 

@@ -104,6 +104,8 @@ namespace TerminalApp
         Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
 
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
+
         FindTargetWindowResult FindTargetWindow(String[] args);
 
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();

@@ -3,6 +3,13 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
+
+    runtimeclass ThemeColor
+    {
+        ThemeColor(Microsoft.Terminal.Core.Color color);
+        Microsoft.Terminal.Core.Color Color;
+    }
+
     [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {
         Theme();
         Theme(Windows.UI.Xaml.ElementTheme requestedTheme);
@@ -10,9 +17,14 @@ namespace Microsoft.Terminal.Settings.Model
 
         String Name;
 
-        // Microsoft.Terminal.Core.Color TabRowColor { get; };
+        // window.* Namespace
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
-        Boolean UseMica { get;};
+        Boolean UseMica { get; };
+
+
+        // tabRow.* Namespace
+        ThemeColor TabRowBackground { get; };
+
         // Microsoft.Terminal.Core.Color Foreground;
         // Microsoft.Terminal.Core.Color Background;
         // Microsoft.Terminal.Core.Color SelectionBackground;

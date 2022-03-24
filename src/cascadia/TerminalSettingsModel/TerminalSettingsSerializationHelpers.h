@@ -546,3 +546,33 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
         pair_type{ "setAsDefault", ValueType::SetAsDefault },
     };
 };
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemeColor>
+{
+    winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromJson(const Json::Value& json)
+    {
+        return winrt::Microsoft::Terminal::Settings::Model::ThemeColor(::Microsoft::Console::Utils::ColorFromHexString(Detail::GetStringView(json)));
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (!json.isString())
+        {
+            return false;
+        }
+
+        const auto string{ Detail::GetStringView(json) };
+        return (string.length() == 7 || string.length() == 4) && string.front() == '#';
+    }
+
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
+    {
+        return til::u16u8(til::color{ val.Color() }.ToHexString(true));
+    }
+
+    std::string TypeDescription() const
+    {
+        return "ThemeColor (#rrggbb, #rgb)";
+    }
+};
