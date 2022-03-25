@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
-
 #include "HighlightedTextSegment.g.h"
 #include "HighlightedText.g.h"
 

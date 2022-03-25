@@ -2629,14 +2629,25 @@ namespace winrt::TerminalApp::implementation
             // brush.Color(backgroundColor);
             // res.Insert(tabRowBackgroundKey, brush);
 
-            const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
-            // const auto brush = Media::AcrylicBrush();
-            const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            acrylicBrush.FallbackColor(backgroundColor);
-            acrylicBrush.TintColor(backgroundColor);
-            acrylicBrush.TintOpacity(0.5);
-            res.Insert(terminalBackgroundBrushKey, acrylicBrush);
+            // const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
+            // // const auto brush = Media::AcrylicBrush();
+            // const auto acrylicBrush = Media::AcrylicBrush();
+            // acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            // acrylicBrush.FallbackColor(backgroundColor);
+            // acrylicBrush.TintColor(backgroundColor);
+            // acrylicBrush.TintOpacity(0.5);
+            // res.Insert(terminalBackgroundBrushKey, acrylicBrush);
+
+            // const auto foo{ res.Lookup(winrt::box_value(L"TerminalBackground")).as<winrt::TerminalApp::TerminalBackground>() };
+            // // const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
+            // // const auto brush = Media::AcrylicBrush();
+            // const auto acrylicBrush = Media::AcrylicBrush();
+            // acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            // acrylicBrush.FallbackColor(backgroundColor);
+            // acrylicBrush.TintColor(backgroundColor);
+            // acrylicBrush.TintOpacity(0.5);
+            // // res.Insert(terminalBackgroundBrushKey, acrylicBrush);
+            // foo.Brush(acrylicBrush);
         }
     }
 

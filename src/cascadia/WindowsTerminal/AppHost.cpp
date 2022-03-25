@@ -1320,8 +1320,8 @@ void AppHost::_updateTheme()
 
             // const auto bgBrush{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundBrush")).as<Media::SolidColorBrush>() };
             // bgBrush.Color(backgroundColor);
-            const auto style{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundStyle")).as<winrt::Windows::UI::Xaml::Style>() };
-            titlebar.Style(style);
+            // const auto style{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundStyle")).as<winrt::Windows::UI::Xaml::Style>() };
+            // titlebar.Style(style);
         }
     }
 

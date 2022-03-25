@@ -41,13 +41,15 @@
                     <!-- <SolidColorBrush x:Name="TerminalBackgroundBrush"
                                      Color="{ThemeResource ApplicationPageBackgroundThemeBrush}" />-->
 
-                    <!-- <SolidColorBrush x:Name="TerminalBackgroundBrush"
-                                     Color="#ff00ff" />-->
+                    <SolidColorBrush x:Name="TerminalBackgroundBrush"
+                                     Color="#ff00ff" />
+                    <local:TerminalBackground x:Key="TerminalBackground" />
 
                     <Style x:Name="TerminalBackgroundStyle"
-                           TargetType="local:TitlebarControl">
+                           TargetType="Grid">
+                        <!-- <Setter Property="Background" Value="{Binding Brush, Mode=TwoWay, Source={StaticResource TerminalBackground}}" /> -->
+                        <!--<Setter Property="Background" Value="{ThemeResource TabViewBackground}" />-->
                         <Setter Property="Background" Value="{StaticResource TerminalBackgroundBrush}" />
-                        <!-- <Setter Property="Background" Value="{ThemeResource TabViewBackground}" /> -->
                     </Style>
 
                     <!--

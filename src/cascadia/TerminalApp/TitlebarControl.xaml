@@ -13,8 +13,11 @@
       VerticalAlignment="Top"
       d:DesignHeight="36"
       d:DesignWidth="400"
+      Background="#ffff00"
       SizeChanged="Root_SizeChanged"
       mc:Ignorable="d">
+
+    <!--  Background="{Binding Brush, Mode=TwoWay, Source={StaticResource TerminalBackground}}"  -->
 
     <!--
         TODO:GH#1988
