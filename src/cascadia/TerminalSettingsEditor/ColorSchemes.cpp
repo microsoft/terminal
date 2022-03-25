@@ -54,18 +54,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         RS_(L"ColorScheme_BrightWhite/Header")
     };
 
-    static const std::array<std::wstring, 9> InBoxSchemes = {
-        L"Campbell",
-        L"Campbell Powershell",
-        L"Vintage",
-        L"One Half Dark",
-        L"One Half Light",
-        L"Solarized Dark",
-        L"Solarized Light",
-        L"Tango Dark",
-        L"Tango Light"
-    };
-
     ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
         _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
@@ -183,8 +171,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Set the text disclaimer for the text box
         hstring disclaimer{};
-        const std::wstring schemeName{ colorScheme.Name() };
-        if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
+        if (colorScheme.Origin() != Model::OriginTag::User)
         {
             // load disclaimer for in-box profiles
             disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
@@ -275,8 +262,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto& scheme{ CurrentColorScheme() })
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
-            const std::wstring myName{ scheme.Name() };
-            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), myName) == std::end(InBoxSchemes);
+            return scheme.Origin() == Model::OriginTag::User;
         }
         return false;
     }

@@ -32,13 +32,6 @@ void GlobalAppSettings::_FinalizeInheritance()
     {
         _actionMap->AddLeastImportantParent(parent->_actionMap);
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
-        for (const auto& [k, v] : parent->_colorSchemes)
-        {
-            if (!_colorSchemes.HasKey(k))
-            {
-                _colorSchemes.Insert(k, v);
-            }
-        }
     }
 }
 

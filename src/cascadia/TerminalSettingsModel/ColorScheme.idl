@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "ISettingsModelObject.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
-    [default_interface] runtimeclass ColorScheme : Windows.Foundation.IStringable {
+    [default_interface] runtimeclass ColorScheme : Windows.Foundation.IStringable, ISettingsModelObject {
         ColorScheme();
         ColorScheme(String name);
 
