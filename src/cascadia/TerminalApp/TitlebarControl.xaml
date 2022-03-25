@@ -13,7 +13,6 @@
       VerticalAlignment="Top"
       d:DesignHeight="36"
       d:DesignWidth="400"
-      Background="{ThemeResource TabViewBackground}"
       SizeChanged="Root_SizeChanged"
       mc:Ignorable="d">
 

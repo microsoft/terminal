@@ -671,6 +671,8 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
     {
         (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
     }
+
+    _updateTheme();
 }
 
 // Method Description:
@@ -1312,9 +1314,14 @@ void AppHost::_updateTheme()
         if (const auto tabRowBg = theme.TabRowBackground())
         {
             const til::color backgroundColor = tabRowBg.Color();
-            const auto brush = Media::SolidColorBrush();
-            brush.Color(backgroundColor);
-            titlebar.Background(brush);
+            // const auto brush = Media::SolidColorBrush();
+            // brush.Color(backgroundColor);
+            // titlebar.Background(brush);
+
+            const auto bgBrush{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundBrush")).as<Media::SolidColorBrush>() };
+            bgBrush.Color(backgroundColor);
+            const auto style{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundStyle")).as<winrt::Windows::UI::Xaml::Style>() };
+            titlebar.Style(style);
         }
     }
 
