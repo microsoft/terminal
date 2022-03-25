@@ -41,8 +41,8 @@
                     <!-- <SolidColorBrush x:Name="TerminalBackgroundBrush"
                                      Color="{ThemeResource ApplicationPageBackgroundThemeBrush}" />-->
 
-                    <SolidColorBrush x:Name="TerminalBackgroundBrush"
-                                     Color="#ff00ff" />
+                    <!-- <SolidColorBrush x:Name="TerminalBackgroundBrush"
+                                     Color="#ff00ff" />-->
 
                     <Style x:Name="TerminalBackgroundStyle"
                            TargetType="local:TitlebarControl">

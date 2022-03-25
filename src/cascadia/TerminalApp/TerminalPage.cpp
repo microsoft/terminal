@@ -2617,14 +2617,26 @@ namespace winrt::TerminalApp::implementation
         const auto theme = _settings.GlobalSettings().Theme();
         if (const auto tabRowBg = theme.TabRowBackground())
         {
-            Windows::UI::Color newTabButtonColor = til::color{ tabRowBg.Color() };
+            const til::color backgroundColor = tabRowBg.Color();
+            Windows::UI::Color newTabButtonColor = backgroundColor;
+
             _SetNewTabButtonColor(newTabButtonColor, newTabButtonColor);
-            // const auto res = Application::Current().Resources();
+
+            const auto res = Application::Current().Resources();
             // const auto tabRowBackgroundKey = winrt::box_value(L"TabRowBackground");
             // const til::color backgroundColor = tabRowBg.Color();
             // const auto brush = Media::SolidColorBrush();
             // brush.Color(backgroundColor);
             // res.Insert(tabRowBackgroundKey, brush);
+
+            const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
+            // const auto brush = Media::AcrylicBrush();
+            const auto acrylicBrush = Media::AcrylicBrush();
+            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            acrylicBrush.FallbackColor(backgroundColor);
+            acrylicBrush.TintColor(backgroundColor);
+            acrylicBrush.TintOpacity(0.5);
+            res.Insert(terminalBackgroundBrushKey, acrylicBrush);
         }
     }
 
