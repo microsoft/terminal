@@ -42,7 +42,7 @@
                                      Color="{ThemeResource ApplicationPageBackgroundThemeBrush}" />-->
 
                     <SolidColorBrush x:Name="TerminalBackgroundBrush"
-                                     Color="#ff00ff" />
+                                     Color="#00ff00" />
                     <local:TerminalBackground x:Key="TerminalBackground" />
 
                     <Style x:Name="TerminalBackgroundStyle"

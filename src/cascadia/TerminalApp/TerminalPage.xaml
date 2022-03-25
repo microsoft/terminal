@@ -9,7 +9,7 @@
       xmlns:local="using:TerminalApp"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
-      Background="{Binding Source={StaticResource TerminalBackground}}"
+      Background="{Binding Brush, Mode=TwoWay, Source={StaticResource TerminalBackground}}"
       mc:Ignorable="d">
 
     <Page.Resources>
