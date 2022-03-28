@@ -51,6 +51,15 @@
                         <!--<Setter Property="Background" Value="{ThemeResource TabViewBackground}" />-->
                         <Setter Property="Background" Value="{StaticResource TerminalBackgroundBrush}" />
                     </Style>
+                    <Binding x:Name="Binder"
+                             Mode="OneWay"
+                             Path="Brush" />
+                    <Style x:Name="AutoTerminalBackgroundStyle"
+                           TargetType="Grid">
+                        <Setter Property="Background" Value="{Binding Brush, Mode=TwoWay, Source={StaticResource TerminalBackground}}" />
+                        <!--<Setter Property="Background" Value="{ThemeResource TabViewBackground}" />-->
+                        <!-- <Setter Property="Background" Value="{StaticResource TerminalBackgroundBrush}" /> -->
+                    </Style>
 
                     <!--
                         We need to manually create the error text brush as a

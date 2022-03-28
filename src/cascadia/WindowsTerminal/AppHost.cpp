@@ -1322,6 +1322,20 @@ void AppHost::_updateTheme()
             // bgBrush.Color(backgroundColor);
             // const auto style{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundStyle")).as<winrt::Windows::UI::Xaml::Style>() };
             // titlebar.Style(style);
+            //winrt::Windows::UI::Xaml::Data::Binding b{};
+            //// TerminalBackground
+            //auto bg{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackground")).as<winrt::TerminalApp::TerminalBackground>() };
+
+            //b.Source(bg);
+            //b.Mode(Xaml::Data::BindingMode::OneWay);
+            //b.Path(Xaml::PropertyPath{ L"Brush" });
+            //Xaml::Controls::Grid::
+            //winrt::Windows::UI::Xaml::Controls::IPanelStatics s{};
+            //titlebar.SetBinding(s.BackgroundProperty(), b);
+
+            auto bg{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackground")).as<winrt::TerminalApp::TerminalBackground>() };
+            auto binder{ _app.Resources().Lookup(winrt::box_value(L"Binder")).as<winrt::Windows::UI::Xaml::Data::Binding>() };
+
         }
     }
 
