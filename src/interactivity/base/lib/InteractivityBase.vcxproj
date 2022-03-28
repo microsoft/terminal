@@ -36,12 +36,10 @@
     <ClInclude Include="..\..\inc\IConsoleInputThread.hpp" />
     <ClInclude Include="..\..\inc\IConsoleWindow.hpp" />
     <ClInclude Include="..\..\inc\IHighDpiApi.hpp" />
-    <ClInclude Include="..\..\inc\IInputServices.hpp" />
     <ClInclude Include="..\..\inc\IInteractivityFactory.hpp" />
     <ClInclude Include="..\..\inc\ISystemConfigurationProvider.hpp" />
     <ClInclude Include="..\..\inc\IWindowMetrics.hpp" />
     <ClInclude Include="..\..\inc\Module.hpp" />
-    <ClInclude Include="..\..\inc\VtApiRedirection.hpp" />
     <ClInclude Include="..\..\inc\EventSynthesis.hpp" />
     <ClInclude Include="..\ApiDetector.hpp" />
     <ClInclude Include="..\HostSignalInputThread.hpp" />

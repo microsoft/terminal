@@ -22,6 +22,11 @@
     <ClInclude Include="..\gdirenderer.hpp" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
+  <ItemDefinitionGroup>
+    <Lib>
+      <AdditionalDependencies>usp10.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

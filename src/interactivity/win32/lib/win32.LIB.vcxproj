@@ -22,7 +22,6 @@
     <ClCompile Include="..\ConsoleKeyInfo.cpp" />
     <ClCompile Include="..\Find.cpp" />
     <ClCompile Include="..\Icon.cpp" />
-    <ClCompile Include="..\InputServices.cpp" />
     <ClCompile Include="..\Menu.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -46,7 +45,6 @@
     <ClInclude Include="..\ConsoleKeyInfo.hpp" />
     <ClInclude Include="..\Find.h" />
     <ClInclude Include="..\Icon.hpp" />
-    <ClInclude Include="..\InputServices.hpp" />
     <ClInclude Include="..\Menu.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\resource.h" />

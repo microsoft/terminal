@@ -31,6 +31,8 @@ using namespace Microsoft::Console;
 // which is why this unsafety wasn't further abstracted away.
 winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
+    // If you add more fields here, make sure to do the same in
+    // SettingsLoader::_addUserProfileParent().
     auto profile = winrt::make_self<Profile>();
     profile->Origin(OriginTag::User);
     profile->Name(parent->Name());
@@ -744,12 +746,17 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
                 break;
             }
         }
+        // All other error types aren't handled at the moment.
+        else if (status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        {
+            break;
+        }
         // If the file path couldn't be found by SearchPathW this could be the result of us being given a commandLine
-        // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"}.
+        // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"},
+        // or we were erroneously given a directory to execute (e.g. someone ran `wt .`).
         // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
         // Of course we can only do that if we have at least 2 remaining arguments in argv.
-        // All other error types aren't handled at the moment.
-        else if ((argc - startOfArguments) < 2 || status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        if ((argc - startOfArguments) < 2)
         {
             break;
         }

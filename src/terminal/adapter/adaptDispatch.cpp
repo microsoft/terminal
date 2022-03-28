@@ -877,7 +877,7 @@ void AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
-    // could collide with eachother.
+    // could collide with each other.
     _pConApi->WriteInput(inEvents, eventsWritten);
 }
 
@@ -1578,7 +1578,7 @@ void AdaptDispatch::_ResetTabStops() noexcept
 //    current screen width, initializing tab stops every 8 columns in the
 //    newly allocated space, iff the _initDefaultTabStops flag is set.
 // Arguments:
-// - width - the width of the screen buffer that we need to accomodate
+// - width - the width of the screen buffer that we need to accommodate
 // Return value:
 // - <none>
 void AdaptDispatch::_InitTabStopsForWidth(const size_t width)

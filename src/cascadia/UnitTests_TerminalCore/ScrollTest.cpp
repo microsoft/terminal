@@ -6,7 +6,7 @@
 
 #include <DefaultSettings.h>
 
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "../renderer/base/Renderer.hpp"
 #include "../renderer/dx/DxRenderer.hpp"
 
@@ -17,6 +17,7 @@
 
 using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console::Render;
 using namespace ::Microsoft::Console::Types;
 
 using namespace WEX::Common;
@@ -25,11 +26,9 @@ using namespace WEX::TestExecution;
 
 namespace
 {
-    class MockScrollRenderTarget final : public ::Microsoft::Console::Render::IRenderTarget
+    class MockScrollRenderEngine final : public RenderEngineBase
     {
     public:
-        ~MockScrollRenderTarget() override{};
-
         std::optional<COORD> TriggerScrollDelta() const
         {
             return _triggerScrollDelta;
@@ -40,19 +39,38 @@ namespace
             _triggerScrollDelta.reset();
         }
 
-        virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport&){};
-        virtual void TriggerRedraw(const COORD* const){};
-        virtual void TriggerRedrawCursor(const COORD* const){};
-        virtual void TriggerRedrawAll(){};
-        virtual void TriggerTeardown() noexcept {};
-        virtual void TriggerSelection(){};
-        virtual void TriggerScroll(){};
-        virtual void TriggerScroll(const COORD* const delta)
+        HRESULT StartPaint() noexcept { return S_OK; }
+        HRESULT EndPaint() noexcept { return S_OK; }
+        HRESULT Present() noexcept { return S_OK; }
+        HRESULT PrepareForTeardown(_Out_ bool* /*pForcePaint*/) noexcept { return S_OK; }
+        HRESULT ScrollFrame() noexcept { return S_OK; }
+        HRESULT Invalidate(const SMALL_RECT* /*psrRegion*/) noexcept { return S_OK; }
+        HRESULT InvalidateCursor(const SMALL_RECT* /*psrRegion*/) noexcept { return S_OK; }
+        HRESULT InvalidateSystem(const RECT* /*prcDirtyClient*/) noexcept { return S_OK; }
+        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept { return S_OK; }
+        HRESULT InvalidateScroll(const COORD* pcoordDelta) noexcept
         {
-            _triggerScrollDelta = { *delta };
-        };
-        virtual void TriggerCircling(){};
-        void TriggerTitleChange(){};
+            _triggerScrollDelta = { *pcoordDelta };
+            return S_OK;
+        }
+        HRESULT InvalidateAll() noexcept { return S_OK; }
+        HRESULT InvalidateCircling(_Out_ bool* /*pForcePaint*/) noexcept { return S_OK; }
+        HRESULT PaintBackground() noexcept { return S_OK; }
+        HRESULT PaintBufferLine(gsl::span<const Cluster> /*clusters*/, COORD /*coord*/, bool /*fTrimLeft*/, bool /*lineWrapped*/) noexcept { return S_OK; }
+        HRESULT PaintBufferGridLines(GridLineSet /*lines*/, COLORREF /*color*/, size_t /*cchLine*/, COORD /*coordTarget*/) noexcept { return S_OK; }
+        HRESULT PaintSelection(SMALL_RECT /*rect*/) noexcept { return S_OK; }
+        HRESULT PaintCursor(const CursorOptions& /*options*/) noexcept { return S_OK; }
+        HRESULT UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/, const RenderSettings& /*renderSettings*/, gsl::not_null<IRenderData*> /*pData*/, bool /*usingSoftFont*/, bool /*isSettingDefaultBrushes*/) noexcept { return S_OK; }
+        HRESULT UpdateFont(const FontInfoDesired& /*FontInfoDesired*/, _Out_ FontInfo& /*FontInfo*/) noexcept { return S_OK; }
+        HRESULT UpdateDpi(int /*iDpi*/) noexcept { return S_OK; }
+        HRESULT UpdateViewport(SMALL_RECT /*srNewViewport*/) noexcept { return S_OK; }
+        HRESULT GetProposedFont(const FontInfoDesired& /*FontInfoDesired*/, _Out_ FontInfo& /*FontInfo*/, int /*iDpi*/) noexcept { return S_OK; }
+        HRESULT GetDirtyArea(gsl::span<const til::rect>& /*area*/) noexcept { return S_OK; }
+        HRESULT GetFontSize(_Out_ COORD* /*pFontSize*/) noexcept { return S_OK; }
+        HRESULT IsGlyphWideByFont(std::wstring_view /*glyph*/, _Out_ bool* /*pResult*/) noexcept { return S_OK; }
+
+    protected:
+        HRESULT _DoUpdateTitle(const std::wstring_view /*newTitle*/) noexcept { return S_OK; }
 
     private:
         std::optional<COORD> _triggerScrollDelta;
@@ -100,8 +118,10 @@ class TerminalCoreUnitTests::ScrollTest final
             *scrollBarNotification = { tmp };
         });
 
-        _renderTarget = std::make_unique<MockScrollRenderTarget>();
-        _term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *_renderTarget);
+        _renderEngine = std::make_unique<MockScrollRenderEngine>();
+        _renderer = std::make_unique<DummyRenderer>(_term.get());
+        _renderer->AddRenderEngine(_renderEngine.get());
+        _term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *_renderer);
         return true;
     }
 
@@ -113,7 +133,8 @@ class TerminalCoreUnitTests::ScrollTest final
 
 private:
     std::unique_ptr<Terminal> _term;
-    std::unique_ptr<MockScrollRenderTarget> _renderTarget;
+    std::unique_ptr<MockScrollRenderEngine> _renderEngine;
+    std::unique_ptr<DummyRenderer> _renderer;
     std::shared_ptr<std::optional<ScrollBarNotification>> _scrollBarNotification;
 };
 
@@ -151,7 +172,7 @@ void ScrollTest::TestNotifyScrolling()
     for (; currentRow < totalBufferSize * 2; currentRow++)
     {
         *_scrollBarNotification = std::nullopt;
-        _renderTarget->Reset();
+        _renderEngine->Reset();
 
         termSm.ProcessString(L"X\r\n");
 
@@ -179,18 +200,18 @@ void ScrollTest::TestNotifyScrolling()
         // call `TriggerScroll` with a delta to tell the renderer about it.
         if (scrolled && circledBuffer)
         {
-            VERIFY_IS_TRUE(_renderTarget->TriggerScrollDelta().has_value(),
-                           fmt::format(L"Expected a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+            VERIFY_IS_TRUE(_renderEngine->TriggerScrollDelta().has_value(),
+                           fmt::format(L"Expected a 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
 
             COORD expectedDelta;
             expectedDelta.X = 0;
             expectedDelta.Y = -1;
-            VERIFY_ARE_EQUAL(expectedDelta, _renderTarget->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+            VERIFY_ARE_EQUAL(expectedDelta, _renderEngine->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
         }
         else
         {
-            VERIFY_IS_FALSE(_renderTarget->TriggerScrollDelta().has_value(),
-                            fmt::format(L"Expected to not see a 'trigger scroll' notification in RenderTarget for row {}", currentRow).c_str());
+            VERIFY_IS_FALSE(_renderEngine->TriggerScrollDelta().has_value(),
+                            fmt::format(L"Expected to not see a 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
         }
 
         if (_scrollBarNotification->has_value())

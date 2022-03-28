@@ -4,7 +4,7 @@
 #include "pch.h"
 #include <WexTestClass.h>
 
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "MockTermSettings.h"
 #include "consoletaeftemplates.hpp"
@@ -57,12 +57,14 @@ class TerminalCoreUnitTests::TerminalBufferTests final
     {
         // STEP 1: Set up the Terminal
         term = std::make_unique<Terminal>();
-        term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, emptyRT);
+        emptyRenderer = std::make_unique<DummyRenderer>(term.get());
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *emptyRenderer);
         return true;
     }
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        emptyRenderer = nullptr;
         term = nullptr;
         return true;
     }
@@ -71,7 +73,7 @@ private:
     void _SetTabStops(std::list<short> columns, bool replace);
     std::list<short> _GetTabStops();
 
-    DummyRenderTarget emptyRT;
+    std::unique_ptr<DummyRenderer> emptyRenderer;
     std::unique_ptr<Terminal> term;
 };
 

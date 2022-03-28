@@ -118,7 +118,8 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ConformanceMode>true</ConformanceMode>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard Condition="$(MSBuildVersion) &lt; '17.0.0'">stdcpp17</LanguageStandard>
+      <LanguageStandard Condition="$(MSBuildVersion) &gt;= '17.0.0'">stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -180,7 +181,6 @@
   <!-- Install an empty one for projects that won't have one.
        The following import will override it when it needs to happen. -->
   <Target Name="MergePGOCounts" />
-  <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!=''" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
 
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">

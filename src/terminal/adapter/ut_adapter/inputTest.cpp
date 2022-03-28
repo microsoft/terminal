@@ -9,10 +9,6 @@
 
 #include "../../input/terminalInput.hpp"
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -464,7 +460,7 @@ void InputTest::TerminalInputModifierKeyTests()
         case VK_TAB:
             if (AltPressed(uiKeystate))
             {
-                // Alt+Tab isn't possible - thats reserved by the system.
+                // Alt+Tab isn't possible - that's reserved by the system.
                 continue;
             }
             else if (ShiftPressed(uiKeystate))

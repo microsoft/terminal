@@ -16,6 +16,16 @@ namespace Microsoft::Console::ErrorReporting
     __declspec(noinline) inline void WINAPI ReportFailureToFallbackProvider(bool alreadyReported, const wil::FailureInfo& failure) noexcept
     try
     {
+        if (failure.hr == 0x80131515L)
+        {
+            // XAML requires that we reply with this HR for the accessibility code in XamlUiaTextRange to work.
+            // Unfortunately, due to C++/WinRT, we have to _throw_ it. That results in us ending up here,
+            // trying to report the error to telemetry. It's not an actual error, per se, so we don't
+            // want to log it. It's also incredibly noisy, which results in bugs getting filed on us.
+            // See https://github.com/microsoft/cppwinrt/issues/798 for more discussion about throwing HRESULTs.
+            return;
+        }
+
         if (!alreadyReported && FallbackProvider)
         {
 #pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL

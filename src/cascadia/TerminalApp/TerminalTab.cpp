@@ -274,7 +274,7 @@ namespace winrt::TerminalApp::implementation
         // Don't reload our icon if it hasn't changed.
         if (iconPath == _lastIconPath)
         {
-            return;
+            co_return;
         }
 
         _lastIconPath = iconPath;
@@ -283,7 +283,7 @@ namespace winrt::TerminalApp::implementation
         // for when we show the icon again)
         if (_iconHidden)
         {
-            return;
+            co_return;
         }
 
         auto weakThis{ get_weak() };
@@ -1415,7 +1415,7 @@ namespace winrt::TerminalApp::implementation
         selectedTabBrush.Color(color);
 
         // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
+        // signified by using the same color with a bit of transparency
         auto deselectedTabColor = color;
         deselectedTabColor.A = 64;
         deselectedTabBrush.Color(deselectedTabColor);

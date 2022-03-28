@@ -27,7 +27,7 @@ Author(s):
     X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                   \
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                   \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                             \
-    X(bool, TrimBlockSelection, "trimBlockSelection", false)                                                                                               \
+    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \

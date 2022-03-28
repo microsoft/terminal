@@ -1983,7 +1983,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    // This test ensures GH#11597 doesn't regress.
+    // This test ensures GH#11597, GH#12520 don't regress.
     void DeserializationTests::LoadFragmentsWithMultipleUpdates()
     {
         static constexpr std::wstring_view fragmentSource{ L"fragment" };
@@ -1991,7 +1991,7 @@ namespace SettingsModelLocalTests
             "profiles": [
                 {
                     "updates": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-                    "cursorShape": "filledBox"
+                    "name": "NewName"
                 },
                 {
                     "updates": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -2011,5 +2011,7 @@ namespace SettingsModelLocalTests
 
         VERIFY_IS_FALSE(loader.duplicateProfile);
         VERIFY_ARE_EQUAL(3u, loader.userSettings.profiles.size());
+        // GH#12520: Fragments should be able to override the name of builtin profiles.
+        VERIFY_ARE_EQUAL(L"NewName", loader.userSettings.profiles[0]->Name());
     }
 }

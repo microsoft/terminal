@@ -11,6 +11,15 @@
 
 using namespace Microsoft::Console::Render;
 
+// This is an excerpt of GDI's FontHasWesternScript() as
+// used by InternalTextOut() which is part of ExtTextOutW().
+bool GdiEngine::FontHasWesternScript(HDC hdc)
+{
+    WORD glyphs[4];
+    return (GetGlyphIndicesW(hdc, L"dMr\"", 4, glyphs, GGI_MARK_NONEXISTING_GLYPHS) == 4) &&
+           (glyphs[0] != 0xFFFF && glyphs[1] != 0xFFFF && glyphs[2] != 0xFFFF && glyphs[3] != 0xFFFF);
+}
+
 // Routine Description:
 // - Prepares internal structures for a painting operation.
 // Arguments:
@@ -53,6 +62,8 @@ using namespace Microsoft::Console::Render;
 #if DBG
     _debugContext = GetDC(_debugWindow);
 #endif
+
+    _lastFontType = FontType::Undefined;
 
     return S_OK;
 }
@@ -445,10 +456,42 @@ using namespace Microsoft::Console::Render;
         for (size_t i = 0; i != _cPolyText; ++i)
         {
             const auto& t = _pPolyText[i];
-            if (!ExtTextOutW(_hdcMemoryContext, t.x, t.y, t.uiFlags, &t.rcl, t.lpstr, t.n, t.pdx))
+
+            // The following if/else replicates the essentials of how ExtTextOutW() without ETO_IGNORELANGUAGE works.
+            // See InternalTextOut().
+            //
+            // Unlike the original, we don't check for `GetTextCharacterExtra(hdc) != 0`,
+            // because we don't ever call SetTextCharacterExtra() anyways.
+            //
+            // GH#12294:
+            // Additionally we set ss.fOverrideDirection to TRUE, because we need to present RTL
+            // text in logical order in order to be compatible with applications like `vim -H`.
+            if (_fontHasWesternScript && ScriptIsComplex(t.lpstr, t.n, SIC_COMPLEX) == S_FALSE)
             {
-                hr = E_FAIL;
-                break;
+                if (!ExtTextOutW(_hdcMemoryContext, t.x, t.y, t.uiFlags | ETO_IGNORELANGUAGE, &t.rcl, t.lpstr, t.n, t.pdx))
+                {
+                    hr = E_FAIL;
+                    break;
+                }
+            }
+            else
+            {
+                SCRIPT_STATE ss{};
+                ss.fOverrideDirection = TRUE;
+
+                SCRIPT_STRING_ANALYSIS ssa;
+                hr = ScriptStringAnalyse(_hdcMemoryContext, t.lpstr, t.n, 0, -1, SSA_GLYPHS | SSA_FALLBACK, 0, nullptr, &ss, t.pdx, nullptr, nullptr, &ssa);
+                if (FAILED(hr))
+                {
+                    break;
+                }
+
+                hr = ScriptStringOut(ssa, t.x, t.y, t.uiFlags, &t.rcl, 0, 0, FALSE);
+                std::ignore = ScriptStringFree(&ssa);
+                if (FAILED(hr))
+                {
+                    break;
+                }
             }
         }
 

@@ -1578,7 +1578,7 @@ CATCH_RETURN();
 // Arguments:
 // - <none>
 // Return Value:
-// - Mutable reference ot the current run.
+// - Mutable reference of the current run.
 [[nodiscard]] CustomTextLayout::LinkedRun& CustomTextLayout::_GetCurrentRun()
 {
     return _runs.at(_runIndex);

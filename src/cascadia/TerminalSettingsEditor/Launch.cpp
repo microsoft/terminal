@@ -73,9 +73,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         return winrt::single_threaded_observable_vector(std::move(profiles));
     }
-
-    bool Launch::ShowFirstWindowPreference() const noexcept
-    {
-        return Feature_PersistedWindowLayout::IsEnabled();
-    }
 }
