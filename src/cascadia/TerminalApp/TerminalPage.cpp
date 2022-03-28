@@ -591,7 +591,7 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
 
         // If the caller provided a CWD, switch to that directory, then switch
         // back once we're done. This looks weird though, because we have to set
@@ -1040,7 +1040,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
     {
-        co_await winrt::resume_foreground(page->_tabView.Dispatcher());
+        co_await wil::resume_foreground(page->_tabView.Dispatcher());
 
         if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
         {
@@ -2040,7 +2040,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
                                                                  const CopyToClipboardEventArgs copiedData)
     {
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
 
         DataPackage dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
@@ -2154,7 +2154,7 @@ namespace winrt::TerminalApp::implementation
 
             if (warnMultiLine || warnLargeText)
             {
-                co_await winrt::resume_foreground(Dispatcher());
+                co_await wil::resume_foreground(Dispatcher());
 
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
@@ -2267,7 +2267,7 @@ namespace winrt::TerminalApp::implementation
                                                                      const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
     {
         auto weakThis = get_weak();
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         if (auto page = weakThis.get())
         {
             winrt::hstring message = eventArgs.Message();
@@ -2334,7 +2334,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the arguments specifying how to set the progress indicator
     winrt::fire_and_forget TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
-        co_await resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         _SetTaskbarProgressHandlers(*this, nullptr);
     }
 
@@ -3415,7 +3415,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::IdentifyWindow()
     {
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
             // If we haven't ever loaded the TeachingTip, then do so now and
@@ -3458,7 +3458,7 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
         // On the foreground thread, raise property changed notifications, and
         // display the success toast.
-        co_await resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
             if (changed)
@@ -3550,7 +3550,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::RenameFailed()
     {
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
             // If we haven't ever loaded the TeachingTip, then do so now and
@@ -3757,7 +3757,7 @@ namespace winrt::TerminalApp::implementation
             const auto newConnectionState = coreState.ConnectionState();
             if (newConnectionState == ConnectionState::Failed && !_IsMessageDismissed(InfoBarMessage::CloseOnExitInfo))
             {
-                co_await winrt::resume_foreground(Dispatcher());
+                co_await wil::resume_foreground(Dispatcher());
                 if (const auto infoBar = FindName(L"CloseOnExitInfoBar").try_as<MUX::Controls::InfoBar>())
                 {
                     infoBar.IsOpen(true);

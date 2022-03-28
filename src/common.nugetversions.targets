@@ -58,6 +58,9 @@
     <!-- VisualStudioSetup -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="'$(TerminalVisualStudioSetup)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
 
+    <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
+
   </ImportGroup>
 
   <Target Name="Terminal_EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -91,6 +94,9 @@
 
     <!-- VisualStudioSetup -->
     <Error Condition="'$(TerminalVisualStudioSetup)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets'))" />
+
+    <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
 
   </Target>
 
