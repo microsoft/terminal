@@ -52,6 +52,7 @@ apimswincoresynchl
 apiset
 APPBARDATA
 appconsult
+appcontainer
 APPICON
 appium
 applet
@@ -1626,6 +1627,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nugetversions
 nullability
 nullness
 nullonfailure

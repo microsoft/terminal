@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29001.49
@@ -290,9 +289,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common Props", "Common Prop
 		src\common.build.post.props = src\common.build.post.props
 		src\common.build.pre.props = src\common.build.pre.props
 		src\common.build.tests.props = src\common.build.tests.props
+		src\common.nugetversions.props = src\common.nugetversions.props
+		src\common.nugetversions.targets = src\common.nugetversions.targets
 		common.openconsole.props = common.openconsole.props
 		src\cppwinrt.build.post.props = src\cppwinrt.build.post.props
 		src\cppwinrt.build.pre.props = src\cppwinrt.build.pre.props
+		dep\nuget\packages.config = dep\nuget\packages.config
 		src\wap-common.build.post.props = src\wap-common.build.post.props
 		src\wap-common.build.pre.props = src\wap-common.build.pre.props
 	EndProjectSection
