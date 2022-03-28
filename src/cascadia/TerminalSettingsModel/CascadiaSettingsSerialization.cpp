@@ -651,7 +651,7 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
         // If you add more fields here, make sure to do the same in
         // implementation::CreateChild().
         auto child = winrt::make_self<Profile>();
-        child->AddLeastImportantParent(profile);
+        child->InsertParent(profile);
         child->Guid(profile->Guid());
 
         // If profile is a dynamic/generated profile, a fragment's
