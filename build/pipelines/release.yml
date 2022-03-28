@@ -261,7 +261,6 @@ jobs:
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
       displayName: Copy PublicTerminalCore.dll to Artifacts
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         Contents: >-
           **/PublicTerminalCore.dll
@@ -272,7 +271,6 @@ jobs:
         flattenFolders: true
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (PublicTerminalCore)
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
