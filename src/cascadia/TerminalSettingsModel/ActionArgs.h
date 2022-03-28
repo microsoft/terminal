@@ -187,8 +187,9 @@ private:                                                                        
     X(ScrollToMarkDirection, Direction, "direction", false, ScrollToMarkDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define ADD_MARK_ARGS(X) \
-    X(til::color, Color, "color", false, 255, 255, 255)
+#define ADD_MARK_ARGS(X)                                \
+    X(til::color, Color, "color", false, 255, 255, 255) \
+    X(winrt::Microsoft::Terminal::Control::MarkCategory, Type, "type", false, winrt::Microsoft::Terminal::Control::MarkCategory::Info)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \

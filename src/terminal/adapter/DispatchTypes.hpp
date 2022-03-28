@@ -490,11 +490,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class MarkCategory : size_t
     {
-        Prompt = 0,
-        Error = 1,
-        Warning = 2,
-        Info = 3
+        Prompt = 1,
+        Error = 2,
+        Warning = 4,
+        Success = 8,
+        Info = 16
     };
+    DEFINE_ENUM_FLAG_OPERATORS(MarkCategory);
 
     struct ScrollMark
     {

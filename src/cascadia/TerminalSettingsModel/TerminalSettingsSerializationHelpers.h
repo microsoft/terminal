@@ -557,3 +557,45 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ScrollToMarkDire
         pair_type{ "last", ValueType::Last },
     };
 };
+
+// Possible ScrollToMarkDirection values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::MarkCategory)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "prompt", ValueType::Prompt },
+        pair_type{ "error", ValueType::Error },
+        pair_type{ "warning", ValueType::Warning },
+        pair_type{ "success", ValueType::Success },
+        pair_type{ "info", ValueType::Info },
+    };
+};
+// TODO! this is dumb. Have different types at the MTSM layer, and then convert
+// to Control::MarkCategory at the end. So these two would both be
+// MTSM::MarkCategory & MTSM::MarkFilter, and then in the handler we'd convert
+// them to the control version.
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Control::MarkFilter)
+{
+    JSON_MAPPINGS(7) = {
+        pair_type{ "none", AllClear },
+        pair_type{ "prompt", ValueType::Prompt },
+        pair_type{ "error", ValueType::Error },
+        pair_type{ "warning", ValueType::Warning },
+        pair_type{ "success", ValueType::Success },
+        pair_type{ "info", ValueType::Info },
+        pair_type{ "all", AllSet },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : AllClear;
+        }
+        return BaseFlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
+    }
+};

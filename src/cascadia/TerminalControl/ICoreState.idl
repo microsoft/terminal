@@ -11,14 +11,33 @@ namespace Microsoft.Terminal.Control
         String Input;
     };
 
+    // Why are there two here?
+    // Because when adding a mark, you want one and only one flag set.
+    // When showing the scrollbar, you want any number of flags.
+    // Separating these allows for the settings serialization to change how they are serialized, parsed, and displayed.
 
+// TODO! this is dumb. Have different types at the MTSM layer, and then convert
+// to Control::MarkCategory at the end. So these two would both be
+// MTSM::MarkCategory & MTSM::MarkFilter, and then in the handler we'd convert
+// them to the control version.
     enum MarkCategory
     {
-        Prompt = 0,
-        Error = 1,
-        Warning = 2,
-        Info = 3
+        Prompt = 1,
+        Error = 2,
+        Warning = 4,
+        Success = 8,
+        Info = 16
     };
+    [flags]
+    enum MarkFilter
+    {
+        Prompt = 1,
+        Error = 2,
+        Warning = 4,
+        Success = 8,
+        Info = 16
+    };
+
     struct ScrollMark
     {
         Microsoft.Terminal.Core.Color Color;
