@@ -391,7 +391,7 @@ jobs:
       inputs:
         targetType: inline
         # Find all artifact files and move them up a directory. Ugh.
-        script: >-
+        script: |-
           Get-ChildItem bin -Recurse -Directory -Filter wpf-dll-* | % {
             $_ | Get-ChildItem -Recurse -File | % {
               Move-Item -Verbose $_.FullName $_.Directory.Parent.FullName
