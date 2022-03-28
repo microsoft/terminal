@@ -1207,7 +1207,7 @@ bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
 winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
 {
     // On the foreground thread:
-    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    co_await wil::resume_foreground(_rootGrid.Dispatcher());
     _summonWindowRoutineBody(args);
 }
 
