@@ -216,7 +216,6 @@ jobs:
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
@@ -270,7 +269,6 @@ jobs:
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
       displayName: Copy PublicTerminalCore.dll to Artifacts
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         Contents: >-
           **/PublicTerminalCore.dll
@@ -281,7 +279,6 @@ jobs:
         flattenFolders: true
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (PublicTerminalCore)
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
@@ -389,31 +386,26 @@ jobs:
       displayName: Package ES - Setup Build
       inputs:
         disableOutputRedirect: true
-    - task: DownloadBuildArtifacts@0
-      displayName: Download x86 PublicTerminalCore
-      inputs:
-        artifactName: wpf-dll-x86-$(BuildConfiguration)-Win10
-        itemPattern: '**/*.dll'
-        downloadPath: bin\Win32\$(BuildConfiguration)\
-        extractTars: false
-    - task: DownloadBuildArtifacts@0
-      displayName: Download x64 PublicTerminalCore
-      inputs:
-        artifactName: wpf-dll-x64-$(BuildConfiguration)-Win10
-        itemPattern: '**/*.dll'
-        downloadPath: bin\x64\$(BuildConfiguration)\
-        extractTars: false
+    - ${{ each platform in parameters.buildPlatforms }}:
+      - task: DownloadBuildArtifacts@0
+        displayName: Download ${{ platform }} PublicTerminalCore
+        inputs:
+          artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)-Win10
+          itemPattern: '**/*.dll'
+          downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
+          extractTars: false
     - task: PowerShell@2
-      displayName: Move downloaded artifacts up a level
+      displayName: Move downloaded artifacts around
       inputs:
         targetType: inline
         # Find all artifact files and move them up a directory. Ugh.
-        script: >-
+        script: |-
           Get-ChildItem bin -Recurse -Directory -Filter wpf-dll-* | % {
             $_ | Get-ChildItem -Recurse -File | % {
               Move-Item -Verbose $_.FullName $_.Directory.Parent.FullName
             }
           }
+          Move-Item bin\x86 bin\Win32
     - task: NuGetToolInstaller@1
       displayName: Use NuGet 5.10.0
       inputs:
