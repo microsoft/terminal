@@ -50,6 +50,14 @@
         <Pack>true</Pack>
         <PackagePath>runtimes\win-x64\native\</PackagePath>
       </None>
+      <None Include="$(RepoBinPath)\ARM64\$(Configuration)\PublicTerminalCore.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-arm64\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\ARM64\$(Configuration)\api-ms-win-core-synch-l1-2-0.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-arm64\native\</PackagePath>
+      </None>
     </ItemGroup>
   </Target>
 
