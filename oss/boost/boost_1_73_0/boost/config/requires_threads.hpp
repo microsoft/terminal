@@ -26,7 +26,7 @@
 
 #endif
 
-#  error "Threading support unavaliable: it has been explicitly disabled with BOOST_DISABLE_THREADS"
+#  error "Threading support unavailable: it has been explicitly disabled with BOOST_DISABLE_THREADS"
 
 #elif !defined(BOOST_HAS_THREADS)
 

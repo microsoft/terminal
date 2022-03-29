@@ -3807,7 +3807,7 @@ void Value::Comments::set(CommentPlacement slot, String comment) {
   if (!ptr_) {
     ptr_ = std::unique_ptr<Array>(new Array());
   }
-  // check comments array boundry.
+  // check comments array boundary.
   if (slot < CommentPlacement::numberOfCommentPlacement) {
     (*ptr_)[slot] = std::move(comment);
   }

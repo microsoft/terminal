@@ -87,7 +87,7 @@ BOOST_LIB_VERSION:    The Boost version, in the form x_y, for Boost version x.y.
 #  endif
 #elif defined(_MSC_VER) && !defined(__MWERKS__) && !defined(__EDG_VERSION__)
 //
-// C language compatability (no, honestly)
+// C language compatibility (no, honestly)
 //
 #  define BOOST_MSVC _MSC_VER
 #  define BOOST_STRINGIZE(X) BOOST_DO_STRINGIZE(X)
