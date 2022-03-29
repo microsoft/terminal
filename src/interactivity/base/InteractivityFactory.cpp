@@ -315,10 +315,10 @@ using namespace Microsoft::Console::Interactivity;
 
                 // const auto windowStyle = (owner == HWND_DESKTOP) ? WS_OVERLAPPEDWINDOW : WS_CHILD;
                 const auto windowStyle = WS_OVERLAPPEDWINDOW;
-
+                const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED;
                 // Attempt to create window
                 hwnd = CreateWindowExW(
-                    WS_EX_TOOLWINDOW,
+                    exStyles,
                     PSEUDO_WINDOW_CLASS,
                     nullptr,
                     windowStyle, //WS_CHILD, //WS_OVERLAPPEDWINDOW,
@@ -338,8 +338,8 @@ using namespace Microsoft::Console::Interactivity;
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
 
-                BOOL const cloak = TRUE;
-                DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &cloak, sizeof(cloak));
+                /*BOOL const cloak = TRUE;
+                DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &cloak, sizeof(cloak));*/
 
                 break;
             }
