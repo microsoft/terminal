@@ -17,7 +17,7 @@
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/Viewport.hpp"
 
-#include "../../cascadia/UnitTests_TerminalCore/TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 #include <sstream>
 
