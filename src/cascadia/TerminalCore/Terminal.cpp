@@ -221,20 +221,20 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _defaultCursorShape = cursorShape;
 }
 
-// Method Description:
-// - Notifies the attached PTY that the window has changed visibility state
-// - NOTE: Most VT commands are generated in `TerminalDispatch` and sent to this
-//         class as the target for transmission. But since this message isn't
-//         coming in via VT parsing (and rather from a window state transition)
-//         we generate and send it here.
-// Arguments:
-// - visible: True for visible; false for not visible.
-// Return Value:
-// - <none>
-void Terminal::UpdateVisibility(const bool visible)
-{
-    ReturnResponse(visible ? L"\x1b[1t" : L"\x1b[2t");
-}
+// // Method Description:
+// // - Notifies the attached PTY that the window has changed visibility state
+// // - NOTE: Most VT commands are generated in `TerminalDispatch` and sent to this
+// //         class as the target for transmission. But since this message isn't
+// //         coming in via VT parsing (and rather from a window state transition)
+// //         we generate and send it here.
+// // Arguments:
+// // - visible: True for visible; false for not visible.
+// // Return Value:
+// // - <none>
+// void Terminal::UpdateVisibility(const bool visible)
+// {
+//     ReturnResponse(visible ? L"\x1b[1t" : L"\x1b[2t");
+// }
 
 // Method Description:
 // - Resize the terminal as the result of some user interaction.

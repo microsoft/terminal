@@ -1691,9 +1691,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // Method Description:
+    // - Notifies the attached PTY that the window has changed visibility state
+    // - NOTE: Most VT commands are generated in `TerminalDispatch` and sent to this
+    //         class as the target for transmission. But since this message isn't
+    //         coming in via VT parsing (and rather from a window state transition)
+    //         we generate and send it here.
+    // Arguments:
+    // - visible: True for visible; false for not visible.
+    // Return Value:
+    // - <none>
     void ControlCore::WindowVisibilityChanged(const bool showOrHide)
     {
-        _terminal->UpdateVisibility(showOrHide);
+        // show is true, hide is false
+        _connection.WriteInput(showOrHide ? L"\x1b[1t" : L"\x1b[2t");
     }
 
     bool ControlCore::_isBackgroundTransparent()
