@@ -9,6 +9,7 @@
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
   <Import Project="..\..\common.build.pre.props" />
+  <Import Project="..\..\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -24,4 +25,5 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.post.props" />
   <Import Project="..\..\common.build.tests.props" />
+  <Import Project="..\..\common.nugetversions.targets" />
 </Project>

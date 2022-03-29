@@ -146,7 +146,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -288,7 +288,7 @@ namespace winrt::TerminalApp::implementation
 
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -307,7 +307,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -336,7 +336,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -351,7 +351,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -398,7 +398,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalTab::UpdateTitle()
     {
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
         if (auto tab{ weakThis.get() })
         {
             const auto activeTitle = _GetActiveTitle();
@@ -424,7 +424,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto control = GetActiveTerminalControl();
 
-        co_await winrt::resume_foreground(control.Dispatcher());
+        co_await wil::resume_foreground(control.Dispatcher());
 
         const auto currentOffset = control.ScrollOffset();
         control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
@@ -865,7 +865,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
-            co_await winrt::resume_foreground(dispatcher);
+            co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
@@ -1074,7 +1074,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (tab->_zoomedPane)
                 {
-                    co_await winrt::resume_foreground(tab->Content().Dispatcher());
+                    co_await wil::resume_foreground(tab->Content().Dispatcher());
 
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
@@ -1088,7 +1088,7 @@ namespace winrt::TerminalApp::implementation
                     // did not actually change. Triggering
                     if (pane != tab->_activePane && !tab->_activePane->_IsLeaf())
                     {
-                        co_await winrt::resume_foreground(tab->Content().Dispatcher());
+                        co_await wil::resume_foreground(tab->Content().Dispatcher());
                         tab->_UpdateActivePane(tab->_activePane);
                     }
 

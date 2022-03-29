@@ -844,7 +844,7 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
 
     winrt::hstring layoutJson = L"";
     // Use the main thread since we are accessing controls.
-    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+    co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
     try
     {
         const auto pos = _GetWindowLaunchPosition();
@@ -1020,7 +1020,7 @@ void AppHost::_listenForInboundConnections()
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 {
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
-    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+    co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
 
     if (!_window)
     {
@@ -1357,7 +1357,7 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
                                                const winrt::Windows::Foundation::IInspectable&)
 {
     // Need to be on the main thread to close out all of the tabs.
-    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+    co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
 
     _logic.Quit();
 }
