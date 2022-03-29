@@ -42,5 +42,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const size_t col) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
+
+        virtual bool FocusChanged(const bool focused) const = 0;
     };
 }
