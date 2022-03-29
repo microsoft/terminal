@@ -313,17 +313,30 @@ using namespace Microsoft::Console::Interactivity;
                 pseudoClass.lpfnWndProc = s_PseudoWindowProc;
                 RegisterClass(&pseudoClass);
 
+                const auto windowStyle = WS_OVERLAPPEDWINDOW;
+                const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED;
                 // Attempt to create window
-                hwnd = CreateWindowExW(
-                    WS_EX_TOOLWINDOW, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, this);
+                hwnd = CreateWindowExW(exStyles,
+                                       PSEUDO_WINDOW_CLASS,
+                                       nullptr,
+                                       windowStyle, //WS_CHILD, //WS_OVERLAPPEDWINDOW,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       HWND_DESKTOP, // owner
+                                       nullptr,
+                                       nullptr,
+                                       this);
+
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
 
-                BOOL const cloak = TRUE;
-                DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &cloak, sizeof(cloak));
+                /*BOOL const cloak = TRUE;
+                DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &cloak, sizeof(cloak));*/
 
                 break;
             }
