@@ -421,6 +421,12 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _pDispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
         break;
+    case CsiActionCodes::FocusIn:
+        success = _pDispatch->FocusChanged(true);
+        break;
+    case CsiActionCodes::FocusOut:
+        success = _pDispatch->FocusChanged(false);
+        break;
     case CsiActionCodes::Win32KeyboardInput:
     {
         // Use WriteCtrlKey here, even for keys that _aren't_ control keys,

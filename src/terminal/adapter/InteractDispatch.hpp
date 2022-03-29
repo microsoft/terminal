@@ -35,6 +35,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool IsVtInputEnabled() const override;
 
+        bool FocusChanged(const bool focused) const override;
+
     private:
         std::unique_ptr<ConGetSet> _pConApi;
     };
