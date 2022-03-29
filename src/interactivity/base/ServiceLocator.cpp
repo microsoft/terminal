@@ -312,7 +312,7 @@ void ServiceLocator::SetPseudoWindowCallback(std::function<void(bool)> func)
 // - <none>
 // Return Value:
 // - a reference to the pseudoconsole window.
-HWND ServiceLocator::LocatePseudoWindow()
+HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
 {
     NTSTATUS status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
@@ -325,7 +325,7 @@ HWND ServiceLocator::LocatePseudoWindow()
         if (NT_SUCCESS(status))
         {
             HWND hwnd;
-            status = s_interactivityFactory->CreatePseudoWindow(hwnd);
+            status = s_interactivityFactory->CreatePseudoWindow(hwnd, owner);
             s_pseudoWindow.reset(hwnd);
         }
 
@@ -335,7 +335,14 @@ HWND ServiceLocator::LocatePseudoWindow()
     return s_pseudoWindow.get();
 }
 
-#pragma endregion
+// void ServiceLocator::ReparentPseudoHwnd(HWND newParent)
+// {
+//     // This will initialize s_interactivityFactory for us. It will also conveniently return 0 when we're on OneCore.
+//     if (const auto psuedoHwnd{ LocatePseudoWindow() })
+//     {
+//         ::SetParent(psuedoHwnd, newParent);
+//     }
+// }
 
 #pragma endregion
 

@@ -67,6 +67,10 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoResizeWindow(*_earlyResize);
     }
+    if (_earlyReparent)
+    {
+        _DoSetWindowParent(*_earlyReparent);
+    }
 }
 
 // Method Description:
@@ -119,6 +123,26 @@ void PtySignalInputThread::ConnectConsole() noexcept
 
             break;
         }
+        case PtySignal::SetParent:
+        {
+            SetParentData reparentMessage = { 0 };
+            _GetData(&reparentMessage, sizeof(reparentMessage));
+
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // todo
+            if (!_consoleConnected)
+            {
+                _earlyReparent = reparentMessage;
+            }
+            else
+            {
+                _DoSetWindowParent(reparentMessage);
+            }
+
+            break;
+        }
         default:
         {
             THROW_HR(E_UNEXPECTED);
@@ -145,6 +169,11 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 void PtySignalInputThread::_DoClearBuffer()
 {
     _pConApi->ClearBuffer();
+}
+
+void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
+{
+    _pConApi->ReparentWindow(data.handle);
 }
 
 // Method Description:

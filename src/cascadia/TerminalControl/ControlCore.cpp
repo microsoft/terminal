@@ -264,6 +264,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto height = vp.Height();
             _connection.Resize(height, width);
 
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ReparentWindow(_OwningHwnd);
+            }
+
             // Override the default width and height to match the size of the swapChainPanel
             _settings->InitialCols(width);
             _settings->InitialRows(height);

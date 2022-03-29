@@ -41,7 +41,7 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] virtual NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider) = 0;
 
         virtual void SetPseudoWindowCallback(std::function<void(bool)> func) = 0;
-        [[nodiscard]] virtual NTSTATUS CreatePseudoWindow(HWND& hwnd) = 0;
+        [[nodiscard]] virtual NTSTATUS CreatePseudoWindow(HWND& hwnd, const HWND owner) = 0;
     };
 
     inline IInteractivityFactory::~IInteractivityFactory() {}

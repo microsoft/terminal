@@ -293,7 +293,7 @@ using namespace Microsoft::Console::Interactivity;
 // - hwnd: Receives the value of the newly created window's HWND.
 // Return Value:
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
-[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
+[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd, const HWND owner)
 {
     hwnd = nullptr;
     ApiLevel level;
@@ -313,9 +313,25 @@ using namespace Microsoft::Console::Interactivity;
                 pseudoClass.lpfnWndProc = s_PseudoWindowProc;
                 RegisterClass(&pseudoClass);
 
+                // const auto windowStyle = (owner == HWND_DESKTOP) ? WS_OVERLAPPEDWINDOW : WS_CHILD;
+                const auto windowStyle = WS_OVERLAPPEDWINDOW;
+
                 // Attempt to create window
                 hwnd = CreateWindowExW(
-                    WS_EX_TOOLWINDOW, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, this);
+                    WS_EX_TOOLWINDOW,
+                    PSEUDO_WINDOW_CLASS,
+                    nullptr,
+                    windowStyle, //WS_CHILD, //WS_OVERLAPPEDWINDOW,
+                    0,
+                    0,
+                    0,
+                    0,
+                    // Niksa just had the parent as HWND_DESKTOP always,
+                    // This branch tests a merged version of the prototypes
+                    owner /*(HWND)0x00070C6A*/ /*HWND_DESKTOP*/, // parent
+                    nullptr,
+                    nullptr,
+                    this);
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();

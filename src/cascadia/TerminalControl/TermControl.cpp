@@ -2790,4 +2790,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void TermControl::OwningHwnd(uint64_t owner)
+    {
+        _core.OwningHwnd(owner);
+    }
+
+    uint64_t TermControl::OwningHwnd()
+    {
+        return _core.OwningHwnd();
+    }
+
 }
