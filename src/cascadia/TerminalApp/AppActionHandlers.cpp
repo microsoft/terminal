@@ -844,6 +844,22 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        // WindowRenamer().Opened([weakThis = get_weak()](auto&&, auto&&) {
+        //     if (auto self{ weakThis.get() })
+        //     {
+        //         self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
+        //     }
+        // });
+
+        _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
+            // Only let this succeed once.
+            if (auto self{ weakThis.get() })
+            {
+                self->_renamerLayoutUpdatedRevoker.revoke();
+                self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
+            }
+        });
         WindowRenamer().IsOpen(true);
 
         // PAIN: We can't immediately focus the textbox in the TeachingTip. It's
