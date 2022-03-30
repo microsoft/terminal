@@ -2051,6 +2051,10 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "experimental.connection.passthroughMode": {
+          "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"

@@ -1043,6 +1043,10 @@
     <value>Enable experimental text rendering engine</value>
     <comment>An option to enable an experimental text rendering engine</comment>
   </data>
+  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
+    <value>Enable experimental virtual terminal passthrough</value>
+    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Audible</value>
     <comment>An option to choose from for the "bell style" setting. When selected, an audible cue is used to notify the user.</comment>

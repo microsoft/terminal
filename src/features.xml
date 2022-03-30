@@ -84,4 +84,15 @@
             <brandingToken>Dev</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
+    
+    <feature>
+        <name>Feature_VtPassthroughMode</name>
+        <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
+        <stage>AlwaysDisabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
 </featureStaging>

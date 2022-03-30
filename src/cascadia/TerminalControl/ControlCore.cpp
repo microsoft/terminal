@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This event is explicitly revoked in the destructor: does not need weak_ref
         _connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
 
-        _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
+        _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
             _sendInputToConnection(wstr);
         });
 

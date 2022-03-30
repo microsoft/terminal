@@ -101,6 +101,11 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
+void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
+{
+    _lookingForDSR = looking;
+}
+
 // Method Description:
 // - Triggers the Execute action to indicate that the listener should
 //      immediately respond to a C0 control character.

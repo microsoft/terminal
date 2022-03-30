@@ -1070,13 +1070,20 @@ namespace winrt::TerminalApp::implementation
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
             connection = TerminalConnection::ConptyConnection();
-            connection.Initialize(TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
-                                                                                       L".",
-                                                                                       L"Azure",
-                                                                                       nullptr,
-                                                                                       ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                       ::base::saturated_cast<uint32_t>(settings.InitialCols()),
-                                                                                       winrt::guid()));
+            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+                                                                                 L".",
+                                                                                 L"Azure",
+                                                                                 nullptr,
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 winrt::guid());
+
+            if constexpr (Feature_VtPassthroughMode::IsEnabled())
+            {
+                valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            }
+
+            connection.Initialize(valueSet);
         }
 
         else
@@ -1114,13 +1121,17 @@ namespace winrt::TerminalApp::implementation
             }
 
             auto conhostConn = TerminalConnection::ConptyConnection();
-            conhostConn.Initialize(TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                        newWorkingDirectory,
-                                                                                        settings.StartingTitle(),
-                                                                                        envMap.GetView(),
-                                                                                        ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                        ::base::saturated_cast<uint32_t>(settings.InitialCols()),
-                                                                                        winrt::guid()));
+            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                                 newWorkingDirectory,
+                                                                                 settings.StartingTitle(),
+                                                                                 envMap.GetView(),
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 winrt::guid());
+
+            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+
+            conhostConn.Initialize(valueSet);
 
             sessionGuid = conhostConn.Guid();
             connection = conhostConn;

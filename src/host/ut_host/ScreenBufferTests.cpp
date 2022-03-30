@@ -1863,7 +1863,7 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
     altBuffer.SetViewportSize(&newBufferSize);
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex{ 0 };
-    g.api.GetConsoleScreenBufferInfoExImpl(mainBuffer, csbiex);
+    g.api->GetConsoleScreenBufferInfoExImpl(mainBuffer, csbiex);
     const auto newActualMainView = mainBuffer.GetViewport();
     const auto newActualAltView = altBuffer.GetViewport();
 
@@ -4973,7 +4973,7 @@ void ScreenBufferTests::SnapCursorWithTerminalScrolling()
 
     Log::Comment(NoThrowString().Format(
         L"Call SetConsoleCursorPosition to snap to the cursor"));
-    VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(si, secondWindowOrigin));
+    VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(si, secondWindowOrigin));
 
     const auto fourthView = si._viewport;
     const auto fourthVirtualBottom = si._virtualBottom;
@@ -5049,12 +5049,12 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
 #pragma region Test ScrollConsoleScreenBufferWImpl()
         // Clear text of alt buffer (same params as in CMD)
-        VERIFY_SUCCEEDED(g.api.ScrollConsoleScreenBufferWImpl(siMain,
-                                                              { 0, 0, 120, 9001 },
-                                                              { 0, -9001 },
-                                                              std::nullopt,
-                                                              L' ',
-                                                              7));
+        VERIFY_SUCCEEDED(g.api->ScrollConsoleScreenBufferWImpl(siMain,
+                                                               { 0, 0, 120, 9001 },
+                                                               { 0, -9001 },
+                                                               std::nullopt,
+                                                               L' ',
+                                                               7));
 
         // Verify text is now gone
         VERIFY_ARE_EQUAL(L" ", altBuffer.GetTextBuffer().GetCellDataAt({ 0, 0 })->Chars());
@@ -5062,7 +5062,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
 #pragma region Test SetConsoleCursorPositionImpl()
         // Reset cursor position as we do with CLS command (same params as in CMD)
-        VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(siMain, { 0 }));
+        VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(siMain, { 0 }));
 
         // Verify state of alt buffer
         auto& altBufferCursor = altBuffer.GetTextBuffer().GetCursor();
