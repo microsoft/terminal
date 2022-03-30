@@ -21,6 +21,10 @@
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
   </PropertyGroup>
+  <PropertyGroup>
+    <TerminalTAEF>true</TerminalTAEF>
+  </PropertyGroup>
+  <Import Project="..\..\common.nugetversions.props" />
   <PropertyGroup Condition="'$(Platform)' == 'ARM64'">
     <PlatformTarget>ARM64</PlatformTarget>
   </PropertyGroup>
@@ -44,35 +48,35 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="appium-dotnet-driver, Version=3.0.0.2, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Appium.WebDriver.3.0.0.2\lib\net45\appium-dotnet-driver.dll</HintPath>
+      <HintPath>$(AppiumWebDriverPathRoot)\lib\net45\appium-dotnet-driver.dll</HintPath>
     </Reference>
     <Reference Include="Castle.Core, Version=4.1.1.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Castle.Core.4.1.1\lib\net45\Castle.Core.dll</HintPath>
+      <HintPath>$(CastleCorePathRoot)\lib\net45\Castle.Core.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(NewtonsoftJSONPathRoot)\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="TE.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Microsoft.Taef.10.60.210621002\lib\net45\TE.Managed.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net45\TE.Managed.dll</HintPath>
     </Reference>
     <Reference Include="TE.Model.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Microsoft.Taef.10.60.210621002\lib\net45\TE.Model.Managed.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net45\TE.Model.Managed.dll</HintPath>
     </Reference>
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="WebDriver, Version=3.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Selenium.WebDriver.3.5.0\lib\net40\WebDriver.dll</HintPath>
+      <HintPath>$(SeleniumWebDriverPathRoot)\lib\net40\WebDriver.dll</HintPath>
     </Reference>
     <Reference Include="WebDriver.Support, Version=3.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Selenium.Support.3.5.0\lib\net40\WebDriver.Support.dll</HintPath>
+      <HintPath>$(SeleniumSupportPathRoot)\lib\net40\WebDriver.Support.dll</HintPath>
     </Reference>
     <Reference Include="Wex.Common.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Microsoft.Taef.10.60.210621002\lib\net45\Wex.Common.Managed.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net45\Wex.Common.Managed.dll</HintPath>
     </Reference>
     <Reference Include="Wex.Logger.Interop, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Microsoft.Taef.10.60.210621002\lib\net45\Wex.Logger.Interop.dll</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\net45\Wex.Logger.Interop.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -98,7 +102,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
@@ -125,11 +128,5 @@
   <PropertyGroup>
     <PostBuildEvent>copy $(SolutionDir)\dep\WinAppDriver\* $(OutDir)\</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="..\..\..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="Exists('..\..\..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets'))" />
-  </Target>
+  <Import Project="..\..\common.nugetversions.targets" />
 </Project>

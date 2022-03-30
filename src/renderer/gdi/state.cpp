@@ -29,7 +29,7 @@ GdiEngine::GdiEngine() :
     _fInvalidRectUsed(false),
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
-    _lastFontType(FontType::Default),
+    _lastFontType(FontType::Undefined),
     _currentLineTransform(IDENTITY_XFORM),
     _currentLineRendition(LineRendition::SingleWidth),
     _fPaintStarted(false),
@@ -141,15 +141,6 @@ GdiEngine::~GdiEngine()
     // Store new window handle and memory context
     _hwndTargetWindow = hwnd;
     _hdcMemoryContext = hdcNewMemoryContext;
-
-    // If we have a font, apply it to the context.
-    if (nullptr != _hfont)
-    {
-        LOG_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
-    }
-
-    // Record the fact that the selected font is the default.
-    _lastFontType = FontType::Default;
 
     if (nullptr != hdcRealWindow)
     {
@@ -327,6 +318,7 @@ GdiEngine::~GdiEngine()
             break;
         }
         _lastFontType = fontType;
+        _fontHasWesternScript = FontHasWesternScript(_hdcMemoryContext);
     }
 
     return S_OK;
@@ -347,9 +339,6 @@ GdiEngine::~GdiEngine()
 
     // Select into DC
     RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
-
-    // Record the fact that the selected font is the default.
-    _lastFontType = FontType::Default;
 
     // Save off the font metrics for various other calculations
     RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics)));
@@ -456,7 +445,9 @@ GdiEngine::~GdiEngine()
                                                 const SIZE cellSize,
                                                 const size_t centeringHint) noexcept
 {
-    // If the soft font is currently selected, replace it with the default font.
+    // If we previously called SelectFont(_hdcMemoryContext, _softFont), it will
+    // still hold a reference to the _softFont object we're planning to overwrite.
+    // --> First revert back to the standard _hfont, lest we have dangling pointers.
     if (_lastFontType == FontType::Soft)
     {
         RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
