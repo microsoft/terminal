@@ -162,21 +162,24 @@ VtIo::VtIo() :
             {
                 auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                        initialViewport);
-                if (_passthroughMode)
+                if constexpr (Feature_VtPassthroughMode::IsEnabled())
                 {
-                    auto vtapi = new VtApiRoutines();
-                    vtapi->m_pVtEngine = xterm256Engine.get();
-                    vtapi->m_pUsualRoutines = globals.api;
-
-                    xterm256Engine->SetPassthroughMode(true);
-
-                    if (_pVtInputThread)
+                    if (_passthroughMode)
                     {
-                        auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
-                        xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
-                    }
+                        auto vtapi = new VtApiRoutines();
+                        vtapi->m_pVtEngine = xterm256Engine.get();
+                        vtapi->m_pUsualRoutines = globals.api;
 
-                    globals.api = vtapi;
+                        xterm256Engine->SetPassthroughMode(true);
+
+                        if (_pVtInputThread)
+                        {
+                            auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
+                            xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
+                        }
+
+                        globals.api = vtapi;
+                    }
                 }
 
                 _pVtRenderEngine = std::move(xterm256Engine);
