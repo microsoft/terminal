@@ -2,6 +2,7 @@
 # Licensed under the MIT license.
 
 #Requires -Version 7
+#Requires -Modules PSGitHub
 
 [CmdletBinding()]
 Param(
@@ -64,6 +65,10 @@ $Script:TodoColumnName = "To Cherry Pick"
 $Script:DoneColumnName = "Cherry Picked"
 $Script:RejectColumnName = "Rejected"
 
+# Propagate default values into all PSGitHub cmdlets
+$PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
+$PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
+
 $Project = Get-GithubProject -Name "$Version Servicing Pipeline"
 $AllColumns = Get-GithubProjectColumn -ProjectId $Project.id
 $ToPickColumn = $AllColumns | ? Name -Eq $script:TodoColumnName
@@ -88,7 +93,7 @@ $Entries | ForEach-Object {
     Write-Host "`e[96m`e[1;7mPICK`e[22;27m $($_.CommitID): $($_.Subject)`e[m"
     $PR = $CommitPRRegex.Match($_.Subject).Groups[1].Value
     $Card = $Cards | ? Number -Eq $PR
-    $null = & git cherry-pick @PickArgs -x $_.CommitID 2>&1
+    $null = & git cherry-pick -x $_.CommitID 2>&1
     $Err = ""
     While ($True) {
         If ($LASTEXITCODE -ne 0) {
@@ -111,10 +116,10 @@ $Entries | ForEach-Object {
                 Break
             }
 
-            $Err = & git cherry-pick @PickArgs --continue --no-edit
+            $Err = & git cherry-pick --continue --no-edit
         } Else {
+            & git commit @PickArgs --amend --no-edit --trailer "Service-Card-Id:$($Card.Id)" --trailer "Service-Version:$Version" | Out-Null
             Write-Host "`e[92;1;7m OK `e[m"
-            & git commit --amend --no-edit --trailer "Service-Card-Id:$($Card.Id)" --trailer "Service-Version:$Version"
             Move-GithubProjectCard -CardId $Card.id -ColumnId $DoneColumn.id
             Break
         }
