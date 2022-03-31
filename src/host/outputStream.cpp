@@ -915,3 +915,10 @@ void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
         LOG_LAST_ERROR_IF_NULL(::SetParent(psuedoHwnd, reinterpret_cast<HWND>(handle)));
     }
 }
+
+void ConhostInternalGetSet::FocusChanged(const bool focused)
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    gci.ProcessHandleList.ModifyConsoleProcessFocus(focused);
+}

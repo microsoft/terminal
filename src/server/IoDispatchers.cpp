@@ -456,9 +456,10 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         return pReceiveMsg;
     }
 
-    const bool inConpty{ gci.IsInVtIoMode() };
+    // const bool inConpty{ gci.IsInVtIoMode() };
     const bool hasFocus{ WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS) };
-    const auto grantFG{ inConpty || hasFocus };
+    // const auto grantFG{ inConpty || hasFocus };
+    const auto grantFG{ hasFocus };
     gci.ProcessHandleList.ModifyConsoleProcessFocus(grantFG);
 
     // Create the handles.

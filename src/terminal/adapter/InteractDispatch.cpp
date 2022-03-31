@@ -177,9 +177,10 @@ bool InteractDispatch::IsVtInputEnabled() const
 
 bool InteractDispatch::FocusChanged(const bool focused) const
 {
-    // * TODO!: plumb through to conapi and then gci.ProcessHandleList.ModifyConsoleProcessFocus(focused);
     // * We should assume this is false by default?
     // * TODO!: ConPTY should ask for this mode? Yea? Lets make sure that VTE will send that sequence even without other mouse sequences enabled.
     //   - in the past, this is something we've made opt-in (request cursor, for example. Maybe also the other mouse modes, can't recall)
     // * gotta make sure that we can always handle the focus events, even if the client hasn't requested them.
+    _pConApi->FocusChanged(focused);
+    return true;
 }
