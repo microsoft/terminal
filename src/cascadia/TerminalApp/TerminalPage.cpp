@@ -3611,7 +3611,11 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - TODO!
+    // - Used to track if the user pressed enter with the renamer open. If we
+    //   immediately focus it after hitting Enter on the command palette, then
+    //   the Enter keydown will dismiss the command palette and open the
+    //   renamer, and then the enter keyup will go to the renamer. So we need to
+    //   make sure both a down and up go to the renamer.
     // Arguments:
     // - e: the KeyRoutedEventArgs describing the key that was released
     // Return Value:

@@ -845,8 +845,6 @@ namespace winrt::TerminalApp::implementation
 
         _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
 
-        _renamerLayoutUpdatedRevoker.revoke();
-
         // BODGY: GH#12021
         //
         // TeachingTip doesn't provide an Opened event.
@@ -866,6 +864,12 @@ namespace winrt::TerminalApp::implementation
         //
         // So, we'll keep track of how many LayoutUpdated's we've _ever_ gotten.
         // If we've had at least 2, then we can focus the text box.
+        //
+        // We're also not using a ContentDialog for this, because in Xaml
+        // Islands a text box in a ContentDialog won't receive _any_ keypresses.
+        // Fun!
+        // WindowRenamerTextBox().Focus(FocusState::Programmatic);
+        _renamerLayoutUpdatedRevoker.revoke();
         _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })
             {
@@ -883,19 +887,10 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+        // Make sure to mark that enter was not pressed in the renamer quite
+        // yet. More details in TerminalPage::_WindowRenamerKeyDown.
         _renamerPressedEnter = false;
         WindowRenamer().IsOpen(true);
-
-        // PAIN: We can't immediately focus the textbox in the TeachingTip. It's
-        // not technically focusable until it is opened. However, it doesn't
-        // provide an event to tell us when it is opened. That's tracked in
-        // microsoft/microsoft-ui-xaml#1607. So for now, the user _needs_ to
-        // click on the text box manually.
-        //
-        // We're also not using a ContentDialog for this, because in Xaml
-        // Islands a text box in a ContentDialog won't receive _any_ keypresses.
-        // Fun!
-        // WindowRenamerTextBox().Focus(FocusState::Programmatic);
 
         args.Handled(true);
     }
