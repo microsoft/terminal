@@ -1683,6 +1683,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::GotFocus()
+    {
+        _connection.WriteInput(L"\x1b[I");
+    }
+
+    void ControlCore::LostFocus()
+    {
+        _connection.WriteInput(L"\x1b[O");
+    }
+
     bool ControlCore::_isBackgroundTransparent()
     {
         // If we're:

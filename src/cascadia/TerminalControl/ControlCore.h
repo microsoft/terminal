@@ -81,6 +81,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
 
+        void GotFocus();
+        void LostFocus();
+
         void ToggleShaderEffects();
         void AdjustOpacity(const double adjustment);
         void ResumeRendering();

@@ -116,6 +116,8 @@ public:
                         const SIZE cellSize,
                         const size_t centeringHint) override;
 
+    void FocusChanged(const bool focused) override;
+
 private:
     void _modifyLines(const size_t count, const bool insert);
 

@@ -892,3 +892,10 @@ void ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPa
         pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
     }
 }
+
+void ConhostInternalGetSet::FocusChanged(const bool focused)
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    gci.ProcessHandleList.ModifyConsoleProcessFocus(focused);
+}

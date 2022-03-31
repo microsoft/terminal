@@ -111,5 +111,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                                     const SIZE cellSize,
                                     const size_t centeringHint) = 0;
+
+        virtual void FocusChanged(const bool focused) = 0;
     };
 }
