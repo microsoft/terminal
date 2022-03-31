@@ -6,7 +6,7 @@
 #include "../TerminalControl/ControlCore.h"
 #include "MockControlSettings.h"
 #include "MockConnection.h"
-#include "../UnitTests_TerminalCore/TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;

@@ -242,11 +242,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget _asyncCloseConnection();
 
-        void _setFontSize(int fontSize);
+        bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
-        void _doResizeUnderLock(const double newWidth,
-                                const double newHeight);
 
         void _sendInputToConnection(std::wstring_view wstr);
 

@@ -9,10 +9,6 @@
 #include "../../inc/unicode.hpp"
 #include "ascii.hpp"
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 using namespace Microsoft::Console::VirtualTerminal;
 
 struct CsiToVkey
@@ -103,6 +99,11 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
+}
+
+void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
+{
+    _lookingForDSR = looking;
 }
 
 // Method Description:

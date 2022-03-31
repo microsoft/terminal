@@ -7,6 +7,11 @@
 
 #pragma hdrstop
 
+Globals::Globals()
+{
+    api = &defaultApiRoutines;
+}
+
 CONSOLE_INFORMATION& Globals::getConsoleInformation()
 {
     return ciConsoleInformation;

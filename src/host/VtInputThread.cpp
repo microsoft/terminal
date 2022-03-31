@@ -31,7 +31,8 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _u8State{},
     _dwThreadId{ 0 },
     _exitRequested{ false },
-    _exitResult{ S_OK }
+    _exitResult{ S_OK },
+    _pfnSetLookingForDSR{}
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
@@ -50,6 +51,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     // we need this callback to be able to flush an unknown input sequence to the app
     auto flushCallback = std::bind(&StateMachine::FlushToTerminal, _pInputStateMachine.get());
     engineRef->SetFlushToInputQueueCallback(flushCallback);
+
+    // we need this callback to capture the reply if someone requests a status from the terminal
+    _pfnSetLookingForDSR = std::bind(&InputStateMachineEngine::SetLookingForDSR, engineRef, std::placeholders::_1);
 }
 
 // Method Description:
@@ -135,6 +139,14 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
         {
             LOG_IF_FAILED(hr);
         }
+    }
+}
+
+void VtInputThread::SetLookingForDSR(const bool looking) noexcept
+{
+    if (_pfnSetLookingForDSR)
+    {
+        _pfnSetLookingForDSR(looking);
     }
 }
 

@@ -20,7 +20,6 @@
     <ClCompile Include="..\ConsoleControl.cpp" />
     <ClCompile Include="..\ConsoleInputThread.cpp" />
     <ClCompile Include="..\ConsoleWindow.cpp" />
-    <ClCompile Include="..\InputServices.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -33,7 +32,6 @@
     <ClInclude Include="..\ConsoleControl.hpp" />
     <ClInclude Include="..\ConsoleInputThread.hpp" />
     <ClInclude Include="..\ConsoleWindow.hpp" />
-    <ClInclude Include="..\InputServices.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\SystemConfigurationProvider.hpp" />
     <ClInclude Include="..\WindowMetrics.hpp" />

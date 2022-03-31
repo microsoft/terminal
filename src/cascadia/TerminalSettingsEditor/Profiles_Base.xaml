@@ -31,7 +31,8 @@
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
-        <ScrollViewer Grid.Row="1"
+        <ScrollViewer Name="ProfilesBase_ScrollView"
+                      Grid.Row="1"
                       ViewChanging="ViewChanging">
             <StackPanel Style="{StaticResource SettingsStackStyle}">
 

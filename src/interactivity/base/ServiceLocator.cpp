@@ -22,7 +22,7 @@ std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
 std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
-std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
+void (*ServiceLocator::s_oneCoreTeardownFunction)() = nullptr;
 
 Globals ServiceLocator::s_globals;
 
@@ -32,6 +32,12 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 #pragma endregion
 
 #pragma region Public Methods
+
+void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
+{
+    FAIL_FAST_IF(nullptr != s_oneCoreTeardownFunction);
+    s_oneCoreTeardownFunction = pfn;
+}
 
 [[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
@@ -66,7 +72,12 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
     delete s_globals.pRender;
-    s_inputServices.reset(nullptr);
+
+    if (s_oneCoreTeardownFunction)
+    {
+        s_oneCoreTeardownFunction();
+    }
+
     s_consoleWindow.reset(nullptr);
 
     ExitProcess(hr);
@@ -267,28 +278,6 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
     LOG_IF_NTSTATUS_FAILED(status);
 
     return s_systemConfigurationProvider.get();
-}
-
-IInputServices* ServiceLocator::LocateInputServices()
-{
-    NTSTATUS status = STATUS_SUCCESS;
-
-    if (!s_inputServices)
-    {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            status = s_interactivityFactory->CreateInputServices(s_inputServices);
-        }
-    }
-
-    LOG_IF_NTSTATUS_FAILED(status);
-
-    return s_inputServices.get();
 }
 
 Globals& ServiceLocator::LocateGlobals()

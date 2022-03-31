@@ -66,6 +66,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _resizeQuirk{ false };
         bool _win32InputMode{ false };
+        bool _passthroughMode{ false };
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;

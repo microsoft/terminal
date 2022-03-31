@@ -23,7 +23,6 @@ Author(s):
 #include "IWindowMetrics.hpp"
 #include "IAccessibilityNotifier.hpp"
 #include "ISystemConfigurationProvider.hpp"
-#include "IInputServices.hpp"
 
 #include <memory>
 
@@ -40,7 +39,6 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] virtual NTSTATUS CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics) = 0;
         [[nodiscard]] virtual NTSTATUS CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier) = 0;
         [[nodiscard]] virtual NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider) = 0;
-        [[nodiscard]] virtual NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services) = 0;
 
         [[nodiscard]] virtual NTSTATUS CreatePseudoWindow(HWND& hwnd) = 0;
     };

@@ -5,10 +5,6 @@
 #include "../inc/EventSynthesis.hpp"
 #include "../../types/inc/convert.hpp"
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../inc/VtApiRedirection.hpp"
-#endif
-
 #pragma hdrstop
 
 // TODO: MSFT 14150722 - can these const values be generated at
