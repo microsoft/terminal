@@ -63,9 +63,6 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        uint64_t _ownerHwnd{ 0 };
-        void SetOwnerHwnd(uint64_t owner) { _ownerHwnd = owner; };
-
         bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         bool ShouldImmediatelyHandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         void HandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);

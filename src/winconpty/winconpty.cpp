@@ -255,7 +255,16 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 }
 
 // Function Description:
-// - TODO!
+// - Sends a message to the pseudoconsole informing it that it should use the
+//   given window handle as the owner for the conpty's pseudo window. This
+//   allows the response given to GetConsoleWindow() to be a HWND that's owned
+//   by the actual hosting terminal's HWND.
+// Arguments:
+// - pPty: A pointer to a PseudoConsole struct.
+// - newParent: The new owning window
+// Return Value:
+// - S_OK if the call succeeded, else an appropriate HRESULT for failing to
+//      write the resize message to the pty.
 HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent)
 {
     if (pPty == nullptr)
@@ -263,23 +272,14 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
         return E_INVALIDARG;
     }
 
+    // sneaky way to pack a short and a uint64_t in a relatively literal way.
 #pragma pack(push, 1)
     struct _signal
     {
-        const unsigned short id; // = PTY_SIGNAL_RESIZE_WINDOW;
-        const uint64_t hwnd; // = reinterpret_cast<uint64_t>(newParent);
+        const unsigned short id;
+        const uint64_t hwnd;
     } data{ PTY_SIGNAL_REPARENT_WINDOW, reinterpret_cast<uint64_t>(newParent) };
 #pragma pack(pop)
-
-    // unsigned short signalPacket[5];
-    // signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;
-    // // hwnd is a uint64_t.
-    // signalPacket[1] = size.X;
-    // signalPacket[2] = size.Y;
-    // signalPacket[3] = size.Y;
-    // signalPacket[4] = size.Y;
-    // static_assert(sizeof(data) == (10));
-    // static_assert(sizeof(data) == (sizeof(unsigned short) + sizeof(HWND)));
 
     const BOOL fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
@@ -457,7 +457,11 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 }
 
 // Function Description:
-// - TODO!
+// - Sends a message to the pseudoconsole informing it that it should use the
+//   given window handle as the owner for the conpty's pseudo window. This
+//   allows the response given to GetConsoleWindow() to be a HWND that's owned
+//   by the actual hosting terminal's HWND.
+// - Used to support GH#2988
 extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newParent)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;

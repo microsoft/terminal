@@ -289,6 +289,7 @@ using namespace Microsoft::Console::Interactivity;
 //      that GetConsoleWindow returns a real value.
 // Arguments:
 // - hwnd: Receives the value of the newly created window's HWND.
+// - owner: the HWND that should be the initial owner of the pseudo window.
 // Return Value:
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
 [[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd, const HWND owner)
@@ -311,32 +312,37 @@ using namespace Microsoft::Console::Interactivity;
                 pseudoClass.lpfnWndProc = DefWindowProc;
                 RegisterClass(&pseudoClass);
 
-                // const auto windowStyle = (owner == HWND_DESKTOP) ? WS_OVERLAPPEDWINDOW : WS_CHILD;
+                // When merging with #12515, we're going to need to adjust these styles.
+                //
+                // Note that because we're not specifing WS_CHILD, this window
+                // will become an _owned_ window, not a _child_ window. This is
+                // important - child windows report their position as relative
+                // to their parent window, whild owned windows are still
+                // relative to the desktop. (there are other subtlties as well
+                // as far as the difference between parent/child and owner/owned
+                // windows). Evan K said we should do it this way, and he
+                // definitely knows.
                 const auto windowStyle = WS_OVERLAPPEDWINDOW;
 
-                // Attempt to create window
-                hwnd = CreateWindowExW(
-                    0,
-                    PSEUDO_WINDOW_CLASS,
-                    nullptr,
-                    windowStyle, //WS_CHILD, //WS_OVERLAPPEDWINDOW,
-                    0,
-                    0,
-                    0,
-                    0,
-                    owner /*(HWND)0x00070C6A*/ /*HWND_DESKTOP*/, // parent
-                    nullptr,
-                    nullptr,
-                    nullptr);
+                // Attempt to create window.
+                hwnd = CreateWindowExW(0,
+                                       PSEUDO_WINDOW_CLASS,
+                                       nullptr,
+                                       windowStyle,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       owner,
+                                       nullptr,
+                                       nullptr,
+                                       nullptr);
+
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
-
-                // const auto awareness{ GetThreadDpiAwarenessContext() };
-                // awareness;
-                // SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
                 break;
             }

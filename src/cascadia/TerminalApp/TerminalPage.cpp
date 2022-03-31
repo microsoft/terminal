@@ -60,6 +60,12 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - implements the IInitializeWithWindow interface from shobjidl_core.
+    // - We're going to use this HWND as the owner for the ConPTY windows, via
+    //   ConptyConnection::ReparentWindow. We need this for applications that
+    //   call GetConsoleWindow, and attempt to open a MessageBox for the
+    //   console. By marking the conpty windows as owned by the Terminal HWND,
+    //   the message box will be owned by the Terminal window as well.
+    //   - see GH#2988
     HRESULT TerminalPage::Initialize(HWND hwnd)
     {
         _hostingHwnd = hwnd;
@@ -2424,9 +2430,11 @@ namespace winrt::TerminalApp::implementation
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
+
         if (_hostingHwnd.has_value())
-            term.OwningHwnd(_ownerHwnd);
-        // term.OwningHwnd(reinterpret_cast<uint64_t>(_ownerHwnd));
+        {
+            term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
+        }
         return term;
     }
 
@@ -3890,6 +3898,23 @@ namespace winrt::TerminalApp::implementation
         }
 
         applicationState.DismissedMessages(std::move(messages));
+    }
+
+    // Method Description:
+    // - Used to tell the Terminal what the root HWND is for the application.
+    //   We're going to use this HWND as the owner for the ConPTY windows, via
+    //   ConptyConnection::ReparentWindow. We need this for applications that
+    //   call GetConsoleWindow, and attempt to open a MessageBox for the
+    //   console. By marking the conpty windows as owned by the Terminal HWND,
+    //   the message box will be owned by the Terminal window as well.
+    // - See GH#2988.
+    // Arguments:
+    // - owner: the HWND that owns this window.
+    // Return Value:
+    // - <none>
+    void TerminalPage::SetOwnerHwnd(uint64_t owner)
+    {
+        _ownerHwnd = owner;
     }
 
 }

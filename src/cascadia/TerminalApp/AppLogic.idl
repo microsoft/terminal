@@ -46,8 +46,6 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
-        void SetOwnerHwnd(UInt64 owner);
-
         Boolean IsUwp();
         void RunAsUwp();
         Boolean IsElevated();

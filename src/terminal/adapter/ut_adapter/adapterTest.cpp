@@ -424,7 +424,7 @@ public:
 
     void ReparentWindow(const uint64_t /*handle*/)
     {
-        Log::Comment(L"UpdateSoftFont MOCK called...");
+        Log::Comment(L"ReparentWindow MOCK called...");
     }
 
     void PrepData()
