@@ -13,7 +13,12 @@
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
 
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
+
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <PropertyGroup>
@@ -54,10 +59,6 @@
     <Midl Include="SamplePeasant.idl" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-
   <!-- Dependencies -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
@@ -87,5 +88,8 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
+
 </Project>

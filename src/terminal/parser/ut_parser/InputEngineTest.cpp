@@ -18,10 +18,6 @@
 #include <string>
 #include <algorithm>
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

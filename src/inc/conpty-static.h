@@ -17,6 +17,7 @@ extern "C" {
 
 #define PSEUDOCONSOLE_RESIZE_QUIRK (2u)
 #define PSEUDOCONSOLE_WIN32_INPUT_MODE (4u)
+#define PSEUDOCONSOLE_PASSTHROUGH_MODE (8u)
 
 HRESULT WINAPI ConptyCreatePseudoConsole(COORD size, HANDLE hInput, HANDLE hOutput, DWORD dwFlags, HPCON* phPC);
 

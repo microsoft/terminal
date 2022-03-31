@@ -15,10 +15,6 @@
 
 #include <cctype>
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 #include "../../inc/consoletaeftemplates.hpp"
 
 using namespace WEX::Common;
@@ -161,7 +157,6 @@ class ClipboardTests
         std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
                                                                                                 wstr.size());
         VERIFY_ARE_EQUAL(wstr.size() * 2, events.size());
-        IInputServices* pInputServices = ServiceLocator::LocateInputServices();
         for (wchar_t wch : wstr)
         {
             std::deque<bool> keydownPattern{ true, false };
@@ -172,9 +167,9 @@ class ClipboardTests
                 keyEvent.reset(static_cast<KeyEvent* const>(events.front().release()));
                 events.pop_front();
 
-                const short keyState = pInputServices->VkKeyScanW(wch);
+                const short keyState = VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(-1, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
                 VERIFY_ARE_EQUAL(isKeyDown, keyEvent->IsKeyDown());
@@ -198,8 +193,6 @@ class ClipboardTests
                                                                                                 wstr.size());
 
         VERIFY_ARE_EQUAL((wstr.size() + uppercaseCount) * 2, events.size());
-        IInputServices* pInputServices = ServiceLocator::LocateInputServices();
-        VERIFY_IS_NOT_NULL(pInputServices);
         for (wchar_t wch : wstr)
         {
             std::deque<bool> keydownPattern{ true, false };
@@ -213,9 +206,9 @@ class ClipboardTests
                 events.pop_front();
 
                 const short keyScanError = -1;
-                const short keyState = pInputServices->VkKeyScanW(wch);
+                const short keyState = VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 if (std::isupper(wch))
                 {
@@ -229,9 +222,9 @@ class ClipboardTests
                     keyEvent2.reset(static_cast<KeyEvent* const>(events.front().release()));
                     events.pop_front();
 
-                    const short keyState2 = pInputServices->VkKeyScanW(wch);
+                    const short keyState2 = VkKeyScanW(wch);
                     VERIFY_ARE_NOT_EQUAL(keyScanError, keyState2);
-                    const WORD virtualScanCode2 = static_cast<WORD>(pInputServices->MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
+                    const WORD virtualScanCode2 = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
 
                     if (isKeyDown)
                     {

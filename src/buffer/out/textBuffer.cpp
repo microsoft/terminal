@@ -6,6 +6,7 @@
 #include "textBuffer.hpp"
 #include "CharRow.hpp"
 
+#include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
@@ -21,23 +22,26 @@ using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 // Routine Description:
 // - Creates a new instance of TextBuffer
 // Arguments:
-// - fontInfo - The font to use for this text buffer as specified in the global font cache
 // - screenBufferSize - The X by Y dimensions of the new screen buffer
-// - fill - Uses the .Attributes property to decide which default color to apply to all text in this buffer
+// - defaultAttributes - The attributes with which the buffer will be initialized
 // - cursorSize - The height of the cursor within this buffer
+// - isActiveBuffer - Whether this is the currently active buffer
+// - renderer - The renderer to use for triggering a redraw
 // Return Value:
 // - constructed object
 // Note: may throw exception
 TextBuffer::TextBuffer(const COORD screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
-                       Microsoft::Console::Render::IRenderTarget& renderTarget) :
+                       const bool isActiveBuffer,
+                       Microsoft::Console::Render::Renderer& renderer) :
     _firstRow{ 0 },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
     _storage{},
     _unicodeStorage{},
-    _renderTarget{ renderTarget },
+    _isActiveBuffer{ isActiveBuffer },
+    _renderer{ renderer },
     _size{},
     _currentHyperlinkId{ 1 },
     _currentPatternId{ 0 }
@@ -387,7 +391,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     // Take the cell distance written and notify that it needs to be repainted.
     const auto written = newIt.GetCellDistance(givenIt);
     const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
-    _NotifyPaint(paint);
+    TriggerRedraw(paint);
 
     return newIt;
 }
@@ -556,7 +560,10 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    _renderTarget.TriggerCircling();
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerCircling();
+    }
 
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();
@@ -825,7 +832,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
-        _NotifyPaint(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
+        TriggerRedraw(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
     }
 }
 
@@ -953,6 +960,69 @@ UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
     return _unicodeStorage;
 }
 
+void TextBuffer::SetAsActiveBuffer(const bool isActiveBuffer) noexcept
+{
+    _isActiveBuffer = isActiveBuffer;
+}
+
+bool TextBuffer::IsActiveBuffer() const noexcept
+{
+    return _isActiveBuffer;
+}
+
+Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
+{
+    return _renderer;
+}
+
+void TextBuffer::TriggerRedraw(const Viewport& viewport)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedraw(viewport);
+    }
+}
+
+void TextBuffer::TriggerRedrawCursor(const COORD position)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedrawCursor(&position);
+    }
+}
+
+void TextBuffer::TriggerRedrawAll()
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerRedrawAll();
+    }
+}
+
+void TextBuffer::TriggerScroll()
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerScroll();
+    }
+}
+
+void TextBuffer::TriggerScroll(const COORD delta)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerScroll(&delta);
+    }
+}
+
+void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.TriggerNewTextNotification(newText);
+    }
+}
+
 // Routine Description:
 // - Method to help refresh all the Row IDs after manipulating the row
 //   by shuffling pointers around.
@@ -989,11 +1059,6 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
     _unicodeStorage.Remap(rowMap, newRowWidth);
 }
 
-void TextBuffer::_NotifyPaint(const Viewport& viewport) const
-{
-    _renderTarget.TriggerRedraw(viewport);
-}
-
 // Routine Description:
 // - Retrieves the first row from the underlying buffer.
 // Arguments:
@@ -1024,17 +1089,6 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 
     THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
     return _storage.at(prevRowIndex);
-}
-
-// Method Description:
-// - Retrieves this buffer's current render target.
-// Arguments:
-// - <none>
-// Return Value:
-// - This buffer's current render target.
-Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcept
-{
-    return _renderTarget;
 }
 
 // Method Description:
@@ -2034,20 +2088,8 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col >= startOffset)
                     {
-                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
-                        for (const auto c : unescapedText)
-                        {
-                            switch (c)
-                            {
-                            case '\\':
-                            case '{':
-                            case '}':
-                                contentBuilder << "\\" << c;
-                                break;
-                            default:
-                                contentBuilder << c;
-                            }
-                        }
+                        const auto text = std::wstring_view{ rows.text.at(row) }.substr(startOffset, col - startOffset + includeCurrent);
+                        _AppendRTFText(contentBuilder, text);
 
                         startOffset = col;
                     }
@@ -2146,6 +2188,31 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
     }
 }
 
+void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text)
+{
+    for (const auto codeUnit : text)
+    {
+        if (codeUnit <= 127)
+        {
+            switch (codeUnit)
+            {
+            case L'\\':
+            case L'{':
+            case L'}':
+                contentBuilder << "\\" << gsl::narrow<char>(codeUnit);
+                break;
+            default:
+                contentBuilder << gsl::narrow<char>(codeUnit);
+            }
+        }
+        else
+        {
+            // Windows uses unsigned wchar_t - RTF uses signed ones.
+            contentBuilder << "\\u" << std::to_string(til::bit_cast<int16_t>(codeUnit)) << "?";
+        }
+    }
+}
+
 // Function Description:
 // - Reflow the contents from the old buffer into the new buffer. The new buffer
 //   can have different dimensions than the old buffer. If it does, then this
@@ -2184,7 +2251,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     bool foundOldVisible = false;
     HRESULT hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
-    for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
+    short iOldRow = 0;
+    for (; iOldRow < cOldRowsTotal; iOldRow++)
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
@@ -2228,7 +2296,11 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Loop through every character in the current row (up to
         // the "right" boundary, which is one past the final valid
         // character)
-        for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
+        short iOldCol = 0;
+        auto chars{ row.GetCharRow().cbegin() };
+        auto attrs{ row.GetAttrRow().begin() };
+        const auto copyRight = iRight;
+        for (; iOldCol < copyRight; iOldCol++)
         {
             if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
             {
@@ -2239,9 +2311,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto glyph = row.GetCharRow().GlyphAt(iOldCol);
-                const auto dbcsAttr = row.GetCharRow().DbcsAttrAt(iOldCol);
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(iOldCol);
+                const auto glyph = chars->Char();
+                const auto dbcsAttr = chars->DbcsAttr();
+                const auto textAttr = *attrs;
 
                 if (!newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr))
                 {
@@ -2250,6 +2322,54 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                 }
             }
             CATCH_RETURN();
+
+            ++chars;
+            ++attrs;
+        }
+
+        // GH#32: Copy the attributes from the rest of the row into this new buffer.
+        // From where we are in the old buffer, to the end of the row, copy the
+        // remaining attributes.
+        // - if the old buffer is smaller than the new buffer, then just copy
+        //   what we have, as it was. We already copied all _text_ with colors,
+        //   but it's possible for someone to just put some color into the
+        //   buffer to the right of that without any text (as just spaces). The
+        //   buffer looks weird to the user when we resize and it starts losing
+        //   those colors, so we need to copy them over too... as long as there
+        //   is space. The last attr in the row will be extended to the end of
+        //   the row in the new buffer.
+        // - if the old buffer is WIDER, than we might have wrapped onto a new
+        //   line. Use the cursor's position's Y so that we know where the new
+        //   row is, and start writing at the cursor position. Again, the attr
+        //   in the last column of the old row will be extended to the end of the
+        //   row that the text was flowed onto.
+        //   - if the text in the old buffer didn't actually fill the whole
+        //     line in the new buffer, then we didn't wrap. That's fine. just
+        //     copy attributes from the old row till the end of the new row, and
+        //     move on.
+        const auto newRowY = newCursor.GetPosition().Y;
+        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        auto newAttrColumn = newCursor.GetPosition().X;
+        const auto newWidth = newBuffer.GetLineWidth(newRowY);
+        // Stop when we get to the end of the buffer width, or the new position
+        // for inserting an attr would be past the right of the new buffer.
+        for (short copyAttrCol = iOldCol;
+             copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
+             copyAttrCol++)
+        {
+            try
+            {
+                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
+                const auto textAttr = *attrs;
+                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
+                {
+                    break;
+                }
+            }
+            CATCH_LOG(); // Not worth dying over.
+
+            ++newAttrColumn;
+            ++attrs;
         }
 
         // If we found the old row that the caller was interested in, set the
@@ -2285,7 +2405,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // only because we ran out of space.
             if (iRight < cOldColsTotal && !row.WasWrapForced())
             {
-                if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
+                if (!fFoundCursorPos && (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y))
                 {
                     cNewCursorPos = newCursor.GetPosition();
                     fFoundCursorPos = true;
@@ -2336,6 +2456,34 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
         }
     }
+
+    // Finish copying buffer attributes to remaining rows below the last
+    // printable character. This is to fix the `color 2f` scenario, where you
+    // change the buffer colors then resize and everything below the last
+    // printable char gets reset. See GH #12567
+    auto newRowY = newCursor.GetPosition().Y + 1;
+    const auto newHeight = newBuffer.GetSize().Height();
+    const auto oldHeight = oldBuffer.GetSize().Height();
+    for (;
+         iOldRow < oldHeight && newRowY < newHeight;
+         iOldRow++)
+    {
+        const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
+
+        // Optimization: Since all these rows are below the last printable char,
+        // we can reasonably assume that they are filled with just spaces.
+        // That's convenient, we can just copy the attr row from the old buffer
+        // into the new one, and resize the row to match. We'll rely on the
+        // behavior of ATTR_ROW::Resize to trim down when narrower, or extend
+        // the last attr when wider.
+        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        const auto newWidth = newBuffer.GetLineWidth(newRowY);
+        newRow.GetAttrRow() = row.GetAttrRow();
+        newRow.GetAttrRow().Resize(newWidth);
+
+        newRowY++;
+    }
+
     if (SUCCEEDED(hr))
     {
         // Finish copying remaining parameters from the old text buffer to the new one

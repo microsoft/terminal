@@ -14,6 +14,8 @@ namespace TerminalApp
     interface IDialogPresenter
     {
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+        Boolean CanShowDialog();
+        void DismissDialog();
     };
 
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged

@@ -75,6 +75,8 @@ public:
     bool SetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) override; // DECSET
     bool ResetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) override; // DECRST
 
+    bool DeviceStatusReport(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::AnsiStatusType /*statusType*/) override; // DSR, DSR-OS, DSR-CPR
+
     bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
     bool EndHyperlink() override;
 
@@ -90,7 +92,11 @@ private:
                                TextAttribute& attr,
                                const bool isForeground);
 
+    bool _WriteResponse(const std::wstring_view reply) const;
     bool _ModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams param, const bool enable);
+
+    bool _OperatingStatus() const;
+    bool _CursorPositionReport() const;
 
     void _ClearSingleTabStop();
     void _ClearAllTabStops();

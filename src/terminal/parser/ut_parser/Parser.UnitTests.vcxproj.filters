@@ -39,7 +39,4 @@
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
 </Project>

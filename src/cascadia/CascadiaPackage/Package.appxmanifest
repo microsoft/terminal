@@ -235,4 +235,9 @@
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>
+
+  <mp:PhoneIdentity
+    PhoneProductId="3a855625-ba50-46d5-b806-cb4520089c64"
+    PhonePublisherId="95d94207-0c7c-47ed-82db-d75c81153c35" />
+
 </Package>

@@ -64,11 +64,8 @@ public:
         m_readHandle.reset(nullptr);
     }
 
-    void PrepareGlobalFont()
+    void PrepareGlobalFont(const COORD coordFontSize = { 8, 12 })
     {
-        COORD coordFontSize;
-        coordFontSize.X = 8;
-        coordFontSize.Y = 12;
         m_pFontInfo = new FontInfo(L"Consolas", 0, 0, coordFontSize, 0);
     }
 
@@ -80,12 +77,27 @@ public:
         }
     }
 
+    void PrepareGlobalRenderer()
+    {
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        g.pRender = new Microsoft::Console::Render::Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
+    }
+
+    void CleanupGlobalRenderer()
+    {
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        delete g.pRender;
+        g.pRender = nullptr;
+    }
+
     void PrepareGlobalScreenBuffer(const short viewWidth = s_csWindowWidth,
                                    const short viewHeight = s_csWindowHeight,
                                    const short bufferWidth = s_csBufferWidth,
                                    const short bufferHeight = s_csBufferHeight)
     {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         COORD coordWindowSize;
         coordWindowSize.X = viewWidth;
         coordWindowSize.Y = viewHeight;
@@ -103,6 +115,18 @@ public:
                                                            TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
                                                            uiCursorSize,
                                                            &gci.pCurrentScreenBuffer));
+
+        // If we have a renderer, we need to call EnablePainting to initialize
+        // the viewport. If not, we mark the text buffer as inactive so that it
+        // doesn't try to trigger a redraw on a non-existent renderer.
+        if (g.pRender)
+        {
+            g.pRender->EnablePainting();
+        }
+        else
+        {
+            gci.pCurrentScreenBuffer->_textBuffer->SetAsActiveBuffer(false);
+        }
     }
 
     void CleanupGlobalScreenBuffer()
@@ -149,7 +173,8 @@ public:
                                   const short bufferWidth = s_csBufferWidth,
                                   const short bufferHeight = s_csBufferHeight)
     {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         COORD coordScreenBufferSize;
         coordScreenBufferSize.X = bufferWidth;
         coordScreenBufferSize.Y = bufferHeight;
@@ -165,7 +190,8 @@ public:
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                                                   initialAttributes,
                                                                                   uiCursorSize,
-                                                                                  gci.pCurrentScreenBuffer->GetRenderTarget());
+                                                                                  true,
+                                                                                  *g.pRender);
             if (textBuffer.get() == nullptr)
             {
                 m_hrTextBufferInfo = E_OUTOFMEMORY;
@@ -175,6 +201,18 @@ public:
                 m_hrTextBufferInfo = S_OK;
             }
             gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
+
+            // If we have a renderer, we need to call EnablePainting to initialize
+            // the viewport. If not, we mark the text buffer as inactive so that it
+            // doesn't try to trigger a redraw on a non-existent renderer.
+            if (g.pRender)
+            {
+                g.pRender->EnablePainting();
+            }
+            else
+            {
+                gci.pCurrentScreenBuffer->_textBuffer->SetAsActiveBuffer(false);
+            }
         }
         catch (...)
         {
