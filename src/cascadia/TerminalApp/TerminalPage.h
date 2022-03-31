@@ -414,6 +414,7 @@ namespace winrt::TerminalApp::implementation
 
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
         void _RequestWindowRename(const winrt::hstring& newName);
+        void _WindowRenamerKeyDown(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _WindowRenamerKeyUp(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
@@ -432,8 +433,11 @@ namespace winrt::TerminalApp::implementation
         void _SetAsDefaultOpenSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
+
         winrt::Windows::UI::Xaml::Controls::Primitives::Popup _renamerPopup{ nullptr };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
+        int _renamerLayoutCount{ 0 };
+        bool _renamerPressedEnter{ false };
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

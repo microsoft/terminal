@@ -3611,6 +3611,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - TODO!
+    // Arguments:
+    // - e: the KeyRoutedEventArgs describing the key that was released
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerKeyDown(const IInspectable& /*sender*/,
+                                             winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        const auto key = e.OriginalKey();
+        if (key == Windows::System::VirtualKey::Enter)
+        {
+            _renamerPressedEnter = true;
+        }
+    }
+
+    // Method Description:
     // - Manually handle Enter and Escape for committing and dismissing a window
     //   rename. This is highly similar to the TabHeaderControl's KeyUp handler.
     // Arguments:
@@ -3620,8 +3636,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
                                            winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        auto key = e.OriginalKey();
-        if (key == Windows::System::VirtualKey::Enter)
+        const auto key = e.OriginalKey();
+        if (key == Windows::System::VirtualKey::Enter && _renamerPressedEnter)
         {
             // User is done making changes, close the rename box
             _WindowRenamerActionClick(sender, nullptr);
@@ -3631,6 +3647,7 @@ namespace winrt::TerminalApp::implementation
             // User wants to discard the changes they made
             WindowRenamerTextBox().Text(WindowName());
             WindowRenamer().IsOpen(false);
+            _renamerPressedEnter = false;
         }
     }
 
