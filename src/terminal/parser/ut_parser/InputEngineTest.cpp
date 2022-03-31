@@ -414,7 +414,7 @@ void InputEngineTest::C0Test()
     for (wchar_t wch = '\x0'; wch < '\x20'; wch++)
     {
         std::wstring inputSeq = std::wstring(&wch, 1);
-        // In general, he actual key that we're going to generate for a C0 char
+        // In general, they actual key that we're going to generate for a C0 char
         //      is char+0x40 and with ctrl pressed.
         wchar_t expectedWch = wch + 0x40;
         bool writeCtrl = true;

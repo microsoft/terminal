@@ -25,7 +25,7 @@ if __name__ == '__main__':
     write('Here we have some components of a burrito:')
     # POULTRY LEG, CHEESE WEDGE, HOT PEPPER, TOMATO
     print(u"\U0001F357\U0001F9C0\U0001F336\U0001F345")
-    # woman cook and man cook emoji
+    # person cook and man cook emoji
     print(u"👩‍🍳 packing them up ‍👨‍🍳")
     sgr('92')
     print(u'✔ Complete!')

@@ -1309,7 +1309,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Primarily just takes the data from the PointerRoutedEventArgs and uses
     //   it to call _DoMouseWheel, see _DoMouseWheel for more details.
     // Arguments:
-    // - args: the event args containing information about t`he mouse wheel event.
+    // - args: the event args containing information about t`they mouse wheel event.
     void TermControl::_MouseWheelHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {

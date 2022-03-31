@@ -8,7 +8,7 @@ Do Not Translate or Localize
 One Half Dark and One Half Light Schemes
 ----------------------------------------
 
-Copyright (c) 2016 Son A. Pham <sp@sonpham.me>
+Copyright (c) 2016 Child A. Pham <sp@sonpham.me>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

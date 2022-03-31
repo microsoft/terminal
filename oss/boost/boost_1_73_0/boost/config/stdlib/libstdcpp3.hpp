@@ -105,7 +105,7 @@
 //  Decide which version of libstdc++ we have, normally
 //  libstdc++ C++0x support is detected via __GNUC__, __GNUC_MINOR__, and possibly
 //  __GNUC_PATCHLEVEL__ at the suggestion of Jonathan Wakely, one of the libstdc++
-//  developers. He also commented:
+//  developers. They also commented:
 //
 //       "I'm not sure how useful __GLIBCXX__ is for your purposes, for instance in
 //       GCC 4.2.4 it is set to 20080519 but in GCC 4.3.0 it is set to 20080305.

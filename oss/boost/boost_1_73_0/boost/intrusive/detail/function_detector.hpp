@@ -9,7 +9,7 @@
 // See http://www.boost.org/libs/intrusive for documentation.
 //
 /////////////////////////////////////////////////////////////////////////////
-//  This code was modified from the code posted by Alexandre Courpron in his
+//  This code was modified from the code posted by Alexandre Courpron in their
 //  article "Interface Detection" in The Code Project:
 //  http://www.codeproject.com/KB/architecture/Detector.aspx
 ///////////////////////////////////////////////////////////////////////////////

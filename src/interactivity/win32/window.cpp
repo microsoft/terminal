@@ -269,7 +269,7 @@ void Window::_UpdateSystemMetrics() const
                 // stored in the link, just the starting position
                 // of the window.
                 // When the user reconnects the other monitor, the
-                // window will be where he left it. Great for take
+                // window will be where they left it. Great for take
                 // home laptop scenario.
                 if (!MonitorFromRect(&rectProposed, MONITOR_DEFAULTTONULL))
                 {
