@@ -169,12 +169,18 @@ bool InteractDispatch::IsVtInputEnabled() const
     return _pConApi->IsVtInputEnabled();
 }
 
+// Method Description:
+// - Plumbs through to ConGetSet::FocusChanged. See that method for details.
+// Arguments:
+// - focused: if the terminal is now focused
+// Return Value:
+// - true always.
 bool InteractDispatch::FocusChanged(const bool focused) const
 {
-    // * We should assume this is false by default?
-    // * TODO!: ConPTY should ask for this mode? Yea? Lets make sure that VTE will send that sequence even without other mouse sequences enabled.
-    //   - in the past, this is something we've made opt-in (request cursor, for example. Maybe also the other mouse modes, can't recall)
-    // * gotta make sure that we can always handle the focus events, even if the client hasn't requested them.
+    // When we do GH#11682, we should make sure that ConPTY requests this mode
+    // from the terminal when it starts up, and ConPTY never unsets that flag.
+    // It should only ever internally disable the events from flowing to the
+    // client application.
     _pConApi->FocusChanged(focused);
     return true;
 }
