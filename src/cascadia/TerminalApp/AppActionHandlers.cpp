@@ -846,58 +846,42 @@ namespace winrt::TerminalApp::implementation
         _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
 
         _renamerLayoutUpdatedRevoker.revoke();
-        // _renamerLayoutCount = 0;
 
+        // BODGY: GH#12021
+        //
+        // TeachingTip doesn't provide an Opened event.
+        // (microsoft/microsoft-ui-xaml#1607). But we want to focus the renamer
+        // text box when it's opened. We can't do that immediately, the TextBox
+        // technically isn't in the visual tree yet. We have to wait for it to
+        // get added some time after we call IsOpen. How do we do that reliably?
+        // Usually, for this kind of thing, we'd just use a one-off
+        // LayoutUpdated event, as a notification that the TextBox was added to
+        // the tree. HOWEVER:
+        //   * The _first_ time this is fired, when the box is _first_ opened,
+        //     yeeting focus doesn't work on the first LayoutUpdated. It does
+        //     work on the second LayoutUpdated. Okay, so we'll wait for two
+        //     LayoutUpdated events, and focus on the second.
+        //   * On subsequent opens: We only ever get a single LayoutUpdated.
+        //     Period. But, you can successfully focus it on that LayoutUpdated.
+        //
+        // So, we'll keep track of how many LayoutUpdated's we've _ever_ gotten.
+        // If we've had at least 2, then we can focus the text box.
         _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
-            // Only let this succeed once.
             if (auto self{ weakThis.get() })
             {
                 auto& count{ self->_renamerLayoutCount };
+
                 if (count < 2)
+                {
                     count++;
+                }
 
                 if (count >= 2)
                 {
                     self->_renamerLayoutUpdatedRevoker.revoke();
                     self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
-                    // self->_renamerLayoutCount = 0;
                 }
-                
             }
-            //     if (self->_renamerPopup == nullptr)
-            //     {
-            //         // look for popup
-            //         Windows::UI::Xaml::DependencyObject currentElement{ self->WindowRenamerTextBox() };
-            //         do
-            //         {
-            //             if (currentElement = Media::VisualTreeHelper::GetParent(currentElement))
-            //             {
-            //                 if (self->_renamerPopup = currentElement.try_as<winrt::Windows::UI::Xaml::Controls::Primitives::Popup>())
-            //                 {
-            //                     break;
-            //                 }
-            //             }
-            //         } while (currentElement);
-
-            //         // const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
-            //         // if (const auto element{ Media::VisualTreeHelper::GetParent(self->WindowRenamerTextBox()) })
-            //         // {
-            //         if (self->_renamerPopup)
-            //         {
-            //             self->_renamerLayoutUpdatedRevoker.revoke();
-
-            //             self->_renamerPopup.Opened([weakThis](auto&&, auto&&) {
-            //                 if (auto self2{ weakThis.get() })
-            //                 {
-            //                     self2->WindowRenamerTextBox().Focus(FocusState::Programmatic);
-            //                 }
-            //             });
-            //         }
-            //         // }
-            //     }
-            // }
-
-            // self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
         });
         _renamerPressedEnter = false;
         WindowRenamer().IsOpen(true);
