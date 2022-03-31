@@ -913,6 +913,6 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
     WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, focused);
     gci.ProcessHandleList.ModifyConsoleProcessFocus(focused);
 
-    // Theoretically, this could be propogated as a focus event as well, to the
+    // Theoretically, this could be propagated as a focus event as well, to the
     // input buffer. That should be considered when implementing GH#11682.
 }

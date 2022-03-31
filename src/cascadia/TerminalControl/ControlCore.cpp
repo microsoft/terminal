@@ -1689,7 +1689,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   specifically request SET_FOCUS_EVENT_MOUSE, ?1004h. ConPTY uses this
     //   sequence REGARDLESS to communicate if the control was focused or not.
     // - Even if a client application disables this mode, the Terminal & conpty
-    //   should always request this from the hostind terminal (and just ignore
+    //   should always request this from the hosting terminal (and just ignore
     //   internally to ConPTY).
     // - Full support for this sequence is tracked in GH#11682.
     // - This is related to work done for GH#2988.
