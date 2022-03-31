@@ -175,7 +175,7 @@ void PtySignalInputThread::_DoClearBuffer()
 
 // Method Description:
 // - Update the owner of the pseudo-window we're using for the conpty HWND. This
-//   allows to mark the psuedoconsole windows as "owner" by the terminal HWND
+//   allows to mark the pseudoconsole windows as "owner" by the terminal HWND
 //   that's actually hosting them.
 // - Refer to GH#2988
 // Arguments:

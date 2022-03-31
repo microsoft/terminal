@@ -265,6 +265,8 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the resize message to the pty.
+#pragma warning(suppress : 26461)
+// an HWND is technically a void*, but that confuses static analysis here.
 HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent)
 {
     if (pPty == nullptr)
@@ -278,7 +280,7 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
     {
         const unsigned short id;
         const uint64_t hwnd;
-    } data{ PTY_SIGNAL_REPARENT_WINDOW, reinterpret_cast<uint64_t>(newParent) };
+    } data{ PTY_SIGNAL_REPARENT_WINDOW, (uint64_t)(newParent) };
 #pragma pack(pop)
 
     const BOOL fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);

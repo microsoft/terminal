@@ -314,11 +314,11 @@ using namespace Microsoft::Console::Interactivity;
 
                 // When merging with #12515, we're going to need to adjust these styles.
                 //
-                // Note that because we're not specifing WS_CHILD, this window
+                // Note that because we're not specifying WS_CHILD, this window
                 // will become an _owned_ window, not a _child_ window. This is
                 // important - child windows report their position as relative
-                // to their parent window, whild owned windows are still
-                // relative to the desktop. (there are other subtlties as well
+                // to their parent window, while owned windows are still
+                // relative to the desktop. (there are other subtleties as well
                 // as far as the difference between parent/child and owner/owned
                 // windows). Evan K said we should do it this way, and he
                 // definitely knows.
