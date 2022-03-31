@@ -856,7 +856,7 @@ namespace winrt::TerminalApp::implementation
         // LayoutUpdated event, as a notification that the TextBox was added to
         // the tree. HOWEVER:
         //   * The _first_ time this is fired, when the box is _first_ opened,
-        //     yeeting focus doesn't work on the first LayoutUpdated. It does
+        //     tossing focus doesn't work on the first LayoutUpdated. It does
         //     work on the second LayoutUpdated. Okay, so we'll wait for two
         //     LayoutUpdated events, and focus on the second.
         //   * On subsequent opens: We only ever get a single LayoutUpdated.
@@ -875,6 +875,7 @@ namespace winrt::TerminalApp::implementation
             {
                 auto& count{ self->_renamerLayoutCount };
 
+                // Don't just always increment this, we don't want to deal with overflow situations
                 if (count < 2)
                 {
                     count++;
