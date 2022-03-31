@@ -432,6 +432,8 @@ namespace winrt::TerminalApp::implementation
         void _SetAsDefaultOpenSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
+        winrt::Windows::UI::Xaml::Controls::Primitives::Popup _renamerPopup{ nullptr };
+        winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

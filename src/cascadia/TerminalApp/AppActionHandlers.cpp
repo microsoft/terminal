@@ -845,21 +845,48 @@ namespace winrt::TerminalApp::implementation
 
         _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
 
-        // WindowRenamer().Opened([weakThis = get_weak()](auto&&, auto&&) {
-        //     if (auto self{ weakThis.get() })
-        //     {
-        //         self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
-        //     }
-        // });
+        _renamerLayoutUpdatedRevoker.revoke();
 
         _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
             // Only let this succeed once.
             if (auto self{ weakThis.get() })
             {
-                self->_renamerLayoutUpdatedRevoker.revoke();
-                self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
+                if (self->_renamerPopup == nullptr)
+                {
+                    // look for popup
+                    Windows::UI::Xaml::DependencyObject currentElement{ self->WindowRenamerTextBox() };
+                    do
+                    {
+                        if (currentElement = Media::VisualTreeHelper::GetParent(currentElement))
+                        {
+                            if (self->_renamerPopup = currentElement.try_as<winrt::Windows::UI::Xaml::Controls::Primitives::Popup>())
+                            {
+                                break;
+                            }
+                        }
+                    } while (currentElement);
+
+                    // const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+                    // if (const auto element{ Media::VisualTreeHelper::GetParent(self->WindowRenamerTextBox()) })
+                    // {
+                    if (self->_renamerPopup)
+                    {
+                        self->_renamerLayoutUpdatedRevoker.revoke();
+
+                        self->_renamerPopup.Opened([weakThis](auto&&, auto&&) {
+                            if (auto self2{ weakThis.get() })
+                            {
+                                self2->WindowRenamerTextBox().Focus(FocusState::Programmatic);
+                            }
+                        });
+                    }
+                    // }
+                }
             }
+
+            // self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
         });
+
         WindowRenamer().IsOpen(true);
 
         // PAIN: We can't immediately focus the textbox in the TeachingTip. It's

@@ -3620,12 +3620,13 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
                                            winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        if (e.OriginalKey() == Windows::System::VirtualKey::Enter)
+        auto key = e.OriginalKey();
+        if (key == Windows::System::VirtualKey::Enter)
         {
             // User is done making changes, close the rename box
             _WindowRenamerActionClick(sender, nullptr);
         }
-        else if (e.OriginalKey() == Windows::System::VirtualKey::Escape)
+        else if (key == Windows::System::VirtualKey::Escape)
         {
             // User wants to discard the changes they made
             WindowRenamerTextBox().Text(WindowName());
