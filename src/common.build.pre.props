@@ -112,7 +112,7 @@
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\boost\boost_1_73_0;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\boost\boost_1_73_0;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -181,7 +181,6 @@
   <!-- Install an empty one for projects that won't have one.
        The following import will override it when it needs to happen. -->
   <Target Name="MergePGOCounts" />
-  <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!=''" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
 
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
@@ -228,7 +227,7 @@
     <PropertyGroup>
       <ErrorText>This project references git submodule(s) that are missing on this computer. Use `git submodule update --init --recursive` to download them.  For more information, see https://github.com/microsoft/terminal#building-the-code. </ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\dep\wil\README.md') Or !Exists('$(SolutionDir)\dep\gsl\README.md')" Text="$([System.String]::Format('$(ErrorText)'))" />
+    <Error Condition="!Exists('$(SolutionDir)\dep\gsl\README.md')" Text="$([System.String]::Format('$(ErrorText)'))" />
   </Target>
 
   <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Branding.targets" />

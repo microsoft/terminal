@@ -206,7 +206,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         std::wstring to_string() const
         {
-            return wil::str_printf<std::wstring>(L"[W:%td, H:%td]", width, height);
+            return wil::str_printf<std::wstring>(L"[W:%d, H:%d]", width, height);
         }
     };
 };

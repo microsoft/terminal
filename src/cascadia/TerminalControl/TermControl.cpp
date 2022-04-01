@@ -244,7 +244,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
 
         _core.UpdateSettings(settings, unfocusedAppearance);
 
@@ -260,7 +260,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
         // Dispatch a call to the UI thread
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
 
         _UpdateAppearanceFromUIThread(newAppearance);
     }
@@ -505,7 +505,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                     const IInspectable& /*args*/)
     {
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         if (auto control{ weakThis.get() })
         {
             til::color newBgColor{ _core.BackgroundColor() };
@@ -627,7 +627,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // We also don't lock for things that come back from the renderer.
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
@@ -652,7 +652,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto hr = static_cast<HRESULT>(args.Result());
 
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
@@ -1377,7 +1377,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::_coreTransparencyChanged(IInspectable /*sender*/,
                                                                  Control::TransparencyChangedEventArgs /*args*/)
     {
-        co_await resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         try
         {
             _changeBackgroundOpacity();
@@ -1772,7 +1772,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // just go ahead and do it.
         // This can come in off the COM thread - hop back to the UI thread.
         auto weakThis{ get_weak() };
-        co_await resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         if (auto control{ weakThis.get() }; !control->_IsClosing())
         {
             control->TSFInputControl().TryRedrawCanvas();
@@ -2619,7 +2619,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                  IInspectable args)
     {
         auto weakThis{ get_weak() };
-        co_await resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(Dispatcher());
         if (auto self{ weakThis.get() })
         {
             auto lastHoveredCell = _core.HoveredCell();

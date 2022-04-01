@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
         bool AtlasEngineAvailable() const noexcept;
+        bool VtPassthroughAvailable() const noexcept;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
 
@@ -103,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
         OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
+        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough)
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);

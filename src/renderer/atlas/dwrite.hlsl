@@ -81,7 +81,8 @@ float4 DWrite_GrayscaleBlend(float4 gammaRatios, float grayscaleEnhancedContrast
     float blendEnhancedContrast = contrastBoost + DWrite_ApplyLightOnDarkContrastAdjustment(grayscaleEnhancedContrast, foregroundStraight);
     float intensity = DWrite_CalcColorIntensity(foregroundStraight);
     float contrasted = DWrite_EnhanceContrast(glyphAlpha, blendEnhancedContrast);
-    return foregroundColor * DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+    float alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+    return alphaCorrected * foregroundColor;
 }
 
 // Call this function to get the same gamma corrected alpha blending effect
