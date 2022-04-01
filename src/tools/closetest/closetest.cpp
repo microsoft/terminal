@@ -298,6 +298,7 @@ static std::vector<DWORD> getConsoleProcessList()
     const DWORD count1 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
     assert(count1 >= 1 && "GetConsoleProcessList failed");
     ret.resize(count1);
+#pragma warning(suppress : 4189) // It's used in the assert
     const DWORD count2 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
     assert(count1 == count2 && "GetConsoleProcessList failed");
     return ret;
@@ -373,7 +374,7 @@ static void spawnChildTree(DWORD masterPid, const std::vector<std::wstring>& ext
     PROCESS_INFORMATION pi{};
     success = CreateProcessW(exeName().c_str(), &cmdline[0], nullptr, nullptr, FALSE, 0, nullptr, nullptr, &sui, &pi);
     assert(success && "CreateProcessW failed");
-
+#pragma warning(suppress : 4189) // It's used in the assert
     const DWORD waitRet = WaitForSingleObject(readyEvent, INFINITE);
     assert(waitRet == WAIT_OBJECT_0 && "WaitForSingleObject failed");
     CloseHandle(readyEvent);
@@ -483,6 +484,7 @@ static BOOL WINAPI ctrlHandler(DWORD type)
 static HANDLE duplicateHandle(HANDLE srcProc, HANDLE srcHandle)
 {
     HANDLE ret{};
+#pragma warning(suppress : 4189) // It's used in the assert
     const auto success =
         DuplicateHandle(srcProc, srcHandle, GetCurrentProcess(), &ret, 0, FALSE, DUPLICATE_SAME_ACCESS);
     assert(success && "DuplicateHandle failed");
@@ -603,6 +605,7 @@ static int doChild(std::deque<std::wstring> argv)
     // Assign self to a job object.
     if (jobHandle != nullptr)
     {
+#pragma warning(suppress : 4189) // It's used in the assert
         const BOOL success =
             AssignProcessToJobObject(jobHandle, GetCurrentProcess());
         assert(success && "AssignProcessToJobObject failed");

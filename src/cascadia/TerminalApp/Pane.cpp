@@ -1032,7 +1032,7 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 {
     auto weakThis{ weak_from_this() };
 
-    co_await winrt::resume_foreground(_root.Dispatcher());
+    co_await wil::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.lock() })
     {
         // BODGY
@@ -1761,7 +1761,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 {
     auto weakThis{ shared_from_this() };
 
-    co_await winrt::resume_foreground(_root.Dispatcher());
+    co_await wil::resume_foreground(_root.Dispatcher());
 
     if (auto pane{ weakThis.get() })
     {

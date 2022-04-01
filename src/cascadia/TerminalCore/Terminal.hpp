@@ -81,7 +81,7 @@ public:
     // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
 
-    // Write comes from the PTY and goes to our parser to be stored in the output buffer
+    // WritePastedText comes from our input and goes back to the PTY's input channel
     void WritePastedText(std::wstring_view stringView);
 
     [[nodiscard]] std::unique_lock<til::ticket_lock> LockForReading();

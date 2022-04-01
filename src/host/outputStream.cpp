@@ -65,7 +65,7 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 // - <none>
 void ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const
 {
-    ServiceLocator::LocateGlobals().api.GetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo);
+    ServiceLocator::LocateGlobals().api->GetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo);
 }
 
 // Routine Description:
@@ -76,7 +76,7 @@ void ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_I
 // - <none>
 void ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo)
 {
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleScreenBufferInfoExImpl(_io.GetActiveOutputBuffer(), screenBufferInfo));
 }
 
 // Routine Description:
@@ -89,7 +89,7 @@ void ConhostInternalGetSet::SetCursorPosition(const COORD position)
 {
     auto& info = _io.GetActiveOutputBuffer();
     const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleCursorPositionImpl(info, clampedPosition));
 }
 
 // Method Description:
@@ -177,7 +177,7 @@ void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>&
 // - <none>
 void ConhostInternalGetSet::SetWindowInfo(const bool absolute, const SMALL_RECT& window)
 {
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api.SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
+    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(_io.GetActiveOutputBuffer(), absolute, window));
 }
 
 // Routine Description:

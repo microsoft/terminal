@@ -26,7 +26,7 @@
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 
-#include "TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
