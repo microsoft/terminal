@@ -330,6 +330,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass SearchForTextArgs : IActionArgs
     {
         String QueryUrl { get; };
+        Boolean WrapWithQuotes { get; };
     };
 
     [default_interface] runtimeclass GlobalSummonArgs : IActionArgs

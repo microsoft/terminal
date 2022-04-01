@@ -202,8 +202,9 @@ private:                                                                        
     X(winrt::hstring, Name, "name", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SEARCH_FOR_TEXT_ARGS(X) \
-    X(winrt::hstring, QueryUrl, "queryUrl", false, L"")
+#define SEARCH_FOR_TEXT_ARGS(X)                         \
+    X(winrt::hstring, QueryUrl, "queryUrl", false, L"") \
+    X(bool, WrapWithQuotes, "wrapWithQuotes", false, true)
 //TODO! this should have some validation!
 // Maybe in post though. Maybe at runtime make sure QueryUrl starts with "http:"
 

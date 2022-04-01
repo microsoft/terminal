@@ -911,7 +911,12 @@ namespace winrt::TerminalApp::implementation
                         const auto selections{ termControl.SelectedText(true) };
                         if (selections.Size() == 1) // TODO! should theoretically be able to work for multiple lines of selection
                         {
-                            const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(selections.GetAt(0));
+                            auto selectedText = selections.GetAt(0);
+                            if (realArgs.WrapWithQuotes())
+                            {
+                                selectedText = L"\"" + selectedText + L"\"";
+                            }
+                            const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(selectedText);
                             winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ finalString };
                             _OpenHyperlinkHandler(termControl, shortcut);
                             args.Handled(true);
