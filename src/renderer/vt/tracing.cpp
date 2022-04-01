@@ -64,6 +64,23 @@ std::string toPrintableString(const std::string_view& inString)
     }
     return retval;
 }
+void RenderTracing::TraceStringFill(const size_t n, const char c) const
+{
+#ifndef UNIT_TESTING
+    if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
+    {
+        TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
+                          "VtEngine_TraceStringFill",
+                          TraceLoggingUInt64(gsl::narrow_cast<uint64_t>(n)),
+                          TraceLoggingChar(c),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+#else
+    UNREFERENCED_PARAMETER(n);
+    UNREFERENCED_PARAMETER(c);
+#endif UNIT_TESTING
+}
 void RenderTracing::TraceString(const std::string_view& instr) const
 {
 #ifndef UNIT_TESTING

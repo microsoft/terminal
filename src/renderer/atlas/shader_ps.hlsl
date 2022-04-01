@@ -48,7 +48,7 @@ cbuffer ConstBuffer : register(b0)
     uint backgroundColor;
     uint cursorColor;
     uint selectionColor;
-    bool useClearType;
+    uint useClearType;
 };
 StructuredBuffer<Cell> cells : register(t0);
 Texture2D<float4> glyphs : register(t1);
@@ -147,7 +147,8 @@ float4 main(float4 pos: SV_Position): SV_Target
                 // See DWrite_GrayscaleBlend
                 float intensity = DWrite_CalcColorIntensity(foregroundStraight);
                 float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
-                color = fg * DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+                float4 alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+                color = alphaBlendPremultiplied(color, alphaCorrected * fg);
             }
         }
     }

@@ -27,7 +27,7 @@ Author(s):
     X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                   \
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                   \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                             \
-    X(bool, TrimBlockSelection, "trimBlockSelection", false)                                                                                               \
+    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
@@ -76,7 +76,8 @@ Author(s):
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
     X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)                                                                                              \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
-    X(bool, Elevate, "elevate", false)
+    X(bool, Elevate, "elevate", false)                                                                                                                         \
+    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)
 
 // Intentionally omitted Profile settings:
 // * Name

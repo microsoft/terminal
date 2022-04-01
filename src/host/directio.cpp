@@ -604,9 +604,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // - rectangle - This is the rectangle describing the region that the buffer covers.
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
-[[nodiscard]] static HRESULT _ConvertCellsToWInplace(const UINT codepage,
-                                                     gsl::span<CHAR_INFO> buffer,
-                                                     const Viewport& rectangle) noexcept
+[[nodiscard]] HRESULT _ConvertCellsToWInplace(const UINT codepage,
+                                              gsl::span<CHAR_INFO> buffer,
+                                              const Viewport& rectangle) noexcept
 {
     try
     {

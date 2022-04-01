@@ -1472,7 +1472,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
 
-        _textBuffer->SetCurrentAttributes(oldPrimaryAttributes);
+        newTextBuffer->SetCurrentAttributes(oldPrimaryAttributes);
 
         _textBuffer.swap(newTextBuffer);
     }

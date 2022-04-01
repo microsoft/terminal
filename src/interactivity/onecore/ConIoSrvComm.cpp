@@ -24,6 +24,19 @@ extern void UnlockConsole();
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
+static std::unique_ptr<ConIoSrvComm> s_conIoSrvComm;
+ConIoSrvComm* ConIoSrvComm::GetConIoSrvComm()
+{
+    static bool initialized = []() {
+        s_conIoSrvComm = std::make_unique<ConIoSrvComm>();
+        ServiceLocator::SetOneCoreTeardownFunction([] {
+            s_conIoSrvComm.reset(nullptr);
+        });
+        return true;
+    }();
+    return s_conIoSrvComm.get();
+}
+
 ConIoSrvComm::ConIoSrvComm() :
     _inputPipeThreadHandle(nullptr),
     _pipeReadHandle(INVALID_HANDLE_VALUE),
@@ -524,70 +537,6 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue)
-{
-    NTSTATUS Status;
-
-    Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
-    {
-        CIS_MSG Message = { 0 };
-        Message.Type = CIS_MSG_TYPE_MAPVIRTUALKEY;
-        Message.MapVirtualKeyParams.Code = uCode;
-        Message.MapVirtualKeyParams.MapType = uMapType;
-
-        Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
-        {
-            *puReturnValue = Message.MapVirtualKeyParams.ReturnValue;
-        }
-    }
-
-    return Status;
-}
-
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue)
-{
-    NTSTATUS Status;
-
-    Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
-    {
-        CIS_MSG Message = { 0 };
-        Message.Type = CIS_MSG_TYPE_VKKEYSCAN;
-        Message.VkKeyScanParams.Character = wCharacter;
-
-        Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
-        {
-            *psReturnValue = Message.VkKeyScanParams.ReturnValue;
-        }
-    }
-
-    return Status;
-}
-
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT* psReturnValue)
-{
-    NTSTATUS Status;
-
-    Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
-    {
-        CIS_MSG Message = { 0 };
-        Message.Type = CIS_MSG_TYPE_GETKEYSTATE;
-        Message.GetKeyStateParams.VirtualKey = iVirtualKey;
-
-        Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
-        {
-            *psReturnValue = Message.GetKeyStateParams.ReturnValue;
-        }
-    }
-
-    return Status;
-}
-
 [[nodiscard]] USHORT ConIoSrvComm::GetDisplayMode() const
 {
     return _displayMode;
@@ -596,88 +545,6 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
 PVOID ConIoSrvComm::GetSharedViewBase() const
 {
     return _alpcSharedViewBase;
-}
-
-#pragma endregion
-
-#pragma region IInputServices Members
-
-UINT ConIoSrvComm::MapVirtualKeyW(UINT uCode, UINT uMapType)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    UINT ReturnValue;
-    Status = RequestMapVirtualKey(uCode, uMapType, &ReturnValue);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ReturnValue = 0;
-        SetLastError(ERROR_PROC_NOT_FOUND);
-    }
-
-    return ReturnValue;
-}
-
-SHORT ConIoSrvComm::VkKeyScanW(WCHAR ch)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    SHORT ReturnValue;
-    Status = RequestVkKeyScan(ch, &ReturnValue);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ReturnValue = 0;
-        SetLastError(ERROR_PROC_NOT_FOUND);
-    }
-
-    return ReturnValue;
-}
-
-SHORT ConIoSrvComm::GetKeyState(int nVirtKey)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    SHORT ReturnValue;
-    Status = RequestGetKeyState(nVirtKey, &ReturnValue);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ReturnValue = 0;
-        SetLastError(ERROR_PROC_NOT_FOUND);
-    }
-
-    return ReturnValue;
-}
-
-BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD* lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
-{
-    SetLastError(ERROR_SUCCESS);
-
-    if (TCI_SRCCODEPAGE == dwFlags)
-    {
-        *lpCs = { 0 };
-
-        DWORD dwSrc = (DWORD)lpSrc;
-        switch (dwSrc)
-        {
-        case CP_JAPANESE:
-            lpCs->ciCharset = SHIFTJIS_CHARSET;
-            return TRUE;
-        case CP_CHINESE_SIMPLIFIED:
-            lpCs->ciCharset = GB2312_CHARSET;
-            return TRUE;
-        case CP_KOREAN:
-            lpCs->ciCharset = HANGEUL_CHARSET;
-            return TRUE;
-        case CP_CHINESE_TRADITIONAL:
-            lpCs->ciCharset = CHINESEBIG5_CHARSET;
-            return TRUE;
-        }
-    }
-
-    SetLastError(ERROR_NOT_SUPPORTED);
-    return FALSE;
 }
 
 #pragma endregion
