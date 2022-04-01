@@ -248,8 +248,6 @@ private:
                                                     const COORD coordBufferOld,
                                                     _Out_ COORD* const pcoordClientNewCharacters);
     [[nodiscard]] HRESULT _AdjustScreenBuffer(const RECT* const prcClientNew);
-    [[nodiscard]] HRESULT _AdjustScreenBufferForCharacters(const COORD coordBufferSizeOld,
-                                                           const COORD coordBufferSizeNew);
     void _CalculateViewportSize(const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
     void _AdjustViewportSize(const RECT* const prcClientNew, const RECT* const prcClientOld, const COORD* const pcoordSize);
     void _InternalSetViewportSize(const COORD* const pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);

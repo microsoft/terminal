@@ -1007,12 +1007,6 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         }
     }
 
-    return _AdjustScreenBufferForCharacters(coordBufferSizeOld, coordBufferSizeNew);
-}
-
-[[nodiscard]] HRESULT SCREEN_INFORMATION::_AdjustScreenBufferForCharacters(const COORD coordBufferSizeOld,
-                                                                           const COORD coordBufferSizeNew)
-{
     HRESULT hr = S_FALSE;
 
     // Only attempt to modify the buffer if something changed. Expensive operation.
@@ -1999,7 +1993,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         else if (_psiMainBuffer->_deferredPtyResize.has_value())
         {
             const COORD newSize = _psiMainBuffer->_deferredPtyResize.value().to_win32_coord();
-            LOG_IF_FAILED(_psiMainBuffer->_AdjustScreenBufferForCharacters(_psiMainBuffer->GetBufferSize().Dimensions(), newSize));
+            _psiMainBuffer->SetViewportSize(&newSize);
             _psiMainBuffer->_deferredPtyResize = std::nullopt;
         }
 
