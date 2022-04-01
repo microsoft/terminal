@@ -72,14 +72,9 @@ void CommandHistory::s_ResizeAll(const size_t commands)
     }
 }
 
-static bool CaseInsensitiveEquality(wchar_t a, wchar_t b)
-{
-    return ::towlower(a) == ::towlower(b);
-}
-
 bool CommandHistory::IsAppNameMatch(const std::wstring_view other) const
 {
-    return std::equal(_appName.cbegin(), _appName.cend(), other.cbegin(), other.cend(), CaseInsensitiveEquality);
+    return CompareStringOrdinal(_appName.data(), gsl::narrow<int>(_appName.size()), other.data(), gsl::narrow<int>(other.size()), TRUE) == CSTR_EQUAL;
 }
 
 // Routine Description:
@@ -534,11 +529,7 @@ std::wstring CommandHistory::Remove(const SHORT iDel)
             const auto& storedCommand = _commands.at(indexFound);
             if ((WI_IsFlagClear(options, MatchOptions::ExactMatch) && (givenCommand.size() <= storedCommand.size())) || (givenCommand.size() == storedCommand.size()))
             {
-                if (std::equal(storedCommand.begin(),
-                               storedCommand.begin() + givenCommand.size(),
-                               givenCommand.begin(),
-                               givenCommand.end(),
-                               CaseInsensitiveEquality))
+                if (til::starts_with(storedCommand, givenCommand))
                 {
                     return true;
                 }

@@ -169,10 +169,10 @@ void Popup::_DrawPrompt(const UINT id)
     }
 
     size_t used;
-    LOG_IF_FAILED(ServiceLocator::LocateGlobals().api.WriteConsoleOutputCharacterWImpl(_screenInfo,
-                                                                                       text,
-                                                                                       WriteCoord,
-                                                                                       used));
+    LOG_IF_FAILED(ServiceLocator::LocateGlobals().api->WriteConsoleOutputCharacterWImpl(_screenInfo,
+                                                                                        text,
+                                                                                        WriteCoord,
+                                                                                        used));
 }
 
 // Routine Description:

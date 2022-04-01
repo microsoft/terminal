@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
     Globals& globals = ServiceLocator::LocateGlobals();
-    ConIoSrvComm* const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
+    ConIoSrvComm* const Server = ConIoSrvComm::GetConIoSrvComm();
 
     NTSTATUS Status = Server->Connect();
 
@@ -114,7 +114,7 @@ HANDLE ConsoleInputThread::Start()
     hThread = CreateThread(nullptr,
                            0,
                            ConsoleInputThreadProcOneCore,
-                           _pConIoSrvComm,
+                           nullptr,
                            0,
                            &dwThreadId);
     if (hThread)
@@ -124,9 +124,4 @@ HANDLE ConsoleInputThread::Start()
     }
 
     return hThread;
-}
-
-ConIoSrvComm* ConsoleInputThread::GetConIoSrvComm()
-{
-    return _pConIoSrvComm;
 }

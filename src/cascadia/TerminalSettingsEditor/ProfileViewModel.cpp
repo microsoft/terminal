@@ -298,6 +298,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return Feature_AtlasEngine::IsEnabled();
     }
 
+    bool ProfileViewModel::VtPassthroughAvailable() const noexcept
+    {
+        return Feature_VtPassthroughMode::IsEnabled();
+    }
+
     bool ProfileViewModel::UseParentProcessDirectory()
     {
         return StartingDirectory().empty();

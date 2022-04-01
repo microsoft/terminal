@@ -21,6 +21,16 @@ TextAttribute Terminal::GetTextAttributes() const
     return _activeBuffer().GetCurrentAttributes();
 }
 
+bool Terminal::ReturnResponse(std::wstring_view responseString)
+{
+    if (!_pfnWriteInput)
+    {
+        return false;
+    }
+    _pfnWriteInput(responseString);
+    return true;
+}
+
 void Terminal::SetTextAttributes(const TextAttribute& attrs)
 {
     _activeBuffer().SetCurrentAttributes(attrs);
