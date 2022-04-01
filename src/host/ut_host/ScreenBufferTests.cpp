@@ -231,6 +231,8 @@ class ScreenBufferTests
     TEST_METHOD(TestReflowEndOfLineColor);
     TEST_METHOD(TestReflowSmallerLongLineWithColor);
     TEST_METHOD(TestReflowBiggerLongLineWithColor);
+
+    TEST_METHOD(TestDeferredMainBufferResize);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -6511,4 +6513,61 @@ void ScreenBufferTests::TestReflowBiggerLongLineWithColor()
     // there are also 3 B's wrapped in spaces, and finally 5 trailing spaces.
     Log::Comment(L"========== Checking the buffer state (after) ==========");
     verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, false);
+}
+
+void ScreenBufferTests::TestDeferredMainBufferResize()
+{
+    // A test for https://github.com/microsoft/terminal/pull/12719#discussion_r834860330
+    Log::Comment(L"Resize the alt buffer. We should defer the resize of the "
+                 L"main buffer till we swap back to it, for performance.");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    auto* siMain = &gci.GetActiveOutputBuffer();
+    auto& stateMachine = siMain->GetStateMachine();
+
+    const til::size oldSize{ siMain->GetBufferSize().Dimensions() };
+    const til::size oldView{ siMain->GetViewport().Dimensions() };
+    Log::Comment(NoThrowString().Format(L"Original buffer size: %dx%d", oldSize.width, oldSize.height));
+    Log::Comment(NoThrowString().Format(L"Original viewport: %dx%d", oldView.width, oldView.height));
+    VERIFY_ARE_NOT_EQUAL(oldSize, oldView);
+
+    stateMachine.ProcessString(L"\x1b[?1049h");
+
+    auto* siAlt = &gci.GetActiveOutputBuffer();
+    VERIFY_ARE_NOT_EQUAL(siMain, siAlt);
+
+    const til::size newSize{ siAlt->GetBufferSize().Dimensions() };
+    const til::size newView{ siAlt->GetViewport().Dimensions() };
+    VERIFY_ARE_EQUAL(oldView, newSize);
+    VERIFY_ARE_EQUAL(oldView, newSize);
+    VERIFY_ARE_EQUAL(newView, newSize);
+
+    stateMachine.ProcessString(L"\x1b[8;24;60t");
+    const til::size expectedSize{ 60, 24 };
+    const til::size altPostResizeSize{ siAlt->GetBufferSize().Dimensions() };
+    const til::size altPostResizeView{ siAlt->GetViewport().Dimensions() };
+    const til::size mainPostResizeSize{ siMain->GetBufferSize().Dimensions() };
+    const til::size mainPostResizeView{ siMain->GetViewport().Dimensions() };
+    VERIFY_ARE_NOT_EQUAL(oldView, altPostResizeSize);
+    VERIFY_ARE_EQUAL(altPostResizeView, altPostResizeSize);
+    VERIFY_ARE_EQUAL(expectedSize, altPostResizeSize);
+
+    Log::Comment(L"Main buffer should not have resized yet.");
+    VERIFY_ARE_EQUAL(oldSize, mainPostResizeSize);
+    VERIFY_ARE_EQUAL(oldView, mainPostResizeView);
+
+    stateMachine.ProcessString(L"\x1b[?1049l");
+
+    auto* siFinal = &gci.GetActiveOutputBuffer();
+    VERIFY_ARE_NOT_EQUAL(siAlt, siFinal);
+    VERIFY_ARE_EQUAL(siMain, siFinal);
+
+    const til::size mainPostRestoreSize{ siMain->GetBufferSize().Dimensions() };
+    const til::size mainPostRestoreView{ siMain->GetViewport().Dimensions() };
+    VERIFY_ARE_NOT_EQUAL(oldView, mainPostRestoreView);
+    VERIFY_ARE_NOT_EQUAL(oldSize, mainPostRestoreSize);
+    VERIFY_ARE_EQUAL(altPostResizeView, mainPostRestoreView);
+    VERIFY_ARE_EQUAL(expectedSize, mainPostRestoreView);
 }
