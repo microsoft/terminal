@@ -108,7 +108,7 @@ private:
     friend void _stdcall TerminalKillFocus(void* terminal);
 
     void _UpdateFont(int newDpi);
-    void _WriteTextToConnection(const std::wstring& text) noexcept;
+    void _WriteTextToConnection(const std::wstring_view text) noexcept;
     HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting);
     HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
     void _PasteTextFromClipboard() noexcept;

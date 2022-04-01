@@ -52,6 +52,7 @@ apimswincoresynchl
 apiset
 APPBARDATA
 appconsult
+appcontainer
 APPICON
 appium
 applet
@@ -518,6 +519,7 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECCRA
 DECDHL
 decdld
 DECDLD
@@ -1626,6 +1628,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nugetversions
 nullability
 nullness
 nullonfailure
@@ -2630,6 +2633,7 @@ VSTS
 VSTT
 vstudio
 vswhere
+vtapi
 vtapp
 VTE
 VTID
