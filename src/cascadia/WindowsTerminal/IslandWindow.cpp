@@ -543,14 +543,13 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         return 0;
     case WM_WINDOWPOSCHANGING:
     {
-        // Pull out the parameters from the call.
-        auto lpwpos = (LPWINDOWPOS)lparam;
-
         // GH#10274 - if the quake window gets moved to another monitor via aero
         // snap (win+shift+arrows), then re-adjust the size for the new monitor.
         if (IsQuakeWindow())
         {
             // Retrieve the suggested dimensions and make a rect and size.
+            LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
+
             // We only need to apply restrictions if the position is changing.
             // The SWP_ flags are confusing to read. This is
             // "if we're not moving the window, do nothing."
@@ -819,6 +818,13 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
     }
 }
 
+// Method Description:
+// - Posts a message to the window message queue that the window visibility has changed
+//   and should then be minimized or restored.
+// Arguments:
+// - showOrHide: True for show; false for hide.
+// Return Value:
+// - <none>
 void IslandWindow::ShowWindowChanged(const bool showOrHide)
 {
     const auto hwnd = GetHandle();

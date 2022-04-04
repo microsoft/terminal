@@ -5,8 +5,6 @@
 
 #include "InteractivityFactory.hpp"
 
-#include <dwmapi.h>
-
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "..\onecore\AccessibilityNotifier.hpp"
 #include "..\onecore\ConsoleControl.hpp"
@@ -334,9 +332,6 @@ using namespace Microsoft::Console::Interactivity;
                     DWORD const gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
-
-                /*BOOL const cloak = TRUE;
-                DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &cloak, sizeof(cloak));*/
 
                 break;
             }
