@@ -328,7 +328,7 @@ jobs:
         $VersionEpoch = 3000
         $Components = "$(XES_APPXMANIFESTVERSION)" -Split "."
         $Components[0] += $VersionEpoch
-        $BundleVersion = $Version -Join "."
+        $BundleVersion = $Components -Join "."
         .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
     - task: EsrpCodeSigning@1
