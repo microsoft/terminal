@@ -580,6 +580,7 @@ DEFFACE
 defing
 DEFPUSHBUTTON
 defterm
+deiconify
 DELAYLOAD
 deletable
 DELETEONRELEASE
@@ -1202,6 +1203,7 @@ IWin
 IWindow
 IXaml
 IXMP
+IXP
 ixx
 jconcpp
 JOBOBJECT
@@ -2194,8 +2196,10 @@ shlobj
 shlwapi
 SHORTPATH
 SHOWCURSOR
+SHOWDEFAULT
 SHOWMAXIMIZED
 SHOWMINNOACTIVE
+SHOWNA
 SHOWNOACTIVATE
 SHOWNORMAL
 SHOWWINDOW
@@ -2427,6 +2431,7 @@ tofrom
 tokenhelpers
 tokenized
 tokenizing
+toolbar
 toolbars
 TOOLINFO
 Toolset
