@@ -718,8 +718,11 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
         if (_psiMainBuffer)
         {
-            _psiMainBuffer->_fAltWindowChanged = false;
-            _psiMainBuffer->_deferredPtyResize = til::size{ GetBufferSize().Dimensions() };
+            // _psiMainBuffer->_fAltWindowChanged = false;
+            // _psiMainBuffer->_deferredPtyResize = til::size{ GetBufferSize().Dimensions() };
+
+            const auto bufferSize = GetBufferSize().Dimensions();
+            _psiMainBuffer->SetViewportSize(&bufferSize);
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
@@ -1990,12 +1993,12 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
             psiMain->_fAltWindowChanged = false;
         }
-        else if (_psiMainBuffer->_deferredPtyResize.has_value())
-        {
-            const COORD newSize = _psiMainBuffer->_deferredPtyResize.value().to_win32_coord();
-            _psiMainBuffer->SetViewportSize(&newSize);
-            _psiMainBuffer->_deferredPtyResize = std::nullopt;
-        }
+        // else if (_psiMainBuffer->_deferredPtyResize.has_value())
+        // {
+        //     const COORD newSize = _psiMainBuffer->_deferredPtyResize.value().to_win32_coord();
+        //     _psiMainBuffer->SetViewportSize(&newSize);
+        //     _psiMainBuffer->_deferredPtyResize = std::nullopt;
+        // }
 
         // GH#381: When we switch into the main buffer:
         //  * flush the current frame, to clear out anything that we prepared for this buffer.
