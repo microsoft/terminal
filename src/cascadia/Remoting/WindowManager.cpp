@@ -347,6 +347,52 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void WindowManager::_createMonarchAndCallbacks()
     {
         _createMonarch();
+
+        if (_monarch == nullptr)
+        {
+            // See MSFT:38540483, GH#12774 for details.
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "WindowManager_NullMonarchTryAgain",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            // Here we're gonna just give it a quick second try.Probably not
+            // definitive, but might help.
+            _createMonarch();
+        }
+
+        if (_monarch == nullptr)
+        {
+            // See MSFT:38540483, GH#12774 for details.
+            if constexpr (Feature_IsolatedMonarchMode::IsEnabled())
+            {
+                // Fall back to having a in proc monarch. Were now isolated from
+                // other windows. This is a pretty torn state, but at least we
+                // didn't just explode.
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_NullMonarchIsolateMode",
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+                _monarch = winrt::make<winrt::Microsoft::Terminal::Remoting::implementation::Monarch>();
+            }
+            else
+            {
+                // The monarch is null. We're hoping that we can find another,
+                // hopefully us. We're gonna go back around the loop again and
+                // see what happens. If this is really an infinite loop (where
+                // the OS won't even give us back US as the monarch), then I
+                // suppose we'll find out soon enough.
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_NullMonarchTryAgain",
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+                winrt::hresult_error(E_UNEXPECTED, L"Did not expect the Monarch to ever be null");
+            }
+        }
+
+        // We're pretty confident that we have a Monarch here.
+
         // Save the result of checking if we're the king. We want to avoid
         // unnecessary calls back and forth if we can.
         _isKing = _areWeTheKing();
