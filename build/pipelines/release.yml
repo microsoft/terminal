@@ -138,38 +138,38 @@ jobs:
       feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
       packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
       versionListDownload: $(TerminalInternalPackageVersion)
-  - task: TouchdownBuildTask@1
-    displayName: Download Localization Files
-    inputs:
-      teamId: 7105
-      authId: $(TouchdownAppId)
-      authKey: $(TouchdownAppKey)
-      resourceFilePath: >-
-        src\cascadia\TerminalApp\Resources\en-US\Resources.resw
-
-        src\cascadia\TerminalApp\Resources\en-US\ContextMenu.resw
-
-        src\cascadia\TerminalControl\Resources\en-US\Resources.resw
-
-        src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
-
-        src\cascadia\TerminalSettingsModel\Resources\en-US\Resources.resw
-
-        src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
-
-        src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
-      appendRelativeDir: true
-      localizationTarget: false
-      pseudoSetting: Included
-  - task: PowerShell@2
-    displayName: Move Loc files one level up
-    inputs:
-      targetType: inline
-      script: >-
-        $Files = Get-ChildItem . -R -Filter 'Resources.resw' | ? FullName -Like '*en-US\*\Resources.resw'
-
-        $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
-      pwsh: true
+        #  - task: TouchdownBuildTask@1
+        #    displayName: Download Localization Files
+        #    inputs:
+        #      teamId: 7105
+        #      authId: $(TouchdownAppId)
+        #      authKey: $(TouchdownAppKey)
+        #      resourceFilePath: >-
+        #        src\cascadia\TerminalApp\Resources\en-US\Resources.resw
+        #
+        #        src\cascadia\TerminalApp\Resources\en-US\ContextMenu.resw
+        #
+        #        src\cascadia\TerminalControl\Resources\en-US\Resources.resw
+        #
+        #        src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
+        #
+        #        src\cascadia\TerminalSettingsModel\Resources\en-US\Resources.resw
+        #
+        #        src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
+        #
+        #        src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
+        #      appendRelativeDir: true
+        #      localizationTarget: false
+        #      pseudoSetting: Included
+        #  - task: PowerShell@2
+        #    displayName: Move Loc files one level up
+        #    inputs:
+        #      targetType: inline
+        #      script: >-
+        #        $Files = Get-ChildItem . -R -Filter 'Resources.resw' | ? FullName -Like '*en-US\*\Resources.resw'
+        #
+        #        $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+        #      pwsh: true
   - task: PowerShell@2
     displayName: Copy the Context Menu Loc Resources to CascadiaPackage
     inputs:
