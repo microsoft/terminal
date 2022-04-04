@@ -11,6 +11,8 @@
 #include "VirtualDesktopUtils.h"
 #include "icon.h"
 
+#include <TerminalThemeHelpers.h>
+
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -398,6 +400,15 @@ void AppHost::Initialize()
     _revokers.SummonWindowRequested = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
     _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
+
+    // BODGY
+    // On certain builds of Windows, when Terminal is set as the default
+    // it will accumulate an unbounded amount of queued animations while
+    // the screen is off and it is servicing window management for console
+    // applications. This call into TerminalThemeHelpers will tell our
+    // compositor to automatically complete animations that are scheduled
+    // while the screen is off.
+    TerminalTrySetAutoCompleteAnimationsWhenOccluded(static_cast<::IUnknown*>(winrt::get_abi(_logic.GetRoot())), true);
 
     _window->UpdateTitle(_logic.Title());
 
