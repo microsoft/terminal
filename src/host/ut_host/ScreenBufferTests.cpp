@@ -6564,6 +6564,8 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     Log::Comment(NoThrowString().Format(L"Original viewport: %dx%d", oldView.width, oldView.height));
     VERIFY_ARE_NOT_EQUAL(oldSize, oldView);
 
+    // printf "\x1b[?1049h" ; sleep 1 ; printf "\x1b[8;24;60t" ; sleep 1 ; printf "\x1b[?1049l" ; sleep 1 ; printf "\n"
+
     stateMachine.ProcessString(L"\x1b[?1049h");
 
     auto* siAlt = &gci.GetActiveOutputBuffer();
