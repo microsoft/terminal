@@ -292,11 +292,16 @@ jobs:
         displayName: Download Artifacts ${{ platform }} $(TerminalTargetWindowsVersion)
         inputs:
           artifactName: appx-${{ platform }}-Release-$(TerminalTargetWindowsVersion)
-    - task: PowerShell@2
+    # Add 3000 to the major version component, but only for the bundle.
+    # This is to ensure that it is newer than "2022.xx.yy.zz" or whatever the original bundle versions were before
+    # we switched to uniform naming.
+    - pwsh: |-
+        $VersionEpoch = 3000
+        $Components = "$(XES_APPXMANIFESTVERSION)" -Split "\."
+        $Components[0] = ([int]$Components[0] + $VersionEpoch)
+        $BundleVersion = $Components -Join "."
+        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
-      inputs:
-        filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:
