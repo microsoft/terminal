@@ -225,6 +225,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleAltBufferTest);
     TEST_METHOD(AltBufferToAltBufferTest);
 
+    TEST_METHOD(AltBufferResizeCrash);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -4067,4 +4069,53 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
     Log::Comment(L"========== Checking the terminal buffer state (StillInAltBuffer) ==========");
     verifyBuffer(*termAltTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::StillInAltBuffer);
+}
+
+void ConptyRoundtripTests::AltBufferResizeCrash()
+{
+    Log::Comment(L"TODO!");
+    auto& g = ServiceLocator::LocateGlobals();
+    g;
+    auto& renderer = *g.pRender;
+    renderer;
+    auto& gci = g.getConsoleInformation();
+    gci;
+    auto& si = gci.GetActiveOutputBuffer();
+    si;
+    auto& sm = si.GetStateMachine();
+    sm;
+    auto* hostTb = &si.GetTextBuffer();
+    hostTb;
+    auto* termTb = term->_mainBuffer.get();
+    termTb;
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    // printf "\e[8;24;132t\e[12;100H\e[?1049h\e[8;10;80t"
+
+    Log::Comment(L"========== Resize to 132x24 ==========");
+    sm.ProcessString(L"\x1b[8;24;132t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Move cursor to (99,11) ==========");
+    sm.ProcessString(L"\x1b[12;100H");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+    sm.ProcessString(L"\x1b[?1049h");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Resize to 80x10 ==========");
+    sm.ProcessString(L"\x1b[8;10;80t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
