@@ -147,7 +147,8 @@
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind FirstWindowPreferenceList}"
-                              SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />
+                              SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
 
@@ -157,7 +158,8 @@
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind LaunchModeList}"
-                              SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}" />
+                              SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
                 <!--  Windowing Behavior  -->
@@ -165,7 +167,8 @@
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind WindowingBehaviorList}"
-                              SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}" />
+                              SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
                 <local:SettingContainer x:Uid="Globals_LaunchSize"

@@ -186,7 +186,8 @@
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
+                          SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Cursor Height  -->
@@ -254,7 +255,8 @@
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}" />
+                          SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Background Image Alignment  -->
@@ -480,7 +482,8 @@
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                                    ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}" />
+                                   SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
+                                   Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
         </StackPanel>
 

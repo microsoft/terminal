@@ -50,7 +50,8 @@
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}" />
+                          SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Always show tabs  -->
@@ -88,7 +89,8 @@
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}" />
+                          SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Disable Animations  -->

@@ -137,7 +137,8 @@
                         <ComboBox AutomationProperties.AccessibilityView="Content"
                                   ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                                   ItemsSource="{x:Bind Profile.ScrollStateList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}" />
+                                  SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
                 <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">

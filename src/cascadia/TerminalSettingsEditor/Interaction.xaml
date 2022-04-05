@@ -43,7 +43,8 @@
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}" />
+                          SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Trim Block Selection  -->
@@ -78,7 +79,8 @@
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind TabSwitcherModeList}"
-                          SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}" />
+                          SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Focus Follow Mouse Mode  -->

@@ -61,7 +61,8 @@
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
-                              SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}" />
+                              SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
                 <!--  AltGr Aliasing  -->
@@ -103,7 +104,8 @@
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
-                              SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}" />
+                              SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
                 <!--  Bell Style  -->
