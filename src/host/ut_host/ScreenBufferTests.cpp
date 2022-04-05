@@ -6540,6 +6540,8 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     // This could theoretically be a helper if other tests need it.
     if (inConpty)
     {
+        Log::Comment(L"Set up ConPTY");
+
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Set up an xterm-256 renderer for conpty
         wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
@@ -6565,7 +6567,7 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     VERIFY_ARE_NOT_EQUAL(oldSize, oldView);
 
     // printf "\x1b[?1049h" ; sleep 1 ; printf "\x1b[8;24;60t" ; sleep 1 ; printf "\x1b[?1049l" ; sleep 1 ; printf "\n"
-
+    Log::Comment(L"Switch to alt buffer");
     stateMachine.ProcessString(L"\x1b[?1049h");
 
     auto* siAlt = &gci.GetActiveOutputBuffer();
@@ -6577,6 +6579,7 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     VERIFY_ARE_EQUAL(oldView, newSize);
     VERIFY_ARE_EQUAL(newView, newSize);
 
+    Log::Comment(L"Resize alt buffer");
     stateMachine.ProcessString(L"\x1b[8;24;60t");
     const til::size expectedSize{ 60, 24 };
     const til::size altPostResizeSize{ siAlt->GetBufferSize().Dimensions() };
@@ -6591,6 +6594,7 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     VERIFY_ARE_EQUAL(oldSize, mainPostResizeSize);
     VERIFY_ARE_EQUAL(oldView, mainPostResizeView);
 
+    Log::Comment(L"Switch to main buffer");
     stateMachine.ProcessString(L"\x1b[?1049l");
 
     auto* siFinal = &gci.GetActiveOutputBuffer();

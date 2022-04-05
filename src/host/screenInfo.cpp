@@ -1992,8 +1992,41 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         }
         else if (_psiMainBuffer->_deferredPtyResize.has_value())
         {
-            const COORD newSize = _psiMainBuffer->_deferredPtyResize.value().to_win32_coord();
-            _psiMainBuffer->SetViewportSize(&newSize);
+            const COORD newViewSize = _psiMainBuffer->_deferredPtyResize.value().to_win32_coord();
+            // Tricky! We want to make sure to resize the actual main buffer
+            // here, not just change the size of the viewport. When they resized
+            // the alt buffer, the dimensions of the alt buffer changed. We
+            // should make sure the main buffer reflects similar changes.
+            //
+            // To do this, we have to emulate bits of
+            // ConhostInternalGetSet::ResizeWindow. We can't call that
+            // straight-up, because the main buffer isn't active yet.
+            const COORD oldScreenBufferSize = _psiMainBuffer->GetBufferSize().Dimensions();
+            COORD newBufferSize = oldScreenBufferSize;
+
+            // Always resize the width of the console
+            newBufferSize.X = newViewSize.X;
+
+            // Only set the new buffer's height if the new size will be TALLER than the current size (e.g., resizing a 80x32 buffer to be 80x124).
+            if (newViewSize.Y > oldScreenBufferSize.Y)
+            {
+                newBufferSize.Y = newViewSize.Y;
+            }
+
+            // From ApiRoutines::SetConsoleScreenBufferInfoExImpl. We don't need
+            // the whole call to SetConsoleScreenBufferInfoEx here, that's
+            // too much work.
+            if (newBufferSize.X != oldScreenBufferSize.X ||
+                newBufferSize.Y != oldScreenBufferSize.Y)
+            {
+                CommandLine& commandLine = CommandLine::Instance();
+                commandLine.Hide(FALSE);
+                LOG_IF_FAILED(_psiMainBuffer->ResizeScreenBuffer(newBufferSize, TRUE));
+                commandLine.Show();
+            }
+
+            _psiMainBuffer->SetViewportSize(&newViewSize);
+
             _psiMainBuffer->_deferredPtyResize = std::nullopt;
         }
 
