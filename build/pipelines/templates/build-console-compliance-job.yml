@@ -75,7 +75,7 @@ jobs:
   # Option 2 isn't feasible because we don't use OneBranch and it doesn't make sense to migrate to it since this isn't an Azure product.
 
   # This is the Package ES simplified SDL sources template. 
-  # To figure out which parameters to use, go read the source: https://onebranch.visualstudio.com/OneBranch.Pipelines/_git/GovernedTemplates?path=/v2/Steps/PackageES/Windows.SDL.Sources.Analysis.OS.Undocked.yml
+  # To figure out which parameters to use, go read the source: https://microsoft.visualstudio.com/OneBranch.Pipelines/_git/GovernedTemplates?path=/v2/Steps/PackageES/Windows.SDL.Sources.Analysis.OS.Undocked.yml
   - template: v2/Steps/PackageES/Windows.SDL.Sources.Analysis.OS.Undocked.yml@templates_onebranch
     parameters:
       globalSdl:
@@ -93,7 +93,7 @@ jobs:
             configFile: $(Build.SourcesDirectory)\build\config\tsaoptions.json
     
   # This is the Package ES simplified SDL binary template. 
-  # To figure out which parameters to use, go read the source: https://onebranch.visualstudio.com/OneBranch.Pipelines/_git/GovernedTemplates?path=/v2/Steps/PackageES/Windows.SDL.Binary.Analysis.OS.Undocked.yml
+  # To figure out which parameters to use, go read the source: https://microsoft.visualstudio.com/OneBranch.Pipelines/_git/GovernedTemplates?path=/v2/Steps/PackageES/Windows.SDL.Binary.Analysis.OS.Undocked.yml
   - template: v2/Steps/PackageES/Windows.SDL.Binary.Analysis.OS.Undocked.yml@templates_onebranch
     parameters:
       globalSdl:

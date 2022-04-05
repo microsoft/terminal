@@ -69,7 +69,7 @@ resources:
     ref: main
   - repository: templates_onebranch
     type: git
-    name: OneBranch.Pipelines/GoverenedTemplates
+    name: OneBranch.Pipelines/GovernedTemplates
     ref: refs/heads/main
 jobs:
 - job: Build
