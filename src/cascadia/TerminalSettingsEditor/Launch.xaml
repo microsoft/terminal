@@ -18,12 +18,9 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-
             <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
-                </StackPanel>
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
             <SettingsModel:IconPathConverter x:Key="IconSourceConverter" />
             <Style x:Key="LaunchSizeNumberBoxStyle"

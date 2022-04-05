@@ -18,12 +18,9 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-
             <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
-                </StackPanel>
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -109,7 +106,8 @@
                 <local:SettingContainer x:Uid="Profile_BellStyle"
                                         ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
                                         HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}">
+                                        SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel>
                         <CheckBox x:Uid="Profile_BellStyleAudible"
                                   IsChecked="{x:Bind Profile.IsBellStyleFlagSet(1), BindBack=Profile.SetBellStyleAudible, Mode=TwoWay}" />
