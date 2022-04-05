@@ -85,6 +85,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         til::u8state _u8State{};
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
+        bool _passthroughMode{};
 
         DWORD _OutputThread();
     };

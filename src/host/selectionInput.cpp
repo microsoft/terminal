@@ -22,11 +22,10 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto inputServices = ServiceLocator::LocateInputServices();
     FAIL_FAST_IF(!IsInSelectingState());
 
     const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
-    const bool ctrlPressed = WI_IsFlagSet(inputServices->GetKeyState(VK_CONTROL), KEY_PRESSED);
+    const bool ctrlPressed = WI_IsFlagSet(GetKeyState(VK_CONTROL), KEY_PRESSED);
 
     // if escape or ctrl-c, cancel selection
     if (!IsMouseButtonDown())
@@ -612,7 +611,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 // - <none>
 void Selection::CheckAndSetAlternateSelection()
 {
-    _fUseAlternateSelection = !!(ServiceLocator::LocateInputServices()->GetKeyState(VK_MENU) & KEY_PRESSED);
+    _fUseAlternateSelection = !!(GetKeyState(VK_MENU) & KEY_PRESSED);
 }
 
 // Routine Description:
@@ -905,7 +904,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
 
         // see if shift is down. if so, we're extending the selection. otherwise, we're resetting the anchor
-        if (ServiceLocator::LocateInputServices()->GetKeyState(VK_SHIFT) & KEY_PRESSED)
+        if (GetKeyState(VK_SHIFT) & KEY_PRESSED)
         {
             // if we're just starting to "extend" our selection from moving around as a cursor
             // then attempt to set the alternate selection state based on the ALT key right now

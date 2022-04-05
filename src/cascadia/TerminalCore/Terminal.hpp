@@ -8,6 +8,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../types/inc/sgrStack.hpp"
+#include "../../renderer/inc/IRenderData.hpp"
 #include "../../renderer/inc/RenderSettings.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
@@ -67,19 +68,19 @@ public:
 
     void Create(COORD viewportSize,
                 SHORT scrollbackLines,
-                Microsoft::Console::Render::IRenderTarget& renderTarget);
+                Microsoft::Console::Render::Renderer& renderer);
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
-                            Microsoft::Console::Render::IRenderTarget& renderTarget);
+                            Microsoft::Console::Render::Renderer& renderer);
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
     void SetFontInfo(const FontInfo& fontInfo);
 
-    // Write goes through the parser
+    // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
 
-    // WritePastedText goes directly to the connection
+    // WritePastedText comes from our input and goes back to the PTY's input channel
     void WritePastedText(std::wstring_view stringView);
 
     [[nodiscard]] std::unique_lock<til::ticket_lock> LockForReading();
@@ -96,6 +97,7 @@ public:
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     void PrintString(std::wstring_view stringView) override;
+    bool ReturnResponse(std::wstring_view responseString) override;
     TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
     Microsoft::Console::Types::Viewport GetBufferSize() override;
@@ -196,7 +198,7 @@ public:
     const bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
-    void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
+    void SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept;
@@ -251,7 +253,7 @@ public:
 #pragma endregion
 
 private:
-    std::function<void(std::wstring&)> _pfnWriteInput;
+    std::function<void(std::wstring_view)> _pfnWriteInput;
     std::function<void()> _pfnWarningBell;
     std::function<void(std::wstring_view)> _pfnTitleChanged;
     std::function<void(std::wstring_view)> _pfnCopyToClipboard;

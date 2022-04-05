@@ -193,6 +193,7 @@
                          IsLightDismissEnabled="True">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"
+                         KeyDown="_WindowRenamerKeyDown"
                          KeyUp="_WindowRenamerKeyUp"
                          Text="{x:Bind WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>

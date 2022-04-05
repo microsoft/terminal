@@ -25,6 +25,7 @@ class SearchTests
         m_state = new CommonState();
 
         m_state->PrepareGlobalFont();
+        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalScreenBuffer();
 
         return true;
@@ -33,6 +34,7 @@ class SearchTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalFont();
 
         delete m_state;

@@ -174,7 +174,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 
     if (notifyScrollChange)
     {
-        _buffer->GetRenderTarget().TriggerScroll();
+        _buffer->TriggerScroll();
         _NotifyScrollEvent();
     }
 

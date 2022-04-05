@@ -353,6 +353,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::HandleActivatePeasant(const Remoting::WindowActivatedArgs& args)
     {
+        if (args == nullptr)
+        {
+            // MSFT:35731327, GH #12624. There's a chance that the way the
+            // window gets set up for defterm, the ActivatedArgs haven't been
+            // created for this window yet. Check here and just ignore them if
+            // they're null. They'll come back with real args soon
+            return;
+        }
         // Start by making a local copy of these args. It's easier for us if our
         // tracking of these args is all in-proc. That way, the only thing that
         // could fail due to the peasant dying is _this first copy_.
@@ -418,6 +426,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::_doHandleActivatePeasant(const winrt::com_ptr<implementation::WindowActivatedArgs>& localArgs)
     {
+        // We're sure that localArgs isn't null here, we checked before in our
+        // one caller (in Monarch::HandleActivatePeasant)
+
         const auto newLastActiveTime = localArgs->ActivatedTime().time_since_epoch().count();
 
         // * Check all the current lists to look for this peasant.

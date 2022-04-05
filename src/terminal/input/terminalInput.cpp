@@ -10,10 +10,6 @@
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/Common.h>
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
 
