@@ -6520,9 +6520,11 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:inConpty", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:reEnterAltBuffer", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
 
     INIT_TEST_PROPERTY(bool, inConpty, L"Should we pretend to be in conpty mode?");
+    INIT_TEST_PROPERTY(bool, reEnterAltBuffer, L"Should we re-enter the alt buffer when we're already in it?");
 
     // A test for https://github.com/microsoft/terminal/pull/12719#discussion_r834860330
     Log::Comment(L"Resize the alt buffer. We should defer the resize of the "
@@ -6593,6 +6595,21 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     Log::Comment(L"Main buffer should not have resized yet.");
     VERIFY_ARE_EQUAL(oldSize, mainPostResizeSize);
     VERIFY_ARE_EQUAL(oldView, mainPostResizeView);
+
+    if (reEnterAltBuffer)
+    {
+        Log::Comment(L"re-enter alt buffer");
+        stateMachine.ProcessString(L"\x1b[?1049h");
+
+        auto* siAlt2 = &gci.GetActiveOutputBuffer();
+        VERIFY_ARE_NOT_EQUAL(siMain, siAlt2);
+        VERIFY_ARE_NOT_EQUAL(siAlt, siAlt2);
+
+        const til::size alt2Size{ siAlt2->GetBufferSize().Dimensions() };
+        const til::size alt2View{ siAlt2->GetViewport().Dimensions() };
+        VERIFY_ARE_EQUAL(altPostResizeSize, alt2Size);
+        VERIFY_ARE_EQUAL(altPostResizeView, alt2View);
+    }
 
     Log::Comment(L"Switch to main buffer");
     stateMachine.ProcessString(L"\x1b[?1049l");
