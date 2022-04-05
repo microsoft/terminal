@@ -7,7 +7,7 @@ issue id: #3327
 
 
 TODO!S:
-* Allow alpha in these colors. Like, I want the tabs to be `#10808080` lighter than the tabrow which is acrylic, `#40102030`
+* Allow alpha in these colors. Like, I want the tabs to be `#10808080` lighter than the tab row which is acrylic, `#40102030`
   - Oh my, I already did that didn't I
 * whole application window BG images, a la that one post in the theming thread
 * How do themes play with different window title settings? (different themes for different windows. `_quake` esp.))
@@ -531,7 +531,7 @@ style admin vs regular windows?
 
 ## Addenda
 
-This spec also has a follow-up spec which elaborates on the comlpexites of Mica
+This spec also has a follow-up spec which elaborates on the complexities of Mica
 in the Terminal. Please also refer to:
 
 * [Mica in the Terminal](./%2310509%20-%20Mica.md)

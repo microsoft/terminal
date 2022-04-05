@@ -24,6 +24,7 @@ dcomp
 DERR
 dlldata
 DONTADDTORECENT
+DWMWA
 DWORDLONG
 enumset
 environstrings
