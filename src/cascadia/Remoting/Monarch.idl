@@ -44,8 +44,8 @@ namespace Microsoft.Terminal.Remoting
         String TabTitle;
     };
 
-    [default_interface] runtimeclass Monarch {
-        Monarch();
+    interface IMonarch
+    {
 
         UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
@@ -66,5 +66,10 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
+    };
+
+    [default_interface] runtimeclass Monarch : IMonarch
+    {
+        Monarch();
     };
 }

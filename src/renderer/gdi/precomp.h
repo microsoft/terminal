@@ -16,8 +16,9 @@ Abstract:
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
-#include <windows.h>
+#include <Windows.h>
 #include <windowsx.h>
+#include <usp10.h>
 
 #ifndef _NTSTATUS_DEFINED
 #define _NTSTATUS_DEFINED

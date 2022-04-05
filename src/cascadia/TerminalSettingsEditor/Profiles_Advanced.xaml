@@ -127,6 +127,16 @@
                     <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
+
+                <!--  VtPassthrough  -->
+                <local:SettingContainer x:Uid="Profile_VtPassthrough"
+                                        ClearSettingValue="{x:Bind Profile.ClearVtPassthrough}"
+                                        HasSettingValue="{x:Bind Profile.HasVtPassthrough, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.VtPassthroughOverrideSource, Mode=OneWay}"
+                                        Visibility="{x:Bind Profile.VtPassthroughAvailable}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.VtPassthrough, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
             </StackPanel>
         </ScrollViewer>
     </Grid>

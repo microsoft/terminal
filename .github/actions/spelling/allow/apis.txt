@@ -62,6 +62,7 @@ IFACEMETHOD
 IFile
 IInheritable
 IMap
+IMonarch
 IObject
 iosfwd
 IPackage
@@ -82,10 +83,14 @@ llu
 localtime
 lround
 LSHIFT
+memchr
+memicmp
 MENUCOMMAND
 MENUDATA
+MENUITEMINFOW
 MENUINFO
-memicmp
+MOUSELEAVE
+mov
 mptt
 mov
 msappx

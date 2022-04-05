@@ -91,6 +91,8 @@ namespace Microsoft::Console::Render
                                                             const int nIndex,
                                                             const LONG dwNewLong) noexcept;
 
+        static bool FontHasWesternScript(HDC hdc);
+
         bool _fPaintStarted;
 
         til::rect _invalidCharacters;
@@ -138,13 +140,15 @@ namespace Microsoft::Console::Render
         COLORREF _lastFg;
         COLORREF _lastBg;
 
-        enum class FontType : size_t
+        enum class FontType : uint8_t
         {
+            Undefined,
             Default,
             Italic,
             Soft
         };
         FontType _lastFontType;
+        bool _fontHasWesternScript = false;
 
         XFORM _currentLineTransform;
         LineRendition _currentLineRendition;

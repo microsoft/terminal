@@ -64,7 +64,16 @@ Openconsole has three configuration types:
 
 AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.
 
-## Updating Nuget package references
+## Updating Nuget package references - Globally versioned
+Most Nuget package references in this project are centralized in a single configuration so that there is a single canonical version for everything.  This canonical version is restored before builds by the build pipeline, environment initialization scripts, or Visual Studio (as appropriate).
+
+The canonical version numbers are defined in dep/nuget/packages.config.  That defines what will be downloaded by nuget.exe.  Most Nuget packages also have a .props and/or .targets file that must be imported by every project that consumes it.  Those import statements are consolidated in:
+- src/common.nugetversions.props
+- src/common.nugetversions.targets
+
+When a globally managed version changes all three of those files must be changed in unison.
+
+## Updating Nuget package references - Locally versioned
 Certain Nuget package references in this project, like `Microsoft.UI.Xaml`, must be updated outside of the Visual Studio NuGet package manager. This can be done using the snippet below.
 > Note that to run this snippet, you need to use WSL as the command uses `sed`.
 To update the version of a given package, use the following snippet

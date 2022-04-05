@@ -266,6 +266,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
             _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
+            if constexpr (Feature_VtPassthroughMode::IsEnabled())
+            {
+                _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
+            }
         }
 
         if (_guid == guid{})
@@ -295,7 +299,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE, &_inPipe, &_outPipe, &_hPC));
+            DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE;
+
+            if constexpr (Feature_VtPassthroughMode::IsEnabled())
+            {
+                if (_passthroughMode)
+                {
+                    WI_SetFlag(flags, PSEUDOCONSOLE_PASSTHROUGH_MODE);
+                }
+            }
+
+            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, flags, &_inPipe, &_outPipe, &_hPC));
             THROW_IF_FAILED(_LaunchAttachedClient());
         }
         // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection

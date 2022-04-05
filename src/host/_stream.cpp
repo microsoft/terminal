@@ -196,7 +196,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // back where it started, but everything else moved.
             // In this case, delta was 1. So the amount that moved is the entire viewport height minus the delta.
             Viewport invalid = Viewport::FromDimensions(viewport.Origin(), { viewport.Width(), viewport.Height() - delta });
-            screenInfo.GetRenderTarget().TriggerRedraw(invalid);
+            screenInfo.GetTextBuffer().TriggerRedraw(invalid);
         }
 
         // reset where our local viewport is, and recalculate the cursor and
@@ -763,6 +763,15 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     textBuffer.GetRowByOffset(CursorPosition.Y).SetWrapForced(false);
 
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                }
+            }
+            // Notify accessibility to read the backspaced character.
+            // See GH:12735, MSFT:31748387
+            if (screenInfo.HasAccessibilityEventing())
+            {
+                if (IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow())
+                {
+                    LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
                 }
             }
             break;

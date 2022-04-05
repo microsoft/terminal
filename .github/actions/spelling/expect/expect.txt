@@ -52,6 +52,7 @@ apimswincoresynchl
 apiset
 APPBARDATA
 appconsult
+appcontainer
 APPICON
 appium
 applet
@@ -237,9 +238,9 @@ charlespetzold
 charset
 CHARSETINFO
 chcp
-Checkin
 checkbox
 checkboxes
+Checkin
 chh
 Childitem
 chk
@@ -518,6 +519,7 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECCRA
 DECDHL
 decdld
 DECDLD
@@ -917,6 +919,7 @@ getwriter
 GFEh
 Gfun
 gfx
+GGI
 GHIJK
 GHIJKL
 GHIJKLM
@@ -1094,6 +1097,7 @@ ifndef
 IFont
 ifstream
 IGNOREEND
+IGNORELANGUAGE
 IHigh
 IHosted
 iid
@@ -1463,9 +1467,9 @@ mscorlib
 msctf
 msctls
 msdata
+MSDL
 msdn
 msft
-MSDL
 MSGCMDLINEF
 MSGF
 MSGFILTER
@@ -1624,6 +1628,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nugetversions
 nullability
 nullness
 nullonfailure
@@ -2084,6 +2089,7 @@ rxvt
 safearray
 SAFECAST
 safemath
+sapi
 sba
 SBCS
 SBCSDBCS
@@ -2238,6 +2244,7 @@ srect
 srv
 srvinit
 srvpipe
+ssa
 ssh
 sstream
 stackoverflow
@@ -2564,6 +2571,7 @@ USESHOWWINDOW
 USESIZE
 USESTDHANDLES
 ushort
+usp
 USRDLL
 utf
 utils
@@ -2574,6 +2582,7 @@ uuidv
 UVWX
 UVWXY
 UWA
+UWAs
 uwp
 uxtheme
 vals
@@ -2624,6 +2633,7 @@ VSTS
 VSTT
 vstudio
 vswhere
+vtapi
 vtapp
 VTE
 VTID

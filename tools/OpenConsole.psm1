@@ -261,6 +261,7 @@ function Invoke-OpenConsoleBuild()
 {
     $root = Find-OpenConsoleRoot
     & "$root\dep\nuget\nuget.exe" restore "$root\OpenConsole.sln"
+    & "$root\dep\nuget\nuget.exe" restore "$root\dep\nuget\packages.config"
     msbuild.exe "$root\OpenConsole.sln" @args
 }
 

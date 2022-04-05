@@ -215,30 +215,10 @@ class ApiRoutinesTests
     TEST_METHOD(ApiGetConsoleTitleA)
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        // SetTitle() runs some extra code. Let's not skip it since this is a test.
         gci.SetTitle(L"Test window title.");
-
-        const auto title = gci.GetTitle();
-
-        int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
-                                                     0,
-                                                     title.data(),
-                                                     gsl::narrow_cast<int>(title.size()),
-                                                     nullptr,
-                                                     0,
-                                                     nullptr,
-                                                     nullptr);
-
-        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);
-        VERIFY_IS_NOT_NULL(pszExpected);
-
-        VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
-                                                        0,
-                                                        title.data(),
-                                                        gsl::narrow_cast<int>(title.size()),
-                                                        pszExpected.get(),
-                                                        iBytesNeeded,
-                                                        nullptr,
-                                                        nullptr));
+        const auto pszExpected = til::u16u8(gci.GetTitle());
 
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
@@ -249,7 +229,7 @@ class ApiRoutinesTests
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(gci.GetTitle().length() + 1, cchWritten);
         VERIFY_ARE_EQUAL(gci.GetTitle().length(), cchNeeded);
-        VERIFY_ARE_EQUAL(WEX::Common::String(pszExpected.get()), WEX::Common::String(pszTitle));
+        VERIFY_ARE_EQUAL(std::string_view{ pszExpected }, std::string_view{ pszTitle });
     }
 
     TEST_METHOD(ApiGetConsoleTitleW)

@@ -342,7 +342,7 @@ void CommandListPopup::_drawList()
         WriteCoord.Y += 1i16;
     }
 
-    auto& api = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().api;
+    auto api = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().api;
 
     WriteCoord.Y = _region.Top + 1i16;
     SHORT i = std::max(gsl::narrow<SHORT>(_bottomIndex - Height() + 1), 0i16);
@@ -379,10 +379,10 @@ void CommandListPopup::_drawList()
 
         WriteCoord.X = _region.Left + 1i16;
 
-        LOG_IF_FAILED(api.WriteConsoleOutputCharacterAImpl(_screenInfo,
-                                                           { CommandNumberPtr, CommandNumberLength },
-                                                           WriteCoord,
-                                                           CommandNumberLength));
+        LOG_IF_FAILED(api->WriteConsoleOutputCharacterAImpl(_screenInfo,
+                                                            { CommandNumberPtr, CommandNumberLength },
+                                                            WriteCoord,
+                                                            CommandNumberLength));
 
         // write command to screen
         auto command = _history.GetNth(i);
@@ -417,10 +417,10 @@ void CommandListPopup::_drawList()
 
         WriteCoord.X = gsl::narrow<SHORT>(WriteCoord.X + CommandNumberLength);
         size_t used;
-        LOG_IF_FAILED(api.WriteConsoleOutputCharacterWImpl(_screenInfo,
-                                                           { command.data(), lStringLength },
-                                                           WriteCoord,
-                                                           used));
+        LOG_IF_FAILED(api->WriteConsoleOutputCharacterWImpl(_screenInfo,
+                                                            { command.data(), lStringLength },
+                                                            WriteCoord,
+                                                            used));
 
         // write attributes to screen
         if (i == _currentCommand)

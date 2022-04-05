@@ -44,7 +44,6 @@ SOURCES = \
     ..\consoleKeyInfo.cpp \
     ..\find.cpp \
     ..\icon.cpp \
-    ..\InputServices.cpp \
     ..\menu.cpp \
     ..\screenInfoUiaProvider.cpp \
     ..\SystemConfigurationProvider.cpp \
