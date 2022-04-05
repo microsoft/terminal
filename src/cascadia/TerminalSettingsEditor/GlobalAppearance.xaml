@@ -84,12 +84,11 @@
             </local:SettingContainer>
 
             <!--  Tab Width Mode  -->
-            <local:SettingContainer x:Uid="Globals_TabWidthMode"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}" />
+            <local:SettingContainer x:Uid="Globals_TabWidthMode">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Disable Animations  -->

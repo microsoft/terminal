@@ -22,6 +22,12 @@
                           x:DataType="local:EnumEntry">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+                </StackPanel>
+            </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -51,12 +57,11 @@
                 <local:SettingContainer x:Uid="Profile_AntialiasingMode"
                                         ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"
                                         HasSettingValue="{x:Bind Profile.HasAntialiasingMode, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
-                                       SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}" />
+                                        SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  AltGr Aliasing  -->
@@ -94,20 +99,18 @@
                 <local:SettingContainer x:Uid="Profile_CloseOnExit"
                                         ClearSettingValue="{x:Bind Profile.ClearCloseOnExit}"
                                         HasSettingValue="{x:Bind Profile.HasCloseOnExit, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
-                                       SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}" />
+                                        SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Bell Style  -->
                 <local:SettingContainer x:Uid="Profile_BellStyle"
                                         ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
                                         HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}">
                     <StackPanel>
                         <CheckBox x:Uid="Profile_BellStyleAudible"
                                   IsChecked="{x:Bind Profile.IsBellStyleFlagSet(1), BindBack=Profile.SetBellStyleAudible, Mode=TwoWay}" />
