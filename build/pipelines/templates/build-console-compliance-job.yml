@@ -74,6 +74,9 @@ jobs:
   # Option 1 isn't feasible because we don't run in Stages and it hides many/most of the override options we need.
   # Option 2 isn't feasible because we don't use OneBranch and it doesn't make sense to migrate to it since this isn't an Azure product.
 
+  ### PREfast and PoliCheck need Node. Install that first.
+  - task: NodeTool@0
+
   # This is the Package ES simplified SDL sources template. 
   # To figure out which parameters to use, go read the source: https://microsoft.visualstudio.com/OneBranch.Pipelines/_git/GovernedTemplates?path=/v2/Steps/PackageES/Windows.SDL.Sources.Analysis.OS.Undocked.yml
   - template: v2/Steps/PackageES/Windows.SDL.Sources.Analysis.OS.Undocked.yml@templates_onebranch
@@ -111,8 +114,6 @@ jobs:
   # - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
   #   displayName: Component Detection
     
-  # # # PREfast and PoliCheck need Node. Install that first.
-  # - task: NodeTool@0
 
   # !!! NOTE !!! Run PREfast first. Some of the other tasks are going to run on a completed build.
   # PREfast is going to build the code as a part of its analysis and the generated sources
