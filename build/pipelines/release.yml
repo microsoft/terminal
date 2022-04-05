@@ -67,6 +67,10 @@ resources:
   - repository: self
     type: git
     ref: main
+  - repository: templates_onebranch
+    type: git
+    name: OneBranch.Pipelines/GoverenedTemplates
+    ref: refs/heads/main
 jobs:
 - job: Build
   strategy:

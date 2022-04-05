@@ -1,0 +1,8 @@
+{
+    "instanceUrl": "https://microsoft.visualstudio.com",
+    "projectName": "os",
+    "areaPath": "OS\\WDX\\DXP\\WinDev\\Terminal",
+    "iterationPath": "OS\\Future",
+    "notificationAliases": [ "condev@microsoft.com;" ],
+    "ignoreBranchName": true
+  }
