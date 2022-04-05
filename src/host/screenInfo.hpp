@@ -299,6 +299,8 @@ private:
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
 
+    static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
+
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;
     friend class ScreenBufferTests;
