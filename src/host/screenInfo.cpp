@@ -1189,20 +1189,6 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                 // Adjust the top of the window instead of the bottom
                 // (so the lines slide upward)
                 srNewViewport.Top -= DeltaY;
-
-                // If we happened to move the top of the window past
-                // the 0th row (first row in the buffer)
-                if (srNewViewport.Top < 0)
-                {
-                    // Find the amount we went past 0, correct the top
-                    // of the window back to 0, and instead adjust the
-                    // bottom even though it will cause us to lose the
-                    // prompt line.
-                    const short cRemainder = 0 - srNewViewport.Top;
-                    srNewViewport.Top += cRemainder;
-                    FAIL_FAST_IF(!(srNewViewport.Top == 0));
-                    srNewViewport.Bottom += cRemainder;
-                }
             }
             else
             {
@@ -1239,7 +1225,14 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
         srNewViewport.Right -= offRightDelta;
         srNewViewport.Left = std::max<SHORT>(0, srNewViewport.Left - offRightDelta);
     }
-    srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
+    const SHORT offBottomDelta = srNewViewport.Bottom - (coordScreenBufferSize.Y - 1);
+    if (offBottomDelta > 0) // the viewport was off the right of the buffer...
+    {
+        // ...so slide both top/bottom back into the buffer. This will prevent us
+        // from having a negative width later.
+        srNewViewport.Bottom -= offBottomDelta;
+        srNewViewport.Top = std::max<SHORT>(0, srNewViewport.Top - offBottomDelta);
+    }
 
     // See MSFT:19917443
     // If we're in terminal scrolling mode, and we've changed the height of the

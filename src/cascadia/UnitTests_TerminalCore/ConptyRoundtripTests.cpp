@@ -4073,21 +4073,11 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
 void ConptyRoundtripTests::AltBufferResizeCrash()
 {
-    Log::Comment(L"TODO!");
     auto& g = ServiceLocator::LocateGlobals();
-    g;
     auto& renderer = *g.pRender;
-    renderer;
     auto& gci = g.getConsoleInformation();
-    gci;
     auto& si = gci.GetActiveOutputBuffer();
-    si;
     auto& sm = si.GetStateMachine();
-    sm;
-    auto* hostTb = &si.GetTextBuffer();
-    hostTb;
-    auto* termTb = term->_mainBuffer.get();
-    termTb;
 
     gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
@@ -4095,9 +4085,6 @@ void ConptyRoundtripTests::AltBufferResizeCrash()
     _flushFirstFrame();
 
     _checkConptyOutput = false;
-    _logConpty = true;
-
-    // printf "\e[8;24;132t\e[12;100H\e[?1049h\e[8;10;80t"
 
     Log::Comment(L"========== Resize to 132x24 ==========");
     sm.ProcessString(L"\x1b[8;24;132t");
