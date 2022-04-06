@@ -272,11 +272,8 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * Kayla Cinnamon, Program Manager:
   [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-* Michael Niksa, Senior Developer:
-  [@michaelniksa](https://twitter.com/MichaelNiksa)
 * Mike Griese, Senior Developer: [@zadjii](https://twitter.com/zadjii)
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
-* Leon Liang, Developer: [@leonmsft](https://twitter.com/leonmsft)
 * Pankaj Bhojwani, Developer
 * Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)
 

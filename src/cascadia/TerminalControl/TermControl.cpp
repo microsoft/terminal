@@ -2163,6 +2163,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
 
+        constexpr std::array<KeyModifier, 3> modalities{ {
+            { VirtualKey::CapitalLock, ControlKeyStates::CapslockOn },
+            { VirtualKey::NumberKeyLock, ControlKeyStates::NumlockOn },
+            { VirtualKey::Scroll, ControlKeyStates::ScrolllockOn },
+        } };
+
+        for (const auto& mod : modalities)
+        {
+            const auto state = window.GetKeyState(mod.vkey);
+            const auto isLocked = WI_IsFlagSet(state, CoreVirtualKeyStates::Locked);
+
+            if (isLocked)
+            {
+                flags |= mod.flags;
+            }
+        }
+
         return flags;
     }
 
