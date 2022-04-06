@@ -4073,6 +4073,10 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
 void ConptyRoundtripTests::AltBufferResizeCrash()
 {
+    Log::Comment(L"During the review for GH#12719, it was noticed that this "
+                 L"particular combination of resizing could crash the terminal."
+                 L" This test makes sure we don't.");
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
@@ -4085,6 +4089,10 @@ void ConptyRoundtripTests::AltBufferResizeCrash()
     _flushFirstFrame();
 
     _checkConptyOutput = false;
+
+    // Note: we really don't care about the output in this test. We could, but
+    // mostly we care to ensure we don't crash. If we make it through this test,
+    // then it's a success.
 
     Log::Comment(L"========== Resize to 132x24 ==========");
     sm.ProcessString(L"\x1b[8;24;132t");
