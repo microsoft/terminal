@@ -199,7 +199,7 @@ void TitleTests::TestGetConsoleTitleA()
     // Run the call and test it out.
     TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, 0, S_OK, chReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 2: Say we have have exactly the string length with no null space.");
+    Log::Comment(L"Test 2: Say we have exactly the string length with no null space.");
     cchTryToRead = cchTestTitle;
 
     // Prepare the buffers and expected data
@@ -214,7 +214,7 @@ void TitleTests::TestGetConsoleTitleA()
     // Run the call and test it out.
     TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, chReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 3: Say we have have the string length plus one null space.");
+    Log::Comment(L"Test 3: Say we have the string length plus one null space.");
     cchTryToRead = cchTestTitle + 1;
 
     // Prepare the buffers and expected data
@@ -283,7 +283,7 @@ void TitleTests::TestGetConsoleTitleW()
     // Run the call and test it out.
     TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 2: Say we have have exactly the string length with no null space.");
+    Log::Comment(L"Test 2: Say we have exactly the string length with no null space.");
     cchTryToRead = cchTestTitle;
 
     // Prepare the buffers and expected data
@@ -298,7 +298,7 @@ void TitleTests::TestGetConsoleTitleW()
     // Run the call and test it out.
     TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 3: Say we have have the string length plus one null space.");
+    Log::Comment(L"Test 3: Say we have the string length plus one null space.");
     cchTryToRead = cchTestTitle + 1;
 
     // Prepare the buffers and expected data

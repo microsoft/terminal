@@ -4756,7 +4756,7 @@ void ScreenBufferTests::SetAutoWrapMode()
     short startLine = 0;
     cursor.SetPosition({ 80 - 3, startLine });
     stateMachine.ProcessString(L"abcdef");
-    // Half of the the content should wrap onto the next line.
+    // Half of the content should wrap onto the next line.
     VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
     VERIFY_IS_TRUE(_ValidateLineContains({ 0, startLine + 1 }, L"def", attributes));
     VERIFY_ARE_EQUAL(COORD({ 3, startLine + 1 }), cursor.GetPosition());
@@ -4777,7 +4777,7 @@ void ScreenBufferTests::SetAutoWrapMode()
     startLine = 4;
     cursor.SetPosition({ 80 - 3, startLine });
     stateMachine.ProcessString(L"abcdef");
-    // Half of the the content should wrap onto the next line.
+    // Half of the content should wrap onto the next line.
     VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
     VERIFY_IS_TRUE(_ValidateLineContains({ 0, startLine + 1 }, L"def", attributes));
     VERIFY_ARE_EQUAL(COORD({ 3, startLine + 1 }), cursor.GetPosition());

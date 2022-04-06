@@ -15,7 +15,7 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 }
 
 // Routine Description:
-// - This routine handles the delete from cursor to char char popup.  It returns when we're out of input or the user has entered a char.
+// - This routine handles the delete from cursor to char popup.  It returns when we're out of input or the user has entered a char.
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return

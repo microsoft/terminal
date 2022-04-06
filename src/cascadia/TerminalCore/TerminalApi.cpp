@@ -140,7 +140,7 @@ void Terminal::InsertCharacter(const size_t count)
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
     // that does the 'move a region from here to there' operation
-    // TODO: Github issue #2163
+    // TODO: GitHub issue #2163
     SHORT dist;
     THROW_IF_FAILED(SizeTToShort(count, &dist));
     const auto cursorPos = _buffer->GetCursor().GetPosition();

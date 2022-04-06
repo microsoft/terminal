@@ -136,7 +136,7 @@ class KeyPressTests
                         repeatCount);
         }
 
-        // make sure the the keypresses got processed and coalesced
+        // make sure the keypresses got processed and coalesced
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
         VERIFY_IS_TRUE(!!successBool);
