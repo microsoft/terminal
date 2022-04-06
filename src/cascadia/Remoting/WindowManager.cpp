@@ -7,6 +7,7 @@
 #include "CommandlineArgs.h"
 #include "../inc/WindowingBehavior.h"
 #include "FindTargetWindowArgs.h"
+#include "ProposeCommandlineResult.h"
 
 #include "WindowManager.g.cpp"
 #include "../../types/inc/utils.hpp"
@@ -106,7 +107,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             try
             {
-                result = _monarch.ProposeCommandline(args);
+                // MSFT:38542548 _We believe_ that this is the source of the
+                // crash here. After we get the result, stash it's values into a
+                // local copy, so that we can check them later. If the Monarch
+                // dies between now and the inspection of
+                // `result.ShouldCreateWindow` below, we don't want to explode
+                // (since _proposeToMonarch is not try/caught).
+                Remoting::ProposeCommandlineResult outOfProcResult = _monarch.ProposeCommandline(args);
+                result = winrt::make<implementation::ProposeCommandlineResult>(outOfProcResult);
+
                 proposedCommandline = true;
             }
             catch (const winrt::hresult_error& e)
