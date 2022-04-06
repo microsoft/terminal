@@ -93,7 +93,13 @@
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
                         </ResourceDictionary>
 
+                        <ResourceDictionary x:Key="HighContrast">
+                            <StaticResource x:Key="TabViewBackground"
+                                            ResourceKey="SystemColorButtonFaceColorBrush" />
+                        </ResourceDictionary>
+
                     </ResourceDictionary.ThemeDictionaries>
+
 
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
