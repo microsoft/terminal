@@ -63,8 +63,7 @@ void MakeAltRasterFont(
 }
 
 [[nodiscard]] NTSTATUS
-    InitializeDbcsMisc(
-        VOID)
+InitializeDbcsMisc(VOID)
 {
     return TrueTypeFontList::s_Initialize();
 }
@@ -158,8 +157,7 @@ GetAltFaceName(
 }
 
 [[nodiscard]] NTSTATUS
-    DestroyDbcsMisc(
-        VOID)
+DestroyDbcsMisc(VOID)
 {
     return TrueTypeFontList::s_Destroy();
 }

@@ -3622,6 +3622,26 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Used to track if the user pressed enter with the renamer open. If we
+    //   immediately focus it after hitting Enter on the command palette, then
+    //   the Enter keydown will dismiss the command palette and open the
+    //   renamer, and then the enter keyup will go to the renamer. So we need to
+    //   make sure both a down and up go to the renamer.
+    // Arguments:
+    // - e: the KeyRoutedEventArgs describing the key that was released
+    // Return Value:
+    // - <none>
+    void TerminalPage::_WindowRenamerKeyDown(const IInspectable& /*sender*/,
+                                             winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        const auto key = e.OriginalKey();
+        if (key == Windows::System::VirtualKey::Enter)
+        {
+            _renamerPressedEnter = true;
+        }
+    }
+
+    // Method Description:
     // - Manually handle Enter and Escape for committing and dismissing a window
     //   rename. This is highly similar to the TabHeaderControl's KeyUp handler.
     // Arguments:
@@ -3631,16 +3651,18 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
                                            winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        if (e.OriginalKey() == Windows::System::VirtualKey::Enter)
+        const auto key = e.OriginalKey();
+        if (key == Windows::System::VirtualKey::Enter && _renamerPressedEnter)
         {
             // User is done making changes, close the rename box
             _WindowRenamerActionClick(sender, nullptr);
         }
-        else if (e.OriginalKey() == Windows::System::VirtualKey::Escape)
+        else if (key == Windows::System::VirtualKey::Escape)
         {
             // User wants to discard the changes they made
             WindowRenamerTextBox().Text(WindowName());
             WindowRenamer().IsOpen(false);
+            _renamerPressedEnter = false;
         }
     }
 

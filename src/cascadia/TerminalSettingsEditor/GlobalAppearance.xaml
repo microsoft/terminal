@@ -17,9 +17,9 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumRadioButtonTemplate"
+            <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -40,12 +40,12 @@
             </local:SettingContainer>
 
             <!--  Theme  -->
-            <local:SettingContainer x:Uid="Globals_Theme"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}" />
+            <local:SettingContainer x:Uid="Globals_Theme">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Always show tabs  -->
@@ -79,12 +79,12 @@
             </local:SettingContainer>
 
             <!--  Tab Width Mode  -->
-            <local:SettingContainer x:Uid="Globals_TabWidthMode"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}" />
+            <local:SettingContainer x:Uid="Globals_TabWidthMode">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Disable Animations  -->

@@ -6,7 +6,11 @@ Class Name:
 - SummonWindowBehavior.h
 
 Abstract:
-- TODO!
+- This is a helper class for encapsulating all the information about how a
+  window should be summoned. Includes info like if we should switch desktops or
+  monitors, if we should dropdown (and how fast), and if we should toggle to
+  hidden if we're already visible. Used by the Monarch to tell a Peasant how it
+  should behave.
 
 --*/
 
