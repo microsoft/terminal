@@ -13,6 +13,7 @@ jobs:
   timeoutInMinutes: 240
   steps:
   - checkout: self
+    path: 's' # Now that there are two checkouts, specify 's' to ensure this one still sits at the $(Build.SourcesDirectory) root so other things don't break with the implicit subdirectory normally created for >1 checkout.
     clean: true
     submodules: true
     persistCredentials: True
