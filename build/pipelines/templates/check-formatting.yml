@@ -6,7 +6,6 @@ jobs:
 
   steps:
   - checkout: self
-    fetchDepth: 1
     submodules: false
     clean: true
 
