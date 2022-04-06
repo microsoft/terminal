@@ -301,6 +301,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
         }
         _ColorSchemeList.RemoveAt(removedSchemeIndex);
+
+        // GH#11971, part 2. If we delete a scheme, and the next scheme we've
+        // loaded is an inbox one that _can't_ be deleted, then we need to toss
+        // focus to something sensible, rather than letting it fall out to the
+        // tab item.
+        //
+        // When deleting a scheme and the next scheme _is_ deletable, this isn't
+        // an issue, we'll already correctly focus the Delete button.
+        if (!CanDeleteCurrentScheme())
+        {
+            SelectionBackgroundButton().Focus(FocusState::Programmatic);
+        }
         DeleteButton().Flyout().Hide();
     }
 
