@@ -2645,7 +2645,7 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 }
 
 // Method Description:
-// - Check if this pane contains the the argument as a child anywhere along the tree.
+// - Check if this pane contains the argument as a child anywhere along the tree.
 // Arguments:
 // - child: the child to search for.
 // Return Value:
