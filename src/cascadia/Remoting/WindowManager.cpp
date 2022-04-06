@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // monarch, and see what happens here.
 
         bool proposedCommandline = false;
-        winrt::com_ptr<implementation::ProposeCommandlineResult> result{ nullptr };
+        Remoting::ProposeCommandlineResult result{ nullptr };
         while (!proposedCommandline)
         {
             try
@@ -114,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // `result.ShouldCreateWindow` below, we don't want to explode
                 // (since _proposeToMonarch is not try/caught).
                 Remoting::ProposeCommandlineResult outOfProcResult = _monarch.ProposeCommandline(args);
-                result = winrt::make_self<implementation::ProposeCommandlineResult>(outOfProcResult);
+                result = winrt::make<implementation::ProposeCommandlineResult>(outOfProcResult);
 
                 proposedCommandline = true;
             }
@@ -195,12 +195,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         // Here, the monarch (not us) has replied to the message. Get the
         // valuables out of the response:
-        _shouldCreateWindow = result->ShouldCreateWindow();
-        if (result->Id())
+        _shouldCreateWindow = result.ShouldCreateWindow();
+        if (result.Id())
         {
-            givenID = result->Id().Value();
+            givenID = result.Id().Value();
         }
-        givenName = result->WindowName();
+        givenName = result.WindowName();
 
         // TraceLogging doesn't have a good solution for logging an
         // optional. So we have to repeat the calls here:
