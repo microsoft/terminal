@@ -22,6 +22,7 @@ jobs:
   - checkout: self
     submodules: true
     clean: true
+    fetchDepth: 1
 
   - task: DownloadBuildArtifacts@0
     inputs:

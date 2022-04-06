@@ -19,6 +19,7 @@ jobs:
   - checkout: self
     submodules: true
     clean: true
+    fetchDepth: 1
 
   - template: restore-nuget-steps.yml
 
