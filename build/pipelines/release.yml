@@ -65,6 +65,7 @@ name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
   repositories:
   - repository: self
+    path: 's'
     type: git
     ref: main
   - repository: templates_onebranch
