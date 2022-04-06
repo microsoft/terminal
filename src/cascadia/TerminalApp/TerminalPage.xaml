@@ -93,7 +93,6 @@
                        x:Uid="AboutDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Close">
             <StackPanel Orientation="Vertical">
                 <TextBlock IsTextSelectionEnabled="True">
@@ -116,28 +115,24 @@
                        x:Uid="QuitDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseAllDialog"
                        x:Uid="CloseAllDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Close" />
 
         <ContentDialog x:Name="MultiLinePasteDialog"
                        x:Uid="MultiLinePasteDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <StackPanel>
                 <TextBlock x:Uid="MultiLineWarningText"
@@ -158,14 +153,12 @@
                        x:Uid="LargePasteDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="ControlNoticeDialog"
                        x:Uid="ControlNoticeDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
                        TextWrapping="WrapWholeWords">
@@ -177,7 +170,6 @@
                        x:Uid="CouldNotOpenUriDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
                        TextWrapping="WrapWholeWords">
