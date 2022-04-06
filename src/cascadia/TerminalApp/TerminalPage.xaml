@@ -82,7 +82,7 @@
             
             Assigning all the dialogs to Row 2 (where the rest of the content
             is) makes the "hole" appear in the same space as the rest of the
-            TebContent, fixing the issue.
+            TabContent, fixing the issue.
             
             Note that the actual content in a content dialog gets parented to
             the PopupRoot, so it actually always appeared in the correct place, it's
