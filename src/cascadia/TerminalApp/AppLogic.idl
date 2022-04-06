@@ -33,6 +33,8 @@ namespace TerminalApp
         SystemMenuItemHandler Handler { get; };
     };
 
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
