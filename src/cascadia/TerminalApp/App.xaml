@@ -103,7 +103,7 @@
                                 provide a Light&dark version of a resource, but not the
                                 HighContrast version, the resource loader will fall back to the
                                 Light value.
-
+                                
                                 SystemColorButtonFaceColorBrush is the default background color for WinUI's TabViewBackground under high contrast mode.
                             -->
                             <StaticResource x:Key="TabViewBackground"
