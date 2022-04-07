@@ -79,6 +79,12 @@ jobs:
   - task: NodeTool@0
     inputs:
       versionSpec: '>=8.10.0'
+  
+  ### Compliance has a Python checker. Occasionally folks on our team have written assorted scripts in Python.
+  # This ensures we do the compliance checker on those too.
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
 
   # This is the Package ES simplified SDL sources template. 
   # To figure out which parameters to use, go read the source: https://microsoft.visualstudio.com/OneBranch.Pipelines/_git/GovernedTemplates?path=/v2/Steps/PackageES/Windows.SDL.Sources.Analysis.OS.Undocked.yml
