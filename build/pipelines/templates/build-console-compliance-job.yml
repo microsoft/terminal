@@ -113,7 +113,7 @@ jobs:
           enabled: false
           configFile: $(Build.SourcesDirectory)\build\config\tsaoptions.json
       variables:
-          ob_outputDirectory: $($Build.SourcesDirectory)\bin\
+          ob_outputDirectory: $(Build.SourcesDirectory)\bin\
 
   # # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
   # - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
