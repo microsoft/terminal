@@ -947,14 +947,8 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
             {
                 // They want focus, we found a pseudohwnd.
 
-                const auto parentHwnd{ ::GetParent(psuedoHwnd) };
-                const auto ancestor{ ::GetAncestor(psuedoHwnd, GA_PARENT) };
-                const auto owner{ ::GetWindow(psuedoHwnd, GW_OWNER) };
-
-                owner;
-                parentHwnd;
-                ancestor;
-                if (ancestor)
+                // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
+                if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_PARENT) })
                 {
                     // We have an owner from a previous call to ReparentWindow
 
@@ -967,7 +961,7 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
                         DWORD currentFgPid{ 0 };
                         DWORD ownerPid{ 0 };
                         GetWindowThreadProcessId(currentFgWindow, &currentFgPid);
-                        GetWindowThreadProcessId(ancestor, &ownerPid);
+                        GetWindowThreadProcessId(ownerHwnd, &ownerPid);
 
                         if (ownerPid == currentFgPid)
                         {
