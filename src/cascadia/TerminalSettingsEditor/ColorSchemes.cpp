@@ -301,7 +301,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
         }
         _ColorSchemeList.RemoveAt(removedSchemeIndex);
+
         DeleteButton().Flyout().Hide();
+
+        // GH#11971, part 2. If we delete a scheme, and the next scheme we've
+        // loaded is an inbox one that _can't_ be deleted, then we need to toss
+        // focus to something sensible, rather than letting it fall out to the
+        // tab item.
+        //
+        // When deleting a scheme and the next scheme _is_ deletable, this isn't
+        // an issue, we'll already correctly focus the Delete button.
+        //
+        // However, it seems even more useful for focus to ALWAYS land on the
+        // scheme dropdown box. This forces Narrator to read the name of the
+        // newly selected color scheme, which seemed more useful.
+        ColorSchemeComboBox().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::AddNew_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
