@@ -934,30 +934,34 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
         // _is_ in the FG. We don't want to allow malicious.exe to say "yep I'm
         // in the foreground, also, here's a popup" if it isn't actually in the
         // FG.
-        if (focused&& const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
+        if (focused)
         {
-            // They want focus, we found a pseudohwnd.
-
-            if (const auto ownerHwnd{ ::GetParent(psuedoHwnd) })
+            if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow() })
             {
-                // We have an owner from a previous call to ReparentWindow
+                // They want focus, we found a pseudohwnd.
 
-                if (const auto currentFgWindow{ ::GetForegroundWindow() })
+                // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
+                if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_PARENT) })
                 {
-                    // There is a window in the foreground (it's possible there
-                    // isn't one)
+                    // We have an owner from a previous call to ReparentWindow
 
-                    // Get the PID of the current FG window, and compare with our owner's PID.
-                    DWORD currentFgPid{ 0 };
-                    DWORD ownerPid{ 0 };
-                    const auto currentFgThreadId{ GetWindowThreadProcessId(currentFgWindow, &currentFgPid) };
-                    const auto ownerThreadId{ GetWindowThreadProcessId(ownerHwnd, &ownerPid) };
-
-                    if (ownerPid == currentFgPid)
+                    if (const auto currentFgWindow{ ::GetForegroundWindow() })
                     {
-                        // Huzzah, the app that owns us is actually the FG
-                        // process. They're allowed to grand FG rights.
-                        shouldActuallyFocus = true;
+                        // There is a window in the foreground (it's possible there
+                        // isn't one)
+
+                        // Get the PID of the current FG window, and compare with our owner's PID.
+                        DWORD currentFgPid{ 0 };
+                        DWORD ownerPid{ 0 };
+                        const auto currentFgThreadId{ GetWindowThreadProcessId(currentFgWindow, &currentFgPid) };
+                        const auto ownerThreadId{ GetWindowThreadProcessId(ownerHwnd, &ownerPid) };
+
+                        if (ownerPid == currentFgPid)
+                        {
+                            // Huzzah, the app that owns us is actually the FG
+                            // process. They're allowed to grand FG rights.
+                            shouldActuallyFocus = true;
+                        }
                     }
                 }
             }

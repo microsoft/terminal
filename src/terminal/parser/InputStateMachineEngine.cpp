@@ -364,7 +364,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     // client reads it.
     if (_pDispatch->IsVtInputEnabled() &&
         _pfnFlushToInputQueue &&
-        id != CsiActionCodes::Win32KeyboardInput)
+        id != CsiActionCodes::Win32KeyboardInput &&
+        id != CsiActionCodes::FocusIn &&
+        id != CsiActionCodes::FocusOut)
     {
         return _pfnFlushToInputQueue();
     }
