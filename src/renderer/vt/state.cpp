@@ -524,6 +524,7 @@ void VtEngine::SetTerminalCursorTextPosition(const COORD cursor) noexcept
 HRESULT VtEngine::RequestWin32Input() noexcept
 {
     RETURN_IF_FAILED(_RequestWin32Input());
+    RETURN_IF_FAILED(_RequestFocusEventMode());
     RETURN_IF_FAILED(_Flush());
     return S_OK;
 }

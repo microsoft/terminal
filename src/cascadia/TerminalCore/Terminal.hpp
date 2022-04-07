@@ -153,6 +153,8 @@ public:
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
 
+    void FocusChanged(const bool focused) noexcept override;
+
     std::wstring GetHyperlinkAtPosition(const COORD position);
     uint16_t GetHyperlinkIdAtPosition(const COORD position);
     std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const COORD position);

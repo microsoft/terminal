@@ -434,6 +434,11 @@ using namespace Microsoft::Console::Render;
     return _Write("\x1b[?9001h");
 }
 
+[[nodiscard]] HRESULT VtEngine::_RequestFocusEventMode() noexcept
+{
+    return _Write("\x1b[?1004h");
+}
+
 // Method Description:
 // - Formats and writes a sequence to add a hyperlink to the terminal buffer
 // Arguments:

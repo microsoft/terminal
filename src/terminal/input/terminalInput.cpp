@@ -674,6 +674,14 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     return false;
 }
 
+void TerminalInput::HandleFocus(const bool focused)
+{
+    if (GetInputMode(Mode::FocusEvent))
+    {
+        _SendInputSequence(focused ? L"\x1b[I" : L"\x1b[O");
+    }
+}
+
 // Routine Description:
 // - Sends the given character to the shell.
 // - Surrogate pairs are being aggregated by this function before being sent.

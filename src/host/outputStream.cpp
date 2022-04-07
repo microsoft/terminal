@@ -202,7 +202,14 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
     // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return !(IsConsolePty() && IsVtInputEnabled());
+    const bool inConpty = IsConsolePty();
+    const bool shouldPassthrough = inConpty && IsVtInputEnabled();
+
+    // GH#12799 - If the app requested that we disable focus events, DON'T pass
+    // that through. ConPTY would _always_ like to know about focus events.
+    const bool disabledFocusEvents = inConpty && (!enabled && mode == TerminalInput::Mode::FocusEvent);
+
+    return !shouldPassthrough || disabledFocusEvents;
 }
 
 // Routine Description:
@@ -934,30 +941,40 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
         // _is_ in the FG. We don't want to allow malicious.exe to say "yep I'm
         // in the foreground, also, here's a popup" if it isn't actually in the
         // FG.
-        if (focused&& const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
+        if (focused)
         {
-            // They want focus, we found a pseudohwnd.
-
-            if (const auto ownerHwnd{ ::GetParent(psuedoHwnd) })
+            if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow() })
             {
-                // We have an owner from a previous call to ReparentWindow
+                // They want focus, we found a pseudohwnd.
 
-                if (const auto currentFgWindow{ ::GetForegroundWindow() })
+                const auto parentHwnd{ ::GetParent(psuedoHwnd) };
+                const auto ancestor{ ::GetAncestor(psuedoHwnd, GA_PARENT) };
+                const auto owner{ ::GetWindow(psuedoHwnd, GW_OWNER) };
+
+                owner;
+                parentHwnd;
+                ancestor;
+                if (ancestor)
                 {
-                    // There is a window in the foreground (it's possible there
-                    // isn't one)
+                    // We have an owner from a previous call to ReparentWindow
 
-                    // Get the PID of the current FG window, and compare with our owner's PID.
-                    DWORD currentFgPid{ 0 };
-                    DWORD ownerPid{ 0 };
-                    const auto currentFgThreadId{ GetWindowThreadProcessId(currentFgWindow, &currentFgPid) };
-                    const auto ownerThreadId{ GetWindowThreadProcessId(ownerHwnd, &ownerPid) };
-
-                    if (ownerPid == currentFgPid)
+                    if (const auto currentFgWindow{ ::GetForegroundWindow() })
                     {
-                        // Huzzah, the app that owns us is actually the FG
-                        // process. They're allowed to grand FG rights.
-                        shouldActuallyFocus = true;
+                        // There is a window in the foreground (it's possible there
+                        // isn't one)
+
+                        // Get the PID of the current FG window, and compare with our owner's PID.
+                        DWORD currentFgPid{ 0 };
+                        DWORD ownerPid{ 0 };
+                        GetWindowThreadProcessId(currentFgWindow, &currentFgPid);
+                        GetWindowThreadProcessId(ancestor, &ownerPid);
+
+                        if (ownerPid == currentFgPid)
+                        {
+                            // Huzzah, the app that owns us is actually the FG
+                            // process. They're allowed to grand FG rights.
+                            shouldActuallyFocus = true;
+                        }
                     }
                 }
             }

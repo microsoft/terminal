@@ -708,6 +708,12 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     return handledDown || handledUp;
 }
 
+// TODO!
+void Terminal::FocusChanged(const bool focused) noexcept
+{
+    _terminalInput->HandleFocus(focused);
+}
+
 // Method Description:
 // - Invalidates the regions described in the given pattern tree for the rendering purposes
 // Arguments:

@@ -1048,6 +1048,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
         break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        success = EnableFocusEventMode(enable);
+        break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
         break;
@@ -2008,7 +2011,6 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
-
 //Arguments:
 // - enabled - true to enable, false to disable.
 // Return value:
@@ -2016,6 +2018,17 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
     return _pConApi->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
+}
+
+// Method Description:
+// - TODO!
+// Arguments:
+// - enabled - true to enable, false to disable.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
+{
+    return _pConApi->SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
 }
 
 //Routine Description:

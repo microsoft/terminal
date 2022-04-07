@@ -406,6 +406,18 @@ bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled)
     return true;
 }
 
+// Method Description:
+// - TODO!
+// Arguments:
+// - enabled - true to enable, false to disable.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableFocusEventMode(const bool enabled)
+{
+    _terminalApi.SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
+    return true;
+}
+
 //Routine Description:
 // Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
 //      scroll up/down events instead of the usual sequences
@@ -642,6 +654,9 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
         break;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
+        break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        success = EnableFocusEventMode(enable);
         break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
