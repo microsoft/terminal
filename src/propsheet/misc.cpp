@@ -119,9 +119,7 @@ AddFaceNode(
     return pNew;
 }
 
-VOID
-    DestroyFaceNodes(
-        VOID)
+VOID DestroyFaceNodes(VOID)
 {
     PFACENODE pNext, pTmp;
 
@@ -435,16 +433,12 @@ CreateBoldFont:
     return FE_FONTOK; // and continue enumeration
 }
 
-VOID
-    InitializeFonts(
-        VOID)
+VOID InitializeFonts(VOID)
 {
     LOG_IF_FAILED(EnumerateFonts(EF_DEFFACE)); // Just the Default font
 }
 
-VOID
-    DestroyFonts(
-        VOID)
+VOID DestroyFonts(VOID)
 {
     ULONG FontIndex;
 
