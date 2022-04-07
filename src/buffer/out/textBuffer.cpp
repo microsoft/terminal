@@ -2350,7 +2350,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // for inserting an attr would be past the right of the new buffer.
         for (short copyAttrCol = iOldCol;
              copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
-             copyAttrCol++)
+             copyAttrCol++, newAttrColumn++)
         {
             try
             {
