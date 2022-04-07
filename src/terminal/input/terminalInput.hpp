@@ -34,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent);
-        void HandleFocus(const bool focused);
+        bool HandleFocus(const bool focused);
 
         enum class Mode : size_t
         {
