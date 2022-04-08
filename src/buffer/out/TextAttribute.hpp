@@ -168,6 +168,7 @@ private:
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
     ExtendedAttributes _extendedAttrs; // sizeof: 1, alignof: 1
+    // Note: one byte padding here
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -176,6 +177,12 @@ private:
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
+
+// The numner 14 is historical/arbitrary but verifies the assumptions documented earlier in the comments
+// about size and alignment of the fields of the class. The offsertof() macro does not work with private
+// data members so about the best we can do is verify that the entire pile of fields adds up to the
+// same number=.
+static_assert(sizeof(TextAttribute) == 14);
 
 enum class TextAttributeBehavior
 {
@@ -186,11 +193,15 @@ enum class TextAttributeBehavior
 
 constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
 {
+    // Perform these comparisons in the "natural"/"physical" order so that the generated code will
+    // load and compare entire cache lines in order. The && operator is short-circuiting so
+    // reordering for aesthetics can and does force the compiler to generate code that will not
+    // perform optimally.
     return a._wAttrLegacy == b._wAttrLegacy &&
+           a._hyperlinkId == b._hyperlinkId &&
            a._foreground == b._foreground &&
            a._background == b._background &&
-           a._extendedAttrs == b._extendedAttrs &&
-           a._hyperlinkId == b._hyperlinkId;
+           a._extendedAttrs == b._extendedAttrs;
 }
 
 constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
