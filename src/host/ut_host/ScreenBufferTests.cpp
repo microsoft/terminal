@@ -6315,6 +6315,7 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
     stateMachine.ProcessString(L"\x1b[44m"); // Blue BG
     stateMachine.ProcessString(L" CCC \n"); // " abc " (with spaces on either side)
     stateMachine.ProcessString(L"\x1b[43m"); // yellow BG
+    stateMachine.ProcessString(L"\U0001F643\n"); // GH#12837: Support for surrogate characters during reflow
     stateMachine.ProcessString(L"\x1b[K"); // Erase line
     stateMachine.ProcessString(L"\x1b[2;6H"); // move the cursor to the end of the BBBBB's
 
@@ -6336,7 +6337,11 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
         TestUtils::VerifyLineContains(iter2, L' ', defaultAttrs, static_cast<size_t>(width - 5));
 
         auto iter3 = tb.GetCellLineDataAt({ 0, 3 });
-        TestUtils::VerifyLineContains(iter3, L' ', yellow, static_cast<size_t>(width));
+        TestUtils::VerifyLineContains(iter3, L"\U0001F643", yellow, 2u);
+        TestUtils::VerifyLineContains(iter3, L' ', defaultAttrs, static_cast<size_t>(width - 2));
+
+        auto iter4 = tb.GetCellLineDataAt({ 0, 4 });
+        TestUtils::VerifyLineContains(iter4, L' ', yellow, static_cast<size_t>(width));
     };
 
     Log::Comment(L"========== Checking the buffer state (before) ==========");

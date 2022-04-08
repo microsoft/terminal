@@ -38,7 +38,7 @@ public:
     OutputCellIterator(const wchar_t& wch, const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const std::wstring_view utf16Text);
-    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute);
+    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit = 0);
     OutputCellIterator(const gsl::span<const WORD> legacyAttributes) noexcept;
     OutputCellIterator(const gsl::span<const CHAR_INFO> charInfos) noexcept;
     OutputCellIterator(const gsl::span<const OutputCell> cells);
