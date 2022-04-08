@@ -341,8 +341,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //
         // * If we're running unpackaged: the .winmd must be a sibling of the .exe
         // * If we're running packaged: the .winmd must be in the package root
-        _monarch = create_instance<Remoting::Monarch>(Monarch_clsid,
-                                                      CLSCTX_LOCAL_SERVER);
+        _monarch = create_instance<Remoting::IMonarch>(Monarch_clsid,
+                                                       CLSCTX_LOCAL_SERVER);
     }
 
     // NOTE: This can throw! Callers include:
