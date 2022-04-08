@@ -2230,8 +2230,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // the "right" boundary, which is one past the final valid
         // character)
         short iOldCol = 0;
-        auto chars{ row.GetCharRow().cbegin() };
-        auto attrs{ row.GetAttrRow().begin() };
         const auto copyRight = iRight;
         for (; iOldCol < copyRight; iOldCol++)
         {
@@ -2244,9 +2242,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto glyph = chars->Char();
-                const auto dbcsAttr = chars->DbcsAttr();
-                const auto textAttr = *attrs;
+                const auto glyph = row.GetCharRow().GlyphAt(iOldCol);
+                const auto dbcsAttr = row.GetCharRow().DbcsAttrAt(iOldCol);
+                const auto textAttr = row.GetAttrRow().GetAttrByColumn(iOldCol);
 
                 if (!newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr))
                 {
@@ -2255,9 +2253,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                 }
             }
             CATCH_RETURN();
-
-            ++chars;
-            ++attrs;
         }
 
         // GH#32: Copy the attributes from the rest of the row into this new buffer.
@@ -2288,21 +2283,18 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // for inserting an attr would be past the right of the new buffer.
         for (short copyAttrCol = iOldCol;
              copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
-             copyAttrCol++)
+             copyAttrCol++, newAttrColumn++)
         {
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto textAttr = *attrs;
+                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
                 if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
                 {
                     break;
                 }
             }
             CATCH_LOG(); // Not worth dying over.
-
-            ++newAttrColumn;
-            ++attrs;
         }
 
         // If we found the old row that the caller was interested in, set the
