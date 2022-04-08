@@ -178,8 +178,8 @@ private:
 #endif
 };
 
-// The numner 14 is historical/arbitrary but verifies the assumptions documented earlier in the comments
-// about size and alignment of the fields of the class. The offsertof() macro does not work with private
+// The number 14 is historical/arbitrary but verifies the assumptions documented earlier in the comments
+// about size and alignment of the fields of the class. The offsetof() macro does not work with private
 // data members so about the best we can do is verify that the entire pile of fields adds up to the
 // same number=.
 static_assert(sizeof(TextAttribute) == 14);
