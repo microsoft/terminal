@@ -100,6 +100,26 @@ jobs:
             enabled: false
             configFile: $(Build.SourcesDirectory)\build\config\tsaoptions.json
     
+  # We need to run the v3 version of PREfast to be able to have the x64 toolset and specify the correct paths to avoid the WAPPROJ.
+  # Also, we run this prior to the rest of the binary analysis rules because PREfast will build all our binaries as a part of its checks.
+  # https://www.1eswiki.com/wiki/PREfast_Build_Task
+  # Builds the project with C/C++ static analysis tools to find coding flaws and vulnerabilities
+  # !!! WARNING !!! It doesn't work with WAPPROJ packaging projects. Build the sub-projects instead.
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
+    displayName: 'Run the PREfast SDL Native Rules for MSBuild'
+    condition: succeededOrFailed()
+    inputs:
+      msBuildCommandline: msbuild.exe /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Terminal\Window\WindowsTerminal /p:VisualStudioVersion=16.0 $(Build.SourcesDirectory)\OpenConsole.sln
+
+  # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
+  - task: CopyFiles@1
+    displayName: 'Copy PREfast xml files to SDLNativeRulesDir'
+    inputs:
+      SourceFolder: '$(Agent.BuildDirectory)'
+      Contents: |
+        **\*.nativecodeanalysis.xml
+      TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
+
   # This is the Package ES simplified SDL binary template. 
   # To figure out which parameters to use, go read the source: https://microsoft.visualstudio.com/OneBranch.Pipelines/_git/GovernedTemplates?path=/v2/Steps/PackageES/Windows.SDL.Binary.Analysis.OS.Undocked.yml
   - template: v2/Steps/PackageES/Windows.SDL.Binary.Analysis.OS.Undocked.yml@templates_onebranch
@@ -108,7 +128,7 @@ jobs:
         binskim:
           analyzeTargetGlob: $(Build.SourcesDirectory)\bin\**\*.dll;$(Build.SourcesDirectory)\bin\**\*.exe;-:file|**\Microsoft.UI.Xaml.dll;-:file|**\Microsoft.Toolkit.Win32.UI.XamlHost.dll;-:file|**\vcruntime*.dll;-:file|**\vcomp*.dll;-:file|**\vccorlib*.dll;-:file|**\vcamp*.dll;-:file|**\msvcp*.dll;-:file|**\concrt*.dll;-:file|**\TerminalThemeHelpers*.dll;-:file|**\cpprest*.dll
         prefast:
-          enabled: true
+          enabled: false # See above, we run the v3 variant of this task.
         tsa:
           enabled: false
           configFile: $(Build.SourcesDirectory)\build\config\tsaoptions.json
