@@ -261,11 +261,26 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // Finally, attempt to set the adjusted cursor position back into the console.
     const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
     cursor.SetPosition(textBuffer.ClampPositionWithinLine(newPos));
+    _ApplyCursorMovementFlags(cursor);
+
+    return true;
+}
+
+// Routine Description:
+// - Helper method which applies a bunch of flags that are typically set whenever
+//   the cursor is moved. The IsOn flag is set to true, and the Delay flag to false,
+//   to force a blinking cursor to be visible, so the user can immediately see the
+//   new position. The HasMoved flag is set to let the accessibility notifier know
+//   that there was movement that needs to be reported.
+// Arguments:
+// - cursor - The cursor instance to be updated
+// Return Value:
+// - <none>
+void AdaptDispatch::_ApplyCursorMovementFlags(Cursor& cursor) noexcept
+{
     cursor.SetDelay(false);
     cursor.SetIsOn(true);
     cursor.SetHasMoved(true);
-
-    return true;
 }
 
 // Routine Description:
@@ -1186,9 +1201,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
         cursor.SetXPosition(0);
-        cursor.SetDelay(false);
-        cursor.SetIsOn(true);
-        cursor.SetHasMoved(true);
+        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -1447,9 +1460,7 @@ bool AdaptDispatch::ReverseLineFeed()
         // Otherwise we move the cursor up, but not past the top of the viewport.
         const COORD newCursorPosition{ cursorPosition.X, cursorPosition.Y - 1 };
         cursor.SetPosition(textBuffer.ClampPositionWithinLine(newCursorPosition));
-        cursor.SetDelay(false);
-        cursor.SetIsOn(true);
-        cursor.SetHasMoved(true);
+        _ApplyCursorMovementFlags(cursor);
     }
     return true;
 }
@@ -1542,9 +1553,7 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
     }
 
     cursor.SetXPosition(column);
-    cursor.SetDelay(false);
-    cursor.SetIsOn(true);
-    cursor.SetHasMoved(true);
+    _ApplyCursorMovementFlags(cursor);
     return true;
 }
 
@@ -1574,9 +1583,7 @@ bool AdaptDispatch::BackwardsTab(const size_t numTabs)
     }
 
     cursor.SetXPosition(column);
-    cursor.SetDelay(false);
-    cursor.SetIsOn(true);
-    cursor.SetHasMoved(true);
+    _ApplyCursorMovementFlags(cursor);
     return true;
 }
 
