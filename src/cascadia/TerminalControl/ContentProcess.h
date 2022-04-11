@@ -14,6 +14,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContentProcess();
         ~ContentProcess();
         bool Initialize(Control::IControlSettings settings,
+                        Control::IControlAppearance unfocusedAppearance,
                         TerminalConnection::ConnectionInformation connectionInfo);
         Control::ControlInteractivity GetInteractivity();
 

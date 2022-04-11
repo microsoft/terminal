@@ -11,6 +11,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ourPID{ GetCurrentProcessId() } {}
 
     bool ContentProcess::Initialize(Control::IControlSettings settings,
+                                    Control::IControlAppearance unfocusedAppearance,
                                     TerminalConnection::ConnectionInformation connectionInfo)
     {
         auto conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectionInfo) };
@@ -18,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return false;
         }
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, conn);
+        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, conn);
         return true;
     }
 

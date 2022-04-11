@@ -62,7 +62,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
         _initializedTerminal{ false },
-        _settings{ settings },
         _closing{ false },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
