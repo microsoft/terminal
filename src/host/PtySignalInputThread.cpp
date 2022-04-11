@@ -93,10 +93,17 @@ void PtySignalInputThread::ConnectConsole() noexcept
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            // TODO!
+            // If the client app hasn't yet connected, stash our initial
+            // visibility for when we do. We default to not being visible - if a
+            // terminal wants the ConPTY windows to start "visible", then they
+            // should send a ShowHidePseudoConsole(..., true) to tell us to
+            // initially be visible.
+            //
+            // Notably, if they don't, then a ShowWindow(SW_HIDE) on the ConPTY
+            // HWND will initially do _nothing_, because the OS will think that
+            // the window is already hidden.
             if (!_consoleConnected)
             {
-                // TODO!
                 _initialShowHide = msg;
             }
             else

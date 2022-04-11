@@ -255,10 +255,11 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 }
 
 // Function Description:
-// - TODO!
+// - Shows or hides the intermal HWND used by ConPTY. This should be kept in
+//   sync with the hosting application's window.
 // Arguments:
 // - hSignal: A signal pipe as returned by CreateConPty.
-// TODO!
+// - show: true if the window should be shown, false to mark it as iconic.
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the clear message to the pty.
@@ -449,7 +450,10 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 }
 
 // Function Description:
-// - TODO!
+// - Tell the ConPTY about the state of the hosting window. This should be used
+//   to keep ConPTY's internal HWND state in sync with the state of whatever the
+//   hosting window is.
+// - For more information, refer to GH#12515.
 extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, bool show)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;
