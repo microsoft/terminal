@@ -40,6 +40,7 @@ namespace Microsoft::Console
     private:
         enum class PtySignal : unsigned short
         {
+            ShowHideWindow = 1,
             ClearBuffer = 2,
             ResizeWindow = 8
         };
@@ -49,11 +50,16 @@ namespace Microsoft::Console
             unsigned short sx;
             unsigned short sy;
         };
+        struct ShowHideData
+        {
+            unsigned short show; // used as a bool, but passed as a ushort
+        };
 
         [[nodiscard]] HRESULT _InputThread();
         bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoClearBuffer();
+        void _DoShowHide(const bool show);
         void _Shutdown();
 
         wil::unique_hfile _hFile;

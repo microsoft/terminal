@@ -255,6 +255,29 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 }
 
 // Function Description:
+// - TODO!
+// Arguments:
+// - hSignal: A signal pipe as returned by CreateConPty.
+// TODO!
+// Return Value:
+// - S_OK if the call succeeded, else an appropriate HRESULT for failing to
+//      write the clear message to the pty.
+HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show)
+{
+    if (pPty == nullptr)
+    {
+        return E_INVALIDARG;
+    }
+
+    unsigned short signalPacket[2];
+    signalPacket[0] = PTY_SIGNAL_SHOWHIDE_WINDOW;
+    signalPacket[1] = show;
+
+    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
+// Function Description:
 // - This closes each of the members of a PseudoConsole. It does not free the
 //      data associated with the PseudoConsole. This is helpful for testing,
 //      where we might stack allocate a PseudoConsole (instead of getting a
@@ -421,6 +444,19 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
     if (SUCCEEDED(hr))
     {
         hr = _ClearPseudoConsole(pPty);
+    }
+    return hr;
+}
+
+// Function Description:
+// - TODO!
+extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, bool show)
+{
+    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    if (SUCCEEDED(hr))
+    {
+        hr = _ShowHidePseudoConsole(pPty, show);
     }
     return hr;
 }

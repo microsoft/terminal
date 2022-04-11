@@ -1705,7 +1705,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::WindowVisibilityChanged(const bool showOrHide)
     {
         // show is true, hide is false
-        _connection.WriteInput(showOrHide ? L"\x1b[1t" : L"\x1b[2t");
+        if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+        {
+            conpty.ShowHide(showOrHide);
+        }
     }
 
     bool ControlCore::_isBackgroundTransparent()

@@ -17,6 +17,7 @@ typedef struct _PseudoConsole
 // Signals
 // These are not defined publicly, but are used for controlling the conpty via
 //      the signal pipe.
+#define PTY_SIGNAL_SHOWHIDE_WINDOW (1u)
 #define PTY_SIGNAL_CLEAR_WINDOW (2u)
 #define PTY_SIGNAL_RESIZE_WINDOW (8u)
 

@@ -482,6 +482,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    void ConptyConnection::ShowHide(const bool show)
+    {
+        // If we haven't connected yet, then TODO!
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), show));
+        }
+    }
+
     void ConptyConnection::Close() noexcept
     try
     {

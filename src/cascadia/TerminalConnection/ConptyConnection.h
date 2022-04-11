@@ -35,6 +35,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;
         void ClearBuffer();
+        void ShowHide(const bool show);
 
         winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;

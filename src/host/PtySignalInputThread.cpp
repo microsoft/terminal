@@ -81,6 +81,25 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         switch (signalId)
         {
+        case PtySignal::ShowHideWindow:
+        {
+            ShowHideData resizeMsg = { 0 };
+            _GetData(&resizeMsg, sizeof(resizeMsg));
+
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // TODO!
+            if (!_consoleConnected)
+            {
+                // TODO!
+            }
+            else
+            {
+                _DoShowHide(resizeMsg.show);
+            }
+            break;
+        }
         case PtySignal::ClearBuffer:
         {
             LockConsole();
@@ -145,6 +164,11 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 void PtySignalInputThread::_DoClearBuffer()
 {
     _pConApi->ClearBuffer();
+}
+
+void PtySignalInputThread::_DoShowHide(const bool show)
+{
+    _pConApi->ShowWindow(show);
 }
 
 // Method Description:
