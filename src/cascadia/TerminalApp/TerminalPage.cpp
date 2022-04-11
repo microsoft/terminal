@@ -2812,12 +2812,9 @@ namespace winrt::TerminalApp::implementation
                 // Manually enumerate the panes in each tab; this will let us recycle TerminalSettings
                 // objects but only have to iterate one time.
                 terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
-                    if (const auto profile{ pane->GetProfile() })
+                    if (auto control = pane->GetTerminalControl())
                     {
-                        if (auto control = pane->GetTerminalControl())
-                        {
-                            control.WindowVisibilityChanged(showOrHide);
-                        }
+                        control.WindowVisibilityChanged(showOrHide);
                     }
                 });
             }
