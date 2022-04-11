@@ -97,14 +97,14 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
 // Arguments:
 // - utf16Text - UTF-16 text range
 // - attribute - Color to apply over the entire range
-OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute) :
+OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit) :
     _mode(Mode::Loose),
     _currentView(s_GenerateView(utf16Text, attribute)),
     _run(utf16Text),
     _attr(attribute),
     _distance(0),
     _pos(0),
-    _fillLimit(0)
+    _fillLimit(fillLimit)
 {
 }
 

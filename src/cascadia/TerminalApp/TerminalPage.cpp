@@ -705,18 +705,6 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
-    // Method description:
-    // - Called when the user closes a content dialog
-    // - Tells the presenter to update its knowledge of whether there is a content dialog open
-    void TerminalPage::_DialogCloseClick(const IInspectable&,
-                                         const ContentDialogButtonClickEventArgs&)
-    {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            presenter.DismissDialog();
-        }
-    }
-
     // Method Description:
     // - Helper to show a content dialog
     // - We only open a content dialog if there isn't one open already
@@ -724,10 +712,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            if (presenter.CanShowDialog())
-            {
-                co_return co_await presenter.ShowDialog(FindName(name).try_as<WUX::Controls::ContentDialog>());
-            }
+            co_return co_await presenter.ShowDialog(FindName(name).try_as<WUX::Controls::ContentDialog>());
         }
         co_return ContentDialogResult::None;
     }
