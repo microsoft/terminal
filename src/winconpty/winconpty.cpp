@@ -255,7 +255,7 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 }
 
 // Function Description:
-// - Shows or hides the intermal HWND used by ConPTY. This should be kept in
+// - Shows or hides the internal HWND used by ConPTY. This should be kept in
 //   sync with the hosting application's window.
 // Arguments:
 // - hSignal: A signal pipe as returned by CreateConPty.
