@@ -548,7 +548,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         if (IsQuakeWindow())
         {
             // Retrieve the suggested dimensions and make a rect and size.
-            LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
+            LPWINDOWPOS lpwpos = (LPWINDOWPOS)lparam;
 
             // We only need to apply restrictions if the position is changing.
             // The SWP_ flags are confusing to read. This is
