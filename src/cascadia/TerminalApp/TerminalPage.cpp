@@ -2422,6 +2422,13 @@ namespace winrt::TerminalApp::implementation
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
+
+        // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
+        if (_visible)
+        {
+            term.WindowVisibilityChanged(_visible);
+        }
+
         return term;
     }
 
@@ -2797,6 +2804,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::WindowVisibilityChanged(const bool showOrHide)
     {
+        _visible = showOrHide;
         for (const auto& tab : _tabs)
         {
             if (auto terminalTab{ _GetTerminalTabImpl(tab) })

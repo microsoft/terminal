@@ -67,6 +67,10 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoResizeWindow(*_earlyResize);
     }
+    if (_initialShowHide)
+    {
+        _DoShowHide(_initialShowHide->show);
+    }
 }
 
 // Method Description:
@@ -83,8 +87,8 @@ void PtySignalInputThread::ConnectConsole() noexcept
         {
         case PtySignal::ShowHideWindow:
         {
-            ShowHideData resizeMsg = { 0 };
-            _GetData(&resizeMsg, sizeof(resizeMsg));
+            ShowHideData msg = { 0 };
+            _GetData(&msg, sizeof(msg));
 
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -93,10 +97,11 @@ void PtySignalInputThread::ConnectConsole() noexcept
             if (!_consoleConnected)
             {
                 // TODO!
+                _initialShowHide = msg;
             }
             else
             {
-                _DoShowHide(resizeMsg.show);
+                _DoShowHide(msg.show);
             }
             break;
         }

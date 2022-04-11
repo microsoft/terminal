@@ -67,6 +67,7 @@ namespace Microsoft::Console
         DWORD _dwThreadId;
         bool _consoleConnected;
         std::optional<ResizeWindowData> _earlyResize;
+        std::optional<ShowHideData> _initialShowHide;
         std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
     };
 }

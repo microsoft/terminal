@@ -310,6 +310,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, flags, &_inPipe, &_outPipe, &_hPC));
+
+            // GH#12515: The conpty assumes it's hidden at the start. If we're visible, let it know now.
+            if (_initialVisibility)
+            {
+                THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
+            }
+
             THROW_IF_FAILED(_LaunchAttachedClient());
         }
         // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
@@ -484,10 +491,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::ShowHide(const bool show)
     {
-        // If we haven't connected yet, then TODO!
+        // If we haven't connected yet, then stash for when we do connect.
         if (_isConnected())
         {
             THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), show));
+        }
+        else
+        {
+            _initialVisibility = show;
         }
     }
 
