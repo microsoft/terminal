@@ -56,6 +56,10 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 //      (in and screen buffers) haven't yet been initialized.
 // - NOTE: Call under LockConsole() to ensure other threads have an opportunity
 //         to set early-work state.
+// - We need to do this specifically on the thread with the message pump. If the
+//   window is created on another thread, then the window won't have a message
+//   pump associated with it, and a DPI change in the connected terminal could
+//   end up HANGING THE CONPTY (for example).
 // Arguments:
 // - <none>
 // Return Value:
@@ -67,6 +71,8 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoResizeWindow(*_earlyResize);
     }
+
+    // If we were given a owner HWND, then manually start the pseudo window now.
     if (_earlyReparent)
     {
         _DoSetWindowParent(*_earlyReparent);
@@ -185,24 +191,6 @@ void PtySignalInputThread::_DoClearBuffer()
 void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 {
     _pConApi->ReparentWindow(data.handle);
-}
-
-// Method Description:
-// - If we were given a owner HWND, then manually start the pseudo window now.
-//   We need to do this specifically on the thread with the message pump. If the
-//   window is created on another thread, then the window won't have a message
-//   pump associated with it, and a DPI change in the connected terminal could
-//   end up HANGING THE CONPTY (for example).
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void PtySignalInputThread::StartPseudoWindowIfNeeded()
-{
-    if (_earlyReparent.has_value())
-    {
-        ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(_earlyReparent.value().handle));
-    }
 }
 
 // Method Description:
