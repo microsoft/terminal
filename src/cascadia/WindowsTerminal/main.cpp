@@ -121,10 +121,18 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // should choose and install the correct one from the bundle.
     EnsureNativeArchitecture();
 
-    // If we _are_ a content process, then this function will call ExitThread(),
-    // after spawning some COM threads to deal with inbound COM requests to the
-    // ContentProcess object.
-    TryRunAsContentProcess();
+    // Content processes are only enabled in dev builds, so that we can check
+    // the feature in to dev builds one piece at a time.
+    if constexpr (Feature_ContentProcess::IsEnabled())
+    {
+        // If we _are_ a content process, then this function will call ExitThread(),
+        // after spawning some COM threads to deal with inbound COM requests to the
+        // ContentProcess object.
+        TryRunAsContentProcess();
+        // If we are a content process, then TryRunAsContentProcess will
+        // ExitThread before it returns, so that nothing else will run here.
+    }
+
     // If we weren't a content process, then we'll just move on, and do the
     // normal WindowsTerminal thing.
 
