@@ -267,8 +267,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetLocalizedControlTypeCore() const
     {
-        // return RS_(L"TerminalControl_ControlType");
-        return L"foo";
+        // TerminalControl_ControlType is "terminal" in english. Usually, this
+        // will return the localized version of that string. For applications
+        // that use the TermControl that don't package up all the resources in a
+        // way that they can be accessed, this will fall back to just "terminal"
+        // (notably, the scratch solution doesn't package these resources)
+        return HasLibraryResourceWithName(L"TerminalControl_ControlType") ?
+                   RS_(L"TerminalControl_ControlType") :
+                   L"terminal";
     }
 
     Windows::Foundation::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
