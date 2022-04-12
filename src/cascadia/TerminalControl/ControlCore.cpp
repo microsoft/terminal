@@ -285,6 +285,54 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _updateAntiAliasingMode();
 
+            // TODO!
+            //
+            // // Set up blinking cursor
+            // int blinkTime = GetCaretBlinkTime();
+            // if (blinkTime != INFINITE)
+            // {
+            //     // Create a timer
+            //     DispatcherTimer cursorTimer;
+            //     cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
+            //     cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
+            //     _cursorTimer.emplace(std::move(cursorTimer));
+            //     // As of GH#6586, don't start the cursor timer immediately, and
+            //     // don't show the cursor initially. We'll show the cursor and start
+            //     // the timer when the control is first focused.
+            //     //
+            //     // As of GH#11411, turn on the cursor if we've already been marked
+            //     // as focused. We suspect that it's possible for the Focused event
+            //     // to fire before the LayoutUpdated. In that case, the
+            //     // _GotFocusHandler would mark us _focused, but find that a
+            //     // _cursorTimer doesn't exist, and it would never turn on the
+            //     // cursor. To mitigate, we'll initialize the cursor's 'on' state
+            //     // with `_focused` here.
+            //     _core.CursorOn(_focused);
+            // }
+            // else
+            // {
+            //     // The user has disabled cursor blinking
+            //     _cursorTimer = std::nullopt;
+            // }
+
+            // // Set up blinking attributes
+            // BOOL animationsEnabled = TRUE;
+            // SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+            // if (animationsEnabled && blinkTime != INFINITE)
+            // {
+            //     // Create a timer
+            //     DispatcherTimer blinkTimer;
+            //     blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
+            //     blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
+            //     blinkTimer.Start();
+            //     _blinkTimer.emplace(std::move(blinkTimer));
+            // }
+            // else
+            // {
+            //     // The user has disabled blinking
+            //     _blinkTimer = std::nullopt;
+            // }
+
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
             _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
@@ -1696,4 +1744,35 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
     }
 
+    // Method Description:
+    // - Toggle the cursor on and off when called by the cursor blink timer.
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    winrt::fire_and_forget ControlCore::_CursorTimerTick(Windows::Foundation::IInspectable const& /* sender */,
+                                                         Windows::Foundation::IInspectable const& /* e */)
+    {
+        if (!_IsClosing())
+        {
+            co_await resume_background();
+
+            BlinkCursor();
+        }
+    }
+
+    // Method Description:
+    // - Toggle the blinking rendition state when called by the blink timer.
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    winrt::fire_and_forget ControlCore::_BlinkTimerTick(Windows::Foundation::IInspectable const& /* sender */,
+                                                        Windows::Foundation::IInspectable const& /* e */)
+    {
+        if (!_IsClosing())
+        {
+            co_await resume_background();
+
+            BlinkAttributeTick();
+        }
+    }
 }

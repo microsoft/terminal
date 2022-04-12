@@ -241,8 +241,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
 
-        winrt::fire_and_forget _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
-        winrt::fire_and_forget _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BellLightOff(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
