@@ -154,17 +154,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     {
         // Clear the patterns first
         _mainBuffer->ClearPatternRecognizers();
-        if (settings.DetectURLs())
-        {
-            // Add regex pattern recognizers to the buffer
-            // For now, we only add the URI regex pattern
-            _hyperlinkPatternId = _mainBuffer->AddPatternRecognizer(linkPattern);
-            UpdatePatternsUnderLock();
-        }
-        else
-        {
-            ClearPatternTree();
-        }
+        _detectURLs = settings.DetectURLs();
+        _updateUrlDetection();
     }
 }
 
@@ -1402,4 +1393,19 @@ bool Terminal::_inAltBuffer() const noexcept
 TextBuffer& Terminal::_activeBuffer() const noexcept
 {
     return _inAltBuffer() ? *_altBuffer : *_mainBuffer;
+}
+
+void Terminal::_updateUrlDetection()
+{
+    if (_detectURLs)
+    {
+        // Add regex pattern recognizers to the buffer
+        // For now, we only add the URI regex pattern
+        _hyperlinkPatternId = _activeBuffer().AddPatternRecognizer(linkPattern);
+        UpdatePatternsUnderLock();
+    }
+    else
+    {
+        ClearPatternTree();
+    }
 }

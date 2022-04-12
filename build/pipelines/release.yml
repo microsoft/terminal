@@ -100,36 +100,7 @@ jobs:
         If ($Arch -Eq "x86") { $Arch = "Win32" }
 
         Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
-  - task: NuGetToolInstaller@1
-    displayName: Use NuGet 5.10
-    inputs:
-      versionSpec: 5.10
-  - task: NuGetAuthenticate@0
-  # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
-  # This should be `task: NuGetCommand@2`
-  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
-    displayName: Restore NuGet packages for extraneous build actions
-    inputs:
-      command: restore
-      feedsToUse: config
-      configPath: NuGet.config
-      restoreSolution: build/packages.config
-      restoreDirectory: '$(Build.SourcesDirectory)\packages'
-  - task: NuGetCommand@2
-    displayName: NuGet custom
-    inputs:
-      command: custom
-      selectOrConfig: config
-      nugetConfigPath: NuGet.Config
-      arguments: restore OpenConsole.sln -SolutionDirectory $(Build.SourcesDirectory)
-  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
-    displayName: Restore NuGet packages for global nuget
-    inputs:
-      command: restore
-      feedsToUse: config
-      configPath: NuGet.config
-      restoreSolution: dep/nuget/packages.config
-      restoreDirectory: '$(Build.SourcesDirectory)\packages'
+  - template: .\templates\restore-nuget-steps.yml
   # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
   - template: .\templates\install-winsdk-steps.yml
   - task: UniversalPackages@0
@@ -321,11 +292,16 @@ jobs:
         displayName: Download Artifacts ${{ platform }} $(TerminalTargetWindowsVersion)
         inputs:
           artifactName: appx-${{ platform }}-Release-$(TerminalTargetWindowsVersion)
-    - task: PowerShell@2
+    # Add 3000 to the major version component, but only for the bundle.
+    # This is to ensure that it is newer than "2022.xx.yy.zz" or whatever the original bundle versions were before
+    # we switched to uniform naming.
+    - pwsh: |-
+        $VersionEpoch = 3000
+        $Components = "$(XES_APPXMANIFESTVERSION)" -Split "\."
+        $Components[0] = ([int]$Components[0] + $VersionEpoch)
+        $BundleVersion = $Components -Join "."
+        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
-      inputs:
-        filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:

@@ -35,7 +35,7 @@ through commandline arguments.
 
 ## User Stories
 
-Lets consider some different ways that a user or developer might want want to
+Lets consider some different ways that a user or developer might want to
 use commandline arguments, to help guide the design.
 
 1. A user wants to open the Windows Terminal with their default profile.

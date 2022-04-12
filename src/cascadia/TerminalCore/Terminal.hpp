@@ -321,12 +321,11 @@ private:
     SelectionExpansion _multiClickSelectionMode;
 #pragma endregion
 
-    // TODO: These members are not shared by an alt-buffer. They should be
-    //      encapsulated, such that a Terminal can have both a main and alt buffer.
     std::unique_ptr<TextBuffer> _mainBuffer;
     std::unique_ptr<TextBuffer> _altBuffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
     SHORT _scrollbackLines;
+    bool _detectURLs{ false };
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize{ std::nullopt };
@@ -383,6 +382,7 @@ private:
 
     bool _inAltBuffer() const noexcept;
     TextBuffer& _activeBuffer() const noexcept;
+    void _updateUrlDetection();
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

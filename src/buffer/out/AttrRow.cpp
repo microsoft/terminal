@@ -95,7 +95,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 
 // Routine Description:
 // - Takes an attribute, and merges it into this row from beginIndex (inclusive) to endIndex (exclusive).
-// - For example, if the current row was was [{4, BLUE}], the merge arguments were
+// - For example, if the current row was [{4, BLUE}], the merge arguments were
 //   { beginIndex = 1, endIndex = 3, newAttr = RED }, then the row would modified to be
 //   [{ 1, BLUE}, {2, RED}, {1, BLUE}].
 // Arguments:
