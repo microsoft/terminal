@@ -182,7 +182,7 @@ namespace winrt::SampleApp::implementation
             winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
             connectInfo = TerminalConnection::ConnectionInformation(myClass, connectionSettings);
 
-            if (!content.Initialize(settings, connectInfo))
+            if (!content.Initialize(settings, settings, connectInfo))
             {
                 _writeToLog(L"Failed to Initialize the ContentProces object.");
                 co_return; // be sure to co_return or we'll fall through to the part where we clear the log
@@ -198,7 +198,7 @@ namespace winrt::SampleApp::implementation
 
         // Create the XAML control that will be attached to the content process.
         // We're not passing in a connection, because the contentGuid will be used instead.
-        Control::TermControl control{ contentGuid, settings, nullptr };
+        Control::TermControl control{ contentGuid, settings, settings, nullptr };
         control.RaiseNotice([this](auto&&, auto& args) {
             _writeToLog(L"Content process died, probably.");
             _writeToLog(args.Message());

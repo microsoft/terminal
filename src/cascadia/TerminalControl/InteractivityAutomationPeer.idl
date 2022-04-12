@@ -16,7 +16,7 @@ namespace Microsoft.Terminal.Control
 
         void SetControlBounds(Windows.Foundation.Rect bounds);
         void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
-        void SetParentProvider(Windows.UI.Xaml.Automation.Provider.IRawElementProviderSimple provider);
+        void ParentProvider(Windows.UI.Xaml.Automation.Provider.IRawElementProviderSimple provider);
 
         event Windows.Foundation.TypedEventHandler<Object, Object> SelectionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> TextChanged;

@@ -43,12 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _controlPadding = til::rect{ til::math::rounding, padding };
     }
-    void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
-    {
-        _parentProvider = parentProvider;
-    }
-
-    void InteractivityAutomationPeer::SetParentProvider(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider)
+    void InteractivityAutomationPeer::ParentProvider(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider)
     {
         _parentProvider = parentProvider;
     }
@@ -202,12 +197,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // LOAD-BEARING: use _parentProvider->ProviderFromPeer(_parentProvider) instead of this->ProviderFromPeer(*this).
         // Since we split the automation peer into TermControlAutomationPeer and InteractivityAutomationPeer,
         // using "this" returns null. This can cause issues with some UIA Client scenarios like any navigation in Narrator.
-        const auto parent{ _parentProvider.get() };
-        if (!parent)
-        {
-            return nullptr;
-        }
-        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.ProviderFromPeer(parent));
+        // TODO! what TF happened in this merge
+        // const auto parent{ _parentProvider.get() };
+        // if (!parent)
+        // {
+        //     return nullptr;
+        // }
+        // const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.ProviderFromPeer(parent));
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, _parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     };
 
@@ -226,7 +223,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);
         // auto parentProvider = this->ProviderFromPeer(*this);
-        const auto parentProvider = _parentProvider;
+        // const auto parentProvider = _parentProvider;
         for (int i = 0; i < count; i++)
         {
             if (auto xutr = _CreateXamlUiaTextRange(providers[i].detach()))
