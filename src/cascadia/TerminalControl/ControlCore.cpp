@@ -1389,6 +1389,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _terminal != nullptr && _terminal->IsTrackingMouseInput();
     }
+    bool ControlCore::ShouldSendAlternateScroll(const unsigned int uiButton,
+                                                const int32_t delta) const
+    {
+        return _terminal != nullptr && _terminal->ShouldSendAlternateScroll(uiButton, delta);
+    }
 
     Core::Point ControlCore::CursorPosition() const
     {

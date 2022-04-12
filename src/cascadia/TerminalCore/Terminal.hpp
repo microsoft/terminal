@@ -154,6 +154,7 @@ public:
 
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
+    bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const noexcept;
 
     std::wstring GetHyperlinkAtPosition(const COORD position);
     uint16_t GetHyperlinkIdAtPosition(const COORD position);

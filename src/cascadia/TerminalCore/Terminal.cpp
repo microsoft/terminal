@@ -536,6 +536,20 @@ bool Terminal::IsTrackingMouseInput() const noexcept
     return _terminalInput->IsTrackingMouseInput();
 }
 
+// Routine Description:
+// - Relays if we are in alternate scroll mode, a special type of mouse input
+//   mode where scrolling sends the arrow keypresses, but the app doesn't
+//   otherwise want mouse input.
+// Parameters:
+// - <none>
+// Return value:
+// - true, if we are tracking mouse input. False, otherwise
+bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
+                                         const int32_t delta) const noexcept
+{
+    return _terminalInput->ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
+}
+
 // Method Description:
 // - Given a coord, get the URI at that location
 // Arguments:
