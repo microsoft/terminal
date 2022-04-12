@@ -56,6 +56,10 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 //      (in and screen buffers) haven't yet been initialized.
 // - NOTE: Call under LockConsole() to ensure other threads have an opportunity
 //         to set early-work state.
+// - We need to do this specifically on the thread with the message pump. If the
+//   window is created on another thread, then the window won't have a message
+//   pump associated with it, and a DPI change in the connected terminal could
+//   end up HANGING THE CONPTY (for example).
 // Arguments:
 // - <none>
 // Return Value:
@@ -66,6 +70,12 @@ void PtySignalInputThread::ConnectConsole() noexcept
     if (_earlyResize)
     {
         _DoResizeWindow(*_earlyResize);
+    }
+
+    // If we were given a owner HWND, then manually start the pseudo window now.
+    if (_earlyReparent)
+    {
+        _DoSetWindowParent(*_earlyReparent);
     }
 }
 
@@ -119,6 +129,28 @@ void PtySignalInputThread::ConnectConsole() noexcept
 
             break;
         }
+        case PtySignal::SetParent:
+        {
+            SetParentData reparentMessage = { 0 };
+            _GetData(&reparentMessage, sizeof(reparentMessage));
+
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // If the client app hasn't yet connected, stash the new owner.
+            // We'll later (PtySignalInputThread::ConnectConsole) use the value
+            // to set up the owner of the conpty window.
+            if (!_consoleConnected)
+            {
+                _earlyReparent = reparentMessage;
+            }
+            else
+            {
+                _DoSetWindowParent(reparentMessage);
+            }
+
+            break;
+        }
         default:
         {
             THROW_HR(E_UNEXPECTED);
@@ -145,6 +177,20 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 void PtySignalInputThread::_DoClearBuffer()
 {
     _pConApi->ClearBuffer();
+}
+
+// Method Description:
+// - Update the owner of the pseudo-window we're using for the conpty HWND. This
+//   allows to mark the pseudoconsole windows as "owner" by the terminal HWND
+//   that's actually hosting them.
+// - Refer to GH#2988
+// Arguments:
+// - data - Packet information containing owner HWND information
+// Return Value:
+// - <none>
+void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
+{
+    _pConApi->ReparentWindow(data.handle);
 }
 
 // Method Description:

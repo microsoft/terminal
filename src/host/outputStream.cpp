@@ -892,3 +892,17 @@ void ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPa
         pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
     }
 }
+
+void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
+{
+    // This will initialize s_interactivityFactory for us. It will also
+    // conveniently return 0 when we're on OneCore.
+    //
+    // If the window hasn't been created yet, by some other call to
+    // LocatePseudoWindow, then this will also initialize the owner of the
+    // window.
+    if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
+    {
+        LOG_LAST_ERROR_IF_NULL(::SetParent(psuedoHwnd, reinterpret_cast<HWND>(handle)));
+    }
+}

@@ -168,6 +168,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        // TODO:GH#1256 - When a tab can be torn out or otherwise reparented to
+        // another window, this value will need a custom setter, so that we can
+        // also update the connection.
+        WINRT_PROPERTY(uint64_t, OwningHwnd, 0);
+
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
