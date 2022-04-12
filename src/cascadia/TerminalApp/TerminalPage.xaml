@@ -72,8 +72,7 @@
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch">
             <Grid.Background>
-                <ImageBrush>
-                </ImageBrush>
+                <ImageBrush />
             </Grid.Background>
         </Grid>
 

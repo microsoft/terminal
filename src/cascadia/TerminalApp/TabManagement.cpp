@@ -153,7 +153,6 @@ namespace winrt::TerminalApp::implementation
                 // application to re-query this value from us.
                 page->_SetTaskbarProgressHandlers(*page, nullptr);
 
-                
                 auto profile = tab->GetFocusedProfile();
                 page->_UpdateBackground(profile);
             }
