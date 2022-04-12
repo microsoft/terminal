@@ -791,6 +791,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ScrollBar().ViewportSize(bufferHeight);
         ScrollBar().LargeChange(std::max(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
+        // TODO! Discuss with AustinL - I bet this can be a timer in the core.
+        //
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
         if (blinkTime != INFINITE)
@@ -1750,11 +1752,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - sender: not used
     // - e: not used
-    void TermControl::_CursorTimerTick(Windows::Foundation::IInspectable const& /* sender */,
-                                       Windows::Foundation::IInspectable const& /* e */)
+    winrt::fire_and_forget TermControl::_CursorTimerTick(Windows::Foundation::IInspectable const& /* sender */,
+                                                         Windows::Foundation::IInspectable const& /* e */)
     {
         if (!_IsClosing())
         {
+            co_await resume_background();
+
             _core.BlinkCursor();
         }
     }
@@ -1764,11 +1768,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - sender: not used
     // - e: not used
-    void TermControl::_BlinkTimerTick(Windows::Foundation::IInspectable const& /* sender */,
-                                      Windows::Foundation::IInspectable const& /* e */)
+    winrt::fire_and_forget TermControl::_BlinkTimerTick(Windows::Foundation::IInspectable const& /* sender */,
+                                                        Windows::Foundation::IInspectable const& /* e */)
     {
         if (!_IsClosing())
         {
+            co_await resume_background();
+
             _core.BlinkAttributeTick();
         }
     }
