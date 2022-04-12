@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _PreNavigateHelper();
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
-        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
+        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton = false);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
 

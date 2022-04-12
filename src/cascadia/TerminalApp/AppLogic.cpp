@@ -397,14 +397,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Returns true if there is no dialog currently being shown (meaning that we can show a dialog)
-    // - Returns false if there is a dialog currently being shown (meaning that we cannot show another dialog)
-    bool AppLogic::CanShowDialog()
-    {
-        return (_dialog == nullptr);
-    }
-
-    // Method Description:
     // - Displays a dialog for errors found while loading or validating the
     //   settings. Uses the resources under the provided  title and content keys
     //   as the title and first content of the dialog, then also displays a
@@ -1003,7 +995,7 @@ namespace winrt::TerminalApp::implementation
         const auto package{ GetCurrentPackageNoThrow() };
         if (package == nullptr)
         {
-            return;
+            co_return;
         }
 
         const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();

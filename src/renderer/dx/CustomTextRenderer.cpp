@@ -57,7 +57,7 @@ using namespace Microsoft::Console::Render;
 
 // Routine Description:
 // - Implementation of IDWritePixelSnapping::GetCurrentTransform
-// - Retrieves the the matrix transform to be used while laying pixels onto the
+// - Retrieves the matrix transform to be used while laying pixels onto the
 //   drawing context
 // Arguments:
 // - clientDrawingContext - Pointer to structure of information required to draw

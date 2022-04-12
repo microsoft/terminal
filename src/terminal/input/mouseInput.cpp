@@ -8,9 +8,6 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../interactivity/inc/VtApiRedirection.hpp"
-#endif
 static constexpr int s_MaxDefaultCoordinate = 94;
 
 // Alternate scroll sequences

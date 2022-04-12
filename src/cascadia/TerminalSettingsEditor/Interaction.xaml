@@ -17,9 +17,9 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumRadioButtonTemplate"
+            <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -33,12 +33,12 @@
             </local:SettingContainer>
 
             <!--  Copy Format  -->
-            <local:SettingContainer x:Uid="Globals_CopyFormat"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}" />
+            <local:SettingContainer x:Uid="Globals_CopyFormat">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Trim Block Selection  -->
@@ -69,12 +69,12 @@
             </local:SettingContainer>
 
             <!--  Tab Switcher Mode  -->
-            <local:SettingContainer x:Uid="Globals_TabSwitcherMode"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind TabSwitcherModeList}"
-                                   SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}" />
+            <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind TabSwitcherModeList}"
+                          SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Focus Follow Mouse Mode  -->

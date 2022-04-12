@@ -25,6 +25,7 @@ typedef struct _PseudoConsole
 // #define PSEUDOCONSOLE_INHERIT_CURSOR (0x1)
 #define PSEUDOCONSOLE_RESIZE_QUIRK (0x2)
 #define PSEUDOCONSOLE_WIN32_INPUT_MODE (0x4)
+#define PSEUDOCONSOLE_PASSTHROUGH_MODE (0x8)
 
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,

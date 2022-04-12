@@ -43,8 +43,7 @@ POINT NonClientSize;
 RECT WindowRect;
 DWORD PreviewFlags;
 
-VOID
-    UpdatePreviewRect(VOID)
+VOID UpdatePreviewRect(VOID)
 
 /*++
 
