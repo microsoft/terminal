@@ -152,6 +152,10 @@ namespace winrt::TerminalApp::implementation
                 // SetTaskbarProgress event here, to get tell the hosting
                 // application to re-query this value from us.
                 page->_SetTaskbarProgressHandlers(*page, nullptr);
+
+                
+                auto profile = tab->GetFocusedProfile();
+                page->_UpdateBackground(profile);
             }
         });
 
@@ -905,8 +909,27 @@ namespace winrt::TerminalApp::implementation
             {
                 _TitleChangedHandlers(*this, tab.Title());
             }
+
+            auto tab_impl = _GetTerminalTabImpl(tab);
+            if (tab_impl)
+            {
+                auto profile = tab_impl->GetFocusedProfile();
+                _UpdateBackground(profile);
+            }
         }
         CATCH_LOG();
+    }
+
+    void TerminalPage::_UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile)
+    {
+        if (profile)
+        {
+            auto controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+            if (_settings.GlobalSettings().BgImageForWindow())
+            {
+                _SetBackgroundImage(controlSettings.DefaultSettings());
+            }
+        }
     }
 
     // Method Description:
