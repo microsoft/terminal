@@ -130,7 +130,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateFlush(_In_ const bool /*circled*/, _Out_ bool* const pForcePaint) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
     *pForcePaint = false;

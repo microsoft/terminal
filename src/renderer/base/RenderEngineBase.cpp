@@ -82,3 +82,19 @@ void RenderEngineBase::WaitUntilCanRender() noexcept
     // Throttle the render loop a bit by default (~60 FPS), improving throughput.
     Sleep(8);
 }
+
+// Routine Description:
+// - Notifies us that we're about to circle the buffer, giving us a chance to
+//   force a repaint before the buffer contents are lost.
+// - The default implementation of flush, is to do nothing for most renderers.
+// Arguments:
+// - circled - ignored
+// - pForcePaint - Always filled with false
+// Return Value:
+// - S_FALSE because we don't use this.
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateFlush(_In_ const bool /*circled*/, _Out_ bool* const pForcePaint) noexcept
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
+    *pForcePaint = false;
+    return S_FALSE;
+}

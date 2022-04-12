@@ -380,6 +380,16 @@ bool VtIo::IsUsingVt() const
     return hr;
 }
 
+[[nodiscard]] HRESULT VtIo::SwitchScreenBuffer(const bool useAltBuffer)
+{
+    HRESULT hr = S_OK;
+    if (_pVtRenderEngine)
+    {
+        hr = _pVtRenderEngine->SwitchScreenBuffer(useAltBuffer);
+    }
+    return hr;
+}
+
 void VtIo::CloseInput()
 {
     // This will release the lock when it goes out of scope
