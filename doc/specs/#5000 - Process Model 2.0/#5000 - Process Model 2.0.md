@@ -317,7 +317,7 @@ Some things we considered during this investigation:
   - We could theoretically build an RPC tunnel between content and window
     processes, and use the RPC connection to marshal the content process to the
     elevated window. However, then _we_ would need to be responsible for
-    securing access the the RPC endpoint, and we feel even less confident doing
+    securing access the RPC endpoint, and we feel even less confident doing
     that.
   - Attempts were also made to use a window-broker-content architecture, with
     the broker process having a static CLSID in the registry, and having the

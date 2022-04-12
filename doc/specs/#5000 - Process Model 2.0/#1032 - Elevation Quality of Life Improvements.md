@@ -75,7 +75,7 @@ Some things we considered during this investigation:
   - We could theoretically build an RPC tunnel between content and window
     processes, and use the RPC connection to marshal the content process to the
     elevated window. However, then _we_ would need to be responsible for
-    securing access the the RPC endpoint, and we feel even less confident doing
+    securing access the RPC endpoint, and we feel even less confident doing
     that.
   - Attempts were also made to use a window-broker-content architecture, with
     the broker process having a static CLSID in the registry, and having the
@@ -456,7 +456,7 @@ accessible.
 
 Unfortunately, these issues are OS bugs that are largely out of our own control.
 We will continue to apply pressure to the centennial app team internally as we
-encounter these issues. They are are team best equipped to resolve these issues.
+encounter these issues. They are the team best equipped to resolve these issues.
 
 ### Default Terminal & auto-elevation
 

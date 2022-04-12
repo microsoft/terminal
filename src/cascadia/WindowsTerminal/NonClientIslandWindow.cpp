@@ -495,7 +495,7 @@ void NonClientIslandWindow::_UpdateMaximizedState()
 }
 
 // Method Description:
-// - Called when the the windows goes from restored to maximized or from
+// - Called when the windows goes from restored to maximized or from
 //   maximized to restored. Updates the maximize button's icon and the frame
 //   margins.
 void NonClientIslandWindow::_OnMaximizeChange() noexcept
@@ -506,8 +506,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {

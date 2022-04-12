@@ -598,7 +598,7 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the desired tab. Returns false if the provided tabIndex
     //   is greater than the number of tabs we have.
     // - During startup, we'll immediately set the selected tab as focused.
-    // - After startup, we'll dispatch an async method to set the the selected
+    // - After startup, we'll dispatch an async method to set the selected
     //   item of the TabView, which will then also trigger a
     //   TabView::SelectionChanged, handled in
     //   TerminalPage::_OnTabSelectionChanged
