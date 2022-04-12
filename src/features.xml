@@ -114,7 +114,7 @@
         <!-- This is VERY MUCH a WIP, so we're using velocity to start checking in code to dev branches without shipping it. -->
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
-        </alwaysDisabledBrandingTokens>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
 </featureStaging>
