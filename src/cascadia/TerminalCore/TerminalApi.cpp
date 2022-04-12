@@ -601,6 +601,9 @@ void Terminal::UseAlternateScreenBuffer()
     const COORD bufferSize{ _mutableViewport.Dimensions() };
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
+    ClearSelection();
+    _mainBuffer->ClearPatternRecognizers();
+
     // Create a new alt buffer
     _altBuffer = std::make_unique<TextBuffer>(bufferSize,
                                               TextAttribute{},
@@ -625,7 +628,7 @@ void Terminal::UseAlternateScreenBuffer()
     }
 
     // update all the hyperlinks on the screen
-    UpdatePatternsUnderLock();
+    _updateUrlDetection();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -645,6 +648,8 @@ void Terminal::UseMainScreenBuffer()
         return;
     }
 
+    ClearSelection();
+
     // Copy our cursor state back to the main buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
@@ -662,12 +667,12 @@ void Terminal::UseMainScreenBuffer()
     }
 
     _mainBuffer->SetAsActiveBuffer(true);
-
     // destroy the alt buffer
     _altBuffer = nullptr;
 
     // update all the hyperlinks on the screen
-    UpdatePatternsUnderLock();
+    _mainBuffer->ClearPatternRecognizers();
+    _updateUrlDetection();
 
     // Update scrollbars
     _NotifyScrollEvent();
