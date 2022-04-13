@@ -767,7 +767,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 //   requested focus events, this will send a message to them.
 // - ConPTY ALWAYS wants focus events.
 // Arguments:
-// - focused: true if we're focused, flase otherwise.
+// - focused: true if we're focused, false otherwise.
 // Return Value:
 // - none
 void Terminal::FocusChanged(const bool focused) noexcept
