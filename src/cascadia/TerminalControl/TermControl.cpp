@@ -671,11 +671,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            // TODO! very good chance we leak this handle
-            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_contentIsOutOfProc() ?
-                                                                    control->_contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
-                                                                    control->_core.SwapChainHandle());
-            _AttachDxgiSwapChainToXaml(chainHandle);
+            control->_aquireAndAttachSwapChainHandle();
         }
     }
 
@@ -727,6 +723,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
+    void TermControl::_aquireAndAttachSwapChainHandle()
+    {
+        const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentIsOutOfProc() ?
+                                                                _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
+                                                                _core.SwapChainHandle());
+        // If we're in-proc, then the render engine has it's own ownership
+        // handle to the swapchain. We don't need to also own it in the XAML
+        // layer. It doesn't really make sense for us to duplicate it to
+        // ourself again, so we're just gonna not.
+        //
+        // If we're out of proc though, the content proc has one handle in
+        // it's process, and now there's a HANDLE in our process with this
+        // value. Wrap that boy up in a unique_handle so that we can release
+        // our handle when needed.
+        if (_contentIsOutOfProc())
+        {
+            _contentSwapChain.reset(chainHandle);
+        }
+
+        _AttachDxgiSwapChainToXaml(chainHandle);
+    }
+
     bool TermControl::_InitializeTerminal()
     {
         if (_initializedTerminal)
@@ -764,11 +782,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _interactivity.Initialize();
         }
 
-        // TODO! very good chance we leak this handle
-        const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentIsOutOfProc() ?
-                                                                _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
-                                                                _core.SwapChainHandle());
-        _AttachDxgiSwapChainToXaml(chainHandle);
+        _aquireAndAttachSwapChainHandle();
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary

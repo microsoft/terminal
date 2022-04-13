@@ -194,8 +194,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         wil::unique_event _contentWaitInterrupt;
         std::thread _contentWaitThread;
+        wil::unique_handle _contentSwapChain;
         void _createContentWaitThread();
         bool _contentIsOutOfProc() const;
+
+        void _aquireAndAttachSwapChainHandle();
 
         inline bool _IsClosing() const noexcept
         {
