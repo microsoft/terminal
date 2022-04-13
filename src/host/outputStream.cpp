@@ -360,7 +360,7 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.HasAccessibilityEventing() && screenInfo.IsActiveScreenBuffer())
+    if (screenInfo.HasAccessibilityEventing())
     {
         screenInfo.NotifyAccessibilityEventing(
             gsl::narrow_cast<short>(changedRect.left),
