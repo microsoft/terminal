@@ -2021,7 +2021,11 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 }
 
 // Method Description:
-// - TODO!
+// - Enables/disables focus event mode. A client may enable this if they want to
+//   receive focus events.
+// - ConPTY always enables this mode and never disables it. Internally, we'll
+//   always set this mode, but conpty will never request this to be disabled by
+//   the hosting terminal.
 // Arguments:
 // - enabled - true to enable, false to disable.
 // Return Value:

@@ -1709,14 +1709,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::GotFocus()
     {
         _terminal->FocusChanged(true);
-        // _connection.WriteInput(L"\x1b[I");
     }
 
     // See GotFocus.
     void ControlCore::LostFocus()
     {
         _terminal->FocusChanged(false);
-        // _connection.WriteInput(L"\x1b[O");
     }
 
     bool ControlCore::_isBackgroundTransparent()

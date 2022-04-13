@@ -395,7 +395,6 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled)
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
-
 //Arguments:
 // - enabled - true to enable, false to disable.
 // Return value:
@@ -407,7 +406,9 @@ bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled)
 }
 
 // Method Description:
-// - TODO!
+// - Enables/disables focus event mode. A client may enable this if they want to
+//   receive focus events.
+// - ConPTY always enables this mode and never disables it. For more details, see GH#12900.
 // Arguments:
 // - enabled - true to enable, false to disable.
 // Return Value:
