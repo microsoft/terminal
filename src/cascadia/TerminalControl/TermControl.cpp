@@ -756,11 +756,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto coreInitialized = _core.Initialize(panelWidth,
                                                       panelHeight,
                                                       panelScaleX);
-        if (!coreInitialized)
+        // ControlCore::Initialize will return false if it was already
+        // initialized. In that case, don't init the rest of the interactivity,
+        // but do go on and hook us up to the core's swapchain and callbacks.
+        if (coreInitialized)
         {
-            return false;
+            _interactivity.Initialize();
         }
-        _interactivity.Initialize();
 
         // TODO! very good chance we leak this handle
         const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentIsOutOfProc() ?
