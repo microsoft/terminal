@@ -527,3 +527,10 @@ HRESULT VtEngine::RequestWin32Input() noexcept
     RETURN_IF_FAILED(_Flush());
     return S_OK;
 }
+
+HRESULT VtEngine::SwitchScreenBuffer(const bool useAltBuffer) noexcept
+{
+    RETURN_IF_FAILED(_SwitchScreenBuffer(useAltBuffer));
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
+}
