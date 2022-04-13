@@ -362,6 +362,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     // win32-input-mode, and if they did, then we'll just translate the
     // INPUT_RECORD back to the same sequence we say here later on, when the
     // client reads it.
+    //
+    // Focus events in conpty are special, so don't flush those through either.
+    // See GH#12799, GH#12900 for details
     if (_pDispatch->IsVtInputEnabled() &&
         _pfnFlushToInputQueue &&
         id != CsiActionCodes::Win32KeyboardInput &&

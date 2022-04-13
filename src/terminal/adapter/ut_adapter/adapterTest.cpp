@@ -422,6 +422,11 @@ public:
         VERIFY_ARE_EQUAL(_expectedCellSize.cy, cellSize.cy);
     }
 
+    void FocusChanged(const bool /*focused*/)
+    {
+        Log::Comment(L"FocusChanged MOCK called...");
+    }
+
     void ReparentWindow(const uint64_t /*handle*/)
     {
         Log::Comment(L"ReparentWindow MOCK called...");
