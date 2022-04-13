@@ -456,14 +456,14 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerCircling()
+void Renderer::TriggerFlush(const bool circling)
 {
     const auto rects = _GetSelectionRects();
 
     FOREACH_ENGINE(pEngine)
     {
         bool fEngineRequestsRepaint = false;
-        HRESULT hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
+        HRESULT hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
 
         LOG_IF_FAILED(pEngine->InvalidateSelection(rects));

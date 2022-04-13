@@ -71,6 +71,9 @@ namespace Microsoft::Terminal::Core
 
         virtual void ShowWindow(bool showOrHide) = 0;
 
+        virtual void UseAlternateScreenBuffer() = 0;
+        virtual void UseMainScreenBuffer() = 0;
+
     protected:
         ITerminalApi() = default;
     };

@@ -1942,6 +1942,15 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
 
+        // GH#381: When we switch into the alt buffer:
+        //  * flush the current frame, to clear out anything that we prepared for this buffer.
+        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
+        if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
+        {
+            ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
+            LOG_IF_FAILED(gci.GetVtIo()->SwitchScreenBuffer(true));
+        }
+
         ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
         // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
@@ -1972,6 +1981,16 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
             psiMain->_fAltWindowChanged = false;
         }
+
+        // GH#381: When we switch into the main buffer:
+        //  * flush the current frame, to clear out anything that we prepared for this buffer.
+        //  * Emit a ?1049h/l to the remote side, to let them know that we've switched buffers.
+        if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
+        {
+            ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
+            LOG_IF_FAILED(gci.GetVtIo()->SwitchScreenBuffer(false));
+        }
+
         ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
 
