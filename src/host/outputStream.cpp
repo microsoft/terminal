@@ -939,8 +939,8 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
                         // Get the PID of the current FG window, and compare with our owner's PID.
                         DWORD currentFgPid{ 0 };
                         DWORD ownerPid{ 0 };
-                        const auto currentFgThreadId{ GetWindowThreadProcessId(currentFgWindow, &currentFgPid) };
-                        const auto ownerThreadId{ GetWindowThreadProcessId(ownerHwnd, &ownerPid) };
+                        GetWindowThreadProcessId(currentFgWindow, &currentFgPid);
+                        GetWindowThreadProcessId(ownerHwnd, &ownerPid);
 
                         if (ownerPid == currentFgPid)
                         {
