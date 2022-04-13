@@ -900,20 +900,6 @@ void ConhostInternalGetSet::UpdateSoftFont(const gsl::span<const uint16_t> bitPa
     }
 }
 
-void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
-{
-    // This will initialize s_interactivityFactory for us. It will also
-    // conveniently return 0 when we're on OneCore.
-    //
-    // If the window hasn't been created yet, by some other call to
-    // LocatePseudoWindow, then this will also initialize the owner of the
-    // window.
-    if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
-    {
-        LOG_LAST_ERROR_IF_NULL(::SetParent(psuedoHwnd, reinterpret_cast<HWND>(handle)));
-    }
-}
-
 // Method Description:
 // - Inform the console that the window is focused. This is used by ConPTY.
 //   Terminals can send ConPTY a FocusIn/FocusOut sequence on the input pipe,
@@ -945,7 +931,7 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
         {
             if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow() })
             {
-                // They want focus, we found a pseudohwnd.
+                // They want focus, we found a pseudo hwnd.
 
                 // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
                 if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_PARENT) })
@@ -981,4 +967,18 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
 
     // Theoretically, this could be propagated as a focus event as well, to the
     // input buffer. That should be considered when implementing GH#11682.
+}
+
+void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
+{
+    // This will initialize s_interactivityFactory for us. It will also
+    // conveniently return 0 when we're on OneCore.
+    //
+    // If the window hasn't been created yet, by some other call to
+    // LocatePseudoWindow, then this will also initialize the owner of the
+    // window.
+    if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
+    {
+        LOG_LAST_ERROR_IF_NULL(::SetParent(psuedoHwnd, reinterpret_cast<HWND>(handle)));
+    }
 }

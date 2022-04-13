@@ -112,8 +112,8 @@ namespace Microsoft::Console::VirtualTerminal
                                     const SIZE cellSize,
                                     const size_t centeringHint) = 0;
 
-        virtual void ReparentWindow(const uint64_t handle) = 0;
-
         virtual void FocusChanged(const bool focused) = 0;
+
+        virtual void ReparentWindow(const uint64_t handle) = 0;
     };
 }

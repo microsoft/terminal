@@ -76,6 +76,7 @@ namespace Microsoft::Console::VirtualTerminal
                          const MouseButtonState state);
 
         bool IsTrackingMouseInput() const noexcept;
+        bool ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
 #pragma endregion
 
 #pragma region MouseInputState Management
@@ -130,7 +131,6 @@ namespace Microsoft::Console::VirtualTerminal
                                                  const short modifierKeyState,
                                                  const short delta);
 
-        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
         bool _SendAlternateScroll(const short delta) const noexcept;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;

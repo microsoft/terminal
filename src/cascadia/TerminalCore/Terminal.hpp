@@ -138,6 +138,8 @@ public:
     void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
     void PopGraphicsRendition() override;
 
+    void UseAlternateScreenBuffer() override;
+    void UseMainScreenBuffer() override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -152,6 +154,7 @@ public:
 
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
+    bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const noexcept;
 
     void FocusChanged(const bool focused) noexcept override;
 
@@ -321,11 +324,11 @@ private:
     SelectionExpansion _multiClickSelectionMode;
 #pragma endregion
 
-    // TODO: These members are not shared by an alt-buffer. They should be
-    //      encapsulated, such that a Terminal can have both a main and alt buffer.
-    std::unique_ptr<TextBuffer> _buffer;
+    std::unique_ptr<TextBuffer> _mainBuffer;
+    std::unique_ptr<TextBuffer> _altBuffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
     SHORT _scrollbackLines;
+    bool _detectURLs{ false };
 
     // _scrollOffset is the number of lines above the viewport that are currently visible
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
@@ -376,6 +379,10 @@ private:
     void _NotifyScrollEvent() noexcept;
 
     void _NotifyTerminalCursorPositionChanged() noexcept;
+
+    bool _inAltBuffer() const noexcept;
+    TextBuffer& _activeBuffer() const noexcept;
+    void _updateUrlDetection();
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

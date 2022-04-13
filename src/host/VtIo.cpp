@@ -300,8 +300,7 @@ bool VtIo::IsUsingVt() const
         // message pump. If you DON'T, then a DPI change in the owning hwnd will
         // cause us to get a dpi change as well, which we'll never deque and
         // handle, effectively HANGING THE OWNER HWND.
-        _pPtySignalInputThread->StartPseudoWindowIfNeeded();
-
+        //
         // Let the signal thread know that the console is connected
         _pPtySignalInputThread->ConnectConsole();
     }
@@ -382,6 +381,16 @@ bool VtIo::IsUsingVt() const
         }
 
         _lookingForCursorPosition = false;
+    }
+    return hr;
+}
+
+[[nodiscard]] HRESULT VtIo::SwitchScreenBuffer(const bool useAltBuffer)
+{
+    HRESULT hr = S_OK;
+    if (_pVtRenderEngine)
+    {
+        hr = _pVtRenderEngine->SwitchScreenBuffer(useAltBuffer);
     }
     return hr;
 }
