@@ -6556,7 +6556,7 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
         auto vtRenderEngine = std::make_unique<Microsoft::Console::Render::Xterm256Engine>(std::move(hFile),
                                                                                            initialViewport);
         // We don't care about the output, so let it just drain to the void.
-        vtRenderEngine->SetTestCallback([](auto&&, auto &&) -> bool { return true; });
+        vtRenderEngine->SetTestCallback([](auto&&, auto&&) -> bool { return true; });
         gci.GetActiveOutputBuffer().SetTerminalConnection(vtRenderEngine.get());
         // Manually set the console into conpty mode. We're not actually going
         // to set up the pipes for conpty, but we want the console to behave
