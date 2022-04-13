@@ -27,6 +27,8 @@ HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
 
 HRESULT WINAPI ConptyShowHidePseudoConsole(HPCON hPC, bool show);
 
+HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newParent);
+
 VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
 
 HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);

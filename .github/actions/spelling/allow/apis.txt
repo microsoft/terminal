@@ -145,6 +145,7 @@ REGCLS
 RETURNCMD
 rfind
 roundf
+ROOTOWNER
 RSHIFT
 SACL
 schandle

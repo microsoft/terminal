@@ -23,6 +23,7 @@ public:
     virtual void MakeWindow() noexcept;
     void Close();
     virtual void OnSize(const UINT width, const UINT height);
+    HWND GetInteropHandle() const;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
     void OnResize(const UINT width, const UINT height) override;

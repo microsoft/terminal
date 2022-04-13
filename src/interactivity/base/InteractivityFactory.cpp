@@ -289,9 +289,10 @@ using namespace Microsoft::Console::Interactivity;
 //      that GetConsoleWindow returns a real value.
 // Arguments:
 // - hwnd: Receives the value of the newly created window's HWND.
+// - owner: the HWND that should be the initial owner of the pseudo window.
 // Return Value:
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
-[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
+[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd, const HWND owner)
 {
     hwnd = nullptr;
     ApiLevel level;
@@ -311,21 +312,30 @@ using namespace Microsoft::Console::Interactivity;
                 pseudoClass.lpfnWndProc = s_PseudoWindowProc;
                 RegisterClass(&pseudoClass);
 
+                // Note that because we're not specifying WS_CHILD, this window
+                // will become an _owned_ window, not a _child_ window. This is
+                // important - child windows report their position as relative
+                // to their parent window, while owned windows are still
+                // relative to the desktop. (there are other subtleties as well
+                // as far as the difference between parent/child and owner/owned
+                // windows). Evan K said we should do it this way, and he
+                // definitely knows.
                 const auto windowStyle = WS_OVERLAPPEDWINDOW;
                 const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED;
-                // Attempt to create window
+
+                // Attempt to create window.
                 hwnd = CreateWindowExW(exStyles,
                                        PSEUDO_WINDOW_CLASS,
                                        nullptr,
-                                       windowStyle, //WS_CHILD, //WS_OVERLAPPEDWINDOW,
+                                       windowStyle,
                                        0,
                                        0,
                                        0,
                                        0,
-                                       HWND_DESKTOP, // owner
+                                       owner,
                                        nullptr,
                                        nullptr,
-                                       this);
+                                       nullptr);
 
                 if (hwnd == nullptr)
                 {
@@ -335,7 +345,6 @@ using namespace Microsoft::Console::Interactivity;
 
                 break;
             }
-
 #ifdef BUILD_ONECORE_INTERACTIVITY
             case ApiLevel::OneCore:
                 hwnd = 0;

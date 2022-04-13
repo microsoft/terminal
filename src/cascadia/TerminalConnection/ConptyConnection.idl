@@ -14,7 +14,10 @@ namespace Microsoft.Terminal.TerminalConnection
         String Commandline { get; };
 
         void ClearBuffer();
+
         void ShowHide(Boolean show);
+
+        void ReparentWindow(UInt64 newParent);
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();
