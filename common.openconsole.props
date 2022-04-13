@@ -18,14 +18,14 @@
 
     This version should be tracked in all project packages.config files for projects that depend on Xaml.
     -->
-    <TerminalMUXVersion>2.7.0-prerelease.210913003</TerminalMUXVersion>
+    <TerminalMUXVersion>2.7.2-prerelease.220406002</TerminalMUXVersion>
     <!--
     For the Windows 11-specific build, we're targeting the public version of Microsoft.UI.Xaml.
     This version emits a package dependency instead of embedding the dependency in our own package.
 
     This version should be tracked in build/packages.config.
     -->
-    <TerminalMUXVersion Condition="'$(TerminalTargetWindowsVersion)'=='Win11'">2.7.0</TerminalMUXVersion>
+    <TerminalMUXVersion Condition="'$(TerminalTargetWindowsVersion)'=='Win11'">2.7.1</TerminalMUXVersion>
   </PropertyGroup>
 
 </Project>

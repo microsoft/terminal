@@ -51,7 +51,7 @@ namespace Microsoft::Console::Render
         void TriggerScroll();
         void TriggerScroll(const COORD* const pcoordDelta);
 
-        void TriggerCircling();
+        void TriggerFlush(const bool circling);
         void TriggerTitleChange();
 
         void TriggerNewTextNotification(const std::wstring_view newText);

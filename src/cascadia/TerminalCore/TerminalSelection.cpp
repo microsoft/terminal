@@ -54,7 +54,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 
     try
     {
-        return _buffer->GetTextRects(_selection->start, _selection->end, _blockSelection, false);
+        return _activeBuffer().GetTextRects(_selection->start, _selection->end, _blockSelection, false);
     }
     CATCH_LOG();
     return result;
@@ -182,7 +182,7 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - the new start/end for a selection
 std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& targetStart) const
 {
-    if (targetStart = _buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
+    if (targetStart = _activeBuffer().GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
     {
         // target is before pivot
         // treat target as start
@@ -207,7 +207,7 @@ std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD
     COORD start = anchors.first;
     COORD end = anchors.second;
 
-    const auto bufferSize = _buffer->GetSize();
+    const auto bufferSize = _activeBuffer().GetSize();
     switch (_multiClickSelectionMode)
     {
     case SelectionExpansion::Line:
@@ -215,8 +215,8 @@ std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD
         end = { bufferSize.RightInclusive(), end.Y };
         break;
     case SelectionExpansion::Word:
-        start = _buffer->GetWordStart(start, _wordDelimiters);
-        end = _buffer->GetWordEnd(end, _wordDelimiters);
+        start = _activeBuffer().GetWordStart(start, _wordDelimiters);
+        end = _activeBuffer().GetWordEnd(end, _wordDelimiters);
         break;
     case SelectionExpansion::Char:
     default:
@@ -325,7 +325,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
             _scrollOffset -= amtBelowView;
         }
         _NotifyScrollEvent();
-        _buffer->TriggerScroll();
+        _activeBuffer().TriggerScroll();
     }
 }
 
@@ -334,22 +334,22 @@ void Terminal::_MoveByChar(SelectionDirection direction, COORD& pos)
     switch (direction)
     {
     case SelectionDirection::Left:
-        _buffer->GetSize().DecrementInBounds(pos);
-        pos = _buffer->GetGlyphStart(til::point{ pos }).to_win32_coord();
+        _activeBuffer().GetSize().DecrementInBounds(pos);
+        pos = _activeBuffer().GetGlyphStart(til::point{ pos }).to_win32_coord();
         break;
     case SelectionDirection::Right:
-        _buffer->GetSize().IncrementInBounds(pos);
-        pos = _buffer->GetGlyphEnd(til::point{ pos }).to_win32_coord();
+        _activeBuffer().GetSize().IncrementInBounds(pos);
+        pos = _activeBuffer().GetGlyphEnd(til::point{ pos }).to_win32_coord();
         break;
     case SelectionDirection::Up:
     {
-        const auto bufferSize{ _buffer->GetSize() };
+        const auto bufferSize{ _activeBuffer().GetSize() };
         pos = { pos.X, std::clamp(base::ClampSub<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
         break;
     }
     case SelectionDirection::Down:
     {
-        const auto bufferSize{ _buffer->GetSize() };
+        const auto bufferSize{ _activeBuffer().GetSize() };
         pos = { pos.X, std::clamp(base::ClampAdd<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
         break;
     }
@@ -361,19 +361,19 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
     switch (direction)
     {
     case SelectionDirection::Left:
-        const auto wordStartPos{ _buffer->GetWordStart(pos, _wordDelimiters) };
-        if (_buffer->GetSize().CompareInBounds(_selection->pivot, pos) < 0)
+        const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
+        if (_activeBuffer().GetSize().CompareInBounds(_selection->pivot, pos) < 0)
         {
             // If we're moving towards the pivot, move one more cell
             pos = wordStartPos;
-            _buffer->GetSize().DecrementInBounds(pos);
+            _activeBuffer().GetSize().DecrementInBounds(pos);
         }
         else if (wordStartPos == pos)
         {
             // already at the beginning of the current word,
             // move to the beginning of the previous word
-            _buffer->GetSize().DecrementInBounds(pos);
-            pos = _buffer->GetWordStart(pos, _wordDelimiters);
+            _activeBuffer().GetSize().DecrementInBounds(pos);
+            pos = _activeBuffer().GetWordStart(pos, _wordDelimiters);
         }
         else
         {
@@ -382,19 +382,19 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
         }
         break;
     case SelectionDirection::Right:
-        const auto wordEndPos{ _buffer->GetWordEnd(pos, _wordDelimiters) };
-        if (_buffer->GetSize().CompareInBounds(pos, _selection->pivot) < 0)
+        const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
+        if (_activeBuffer().GetSize().CompareInBounds(pos, _selection->pivot) < 0)
         {
             // If we're moving towards the pivot, move one more cell
-            pos = _buffer->GetWordEnd(pos, _wordDelimiters);
-            _buffer->GetSize().IncrementInBounds(pos);
+            pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
+            _activeBuffer().GetSize().IncrementInBounds(pos);
         }
         else if (wordEndPos == pos)
         {
             // already at the end of the current word,
             // move to the end of the next word
-            _buffer->GetSize().IncrementInBounds(pos);
-            pos = _buffer->GetWordEnd(pos, _wordDelimiters);
+            _activeBuffer().GetSize().IncrementInBounds(pos);
+            pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
         }
         else
         {
@@ -404,18 +404,18 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
         break;
     case SelectionDirection::Up:
         _MoveByChar(direction, pos);
-        pos = _buffer->GetWordStart(pos, _wordDelimiters);
+        pos = _activeBuffer().GetWordStart(pos, _wordDelimiters);
         break;
     case SelectionDirection::Down:
         _MoveByChar(direction, pos);
-        pos = _buffer->GetWordEnd(pos, _wordDelimiters);
+        pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
         break;
     }
 }
 
 void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
 {
-    const auto bufferSize{ _buffer->GetSize() };
+    const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
     {
     case SelectionDirection::Left:
@@ -444,7 +444,7 @@ void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
 
 void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
 {
-    const auto bufferSize{ _buffer->GetSize() };
+    const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
     {
     case SelectionDirection::Left:
@@ -489,7 +489,7 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool sin
     const auto includeCRLF = !singleLine || _blockSelection;
     const auto trimTrailingWhitespace = !singleLine && (!_blockSelection || _trimBlockSelection);
     const auto formatWrappedRows = _blockSelection;
-    return _buffer->GetText(includeCRLF, trimTrailingWhitespace, selectionRects, GetAttributeColors, formatWrappedRows);
+    return _activeBuffer().GetText(includeCRLF, trimTrailingWhitespace, selectionRects, GetAttributeColors, formatWrappedRows);
 }
 
 // Method Description:
@@ -502,7 +502,7 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
     const auto yPos = base::ClampedNumeric<short>(_VisibleStartIndex()) + viewportPos.Y;
     COORD bufferPos = { viewportPos.X, yPos };
-    _buffer->GetSize().Clamp(bufferPos);
+    _activeBuffer().GetSize().Clamp(bufferPos);
     return bufferPos;
 }
 
