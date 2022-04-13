@@ -357,7 +357,7 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 // - changedRect - the area that has changed.
 // Return value:
 // - <none>
-void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect changedRect)
+void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     if (screenInfo.HasAccessibilityEventing() && screenInfo.IsActiveScreenBuffer())

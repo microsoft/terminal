@@ -206,7 +206,7 @@ public:
         return _isPty;
     }
 
-    void NotifyAccessibilityChange(const til::rect /*changedRect*/) override
+    void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
     {
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }

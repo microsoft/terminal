@@ -166,14 +166,14 @@ namespace Microsoft::Console::VirtualTerminal
             static constexpr Offset Unchanged() { return Forward(0); };
         };
 
-        std::pair<int, int> _GetVerticalMargins(const til::rect viewport, const bool absolute);
+        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
-        void _FillRect(TextBuffer& textBuffer, const til::rect fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
+        void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _EraseScrollback();
         void _EraseAll();
-        void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta);
-        void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta);
+        void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta);
+        void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta);
         void _InsertDeleteCharacterHelper(const int32_t delta);
         void _InsertDeleteLineHelper(const int32_t delta);
         void _ScrollMovement(const int32_t delta);

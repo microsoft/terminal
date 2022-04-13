@@ -170,7 +170,7 @@ bool AdaptDispatch::CursorPrevLine(const size_t distance)
 // - absolute - Should coordinates be absolute or relative to the viewport.
 // Return Value:
 // - A std::pair containing the top and bottom coordinates (inclusive).
-std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect viewport, const bool absolute)
+std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport, const bool absolute)
 {
     // If the top is out of range, reset the margins completely.
     const auto bottommostRow = viewport.bottom - viewport.top - 1;
@@ -444,7 +444,7 @@ bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
 // - delta - Distance to move (positive is down, negative is up).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.height());
     if (absoluteDelta < scrollRect.height())
@@ -479,7 +479,7 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
 // - delta - Distance to move (positive is right, negative is left).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
     if (absoluteDelta < scrollRect.width())
@@ -563,7 +563,7 @@ bool AdaptDispatch::DeleteCharacter(const size_t count)
 // - fillAttrs - Attributes to be written to the buffer.
 // Return Value:
 // - <none>
-void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect fillRect, const wchar_t fillChar, const TextAttribute fillAttrs)
+void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs)
 {
     if (fillRect.left < fillRect.right && fillRect.top < fillRect.bottom)
     {

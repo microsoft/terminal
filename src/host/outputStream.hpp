@@ -65,7 +65,7 @@ public:
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
 
-    void NotifyAccessibilityChange(const til::rect changedRect) override;
+    void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;
