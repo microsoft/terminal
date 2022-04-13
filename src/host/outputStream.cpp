@@ -924,7 +924,7 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
         {
             if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow() })
             {
-                // They want focus, we found a pseudohwnd.
+                // They want focus, we found a pseudo hwnd.
 
                 // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
                 if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_PARENT) })
