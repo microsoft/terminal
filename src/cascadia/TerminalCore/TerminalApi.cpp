@@ -630,6 +630,10 @@ void Terminal::UseAlternateScreenBuffer()
     // update all the hyperlinks on the screen
     _updateUrlDetection();
 
+    // GH#3321: Make sure we let the TerminalInput know that we switched
+    // buffers. This might affect how we interpret certain mouse events.
+    _terminalInput->UseAlternateScreenBuffer();
+
     // Update scrollbars
     _NotifyScrollEvent();
 
@@ -673,6 +677,10 @@ void Terminal::UseMainScreenBuffer()
     // update all the hyperlinks on the screen
     _mainBuffer->ClearPatternRecognizers();
     _updateUrlDetection();
+
+    // GH#3321: Make sure we let the TerminalInput know that we switched
+    // buffers. This might affect how we interpret certain mouse events.
+    _terminalInput->UseMainScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
