@@ -321,7 +321,7 @@ bool TerminalInput::HandleMouse(const COORD position,
             // on the wheel, accumulate delta until we hit the amount required to dispatch one
             // "line" worth of scroll.
             // Mark the event as "handled" if we would have otherwise emitted a scroll event.
-            return IsTrackingMouseInput() || _ShouldSendAlternateScroll(button, delta);
+            return IsTrackingMouseInput() || ShouldSendAlternateScroll(button, delta);
         }
 
         // We're ready to send this event through, but first we need to clear the accumulated;
@@ -330,7 +330,7 @@ bool TerminalInput::HandleMouse(const COORD position,
     }
 
     bool success = false;
-    if (_ShouldSendAlternateScroll(button, delta))
+    if (ShouldSendAlternateScroll(button, delta))
     {
         success = _SendAlternateScroll(delta);
     }
@@ -539,11 +539,12 @@ std::wstring TerminalInput::_GenerateSGRSequence(const COORD position,
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
-bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
+bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
-    return _mouseInputState.inAlternateBuffer &&
-           _inputMode.test(Mode::AlternateScroll) &&
-           (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0;
+    const bool inAltBuffer{ _mouseInputState.inAlternateBuffer };
+    const bool inAltScroll{ _inputMode.test(Mode::AlternateScroll) };
+    const bool wasMouseWheel{ (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0 };
+    return inAltBuffer && inAltScroll && wasMouseWheel;
 }
 
 // Routine Description:

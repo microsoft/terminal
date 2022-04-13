@@ -53,6 +53,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
 
+        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
+
         void WaitUntilCanRender() noexcept override;
 
     protected:

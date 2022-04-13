@@ -59,6 +59,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool BracketedPasteEnabled() const noexcept;
 
         double BackgroundOpacity() const;
+
+        uint64_t OwningHwnd();
+        void OwningHwnd(uint64_t owner);
 #pragma endregion
 
         void ScrollViewport(int viewTop);

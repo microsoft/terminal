@@ -67,6 +67,8 @@ public:
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
+    void ReparentWindow(const uint64_t handle);
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

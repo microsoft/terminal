@@ -56,7 +56,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* pForcePaint) noexcept override;
+        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> clusters, COORD coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept override;
@@ -85,6 +85,7 @@ namespace Microsoft::Console::Render
         void SetTerminalCursorTextPosition(const COORD coordCursor) noexcept;
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
         [[nodiscard]] HRESULT RequestWin32Input() noexcept;
+        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer) noexcept;
 
     protected:
         wil::unique_hfile _hFile;
@@ -196,6 +197,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ListenForDSR() noexcept;
 
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
+        [[nodiscard]] HRESULT _SwitchScreenBuffer(const bool useAltBuffer) noexcept;
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
