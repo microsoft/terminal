@@ -116,9 +116,9 @@ public:
                         const SIZE cellSize,
                         const size_t centeringHint) override;
 
-    void ReparentWindow(const uint64_t handle);
-
     void FocusChanged(const bool focused) override;
+
+    void ReparentWindow(const uint64_t handle);
 
 private:
     void _modifyLines(const size_t count, const bool insert);
