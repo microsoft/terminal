@@ -24,7 +24,7 @@ namespace ControlUnitTests
     class ControlInteractivityTests
     {
         BEGIN_TEST_CLASS(ControlInteractivityTests)
-            // TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
+            TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
         END_TEST_CLASS()
 
         TEST_METHOD(TestAdjustAcrylic);
@@ -102,7 +102,7 @@ namespace ControlUnitTests
                                std::deque<std::wstring>& expectedOutput)
         {
             conn->TerminalOutput([&](const hstring& hstr) {
-                VERIFY_IS_GREATER_THAN(expectedOutput.size(), 0);
+                VERIFY_IS_GREATER_THAN(expectedOutput.size(), 0u);
                 const auto expected = expectedOutput.front();
                 expectedOutput.pop_front();
                 Log::Comment(fmt::format(L"Received: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(hstr.c_str())).c_str());
@@ -111,7 +111,7 @@ namespace ControlUnitTests
             });
 
             return std::move(wil::scope_exit([&]() {
-                VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
+                VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
             }));
         }
     };
@@ -860,7 +860,7 @@ namespace ControlUnitTests
     {
         // This is a test for
         // * GH#10642
-        // * https://github.com/microsoft/terminal/pull/12719#pullrequestreview-941648927
+        // * a comment in GH#12719
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         auto [settings, conn] = _createSettingsAndConnection();
@@ -903,7 +903,7 @@ namespace ControlUnitTests
                                       0, // timestamp
                                       modifiers,
                                       cursorPosition0.to_core_point());
-        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
 
         // These first two bits are a test for GH#10642
         Log::Comment(L" --- Click on the terminal outside the width of the mutable viewport, see that it's clamped to the viewport ---");
@@ -912,14 +912,14 @@ namespace ControlUnitTests
         const til::point cursorPosition1{ terminalPosition1 * fontSize };
 
         // The viewport is only 30 wide, so clamping 35 to the buffer size gets
-        // us 29, whech converted is (32 + 29 + 1) = 62 = '>'
+        // us 29, which converted is (32 + 29 + 1) = 62 = '>'
         expectedOutput.push_back(L"\x1b[M >&");
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
                                       cursorPosition1.to_core_point());
-        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
 
         Log::Comment(L" --- Scroll up, click the terminal. We shouldn't get any event. ---");
         core->UserScrollViewport(10);
@@ -936,7 +936,7 @@ namespace ControlUnitTests
                                       cursorPosition0.to_core_point());
         // Flush it out.
         conn->WriteInput(L"sentinel");
-        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
 
         // This is the part as mentioned in GH#12719
         Log::Comment(L" --- Switch to alt buffer ---");
@@ -964,6 +964,6 @@ namespace ControlUnitTests
                                       0, // timestamp
                                       modifiers,
                                       cursorPosition1.to_core_point());
-        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
     }
 }
