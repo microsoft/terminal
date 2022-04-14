@@ -722,7 +722,7 @@ try
     bool releaseSettingExists = false;
     if (firstTimeSetup)
     {
-        #if defined(WT_BRANDING_PREVIEW)
+#if defined(WT_BRANDING_PREVIEW)
         {
             try
             {
@@ -733,16 +733,16 @@ try
             {
             }
         }
-        #endif
+#endif
     }
-    
+
     // GH#11119: If we find that the settings file doesn't exist, or is empty,
     // then let's quick delete the state file as well. If the user does have a
     // state file, and not a settings, then they probably tried to reset their
     // settings. It might have data in it that was only relevant for a previous
     // iteration of the settings file. If we don't, we'll load the old state and
     // ignore all dynamic profiles (for example)!
-    if (firstTimeSetup) 
+    if (firstTimeSetup)
     {
         ApplicationState::SharedInstance().Reset();
     }
