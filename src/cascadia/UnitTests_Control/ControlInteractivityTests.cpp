@@ -859,7 +859,7 @@ namespace ControlUnitTests
     void ControlInteractivityTests::AltBufferClampMouse()
     {
         // This is a test for
-        // * GH#11290
+        // * GH#10642
         // * https://github.com/microsoft/terminal/pull/12719#pullrequestreview-941648927
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
@@ -905,7 +905,7 @@ namespace ControlUnitTests
                                       cursorPosition0.to_core_point());
         VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
 
-        // These first two bits are a test for GH#11290
+        // These first two bits are a test for GH#10642
         Log::Comment(L" --- Click on the terminal outside the width of the mutable viewport, see that it's clamped to the viewport ---");
         // Not actually possible, but for validation.
         const til::point terminalPosition1{ originalViewport.Width() + 5, 5 };
@@ -938,6 +938,7 @@ namespace ControlUnitTests
         conn->WriteInput(L"sentinel");
         VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
 
+        // This is the part as mentioned in GH#12719
         Log::Comment(L" --- Switch to alt buffer ---");
         term.Write(L"\x1b[?1049h");
         auto returnToMain = wil::scope_exit([&]() { term.Write(L"\x1b[?1049h"); });
