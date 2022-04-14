@@ -95,3 +95,11 @@ stages:
     jobs:
       - template: ./templates/check-formatting.yml
 
+
+  - stage: CodeIndexer
+    displayName: Github CodeNav Indexer
+    dependsOn: [Build_x64]
+    condition: succeeded()
+    jobs:
+      - template: ./templates/codenav-indexer.yml
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
