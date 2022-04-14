@@ -43,8 +43,8 @@ class ScreenBufferTests
         m_state->InitEvents();
         m_state->PrepareGlobalFont({ 1, 1 });
         m_state->PrepareGlobalRenderer();
-        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
 
         return true;
     }
@@ -902,6 +902,8 @@ void ScreenBufferTests::EraseAllTests()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si._textBuffer->GetCursor();
 
+    const auto eraseAll = L"\033[2J";
+
     VERIFY_ARE_EQUAL(si.GetViewport().Top(), 0);
 
     ////////////////////////////////////////////////////////////////////////
@@ -912,7 +914,7 @@ void ScreenBufferTests::EraseAllTests()
     VERIFY_ARE_EQUAL(si.GetViewport().Top(), 0);
     VERIFY_ARE_EQUAL(cursor.GetPosition(), originalRelativePosition);
 
-    VERIFY_SUCCEEDED(si.VtEraseAll());
+    stateMachine.ProcessString(eraseAll);
 
     auto viewport = si._viewport;
     VERIFY_ARE_EQUAL(viewport.Top(), 1);
@@ -941,7 +943,7 @@ void ScreenBufferTests::EraseAllTests()
         viewport.RightInclusive(),
         viewport.BottomInclusive()));
 
-    VERIFY_SUCCEEDED(si.VtEraseAll());
+    stateMachine.ProcessString(eraseAll);
     viewport = si._viewport;
     VERIFY_ARE_EQUAL(viewport.Top(), 4);
     newRelativePos = originalRelativePosition;
@@ -972,7 +974,7 @@ void ScreenBufferTests::EraseAllTests()
         viewport.Top(),
         viewport.RightInclusive(),
         viewport.BottomInclusive()));
-    VERIFY_SUCCEEDED(si.VtEraseAll());
+    stateMachine.ProcessString(eraseAll);
 
     viewport = si._viewport;
     auto heightFromBottom = si.GetBufferSize().Height() - (viewport.Height());
@@ -1225,6 +1227,10 @@ void ScreenBufferTests::VtResizeDECCOLM()
     auto getRelativeCursorPosition = [&]() {
         return si.GetTextBuffer().GetCursor().GetPosition() - si.GetViewport().Origin();
     };
+    auto areMarginsSet = [&]() {
+        const auto margins = si.GetRelativeScrollMargins();
+        return margins.BottomInclusive() > margins.Top();
+    };
 
     stateMachine.ProcessString(setInitialMargins);
     stateMachine.ProcessString(setInitialCursor);
@@ -1244,7 +1250,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     auto newViewHeight = si.GetViewport().Height();
     auto newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_IS_TRUE(areMarginsSet());
     VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
@@ -1272,7 +1278,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewHeight = si.GetViewport().Height();
     newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_IS_FALSE(areMarginsSet());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -1298,7 +1304,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewHeight = si.GetViewport().Height();
     newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_IS_TRUE(areMarginsSet());
     VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
@@ -1326,7 +1332,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewHeight = si.GetViewport().Height();
     newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_IS_FALSE(areMarginsSet());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -5892,6 +5898,11 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     const auto& cursor = si.GetTextBuffer().GetCursor();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
+    auto areMarginsSet = [&]() {
+        const auto margins = si.GetRelativeScrollMargins();
+        return margins.BottomInclusive() > margins.Top();
+    };
+
     Log::Comment(L"Set the initial buffer state.");
 
     const auto bufferWidth = si.GetBufferSize().Width();
@@ -5914,7 +5925,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
 
     // Set some margins.
     stateMachine.ProcessString(L"\x1b[10;20r");
-    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_IS_TRUE(areMarginsSet());
 
     // Place the cursor in the center.
     auto cursorPos = COORD{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
@@ -5932,7 +5943,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     VERIFY_IS_TRUE(_ValidateLinesContain(viewportEnd, bufferHeight, L'Z', bufferAttr));
 
     Log::Comment(L"Margins should not be set.");
-    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_IS_FALSE(areMarginsSet());
 
     Log::Comment(L"Cursor position should be moved to home.");
     auto homePosition = COORD{ 0, viewportStart };
@@ -6112,8 +6123,8 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
     Log::Comment(L"The viewport itself should not have changed at this point");
     VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
 
-    Log::Comment(L"But after MoveToBottom, the viewport should align with the new virtual bottom");
-    si.MoveToBottom();
+    Log::Comment(L"But after moving to the virtual viewport, we should align with the new virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, si.GetVirtualViewport().Origin(), true));
     VERIFY_ARE_EQUAL(newVirtualBottom, si.GetViewport().BottomInclusive());
 }
 
@@ -6148,7 +6159,7 @@ void ScreenBufferTests::RetainHorizontalOffsetWhenMovingToBottom()
     VERIFY_ARE_EQUAL(initialOrigin.X, si.GetViewport().Left());
 
     Log::Comment(L"Move the viewport back to the virtual bottom");
-    si.MoveToBottom();
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, si.GetVirtualViewport().Origin(), true));
 
     Log::Comment(L"Verify Y offset has moved back and X is unchanged");
     VERIFY_ARE_EQUAL(initialOrigin.Y, si.GetViewport().Top());

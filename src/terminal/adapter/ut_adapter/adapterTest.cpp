@@ -4,6 +4,8 @@
 #include "precomp.h"
 #include <wextestclass.h>
 #include "../../inc/consoletaeftemplates.hpp"
+#include "../../parser/OutputStateMachineEngine.hpp"
+#include "../../../renderer/inc/DummyRenderer.hpp"
 
 #include "adaptDispatch.hpp"
 
@@ -62,79 +64,24 @@ public:
     {
     }
 
-    void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& sbiex) const override
+    StateMachine& GetStateMachine() override
     {
-        Log::Comment(L"GetConsoleScreenBufferInfoEx MOCK returning data...");
-
-        THROW_HR_IF(E_FAIL, !_getConsoleScreenBufferInfoExResult);
-        sbiex.dwSize = _bufferSize;
-        sbiex.srWindow = _viewport;
-        sbiex.dwCursorPosition = _cursorPos;
-        sbiex.wAttributes = _attribute.GetLegacyAttributes();
-    }
-    void SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& sbiex) override
-    {
-        Log::Comment(L"SetConsoleScreenBufferInfoEx MOCK returning data...");
-
-        THROW_HR_IF(E_FAIL, !_setConsoleScreenBufferInfoExResult);
-        VERIFY_ARE_EQUAL(_expectedCursorPos, sbiex.dwCursorPosition);
-        VERIFY_ARE_EQUAL(_expectedScreenBufferSize, sbiex.dwSize);
-        VERIFY_ARE_EQUAL(_expectedScreenBufferViewport, sbiex.srWindow);
-        VERIFY_ARE_EQUAL(_expectedAttribute, TextAttribute{ sbiex.wAttributes });
-    }
-    void SetCursorPosition(const COORD position) override
-    {
-        Log::Comment(L"SetCursorPosition MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_setCursorPositionResult);
-        VERIFY_ARE_EQUAL(_expectedCursorPos, position);
-        _cursorPos = position;
+        return *_stateMachine;
     }
 
-    void SetWindowInfo(const bool absolute, const SMALL_RECT& window) override
+    TextBuffer& GetTextBuffer() override
     {
-        Log::Comment(L"SetWindowInfo MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_setWindowInfoResult);
-        VERIFY_ARE_EQUAL(_expectedWindowAbsolute, absolute);
-        VERIFY_ARE_EQUAL(_expectedConsoleWindow, window);
-        _viewport = window;
+        return *_textBuffer.get();
     }
 
-    bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) override
+    til::rect GetViewport() const override
     {
-        Log::Comment(L"SetInputMode MOCK called...");
-
-        if (_setInputModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedInputMode, mode);
-            VERIFY_ARE_EQUAL(_expectedInputModeEnabled, enabled);
-        }
-
-        return _setInputModeResult;
+        return til::rect{ _viewport.Left, _viewport.Top, _viewport.Right, _viewport.Bottom };
     }
 
-    void SetParserMode(const StateMachine::Mode mode, const bool enabled) override
+    void SetViewportPosition(const til::point /*position*/) override
     {
-        Log::Comment(L"SetParserMode MOCK called...");
-
-        if (_setParserModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedParserMode, mode);
-            VERIFY_ARE_EQUAL(_expectedParserModeEnabled, enabled);
-        }
-    }
-
-    bool GetParserMode(const StateMachine::Mode /*mode*/) const override
-    {
-        Log::Comment(L"GetParserMode MOCK called...");
-
-        return false;
-    }
-
-    void SetRenderMode(const RenderSettings::Mode /*mode*/, const bool /*enabled*/) override
-    {
-        Log::Comment(L"SetRenderMode MOCK called...");
+        Log::Comment(L"SetViewportPosition MOCK called...");
     }
 
     void SetAutoWrapMode(const bool /*wrapAtEOL*/) override
@@ -142,37 +89,9 @@ public:
         Log::Comment(L"SetAutoWrapMode MOCK called...");
     }
 
-    void SetCursorVisibility(const bool visible) override
-    {
-        Log::Comment(L"SetCursorVisibility MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_setCursorVisibilityResult);
-        VERIFY_ARE_EQUAL(_expectedCursorVisibility, visible);
-    }
-
-    bool EnableCursorBlinking(const bool enable) override
-    {
-        Log::Comment(L"EnableCursorBlinking MOCK called...");
-
-        if (_enableCursorBlinkingResult)
-        {
-            VERIFY_ARE_EQUAL(_enable, enable);
-        }
-
-        return _enableCursorBlinkingResult;
-    }
-
     bool IsVtInputEnabled() const override
     {
         return false;
-    }
-
-    TextAttribute GetTextAttributes() const
-    {
-        Log::Comment(L"GetTextAttributes MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_getTextAttributesResult);
-        return _attribute;
     }
 
     void SetTextAttributes(const TextAttribute& attrs)
@@ -181,24 +100,7 @@ public:
 
         THROW_HR_IF(E_FAIL, !_setTextAttributesResult);
         VERIFY_ARE_EQUAL(_expectedAttribute, attrs);
-        _attribute = attrs;
-    }
-
-    void SetCurrentLineRendition(const LineRendition /*lineRendition*/)
-    {
-        Log::Comment(L"SetCurrentLineRendition MOCK called...");
-    }
-
-    void ResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
-    {
-        Log::Comment(L"ResetLineRenditionRange MOCK called...");
-    }
-
-    SHORT GetLineWidth(const size_t /*row*/) const
-    {
-        Log::Comment(L"GetLineWidth MOCK called...");
-
-        return _bufferSize.X;
+        _textBuffer->SetCurrentAttributes(attrs);
     }
 
     void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override
@@ -220,16 +122,6 @@ public:
             _events.swap(events);
         }
         eventsWritten = _events.size();
-    }
-
-    void WriteControlInput(_In_ KeyEvent key) override
-    {
-        Log::Comment(L"WriteControlInput MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_writeControlInputResult);
-        VERIFY_ARE_EQUAL('C', key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(0x3, key.GetCharData());
-        VERIFY_ARE_EQUAL(true, key.IsCtrlPressed());
     }
 
     void SetScrollingRegion(const SMALL_RECT& scrollMargins) override
@@ -262,11 +154,6 @@ public:
         VERIFY_ARE_EQUAL(_expectedLineFeedWithReturn, withReturn);
     }
 
-    void ReverseLineFeed() override
-    {
-        Log::Comment(L"ReverseLineFeed MOCK called...");
-    }
-
     void SetWindowTitle(const std::wstring_view title)
     {
         Log::Comment(L"SetWindowTitle MOCK called...");
@@ -289,44 +176,15 @@ public:
         Log::Comment(L"UseMainScreenBuffer MOCK called...");
     }
 
-    void EraseAll() override
-    {
-        Log::Comment(L"EraseAll MOCK called...");
-    }
-
-    void ClearBuffer() override
-    {
-        Log::Comment(L"ClearBuffer MOCK called...");
-    }
-
     CursorType GetUserDefaultCursorStyle() const override
     {
         return CursorType::Legacy;
-    }
-
-    void SetCursorStyle(const CursorType cursorType) override
-    {
-        Log::Comment(L"SetCursorStyle MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_setCursorStyleResult);
-        VERIFY_ARE_EQUAL(_expectedCursorStyle, cursorType);
-    }
-
-    void RefreshWindow() override
-    {
-        Log::Comment(L"RefreshWindow MOCK called...");
     }
 
     bool ResizeWindow(const size_t /*width*/, const size_t /*height*/) override
     {
         Log::Comment(L"ResizeWindow MOCK called...");
         return true;
-    }
-
-    void SuppressResizeRepaint() override
-    {
-        Log::Comment(L"SuppressResizeRepaint MOCK called...");
-        VERIFY_IS_TRUE(false, L"AdaptDispatch should never be calling this function.");
     }
 
     void SetConsoleOutputCP(const unsigned int codepage) override
@@ -348,78 +206,9 @@ public:
         return _isPty;
     }
 
-    void DeleteLines(const size_t /*count*/) override
+    void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
     {
-        Log::Comment(L"DeleteLines MOCK called...");
-    }
-
-    void InsertLines(const size_t /*count*/) override
-    {
-        Log::Comment(L"InsertLines MOCK called...");
-    }
-
-    void MoveToBottom() override
-    {
-        Log::Comment(L"MoveToBottom MOCK called...");
-    }
-
-    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override
-    {
-        Log::Comment(L"GetColorTableEntry MOCK called...");
-
-        if (_getColorTableEntryResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedColorTableIndex, tableIndex);
-            // Simply returning the index as the color value makes it easy for
-            // tests to confirm that they've received the color they expected.
-            return gsl::narrow_cast<COLORREF>(tableIndex);
-        }
-
-        return INVALID_COLOR;
-    }
-
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
-    {
-        Log::Comment(L"SetColorTableEntry MOCK called...");
-        if (_setColorTableEntryResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedColorTableIndex, tableIndex);
-            VERIFY_ARE_EQUAL(_expectedColorValue, color);
-        }
-
-        return _setColorTableEntryResult;
-    }
-
-    void SetColorAliasIndex(const ColorAlias /*alias*/, const size_t /*tableIndex*/) noexcept override
-    {
-        Log::Comment(L"SetColorAliasIndex MOCK called...");
-    }
-
-    void FillRegion(const COORD /*startPosition*/,
-                    const size_t /*fillLength*/,
-                    const wchar_t /*fillChar*/,
-                    const bool /*standardFillAttrs*/) noexcept override
-    {
-        Log::Comment(L"FillRegion MOCK called...");
-    }
-
-    void ScrollRegion(const SMALL_RECT /*scrollRect*/,
-                      const std::optional<SMALL_RECT> /*clipRect*/,
-                      const COORD /*destinationOrigin*/,
-                      const bool /*standardFillAttrs*/) noexcept override
-    {
-        Log::Comment(L"ScrollRegion MOCK called...");
-    }
-
-    void UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
-                        const SIZE cellSize,
-                        const size_t /*centeringHint*/) noexcept override
-    {
-        Log::Comment(L"UpdateSoftFont MOCK called...");
-
-        Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
-        VERIFY_ARE_EQUAL(_expectedCellSize.cx, cellSize.cx);
-        VERIFY_ARE_EQUAL(_expectedCellSize.cy, cellSize.cy);
+        Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
     void ReparentWindow(const uint64_t /*handle*/)
@@ -456,17 +245,10 @@ public:
         Log::Comment(L"Resetting mock data state.");
 
         // APIs succeed by default
-        _setCursorPositionResult = TRUE;
-        _getConsoleScreenBufferInfoExResult = TRUE;
-        _getTextAttributesResult = TRUE;
         _setTextAttributesResult = TRUE;
         _writeInputResult = TRUE;
-        _writeControlInputResult = TRUE;
-        _setWindowInfoResult = TRUE;
-        _moveToBottomResult = true;
 
-        _bufferSize.X = 100;
-        _bufferSize.Y = 600;
+        _textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _viewport.Top = 20;
@@ -477,11 +259,9 @@ public:
         // Call cursor positions separately
         PrepCursor(xact, yact);
 
-        _cursorVisible = TRUE;
-
         // Attribute default is gray on black.
-        _attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
-        _expectedAttribute = _attribute;
+        _textBuffer->SetCurrentAttributes(TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
+        _expectedAttribute = _textBuffer->GetCurrentAttributes();
 
         _events.clear();
         _retainInput = false;
@@ -491,19 +271,22 @@ public:
     {
         Log::Comment(L"Adjusting cursor within viewport... Expected will match actual when done.");
 
+        COORD cursorPos = {};
+        const COORD bufferSize = _textBuffer->GetSize().Dimensions();
+
         switch (xact)
         {
         case CursorX::LEFT:
             Log::Comment(L"Cursor set to left edge of buffer.");
-            _cursorPos.X = 0;
+            cursorPos.X = 0;
             break;
         case CursorX::RIGHT:
             Log::Comment(L"Cursor set to right edge of buffer.");
-            _cursorPos.X = _bufferSize.X - 1;
+            cursorPos.X = bufferSize.X - 1;
             break;
         case CursorX::XCENTER:
             Log::Comment(L"Cursor set to centered X of buffer.");
-            _cursorPos.X = _bufferSize.X / 2;
+            cursorPos.X = bufferSize.X / 2;
             break;
         }
 
@@ -511,19 +294,25 @@ public:
         {
         case CursorY::TOP:
             Log::Comment(L"Cursor set to top edge of viewport.");
-            _cursorPos.Y = _viewport.Top;
+            cursorPos.Y = _viewport.Top;
             break;
         case CursorY::BOTTOM:
             Log::Comment(L"Cursor set to bottom edge of viewport.");
-            _cursorPos.Y = _viewport.Bottom - 1;
+            cursorPos.Y = _viewport.Bottom - 1;
             break;
         case CursorY::YCENTER:
             Log::Comment(L"Cursor set to centered Y of viewport.");
-            _cursorPos.Y = _viewport.Top + ((_viewport.Bottom - _viewport.Top) / 2);
+            cursorPos.Y = _viewport.Top + ((_viewport.Bottom - _viewport.Top) / 2);
             break;
         }
 
-        _expectedCursorPos = _cursorPos;
+        _textBuffer->GetCursor().SetPosition(cursorPos);
+        _expectedCursorPos = cursorPos;
+    }
+
+    void ValidateExpectedCursorPos()
+    {
+        VERIFY_ARE_EQUAL(_expectedCursorPos, _textBuffer->GetCursor().GetPosition());
     }
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
@@ -550,16 +339,6 @@ public:
             VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
             VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualScanCode());
         }
-    }
-
-    void AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) const
-    {
-        Log::Comment(L"AddHyperlink MOCK called...");
-    }
-
-    void EndHyperlink() const
-    {
-        Log::Comment(L"EndHyperlink MOCK called...");
     }
 
     void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
@@ -593,66 +372,31 @@ public:
         });
     }
 
-    COORD _bufferSize = { 0, 0 };
+    StateMachine* _stateMachine;
+    DummyRenderer _renderer;
+    std::unique_ptr<TextBuffer> _textBuffer;
     SMALL_RECT _viewport = { 0, 0, 0, 0 };
-    SMALL_RECT _expectedConsoleWindow = { 0, 0, 0, 0 };
-    COORD _cursorPos = { 0, 0 };
     SMALL_RECT _expectedScrollRegion = { 0, 0, 0, 0 };
     SMALL_RECT _activeScrollRegion = { 0, 0, 0, 0 };
 
-    bool _cursorVisible = false;
-
     COORD _expectedCursorPos = { 0, 0 };
 
-    TextAttribute _attribute = {};
     TextAttribute _expectedAttribute = {};
     unsigned int _expectedOutputCP = 0;
     bool _isPty = false;
 
-    bool _setCursorVisibilityResult = false;
-    bool _expectedCursorVisibility = false;
-
-    bool _getConsoleScreenBufferInfoExResult = false;
-    bool _setCursorPositionResult = false;
-    bool _getTextAttributesResult = false;
     bool _setTextAttributesResult = false;
     bool _writeInputResult = false;
-    bool _writeControlInputResult = false;
 
-    bool _setWindowInfoResult = false;
-    bool _expectedWindowAbsolute = false;
-    bool _setConsoleScreenBufferInfoExResult = false;
-
-    COORD _expectedScreenBufferSize = { 0, 0 };
-    SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
-    bool _setInputModeResult = false;
-    TerminalInput::Mode _expectedInputMode;
-    bool _expectedInputModeEnabled = false;
-    bool _setParserModeResult = false;
-    StateMachine::Mode _expectedParserMode;
-    bool _expectedParserModeEnabled = false;
-    bool _enableCursorBlinkingResult = false;
-    bool _enable = false; // for cursor blinking
     bool _setScrollingRegionResult = false;
     bool _getLineFeedModeResult = false;
     bool _lineFeedResult = false;
     bool _expectedLineFeedWithReturn = false;
-    bool _reverseLineFeedResult = false;
 
     bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
-    bool _setCursorStyleResult = false;
-    CursorType _expectedCursorStyle;
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
-    bool _moveToBottomResult = false;
-
-    bool _getColorTableEntryResult = false;
-    bool _setColorTableEntryResult = false;
-    size_t _expectedColorTableIndex = SIZE_MAX;
-    COLORREF _expectedColorValue = INVALID_COLOR;
-
-    SIZE _expectedCellSize = {};
 
 private:
     HANDLE _hCon;
@@ -673,15 +417,27 @@ public:
         {
             // give AdaptDispatch ownership of _testGetSet
             _testGetSet = api.get(); // keep a copy for us but don't manage its lifetime anymore.
-            _pDispatch = std::make_unique<AdaptDispatch>(std::move(api));
-            fSuccess = _pDispatch != nullptr;
+            _terminalInput = TerminalInput{ nullptr };
+            auto& renderer = _testGetSet->_renderer;
+            auto& renderSettings = renderer._renderSettings;
+            auto adapter = std::make_unique<AdaptDispatch>(std::move(api), renderer, renderSettings, _terminalInput);
+
+            fSuccess = adapter.get() != nullptr;
+            if (fSuccess)
+            {
+                _pDispatch = adapter.get();
+                auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
+                _stateMachine = std::make_unique<StateMachine>(std::move(engine));
+                _testGetSet->_stateMachine = _stateMachine.get();
+            }
         }
         return fSuccess;
     }
 
     TEST_METHOD_CLEANUP(CleanupMethods)
     {
-        _pDispatch.reset();
+        _stateMachine.reset();
+        _pDispatch = nullptr;
         _testGetSet = nullptr;
         return true;
     }
@@ -743,7 +499,8 @@ public:
         Log::Comment(L"Test 1: Cursor doesn't move when placed in corner of viewport.");
         _testGetSet->PrepData(direction);
 
-        VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(1));
+        VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(1));
+        _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Test 1b: Cursor moves to left of line with next/prev line command when cursor can't move higher/lower.");
 
@@ -764,7 +521,8 @@ public:
         if (fDoTest1b)
         {
             _testGetSet->_expectedCursorPos.X = 0;
-            VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(1));
+            VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(1));
+            _testGetSet->ValidateExpectedCursorPos();
         }
         else
         {
@@ -799,7 +557,8 @@ public:
             break;
         }
 
-        VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(1));
+        VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(1));
+        _testGetSet->ValidateExpectedCursorPos();
 
         // place cursor and move it up too far. It should get bounded by the viewport.
         Log::Comment(L"Test 3: Cursor moves and gets stuck at viewport when started away from edges and moved beyond edges.");
@@ -816,7 +575,7 @@ public:
             _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
             break;
         case CursorDirection::RIGHT:
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_bufferSize.X - 1;
+            _testGetSet->_expectedCursorPos.X = _testGetSet->_textBuffer->GetSize().Dimensions().X - 1;
             break;
         case CursorDirection::LEFT:
             _testGetSet->_expectedCursorPos.X = 0;
@@ -831,23 +590,8 @@ public:
             break;
         }
 
-        VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(100));
-
-        // error cases
-        // SetCursorPosition throws failure. Parameters are otherwise normal.
-        Log::Comment(L"Test 4: When SetCursorPosition throws a failure, call fails and cursor doesn't move.");
-        _testGetSet->PrepData(direction);
-        _testGetSet->_setCursorPositionResult = FALSE;
-
-        VERIFY_THROWS((_pDispatch.get()->*(moveFunc))(0), std::exception);
-        VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
-
-        // GetConsoleScreenBufferInfo throws failure. Parameters are otherwise normal.
-        Log::Comment(L"Test 5: When GetConsoleScreenBufferInfo throws a failure, call fails and cursor doesn't move.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-        _testGetSet->_getConsoleScreenBufferInfoExResult = FALSE;
-        VERIFY_THROWS((_pDispatch.get()->*(moveFunc))(0), std::exception);
-        VERIFY_ARE_EQUAL(_testGetSet->_expectedCursorPos, _testGetSet->_cursorPos);
+        VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(100));
+        _testGetSet->ValidateExpectedCursorPos();
     }
 
     TEST_METHOD(CursorPositionTest)
@@ -864,7 +608,8 @@ public:
         _testGetSet->_expectedCursorPos.X = sCol - 1;
         _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top + (sRow - 1);
 
-        VERIFY_IS_TRUE(_pDispatch.get()->CursorPosition(sRow, sCol));
+        VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
+        _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Test 2: Move to 0, 0 (which is 1,1 in VT speak)");
         _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
@@ -873,32 +618,20 @@ public:
         _testGetSet->_expectedCursorPos.X = 0;
         _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
 
-        VERIFY_IS_TRUE(_pDispatch.get()->CursorPosition(1, 1));
+        VERIFY_IS_TRUE(_pDispatch->CursorPosition(1, 1));
+        _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        sCol = (_testGetSet->_bufferSize.X) * 2;
+        sCol = (_testGetSet->_textBuffer->GetSize().Dimensions().X) * 2;
         sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) * 2;
 
-        _testGetSet->_expectedCursorPos.X = _testGetSet->_bufferSize.X - 1;
+        _testGetSet->_expectedCursorPos.X = _testGetSet->_textBuffer->GetSize().Dimensions().X - 1;
         _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
 
-        VERIFY_IS_TRUE(_pDispatch.get()->CursorPosition(sRow, sCol));
-
-        Log::Comment(L"Test 4: GetConsoleInfo API returns false. No move, return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        _testGetSet->_getConsoleScreenBufferInfoExResult = FALSE;
-
-        VERIFY_THROWS(_pDispatch.get()->CursorPosition(1, 1), std::exception);
-
-        Log::Comment(L"Test 5: SetCursor API returns false. No move, return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        _testGetSet->_setCursorPositionResult = FALSE;
-
-        VERIFY_THROWS(_pDispatch.get()->CursorPosition(1, 1), std::exception);
+        VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
+        _testGetSet->ValidateExpectedCursorPos();
     }
 
     TEST_METHOD(CursorSingleDimensionMoveTest)
@@ -927,7 +660,7 @@ public:
         {
         case AbsolutePosition::CursorHorizontal:
             Log::Comment(L"Testing cursor horizontal movement.");
-            sRangeEnd = _testGetSet->_bufferSize.X;
+            sRangeEnd = _testGetSet->_textBuffer->GetSize().Dimensions().X;
             sRangeStart = 0;
             psCursorExpected = &_testGetSet->_expectedCursorPos.X;
             moveFunc = &AdaptDispatch::CursorHorizontalPositionAbsolute;
@@ -954,7 +687,8 @@ public:
 
         *psCursorExpected = sRangeStart + (sVal - 1);
 
-        VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(sVal));
+        VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(sVal));
+        _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Test 2: Move to 0 (which is 1 in VT speak)");
         _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
@@ -962,7 +696,8 @@ public:
         *psCursorExpected = sRangeStart;
         sVal = 1;
 
-        VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(sVal));
+        VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(sVal));
+        _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
@@ -971,25 +706,8 @@ public:
 
         *psCursorExpected = sRangeEnd - 1;
 
-        VERIFY_IS_TRUE((_pDispatch.get()->*(moveFunc))(sVal));
-
-        Log::Comment(L"Test 4: GetConsoleInfo API returns false. No move, return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        _testGetSet->_getConsoleScreenBufferInfoExResult = FALSE;
-
-        sVal = 1;
-
-        VERIFY_THROWS((_pDispatch.get()->*(moveFunc))(sVal), std::exception);
-
-        Log::Comment(L"Test 5: SetCursor API returns false. No move, return false.");
-        _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
-
-        _testGetSet->_setCursorPositionResult = FALSE;
-
-        sVal = 1;
-
-        VERIFY_THROWS((_pDispatch.get()->*(moveFunc))(sVal), std::exception);
+        VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(sVal));
+        _testGetSet->ValidateExpectedCursorPos();
     }
 
     TEST_METHOD(CursorSaveRestoreTest)
@@ -1011,11 +729,13 @@ public:
         // Attributes are restored to defaults.
         _testGetSet->_expectedAttribute = {};
 
-        VERIFY_IS_TRUE(_pDispatch.get()->CursorRestoreState(), L"By default, restore to top left corner (0,0 offset from viewport).");
+        VERIFY_IS_TRUE(_pDispatch->CursorRestoreState(), L"By default, restore to top left corner (0,0 offset from viewport).");
+        _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Test 2: Place cursor in center. Save. Move cursor to corner. Restore. Should come back to center.");
         _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        VERIFY_IS_TRUE(_pDispatch.get()->CursorSaveState(), L"Succeed at saving position.");
+        VERIFY_IS_TRUE(_pDispatch->CursorSaveState(), L"Succeed at saving position.");
+        _testGetSet->ValidateExpectedCursorPos();
 
         Log::Comment(L"Backup expected cursor (in the middle). Move cursor to corner. Then re-set expected cursor to middle.");
         // save expected cursor position
@@ -1027,7 +747,8 @@ public:
         // restore expected cursor position to center.
         _testGetSet->_expectedCursorPos = coordExpected;
 
-        VERIFY_IS_TRUE(_pDispatch.get()->CursorRestoreState(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.");
+        VERIFY_IS_TRUE(_pDispatch->CursorRestoreState(), L"Restoring to corner should succeed. API call inside will test that cursor matched expected position.");
+        _testGetSet->ValidateExpectedCursorPos();
     }
 
     TEST_METHOD(CursorHideShowTest)
@@ -1045,17 +766,11 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fStartingVis", fStart));
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fEndingVis", fEnd));
 
-        Log::Comment(L"Test 1: Verify successful API call modifies visibility state.");
+        Log::Comment(L"Verify successful API call modifies visibility state.");
         _testGetSet->PrepData();
-        _testGetSet->_cursorVisible = fStart;
-        _testGetSet->_setCursorVisibilityResult = true;
-        _testGetSet->_expectedCursorVisibility = fEnd;
-        VERIFY_IS_TRUE(_pDispatch.get()->CursorVisibility(fEnd));
-
-        Log::Comment(L"Test 3: When we fail to set updated cursor information, the dispatch should fail.");
-        _testGetSet->PrepData();
-        _testGetSet->_setCursorVisibilityResult = false;
-        VERIFY_THROWS(_pDispatch.get()->CursorVisibility(fEnd), std::exception);
+        _testGetSet->_textBuffer->GetCursor().SetIsVisible(fStart);
+        VERIFY_IS_TRUE(_pDispatch->CursorVisibility(fEnd));
+        VERIFY_ARE_EQUAL(fEnd, _testGetSet->_textBuffer->GetCursor().IsVisible());
     }
 
     TEST_METHOD(GraphicsBaseTests)
@@ -1069,23 +784,16 @@ public:
         VTParameter rgOptions[16];
         size_t cOptions = 0;
 
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
-        Log::Comment(L"Test 2: Gracefully fail when getting attribute data fails.");
-
-        _testGetSet->PrepData();
-        _testGetSet->_getTextAttributesResult = FALSE;
-
-        VERIFY_THROWS(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }), std::exception);
-
-        Log::Comment(L"Test 3: Gracefully fail when setting attribute data fails.");
+        Log::Comment(L"Test 2: Gracefully fail when setting attribute data fails.");
 
         _testGetSet->PrepData();
         _testGetSet->_setTextAttributesResult = FALSE;
         // Need at least one option in order for the call to be able to fail.
         rgOptions[0] = (DispatchTypes::GraphicsOptions)0;
         cOptions = 1;
-        VERIFY_THROWS(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }), std::exception);
+        VERIFY_THROWS(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }), std::exception);
     }
 
     TEST_METHOD(GraphicsSingleTests)
@@ -1107,299 +815,300 @@ public:
         size_t cOptions = 1;
         rgOptions[0] = graphicsOption;
 
+        TextAttribute startingAttribute;
         switch (graphicsOption)
         {
         case DispatchTypes::GraphicsOptions::Off:
             Log::Comment(L"Testing graphics 'Off/Reset'");
-            _testGetSet->_attribute = TextAttribute{ (WORD)~_testGetSet->s_defaultFill };
+            startingAttribute = TextAttribute{ (WORD)~_testGetSet->s_defaultFill };
             _testGetSet->_expectedAttribute = TextAttribute{};
             break;
         case DispatchTypes::GraphicsOptions::Intense:
             Log::Comment(L"Testing graphics 'Intense'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetIntense(true);
             break;
         case DispatchTypes::GraphicsOptions::RGBColorOrFaint:
             Log::Comment(L"Testing graphics 'Faint'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetFaint(true);
             break;
         case DispatchTypes::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetUnderlined(true);
             break;
         case DispatchTypes::GraphicsOptions::DoublyUnderlined:
             Log::Comment(L"Testing graphics 'Doubly Underlined'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
             break;
         case DispatchTypes::GraphicsOptions::Overline:
             Log::Comment(L"Testing graphics 'Overline'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_GRID_HORIZONTAL };
             break;
         case DispatchTypes::GraphicsOptions::Negative:
             Log::Comment(L"Testing graphics 'Negative'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
             break;
         case DispatchTypes::GraphicsOptions::Invisible:
             Log::Comment(L"Testing graphics 'Invisible'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetInvisible(true);
             break;
         case DispatchTypes::GraphicsOptions::CrossedOut:
             Log::Comment(L"Testing graphics 'Crossed Out'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
+            startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetCrossedOut(true);
             break;
         case DispatchTypes::GraphicsOptions::NotIntenseOrFaint:
             Log::Comment(L"Testing graphics 'No Intense or Faint'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_attribute.SetIntense(true);
-            _testGetSet->_attribute.SetFaint(true);
+            startingAttribute = TextAttribute{ 0 };
+            startingAttribute.SetIntense(true);
+            startingAttribute.SetFaint(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_attribute.SetUnderlined(true);
-            _testGetSet->_attribute.SetDoublyUnderlined(true);
+            startingAttribute = TextAttribute{ 0 };
+            startingAttribute.SetUnderlined(true);
+            startingAttribute.SetDoublyUnderlined(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoOverline:
             Log::Comment(L"Testing graphics 'No Overline'");
-            _testGetSet->_attribute = TextAttribute{ COMMON_LVB_GRID_HORIZONTAL };
+            startingAttribute = TextAttribute{ COMMON_LVB_GRID_HORIZONTAL };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::Positive:
             Log::Comment(L"Testing graphics 'Positive'");
-            _testGetSet->_attribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
+            startingAttribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::Visible:
             Log::Comment(L"Testing graphics 'Visible'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_attribute.SetInvisible(true);
+            startingAttribute = TextAttribute{ 0 };
+            startingAttribute.SetInvisible(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NotCrossedOut:
             Log::Comment(L"Testing graphics 'Not Crossed Out'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_attribute.SetCrossedOut(true);
+            startingAttribute = TextAttribute{ 0 };
+            startingAttribute.SetCrossedOut(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::ForegroundBlack:
             Log::Comment(L"Testing graphics 'Foreground Color Black'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundBlue:
             Log::Comment(L"Testing graphics 'Foreground Color Blue'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundGreen:
             Log::Comment(L"Testing graphics 'Foreground Color Green'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundCyan:
             Log::Comment(L"Testing graphics 'Foreground Color Cyan'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundRed:
             Log::Comment(L"Testing graphics 'Foreground Color Red'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundMagenta:
             Log::Comment(L"Testing graphics 'Foreground Color Magenta'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_GREEN | FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_GREEN | FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundYellow:
             Log::Comment(L"Testing graphics 'Foreground Color Yellow'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundWhite:
             Log::Comment(L"Testing graphics 'Foreground Color White'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_WHITE);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundDefault:
             Log::Comment(L"Testing graphics 'Foreground Color Default'");
-            _testGetSet->_attribute = TextAttribute{ (WORD)~_testGetSet->s_wDefaultAttribute }; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
+            startingAttribute = TextAttribute{ (WORD)~_testGetSet->s_wDefaultAttribute }; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute; // expect = starting
+            _testGetSet->_expectedAttribute = startingAttribute; // expect = starting
             _testGetSet->_expectedAttribute.SetDefaultForeground(); // set the foreground as default
             break;
         case DispatchTypes::GraphicsOptions::BackgroundBlack:
             Log::Comment(L"Testing graphics 'Background Color Black'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundBlue:
             Log::Comment(L"Testing graphics 'Background Color Blue'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundGreen:
             Log::Comment(L"Testing graphics 'Background Color Green'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundCyan:
             Log::Comment(L"Testing graphics 'Background Color Cyan'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundRed:
             Log::Comment(L"Testing graphics 'Background Color Red'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_RED);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundMagenta:
             Log::Comment(L"Testing graphics 'Background Color Magenta'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_GREEN | BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_GREEN | BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundYellow:
             Log::Comment(L"Testing graphics 'Background Color Yellow'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundWhite:
             Log::Comment(L"Testing graphics 'Background Color White'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_INTENSITY };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_INTENSITY };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_WHITE);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundDefault:
             Log::Comment(L"Testing graphics 'Background Color Default'");
-            _testGetSet->_attribute = TextAttribute{ (WORD)~_testGetSet->s_wDefaultAttribute }; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
+            startingAttribute = TextAttribute{ (WORD)~_testGetSet->s_wDefaultAttribute }; // set the current attribute to the opposite of default so we can ensure all relevant bits flip.
             // To get expected value, take what we started with and change ONLY the background series of bits to what the Default says.
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute; // expect = starting
+            _testGetSet->_expectedAttribute = startingAttribute; // expect = starting
             _testGetSet->_expectedAttribute.SetDefaultBackground(); // set the background as default
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundBlack:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Black'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundBlue:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Blue'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundGreen:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Green'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_BLUE };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_BLUE };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundCyan:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Cyan'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_RED };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundRed:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Red'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_RED);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Magenta'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_GREEN };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_GREEN };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundYellow:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Yellow'");
-            _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ FOREGROUND_BLUE };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundWhite:
             Log::Comment(L"Testing graphics 'Bright Foreground Color White'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_WHITE);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundBlack:
             Log::Comment(L"Testing graphics 'Bright Background Color Black'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundBlue:
             Log::Comment(L"Testing graphics 'Bright Background Color Blue'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundGreen:
             Log::Comment(L"Testing graphics 'Bright Background Color Green'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_BLUE };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_BLUE };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundCyan:
             Log::Comment(L"Testing graphics 'Bright Background Color Cyan'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_RED };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundRed:
             Log::Comment(L"Testing graphics 'Bright Background Color Red'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_GREEN };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_GREEN };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_RED);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Background Color Magenta'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_GREEN };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_GREEN };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundYellow:
             Log::Comment(L"Testing graphics 'Bright Background Color Yellow'");
-            _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ BACKGROUND_BLUE };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundWhite:
             Log::Comment(L"Testing graphics 'Bright Background Color White'");
-            _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = startingAttribute;
             _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_WHITE);
             break;
         default:
@@ -1407,7 +1116,8 @@ public:
             break;
         }
 
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        _testGetSet->_textBuffer->SetCurrentAttributes(startingAttribute);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
     TEST_METHOD(GraphicsPushPopTests)
@@ -1561,82 +1271,82 @@ public:
         Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_expectedAttribute = {};
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Enabling brightness");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Intense;
         _testGetSet->_expectedAttribute.SetIntense(true);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(WI_IsFlagSet(_testGetSet->_attribute.GetLegacyAttributes(), FOREGROUND_GREEN));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(WI_IsFlagSet(_testGetSet->_textBuffer->GetCurrentAttributes().GetLegacyAttributes(), FOREGROUND_GREEN));
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Test 2: Disable brightness, use a bright color, next normal call remains not bright");
         Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_expectedAttribute = {};
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(WI_IsFlagClear(_testGetSet->_attribute.GetLegacyAttributes(), FOREGROUND_INTENSITY));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(WI_IsFlagClear(_testGetSet->_textBuffer->GetCurrentAttributes().GetLegacyAttributes(), FOREGROUND_INTENSITY));
+        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue', brightness of 9x series doesn't persist");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Test 3: Enable brightness, use a bright color, brightness persists to next normal call");
         Log::Comment(L"Resetting graphics options");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
         _testGetSet->_expectedAttribute = {};
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_FALSE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Enabling brightness");
         rgOptions[0] = DispatchTypes::GraphicsOptions::Intense;
         _testGetSet->_expectedAttribute.SetIntense(true);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue, with brightness', brightness of 9x series doesn't affect brightness");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
-        VERIFY_IS_TRUE(_testGetSet->_attribute.IsIntense());
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCurrentAttributes().IsIntense());
     }
 
     TEST_METHOD(DeviceStatusReportTests)
@@ -1645,7 +1355,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch.get()->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
     }
 
     TEST_METHOD(DeviceStatus_OperatingStatusTests)
@@ -1654,7 +1364,7 @@ public:
 
         Log::Comment(L"Test 1: Verify good operating condition.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::OS_OperatingStatus));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::OS_OperatingStatus));
 
         _testGetSet->ValidateInputEvent(L"\x1b[0n");
     }
@@ -1668,7 +1378,7 @@ public:
             _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
             // start with the cursor position in the buffer.
-            COORD coordCursorExpected = _testGetSet->_cursorPos;
+            COORD coordCursorExpected = _testGetSet->_textBuffer->GetCursor().GetPosition();
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
             coordCursorExpected.Y -= _testGetSet->_viewport.Top;
@@ -1677,7 +1387,7 @@ public:
             coordCursorExpected.X++;
             coordCursorExpected.Y++;
 
-            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
 
             wchar_t pwszBuffer[50];
 
@@ -1693,7 +1403,7 @@ public:
             auto retentionScope{ _testGetSet->EnableInputRetentionInScope() };
 
             // start with the cursor position in the buffer.
-            til::point coordCursorExpectedFirst{ _testGetSet->_cursorPos };
+            til::point coordCursorExpectedFirst{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
             coordCursorExpectedFirst -= til::point{ 0, _testGetSet->_viewport.Top };
@@ -1701,15 +1411,17 @@ public:
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
             coordCursorExpectedFirst += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
 
-            _testGetSet->_cursorPos.X++;
-            _testGetSet->_cursorPos.Y++;
+            auto cursorPos = _testGetSet->_textBuffer->GetCursor().GetPosition();
+            cursorPos.X++;
+            cursorPos.Y++;
+            _testGetSet->_textBuffer->GetCursor().SetPosition(cursorPos);
 
             auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
             coordCursorExpectedSecond += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
 
             wchar_t pwszBuffer[50];
 
@@ -1724,7 +1436,7 @@ public:
 
         Log::Comment(L"Test 1: Verify normal response.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch.get()->DeviceAttributes());
+        VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
         PCWSTR pwszExpectedResponse = L"\x1b[?1;0c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
@@ -1733,7 +1445,7 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_writeInputResult = FALSE;
 
-        VERIFY_THROWS(_pDispatch.get()->DeviceAttributes(), std::exception);
+        VERIFY_THROWS(_pDispatch->DeviceAttributes(), std::exception);
     }
 
     TEST_METHOD(SecondaryDeviceAttributesTests)
@@ -1742,7 +1454,7 @@ public:
 
         Log::Comment(L"Test 1: Verify normal response.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch.get()->SecondaryDeviceAttributes());
+        VERIFY_IS_TRUE(_pDispatch->SecondaryDeviceAttributes());
 
         PCWSTR pwszExpectedResponse = L"\x1b[>0;10;1c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
@@ -1751,7 +1463,7 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_writeInputResult = FALSE;
 
-        VERIFY_THROWS(_pDispatch.get()->SecondaryDeviceAttributes(), std::exception);
+        VERIFY_THROWS(_pDispatch->SecondaryDeviceAttributes(), std::exception);
     }
 
     TEST_METHOD(TertiaryDeviceAttributesTests)
@@ -1760,7 +1472,7 @@ public:
 
         Log::Comment(L"Test 1: Verify normal response.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch.get()->TertiaryDeviceAttributes());
+        VERIFY_IS_TRUE(_pDispatch->TertiaryDeviceAttributes());
 
         PCWSTR pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
@@ -1769,7 +1481,7 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_writeInputResult = FALSE;
 
-        VERIFY_THROWS(_pDispatch.get()->TertiaryDeviceAttributes(), std::exception);
+        VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
     }
 
     TEST_METHOD(RequestTerminalParametersTests)
@@ -1778,28 +1490,28 @@ public:
 
         Log::Comment(L"Test 1: Verify response for unsolicited permission.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+        VERIFY_IS_TRUE(_pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
         _testGetSet->ValidateInputEvent(L"\x1b[2;1;1;128;128;1;0x");
 
         Log::Comment(L"Test 2: Verify response for solicited permission.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Solicited));
+        VERIFY_IS_TRUE(_pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Solicited));
         _testGetSet->ValidateInputEvent(L"\x1b[3;1;1;128;128;1;0x");
 
         Log::Comment(L"Test 3: Verify failure with invalid parameter.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
+        VERIFY_IS_FALSE(_pDispatch->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
 
         Log::Comment(L"Test 4: Verify failure when WriteInput doesn't work.");
         _testGetSet->PrepData();
         _testGetSet->_writeInputResult = FALSE;
-        VERIFY_THROWS(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited), std::exception);
+        VERIFY_THROWS(_pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited), std::exception);
     }
 
     TEST_METHOD(RequestSettingsTests)
     {
         const auto requestSetting = [=](const std::wstring_view settingId = {}) {
-            const auto stringHandler = _pDispatch.get()->RequestSetting();
+            const auto stringHandler = _pDispatch->RequestSetting();
             for (auto ch : settingId)
             {
                 stringHandler(ch);
@@ -1809,7 +1521,7 @@ public:
 
         Log::Comment(L"Requesting DECSTBM margins (5 to 10).");
         _testGetSet->PrepData();
-        _pDispatch.get()->SetTopBottomScrollingMargins(5, 10);
+        _pDispatch->SetTopBottomScrollingMargins(5, 10);
         requestSetting(L"r");
         _testGetSet->ValidateInputEvent(L"\033P1$r5;10r\033\\");
 
@@ -1817,79 +1529,88 @@ public:
         _testGetSet->PrepData();
         // Set screen height to 25 - this will be the expected margin range.
         _testGetSet->_viewport.Bottom = _testGetSet->_viewport.Top + 25;
-        _pDispatch.get()->SetTopBottomScrollingMargins(0, 0);
+        _pDispatch->SetTopBottomScrollingMargins(0, 0);
         requestSetting(L"r");
         _testGetSet->ValidateInputEvent(L"\033P1$r1;25r\033\\");
 
         Log::Comment(L"Requesting SGR attributes (default).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
+        TextAttribute attribute = {};
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (intense, underlined, reversed).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetIntense(true);
-        _testGetSet->_attribute.SetUnderlined(true);
-        _testGetSet->_attribute.SetReverseVideo(true);
+        attribute = {};
+        attribute.SetIntense(true);
+        attribute.SetUnderlined(true);
+        attribute.SetReverseVideo(true);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4;7m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (faint, blinking, invisible).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetFaint(true);
-        _testGetSet->_attribute.SetBlinking(true);
-        _testGetSet->_attribute.SetInvisible(true);
+        attribute = {};
+        attribute.SetFaint(true);
+        attribute.SetBlinking(true);
+        attribute.SetInvisible(true);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;2;5;8m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (italic, crossed-out).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetItalic(true);
-        _testGetSet->_attribute.SetCrossedOut(true);
+        attribute = {};
+        attribute.SetItalic(true);
+        attribute.SetCrossedOut(true);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;3;9m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (doubly underlined, overlined).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetDoublyUnderlined(true);
-        _testGetSet->_attribute.SetOverlined(true);
+        attribute = {};
+        attribute.SetDoublyUnderlined(true);
+        attribute.SetOverlined(true);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;21;53m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (standard colors).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetIndexedForeground(TextColor::DARK_YELLOW);
-        _testGetSet->_attribute.SetIndexedBackground(TextColor::DARK_CYAN);
+        attribute = {};
+        attribute.SetIndexedForeground(TextColor::DARK_YELLOW);
+        attribute.SetIndexedBackground(TextColor::DARK_CYAN);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;33;46m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (AIX colors).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetIndexedForeground(TextColor::BRIGHT_CYAN);
-        _testGetSet->_attribute.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
+        attribute = {};
+        attribute.SetIndexedForeground(TextColor::BRIGHT_CYAN);
+        attribute.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;96;103m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (ITU indexed colors).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetIndexedForeground256(123);
-        _testGetSet->_attribute.SetIndexedBackground256(45);
+        attribute = {};
+        attribute.SetIndexedForeground256(123);
+        attribute.SetIndexedBackground256(45);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;38;5;123;48;5;45m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
         _testGetSet->PrepData();
-        _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetForeground(RGB(12, 34, 56));
-        _testGetSet->_attribute.SetBackground(RGB(65, 43, 21));
+        attribute = {};
+        attribute.SetForeground(RGB(12, 34, 56));
+        attribute.SetBackground(RGB(65, 43, 21));
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;38;2;12;34;56;48;2;65;43;21m\033\\");
 
@@ -1902,87 +1623,72 @@ public:
     TEST_METHOD(CursorKeysModeTest)
     {
         Log::Comment(L"Starting test...");
+        _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, true);
 
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _testGetSet->_setInputModeResult = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::CursorKey;
-        _testGetSet->_expectedInputModeEnabled = false;
-
-        VERIFY_IS_TRUE(_pDispatch.get()->SetCursorKeysMode(false));
+        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _testGetSet->_setInputModeResult = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::CursorKey;
-        _testGetSet->_expectedInputModeEnabled = true;
-
-        VERIFY_IS_TRUE(_pDispatch.get()->SetCursorKeysMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
     }
 
     TEST_METHOD(KeypadModeTest)
     {
         Log::Comment(L"Starting test...");
+        _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, true);
 
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _testGetSet->_setInputModeResult = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::Keypad;
-        _testGetSet->_expectedInputModeEnabled = false;
-
-        VERIFY_IS_TRUE(_pDispatch.get()->SetKeypadMode(false));
+        VERIFY_IS_TRUE(_pDispatch->SetKeypadMode(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::Keypad));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _testGetSet->_setInputModeResult = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::Keypad;
-        _testGetSet->_expectedInputModeEnabled = true;
-
-        VERIFY_IS_TRUE(_pDispatch.get()->SetKeypadMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetKeypadMode(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::Keypad));
     }
 
     TEST_METHOD(AnsiModeTest)
     {
         Log::Comment(L"Starting test...");
+        _stateMachine->SetParserMode(StateMachine::Mode::Ansi, false);
 
         // success cases
         // set ansi mode = true
         Log::Comment(L"Test 1: ansi mode = true");
-        _testGetSet->_setParserModeResult = true;
-        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
-        _testGetSet->_expectedParserModeEnabled = true;
-
-        VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetAnsiMode(true));
+        VERIFY_IS_TRUE(_stateMachine->GetParserMode(StateMachine::Mode::Ansi));
 
         // set ansi mode = false
         Log::Comment(L"Test 2: ansi mode = false.");
-        _testGetSet->_setParserModeResult = true;
-        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
-        _testGetSet->_expectedParserModeEnabled = false;
-
-        VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(false));
+        VERIFY_IS_TRUE(_pDispatch->SetAnsiMode(false));
+        VERIFY_IS_FALSE(_stateMachine->GetParserMode(StateMachine::Mode::Ansi));
     }
 
     TEST_METHOD(AllowBlinkingTest)
     {
         Log::Comment(L"Starting test...");
 
+        _testGetSet->PrepData();
+
         // success cases
-        // set numeric mode = true
+        // set blinking mode = true
         Log::Comment(L"Test 1: enable blinking = true");
-        _testGetSet->_enableCursorBlinkingResult = TRUE;
-        _testGetSet->_enable = true;
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(true));
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
 
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableCursorBlinking(true));
-
-        // set numeric mode = false
+        // set blinking mode = false
         Log::Comment(L"Test 2: enable blinking = false");
-        _testGetSet->_enableCursorBlinkingResult = TRUE;
-        _testGetSet->_enable = false;
-
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableCursorBlinking(false));
+        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(false));
+        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
     }
 
     TEST_METHOD(ScrollMarginsTest)
@@ -1990,85 +1696,82 @@ public:
         Log::Comment(L"Starting test...");
 
         SMALL_RECT srTestMargins = { 0 };
-        _testGetSet->_bufferSize = { 100, 600 };
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
         _testGetSet->_viewport.Right = 8;
         _testGetSet->_viewport.Bottom = 8;
-        _testGetSet->_getConsoleScreenBufferInfoExResult = TRUE;
         SHORT sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_setCursorPositionResult = true;
-        _testGetSet->_moveToBottomResult = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 0);
         _testGetSet->_expectedScrollRegion.Bottom = _testGetSet->_viewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
         _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 0);
         _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds has no effect.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 3);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, sScreenHeight);
         _testGetSet->_expectedScrollRegion.Top = 0;
         _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 7: Verify setting margins to (1, height) clears them");
         // First set,
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight);
         _testGetSet->_expectedScrollRegion.Top = 0;
         _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
         // First set,
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         // Then clear
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, 0);
         _testGetSet->_expectedScrollRegion.Top = 0;
         _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 9: Verify having top and bottom margin the same has no effect.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 4, 4);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds has no effect.");
@@ -2076,7 +1779,7 @@ public:
         _testGetSet->_SetMarginsHelper(&srTestMargins, sScreenHeight + 1, sScreenHeight + 10);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds has no effect.");
@@ -2084,7 +1787,7 @@ public:
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight + 1);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch.get()->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
         VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
     }
 
@@ -2097,21 +1800,21 @@ public:
 
         Log::Comment(L"Test 1: Line feed without carriage return.");
         _testGetSet->_expectedLineFeedWithReturn = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::WithoutReturn));
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn));
 
         Log::Comment(L"Test 2: Line feed with carriage return.");
         _testGetSet->_expectedLineFeedWithReturn = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::WithReturn));
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn));
 
         Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
         _testGetSet->_getLineFeedModeResult = false;
         _testGetSet->_expectedLineFeedWithReturn = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
 
         Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
         _testGetSet->_getLineFeedModeResult = true;
         _testGetSet->_expectedLineFeedWithReturn = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
     }
 
     TEST_METHOD(SetConsoleTitleTest)
@@ -2122,13 +1825,13 @@ public:
         _testGetSet->_setWindowTitleResult = TRUE;
         _testGetSet->_expectedWindowTitle = L"Foo bar";
 
-        VERIFY_IS_TRUE(_pDispatch.get()->SetWindowTitle(_testGetSet->_expectedWindowTitle));
+        VERIFY_IS_TRUE(_pDispatch->SetWindowTitle(_testGetSet->_expectedWindowTitle));
 
         Log::Comment(L"Test 2: set title to be null");
         _testGetSet->_setWindowTitleResult = FALSE;
         _testGetSet->_expectedWindowTitle = {};
 
-        VERIFY_IS_TRUE(_pDispatch.get()->SetWindowTitle({}));
+        VERIFY_IS_TRUE(_pDispatch->SetWindowTitle({}));
     }
 
     TEST_METHOD(TestMouseModes)
@@ -2136,52 +1839,46 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: Test Default Mouse Mode");
-        _testGetSet->_expectedInputModeEnabled = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::DefaultMouseTracking;
-        _testGetSet->_setInputModeResult = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableVT200MouseMode(true));
-        _testGetSet->_expectedInputModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableVT200MouseMode(false));
+        _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, false);
+        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
+        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
 
         Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
-        _testGetSet->_expectedInputModeEnabled = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::Utf8MouseEncoding;
-        _testGetSet->_setInputModeResult = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableUTF8ExtendedMouseMode(true));
-        _testGetSet->_expectedInputModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableUTF8ExtendedMouseMode(false));
+        _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, false);
+        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
+        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
 
         Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
-        _testGetSet->_expectedInputModeEnabled = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::SgrMouseEncoding;
-        _testGetSet->_setInputModeResult = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableSGRExtendedMouseMode(true));
-        _testGetSet->_expectedInputModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableSGRExtendedMouseMode(false));
+        _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, false);
+        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
+        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
 
         Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
-        _testGetSet->_expectedInputModeEnabled = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::ButtonEventMouseTracking;
-        _testGetSet->_setInputModeResult = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableButtonEventMouseMode(true));
-        _testGetSet->_expectedInputModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableButtonEventMouseMode(false));
+        _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, false);
+        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
+        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
 
         Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
-        _testGetSet->_expectedInputModeEnabled = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::AnyEventMouseTracking;
-        _testGetSet->_setInputModeResult = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableAnyEventMouseMode(true));
-        _testGetSet->_expectedInputModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableAnyEventMouseMode(false));
+        _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, false);
+        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
+        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
 
         Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
-        _testGetSet->_expectedInputModeEnabled = true;
-        _testGetSet->_expectedInputMode = TerminalInput::Mode::AlternateScroll;
-        _testGetSet->_setInputModeResult = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableAlternateScroll(true));
-        _testGetSet->_expectedInputModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->EnableAlternateScroll(false));
+        _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, false);
+        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(true));
+        VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
+        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(false));
+        VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
     }
 
     TEST_METHOD(Xterm256ColorTest)
@@ -2193,36 +1890,35 @@ public:
         VTParameter rgOptions[16];
         size_t cOptions = 3;
 
-        _testGetSet->_getColorTableEntryResult = true;
-        _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+        _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
         Log::Comment(L"Test 1: Change Foreground");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)2; // Green
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_GREEN);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 2: Change Background");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::BRIGHT_RED);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 3: Change Foreground to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)42; // Arbitrary Color
         _testGetSet->_expectedAttribute.SetIndexedForeground256(42);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 4: Change Background to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)142; // Arbitrary Color
         _testGetSet->_expectedAttribute.SetIndexedBackground256(142);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 5: Change Foreground to Legacy Attr while BG is RGB color");
         // Unfortunately this test isn't all that good, because the adapterTest adapter isn't smart enough
@@ -2232,7 +1928,7 @@ public:
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::BRIGHT_RED);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
     TEST_METHOD(XtermExtendedColorDefaultParameterTest)
@@ -2243,34 +1939,33 @@ public:
 
         VTParameter rgOptions[16];
 
-        _testGetSet->_getColorTableEntryResult = true;
-        _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+        _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
         Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 2 }));
 
         Log::Comment(L"Test 2: Change Indexed Background with default index parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = {};
         _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::DARK_BLACK);
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 3 }));
 
         Log::Comment(L"Test 3: Change RGB Foreground with all RGB parameters missing");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 2 }));
 
         Log::Comment(L"Test 4: Change RGB Background with some missing RGB parameters");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
         rgOptions[2] = 123;
         _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 3 }));
 
         Log::Comment(L"Test 5: Change RGB Foreground with some default RGB parameters");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
@@ -2279,21 +1974,20 @@ public:
         rgOptions[3] = {};
         rgOptions[4] = 123;
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
-        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 5 }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
     }
 
     TEST_METHOD(SetColorTableValue)
     {
         _testGetSet->PrepData();
 
-        _testGetSet->_setColorTableEntryResult = true;
         const auto testColor = RGB(1, 2, 3);
-        _testGetSet->_expectedColorValue = testColor;
+        const auto& renderSettings = _testGetSet->_renderer._renderSettings;
 
         for (size_t i = 0; i < 256; i++)
         {
-            _testGetSet->_expectedColorTableIndex = i;
-            VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(i, testColor));
+            VERIFY_IS_TRUE(_pDispatch->SetColorTableEntry(i, testColor));
+            VERIFY_ARE_EQUAL(testColor, renderSettings.GetColorTableEntry(i));
         }
     }
 
@@ -2303,43 +1997,49 @@ public:
         using FontSet = DispatchTypes::DrcsFontSet;
         using FontUsage = DispatchTypes::DrcsFontUsage;
 
-        const auto decdld = [=](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
-            const auto ec = DispatchTypes::DrcsEraseControl::AllChars;
-            const auto css = DispatchTypes::DrcsCharsetSize::Size94;
+        FontBuffer fontBuffer;
+        SIZE expectedCellSize;
+
+        const auto decdld = [&](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
             const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
-            const auto stringHandler = _pDispatch.get()->DownloadDRCS(0, 0, ec, cellMatrix, ss, u, cmh, css);
-            if (stringHandler)
+            RETURN_BOOL_IF_FALSE(fontBuffer.SetEraseControl(DispatchTypes::DrcsEraseControl::AllChars));
+            RETURN_BOOL_IF_FALSE(fontBuffer.SetAttributes(cellMatrix, cmh, ss, u));
+            RETURN_BOOL_IF_FALSE(fontBuffer.SetStartChar(0, DispatchTypes::DrcsCharsetSize::Size94));
+
+            fontBuffer.AddSixelData(L'B'); // Charset identifier
+            for (auto ch : data)
             {
-                stringHandler(L'B'); // Charset identifier
-                for (auto ch : data)
-                {
-                    stringHandler(ch);
-                }
-                stringHandler(L'\033'); // String terminator
+                fontBuffer.AddSixelData(ch);
             }
-            return stringHandler != nullptr;
+            RETURN_BOOL_IF_FALSE(fontBuffer.FinalizeSixelData());
+
+            const auto cellSize = fontBuffer.GetCellSize().to_win32_size();
+            Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
+            VERIFY_ARE_EQUAL(expectedCellSize.cx, cellSize.cx);
+            VERIFY_ARE_EQUAL(expectedCellSize.cy, cellSize.cy);
+            return true;
         };
 
         // Matrix sizes at 80x24 should always use a 10x10 cell size (VT2xx).
         Log::Comment(L"Matrix 5x10 for 80x24 font set with text usage");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size5x10, 0, FontSet::Size80x24, FontUsage::Text));
         Log::Comment(L"Matrix 6x10 for 80x24 font set with text usage");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size80x24, FontUsage::Text));
         Log::Comment(L"Matrix 7x10 for 80x24 font set with text usage");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 0, FontSet::Size80x24, FontUsage::Text));
 
         // At 132x24 the cell size is typically 6x10 (VT240), but could be 10x10 (VT220)
         Log::Comment(L"Matrix 5x10 for 132x24 font set with text usage");
-        _testGetSet->_expectedCellSize = { 6, 10 };
+        expectedCellSize = { 6, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size5x10, 0, FontSet::Size132x24, FontUsage::Text));
         Log::Comment(L"Matrix 6x10 for 132x24 font set with text usage");
-        _testGetSet->_expectedCellSize = { 6, 10 };
+        expectedCellSize = { 6, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size132x24, FontUsage::Text));
         Log::Comment(L"Matrix 7x10 for 132x24 font set with text usage (VT220 only)");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 0, FontSet::Size132x24, FontUsage::Text));
 
         // Full cell usage is invalid for all matrix sizes except 6x10 at 132x24.
@@ -2352,7 +2052,7 @@ public:
         Log::Comment(L"Matrix 5x10 for 132x24 font set with full cell usage (invalid)");
         VERIFY_IS_FALSE(decdld(CellMatrix::Size5x10, 0, FontSet::Size132x24, FontUsage::FullCell));
         Log::Comment(L"Matrix 6x10 for 132x24 font set with full cell usage");
-        _testGetSet->_expectedCellSize = { 6, 10 };
+        expectedCellSize = { 6, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size132x24, FontUsage::FullCell));
         Log::Comment(L"Matrix 7x10 for 132x24 font set with full cell usage (invalid)");
         VERIFY_IS_FALSE(decdld(CellMatrix::Size7x10, 0, FontSet::Size132x24, FontUsage::FullCell));
@@ -2369,15 +2069,15 @@ public:
 
         // The height parameter has no effect when a matrix size is used.
         Log::Comment(L"Matrix 7x10 with unused height parameter");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 20, FontSet::Size80x24, FontUsage::Text));
 
         // Full cell fonts with explicit dimensions are accepted as their given cell size.
         Log::Comment(L"Explicit 13x17 for 80x24 font set with full cell usage");
-        _testGetSet->_expectedCellSize = { 13, 17 };
+        expectedCellSize = { 13, 17 };
         VERIFY_IS_TRUE(decdld(13, 17, FontSet::Size80x24, FontUsage::FullCell));
         Log::Comment(L"Explicit 9x25 for 132x24 font set with full cell usage");
-        _testGetSet->_expectedCellSize = { 9, 25 };
+        expectedCellSize = { 9, 25 };
         VERIFY_IS_TRUE(decdld(9, 25, FontSet::Size132x24, FontUsage::FullCell));
 
         // Cell sizes outside the maximum supported range (16x32) are invalid.
@@ -2386,174 +2086,170 @@ public:
 
         // Text fonts with explicit dimensions are interpreted as their closest matching device.
         Log::Comment(L"Explicit 12x12 for 80x24 font set with text usage (VT320)");
-        _testGetSet->_expectedCellSize = { 15, 12 };
+        expectedCellSize = { 15, 12 };
         VERIFY_IS_TRUE(decdld(12, 12, FontSet::Size80x24, FontUsage::Text));
         Log::Comment(L"Explicit 9x20 for 80x24 font set with text usage (VT340)");
-        _testGetSet->_expectedCellSize = { 10, 20 };
+        expectedCellSize = { 10, 20 };
         VERIFY_IS_TRUE(decdld(9, 20, FontSet::Size80x24, FontUsage::Text));
         Log::Comment(L"Explicit 10x30 for 80x24 font set with text usage (VT382)");
-        _testGetSet->_expectedCellSize = { 12, 30 };
+        expectedCellSize = { 12, 30 };
         VERIFY_IS_TRUE(decdld(10, 30, FontSet::Size80x24, FontUsage::Text));
         Log::Comment(L"Explicit 8x16 for 80x24 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 10, 16 };
+        expectedCellSize = { 10, 16 };
         VERIFY_IS_TRUE(decdld(8, 16, FontSet::Size80x24, FontUsage::Text));
         Log::Comment(L"Explicit 7x12 for 132x24 font set with text usage (VT320)");
-        _testGetSet->_expectedCellSize = { 9, 12 };
+        expectedCellSize = { 9, 12 };
         VERIFY_IS_TRUE(decdld(7, 12, FontSet::Size132x24, FontUsage::Text));
         Log::Comment(L"Explicit 5x20 for 132x24 font set with text usage (VT340)");
-        _testGetSet->_expectedCellSize = { 6, 20 };
+        expectedCellSize = { 6, 20 };
         VERIFY_IS_TRUE(decdld(5, 20, FontSet::Size132x24, FontUsage::Text));
         Log::Comment(L"Explicit 6x30 for 132x24 font set with text usage (VT382)");
-        _testGetSet->_expectedCellSize = { 7, 30 };
+        expectedCellSize = { 7, 30 };
         VERIFY_IS_TRUE(decdld(6, 30, FontSet::Size132x24, FontUsage::Text));
         Log::Comment(L"Explicit 5x16 for 132x24 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 6, 16 };
+        expectedCellSize = { 6, 16 };
         VERIFY_IS_TRUE(decdld(5, 16, FontSet::Size132x24, FontUsage::Text));
 
         // Font sets with more than 24 lines must be VT420/VT5xx.
         Log::Comment(L"80x36 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x36, FontUsage::Text));
         Log::Comment(L"80x48 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 10, 8 };
+        expectedCellSize = { 10, 8 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x48, FontUsage::Text));
         Log::Comment(L"132x36 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 6, 10 };
+        expectedCellSize = { 6, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x36, FontUsage::Text));
         Log::Comment(L"132x48 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 6, 8 };
+        expectedCellSize = { 6, 8 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x48, FontUsage::Text));
         Log::Comment(L"80x36 font set with full cell usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x36, FontUsage::FullCell));
         Log::Comment(L"80x48 font set with full cell usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 10, 8 };
+        expectedCellSize = { 10, 8 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x48, FontUsage::FullCell));
         Log::Comment(L"132x36 font set with full cell usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 6, 10 };
+        expectedCellSize = { 6, 10 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x36, FontUsage::FullCell));
         Log::Comment(L"132x48 font set with full cell usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 6, 8 };
+        expectedCellSize = { 6, 8 };
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x48, FontUsage::FullCell));
 
         // Without an explicit size, the cell size is estimated from the number of sixels
         // used in the character bitmaps. But note that sixel heights are always a multiple
         // of 6, so will often be larger than the cell size for which they were intended.
         Log::Comment(L"8x12 bitmap for 80x24 font set with text usage (VT2xx)");
-        _testGetSet->_expectedCellSize = { 10, 10 };
+        expectedCellSize = { 10, 10 };
         const auto bitmapOf8x12 = L"????????/????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf8x12));
         Log::Comment(L"12x12 bitmap for 80x24 font set with text usage (VT320)");
-        _testGetSet->_expectedCellSize = { 15, 12 };
+        expectedCellSize = { 15, 12 };
         const auto bitmapOf12x12 = L"????????????/????????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf12x12));
         Log::Comment(L"9x24 bitmap for 80x24 font set with text usage (VT340)");
-        _testGetSet->_expectedCellSize = { 10, 20 };
+        expectedCellSize = { 10, 20 };
         const auto bitmapOf9x24 = L"?????????/?????????/?????????/?????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf9x24));
         Log::Comment(L"10x30 bitmap for 80x24 font set with text usage (VT382)");
-        _testGetSet->_expectedCellSize = { 12, 30 };
+        expectedCellSize = { 12, 30 };
         const auto bitmapOf10x30 = L"??????????/??????????/??????????/??????????/??????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf10x30));
         Log::Comment(L"8x18 bitmap for 80x24 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 10, 16 };
+        expectedCellSize = { 10, 16 };
         const auto bitmapOf8x18 = L"????????/????????/????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf8x18));
 
         Log::Comment(L"5x12 bitmap for 132x24 font set with text usage (VT240)");
-        _testGetSet->_expectedCellSize = { 6, 10 };
+        expectedCellSize = { 6, 10 };
         const auto bitmapOf5x12 = L"?????/?????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x12));
         Log::Comment(L"7x12 bitmap for 132x24 font set with text usage (VT320)");
-        _testGetSet->_expectedCellSize = { 9, 12 };
+        expectedCellSize = { 9, 12 };
         const auto bitmapOf7x12 = L"???????/???????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf7x12));
         Log::Comment(L"5x24 bitmap for 132x24 font set with text usage (VT340)");
-        _testGetSet->_expectedCellSize = { 6, 20 };
+        expectedCellSize = { 6, 20 };
         const auto bitmapOf5x24 = L"?????/?????/?????/?????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x24));
         Log::Comment(L"6x30 bitmap for 132x24 font set with text usage (VT382)");
-        _testGetSet->_expectedCellSize = { 7, 30 };
+        expectedCellSize = { 7, 30 };
         const auto bitmapOf6x30 = L"??????/??????/??????/??????/??????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf6x30));
         Log::Comment(L"5x18 bitmap for 132x24 font set with text usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 6, 16 };
+        expectedCellSize = { 6, 16 };
         const auto bitmapOf5x18 = L"?????/?????/?????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x18));
 
         Log::Comment(L"15x12 bitmap for 80x24 font set with full cell usage (VT320)");
-        _testGetSet->_expectedCellSize = { 15, 12 };
+        expectedCellSize = { 15, 12 };
         const auto bitmapOf15x12 = L"???????????????/???????????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf15x12));
         Log::Comment(L"10x24 bitmap for 80x24 font set with full cell usage (VT340)");
-        _testGetSet->_expectedCellSize = { 10, 20 };
+        expectedCellSize = { 10, 20 };
         const auto bitmapOf10x24 = L"??????????/??????????/??????????/??????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf10x24));
         Log::Comment(L"12x30 bitmap for 80x24 font set with full cell usage (VT382)");
-        _testGetSet->_expectedCellSize = { 12, 30 };
+        expectedCellSize = { 12, 30 };
         const auto bitmapOf12x30 = L"????????????/????????????/????????????/????????????/????????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf12x30));
         Log::Comment(L"10x18 bitmap for 80x24 font set with full cell usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 10, 16 };
+        expectedCellSize = { 10, 16 };
         const auto bitmapOf10x18 = L"??????????/??????????/??????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf10x18));
 
         Log::Comment(L"6x12 bitmap for 132x24 font set with full cell usage (VT240)");
-        _testGetSet->_expectedCellSize = { 6, 10 };
+        expectedCellSize = { 6, 10 };
         const auto bitmapOf6x12 = L"??????/??????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x12));
         Log::Comment(L"9x12 bitmap for 132x24 font set with full cell usage (VT320)");
-        _testGetSet->_expectedCellSize = { 9, 12 };
+        expectedCellSize = { 9, 12 };
         const auto bitmapOf9x12 = L"?????????/?????????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf9x12));
         Log::Comment(L"6x24 bitmap for 132x24 font set with full cell usage (VT340)");
-        _testGetSet->_expectedCellSize = { 6, 20 };
+        expectedCellSize = { 6, 20 };
         const auto bitmapOf6x24 = L"??????/??????/??????/??????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x24));
         Log::Comment(L"7x30 bitmap for 132x24 font set with full cell usage (VT382)");
-        _testGetSet->_expectedCellSize = { 7, 30 };
+        expectedCellSize = { 7, 30 };
         const auto bitmapOf7x30 = L"???????/???????/???????/???????/???????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf7x30));
         Log::Comment(L"6x18 bitmap for 132x24 font set with full cell usage (VT420/VT5xx)");
-        _testGetSet->_expectedCellSize = { 6, 16 };
+        expectedCellSize = { 6, 16 };
         const auto bitmapOf6x18 = L"??????/??????/??????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x18));
     }
 
     TEST_METHOD(TogglingC1ParserMode)
     {
+        _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, false);
+
         Log::Comment(L"1. Accept C1 controls");
-        _testGetSet->_setParserModeResult = true;
-        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
-        _testGetSet->_expectedParserModeEnabled = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(true));
+        VERIFY_IS_TRUE(_pDispatch->AcceptC1Controls(true));
+        VERIFY_IS_TRUE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
 
         Log::Comment(L"2. Don't accept C1 controls");
-        _testGetSet->_setParserModeResult = true;
-        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
-        _testGetSet->_expectedParserModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(false));
+        VERIFY_IS_TRUE(_pDispatch->AcceptC1Controls(false));
+        VERIFY_IS_FALSE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
 
         Log::Comment(L"3. Designate ISO-2022 coding system");
         // Code page should be set to ISO-8859-1 and C1 parsing enabled
         _testGetSet->_setConsoleOutputCPResult = true;
         _testGetSet->_expectedOutputCP = 28591;
-        _testGetSet->_setParserModeResult = true;
-        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
-        _testGetSet->_expectedParserModeEnabled = true;
-        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::ISO2022));
+        VERIFY_IS_TRUE(_pDispatch->DesignateCodingSystem(DispatchTypes::CodingSystem::ISO2022));
+        VERIFY_IS_TRUE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
 
         Log::Comment(L"4. Designate UTF-8 coding system");
         // Code page should be set to UTF-8 and C1 parsing disabled
         _testGetSet->_setConsoleOutputCPResult = true;
         _testGetSet->_expectedOutputCP = CP_UTF8;
-        _testGetSet->_setParserModeResult = true;
-        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
-        _testGetSet->_expectedParserModeEnabled = false;
-        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8));
+        VERIFY_IS_TRUE(_pDispatch->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8));
+        VERIFY_IS_FALSE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
     }
 
 private:
+    TerminalInput _terminalInput{ nullptr };
     TestGetSet* _testGetSet; // non-ownership pointer
-    std::unique_ptr<AdaptDispatch> _pDispatch;
+    AdaptDispatch* _pDispatch; // non-ownership pointer
+    std::unique_ptr<StateMachine> _stateMachine;
 };

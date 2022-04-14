@@ -75,7 +75,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 // - True.
 bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
-    TextAttribute attr = _pConApi->GetTextAttributes();
+    TextAttribute attr = _pConApi->GetTextBuffer().GetCurrentAttributes();
 
     // Run through the graphics options and apply them
     for (size_t i = 0; i < options.size(); i++)
@@ -270,7 +270,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 {
-    const auto currentAttributes = _pConApi->GetTextAttributes();
+    const auto currentAttributes = _pConApi->GetTextBuffer().GetCurrentAttributes();
     _sgrStack.Push(currentAttributes, options);
     return true;
 }
@@ -284,7 +284,7 @@ bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::PopGraphicsRendition()
 {
-    const auto currentAttributes = _pConApi->GetTextAttributes();
+    const auto currentAttributes = _pConApi->GetTextBuffer().GetCurrentAttributes();
     _pConApi->SetTextAttributes(_sgrStack.Pop(currentAttributes));
     return true;
 }

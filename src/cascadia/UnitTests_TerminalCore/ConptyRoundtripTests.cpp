@@ -66,8 +66,9 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalRenderer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
 
         return true;
     }
@@ -75,6 +76,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
@@ -100,8 +102,6 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
         gci.CalculateDefaultColorIndices();
-
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
@@ -154,8 +154,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     {
         m_state->CleanupNewTextBufferInfo();
 
-        auto& g = ServiceLocator::LocateGlobals();
-        delete g.pRender;
+        auto& engines = ServiceLocator::LocateGlobals().pRender->_engines;
+        std::fill(engines.begin(), engines.end(), nullptr);
 
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Tests should drain all the output they push into the expected output buffer.");
 
@@ -308,7 +308,8 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
 void ConptyRoundtripTests::_clearConpty()
 {
     // Taken verbatim from implementation in PtySignalInputThread::_DoClearBuffer
-    _pConApi->ClearBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
 }
 
 [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size newSize)

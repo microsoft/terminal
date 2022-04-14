@@ -34,9 +34,8 @@ class ApiRoutinesTests
         m_state = std::make_unique<CommonState>();
 
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
-
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
 
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)

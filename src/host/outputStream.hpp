@@ -31,31 +31,16 @@ public:
 
     void PrintString(const std::wstring_view string) override;
 
-    void GetConsoleScreenBufferInfoEx(CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) const override;
-    void SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX& screenBufferInfo) override;
+    Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
+    TextBuffer& GetTextBuffer() override;
+    til::rect GetViewport() const override;
+    void SetViewportPosition(const til::point position) override;
 
-    void SetCursorPosition(const COORD position) override;
-
-    TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
-
-    void SetCurrentLineRendition(const LineRendition lineRendition) override;
-    void ResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
-    SHORT GetLineWidth(const size_t row) const override;
 
     void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
 
-    void SetWindowInfo(bool const absolute, const SMALL_RECT& window) override;
-
-    bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
-    void SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
-    bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
-    void SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
-
     void SetAutoWrapMode(const bool wrapAtEOL) override;
-
-    void SetCursorVisibility(const bool visible) override;
-    bool EnableCursorBlinking(const bool enable) override;
 
     void SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
 
@@ -63,7 +48,6 @@ public:
 
     bool GetLineFeedMode() const override;
     void LineFeed(const bool withReturn) override;
-    void ReverseLineFeed() override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 
@@ -71,55 +55,20 @@ public:
 
     void UseMainScreenBuffer() override;
 
-    void EraseAll() override;
-    void ClearBuffer() override;
-
     CursorType GetUserDefaultCursorStyle() const override;
-    void SetCursorStyle(CursorType const style) override;
 
-    void RefreshWindow() override;
     bool ResizeWindow(const size_t width, const size_t height) override;
-    void SuppressResizeRepaint() override;
-
-    void WriteControlInput(const KeyEvent key) override;
 
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
 
     bool IsConsolePty() const override;
-
-    void DeleteLines(const size_t count) override;
-    void InsertLines(const size_t count) override;
-
-    void MoveToBottom() override;
-
-    COLORREF GetColorTableEntry(const size_t tableIndex) const override;
-    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
-    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
-
-    void FillRegion(const COORD startPosition,
-                    const size_t fillLength,
-                    const wchar_t fillChar,
-                    const bool standardFillAttrs) override;
-
-    void ScrollRegion(const SMALL_RECT scrollRect,
-                      const std::optional<SMALL_RECT> clipRect,
-                      const COORD destinationOrigin,
-                      const bool standardFillAttrs) override;
-
     bool IsVtInputEnabled() const override;
 
-    void AddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
-    void EndHyperlink() const override;
-
-    void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                        const SIZE cellSize,
-                        const size_t centeringHint) override;
+    void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
     void ReparentWindow(const uint64_t handle);
 
 private:
-    void _modifyLines(const size_t count, const bool insert);
-
     Microsoft::Console::IIoProvider& _io;
 };
