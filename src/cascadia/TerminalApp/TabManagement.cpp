@@ -921,13 +921,9 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile)
     {
-        if (profile)
+        if (profile && _settings.GlobalSettings().BgImageForWindow())
         {
-            auto controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
-            if (_settings.GlobalSettings().BgImageForWindow())
-            {
-                _SetBackgroundImage(controlSettings.DefaultSettings());
-            }
+            _SetBackgroundImage(profile.DefaultAppearance());
         }
     }
 

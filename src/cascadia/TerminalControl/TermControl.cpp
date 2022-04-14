@@ -460,15 +460,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto settings{ _core.Settings() };
         auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
 
-        auto transparent_bg = settings.BgImageForWindow();
-        if (transparent_bg)
+        auto transparentBg = settings.BgImageForWindow();
+        if (transparentBg)
         {
             bgColor = Windows::UI::Colors::Transparent();
         }
         // GH#11743: Make sure to use the Core's current UseAcrylic value, not
         // the one from the settings. The Core's runtime UseAcrylic may have
         // changed from what was in the original settings.
-        if (_core.UseAcrylic() && !transparent_bg)
+        if (_core.UseAcrylic() && !transparentBg)
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one

@@ -2473,11 +2473,6 @@ namespace winrt::TerminalApp::implementation
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
         }
 
-        if (_settings.GlobalSettings().BgImageForWindow())
-        {
-            _SetBackgroundImage(controlSettings.DefaultSettings());
-        }
-
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
         {
@@ -2526,9 +2521,9 @@ namespace winrt::TerminalApp::implementation
     // - newAppearance
     // Return Value:
     // - <none>
-    void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Control::IControlAppearance& newAppearance)
+    void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
     {
-        if (newAppearance.BackgroundImage().empty())
+        if (newAppearance.BackgroundImagePath().empty())
         {
             _tabContent.Background(nullptr);
             return;
@@ -2537,7 +2532,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Uri imageUri{ nullptr };
         try
         {
-            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImage() };
+            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImagePath() };
         }
         catch (...)
         {
@@ -2608,8 +2603,7 @@ namespace winrt::TerminalApp::implementation
                 auto profile = focusedTab->GetFocusedProfile();
                 if (profile)
                 {
-                    auto controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
-                    _SetBackgroundImage(controlSettings.DefaultSettings());
+                    _SetBackgroundImage(profile.DefaultAppearance());
                 }
             }
         }
