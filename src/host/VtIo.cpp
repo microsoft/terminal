@@ -296,6 +296,11 @@ bool VtIo::IsUsingVt() const
 
     if (_pPtySignalInputThread)
     {
+        // IMPORTANT! Start the pseudo window on this thread. This thread has a
+        // message pump. If you DON'T, then a DPI change in the owning hwnd will
+        // cause us to get a dpi change as well, which we'll never deque and
+        // handle, effectively HANGING THE OWNER HWND.
+        //
         // Let the signal thread know that the console is connected
         _pPtySignalInputThread->ConnectConsole();
     }

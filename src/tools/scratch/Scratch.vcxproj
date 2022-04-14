@@ -21,6 +21,14 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <!-- subsume fmt, one of our dependencies, into contypes. -->
+    <ProjectReference Include="..\..\dep\fmt\fmt.vcxproj">
+      <Project>{6bae5851-50d5-4934-8d5e-30361a8a40f3}</Project>
+    </ProjectReference>
+  </ItemGroup>
+
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.post.props" />
   <Import Project="..\..\common.build.tests.props" />
