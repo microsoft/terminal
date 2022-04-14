@@ -14,6 +14,7 @@
 
 static constexpr std::string_view Utf8Bom{ "\xEF\xBB\xBF", 3 };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
+static constexpr std::wstring_view ReleaseSettingsFolder{ L"Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
@@ -37,6 +38,33 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
             // Create the directory if it doesn't exist
             std::filesystem::create_directories(parentDirectoryForSettingsFile);
+
+            return parentDirectoryForSettingsFile;
+        }();
+        return baseSettingsPath;
+    }
+
+    // Returns a path like C:\Users\<username>\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState
+    // to the path of the stable release settings
+    std::filesystem::path GetReleaseSettingsPath()
+    {
+        static std::filesystem::path baseSettingsPath = []() {
+            wil::unique_cotaskmem_string localAppDataFolder;
+            // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
+            // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
+            // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
+            THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_NO_PACKAGE_REDIRECTION, nullptr, &localAppDataFolder));
+
+            // Returns a path like C:\Users\<username>\AppData\Local
+            std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
+
+            //Appending \Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState to the settings path
+            parentDirectoryForSettingsFile /= ReleaseSettingsFolder;
+
+            if (!IsPackaged())
+            {
+                parentDirectoryForSettingsFile /= UnpackagedSettingsFolderName;
+            }
 
             return parentDirectoryForSettingsFile;
         }();
