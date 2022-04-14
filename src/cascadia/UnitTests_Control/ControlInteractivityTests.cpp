@@ -38,6 +38,9 @@ namespace ControlUnitTests
         TEST_METHOD(PointerClickOutsideActiveRegion);
         TEST_METHOD(IncrementCircularBufferWithSelection);
 
+        TEST_METHOD(GetMouseEventsInTest);
+        TEST_METHOD(AltBufferClampMouse);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -797,5 +800,38 @@ namespace ControlUnitTests
         }
         // Verify that the selection got reset
         VERIFY_IS_FALSE(core->HasSelection());
+    }
+
+    void ControlInteractivityTests::GetMouseEventsInTest()
+    {
+        // This is a test for GH#10749
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        std::deque<std::wstring> expectedOutput{};
+        expectedOutput.push_back(L"\x1b[m");
+
+        conn->TerminalOutput([&](const hstring& hstr) {
+            const auto& expected = expectedOutput.front();
+            expectedOutput.pop_front();
+            Log::Comment(fmt::format(L"Received: {}", hstr).c_str());
+            Log::Comment(fmt::format(L"Expected: {}", expected).c_str());
+            VERIFY_ARE_EQUAL(expected.c_str(), hstr.c_str());
+        });
+
+        conn->WriteInput(L"Foo\r\n");
+    }
+
+    void ControlInteractivityTests::AltBufferClampMouse()
+    {
+        // This is a test for GH#10749
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
     }
 }
