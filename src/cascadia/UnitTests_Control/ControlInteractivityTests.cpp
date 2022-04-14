@@ -952,10 +952,12 @@ namespace ControlUnitTests
                                       cursorPosition1.to_core_point());
 
         Log::Comment(L" --- Resize the terminal to be 10 columns wider ---");
-        core->SizeChanged(40, 20);
+        const til::size newSizeInDips{ til::size{ 40, 20 } * fontSize };
+        core->SizeChanged(newSizeInDips.width, newSizeInDips.height);
 
         Log::Comment(L" --- Click on a spot that's NOW INSIDE the buffer ---");
-        expectedOutput.push_back(L"\x1b[M C&");
+        // (32 + 35 + 1) = 68 = 'D'
+        expectedOutput.push_back(L"\x1b[M D&");
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp

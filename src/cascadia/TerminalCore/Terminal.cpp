@@ -707,7 +707,7 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
     // clamp them to be within the range [(0, 0), (W, H)].
 #pragma warning(suppress : 26496) // analysis can't tell we're assigning through a reference below
     auto clampedPos{ viewportPos };
-    _mutableViewport.ToOrigin().Clamp(clampedPos);
+    _GetMutableViewport().ToOrigin().Clamp(clampedPos);
     return _terminalInput->HandleMouse(clampedPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
 }
 
