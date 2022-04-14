@@ -1113,46 +1113,50 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     cursor.SetPosition(proposedCursorPosition);
 
     // Move the viewport down if the cursor moved below the viewport.
-    bool updatedViewport = false;
-    const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
-    if (scrollAmount > 0)
+    // Obviously, don't need to do this in the alt buffer.
+    if (!_inAltBuffer())
     {
-        const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
-        // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
-        if (!_inAltBuffer() && newViewTop != _mutableViewport.Top())
+        bool updatedViewport = false;
+        const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
+        if (scrollAmount > 0)
         {
-            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
-                                                        _mutableViewport.Dimensions());
-            updatedViewport = true;
+            const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
+            // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
+            if (newViewTop != _mutableViewport.Top())
+            {
+                _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
+                                                            _mutableViewport.Dimensions());
+                updatedViewport = true;
+            }
         }
-    }
 
-    // If the viewport moved, or we circled the buffer, we might need to update
-    // our _scrollOffset
-    if (!_inAltBuffer() && (updatedViewport || newRows != 0))
-    {
-        const auto oldScrollOffset = _scrollOffset;
+        // If the viewport moved, or we circled the buffer, we might need to update
+        // our _scrollOffset
+        if (updatedViewport || newRows != 0)
+        {
+            const auto oldScrollOffset = _scrollOffset;
 
-        // scroll if...
-        //   - no selection is active
-        //   - viewport is already at the bottom
-        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
+            // scroll if...
+            //   - no selection is active
+            //   - viewport is already at the bottom
+            const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
 
-        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
+            _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
-        // Clamp the range to make sure that we don't scroll way off the top of the buffer
-        _scrollOffset = std::clamp(_scrollOffset,
-                                   0,
-                                   _activeBuffer().GetSize().Height() - _mutableViewport.Height());
+            // Clamp the range to make sure that we don't scroll way off the top of the buffer
+            _scrollOffset = std::clamp(_scrollOffset,
+                                       0,
+                                       _activeBuffer().GetSize().Height() - _mutableViewport.Height());
 
-        // If the new scroll offset is different, then we'll still want to raise a scroll event
-        updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
-    }
+            // If the new scroll offset is different, then we'll still want to raise a scroll event
+            updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
+        }
 
-    // If the viewport moved, then send a scrolling notification.
-    if (updatedViewport)
-    {
-        _NotifyScrollEvent();
+        // If the viewport moved, then send a scrolling notification.
+        if (updatedViewport)
+        {
+            _NotifyScrollEvent();
+        }
     }
 
     if (rowsPushedOffTopOfBuffer != 0)
