@@ -369,8 +369,6 @@ bool SettingsLoader::DisableDeletedProfiles()
 // the settings need to be saved to disk.
 bool SettingsLoader::FixupUserSettings()
 {
-    using namespace std::string_view_literals;
-
     struct CommandlinePatch
     {
         winrt::guid guid;
