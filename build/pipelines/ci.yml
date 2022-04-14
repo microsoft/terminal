@@ -102,3 +102,4 @@ stages:
     condition: succeeded()
     jobs:
       - template: ./templates/codenav-indexer.yml
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
