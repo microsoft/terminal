@@ -24,7 +24,7 @@ namespace ControlUnitTests
     class ControlInteractivityTests
     {
         BEGIN_TEST_CLASS(ControlInteractivityTests)
-            TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
+            // TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
         END_TEST_CLASS()
 
         TEST_METHOD(TestAdjustAcrylic);
@@ -96,7 +96,9 @@ namespace ControlUnitTests
             interactivity->Initialize();
         }
 
-        void _addInputCallback(const winrt::com_ptr<MockConnection>& conn,
+        // Returns a scope_exit callback that should be used to ensure all
+        // output is drained.
+        auto _addInputCallback(const winrt::com_ptr<MockConnection>& conn,
                                std::deque<std::wstring>& expectedOutput)
         {
             conn->TerminalOutput([&](const hstring& hstr) {
@@ -107,6 +109,10 @@ namespace ControlUnitTests
                 Log::Comment(fmt::format(L"Expected: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(expected)).c_str());
                 VERIFY_ARE_EQUAL(expected, hstr);
             });
+
+            return std::move(wil::scope_exit([&]() {
+                VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
+            }));
         }
     };
 
@@ -828,7 +834,7 @@ namespace ControlUnitTests
         _standardInit(core, interactivity);
 
         std::deque<std::wstring> expectedOutput{};
-        _addInputCallback(conn, expectedOutput);
+        auto validateDrained = _addInputCallback(conn, expectedOutput);
 
         Log::Comment(L"Enable mouse mode");
         auto& term{ *core->_terminal };
@@ -870,15 +876,15 @@ namespace ControlUnitTests
 
         // Start checking output
         std::deque<std::wstring> expectedOutput{};
-        _addInputCallback(conn, expectedOutput);
+        auto validateDrained = _addInputCallback(conn, expectedOutput);
 
         const auto originalViewport{ term.GetViewport() };
         VERIFY_ARE_EQUAL(originalViewport.Width(), 30);
 
-        Log::Comment(L"Enable mouse mode");
+        Log::Comment(L" --- Enable mouse mode ---");
         term.Write(L"\x1b[?1000h");
 
-        Log::Comment(L"Click on the terminal");
+        Log::Comment(L" --- Click on the terminal ---");
         // Recall:
         //
         // >  !  specifies the value 1.  The upper left character position on
@@ -897,22 +903,11 @@ namespace ControlUnitTests
                                       0, // timestamp
                                       modifiers,
                                       cursorPosition0.to_core_point());
+        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
 
         // These first two bits are a test for GH#11290
-        Log::Comment(L"Scroll up, click the terminal, the event should be clamped to y=0");
-        core->UserScrollViewport(0);
-
-        // Viewport is now on row 0, but the mutable viewport is way below that.
-        // Mouse even should still come in clamped to the real viewport.
-
-        expectedOutput.push_back(L"\x1b[M &&");
-        interactivity->PointerPressed(leftMouseDown,
-                                      WM_LBUTTONDOWN, //pointerUpdateKind
-                                      0, // timestamp
-                                      modifiers,
-                                      cursorPosition0.to_core_point());
-
-        Log::Comment(L"Click on the terminal outside the mutable viewport, see that it's clamped to the viewport");
+        Log::Comment(L" --- Click on the terminal outside the width of the mutable viewport, see that it's clamped to the viewport ---");
+        // Not actually possible, but for validation.
         const til::point terminalPosition1{ originalViewport.Width() + 5, 5 };
         const til::point cursorPosition1{ terminalPosition1 * fontSize };
 
@@ -924,11 +919,31 @@ namespace ControlUnitTests
                                       0, // timestamp
                                       modifiers,
                                       cursorPosition1.to_core_point());
+        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
 
-        Log::Comment(L"Switch to alt buffer");
+        Log::Comment(L" --- Scroll up, click the terminal. We shouldn't get any event. ---");
+        core->UserScrollViewport(10);
+        VERIFY_IS_GREATER_THAN(core->ScrollOffset(), 0);
+
+        // Viewport is now above the mutable viewport, so the mouse event
+        // straight up won't be sent to the terminal.
+
+        expectedOutput.push_back(L"sentinel"); // Clearly, it won't be this string
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0.to_core_point());
+        // Flush it out.
+        conn->WriteInput(L"sentinel");
+        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
+
+        Log::Comment(L" --- Switch to alt buffer ---");
         term.Write(L"\x1b[?1049h");
+        auto returnToMain = wil::scope_exit([&]() { term.Write(L"\x1b[?1049h"); });
 
-        Log::Comment(L"Click on a spot that's still outside the buffer");
+        VERIFY_ARE_EQUAL(0, core->ScrollOffset());
+        Log::Comment(L" --- Click on a spot that's still outside the buffer ---");
         expectedOutput.push_back(L"\x1b[M >&");
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
@@ -936,15 +951,16 @@ namespace ControlUnitTests
                                       modifiers,
                                       cursorPosition1.to_core_point());
 
-        Log::Comment(L"Resize the terminal to be 10 columns wider");
+        Log::Comment(L" --- Resize the terminal to be 10 columns wider ---");
         core->SizeChanged(40, 20);
 
-        Log::Comment(L"Click on a spot that's NOW INSIDE the buffer");
+        Log::Comment(L" --- Click on a spot that's NOW INSIDE the buffer ---");
         expectedOutput.push_back(L"\x1b[M C&");
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
                                       modifiers,
                                       cursorPosition1.to_core_point());
+        VERIFY_ARE_EQUAL(0, expectedOutput.size(), L"Validate we drained all the expected output");
     }
 }
