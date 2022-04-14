@@ -42,6 +42,7 @@ MSVC
 MSVCP
 muxc
 netcore
+Onefuzz
 osgvsowi
 PFILETIME
 pgc
