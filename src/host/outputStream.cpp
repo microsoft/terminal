@@ -927,7 +927,10 @@ void ConhostInternalGetSet::FocusChanged(const bool focused)
                 // They want focus, we found a pseudo hwnd.
 
                 // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
-                if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_PARENT) })
+                // GA_PARENT and GA_ROOT seemingly return the same thing for
+                // Terminal. We're going with GA_ROOT since it seems
+                // semantically more correct here.
+                if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_ROOT) })
                 {
                     // We have an owner from a previous call to ReparentWindow
 
