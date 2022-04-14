@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "../TerminalControl/EventArgs.h"
 #include "../TerminalControl/ControlInteractivity.h"
+
+#include "../../inc/TestUtils.h"
 #include "MockControlSettings.h"
 #include "MockConnection.h"
 
@@ -812,17 +814,34 @@ namespace ControlUnitTests
         _standardInit(core, interactivity);
 
         std::deque<std::wstring> expectedOutput{};
-        expectedOutput.push_back(L"\x1b[m");
+        expectedOutput.push_back(L"\x1b[M &&");
 
         conn->TerminalOutput([&](const hstring& hstr) {
-            const auto& expected = expectedOutput.front();
+            VERIFY_IS_GREATER_THAN(expectedOutput.size(), 0);
+            const auto expected = expectedOutput.front();
             expectedOutput.pop_front();
-            Log::Comment(fmt::format(L"Received: {}", hstr).c_str());
-            Log::Comment(fmt::format(L"Expected: {}", expected).c_str());
-            VERIFY_ARE_EQUAL(expected.c_str(), hstr.c_str());
+            Log::Comment(fmt::format(L"Received: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(hstr.c_str())).c_str());
+            Log::Comment(fmt::format(L"Expected: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(expected)).c_str());
+            VERIFY_ARE_EQUAL(expected, hstr);
         });
 
-        conn->WriteInput(L"Foo\r\n");
+        // conn->WriteInput(L"Foo\r\n");
+        Log::Comment(L"Enable mouse mode");
+        auto& term{ *core->_terminal };
+        term.Write(L"\x1b[?1000h");
+
+        Log::Comment(L"Click on the terminal");
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const til::size fontSize{ 9, 21 };
+        const til::point terminalPosition0{ 5, 5 };
+        const til::point cursorPosition0{ terminalPosition0 * fontSize };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0.to_core_point());
     }
 
     void ControlInteractivityTests::AltBufferClampMouse()
