@@ -7,6 +7,12 @@ using Microsoft.Terminal.Wpf;
 using System;
 using System.Windows;
 
+//
+// HEY YOU! Trying to build this to test it? MAKE SURE TO SET THE CONFIGURATION TO
+// DotNet_(x64|x86)Test
+// IT WON'T BUILD FOR YOU OTHERWISE.
+//
+
 namespace WpfTerminalTestNetCore
 {
     public class EchoConnection : Microsoft.Terminal.Wpf.ITerminalConnection
