@@ -282,6 +282,9 @@ namespace Microsoft.Terminal.Wpf
                 NativeMethods.TerminalSetCursorVisible(this.terminal, false);
             }
 
+            // Let the Connection know what HWND we're in.
+            (this.connection as IWindowHostedConnection)?.ReparentWindow((ulong)this.hwnd);
+
             return new HandleRef(this, this.hwnd);
         }
 
