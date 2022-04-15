@@ -18,14 +18,18 @@ Author(s):
 #include "conGetSet.hpp"
 #include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
-#include "..\..\types\inc\sgrStack.hpp"
+#include "../input/terminalInput.hpp"
+#include "../../types/inc/sgrStack.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public ITermDispatch
     {
+        using Renderer = Microsoft::Console::Render::Renderer;
+        using RenderSettings = Microsoft::Console::Render::RenderSettings;
+
     public:
-        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi);
+        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
@@ -162,21 +166,27 @@ namespace Microsoft::Console::VirtualTerminal
             static constexpr Offset Unchanged() { return Forward(0); };
         };
 
-        bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins) const;
-        void _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
-                                    const DispatchTypes::EraseType eraseType,
-                                    const size_t lineId) const;
+        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
+        bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
+        void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
+        void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _EraseScrollback();
         void _EraseAll();
-        void _InsertDeleteHelper(const size_t count, const bool isInsert) const;
-        void _ScrollMovement(const ScrollDirection dir, const size_t distance) const;
+        void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta);
+        void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta);
+        void _InsertDeleteCharacterHelper(const int32_t delta);
+        void _InsertDeleteLineHelper(const int32_t delta);
+        void _ScrollMovement(const int32_t delta);
 
         void _DoSetTopBottomScrollingMargins(const size_t topMargin,
                                              const size_t bottomMargin);
         void _OperatingStatus() const;
-        void _CursorPositionReport() const;
+        void _CursorPositionReport();
 
         void _WriteResponse(const std::wstring_view reply) const;
+        bool _GetParserMode(const StateMachine::Mode mode) const;
+        void _SetParserMode(const StateMachine::Mode mode, const bool enable);
+        bool _SetInputMode(const TerminalInput::Mode mode, const bool enable);
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
@@ -186,12 +196,15 @@ namespace Microsoft::Console::VirtualTerminal
         void _InitTabStopsForWidth(const size_t width);
 
         void _ReportSGRSetting() const;
-        void _ReportDECSTBMSetting() const;
+        void _ReportDECSTBMSetting();
 
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
         std::unique_ptr<ConGetSet> _pConApi;
+        Renderer& _renderer;
+        RenderSettings& _renderSettings;
+        TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::optional<unsigned int> _initialCodePage;
