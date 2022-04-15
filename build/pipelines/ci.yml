@@ -99,6 +99,6 @@ stages:
   - stage: CodeIndexer
     displayName: Github CodeNav Indexer
     dependsOn: [Build_x64]
-    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
     jobs:
       - template: ./templates/codenav-indexer.yml
