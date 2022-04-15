@@ -631,6 +631,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              margins.Right,
                                              margins.Bottom };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, padding, interactivityAutoPeer);
+                interactivityAutoPeer.ParentProvider(_automationPeer.GetParentProvider());
                 return _automationPeer;
             }
         }
