@@ -62,12 +62,15 @@ namespace Microsoft::Console::Render::FontCache
 
                 wil::com_ptr<IDWriteFontSetBuilder1> fontSetBuilder;
                 THROW_IF_FAILED(factory5->CreateFontSetBuilder(fontSetBuilder.addressof()));
-                THROW_IF_FAILED(fontSetBuilder->AddFontSet(systemFontSet.get()));
 
                 for (const auto& file : nearbyFontFiles)
                 {
                     LOG_IF_FAILED(fontSetBuilder->AddFontFile(file.get()));
                 }
+
+                // IDWriteFontSetBuilder ignores any families that have already been added.
+                // By adding the system font collection last, we ensure our nearby fonts take precedence.
+                THROW_IF_FAILED(fontSetBuilder->AddFontSet(systemFontSet.get()));
 
                 wil::com_ptr<IDWriteFontSet> fontSet;
                 THROW_IF_FAILED(fontSetBuilder->CreateFontSet(fontSet.addressof()));

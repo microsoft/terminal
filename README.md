@@ -299,6 +299,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
   * Universal Windows Platform Development
   * **The following Individual Components**
     * C++ (v142) Universal Windows Platform Tools
+* You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
 

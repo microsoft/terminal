@@ -3,12 +3,21 @@
 
 #include "precomp.h"
 
+// Some of the interactivity classes pulled in by ServiceLocator.hpp are not
+// yet audit-safe, so for now we'll need to disable a bunch of warnings.
+#pragma warning(disable : 26432)
+#pragma warning(disable : 26440)
+#pragma warning(disable : 26455)
+
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../host/conddkrefs.h"
+#include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -47,7 +56,7 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 // - True.
 bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
 {
-    _pConApi->WriteControlInput(event);
+    HandleGenericKeyEvent(event, false);
     return true;
 }
 
@@ -67,7 +76,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, codepage);
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
@@ -101,14 +110,15 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _pConApi->RefreshWindow();
+        _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // the ConGetSet interface, that specifically handles a conpty resize.
         if (_pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
         {
-            _pConApi->SuppressResizeRepaint();
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
         }
         return true;
     default:
@@ -135,26 +145,29 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
     const size_t colFixed = col - 1;
 
     // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    COORD coordCursor = csbiex.dwCursorPosition;
+    const auto viewport = _pConApi->GetViewport().to_small_rect();
+    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    auto coordCursor = cursor.GetPosition();
 
     // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
     THROW_IF_FAILED(SizeTToShort(rowFixed, &coordCursor.Y));
     THROW_IF_FAILED(SizeTToShort(colFixed, &coordCursor.X));
 
     // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-    THROW_IF_FAILED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y));
-    THROW_IF_FAILED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+    THROW_IF_FAILED(ShortAdd(coordCursor.Y, viewport.Top, &coordCursor.Y));
+    THROW_IF_FAILED(ShortAdd(coordCursor.X, viewport.Left, &coordCursor.X));
 
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
-    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
+    coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, viewport.Bottom);
+    coordCursor.X = std::clamp(coordCursor.X, viewport.Left, viewport.Right);
+
+    // MSFT: 15813316 - Try to use this MoveCursor call to inherit the cursor position.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursor));
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    _pConApi->SetCursorPosition(coordCursor);
+    cursor.SetPosition(coordCursor);
+    cursor.SetHasMoved(true);
     return true;
 }
 

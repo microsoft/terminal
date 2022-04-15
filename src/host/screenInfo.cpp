@@ -254,8 +254,13 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 {
     try
     {
+        auto& g = ServiceLocator::LocateGlobals();
+        auto& gci = g.getConsoleInformation();
+        auto& renderer = *g.pRender;
+        auto& renderSettings = gci.GetRenderSettings();
+        auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
         auto getset = std::make_unique<ConhostInternalGetSet>(*this);
-        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset));
+        auto adapter = std::make_unique<AdaptDispatch>(std::move(getset), renderer, renderSettings, terminalInput);
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(adapter));
         // Note that at this point in the setup, we haven't determined if we're
         //      in VtIo mode or not yet. We'll set the OutputStateMachine's
@@ -718,9 +723,8 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
         if (_psiMainBuffer)
         {
-            const auto bufferSize = GetBufferSize().Dimensions();
-
-            _psiMainBuffer->SetViewportSize(&bufferSize);
+            _psiMainBuffer->_fAltWindowChanged = false;
+            _psiMainBuffer->_deferredPtyResize = til::size{ GetBufferSize().Dimensions() };
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
@@ -1190,20 +1194,6 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                 // Adjust the top of the window instead of the bottom
                 // (so the lines slide upward)
                 srNewViewport.Top -= DeltaY;
-
-                // If we happened to move the top of the window past
-                // the 0th row (first row in the buffer)
-                if (srNewViewport.Top < 0)
-                {
-                    // Find the amount we went past 0, correct the top
-                    // of the window back to 0, and instead adjust the
-                    // bottom even though it will cause us to lose the
-                    // prompt line.
-                    const short cRemainder = 0 - srNewViewport.Top;
-                    srNewViewport.Top += cRemainder;
-                    FAIL_FAST_IF(!(srNewViewport.Top == 0));
-                    srNewViewport.Bottom += cRemainder;
-                }
             }
             else
             {
@@ -1240,7 +1230,14 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
         srNewViewport.Right -= offRightDelta;
         srNewViewport.Left = std::max<SHORT>(0, srNewViewport.Left - offRightDelta);
     }
-    srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
+    const SHORT offBottomDelta = srNewViewport.Bottom - (coordScreenBufferSize.Y - 1);
+    if (offBottomDelta > 0) // the viewport was off the right of the buffer...
+    {
+        // ...so slide both top/bottom back into the buffer. This will prevent us
+        // from having a negative width later.
+        srNewViewport.Bottom -= offBottomDelta;
+        srNewViewport.Top = std::max<SHORT>(0, srNewViewport.Top - offBottomDelta);
+    }
 
     // See MSFT:19917443
     // If we're in terminal scrolling mode, and we've changed the height of the
@@ -1489,6 +1486,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
+    _textBuffer->GetCursor().StartDeferDrawing();
+    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(coordNewScreenSize));
 }
 
@@ -1532,7 +1531,15 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     CommandLine::Instance().EndAllPopups();
 
     const bool fWrapText = gci.GetWrapText();
-    if (fWrapText)
+    // GH#3493: Don't reflow the alt buffer.
+    //
+    // VTE only rewraps the contents of the (normal screen + its scrollback
+    // buffer) on a resize event. It doesn't rewrap the contents of the
+    // alternate screen. The alternate screen is used by applications which
+    // repaint it after a resize event. So it doesn't really matter. However, in
+    // that short time window, after resizing the terminal but before the
+    // application catches up, this prevents vertical lines
+    if (fWrapText && !_IsAltBuffer())
     {
         status = ResizeWithReflow(coordNewScreenSize);
     }
@@ -1906,6 +1913,66 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     return Status;
 }
 
+// Function Description:
+// - Handle deferred resizes that may have happened while the alt buffer was
+//   active. Both resizes on the HWND itself (_fAltWindowChanged), and resizes
+//   to the viewport of the alt buffer (which in turn should resize the buffer),
+//   are handled here.
+// Arguments:
+// - siMain: the main buffer whose resize was deferred.
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
+{
+    if (siMain._fAltWindowChanged)
+    {
+        siMain.ProcessResizeWindow(&(siMain._rcAltSavedClientNew), &(siMain._rcAltSavedClientOld));
+        siMain._fAltWindowChanged = false;
+    }
+    else if (siMain._deferredPtyResize.has_value())
+    {
+        const COORD newViewSize = siMain._deferredPtyResize.value().to_win32_coord();
+        // Tricky! We want to make sure to resize the actual main buffer
+        // here, not just change the size of the viewport. When they resized
+        // the alt buffer, the dimensions of the alt buffer changed. We
+        // should make sure the main buffer reflects similar changes.
+        //
+        // To do this, we have to emulate bits of
+        // ConhostInternalGetSet::ResizeWindow. We can't call that
+        // straight-up, because the main buffer isn't active yet.
+        const COORD oldScreenBufferSize = siMain.GetBufferSize().Dimensions();
+        COORD newBufferSize = oldScreenBufferSize;
+
+        // Always resize the width of the console
+        newBufferSize.X = newViewSize.X;
+
+        // Only set the new buffer's height if the new size will be TALLER than the current size (e.g., resizing a 80x32 buffer to be 80x124).
+        if (newViewSize.Y > oldScreenBufferSize.Y)
+        {
+            newBufferSize.Y = newViewSize.Y;
+        }
+
+        // From ApiRoutines::SetConsoleScreenBufferInfoExImpl. We don't need
+        // the whole call to SetConsoleScreenBufferInfoEx here, that's
+        // too much work.
+        if (newBufferSize.X != oldScreenBufferSize.X ||
+            newBufferSize.Y != oldScreenBufferSize.Y)
+        {
+            CommandLine& commandLine = CommandLine::Instance();
+            commandLine.Hide(FALSE);
+            LOG_IF_FAILED(siMain.ResizeScreenBuffer(newBufferSize, TRUE));
+            commandLine.Show();
+        }
+
+        // Not that the buffer is smaller, actually make sure to resize our
+        // viewport to match.
+        siMain.SetViewportSize(&newViewSize);
+
+        // Clear out the resize.
+        siMain._deferredPtyResize = std::nullopt;
+    }
+}
+
 // Routine Description:
 // - Creates an "alternate" screen buffer for this buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
@@ -1919,11 +1986,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& siMain = GetMainBuffer();
     // If we're in an alt that resized, resize the main before making the new alt
-    if (siMain._fAltWindowChanged)
-    {
-        siMain.ProcessResizeWindow(&(siMain._rcAltSavedClientNew), &(siMain._rcAltSavedClientOld));
-        siMain._fAltWindowChanged = false;
-    }
+    _handleDeferredResize(siMain);
 
     SCREEN_INFORMATION* psiNewAltBuffer;
     NTSTATUS Status = _CreateAltBuffer(&psiNewAltBuffer);
@@ -1976,11 +2039,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
     SCREEN_INFORMATION* psiMain = _psiMainBuffer;
     if (psiMain != nullptr)
     {
-        if (psiMain->_fAltWindowChanged)
-        {
-            psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
-            psiMain->_fAltWindowChanged = false;
-        }
+        _handleDeferredResize(*psiMain);
 
         // GH#381: When we switch into the main buffer:
         //  * flush the current frame, to clear out anything that we prepared for this buffer.
@@ -2221,57 +2280,6 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     }
 
     Tracing::s_TraceWindowViewport(_viewport);
-}
-
-// Method Description:
-// - Performs a VT Erase All operation. In most terminals, this is done by
-//      moving the viewport into the scrollback, clearing out the current screen.
-//      For them, there can never be any characters beneath the viewport, as the
-//      viewport is always at the bottom. So, we can accomplish the same behavior
-//      by using the LastNonspaceCharacter as the "bottom", and placing the new
-//      viewport underneath that character.
-// Parameters:
-//  <none>
-// Return value:
-// - S_OK if we succeeded, or another status if there was a failure.
-[[nodiscard]] HRESULT SCREEN_INFORMATION::VtEraseAll()
-{
-    const COORD coordLastChar = _textBuffer->GetLastNonSpaceCharacter();
-    short sNewTop = coordLastChar.Y + 1;
-    const Viewport oldViewport = _viewport;
-    // Stash away the current position of the cursor within the viewport.
-    // We'll need to restore the cursor to that same relative position, after
-    //      we move the viewport.
-    const COORD oldCursorPos = _textBuffer->GetCursor().GetPosition();
-    COORD relativeCursor = oldCursorPos;
-    oldViewport.ConvertToOrigin(&relativeCursor);
-
-    short delta = (sNewTop + _viewport.Height()) - (GetBufferSize().Height());
-    for (auto i = 0; i < delta; i++)
-    {
-        _textBuffer->IncrementCircularBuffer();
-        sNewTop--;
-    }
-
-    const COORD coordNewOrigin = { 0, sNewTop };
-    RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
-    // Restore the relative cursor position
-    _viewport.ConvertFromOrigin(&relativeCursor);
-    RETURN_IF_FAILED(SetCursorPosition(relativeCursor, false));
-
-    // Update all the rows in the current viewport with the standard erase attributes,
-    // i.e. the current background color, but with no meta attributes set.
-    auto fillAttributes = GetAttributes();
-    fillAttributes.SetStandardErase();
-    auto fillPosition = COORD{ 0, _viewport.Top() };
-    auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
-    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
-    Write(fillData, fillPosition, false);
-
-    // Also reset the line rendition for the erased rows.
-    _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
-
-    return S_OK;
 }
 
 // Method Description:
@@ -2652,24 +2660,6 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
 }
 
 // Method Description:
-// - Moves the viewport to where we last believed the "virtual bottom" was. This
-//      emulates linux terminal behavior, where there's no buffer, only a
-//      viewport. This is called by WriteChars, on output from an application in
-//      VT mode, before the output is processed by the state machine.
-//   This ensures that if a user scrolls around in the buffer, and a client
-//      application uses VT to control the cursor/buffer, those commands are
-//      still processed relative to the coordinates before the user scrolled the buffer.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::MoveToBottom()
-{
-    const auto virtualView = GetVirtualViewport();
-    LOG_IF_NTSTATUS_FAILED(SetViewportOrigin(true, virtualView.Origin(), true));
-}
-
-// Method Description:
 // - Returns the "virtual" Viewport - the viewport with its bottom at
 //      `_virtualBottom`. For VT operations, this is essentially the mutable
 //      section of the buffer.
@@ -2736,35 +2726,6 @@ FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() noexcept
 const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;
-}
-
-// Method Description:
-// - Returns true iff the scroll margins have been set.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff the scroll margins have been set.
-bool SCREEN_INFORMATION::AreMarginsSet() const noexcept
-{
-    return _scrollMargins.BottomInclusive() > _scrollMargins.Top();
-}
-
-// Routine Description:
-// - Determines whether a cursor position is within the vertical bounds of the
-//      scroll margins, or the margins aren't set.
-// Parameters:
-// - cursorPosition - The cursor position to test
-// Return value:
-// - true iff the position is in bounds.
-bool SCREEN_INFORMATION::IsCursorInMargins(const COORD cursorPosition) const noexcept
-{
-    // If the margins aren't set, then any position is considered in bounds.
-    if (!AreMarginsSet())
-    {
-        return true;
-    }
-    const auto margins = GetAbsoluteScrollMargins().ToInclusive();
-    return cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
 }
 
 // Routine Description:
