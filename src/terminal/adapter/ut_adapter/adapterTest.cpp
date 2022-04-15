@@ -211,11 +211,6 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
-    void FocusChanged(const bool /*focused*/)
-    {
-        Log::Comment(L"FocusChanged MOCK called...");
-    }
-
     void ReparentWindow(const uint64_t /*handle*/)
     {
         Log::Comment(L"ReparentWindow MOCK called...");

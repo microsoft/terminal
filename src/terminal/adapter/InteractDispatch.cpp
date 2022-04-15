@@ -183,7 +183,12 @@ bool InteractDispatch::IsVtInputEnabled() const
 }
 
 // Method Description:
-// - Plumbs through to ConGetSet::FocusChanged. See that method for details.
+// - Inform the console that the window is focused. This is used by ConPTY.
+//   Terminals can send ConPTY a FocusIn/FocusOut sequence on the input pipe,
+//   which will end up here. This will update the console's internal tracker if
+//   it's focused or not, as to match the end-terminal's state.
+// - Used to call ConsoleControl(ConsoleSetForeground,...).
+// - Full support for this sequence is tracked in GH#11682.
 // Arguments:
 // - focused: if the terminal is now focused
 // Return Value:
@@ -194,6 +199,14 @@ bool InteractDispatch::FocusChanged(const bool focused) const
     // from the terminal when it starts up, and ConPTY never unsets that flag.
     // It should only ever internally disable the events from flowing to the
     // client application.
-    _pConApi->FocusChanged(focused);
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, focused);
+    gci.ProcessHandleList.ModifyConsoleProcessFocus(focused);
+
+    // Theoretically, this could be propagated as a focus event as well, to the
+    // input buffer. That should be considered when implementing GH#11682.
+
     return true;
 }
