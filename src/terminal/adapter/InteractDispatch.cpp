@@ -3,12 +3,21 @@
 
 #include "precomp.h"
 
+// Some of the interactivity classes pulled in by ServiceLocator.hpp are not
+// yet audit-safe, so for now we'll need to disable a bunch of warnings.
+#pragma warning(disable : 26432)
+#pragma warning(disable : 26440)
+#pragma warning(disable : 26455)
+
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../host/conddkrefs.h"
+#include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -47,7 +56,7 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 // - True.
 bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
 {
-    _pConApi->WriteControlInput(event);
+    HandleGenericKeyEvent(event, false);
     return true;
 }
 
@@ -67,7 +76,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, codepage);
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
@@ -101,14 +110,15 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _pConApi->RefreshWindow();
+        _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // the ConGetSet interface, that specifically handles a conpty resize.
         if (_pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
         {
-            _pConApi->SuppressResizeRepaint();
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
         }
         return true;
     default:
@@ -135,26 +145,29 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
     const size_t colFixed = col - 1;
 
     // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    COORD coordCursor = csbiex.dwCursorPosition;
+    const auto viewport = _pConApi->GetViewport().to_small_rect();
+    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    auto coordCursor = cursor.GetPosition();
 
     // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
     THROW_IF_FAILED(SizeTToShort(rowFixed, &coordCursor.Y));
     THROW_IF_FAILED(SizeTToShort(colFixed, &coordCursor.X));
 
     // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-    THROW_IF_FAILED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y));
-    THROW_IF_FAILED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+    THROW_IF_FAILED(ShortAdd(coordCursor.Y, viewport.Top, &coordCursor.Y));
+    THROW_IF_FAILED(ShortAdd(coordCursor.X, viewport.Left, &coordCursor.X));
 
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
-    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
+    coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, viewport.Bottom);
+    coordCursor.X = std::clamp(coordCursor.X, viewport.Left, viewport.Right);
+
+    // MSFT: 15813316 - Try to use this MoveCursor call to inherit the cursor position.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursor));
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    _pConApi->SetCursorPosition(coordCursor);
+    cursor.SetPosition(coordCursor);
+    cursor.SetHasMoved(true);
     return true;
 }
 
@@ -170,17 +183,73 @@ bool InteractDispatch::IsVtInputEnabled() const
 }
 
 // Method Description:
-// - Plumbs through to ConGetSet::FocusChanged. See that method for details.
+// - Inform the console that the window is focused. This is used by ConPTY.
+//   Terminals can send ConPTY a FocusIn/FocusOut sequence on the input pipe,
+//   which will end up here. This will update the console's internal tracker if
+//   it's focused or not, as to match the end-terminal's state.
+// - Used to call ConsoleControl(ConsoleSetForeground,...).
+// - Full support for this sequence is tracked in GH#11682.
 // Arguments:
 // - focused: if the terminal is now focused
 // Return Value:
 // - true always.
 bool InteractDispatch::FocusChanged(const bool focused) const
 {
-    // When we do GH#11682, we should make sure that ConPTY requests this mode
-    // from the terminal when it starts up, and ConPTY never unsets that flag.
-    // It should only ever internally disable the events from flowing to the
-    // client application.
-    _pConApi->FocusChanged(focused);
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+
+    if (gci.IsInVtIoMode())
+    {
+        bool shouldActuallyFocus = false;
+
+        // From https://github.com/microsoft/terminal/pull/12799#issuecomment-1086289552
+        // Make sure that the process that's telling us it's focused, actually
+        // _is_ in the FG. We don't want to allow malicious.exe to say "yep I'm
+        // in the foreground, also, here's a popup" if it isn't actually in the
+        // FG.
+        if (focused)
+        {
+            if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow() })
+            {
+                // They want focus, we found a pseudo hwnd.
+
+                // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
+                // GA_PARENT and GA_ROOT seemingly return the same thing for
+                // Terminal. We're going with GA_ROOT since it seems
+                // semantically more correct here.
+                if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_ROOT) })
+                {
+                    // We have an owner from a previous call to ReparentWindow
+
+                    if (const auto currentFgWindow{ ::GetForegroundWindow() })
+                    {
+                        // There is a window in the foreground (it's possible there
+                        // isn't one)
+
+                        // Get the PID of the current FG window, and compare with our owner's PID.
+                        DWORD currentFgPid{ 0 };
+                        DWORD ownerPid{ 0 };
+                        GetWindowThreadProcessId(currentFgWindow, &currentFgPid);
+                        GetWindowThreadProcessId(ownerHwnd, &ownerPid);
+
+                        if (ownerPid == currentFgPid)
+                        {
+                            // Huzzah, the app that owns us is actually the FG
+                            // process. They're allowed to grand FG rights.
+                            shouldActuallyFocus = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
+        gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
+    }
+    // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
+
+    // Theoretically, this could be propagated as a focus event as well, to the
+    // input buffer. That should be considered when implementing GH#11682.
+
     return true;
 }
