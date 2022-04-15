@@ -225,6 +225,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleAltBufferTest);
     TEST_METHOD(AltBufferToAltBufferTest);
 
+    TEST_METHOD(AltBufferResizeCrash);
+
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
     void _flushFirstFrame();
@@ -3864,6 +3866,8 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -4023,6 +4027,8 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
     gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -4068,4 +4074,51 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
     Log::Comment(L"========== Checking the terminal buffer state (StillInAltBuffer) ==========");
     verifyBuffer(*termAltTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::StillInAltBuffer);
+}
+
+void ConptyRoundtripTests::AltBufferResizeCrash()
+{
+    Log::Comment(L"During the review for GH#12719, it was noticed that this "
+                 L"particular combination of resizing could crash the terminal."
+                 L" This test makes sure we don't.");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
+
+    // Note: we really don't care about the output in this test. We could, but
+    // mostly we care to ensure we don't crash. If we make it through this test,
+    // then it's a success.
+
+    Log::Comment(L"========== Resize to 132x24 ==========");
+    sm.ProcessString(L"\x1b[8;24;132t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Move cursor to (99,11) ==========");
+    sm.ProcessString(L"\x1b[12;100H");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+    sm.ProcessString(L"\x1b[?1049h");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Resize to 80x10 ==========");
+    sm.ProcessString(L"\x1b[8;10;80t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 }

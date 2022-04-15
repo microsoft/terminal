@@ -723,9 +723,8 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
         if (_psiMainBuffer)
         {
-            const auto bufferSize = GetBufferSize().Dimensions();
-
-            _psiMainBuffer->SetViewportSize(&bufferSize);
+            _psiMainBuffer->_fAltWindowChanged = false;
+            _psiMainBuffer->_deferredPtyResize = til::size{ GetBufferSize().Dimensions() };
         }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
@@ -1195,20 +1194,6 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
                 // Adjust the top of the window instead of the bottom
                 // (so the lines slide upward)
                 srNewViewport.Top -= DeltaY;
-
-                // If we happened to move the top of the window past
-                // the 0th row (first row in the buffer)
-                if (srNewViewport.Top < 0)
-                {
-                    // Find the amount we went past 0, correct the top
-                    // of the window back to 0, and instead adjust the
-                    // bottom even though it will cause us to lose the
-                    // prompt line.
-                    const short cRemainder = 0 - srNewViewport.Top;
-                    srNewViewport.Top += cRemainder;
-                    FAIL_FAST_IF(!(srNewViewport.Top == 0));
-                    srNewViewport.Bottom += cRemainder;
-                }
             }
             else
             {
@@ -1245,7 +1230,14 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
         srNewViewport.Right -= offRightDelta;
         srNewViewport.Left = std::max<SHORT>(0, srNewViewport.Left - offRightDelta);
     }
-    srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
+    const SHORT offBottomDelta = srNewViewport.Bottom - (coordScreenBufferSize.Y - 1);
+    if (offBottomDelta > 0) // the viewport was off the right of the buffer...
+    {
+        // ...so slide both top/bottom back into the buffer. This will prevent us
+        // from having a negative width later.
+        srNewViewport.Bottom -= offBottomDelta;
+        srNewViewport.Top = std::max<SHORT>(0, srNewViewport.Top - offBottomDelta);
+    }
 
     // See MSFT:19917443
     // If we're in terminal scrolling mode, and we've changed the height of the
@@ -1494,6 +1486,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const COORD coordNewScreenSize)
 {
+    _textBuffer->GetCursor().StartDeferDrawing();
+    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(coordNewScreenSize));
 }
 
@@ -1537,7 +1531,15 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     CommandLine::Instance().EndAllPopups();
 
     const bool fWrapText = gci.GetWrapText();
-    if (fWrapText)
+    // GH#3493: Don't reflow the alt buffer.
+    //
+    // VTE only rewraps the contents of the (normal screen + its scrollback
+    // buffer) on a resize event. It doesn't rewrap the contents of the
+    // alternate screen. The alternate screen is used by applications which
+    // repaint it after a resize event. So it doesn't really matter. However, in
+    // that short time window, after resizing the terminal but before the
+    // application catches up, this prevents vertical lines
+    if (fWrapText && !_IsAltBuffer())
     {
         status = ResizeWithReflow(coordNewScreenSize);
     }
@@ -1911,6 +1913,66 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     return Status;
 }
 
+// Function Description:
+// - Handle deferred resizes that may have happened while the alt buffer was
+//   active. Both resizes on the HWND itself (_fAltWindowChanged), and resizes
+//   to the viewport of the alt buffer (which in turn should resize the buffer),
+//   are handled here.
+// Arguments:
+// - siMain: the main buffer whose resize was deferred.
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
+{
+    if (siMain._fAltWindowChanged)
+    {
+        siMain.ProcessResizeWindow(&(siMain._rcAltSavedClientNew), &(siMain._rcAltSavedClientOld));
+        siMain._fAltWindowChanged = false;
+    }
+    else if (siMain._deferredPtyResize.has_value())
+    {
+        const COORD newViewSize = siMain._deferredPtyResize.value().to_win32_coord();
+        // Tricky! We want to make sure to resize the actual main buffer
+        // here, not just change the size of the viewport. When they resized
+        // the alt buffer, the dimensions of the alt buffer changed. We
+        // should make sure the main buffer reflects similar changes.
+        //
+        // To do this, we have to emulate bits of
+        // ConhostInternalGetSet::ResizeWindow. We can't call that
+        // straight-up, because the main buffer isn't active yet.
+        const COORD oldScreenBufferSize = siMain.GetBufferSize().Dimensions();
+        COORD newBufferSize = oldScreenBufferSize;
+
+        // Always resize the width of the console
+        newBufferSize.X = newViewSize.X;
+
+        // Only set the new buffer's height if the new size will be TALLER than the current size (e.g., resizing a 80x32 buffer to be 80x124).
+        if (newViewSize.Y > oldScreenBufferSize.Y)
+        {
+            newBufferSize.Y = newViewSize.Y;
+        }
+
+        // From ApiRoutines::SetConsoleScreenBufferInfoExImpl. We don't need
+        // the whole call to SetConsoleScreenBufferInfoEx here, that's
+        // too much work.
+        if (newBufferSize.X != oldScreenBufferSize.X ||
+            newBufferSize.Y != oldScreenBufferSize.Y)
+        {
+            CommandLine& commandLine = CommandLine::Instance();
+            commandLine.Hide(FALSE);
+            LOG_IF_FAILED(siMain.ResizeScreenBuffer(newBufferSize, TRUE));
+            commandLine.Show();
+        }
+
+        // Not that the buffer is smaller, actually make sure to resize our
+        // viewport to match.
+        siMain.SetViewportSize(&newViewSize);
+
+        // Clear out the resize.
+        siMain._deferredPtyResize = std::nullopt;
+    }
+}
+
 // Routine Description:
 // - Creates an "alternate" screen buffer for this buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
@@ -1924,11 +1986,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& siMain = GetMainBuffer();
     // If we're in an alt that resized, resize the main before making the new alt
-    if (siMain._fAltWindowChanged)
-    {
-        siMain.ProcessResizeWindow(&(siMain._rcAltSavedClientNew), &(siMain._rcAltSavedClientOld));
-        siMain._fAltWindowChanged = false;
-    }
+    _handleDeferredResize(siMain);
 
     SCREEN_INFORMATION* psiNewAltBuffer;
     NTSTATUS Status = _CreateAltBuffer(&psiNewAltBuffer);
@@ -1981,11 +2039,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
     SCREEN_INFORMATION* psiMain = _psiMainBuffer;
     if (psiMain != nullptr)
     {
-        if (psiMain->_fAltWindowChanged)
-        {
-            psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
-            psiMain->_fAltWindowChanged = false;
-        }
+        _handleDeferredResize(*psiMain);
 
         // GH#381: When we switch into the main buffer:
         //  * flush the current frame, to clear out anything that we prepared for this buffer.

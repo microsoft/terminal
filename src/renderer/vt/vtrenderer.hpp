@@ -27,6 +27,7 @@ namespace TerminalCoreUnitTests
 {
     class ConptyRoundtripTests;
 };
+class ScreenBufferTests;
 #endif
 
 namespace Microsoft::Console::VirtualTerminal
@@ -227,6 +228,7 @@ namespace Microsoft::Console::Render
 
         friend class VtRendererTest;
         friend class ConptyOutputTests;
+        friend class ScreenBufferTests;
         friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 
