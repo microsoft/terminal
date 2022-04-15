@@ -6,7 +6,6 @@
 using Microsoft.Terminal.Wpf;
 using System;
 using System.Windows;
-using Microsoft.Terminal.TerminalConnection;
 
 //
 // HEY YOU! Trying to build this to test it? MAKE SURE TO SET THE CONFIGURATION TO
@@ -86,44 +85,6 @@ namespace WpfTerminalTestNetCore
             return;
         }
     }
-
-    public class ConptyConnection : Microsoft.Terminal.Wpf.ITerminalConnection
-    {
-        // This fails with module not found. This is annoying. We probably need CsWinRT to actually use the conpty WinRT class.
-        Microsoft.Terminal.TerminalConnection.ConptyConnection internalConnection = new Microsoft.Terminal.TerminalConnection.ConptyConnection();
-
-        public event EventHandler<TerminalOutputEventArgs> TerminalOutput;
-        public ConptyConnection()
-        {
-            internalConnection.TerminalOutput += InternalConnection_TerminalOutput;
-        }
-
-        private void InternalConnection_TerminalOutput(string output)
-        {
-            TerminalOutput.Invoke(this, new TerminalOutputEventArgs(output));
-        }
-
-        public void Close()
-        {
-            internalConnection.Close();
-        }
-
-        public void Resize(uint rows, uint columns)
-        {
-            internalConnection.Resize(rows, columns);
-        }
-
-        public void Start()
-        {
-            internalConnection.Start();
-        }
-
-        public void WriteInput(string data)
-        {
-            internalConnection.WriteInput(data);
-        }
-    }
-
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -148,15 +109,9 @@ namespace WpfTerminalTestNetCore
                 ColorTable = new uint[] { 0x0C0C0C, 0x1F0FC5, 0x0EA113, 0x009CC1, 0xDA3700, 0x981788, 0xDD963A, 0xCCCCCC, 0x767676, 0x5648E7, 0x0CC616, 0xA5F1F9, 0xFF783B, 0x9E00B4, 0xD6D661, 0xF2F2F2 },
             };
 
-            // Terminal.Connection = new EchoConnection();
-            Terminal.Connection = new ConptyConnection();
-            // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
-            // let's just arbitrarily start with a 270x420px (30x20 chars) window
-
-
+            Terminal.Connection = new EchoConnection();
             Terminal.SetTheme(theme, "Cascadia Code", 12);
             Terminal.Focus();
-
         }
     }
 }

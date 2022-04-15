@@ -1,21 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
-
-  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RuntimeFrameworkVersion>3.1.18</RuntimeFrameworkVersion>
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU;x64;x86</Platforms>
-    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)src\api-ms-win-core-synch-l1-2-0\api-ms-win-core-synch-l1-2-0.vcxproj" />
     <ProjectReference Include="$(SolutionDir)src\cascadia\PublicTerminalCore\PublicTerminalCore.vcxproj" />
-    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(SolutionDir)src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj" />
   </ItemGroup>
 
@@ -32,7 +27,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
-  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
 
 </Project>
