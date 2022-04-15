@@ -1025,14 +1025,24 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
     // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    const bool inConpty = _pConApi->IsConsolePty();
-    const bool shouldPassthrough = inConpty && _pConApi->IsVtInputEnabled();
 
     // GH#12799 - If the app requested that we disable focus events, DON'T pass
     // that through. ConPTY would _always_ like to know about focus events.
-    const bool disabledFocusEvents = inConpty && (!enable && mode == TerminalInput::Mode::FocusEvent);
 
-    return !shouldPassthrough || disabledFocusEvents;
+    return !_pConApi->IsConsolePty() ||
+           !_pConApi->IsVtInputEnabled() ||
+           (!enable && mode == TerminalInput::Mode::FocusEvent);
+
+    // Another way of writing the above statement is:
+    //
+    // const bool inConpty = _pConApi->IsConsolePty();
+    // const bool shouldPassthrough = inConpty && _pConApi->IsVtInputEnabled();
+    // const bool disabledFocusEvents = inConpty && (!enable && mode == TerminalInput::Mode::FocusEvent);
+    // return !shouldPassthrough || disabledFocusEvents;
+    //
+    // It's like a "filter" left to right. Due to the early return via
+    // !IsConsolePty, once you're at the !enable part, IsConsolePty can only be
+    // true anymore.
 }
 
 // Routine Description:

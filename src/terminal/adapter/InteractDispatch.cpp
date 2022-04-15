@@ -188,7 +188,7 @@ bool InteractDispatch::IsVtInputEnabled() const
 //   which will end up here. This will update the console's internal tracker if
 //   it's focused or not, as to match the end-terminal's state.
 // - Used to call ConsoleControl(ConsoleSetForeground,...).
-// - Full support for this sequence is tracked in GH#11682.
+// - Full support for this sequence was added in GH#11682.
 // Arguments:
 // - focused: if the terminal is now focused
 // Return Value:
@@ -247,9 +247,6 @@ bool InteractDispatch::FocusChanged(const bool focused) const
         gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
     }
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
-
-    // Theoretically, this could be propagated as a focus event as well, to the
-    // input buffer. That should be considered when implementing GH#11682.
 
     return true;
 }

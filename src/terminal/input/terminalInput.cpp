@@ -684,7 +684,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 
 bool TerminalInput::HandleFocus(const bool focused)
 {
-    const bool enabled{ GetInputMode(Mode::FocusEvent) };
+    const bool enabled{ _inputMode.test(Mode::FocusEvent) };
     if (enabled)
     {
         _SendInputSequence(focused ? L"\x1b[I" : L"\x1b[O");

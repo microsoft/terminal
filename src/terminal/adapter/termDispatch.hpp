@@ -72,6 +72,7 @@ public:
     bool EnableSGRExtendedMouseMode(const bool /*enabled*/) override { return false; } // ?1006
     bool EnableButtonEventMouseMode(const bool /*enabled*/) override { return false; } // ?1002
     bool EnableAnyEventMouseMode(const bool /*enabled*/) override { return false; } // ?1003
+    bool EnableFocusEventMode(const bool /*enabled*/) override { return false; } // ?1004
     bool EnableAlternateScroll(const bool /*enabled*/) override { return false; } // ?1007
     bool EnableXtermBracketedPasteMode(const bool /*enabled*/) override { return false; } // ?2004
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
