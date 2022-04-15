@@ -39,17 +39,6 @@ namespace winrt::TerminalApp::implementation
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
-        if (CommandPaletteShadow())
-        {
-            // Hook up the shadow on the command palette to the backdrop that
-            // will actually show it. This needs to be done at runtime, and only
-            // if the shadow actually exists. ThemeShadow isn't supported below
-            // version 18362.
-            CommandPaletteShadow().Receivers().Append(_shadowBackdrop());
-            // "raise" the command palette up by 16 units, so it will cast a shadow.
-            _backdrop().Translation({ 0, 0, 16 });
-        }
-
         // Whatever is hosting us will enable us by setting our visibility to
         // "Visible". When that happens, set focus to our search box.
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
