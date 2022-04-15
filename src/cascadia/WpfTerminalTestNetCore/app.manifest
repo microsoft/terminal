@@ -32,4 +32,7 @@
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">True/PM</dpiAware>
     </windowsSettings>
   </application>
+
+
+  <file name="Microsoft.Terminal.TerminalConnection.dll" hashalg="SHA1"><activatableClass name="Microsoft.Terminal.TerminalConnection.AzureConnection" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass><activatableClass name="Microsoft.Terminal.TerminalConnection.ConnectionInformation" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass><activatableClass name="Microsoft.Terminal.TerminalConnection.ConptyConnection" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass><activatableClass name="Microsoft.Terminal.TerminalConnection.EchoConnection" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass></file>
 </assembly>
