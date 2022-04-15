@@ -409,8 +409,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::point terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
 
-        // Short-circuit isReadOnly check to avoid warning dialog
-        if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
+        // Short-circuit isReadOnly check to avoid warning dialog.
+        //
+        // GH#3321: Alternate scroll mode is a special type of mouse input mode
+        // where the terminal sends arrow keys when the user mouse wheels, but
+        // the client app doesn't care for other mouse input. It's tracked
+        // separately from _canSendVTMouseInput.
+        if (!_core->IsInReadOnlyMode() &&
+            (_canSendVTMouseInput(modifiers) || _shouldSendAlternateScroll(modifiers, delta)))
         {
             // Most mouse event handlers call
             //      _trySendMouseEvent(point);
@@ -569,6 +575,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
         return _core->IsVtMouseModeEnabled();
+    }
+
+    bool ControlInteractivity::_shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta)
+    {
+        // If the user is holding down Shift, suppress mouse events
+        // TODO GH#4875: disable/customize this functionality
+        if (modifiers.IsShiftPressed())
+        {
+            return false;
+        }
+        return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta);
     }
 
     // Method Description:

@@ -157,7 +157,7 @@ void ScrollTest::TestNotifyScrolling()
     Log::Comment(L"Watch out - this test takes a while to run, and won't "
                  L"output anything unless in encounters an error. This is expected.");
 
-    auto& termTb = *_term->_buffer;
+    auto& termTb = *_term->_mainBuffer;
     auto& termSm = *_term->_stateMachine;
 
     const auto totalBufferSize = termTb.GetSize().Height();

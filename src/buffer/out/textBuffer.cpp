@@ -562,7 +562,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     if (_isActiveBuffer)
     {
-        _renderer.TriggerCircling();
+        _renderer.TriggerFlush(true);
     }
 
     // Prune hyperlinks to delete obsolete references

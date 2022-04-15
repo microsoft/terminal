@@ -288,10 +288,11 @@ Globals& ServiceLocator::LocateGlobals()
 // Method Description:
 // - Retrieves the pseudo console window, or attempts to instantiate one.
 // Arguments:
-// - <none>
+// - owner: (defaults to 0 `HWND_DESKTOP`) the HWND that should be the initial
+//   owner of the pseudo window.
 // Return Value:
 // - a reference to the pseudoconsole window.
-HWND ServiceLocator::LocatePseudoWindow()
+HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
 {
     NTSTATUS status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
@@ -304,7 +305,7 @@ HWND ServiceLocator::LocatePseudoWindow()
         if (NT_SUCCESS(status))
         {
             HWND hwnd;
-            status = s_interactivityFactory->CreatePseudoWindow(hwnd);
+            status = s_interactivityFactory->CreatePseudoWindow(hwnd, owner);
             s_pseudoWindow.reset(hwnd);
         }
         s_pseudoWindowInitialized = true;
@@ -312,8 +313,6 @@ HWND ServiceLocator::LocatePseudoWindow()
     LOG_IF_NTSTATUS_FAILED(status);
     return s_pseudoWindow.get();
 }
-
-#pragma endregion
 
 #pragma endregion
 

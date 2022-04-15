@@ -262,6 +262,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto height = vp.Height();
             _connection.Resize(height, width);
 
+            if (_OwningHwnd != 0)
+            {
+                if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+                {
+                    conpty.ReparentWindow(_OwningHwnd);
+                }
+            }
+
             // Override the default width and height to match the size of the swapChainPanel
             _settings->InitialCols(width);
             _settings->InitialRows(height);
@@ -1428,6 +1436,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::IsVtMouseModeEnabled() const
     {
         return _terminal != nullptr && _terminal->IsTrackingMouseInput();
+    }
+    bool ControlCore::ShouldSendAlternateScroll(const unsigned int uiButton,
+                                                const int32_t delta) const
+    {
+        return _terminal != nullptr && _terminal->ShouldSendAlternateScroll(uiButton, delta);
     }
 
     Core::Point ControlCore::CursorPosition() const

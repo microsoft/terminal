@@ -435,6 +435,17 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Send a sequence to the connected terminal to switch to the alternate or main screen buffer.
+// Arguments:
+// - useAltBuffer: if true, switch to the alt buffer, otherwise to the main buffer.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SwitchScreenBuffer(const bool useAltBuffer) noexcept
+{
+    return _Write(useAltBuffer ? "\x1b[?1049h" : "\x1b[?1049l");
+}
+
+// Method Description:
 // - Formats and writes a sequence to add a hyperlink to the terminal buffer
 // Arguments:
 // - The hyperlink URI
