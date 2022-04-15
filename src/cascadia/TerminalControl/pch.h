@@ -47,6 +47,7 @@
 #include <winrt/Windows.UI.Xaml.Interop.h>
 #include <winrt/Windows.ui.xaml.markup.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.Storage.h>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>

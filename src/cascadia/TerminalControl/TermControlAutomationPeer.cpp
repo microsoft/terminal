@@ -4,6 +4,8 @@
 #include "pch.h"
 #include <UIAutomationCore.h>
 #include <LibraryResources.h>
+#include <ScopedResourceLoader.h>
+
 #include "TermControlAutomationPeer.h"
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.cpp"
@@ -272,7 +274,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // that use the TermControl that don't package up all the resources in a
         // way that they can be accessed, this will fall back to just "terminal"
         // (notably, the scratch solution doesn't package these resources)
-        return HasLibraryResourceWithName(L"TerminalControl_ControlType") ?
+        return ScopedResourceLoader(L"Microsoft.Terminal.Control/Resources").GetResourceMap() ?
                    RS_(L"TerminalControl_ControlType") :
                    L"terminal";
     }
