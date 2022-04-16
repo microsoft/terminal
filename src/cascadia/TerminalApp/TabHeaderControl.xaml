@@ -13,22 +13,6 @@
              MinHeight="16"
              mc:Ignorable="d">
 
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
-        </ResourceDictionary>
-    </UserControl.Resources>
-
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
         <mux:ProgressRing x:Name="HeaderProgressRing"
@@ -68,10 +52,10 @@
                    Text="{x:Bind Title, Mode=OneWay}"
                    Visibility="Visible" />
         <TextBox x:Name="HeaderRenamerTextBox"
-                 Height="16"
+                 Height="24"
                  MinHeight="0"
                  MaxWidth="{x:Bind RenamerMaxWidth, Mode=OneWay}"
-                 Padding="4,0,4,0"
+                 Padding="4,4,4,3"
                  FontSize="12"
                  IsSpellCheckEnabled="False"
                  LostFocus="RenameBoxLostFocusHandler"

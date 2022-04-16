@@ -5,6 +5,8 @@
         xmlns:local="using:TerminalApp"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+        Placement="Bottom"
+        ShouldConstrainToRootBounds="False"
         mc:Ignorable="d">
     <Flyout.FlyoutPresenterStyle>
         <Style TargetType="FlyoutPresenter">
@@ -24,8 +26,8 @@
                                        Orientation="Horizontal">
                     <VariableSizedWrapGrid.Resources>
                         <Style TargetType="Rectangle">
-                            <Setter Property="Width" Value="30" />
-                            <Setter Property="Height" Value="30" />
+                            <Setter Property="Width" Value="32" />
+                            <Setter Property="Height" Value="32" />
                         </Style>
                         <Style TargetType="Button">
                             <Setter Property="Padding" Value="-1" />
@@ -157,14 +159,14 @@
                 <Button x:Name="ClearColorButton"
                         x:Uid="TabColorClearButton"
                         Grid.Column="0"
-                        Margin="2"
+                        Margin="2,2,4,2"
                         HorizontalAlignment="Stretch"
                         Click="ClearColorButton_Click"
                         Content="Reset" />
                 <ToggleButton x:Name="CustomColorButton"
                               x:Uid="TabColorCustomButton"
                               Grid.Column="1"
-                              Margin="2"
+                              Margin="4,2,2,2"
                               HorizontalAlignment="Stretch"
                               Click="ShowColorPickerButton_Click"
                               Content="Custom"
@@ -180,7 +182,6 @@
             </Grid.RowDefinitions>
             <muxc:ColorPicker x:Name="customColorPicker"
                               Grid.Row="0"
-                              Margin="0,0,0,12"
                               ColorChanged="ColorPicker_ColorChanged"
                               FontSize="10"
                               IsAlphaEnabled="False"
