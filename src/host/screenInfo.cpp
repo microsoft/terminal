@@ -1239,23 +1239,21 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
         srNewViewport.Top = std::max<SHORT>(0, srNewViewport.Top - offBottomDelta);
     }
 
-    // See MSFT:19917443
-    // If we're in terminal scrolling mode, and we've changed the height of the
-    //      viewport, the new viewport's bottom to the _virtualBottom.
-    // GH#1206 - Only do this if the viewport is _growing_ in height. This can
-    // cause unexpected behavior if we try to anchor the _virtualBottom to a
-    // position that will be greater than the height of the buffer.
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto newViewport = Viewport::FromInclusive(srNewViewport);
-    if (gci.IsTerminalScrolling() && newViewport.Height() >= _viewport.Height())
+    // In general we want to avoid moving the virtual bottom unless it's aligned with
+    // the visible viewport, so we check whether the changes we're making would cause
+    // the bottom of the visible viewport to intersect the virtual bottom at any point.
+    // If so, we update the virtual bottom to match. We also update the virtual bottom
+    // if it's less than the new viewport height minus 1, because that would otherwise
+    // leave the virtual viewport extended past the top of the buffer.
+    const auto newViewport = Viewport::FromInclusive(srNewViewport);
+    if ((_virtualBottom >= _viewport.BottomInclusive() && _virtualBottom < newViewport.BottomInclusive()) ||
+        (_virtualBottom <= _viewport.BottomInclusive() && _virtualBottom > newViewport.BottomInclusive()) ||
+        _virtualBottom < newViewport.Height() - 1)
     {
-        const auto newTop = static_cast<short>(std::max(0, _virtualBottom - (newViewport.Height() - 1)));
-
-        newViewport = Viewport::FromDimensions(COORD({ newViewport.Left(), newTop }), newViewport.Dimensions());
+        _virtualBottom = srNewViewport.Bottom;
     }
 
     _viewport = newViewport;
-    UpdateBottom();
     Tracing::s_TraceWindowViewport(_viewport);
 
     // In Conpty mode, call TriggerScroll here without params. By not providing
@@ -1267,6 +1265,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     // till the start of the next frame. If any other text gets output before
     // that frame starts, there's a very real chance that it'll cause errors as
     // the engine tries to invalidate those regions.
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
     {
         ServiceLocator::LocateGlobals().pRender->TriggerScroll();
