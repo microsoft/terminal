@@ -7,7 +7,6 @@
                          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                          xmlns:TA="using:TerminalApp"
                          xmlns:Toolkit="using:Microsoft.Toolkit.Win32.UI.XamlHost"
-                         xmlns:contract8Present="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
                          xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                          xmlns:local="using:TerminalApp"
                          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -49,11 +48,8 @@
                     <!--  Suppress top padding  -->
                     <Thickness x:Key="TabViewHeaderPadding">9,0,8,0</Thickness>
 
-                    <!--
-                        Shadow that can be used by any control.
-                        Only works from build 18362, so it needs API contract 8.
-                    -->
-                    <contract8Present:ThemeShadow x:Name="SharedShadow" />
+                    <!--  Shadow that can be used by any control.  -->
+                    <ThemeShadow x:Name="SharedShadow" />
 
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
