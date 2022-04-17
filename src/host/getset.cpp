@@ -688,8 +688,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
         auto& buffer = context.GetActiveBuffer();
 
         const auto coordScreenBufferSize = buffer.GetBufferSize().Dimensions();
@@ -707,12 +705,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // Attempt to "snap" the viewport to the cursor position. If the cursor
         // is not in the current viewport, we'll try and move the viewport so
         // that the cursor is visible.
-        // microsoft/terminal#1222 - Use the "virtual" viewport here, so that
-        // when the console is in terminal-scrolling mode, the viewport snaps
-        // back to the virtual viewport's location.
-        const auto currentViewport = gci.IsTerminalScrolling() ?
-                                         buffer.GetVirtualViewport().ToInclusive() :
-                                         buffer.GetViewport().ToInclusive();
+        // GH#1222 and GH#9754 - Use the "virtual" viewport here, so that the
+        // viewport snaps back to the virtual viewport's location.
+        const auto currentViewport = buffer.GetVirtualViewport().ToInclusive();
         COORD delta{ 0 };
         {
             // When evaluating the X offset, we must convert the buffer position to
@@ -745,6 +740,12 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // SetViewportOrigin will worry about clamping these values to the
         // buffer for us.
         RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(true, newWindowOrigin, true));
+
+        // SetViewportOrigin will only move the virtual bottom down, but in
+        // this particular case we also need to allow the virtual bottom to
+        // be moved up, so we have to call UpdateBottom explicitly. This is
+        // how the cmd shell's CLS command resets the buffer.
+        buffer.UpdateBottom();
 
         return S_OK;
     }
