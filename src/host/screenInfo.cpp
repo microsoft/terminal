@@ -818,7 +818,10 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
     // Update our internal virtual bottom tracker if requested. This helps keep
     //      the viewport's logical position consistent from the perspective of a
     //      VT client application, even if the user scrolls the viewport with the mouse.
-    if (updateBottom)
+    //      We typically only want to this to move the virtual bottom down, though,
+    //      otherwise it can end up "truncating" the buffer if the user is viewing
+    //      the scrollback at the time the viewport origin is updated.
+    if (updateBottom && _virtualBottom < _viewport.BottomInclusive())
     {
         UpdateBottom();
     }
@@ -2306,6 +2309,10 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 
     const COORD coordNewOrigin = { 0, sNewTop };
     RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
+
+    // SetViewportOrigin will only move the virtual bottom down, but in this
+    // case we need to reset it to the top, so we have to update it explicitly.
+    UpdateBottom();
 
     // Place the cursor at the same x coord, on the row that's now the top
     RETURN_IF_FAILED(SetCursorPosition(COORD{ oldCursorPos.X, sNewTop }, false));
