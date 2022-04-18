@@ -213,7 +213,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
         }
 
         // scroll if necessary to make cursor visible.
-        screenInfo.MakeCursorVisible(coordBufferPos, false);
+        screenInfo.MakeCursorVisible(coordBufferPos);
 
         _dwSelectionFlags |= CONSOLE_SELECTION_NOT_EMPTY;
         _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
@@ -224,7 +224,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     else
     {
         // scroll if necessary to make cursor visible.
-        screenInfo.MakeCursorVisible(coordBufferPos, false);
+        screenInfo.MakeCursorVisible(coordBufferPos);
     }
 
     // remember previous selection rect

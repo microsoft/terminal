@@ -1751,7 +1751,7 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition, const bool updateBottom)
+void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
 {
     COORD WindowOrigin;
 
@@ -1783,7 +1783,7 @@ void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition, const boo
 
     if (WindowOrigin.X != 0 || WindowOrigin.Y != 0)
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, updateBottom));
+        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, false));
     }
 }
 
