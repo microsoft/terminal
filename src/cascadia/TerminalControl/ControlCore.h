@@ -246,9 +246,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
-        winrt::Windows::System::Threading::ThreadPoolTimer _cursorTimer{ nullptr };
-        winrt::Windows::System::Threading::ThreadPoolTimer _blinkTimer{ nullptr };
-
         winrt::fire_and_forget _asyncCloseConnection();
 
         bool _setFontSizeUnderLock(int fontSize);
@@ -282,9 +279,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setOpacity(const double opacity);
 
         bool _isBackgroundTransparent();
-
-        winrt::fire_and_forget _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
-        winrt::fire_and_forget _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
         inline bool _IsClosing() const noexcept
         {

@@ -29,7 +29,6 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.system.h>
-#include <winrt/Windows.system.threading.h>
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
