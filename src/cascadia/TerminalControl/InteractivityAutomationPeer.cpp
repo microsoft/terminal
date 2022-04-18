@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _controlPadding = til::rect{ til::math::rounding, padding };
     }
-    void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
+    void InteractivityAutomationPeer::ParentProvider(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider)
     {
         _parentProvider = parentProvider;
     }
@@ -189,12 +189,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // LOAD-BEARING: use _parentProvider->ProviderFromPeer(_parentProvider) instead of this->ProviderFromPeer(*this).
         // Since we split the automation peer into TermControlAutomationPeer and InteractivityAutomationPeer,
         // using "this" returns null. This can cause issues with some UIA Client scenarios like any navigation in Narrator.
-        const auto parent{ _parentProvider.get() };
-        if (!parent)
-        {
-            return nullptr;
-        }
-        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.ProviderFromPeer(parent));
+        // const auto parent{ _parentProvider.get() };
+        // if (!parent)
+        // {
+        //     return nullptr;
+        // }
+        // const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.ProviderFromPeer(parent));
+        // return xutr.as<XamlAutomation::ITextRangeProvider>();
+
+        const auto parentProvider = _parentProvider;
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     };
 
