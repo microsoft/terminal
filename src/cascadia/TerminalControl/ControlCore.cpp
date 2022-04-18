@@ -1709,4 +1709,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
     }
 
+    double ControlCore::DisplayScale() const
+    {
+        return _compositionScale;
+    }
 }

@@ -49,6 +49,7 @@ namespace Microsoft.Terminal.Control
         Boolean HasUnfocusedAppearance();
 
         UInt64 SwapChainHandle { get; };
+        Double DisplayScale { get; };
 
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };

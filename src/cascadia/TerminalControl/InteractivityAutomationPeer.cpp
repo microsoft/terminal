@@ -183,7 +183,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     double InteractivityAutomationPeer::GetScaleFactor() const noexcept
     {
-        return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        return _interactivity->Core().DisplayScale();
+        // return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
     }
 
     void InteractivityAutomationPeer::ChangeViewport(const SMALL_RECT NewWindow)

@@ -64,6 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
+        double DisplayScale() const;
         uint64_t SwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
