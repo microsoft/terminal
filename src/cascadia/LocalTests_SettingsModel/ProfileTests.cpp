@@ -40,7 +40,6 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfilesOnArray);
         TEST_METHOD(DuplicateProfileTest);
         TEST_METHOD(TestGenGuidsForProfiles);
-
         TEST_METHOD(TestCorrectOldDefaultShellPaths);
     };
 
@@ -367,31 +366,43 @@ namespace SettingsModelLocalTests
             ]
         })" };
         static constexpr std::string_view userProfiles{ R"({
-            "profiles": [
+            "profiles": {
+                "defaults":
                 {
-                    "name" : "powershell 1",
-                    "commandline": "powershell.exe",
-                    "guid" : "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+                    "commandline": "pwsh.exe"
                 },
-                {
-                    "name" : "powershell 2",
-                    "commandline": "powershell.exe",
-                    "guid" : "{61c54bbd-0000-5271-96e7-009a87ff44bf}"
-                },
-                {
-                    "name" : "cmd 1",
-                    "commandline": "cmd.exe",
-                    "guid" : "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"
-                },
-                {
-                    "name" : "cmd 2",
-                    "commandline": "cmd.exe",
-                    "guid" : "{0caa0dad-0000-5f56-a8ff-afceeeaa6101}"
-                }
-            ]
+                "list":
+                [
+                    {
+                        "name" : "powershell 1",
+                        "commandline": "powershell.exe",
+                        "guid" : "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+                    },
+                    {
+                        "name" : "powershell 2",
+                        "commandline": "powershell.exe",
+                        "guid" : "{61c54bbd-0000-5271-96e7-009a87ff44bf}"
+                    },
+                    {
+                        "name" : "cmd 1",
+                        "commandline": "cmd.exe",
+                        "guid" : "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"
+                    },
+                    {
+                        "name" : "cmd 2",
+                        "commandline": "cmd.exe",
+                        "guid" : "{0caa0dad-0000-5f56-a8ff-afceeeaa6101}"
+                    }
+                ]
+            }
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userProfiles, inboxProfiles);
+        implementation::SettingsLoader loader{ userProfiles, inboxProfiles };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
         const auto allProfiles = settings->AllProfiles();
         VERIFY_ARE_EQUAL(4u, allProfiles.Size());
         VERIFY_ARE_EQUAL(L"powershell 1", allProfiles.GetAt(0).Name());
