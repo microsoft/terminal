@@ -2595,7 +2595,7 @@ namespace winrt::TerminalApp::implementation
             profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
         }
 
-        if (_settings.GlobalSettings().BgImageForWindow())
+        if (_settings.GlobalSettings().UseBackgroundImageForWindow())
         {
             const auto focusedTab{ _GetFocusedTabImpl() };
             if (focusedTab)

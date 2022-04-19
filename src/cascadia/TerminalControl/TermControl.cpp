@@ -308,7 +308,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        if (_core.Settings().BgImageForWindow())
+        if (_core.Settings().UseBackgroundImageForWindow())
         {
             foregroundBrush.Color(Windows::UI::Colors::Transparent());
         }
@@ -401,7 +401,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_SetBackgroundImage(const IControlAppearance& newAppearance)
     {
-        if (newAppearance.BackgroundImage().empty() || _core.Settings().BgImageForWindow())
+        if (newAppearance.BackgroundImage().empty() || _core.Settings().UseBackgroundImageForWindow())
         {
             BackgroundImage().Source(nullptr);
             return;
@@ -460,7 +460,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto settings{ _core.Settings() };
         auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
 
-        auto transparentBg = settings.BgImageForWindow();
+        auto transparentBg = settings.UseBackgroundImageForWindow();
         if (transparentBg)
         {
             bgColor = Windows::UI::Colors::Transparent();
@@ -533,7 +533,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - bg: the new color to use as the background color.
     void TermControl::_changeBackgroundColor(til::color bg)
     {
-        auto transparent_bg = _core.Settings().BgImageForWindow();
+        auto transparent_bg = _core.Settings().UseBackgroundImageForWindow();
         if (transparent_bg)
         {
             bg = Windows::UI::Colors::Transparent();
