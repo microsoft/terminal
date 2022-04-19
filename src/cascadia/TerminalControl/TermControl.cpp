@@ -124,20 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
-                    control->_isInternalScrollBarUpdate = true;
-
-                    auto scrollBar = control->ScrollBar();
-                    if (update.newValue)
-                    {
-                        scrollBar.Value(*update.newValue);
-                    }
-                    scrollBar.Maximum(update.newMaximum);
-                    scrollBar.Minimum(update.newMinimum);
-                    scrollBar.ViewportSize(update.newViewportSize);
-                    // scroll one full screen worth at a time when the scroll bar is clicked
-                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
-
-                    control->_isInternalScrollBarUpdate = false;
+                    control->_throttledUpdateScrollbar(update);
                 }
             });
 
