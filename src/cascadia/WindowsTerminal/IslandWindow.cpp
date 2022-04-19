@@ -538,6 +538,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             return 0;
         }
         CATCH_LOG();
+        break;
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
@@ -595,6 +596,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 return 0;
             }
         }
+        break;
     }
     case CM_NOTIFY_FROM_NOTIFICATION_AREA:
     {
