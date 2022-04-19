@@ -682,7 +682,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     return false;
 }
 
-bool TerminalInput::HandleFocus(const bool focused)
+bool TerminalInput::HandleFocus(const bool focused) noexcept
 {
     const bool enabled{ _inputMode.test(Mode::FocusEvent) };
     if (enabled)
