@@ -806,8 +806,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ScrollBar().ViewportSize(bufferHeight);
         ScrollBar().LargeChange(std::max(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
-        // TODO! Discuss with AustinL - I bet this can be a timer in the core.
-        //
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
         if (blinkTime != INFINITE)

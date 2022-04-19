@@ -174,8 +174,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     double InteractivityAutomationPeer::GetScaleFactor() const noexcept
     {
+        // If we were being used in a process that had a CoreWindow, we could just call
+        //  DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        //
+        // We won't always be though, so instead, ask our model what the DPI is.
         return _interactivity->Core().DisplayScale();
-        // return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
     }
 
     void InteractivityAutomationPeer::ChangeViewport(const SMALL_RECT NewWindow)
@@ -186,19 +189,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::_CreateXamlUiaTextRange(UIA::ITextRangeProvider* returnVal) const
     {
-        // LOAD-BEARING: use _parentProvider->ProviderFromPeer(_parentProvider) instead of this->ProviderFromPeer(*this).
-        // Since we split the automation peer into TermControlAutomationPeer and InteractivityAutomationPeer,
-        // using "this" returns null. This can cause issues with some UIA Client scenarios like any navigation in Narrator.
-        // const auto parent{ _parentProvider.get() };
-        // if (!parent)
-        // {
-        //     return nullptr;
-        // }
-        // const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.ProviderFromPeer(parent));
-        // return xutr.as<XamlAutomation::ITextRangeProvider>();
-
         const auto parentProvider = _parentProvider;
-        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, _parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     };
 
