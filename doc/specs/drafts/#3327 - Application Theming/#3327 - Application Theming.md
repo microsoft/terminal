@@ -1,19 +1,18 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-12-13
-last updated: 2022-02-18
+last updated: 2022-04-19
 issue id: #3327
 ---
 
 
 TODO!S:
-* Allow alpha in these colors. Like, I want the tabs to be `#10808080` lighter than the tab row which is acrylic, `#40102030`
-  - Oh my, I already did that didn't I
 * whole application window BG images, a la that one post in the theming thread
 * How do themes play with different window title settings? (different themes for different windows. `_quake` esp.))
 * any clever ideas for elevated themes?
 * tab.bottomCornerRadius? or is tab.cornerRadius a "1" = all 1, "1, 2" = tops 1, bottoms 2 kinda situation
-
+* `tabRow.background` that follows the OS setting for "Use accent color in titlebars"
+* Reconcile with global `experimental.useBackgroundImageForWindow` from [#12893]
 
 # Application Theming
 
@@ -500,11 +499,13 @@ theme, regardless of whatever `window.applicationTheme` is set to. Should the
 user leave `window.applicationTheme` set to `system`, it's entirely likely that
 they would like the rest of their colors to automatically update to match.
 
-[TODO!]: # TODO!
+[TODO!]: # We should certainly have a plan for this in mind before accepting this spec.
 
 _Terrible ideas_:
 * allow the user to set different themes for different OS themes. Something like
   `"theme": { "light": "My Light Theme", "dark": "My Dark Theme" }`
+  - This design might complicate the "let `theme` be an object" as mentioned in
+    Future considerations.
 * Allow the user to set their own brushes as part of a theme? So like,
 ```jsonc
 {
@@ -552,6 +553,12 @@ in the Terminal. Please also refer to:
   - We probably shouldn't allow layering for fragment themes - don't want
     `foo.exe` installing a `light` theme that totally overrides the built-in
     one. Right? **TODO! DISCUSSION**
+* I don't think it's unreasonable to implement support for `theme` as either a
+  string or an object. If `theme` is a string, then we can do a name-based
+  lookup in a table of themes. If it's an object, we can just use that object
+  immediately. Doing this might provide a simpler implementation plan whereby we
+  allow `"default"|"light"|"dark"|{object}` at first, and then later add the
+  list of themes.
 
 #### Theming v2 Properties
 
@@ -586,3 +593,4 @@ in the Terminal. Please also refer to:
 [#5280]: https://github.com/microsoft/terminal/pull/5280
 
 [microsoft-ui-xaml#2201]: https://github.com/microsoft/microsoft-ui-xaml/pull/2201#issuecomment-606888293
+[#12893]: https://github.com/microsoft/terminal/pull/12893
