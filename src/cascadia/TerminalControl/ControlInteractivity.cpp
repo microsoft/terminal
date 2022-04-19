@@ -111,6 +111,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             THROW_IF_FAILED(_uiaEngine->Enable());
         }
 
+        _core->GotFocus();
+
         _updateSystemParameterSettings();
     }
 
@@ -120,6 +122,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             THROW_IF_FAILED(_uiaEngine->Disable());
         }
+
+        _core->LostFocus();
     }
 
     // Method Description
