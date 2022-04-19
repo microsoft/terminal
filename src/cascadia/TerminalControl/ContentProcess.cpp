@@ -72,9 +72,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                        static_cast<DWORD>(callersPid)) };
         if (hWindowProcess.get() == nullptr)
         {
-            const auto gle = GetLastError();
-            gle;
-            // TODO! tracelog an error here
+            TraceLoggingWrite(g_hTerminalControlProvider,
+                              "ContentProcess::RequestSwapChainHandle_OpenOtherProcessFailed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            LOG_LAST_ERROR();
             return 0;
         }
 
@@ -88,9 +91,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        DUPLICATE_SAME_ACCESS);
         if (!success)
         {
-            const auto gle = GetLastError();
-            gle;
-            // TODO! tracelog an error here
+            TraceLoggingWrite(g_hTerminalControlProvider,
+                              "ContentProcess::RequestSwapChainHandle_DuplicateHandleFailed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            LOG_LAST_ERROR();
             return 0;
         }
 
