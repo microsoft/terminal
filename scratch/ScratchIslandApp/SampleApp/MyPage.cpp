@@ -199,6 +199,7 @@ namespace winrt::SampleApp::implementation
         // Create the XAML control that will be attached to the content process.
         // We're not passing in a connection, because the contentGuid will be used instead.
         Control::TermControl control{ contentGuid, settings, settings, nullptr };
+        auto weakControl = winrt::make_weak(control);
         control.RaiseNotice([this](auto&&, auto& args) {
             _writeToLog(L"Content process died, probably.");
             _writeToLog(args.Message());
@@ -209,16 +210,19 @@ namespace winrt::SampleApp::implementation
                 piContentProcess.reset();
             }
         });
-        control.ConnectionStateChanged([this, control](auto&&, auto&) {
-            const auto newConnectionState = control.ConnectionState();
-            if (newConnectionState == TerminalConnection::ConnectionState::Closed)
+        control.ConnectionStateChanged([this, weakControl](auto&&, auto&) {
+            if (auto strongControl{ weakControl.get() })
             {
-                _writeToLog(L"Connection was closed");
-                OutOfProcContent().Children().Clear();
-                GuidInput().Text(L"");
-                if (piContentProcess.hProcess)
+                const auto newConnectionState = strongControl.ConnectionState();
+                if (newConnectionState == TerminalConnection::ConnectionState::Closed)
                 {
-                    piContentProcess.reset();
+                    _writeToLog(L"Connection was closed");
+                    OutOfProcContent().Children().Clear();
+                    GuidInput().Text(L"");
+                    if (piContentProcess.hProcess)
+                    {
+                        piContentProcess.reset();
+                    }
                 }
             }
         });

@@ -58,7 +58,7 @@ void SampleIslandWindow::MakeWindow() noexcept
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,
                                 1024,
-                                768,
+                                860,
                                 nullptr,
                                 nullptr,
                                 wc.hInstance,

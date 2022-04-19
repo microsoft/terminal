@@ -284,17 +284,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         inline bool _IsClosing() const noexcept
         {
 #ifndef NDEBUG
-            // // TODO! This may not be strictly true if the core is running out of
-            // // proc with XAML. I keep hitting this assertion every time it
-            // // exits, so we might need a better solution.
-            // if (_dispatcher)
-            // {
-            //     // _closing isn't atomic and may only be accessed from the main thread.
-            //     //
-            //     // Though, the unit tests don't actually run in TAEF's main
-            //     // thread, so we don't care when we're running in tests.
-            //     assert(_inUnitTests || _dispatcher.HasThreadAccess());
-            // }
+            // This may not be strictly true if the core is running out of proc
+            // with XAML. This assert was hit frequently during initial x-proc
+            // development, but seemingly not anymore. Keep an eye on it.
+            if (_dispatcher)
+            {
+                // _closing isn't atomic and may only be accessed from the main thread.
+                //
+                // Though, the unit tests don't actually run in TAEF's main
+                // thread, so we don't care when we're running in tests.
+                assert(_inUnitTests || _dispatcher.HasThreadAccess());
+            }
 #endif
             return _closing;
         }
