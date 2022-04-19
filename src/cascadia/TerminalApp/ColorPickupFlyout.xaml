@@ -25,7 +25,8 @@
                                        MaximumRowsOrColumns="4"
                                        Orientation="Horizontal">
                     <VariableSizedWrapGrid.Resources>
-                        <Style TargetType="Button">
+                        <Style x:Key="ColorButtonStyle"
+                               TargetType="Button">
                             <Setter Property="BorderBrush" Value="{ThemeResource ButtonBorderBrush}" />
                             <Setter Property="BorderThickness" Value="{ThemeResource ButtonBorderThemeThickness}" />
                             <Setter Property="Margin" Value="2" />
@@ -101,6 +102,8 @@
                                 </Setter.Value>
                             </Setter>
                         </Style>
+                        <Style BasedOn="{StaticResource ColorButtonStyle}"
+                               TargetType="Button" />
                     </VariableSizedWrapGrid.Resources>
 
                     <Button x:Uid="CrimsonColorButton"
