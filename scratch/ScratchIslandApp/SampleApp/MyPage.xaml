@@ -23,18 +23,18 @@
             <TextBox x:Name="GuidInput"
                      Width="400"
                      PlaceholderText="{}{guid here}" />
-            <Button x:Name="CreateOopControl"
+            <Button x:Name="CreateOutOfProcControl"
                     Grid.Row="0"
                     Tapped="CreateClicked">
                 Create
             </Button>
-            <Button x:Name="CloseOopControl"
+            <Button x:Name="CloseOutOfProcControl"
                     Grid.Row="0"
                     Margin="4,0,0,0"
                     Tapped="CloseClicked">
                 Close
             </Button>
-            <Button x:Name="KillOopControl"
+            <Button x:Name="KillOutOfProcControl"
                     Grid.Row="0"
                     Margin="4,0,0,0"
                     Tapped="KillClicked">

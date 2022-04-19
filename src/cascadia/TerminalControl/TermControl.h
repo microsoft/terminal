@@ -201,7 +201,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _createContentWaitThread();
         bool _contentIsOutOfProc() const;
 
-        void _aquireAndAttachSwapChainHandle();
+        void _acquireAndAttachSwapChainHandle();
 
         inline bool _IsClosing() const noexcept
         {

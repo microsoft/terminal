@@ -44,14 +44,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         //
         //
         /*
-        onecore\com\combase\inc\RegistryKey.hpp(527)\combase.dll!00007FFF75E1F855:
-        (caller: 00007FFF75D3BC29) LogHr(2) tid(83a8) 800700A1 The specified
+        onecore\com\combase\inc\RegistryKey.hpp(527)\combase.dll!01234:
+        (caller: 01234) LogHr(2) tid(83a8) 800700A1 The specified
         path is invalid.
             Msg:[StaticNtOpen failed with
             path:\REGISTRY\A\{A41685A4-AD85-4C4C-BA5D-A849ADBF3C40}\ActivatableClassId
             \REGISTRY\MACHINE\Software\Classes\ActivatableClasses]
-        ...\src\cascadia\TerminalConnection\ConnectionInformation.cpp(47)\TerminalConnection.dll!00007FFEC1381FC5:
-        (caller: 00007FFEC13810A5) LogHr(1) tid(83a8) 800700A1 The specified
+        ...\src\cascadia\TerminalConnection\ConnectionInformation.cpp(47)\TerminalConnection.dll!01234:
+        (caller: 01234) LogHr(1) tid(83a8) 800700A1 The specified
         path is invalid.
             [...TerminalConnection::implementation::ConnectionInformation::CreateConnection(RoActivateInstance(name,
             raw))]

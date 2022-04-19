@@ -54,10 +54,10 @@ struct ContentProcessFactory : implements<ContentProcessFactory, IClassFactory>
             auto strong = g_weak.get();
             // !! LOAD BEARING !! If you set this event in the _first_ branch
             // here, when we first create the object, then there will be _no_
-            // referernces to the ContentProcess object for a small slice. We'll
+            // references to the ContentProcess object for a small slice. We'll
             // stash the ContentProcess in the weak_ptr, and return it, and at
             // that moment, there will be 0 outstanding references, it'll dtor,
-            // and wei'll ExitProcess.
+            // and we'll ExitProcess.
             //
             // Instead, set the event here, once there's already a reference
             // outside of just the weak one we keep. Experimentation showed this

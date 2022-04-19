@@ -17,6 +17,7 @@ CLASSNOTAVAILABLE
 cmdletbinding
 COLORPROPERTY
 colspan
+combase
 COMDLG
 commandlinetoargv
 comparand

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 //
 // The functions for handling content processes in the TermControl are largely
-// in TermControlContentManageent.cpp
+// in TermControlContentManagement.cpp
 
 #include "pch.h"
 #include "TermControl.h"
@@ -670,7 +670,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            control->_aquireAndAttachSwapChainHandle();
+            control->_acquireAndAttachSwapChainHandle();
         }
     }
 
@@ -722,7 +722,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
-    void TermControl::_aquireAndAttachSwapChainHandle()
+    void TermControl::_acquireAndAttachSwapChainHandle()
     {
         const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentIsOutOfProc() ?
                                                                 _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
@@ -781,7 +781,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _interactivity.Initialize();
         }
 
-        _aquireAndAttachSwapChainHandle();
+        _acquireAndAttachSwapChainHandle();
 
         // Tell the DX Engine to notify us when the swap chain changes. We do
         // this after we initially set the swapchain so as to avoid unnecessary

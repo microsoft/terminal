@@ -69,7 +69,7 @@ namespace winrt::SampleApp::implementation
 
         // god bless, fmt::format will format a HANDLE like `0xa80`
         std::wstring commandline{
-            fmt::format(L"windowsterminal.exe --content {} --signal {}", guidStr, ev.get())
+            fmt::format(L"WindowsTerminal.exe --content {} --signal {}", guidStr, ev.get())
         };
 
         STARTUPINFO siOne{ 0 };
@@ -156,7 +156,7 @@ namespace winrt::SampleApp::implementation
 
         if (content == nullptr)
         {
-            _writeToLog(L"Failed to connect to the ContentProces object. It may not have been started fast enough.");
+            _writeToLog(L"Failed to connect to the ContentProcess object. It may not have been started fast enough.");
             co_return; // be sure to co_return or we'll fall through to the part where we clear the log
         }
 
@@ -184,7 +184,7 @@ namespace winrt::SampleApp::implementation
 
             if (!content.Initialize(settings, settings, connectInfo))
             {
-                _writeToLog(L"Failed to Initialize the ContentProces object.");
+                _writeToLog(L"Failed to Initialize the ContentProcess object.");
                 co_return; // be sure to co_return or we'll fall through to the part where we clear the log
             }
         }

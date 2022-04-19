@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
         // get destructed. This eliminates the need to do any sort of
-        // refcounting weirdness. This entire process exists to host one
+        // ref-counting weirdness. This entire process exists to host one
         // singular ContentProcess instance. When we're destructed, it's because
         // every other window process was done with us. We can die now, knowing
         // that our job is complete.
