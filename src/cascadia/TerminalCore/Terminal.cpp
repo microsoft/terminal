@@ -156,17 +156,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     {
         // Clear the patterns first
         _mainBuffer->ClearPatternRecognizers();
-        if (settings.DetectURLs())
-        {
-            // Add regex pattern recognizers to the buffer
-            // For now, we only add the URI regex pattern
-            _hyperlinkPatternId = _mainBuffer->AddPatternRecognizer(linkPattern);
-            UpdatePatternsUnderLock();
-        }
-        else
-        {
-            ClearPatternTree();
-        }
+        _detectURLs = settings.DetectURLs();
+        _updateUrlDetection();
     }
 }
 
@@ -531,6 +522,20 @@ bool Terminal::IsTrackingMouseInput() const noexcept
     return _terminalInput->IsTrackingMouseInput();
 }
 
+// Routine Description:
+// - Relays if we are in alternate scroll mode, a special type of mouse input
+//   mode where scrolling sends the arrow keypresses, but the app doesn't
+//   otherwise want mouse input.
+// Parameters:
+// - <none>
+// Return value:
+// - true, if we are tracking mouse input. False, otherwise
+bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
+                                         const int32_t delta) const noexcept
+{
+    return _terminalInput->ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
+}
+
 // Method Description:
 // - Given a coord, get the URI at that location
 // Arguments:
@@ -712,7 +717,7 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
     // clamp them to be within the range [(0, 0), (W, H)].
 #pragma warning(suppress : 26496) // analysis can't tell we're assigning through a reference below
     auto clampedPos{ viewportPos };
-    _mutableViewport.ToOrigin().Clamp(clampedPos);
+    _GetMutableViewport().ToOrigin().Clamp(clampedPos);
     return _terminalInput->HandleMouse(clampedPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
 }
 
@@ -1126,46 +1131,50 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     cursor.SetPosition(proposedCursorPosition);
 
     // Move the viewport down if the cursor moved below the viewport.
-    bool updatedViewport = false;
-    const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
-    if (scrollAmount > 0)
+    // Obviously, don't need to do this in the alt buffer.
+    if (!_inAltBuffer())
     {
-        const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
-        // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
-        if (!_inAltBuffer() && newViewTop != _mutableViewport.Top())
+        bool updatedViewport = false;
+        const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
+        if (scrollAmount > 0)
         {
-            _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
-                                                        _mutableViewport.Dimensions());
-            updatedViewport = true;
+            const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
+            // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
+            if (newViewTop != _mutableViewport.Top())
+            {
+                _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) },
+                                                            _mutableViewport.Dimensions());
+                updatedViewport = true;
+            }
         }
-    }
 
-    // If the viewport moved, or we circled the buffer, we might need to update
-    // our _scrollOffset
-    if (!_inAltBuffer() && (updatedViewport || newRows != 0))
-    {
-        const auto oldScrollOffset = _scrollOffset;
+        // If the viewport moved, or we circled the buffer, we might need to update
+        // our _scrollOffset
+        if (updatedViewport || newRows != 0)
+        {
+            const auto oldScrollOffset = _scrollOffset;
 
-        // scroll if...
-        //   - no selection is active
-        //   - viewport is already at the bottom
-        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
+            // scroll if...
+            //   - no selection is active
+            //   - viewport is already at the bottom
+            const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
 
-        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
+            _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
-        // Clamp the range to make sure that we don't scroll way off the top of the buffer
-        _scrollOffset = std::clamp(_scrollOffset,
-                                   0,
-                                   _activeBuffer().GetSize().Height() - _mutableViewport.Height());
+            // Clamp the range to make sure that we don't scroll way off the top of the buffer
+            _scrollOffset = std::clamp(_scrollOffset,
+                                       0,
+                                       _activeBuffer().GetSize().Height() - _mutableViewport.Height());
 
-        // If the new scroll offset is different, then we'll still want to raise a scroll event
-        updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
-    }
+            // If the new scroll offset is different, then we'll still want to raise a scroll event
+            updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
+        }
 
-    // If the viewport moved, then send a scrolling notification.
-    if (updatedViewport)
-    {
-        _NotifyScrollEvent();
+        // If the viewport moved, then send a scrolling notification.
+        if (updatedViewport)
+        {
+            _NotifyScrollEvent();
+        }
     }
 
     if (rowsPushedOffTopOfBuffer != 0)
@@ -1240,7 +1249,7 @@ void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
     }
 }
 
-void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
+void Terminal::SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
 }
@@ -1473,4 +1482,19 @@ void Terminal::ClearAllMarks()
     _scrollMarks.clear();
     // Tell the control that the scrollbar has somehow changed. Used as a hack.
     _NotifyScrollEvent();
+}
+
+void Terminal::_updateUrlDetection()
+{
+    if (_detectURLs)
+    {
+        // Add regex pattern recognizers to the buffer
+        // For now, we only add the URI regex pattern
+        _hyperlinkPatternId = _activeBuffer().AddPatternRecognizer(linkPattern);
+        UpdatePatternsUnderLock();
+    }
+    else
+    {
+        ClearPatternTree();
+    }
 }

@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Core
         Boolean ForceVTInput;
         Boolean TrimBlockSelection;
         Boolean DetectURLs;
+        Boolean VtPassthrough;
 
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;

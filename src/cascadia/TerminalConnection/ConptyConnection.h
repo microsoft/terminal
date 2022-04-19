@@ -35,6 +35,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;
         void ClearBuffer();
+        void ReparentWindow(const uint64_t newParent);
 
         winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
@@ -65,6 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
+        uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};
         hstring _startingTitle{};
@@ -85,6 +87,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         til::u8state _u8State{};
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
+        bool _passthroughMode{};
 
         DWORD _OutputThread();
     };

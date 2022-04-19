@@ -67,6 +67,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearMark();
         void ClearAllMarks();
 
+        uint64_t OwningHwnd();
+        void OwningHwnd(uint64_t owner);
 #pragma endregion
 
         void ScrollViewport(int viewTop);

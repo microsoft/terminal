@@ -437,7 +437,7 @@ using namespace Microsoft::Console::Render;
 // Method Description:
 // - Send a sequence to the connected terminal to switch to the alternate or main screen buffer.
 // Arguments:
-// - useAltBuffer: if true, switch to the malt buffer, otherwise to the main buffer.
+// - useAltBuffer: if true, switch to the alt buffer, otherwise to the main buffer.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SwitchScreenBuffer(const bool useAltBuffer) noexcept

@@ -76,6 +76,7 @@ namespace Microsoft.Terminal.Control
         void AddMark(ScrollMark mark);
         void ClearMark();
         void ClearAllMarks();
+        UInt64 OwningHwnd;
 
     };
 }

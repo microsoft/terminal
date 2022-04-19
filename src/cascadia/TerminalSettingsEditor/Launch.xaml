@@ -18,9 +18,9 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumRadioButtonTemplate"
+            <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
             <SettingsModel:IconPathConverter x:Key="IconSourceConverter" />
             <Style x:Key="LaunchSizeNumberBoxStyle"
@@ -137,32 +137,32 @@
                 </local:SettingContainer>
 
                 <!--  First Window Behavior  -->
-                <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind FirstWindowPreferenceList}"
-                                       SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />
+                <local:SettingContainer x:Uid="Globals_FirstWindowPreference">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind FirstWindowPreferenceList}"
+                              SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Name="Globals_LaunchMode"
-                                        x:Uid="Globals_LaunchMode"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind LaunchModeList}"
-                                       SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}" />
+                                        x:Uid="Globals_LaunchMode">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind LaunchModeList}"
+                              SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
-                <!--  Launch Mode  -->
-                <local:SettingContainer x:Uid="Globals_WindowingBehavior"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind WindowingBehaviorList}"
-                                       SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}" />
+                <!--  Windowing Behavior  -->
+                <local:SettingContainer x:Uid="Globals_WindowingBehavior">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind WindowingBehaviorList}"
+                              SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
                 <local:SettingContainer x:Uid="Globals_LaunchSize"

@@ -196,8 +196,6 @@ public:
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
-    bool AreMarginsSet() const noexcept;
-    bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
@@ -216,13 +214,11 @@ public:
     void SetDefaultAttributes(const TextAttribute& attributes,
                               const TextAttribute& popupAttributes);
 
-    [[nodiscard]] HRESULT VtEraseAll();
     [[nodiscard]] HRESULT ClearBuffer();
 
     void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
 
     void UpdateBottom();
-    void MoveToBottom();
 
     FontInfo& GetCurrentFont() noexcept;
     const FontInfo& GetCurrentFont() const noexcept;
@@ -298,6 +294,8 @@ private:
     bool _ignoreLegacyEquivalentVTAttributes;
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
+
+    static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

@@ -94,12 +94,13 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
-    const wchar_t* pwszFormat = L"\"%s\" --headless %s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
+    const wchar_t* pwszFormat = L"\"%s\" --headless %s%s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
     const BOOL bWin32InputMode = (dwFlags & PSEUDOCONSOLE_WIN32_INPUT_MODE) == PSEUDOCONSOLE_WIN32_INPUT_MODE;
+    const BOOL bPassthroughMode = (dwFlags & PSEUDOCONSOLE_PASSTHROUGH_MODE) == PSEUDOCONSOLE_PASSTHROUGH_MODE;
     swprintf_s(cmd,
                MAX_PATH,
                pwszFormat,
@@ -107,6 +108,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                bInheritCursor ? L"--inheritcursor " : L"",
                bWin32InputMode ? L"--win32input " : L"",
                bResizeQuirk ? L"--resizeQuirk " : L"",
+               bPassthroughMode ? L"--passthrough " : L"",
                size.X,
                size.Y,
                signalPipeConhostSide.get(),
@@ -249,6 +251,39 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
     signalPacket[0] = PTY_SIGNAL_CLEAR_WINDOW;
 
     const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
+// Function Description:
+// - Sends a message to the pseudoconsole informing it that it should use the
+//   given window handle as the owner for the conpty's pseudo window. This
+//   allows the response given to GetConsoleWindow() to be a HWND that's owned
+//   by the actual hosting terminal's HWND.
+// Arguments:
+// - pPty: A pointer to a PseudoConsole struct.
+// - newParent: The new owning window
+// Return Value:
+// - S_OK if the call succeeded, else an appropriate HRESULT for failing to
+//      write the resize message to the pty.
+#pragma warning(suppress : 26461)
+// an HWND is technically a void*, but that confuses static analysis here.
+HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent)
+{
+    if (pPty == nullptr)
+    {
+        return E_INVALIDARG;
+    }
+
+    // sneaky way to pack a short and a uint64_t in a relatively literal way.
+#pragma pack(push, 1)
+    struct _signal
+    {
+        const unsigned short id;
+        const uint64_t hwnd;
+    } data{ PTY_SIGNAL_REPARENT_WINDOW, (uint64_t)(newParent) };
+#pragma pack(pop)
+
+    const BOOL fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
@@ -419,6 +454,23 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
     if (SUCCEEDED(hr))
     {
         hr = _ClearPseudoConsole(pPty);
+    }
+    return hr;
+}
+
+// Function Description:
+// - Sends a message to the pseudoconsole informing it that it should use the
+//   given window handle as the owner for the conpty's pseudo window. This
+//   allows the response given to GetConsoleWindow() to be a HWND that's owned
+//   by the actual hosting terminal's HWND.
+// - Used to support GH#2988
+extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newParent)
+{
+    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    if (SUCCEEDED(hr))
+    {
+        hr = _ReparentPseudoConsole(pPty, newParent);
     }
     return hr;
 }

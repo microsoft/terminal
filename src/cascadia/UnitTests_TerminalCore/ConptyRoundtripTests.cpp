@@ -26,7 +26,7 @@
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 
-#include "TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -66,8 +66,9 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalRenderer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
 
         return true;
     }
@@ -75,6 +76,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
+        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
@@ -100,8 +102,6 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
         gci.CalculateDefaultColorIndices();
-
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
@@ -154,8 +154,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     {
         m_state->CleanupNewTextBufferInfo();
 
-        auto& g = ServiceLocator::LocateGlobals();
-        delete g.pRender;
+        auto& engines = ServiceLocator::LocateGlobals().pRender->_engines;
+        std::fill(engines.begin(), engines.end(), nullptr);
 
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Tests should drain all the output they push into the expected output buffer.");
 
@@ -224,6 +224,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(SimpleAltBufferTest);
     TEST_METHOD(AltBufferToAltBufferTest);
+
+    TEST_METHOD(AltBufferResizeCrash);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -308,7 +310,8 @@ void ConptyRoundtripTests::_resizeConpty(const unsigned short sx,
 void ConptyRoundtripTests::_clearConpty()
 {
     // Taken verbatim from implementation in PtySignalInputThread::_DoClearBuffer
-    _pConApi->ClearBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
 }
 
 [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size newSize)
@@ -2966,7 +2969,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
             else if (leaveTrailingChar && row == 3)
             {
                 auto iter = TestUtils::VerifyLineContains(tb, { 0, row }, L'#', greenAttrs, 1u);
-                TestUtils::VerifyLineContains(iter, L' ', (afterResize ? greenAttrs : actualDefaultAttrs), static_cast<size_t>(width - 1));
+                TestUtils::VerifyLineContains(iter, L' ', (actualDefaultAttrs), static_cast<size_t>(width - 1));
             }
             else
             {
@@ -3863,6 +3866,8 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -4022,6 +4027,8 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
     gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -4067,4 +4074,51 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
     Log::Comment(L"========== Checking the terminal buffer state (StillInAltBuffer) ==========");
     verifyBuffer(*termAltTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::StillInAltBuffer);
+}
+
+void ConptyRoundtripTests::AltBufferResizeCrash()
+{
+    Log::Comment(L"During the review for GH#12719, it was noticed that this "
+                 L"particular combination of resizing could crash the terminal."
+                 L" This test makes sure we don't.");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
+
+    // Note: we really don't care about the output in this test. We could, but
+    // mostly we care to ensure we don't crash. If we make it through this test,
+    // then it's a success.
+
+    Log::Comment(L"========== Resize to 132x24 ==========");
+    sm.ProcessString(L"\x1b[8;24;132t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Move cursor to (99,11) ==========");
+    sm.ProcessString(L"\x1b[12;100H");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+    sm.ProcessString(L"\x1b[?1049h");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Resize to 80x10 ==========");
+    sm.ProcessString(L"\x1b[8;10;80t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 }

@@ -18,7 +18,6 @@
 #include "../win32/AccessibilityNotifier.hpp"
 #include "../win32/ConsoleControl.hpp"
 #include "../win32/ConsoleInputThread.hpp"
-#include "../win32/InputServices.hpp"
 #include "../win32/WindowDpiApi.hpp"
 #include "../win32/WindowMetrics.hpp"
 #include "../win32/SystemConfigurationProvider.hpp"
@@ -282,48 +281,6 @@ using namespace Microsoft::Console::Interactivity;
     return status;
 }
 
-[[nodiscard]] NTSTATUS InteractivityFactory::CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services)
-{
-    NTSTATUS status = STATUS_SUCCESS;
-
-    ApiLevel level;
-    status = ApiDetector::DetectNtUserWindow(&level);
-
-    if (NT_SUCCESS(status))
-    {
-        std::unique_ptr<IInputServices> newServices;
-        try
-        {
-            switch (level)
-            {
-            case ApiLevel::Win32:
-                newServices = std::make_unique<Microsoft::Console::Interactivity::Win32::InputServices>();
-                break;
-
-#ifdef BUILD_ONECORE_INTERACTIVITY
-            case ApiLevel::OneCore:
-                newServices = std::make_unique<Microsoft::Console::Interactivity::OneCore::ConIoSrvComm>();
-                break;
-#endif
-            default:
-                status = STATUS_INVALID_LEVEL;
-                break;
-            }
-        }
-        catch (...)
-        {
-            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            services.swap(newServices);
-        }
-    }
-
-    return status;
-}
-
 // Method Description:
 // - Attempts to instantiate a "pseudo window" for when we're operating in
 //      pseudoconsole mode. There are some tools (cygwin & derivatives) that use
@@ -332,14 +289,15 @@ using namespace Microsoft::Console::Interactivity;
 //      that GetConsoleWindow returns a real value.
 // Arguments:
 // - hwnd: Receives the value of the newly created window's HWND.
+// - owner: the HWND that should be the initial owner of the pseudo window.
 // Return Value:
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
-[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
+[[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd, const HWND owner)
 {
     hwnd = nullptr;
     ApiLevel level;
     NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);
-    ;
+
     if (NT_SUCCESS(status))
     {
         try
@@ -349,19 +307,45 @@ using namespace Microsoft::Console::Interactivity;
             switch (level)
             {
             case ApiLevel::Win32:
+            {
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
                 pseudoClass.lpfnWndProc = DefWindowProc;
                 RegisterClass(&pseudoClass);
-                // Attempt to create window
-                hwnd = CreateWindowExW(
-                    0, PSEUDO_WINDOW_CLASS, nullptr, WS_OVERLAPPEDWINDOW, 0, 0, 0, 0, HWND_DESKTOP, nullptr, nullptr, nullptr);
+
+                // When merging with #12515, we're going to need to adjust these styles.
+                //
+                // Note that because we're not specifying WS_CHILD, this window
+                // will become an _owned_ window, not a _child_ window. This is
+                // important - child windows report their position as relative
+                // to their parent window, while owned windows are still
+                // relative to the desktop. (there are other subtleties as well
+                // as far as the difference between parent/child and owner/owned
+                // windows). Evan K said we should do it this way, and he
+                // definitely knows.
+                const auto windowStyle = WS_OVERLAPPEDWINDOW;
+
+                // Attempt to create window.
+                hwnd = CreateWindowExW(0,
+                                       PSEUDO_WINDOW_CLASS,
+                                       nullptr,
+                                       windowStyle,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       owner,
+                                       nullptr,
+                                       nullptr,
+                                       nullptr);
+
                 if (hwnd == nullptr)
                 {
                     DWORD const gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
-                break;
 
+                break;
+            }
 #ifdef BUILD_ONECORE_INTERACTIVITY
             case ApiLevel::OneCore:
                 hwnd = 0;

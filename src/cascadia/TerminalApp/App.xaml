@@ -93,6 +93,23 @@
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
                         </ResourceDictionary>
 
+                        <ResourceDictionary x:Key="HighContrast">
+                            <!--  Define resources for HighContrast mode here  -->
+
+                            <!--
+                                MSFT:38264744
+                                You'd think that if a key wasn't present in a ThemeDictionary,
+                                it'd fall back to the original value. You'd be wrong - if you
+                                provide a Light&dark version of a resource, but not the
+                                HighContrast version, the resource loader will fall back to the
+                                Light value.
+                                
+                                SystemColorButtonFaceColorBrush is the default background color for WinUI's TabViewBackground under high contrast mode.
+                            -->
+                            <StaticResource x:Key="TabViewBackground"
+                                            ResourceKey="SystemColorButtonFaceColorBrush" />
+                        </ResourceDictionary>
+
                     </ResourceDictionary.ThemeDictionaries>
 
                 </ResourceDictionary>

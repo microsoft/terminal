@@ -81,6 +81,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
 
+        void GotFocus();
+        void LostFocus();
+
         void ToggleShaderEffects();
         void AdjustOpacity(const double adjustment);
         void ResumeRendering();
@@ -145,6 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
+        bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
 
         bool HasSelection() const;
@@ -174,6 +178,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool IsVintageOpacityAvailable() noexcept;
 
         void AdjustOpacity(const double opacity, const bool relative);
+
+        // TODO:GH#1256 - When a tab can be torn out or otherwise reparented to
+        // another window, this value will need a custom setter, so that we can
+        // also update the connection.
+        WINRT_PROPERTY(uint64_t, OwningHwnd, 0);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
@@ -251,11 +260,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget _asyncCloseConnection();
 
-        void _setFontSize(int fontSize);
+        bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
-        void _doResizeUnderLock(const double newWidth,
-                                const double newHeight);
 
         void _sendInputToConnection(std::wstring_view wstr);
 

@@ -41,6 +41,11 @@ IslandWindow::~IslandWindow()
     _source.Close();
 }
 
+HWND IslandWindow::GetInteropHandle() const
+{
+    return _interopWindowHandle;
+}
+
 // Method Description:
 // - Create the actual window that we'll use for the application.
 // Arguments:
@@ -533,6 +538,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             return 0;
         }
         CATCH_LOG();
+        break;
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
@@ -590,6 +596,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 return 0;
             }
         }
+        break;
     }
     case CM_NOTIFY_FROM_NOTIFICATION_AREA:
     {
@@ -1207,7 +1214,7 @@ bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
 winrt::fire_and_forget IslandWindow::SummonWindow(Remoting::SummonWindowBehavior args)
 {
     // On the foreground thread:
-    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    co_await wil::resume_foreground(_rootGrid.Dispatcher());
     _summonWindowRoutineBody(args);
 }
 

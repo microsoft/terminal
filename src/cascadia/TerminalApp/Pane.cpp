@@ -472,7 +472,7 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     }
 
     // Since the direction is the same as our split, it is possible that we must
-    // move focus from from one child to another child.
+    // move focus from one child to another child.
     // We now must keep track of state while we recurse.
     // If we have it, get the size of this pane.
     const auto scaleX = _root.ActualWidth() > 0 ? gsl::narrow_cast<float>(_root.ActualWidth()) : 1.f;
@@ -1032,7 +1032,7 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 {
     auto weakThis{ weak_from_this() };
 
-    co_await winrt::resume_foreground(_root.Dispatcher());
+    co_await wil::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.lock() })
     {
         // BODGY
@@ -1761,7 +1761,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 {
     auto weakThis{ shared_from_this() };
 
-    co_await winrt::resume_foreground(_root.Dispatcher());
+    co_await wil::resume_foreground(_root.Dispatcher());
 
     if (auto pane{ weakThis.get() })
     {
@@ -2645,7 +2645,7 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 }
 
 // Method Description:
-// - Check if this pane contains the the argument as a child anywhere along the tree.
+// - Check if this pane contains the argument as a child anywhere along the tree.
 // Arguments:
 // - child: the child to search for.
 // Return Value:

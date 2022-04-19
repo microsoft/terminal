@@ -9,10 +9,6 @@
 #include "../../inc/unicode.hpp"
 #include "ascii.hpp"
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 using namespace Microsoft::Console::VirtualTerminal;
 
 struct CsiToVkey
@@ -103,6 +99,11 @@ InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispat
     _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
+}
+
+void InputStateMachineEngine::SetLookingForDSR(const bool looking) noexcept
+{
+    _lookingForDSR = looking;
 }
 
 // Method Description:
@@ -361,9 +362,14 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     // win32-input-mode, and if they did, then we'll just translate the
     // INPUT_RECORD back to the same sequence we say here later on, when the
     // client reads it.
+    //
+    // Focus events in conpty are special, so don't flush those through either.
+    // See GH#12799, GH#12900 for details
     if (_pDispatch->IsVtInputEnabled() &&
         _pfnFlushToInputQueue &&
-        id != CsiActionCodes::Win32KeyboardInput)
+        id != CsiActionCodes::Win32KeyboardInput &&
+        id != CsiActionCodes::FocusIn &&
+        id != CsiActionCodes::FocusOut)
     {
         return _pfnFlushToInputQueue();
     }
@@ -424,6 +430,12 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _pDispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
+        break;
+    case CsiActionCodes::FocusIn:
+        success = _pDispatch->FocusChanged(true);
+        break;
+    case CsiActionCodes::FocusOut:
+        success = _pDispatch->FocusChanged(false);
         break;
     case CsiActionCodes::Win32KeyboardInput:
     {

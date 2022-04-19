@@ -242,7 +242,7 @@ HRESULT HwndTerminal::Initialize()
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
     _terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
     _terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
-    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept { _WriteTextToConnection(input); });
+    _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
@@ -282,7 +282,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
     _terminal->SetScrollPositionChangedCallback(callback);
 }
 
-void HwndTerminal::_WriteTextToConnection(const std::wstring& input) noexcept
+void HwndTerminal::_WriteTextToConnection(const std::wstring_view input) noexcept
 {
     if (!_pfnWriteCallback)
     {

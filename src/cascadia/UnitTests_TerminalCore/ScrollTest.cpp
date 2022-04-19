@@ -13,7 +13,7 @@
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "MockTermSettings.h"
 #include "consoletaeftemplates.hpp"
-#include "TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;

@@ -21,6 +21,16 @@ TextAttribute Terminal::GetTextAttributes() const
     return _activeBuffer().GetCurrentAttributes();
 }
 
+bool Terminal::ReturnResponse(std::wstring_view responseString)
+{
+    if (!_pfnWriteInput)
+    {
+        return false;
+    }
+    _pfnWriteInput(responseString);
+    return true;
+}
+
 void Terminal::SetTextAttributes(const TextAttribute& attrs)
 {
     _activeBuffer().SetCurrentAttributes(attrs);
@@ -132,7 +142,7 @@ void Terminal::InsertCharacter(const size_t count)
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
     // that does the 'move a region from here to there' operation
-    // TODO: Github issue #2163
+    // TODO: GitHub issue #2163
     SHORT dist;
     THROW_IF_FAILED(SizeTToShort(count, &dist));
     const auto cursorPos = _activeBuffer().GetCursor().GetPosition();
@@ -592,6 +602,9 @@ void Terminal::UseAlternateScreenBuffer()
 
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
+    ClearSelection();
+    _mainBuffer->ClearPatternRecognizers();
+
     // Create a new alt buffer
     _altBuffer = std::make_unique<TextBuffer>(_altBufferSize.to_win32_coord(),
                                               TextAttribute{},
@@ -616,7 +629,7 @@ void Terminal::UseAlternateScreenBuffer()
     }
 
     // update all the hyperlinks on the screen
-    UpdatePatternsUnderLock();
+    _updateUrlDetection();
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
@@ -640,6 +653,8 @@ void Terminal::UseMainScreenBuffer()
         return;
     }
 
+    ClearSelection();
+
     // Copy our cursor state back to the main buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
@@ -657,7 +672,6 @@ void Terminal::UseMainScreenBuffer()
     }
 
     _mainBuffer->SetAsActiveBuffer(true);
-
     // destroy the alt buffer
     _altBuffer = nullptr;
 
@@ -668,7 +682,8 @@ void Terminal::UseMainScreenBuffer()
     }
 
     // update all the hyperlinks on the screen
-    UpdatePatternsUnderLock();
+    _mainBuffer->ClearPatternRecognizers();
+    _updateUrlDetection();
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.

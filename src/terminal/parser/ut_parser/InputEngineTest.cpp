@@ -18,10 +18,6 @@
 #include <string>
 #include <algorithm>
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -336,6 +332,8 @@ public:
 
     virtual bool IsVtInputEnabled() const override;
 
+    virtual bool FocusChanged(const bool focused) const override;
+
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
     TestState* _testState; // non-ownership pointer
@@ -401,6 +399,11 @@ bool TestInteractDispatch::MoveCursor(const size_t row, const size_t col)
 bool TestInteractDispatch::IsVtInputEnabled() const
 {
     return true;
+}
+
+bool TestInteractDispatch::FocusChanged(const bool /*focused*/) const
+{
+    return false;
 }
 
 void InputEngineTest::C0Test()

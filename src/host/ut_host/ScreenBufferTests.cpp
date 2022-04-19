@@ -16,6 +16,9 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../../renderer/vt/Xterm256Engine.hpp"
+
+#include "../../inc/TestUtils.h"
 
 #include <sstream>
 
@@ -26,6 +29,7 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
+using namespace TerminalCoreUnitTests;
 
 class ScreenBufferTests
 {
@@ -40,8 +44,8 @@ class ScreenBufferTests
         m_state->InitEvents();
         m_state->PrepareGlobalFont({ 1, 1 });
         m_state->PrepareGlobalRenderer();
-        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
 
         return true;
     }
@@ -224,6 +228,12 @@ class ScreenBufferTests
     TEST_METHOD(RetainHorizontalOffsetWhenMovingToBottom);
 
     TEST_METHOD(TestWriteConsoleVTQuirkMode);
+
+    TEST_METHOD(TestReflowEndOfLineColor);
+    TEST_METHOD(TestReflowSmallerLongLineWithColor);
+    TEST_METHOD(TestReflowBiggerLongLineWithColor);
+
+    TEST_METHOD(TestDeferredMainBufferResize);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -895,6 +905,8 @@ void ScreenBufferTests::EraseAllTests()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si._textBuffer->GetCursor();
 
+    const auto eraseAll = L"\033[2J";
+
     VERIFY_ARE_EQUAL(si.GetViewport().Top(), 0);
 
     ////////////////////////////////////////////////////////////////////////
@@ -905,7 +917,7 @@ void ScreenBufferTests::EraseAllTests()
     VERIFY_ARE_EQUAL(si.GetViewport().Top(), 0);
     VERIFY_ARE_EQUAL(cursor.GetPosition(), originalRelativePosition);
 
-    VERIFY_SUCCEEDED(si.VtEraseAll());
+    stateMachine.ProcessString(eraseAll);
 
     auto viewport = si._viewport;
     VERIFY_ARE_EQUAL(viewport.Top(), 1);
@@ -934,7 +946,7 @@ void ScreenBufferTests::EraseAllTests()
         viewport.RightInclusive(),
         viewport.BottomInclusive()));
 
-    VERIFY_SUCCEEDED(si.VtEraseAll());
+    stateMachine.ProcessString(eraseAll);
     viewport = si._viewport;
     VERIFY_ARE_EQUAL(viewport.Top(), 4);
     newRelativePos = originalRelativePosition;
@@ -965,7 +977,7 @@ void ScreenBufferTests::EraseAllTests()
         viewport.Top(),
         viewport.RightInclusive(),
         viewport.BottomInclusive()));
-    VERIFY_SUCCEEDED(si.VtEraseAll());
+    stateMachine.ProcessString(eraseAll);
 
     viewport = si._viewport;
     auto heightFromBottom = si.GetBufferSize().Height() - (viewport.Height());
@@ -1218,6 +1230,10 @@ void ScreenBufferTests::VtResizeDECCOLM()
     auto getRelativeCursorPosition = [&]() {
         return si.GetTextBuffer().GetCursor().GetPosition() - si.GetViewport().Origin();
     };
+    auto areMarginsSet = [&]() {
+        const auto margins = si.GetRelativeScrollMargins();
+        return margins.BottomInclusive() > margins.Top();
+    };
 
     stateMachine.ProcessString(setInitialMargins);
     stateMachine.ProcessString(setInitialCursor);
@@ -1237,7 +1253,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     auto newViewHeight = si.GetViewport().Height();
     auto newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_IS_TRUE(areMarginsSet());
     VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
@@ -1265,7 +1281,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewHeight = si.GetViewport().Height();
     newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_IS_FALSE(areMarginsSet());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -1291,7 +1307,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewHeight = si.GetViewport().Height();
     newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_IS_TRUE(areMarginsSet());
     VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
@@ -1319,7 +1335,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewHeight = si.GetViewport().Height();
     newViewWidth = si.GetViewport().Width();
 
-    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_IS_FALSE(areMarginsSet());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -1856,7 +1872,7 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
     altBuffer.SetViewportSize(&newBufferSize);
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex{ 0 };
-    g.api.GetConsoleScreenBufferInfoExImpl(mainBuffer, csbiex);
+    g.api->GetConsoleScreenBufferInfoExImpl(mainBuffer, csbiex);
     const auto newActualMainView = mainBuffer.GetViewport();
     const auto newActualAltView = altBuffer.GetViewport();
 
@@ -4749,7 +4765,7 @@ void ScreenBufferTests::SetAutoWrapMode()
     short startLine = 0;
     cursor.SetPosition({ 80 - 3, startLine });
     stateMachine.ProcessString(L"abcdef");
-    // Half of the the content should wrap onto the next line.
+    // Half of the content should wrap onto the next line.
     VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
     VERIFY_IS_TRUE(_ValidateLineContains({ 0, startLine + 1 }, L"def", attributes));
     VERIFY_ARE_EQUAL(COORD({ 3, startLine + 1 }), cursor.GetPosition());
@@ -4770,7 +4786,7 @@ void ScreenBufferTests::SetAutoWrapMode()
     startLine = 4;
     cursor.SetPosition({ 80 - 3, startLine });
     stateMachine.ProcessString(L"abcdef");
-    // Half of the the content should wrap onto the next line.
+    // Half of the content should wrap onto the next line.
     VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
     VERIFY_IS_TRUE(_ValidateLineContains({ 0, startLine + 1 }, L"def", attributes));
     VERIFY_ARE_EQUAL(COORD({ 3, startLine + 1 }), cursor.GetPosition());
@@ -4966,7 +4982,7 @@ void ScreenBufferTests::SnapCursorWithTerminalScrolling()
 
     Log::Comment(NoThrowString().Format(
         L"Call SetConsoleCursorPosition to snap to the cursor"));
-    VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(si, secondWindowOrigin));
+    VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(si, secondWindowOrigin));
 
     const auto fourthView = si._viewport;
     const auto fourthVirtualBottom = si._virtualBottom;
@@ -5042,12 +5058,12 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
 #pragma region Test ScrollConsoleScreenBufferWImpl()
         // Clear text of alt buffer (same params as in CMD)
-        VERIFY_SUCCEEDED(g.api.ScrollConsoleScreenBufferWImpl(siMain,
-                                                              { 0, 0, 120, 9001 },
-                                                              { 0, -9001 },
-                                                              std::nullopt,
-                                                              L' ',
-                                                              7));
+        VERIFY_SUCCEEDED(g.api->ScrollConsoleScreenBufferWImpl(siMain,
+                                                               { 0, 0, 120, 9001 },
+                                                               { 0, -9001 },
+                                                               std::nullopt,
+                                                               L' ',
+                                                               7));
 
         // Verify text is now gone
         VERIFY_ARE_EQUAL(L" ", altBuffer.GetTextBuffer().GetCellDataAt({ 0, 0 })->Chars());
@@ -5055,7 +5071,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
 #pragma region Test SetConsoleCursorPositionImpl()
         // Reset cursor position as we do with CLS command (same params as in CMD)
-        VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(siMain, { 0 }));
+        VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(siMain, { 0 }));
 
         // Verify state of alt buffer
         auto& altBufferCursor = altBuffer.GetTextBuffer().GetCursor();
@@ -5885,6 +5901,11 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     const auto& cursor = si.GetTextBuffer().GetCursor();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
+    auto areMarginsSet = [&]() {
+        const auto margins = si.GetRelativeScrollMargins();
+        return margins.BottomInclusive() > margins.Top();
+    };
+
     Log::Comment(L"Set the initial buffer state.");
 
     const auto bufferWidth = si.GetBufferSize().Width();
@@ -5907,7 +5928,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
 
     // Set some margins.
     stateMachine.ProcessString(L"\x1b[10;20r");
-    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_IS_TRUE(areMarginsSet());
 
     // Place the cursor in the center.
     auto cursorPos = COORD{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
@@ -5925,7 +5946,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     VERIFY_IS_TRUE(_ValidateLinesContain(viewportEnd, bufferHeight, L'Z', bufferAttr));
 
     Log::Comment(L"Margins should not be set.");
-    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_IS_FALSE(areMarginsSet());
 
     Log::Comment(L"Cursor position should be moved to home.");
     auto homePosition = COORD{ 0, viewportStart };
@@ -6105,8 +6126,8 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
     Log::Comment(L"The viewport itself should not have changed at this point");
     VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
 
-    Log::Comment(L"But after MoveToBottom, the viewport should align with the new virtual bottom");
-    si.MoveToBottom();
+    Log::Comment(L"But after moving to the virtual viewport, we should align with the new virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, si.GetVirtualViewport().Origin(), true));
     VERIFY_ARE_EQUAL(newVirtualBottom, si.GetViewport().BottomInclusive());
 }
 
@@ -6141,7 +6162,7 @@ void ScreenBufferTests::RetainHorizontalOffsetWhenMovingToBottom()
     VERIFY_ARE_EQUAL(initialOrigin.X, si.GetViewport().Left());
 
     Log::Comment(L"Move the viewport back to the virtual bottom");
-    si.MoveToBottom();
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, si.GetVirtualViewport().Origin(), true));
 
     Log::Comment(L"Verify Y offset has moved back and X is unchanged");
     VERIFY_ARE_EQUAL(initialOrigin.Y, si.GetViewport().Top());
@@ -6268,4 +6289,355 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
 
         verifyLastAttribute(vtWhiteOnBlack256Attribute);
     }
+}
+
+void ScreenBufferTests::TestReflowEndOfLineColor()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:dx", L"{-1, 0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:dy", L"{-1, 0, 1}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
+    INIT_TEST_PROPERTY(int, dy, L"The change in height of the buffer");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    gci.SetWrapText(true);
+
+    auto defaultAttrs = si.GetAttributes();
+    auto red = defaultAttrs;
+    red.SetIndexedBackground(TextColor::DARK_RED);
+    auto green = defaultAttrs;
+    green.SetIndexedBackground(TextColor::DARK_GREEN);
+    auto blue = defaultAttrs;
+    blue.SetIndexedBackground(TextColor::DARK_BLUE);
+    auto yellow = defaultAttrs;
+    yellow.SetIndexedBackground(TextColor::DARK_YELLOW);
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"Fill buffer with some data");
+    stateMachine.ProcessString(L"\x1b[H");
+    stateMachine.ProcessString(L"\x1b[41m"); // Red BG
+    stateMachine.ProcessString(L"AAAAA"); // AAAAA
+    stateMachine.ProcessString(L"\x1b[42m"); // Green BG
+    stateMachine.ProcessString(L"\nBBBBB\n"); // BBBBB
+    stateMachine.ProcessString(L"\x1b[44m"); // Blue BG
+    stateMachine.ProcessString(L" CCC \n"); // " abc " (with spaces on either side)
+    stateMachine.ProcessString(L"\x1b[43m"); // yellow BG
+    stateMachine.ProcessString(L"\U0001F643\n"); // GH#12837: Support for surrogate characters during reflow
+    stateMachine.ProcessString(L"\x1b[K"); // Erase line
+    stateMachine.ProcessString(L"\x1b[2;6H"); // move the cursor to the end of the BBBBB's
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool /*before*/) {
+        const short width = tb.GetSize().Width();
+        Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
+
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 5u);
+        TestUtils::VerifyLineContains(iter0, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+
+        auto iter1 = tb.GetCellLineDataAt({ 0, 1 });
+        TestUtils::VerifyLineContains(iter1, L'B', green, 5u);
+        TestUtils::VerifyLineContains(iter1, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+
+        auto iter2 = tb.GetCellLineDataAt({ 0, 2 });
+        TestUtils::VerifyLineContains(iter2, L' ', blue, 1u);
+        TestUtils::VerifyLineContains(iter2, L'C', blue, 3u);
+        TestUtils::VerifyLineContains(iter2, L' ', blue, 1u);
+        TestUtils::VerifyLineContains(iter2, L' ', defaultAttrs, static_cast<size_t>(width - 5));
+
+        auto iter3 = tb.GetCellLineDataAt({ 0, 3 });
+        TestUtils::VerifyLineContains(iter3, L"\U0001F643", yellow, 2u);
+        TestUtils::VerifyLineContains(iter3, L' ', defaultAttrs, static_cast<size_t>(width - 2));
+
+        auto iter4 = tb.GetCellLineDataAt({ 0, 4 });
+        TestUtils::VerifyLineContains(iter4, L' ', yellow, static_cast<size_t>(width));
+    };
+
+    Log::Comment(L"========== Checking the buffer state (before) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, true);
+
+    Log::Comment(L"========== resize buffer ==========");
+    const til::point delta{ dx, dy };
+    const til::point oldSize{ si.GetBufferSize().Dimensions() };
+    const til::point newSize{ oldSize + delta };
+    VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
+
+    Log::Comment(L"========== Checking the buffer state (after) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, false);
+}
+
+void ScreenBufferTests::TestReflowSmallerLongLineWithColor()
+{
+    Log::Comment(L"Reflow the buffer such that a long, line of text flows onto "
+                 L"the next line. Check that the trailing attributes were copied"
+                 L" to the new row.");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    gci.SetWrapText(true);
+
+    auto defaultAttrs = si.GetAttributes();
+    auto red = defaultAttrs;
+    red.SetIndexedBackground(TextColor::DARK_RED);
+    auto green = defaultAttrs;
+    green.SetIndexedBackground(TextColor::DARK_GREEN);
+    auto blue = defaultAttrs;
+    blue.SetIndexedBackground(TextColor::DARK_BLUE);
+    auto yellow = defaultAttrs;
+    yellow.SetIndexedBackground(TextColor::DARK_YELLOW);
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"Fill buffer with some data");
+    stateMachine.ProcessString(L"\x1b[H");
+    stateMachine.ProcessString(L"\x1b[41m"); // Red BG
+    stateMachine.ProcessString(L"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // 35 A's
+    stateMachine.ProcessString(L"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // 35 more, 70 total
+    stateMachine.ProcessString(L"\x1b[42m"); // Green BG
+    stateMachine.ProcessString(L" BBB \n"); // " BBB " with spaces on either side).
+    // Attributes fill 70 red, 5 green, the last 5 are {whatever it was before}
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool before) {
+        const short width = tb.GetSize().Width();
+        Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
+
+        if (before)
+        {
+            auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 70u);
+            TestUtils::VerifyLineContains(iter0, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter0, L'B', green, 3u);
+            TestUtils::VerifyLineContains(iter0, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter0, L' ', defaultAttrs, 5u);
+        }
+        else
+        {
+            auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 65u);
+
+            auto iter1 = tb.GetCellLineDataAt({ 0, 1 });
+            TestUtils::VerifyLineContains(iter1, L'A', red, 5u);
+            TestUtils::VerifyLineContains(iter1, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter1, L'B', green, 3u);
+            TestUtils::VerifyLineContains(iter1, L' ', green, 1u);
+
+            // We don't want to necessarily verify the contents of the rest of the
+            // line, but we will anyways. Right now, we expect the last attrs on the
+            // original row to fill the remainder of the row it flowed onto. We may
+            // want to change that in the future. If we do, this check can always be
+            // changed.
+            TestUtils::VerifyLineContains(iter1, L' ', defaultAttrs, static_cast<size_t>(width - 10));
+        }
+    };
+
+    Log::Comment(L"========== Checking the buffer state (before) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, true);
+
+    Log::Comment(L"========== resize buffer ==========");
+    const til::point delta{ -15, 0 };
+    const til::point oldSize{ si.GetBufferSize().Dimensions() };
+    const til::point newSize{ oldSize + delta };
+    VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
+
+    // Buffer is now 65 wide. 65 A's that wrapped onto the next row, where there
+    // are also 3 B's wrapped in spaces.
+    Log::Comment(L"========== Checking the buffer state (after) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, false);
+}
+
+void ScreenBufferTests::TestReflowBiggerLongLineWithColor()
+{
+    Log::Comment(L"Reflow the buffer such that a wrapped line of text 'de-flows' onto the previous line.");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    gci.SetWrapText(true);
+
+    auto defaultAttrs = si.GetAttributes();
+    auto red = defaultAttrs;
+    red.SetIndexedBackground(TextColor::DARK_RED);
+    auto green = defaultAttrs;
+    green.SetIndexedBackground(TextColor::DARK_GREEN);
+    auto blue = defaultAttrs;
+    blue.SetIndexedBackground(TextColor::DARK_BLUE);
+    auto yellow = defaultAttrs;
+    yellow.SetIndexedBackground(TextColor::DARK_YELLOW);
+
+    Log::Comment(L"Make sure the viewport is at 0,0");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
+
+    Log::Comment(L"Fill buffer with some data");
+    stateMachine.ProcessString(L"\x1b[H");
+    stateMachine.ProcessString(L"\x1b[41m"); // Red BG
+    stateMachine.ProcessString(L"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // 40 A's
+    stateMachine.ProcessString(L"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // 40 more, to wrap
+    stateMachine.ProcessString(L"AAAAA"); // 5 more. 85 total.
+    stateMachine.ProcessString(L"\x1b[42m"); // Green BG
+    stateMachine.ProcessString(L" BBB \n"); // " BBB " with spaces on either side).
+    // Attributes fill 85 red, 5 green, the rest are {whatever it was before}
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool before) {
+        const short width = tb.GetSize().Width();
+        Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
+
+        if (before)
+        {
+            auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 80u);
+
+            auto iter1 = tb.GetCellLineDataAt({ 0, 1 });
+            TestUtils::VerifyLineContains(iter1, L'A', red, 5u);
+            TestUtils::VerifyLineContains(iter1, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter1, L'B', green, 3u);
+            TestUtils::VerifyLineContains(iter1, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter1, L' ', defaultAttrs, static_cast<size_t>(width - 10));
+        }
+        else
+        {
+            auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 85u);
+            TestUtils::VerifyLineContains(iter0, L' ', green, 1u);
+            TestUtils::VerifyLineContains(iter0, L'B', green, 3u);
+            TestUtils::VerifyLineContains(iter0, L' ', green, 1u);
+
+            // We don't want to necessarily verify the contents of the rest of
+            // the line, but we will anyways. Differently than
+            // TestReflowSmallerLongLineWithColor: In this test, the since we're
+            // de-flowing row 1 onto row 0, and the trailing spaces in row 1 are
+            // default attrs, then that's the attrs we'll use to finish filling
+            // up the 0th row in the new buffer. Again, we may want to change
+            // that in the future. If we do, this check can always be changed.
+            TestUtils::VerifyLineContains(iter0, L' ', defaultAttrs, static_cast<size_t>(width - 90));
+        }
+    };
+
+    Log::Comment(L"========== Checking the buffer state (before) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, true);
+
+    Log::Comment(L"========== resize buffer ==========");
+    const til::point delta{ 15, 0 };
+    const til::point oldSize{ si.GetBufferSize().Dimensions() };
+    const til::point newSize{ oldSize + delta };
+    VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
+
+    // Buffer is now 95 wide. 85 A's that de-flowed onto the first row, where
+    // there are also 3 B's wrapped in spaces, and finally 5 trailing spaces.
+    Log::Comment(L"========== Checking the buffer state (after) ==========");
+    verifyBuffer(si.GetTextBuffer(), til::rect{ si.GetViewport().ToInclusive() }, false);
+}
+
+void ScreenBufferTests::TestDeferredMainBufferResize()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:inConpty", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:reEnterAltBuffer", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(bool, inConpty, L"Should we pretend to be in conpty mode?");
+    INIT_TEST_PROPERTY(bool, reEnterAltBuffer, L"Should we re-enter the alt buffer when we're already in it?");
+
+    // A test for https://github.com/microsoft/terminal/pull/12719#discussion_r834860330
+    Log::Comment(L"Resize the alt buffer. We should defer the resize of the "
+                 L"main buffer till we swap back to it, for performance.");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    // HUGELY cribbed from ConptyRoundtripTests::MethodSetup. This fakes the
+    // console into thinking that it's in ConPTY mode. Yes, we need all this
+    // just to get gci.IsInVtIoMode() to return true. The screen buffer gates
+    // all sorts of internal checks on that.
+    //
+    // This could theoretically be a helper if other tests need it.
+    if (inConpty)
+    {
+        Log::Comment(L"Set up ConPTY");
+
+        auto& currentBuffer = gci.GetActiveOutputBuffer();
+        // Set up an xterm-256 renderer for conpty
+        wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        Viewport initialViewport = currentBuffer.GetViewport();
+        auto vtRenderEngine = std::make_unique<Microsoft::Console::Render::Xterm256Engine>(std::move(hFile),
+                                                                                           initialViewport);
+        // We don't care about the output, so let it just drain to the void.
+        vtRenderEngine->SetTestCallback([](auto&&, auto&&) -> bool { return true; });
+        gci.GetActiveOutputBuffer().SetTerminalConnection(vtRenderEngine.get());
+        // Manually set the console into conpty mode. We're not actually going
+        // to set up the pipes for conpty, but we want the console to behave
+        // like it would in conpty mode.
+        ServiceLocator::LocateGlobals().EnableConptyModeForTests(std::move(vtRenderEngine));
+    }
+
+    auto* siMain = &gci.GetActiveOutputBuffer();
+    auto& stateMachine = siMain->GetStateMachine();
+
+    const til::size oldSize{ siMain->GetBufferSize().Dimensions() };
+    const til::size oldView{ siMain->GetViewport().Dimensions() };
+    Log::Comment(NoThrowString().Format(L"Original buffer size: %dx%d", oldSize.width, oldSize.height));
+    Log::Comment(NoThrowString().Format(L"Original viewport: %dx%d", oldView.width, oldView.height));
+    VERIFY_ARE_NOT_EQUAL(oldSize, oldView);
+
+    // printf "\x1b[?1049h" ; sleep 1 ; printf "\x1b[8;24;60t" ; sleep 1 ; printf "\x1b[?1049l" ; sleep 1 ; printf "\n"
+    Log::Comment(L"Switch to alt buffer");
+    stateMachine.ProcessString(L"\x1b[?1049h");
+
+    auto* siAlt = &gci.GetActiveOutputBuffer();
+    VERIFY_ARE_NOT_EQUAL(siMain, siAlt);
+
+    const til::size newSize{ siAlt->GetBufferSize().Dimensions() };
+    const til::size newView{ siAlt->GetViewport().Dimensions() };
+    VERIFY_ARE_EQUAL(oldView, newSize);
+    VERIFY_ARE_EQUAL(oldView, newSize);
+    VERIFY_ARE_EQUAL(newView, newSize);
+
+    Log::Comment(L"Resize alt buffer");
+    stateMachine.ProcessString(L"\x1b[8;24;60t");
+    const til::size expectedSize{ 60, 24 };
+    const til::size altPostResizeSize{ siAlt->GetBufferSize().Dimensions() };
+    const til::size altPostResizeView{ siAlt->GetViewport().Dimensions() };
+    const til::size mainPostResizeSize{ siMain->GetBufferSize().Dimensions() };
+    const til::size mainPostResizeView{ siMain->GetViewport().Dimensions() };
+    VERIFY_ARE_NOT_EQUAL(oldView, altPostResizeSize);
+    VERIFY_ARE_EQUAL(altPostResizeView, altPostResizeSize);
+    VERIFY_ARE_EQUAL(expectedSize, altPostResizeSize);
+
+    Log::Comment(L"Main buffer should not have resized yet.");
+    VERIFY_ARE_EQUAL(oldSize, mainPostResizeSize);
+    VERIFY_ARE_EQUAL(oldView, mainPostResizeView);
+
+    if (reEnterAltBuffer)
+    {
+        Log::Comment(L"re-enter alt buffer");
+        stateMachine.ProcessString(L"\x1b[?1049h");
+
+        auto* siAlt2 = &gci.GetActiveOutputBuffer();
+        VERIFY_ARE_NOT_EQUAL(siMain, siAlt2);
+        VERIFY_ARE_NOT_EQUAL(siAlt, siAlt2);
+
+        const til::size alt2Size{ siAlt2->GetBufferSize().Dimensions() };
+        const til::size alt2View{ siAlt2->GetViewport().Dimensions() };
+        VERIFY_ARE_EQUAL(altPostResizeSize, alt2Size);
+        VERIFY_ARE_EQUAL(altPostResizeView, alt2View);
+    }
+
+    Log::Comment(L"Switch to main buffer");
+    stateMachine.ProcessString(L"\x1b[?1049l");
+
+    auto* siFinal = &gci.GetActiveOutputBuffer();
+    VERIFY_ARE_NOT_EQUAL(siAlt, siFinal);
+    VERIFY_ARE_EQUAL(siMain, siFinal);
+
+    const til::size mainPostRestoreSize{ siMain->GetBufferSize().Dimensions() };
+    const til::size mainPostRestoreView{ siMain->GetViewport().Dimensions() };
+    VERIFY_ARE_NOT_EQUAL(oldView, mainPostRestoreView);
+    VERIFY_ARE_NOT_EQUAL(oldSize, mainPostRestoreSize);
+    VERIFY_ARE_EQUAL(altPostResizeView, mainPostRestoreView);
+    VERIFY_ARE_EQUAL(expectedSize, mainPostRestoreView);
 }
