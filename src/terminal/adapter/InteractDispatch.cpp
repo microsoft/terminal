@@ -198,6 +198,8 @@ bool InteractDispatch::FocusChanged(const bool focused) const
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
 
+    // This should likely always be true - we shouldnn't ever have an
+    // InteractDispatch outside ConPTY mode, but just in case...
     if (gci.IsInVtIoMode())
     {
         bool shouldActuallyFocus = false;
@@ -209,15 +211,15 @@ bool InteractDispatch::FocusChanged(const bool focused) const
         // FG.
         if (focused)
         {
-            if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow() })
+            if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow() })
             {
                 // They want focus, we found a pseudo hwnd.
 
-                // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
+                // Note: ::GetParent(pseudoHwnd) will return 0. GetAncestor works though.
                 // GA_PARENT and GA_ROOT seemingly return the same thing for
                 // Terminal. We're going with GA_ROOT since it seems
                 // semantically more correct here.
-                if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_ROOT) })
+                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOT) })
                 {
                     // We have an owner from a previous call to ReparentWindow
 
