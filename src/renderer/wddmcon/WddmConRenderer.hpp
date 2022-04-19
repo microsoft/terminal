@@ -31,7 +31,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;

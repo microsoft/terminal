@@ -41,6 +41,11 @@ IslandWindow::~IslandWindow()
     _source.Close();
 }
 
+HWND IslandWindow::GetInteropHandle() const
+{
+    return _interopWindowHandle;
+}
+
 // Method Description:
 // - Create the actual window that we'll use for the application.
 // Arguments:
@@ -533,6 +538,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             return 0;
         }
         CATCH_LOG();
+        break;
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
@@ -590,6 +596,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 return 0;
             }
         }
+        break;
     }
     case CM_NOTIFY_FROM_NOTIFICATION_AREA:
     {

@@ -297,7 +297,7 @@ void Settings::Validate()
     _dwScreenBufferSize.X = std::max(_dwScreenBufferSize.X, 1i16);
     _dwScreenBufferSize.Y = std::max(_dwScreenBufferSize.Y, 1i16);
 
-    // minimum window size size 1x1
+    // minimum window size 1x1
     _dwWindowSize.X = std::max(_dwWindowSize.X, 1i16);
     _dwWindowSize.Y = std::max(_dwWindowSize.Y, 1i16);
 

@@ -60,6 +60,12 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - implements the IInitializeWithWindow interface from shobjidl_core.
+    // - We're going to use this HWND as the owner for the ConPTY windows, via
+    //   ConptyConnection::ReparentWindow. We need this for applications that
+    //   call GetConsoleWindow, and attempt to open a MessageBox for the
+    //   console. By marking the conpty windows as owned by the Terminal HWND,
+    //   the message box will be owned by the Terminal window as well.
+    //   - see GH#2988
     HRESULT TerminalPage::Initialize(HWND hwnd)
     {
         _hostingHwnd = hwnd;
@@ -705,18 +711,6 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
-    // Method description:
-    // - Called when the user closes a content dialog
-    // - Tells the presenter to update its knowledge of whether there is a content dialog open
-    void TerminalPage::_DialogCloseClick(const IInspectable&,
-                                         const ContentDialogButtonClickEventArgs&)
-    {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            presenter.DismissDialog();
-        }
-    }
-
     // Method Description:
     // - Helper to show a content dialog
     // - We only open a content dialog if there isn't one open already
@@ -724,10 +718,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            if (presenter.CanShowDialog())
-            {
-                co_return co_await presenter.ShowDialog(FindName(name).try_as<WUX::Controls::ContentDialog>());
-            }
+            co_return co_await presenter.ShowDialog(FindName(name).try_as<WUX::Controls::ContentDialog>());
         }
         co_return ContentDialogResult::None;
     }
@@ -2424,6 +2415,11 @@ namespace winrt::TerminalApp::implementation
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
+
+        if (_hostingHwnd.has_value())
+        {
+            term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
+        }
         return term;
     }
 

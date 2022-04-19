@@ -700,9 +700,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                     position.Y < 0));
         // clang-format on
 
-        // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
-        RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(position));
-
         RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
 
         LOG_IF_FAILED(ConsoleImeResizeCompStrView());

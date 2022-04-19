@@ -658,6 +658,9 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
+        success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -784,5 +787,86 @@ bool TerminalDispatch::HardReset()
     // Delete all current tab stops and reapply
     _ResetTabStops();
 
+    return true;
+}
+
+// Routine Description:
+// - DECSC - Saves the current "cursor state" into a memory buffer. This
+//   includes the cursor position, origin mode, graphic rendition, and
+//   active character set.
+// Arguments:
+// - <none>
+// Return Value:
+// - True.
+bool TerminalDispatch::CursorSaveState()
+{
+    // TODO GH#3849: When de-duplicating this, the AdaptDispatch version of this
+    // is more elaborate.
+    const auto attributes = _terminalApi.GetTextAttributes();
+    COORD coordCursor = _terminalApi.GetCursorPosition();
+    // The cursor is given to us by the API as relative to current viewport top.
+
+    // VT is also 1 based, not 0 based, so correct by 1.
+    auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
+    savedCursorState.Column = coordCursor.X + 1;
+    savedCursorState.Row = coordCursor.Y + 1;
+    savedCursorState.Attributes = attributes;
+
+    return true;
+}
+
+// Routine Description:
+// - DECRC - Restores a saved "cursor state" from the DECSC command back into
+//   the console state. This includes the cursor position, origin mode, graphic
+//   rendition, and active character set.
+// Arguments:
+// - <none>
+// Return Value:
+// - True.
+bool TerminalDispatch::CursorRestoreState()
+{
+    // TODO GH#3849: When de-duplicating this, the AdaptDispatch version of this
+    // is more elaborate.
+    auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
+
+    auto row = savedCursorState.Row;
+    const auto col = savedCursorState.Column;
+
+    // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
+    CursorPosition(row, col);
+
+    // Restore text attributes.
+    _terminalApi.SetTextAttributes(savedCursorState.Attributes);
+
+    return true;
+}
+
+// - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
+//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
+//     existing alternate, it is discarded.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool TerminalDispatch::UseAlternateScreenBuffer()
+{
+    CursorSaveState();
+    _terminalApi.UseAlternateScreenBuffer();
+    _usingAltBuffer = true;
+    return true;
+}
+
+// Routine Description:
+// - ASBRST - From the alternate buffer, returns to the main screen buffer.
+//     From the main screen buffer, does nothing. The alternate is discarded.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool TerminalDispatch::UseMainScreenBuffer()
+{
+    _terminalApi.UseMainScreenBuffer();
+    _usingAltBuffer = false;
+    CursorRestoreState();
     return true;
 }

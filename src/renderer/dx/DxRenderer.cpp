@@ -1201,20 +1201,6 @@ try
 CATCH_RETURN();
 
 // Routine Description:
-// - This currently has no effect in this renderer.
-// Arguments:
-// - pForcePaint - Always filled with false
-// Return Value:
-// - S_FALSE because we don't use this.
-[[nodiscard]] HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
-// Routine Description:
 // - Gets the area in pixels of the surface we are targeting
 // Arguments:
 // - <none>
