@@ -195,15 +195,60 @@ bool InteractDispatch::IsVtInputEnabled() const
 // - true always.
 bool InteractDispatch::FocusChanged(const bool focused) const
 {
-    // When we do GH#11682, we should make sure that ConPTY requests this mode
-    // from the terminal when it starts up, and ConPTY never unsets that flag.
-    // It should only ever internally disable the events from flowing to the
-    // client application.
-
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-    WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, focused);
-    gci.ProcessHandleList.ModifyConsoleProcessFocus(focused);
+
+    // This should likely always be true - we shouldn't ever have an
+    // InteractDispatch outside ConPTY mode, but just in case...
+    if (gci.IsInVtIoMode())
+    {
+        bool shouldActuallyFocus = false;
+
+        // From https://github.com/microsoft/terminal/pull/12799#issuecomment-1086289552
+        // Make sure that the process that's telling us it's focused, actually
+        // _is_ in the FG. We don't want to allow malicious.exe to say "yep I'm
+        // in the foreground, also, here's a popup" if it isn't actually in the
+        // FG.
+        if (focused)
+        {
+            if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow() })
+            {
+                // They want focus, we found a pseudo hwnd.
+
+                // Note: ::GetParent(pseudoHwnd) will return 0. GetAncestor works though.
+                // GA_PARENT and GA_ROOT seemingly return the same thing for
+                // Terminal. We're going with GA_ROOT since it seems
+                // semantically more correct here.
+                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOT) })
+                {
+                    // We have an owner from a previous call to ReparentWindow
+
+                    if (const auto currentFgWindow{ ::GetForegroundWindow() })
+                    {
+                        // There is a window in the foreground (it's possible there
+                        // isn't one)
+
+                        // Get the PID of the current FG window, and compare with our owner's PID.
+                        DWORD currentFgPid{ 0 };
+                        DWORD ownerPid{ 0 };
+                        GetWindowThreadProcessId(currentFgWindow, &currentFgPid);
+                        GetWindowThreadProcessId(ownerHwnd, &ownerPid);
+
+                        if (ownerPid == currentFgPid)
+                        {
+                            // Huzzah, the app that owns us is actually the FG
+                            // process. They're allowed to grand FG rights.
+                            shouldActuallyFocus = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
+        gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
+    }
+    // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
 
     // Theoretically, this could be propagated as a focus event as well, to the
     // input buffer. That should be considered when implementing GH#11682.
