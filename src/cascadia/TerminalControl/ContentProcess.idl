@@ -10,7 +10,7 @@ namespace Microsoft.Terminal.Control
         ContentProcess();
 
         Boolean Initialize(IControlSettings settings,
-                             IControlAppearance unfocusedAppearance,
+                           IControlAppearance unfocusedAppearance,
                            Microsoft.Terminal.TerminalConnection.ConnectionInformation connectionInfo);
 
         ControlInteractivity GetInteractivity();

@@ -119,7 +119,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
         THROW_IF_FAILED(_uiaProvider->RangeFromChild(/* IRawElementProviderSimple */ nullptr,
                                                      &returnVal));
-
         return _CreateXamlUiaTextRange(returnVal);
     }
 
@@ -127,7 +126,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         UIA::ITextRangeProvider* returnVal;
         THROW_IF_FAILED(_uiaProvider->RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal));
-
         return _CreateXamlUiaTextRange(returnVal);
     }
 
@@ -135,7 +133,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         UIA::ITextRangeProvider* returnVal;
         THROW_IF_FAILED(_uiaProvider->get_DocumentRange(&returnVal));
-
         return _CreateXamlUiaTextRange(returnVal);
     }
 
@@ -208,7 +205,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);
-
         for (int i = 0; i < count; i++)
         {
             if (auto xutr = _CreateXamlUiaTextRange(providers[i].detach()))
