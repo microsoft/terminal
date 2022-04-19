@@ -197,7 +197,7 @@ bool InteractDispatch::FocusChanged(const bool focused) const
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
 
-    // This should likely always be true - we shouldnn't ever have an
+    // This should likely always be true - we shouldn't ever have an
     // InteractDispatch outside ConPTY mode, but just in case...
     if (gci.IsInVtIoMode())
     {
