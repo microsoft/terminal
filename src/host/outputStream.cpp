@@ -378,8 +378,8 @@ void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
     // If the window hasn't been created yet, by some other call to
     // LocatePseudoWindow, then this will also initialize the owner of the
     // window.
-    if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
     {
-        LOG_LAST_ERROR_IF_NULL(::SetParent(psuedoHwnd, reinterpret_cast<HWND>(handle)));
+        LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, reinterpret_cast<HWND>(handle)));
     }
 }
