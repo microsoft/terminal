@@ -592,11 +592,11 @@ bool AdaptDispatch::EraseCharacters(const VTInt numChars)
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().Y;
     const auto startCol = textBuffer.GetCursor().GetPosition().X;
-    const auto endCol = std::min<size_t>(startCol + numChars, textBuffer.GetLineWidth(row));
+    const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
-    _FillRect(textBuffer, { startCol, row, gsl::narrow_cast<til::CoordType>(endCol), row + 1 }, L' ', eraseAttributes);
+    _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, L' ', eraseAttributes);
 
     return true;
 }
