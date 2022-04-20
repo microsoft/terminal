@@ -134,39 +134,26 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // - col: The column to move the cursor to.
 // Return value:
 // - True.
-bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
+bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
-    // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-    THROW_HR_IF(E_INVALIDARG, row == 0);
-    THROW_HR_IF(E_INVALIDARG, col == 0);
+    // First retrieve some information about the buffer
+    const auto viewport = _pConApi->GetViewport();
 
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-    const size_t rowFixed = row - 1;
-    const size_t colFixed = col - 1;
-
-    // First retrieve some information about the buffer
-    const auto viewport = _pConApi->GetViewport().to_small_rect();
-    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
-    auto coordCursor = cursor.GetPosition();
-
-    // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
-    THROW_IF_FAILED(SizeTToShort(rowFixed, &coordCursor.Y));
-    THROW_IF_FAILED(SizeTToShort(colFixed, &coordCursor.X));
-
-    // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-    THROW_IF_FAILED(ShortAdd(coordCursor.Y, viewport.Top, &coordCursor.Y));
-    THROW_IF_FAILED(ShortAdd(coordCursor.X, viewport.Left, &coordCursor.X));
-
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
+    til::point coordCursor{ col - 1 + viewport.Left, row - 1 + viewport.Top };
     coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, viewport.Bottom);
     coordCursor.X = std::clamp(coordCursor.X, viewport.Left, viewport.Right);
 
+    const auto coordCursorShort = til::unwrap_coord(coordCursor);
+
     // MSFT: 15813316 - Try to use this MoveCursor call to inherit the cursor position.
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursor));
+    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursorShort));
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    cursor.SetPosition(coordCursor);
+    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    cursor.SetPosition(coordCursorShort);
     cursor.SetHasMoved(true);
     return true;
 }

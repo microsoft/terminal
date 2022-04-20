@@ -1998,9 +1998,9 @@ void StateMachine::ResetState() noexcept
 // - value - The value to update with the printable character. See example above.
 // Return Value:
 // - <none> - But really it's the update to the given value parameter.
-void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value) noexcept
+void StateMachine::_AccumulateTo(const wchar_t wch, VTInt& value) noexcept
 {
-    const size_t digit = wch - L'0';
+    const auto digit = wch - L'0';
 
     value = value * 10 + digit;
 

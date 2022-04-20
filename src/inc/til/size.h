@@ -209,6 +209,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return wil::str_printf<std::wstring>(L"[W:%d, H:%d]", width, height);
         }
     };
+
+    constexpr size wrap_coord_size(const COORD rect) noexcept
+    {
+        return { rect.X, rect.Y };
+    }
+
+    constexpr COORD unwrap_coord_size(const size rect)
+    {
+        return {
+            gsl::narrow<short>(rect.width),
+            gsl::narrow<short>(rect.height),
+        };
+    }
 };
 
 #ifdef __WEX_COMMON_H__
