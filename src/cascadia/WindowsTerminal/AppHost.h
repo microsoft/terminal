@@ -52,6 +52,9 @@ private:
                                   const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
+    void _AppInitializedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                const winrt::Windows::Foundation::IInspectable& arg);
+
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
@@ -144,6 +147,7 @@ private:
         winrt::TerminalApp::AppLogic::FullscreenChanged_revoker FullscreenChanged;
         winrt::TerminalApp::AppLogic::FocusModeChanged_revoker FocusModeChanged;
         winrt::TerminalApp::AppLogic::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
+        winrt::TerminalApp::AppLogic::Initialized_revoker Initialized;
         winrt::TerminalApp::AppLogic::RaiseVisualBell_revoker RaiseVisualBell;
         winrt::TerminalApp::AppLogic::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
         winrt::TerminalApp::AppLogic::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;

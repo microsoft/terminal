@@ -377,6 +377,7 @@ void AppHost::Initialize()
     _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
     _revokers.FocusModeChanged = _logic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
     _revokers.AlwaysOnTopChanged = _logic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
+    _revokers.Initialized = _logic.Initialized(winrt::auto_revoke, { this, &AppHost::_AppInitializedHandler });
     _revokers.RaiseVisualBell = _logic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
     _revokers.SystemMenuChangeRequested = _logic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
     _revokers.ChangeMaximizeRequested = _logic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
@@ -533,6 +534,14 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - None
 void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
+    BOOL fCloak = TRUE;
+    auto result = DwmSetWindowAttribute(hwnd,
+                          DWMWA_CLOAK,
+                          &fCloak,
+                          sizeof(fCloak));
+    result;
+    LOG_IF_FAILED(result);
+
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
@@ -1546,4 +1555,14 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 {
     const auto pos = _GetWindowLaunchPosition();
     _logic.CloseWindow(pos);
+}
+
+void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Windows::Foundation::IInspectable& /*arg*/)
+{
+    BOOL fCloak = FALSE;
+    DwmSetWindowAttribute(_window->GetHandle(),
+                          DWMWA_CLOAK,
+                          &fCloak,
+                          sizeof(fCloak));
 }

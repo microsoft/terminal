@@ -658,7 +658,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_CompleteInitialization()
+    winrt::fire_and_forget TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
 
@@ -678,9 +678,20 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
             _LastTabClosedHandlers(*this, nullptr);
+            co_return;
         }
         else
         {
+            // Capture calling context.
+            winrt::apartment_context ui_thread;
+
+            // TODO! Capture a weak ref for gods sake
+
+            // Switch to the BG thread -
+            co_await winrt::resume_background();
+
+            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+
             _InitializedHandlers(*this, nullptr);
         }
     }
