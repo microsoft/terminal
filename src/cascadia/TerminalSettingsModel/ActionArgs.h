@@ -188,7 +188,7 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADD_MARK_ARGS(X) \
-    X(til::color, Color, "color", false, 255, 255, 255)
+    X(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \

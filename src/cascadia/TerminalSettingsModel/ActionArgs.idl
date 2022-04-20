@@ -306,8 +306,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass AddMarkArgs : IActionArgs
     {
-        Microsoft.Terminal.Core.Color Color { get; };
-        // Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
     };
 
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs

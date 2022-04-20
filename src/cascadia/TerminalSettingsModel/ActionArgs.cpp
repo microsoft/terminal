@@ -632,10 +632,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring AddMarkArgs::GenerateName() const
     {
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"AddMarkWithColorCommandKey")),
-                        til::color{ Color() }.ToHexString(true))
-        };
+        if (Color())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"AddMarkWithColorCommandKey")),
+                            til::color{ Color().Value() }.ToHexString(true))
+            };
+
+        }
+        else
+        {
+            return RS_(L"AddMarkCommandKey");
+        }
     }
 
     winrt::hstring MoveTabArgs::GenerateName() const
