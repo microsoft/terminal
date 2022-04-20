@@ -1471,9 +1471,27 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
 
 void Terminal::ClearMark()
 {
-    // TODO! just look for one where the cursor is, or where the selection is
+    // Look for one where the cursor is, or where the selection is if we have
+    // one. Any mark that intersects the cursor/selection, on either side
+    // (inclusive), will get cleared.
+    const til::point cursor{ _activeBuffer().GetCursor().GetPosition() };
+    til::point start{ cursor };
+    til::point end{ cursor };
 
-    _scrollMarks.clear();
+    if (IsSelectionActive())
+    {
+        start = til::point{ GetSelectionAnchor() };
+        end = til::point{ GetSelectionEnd() };
+    }
+
+    _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
+                                      _scrollMarks.end(),
+                                      [&start, &end](const auto& m) {
+                                          return (m.start >= start && m.start <= end) ||
+                                                 (m.end >= start && m.end <= end);
+                                      }),
+                       _scrollMarks.end());
+
     // Tell the control that the scrollbar has somehow changed. Used as a hack.
     _NotifyScrollEvent();
 }
