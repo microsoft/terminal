@@ -25,7 +25,7 @@ namespace Microsoft::Console::VirtualTerminal
     // parameter values, so 32767 should be more than enough. At most we might
     // want to increase this to 65535, since that is what XTerm and VTE support,
     // but for now 32767 is the safest limit for our existing code base.
-    constexpr size_t MAX_PARAMETER_VALUE = 32767;
+    constexpr VTInt MAX_PARAMETER_VALUE = 32767;
 
     // The DEC STD 070 reference requires that a minimum of 16 parameter values
     // are supported, but most modern terminal emulators will allow around twice
@@ -126,7 +126,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventDcsPassThrough(const wchar_t wch);
         void _EventSosPmApcString(const wchar_t wch) noexcept;
 
-        void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
+        void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
 
         template<typename TLambda>
         bool _SafeExecute(TLambda&& lambda) noexcept;
@@ -183,7 +183,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _parameterLimitReached;
 
         std::wstring _oscString;
-        size_t _oscParameter;
+        VTInt _oscParameter;
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
 

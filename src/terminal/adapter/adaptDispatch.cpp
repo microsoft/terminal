@@ -96,7 +96,7 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorUp(const size_t distance)
+bool AdaptDispatch::CursorUp(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Backward(distance), Offset::Unchanged(), true);
 }
@@ -112,7 +112,7 @@ bool AdaptDispatch::CursorUp(const size_t distance)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorDown(const size_t distance)
+bool AdaptDispatch::CursorDown(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), true);
 }
@@ -123,7 +123,7 @@ bool AdaptDispatch::CursorDown(const size_t distance)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorForward(const size_t distance)
+bool AdaptDispatch::CursorForward(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), true);
 }
@@ -134,7 +134,7 @@ bool AdaptDispatch::CursorForward(const size_t distance)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorBackward(const size_t distance)
+bool AdaptDispatch::CursorBackward(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Backward(distance), true);
 }
@@ -146,7 +146,7 @@ bool AdaptDispatch::CursorBackward(const size_t distance)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorNextLine(const size_t distance)
+bool AdaptDispatch::CursorNextLine(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Forward(distance), Offset::Absolute(1), true);
 }
@@ -158,7 +158,7 @@ bool AdaptDispatch::CursorNextLine(const size_t distance)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorPrevLine(const size_t distance)
+bool AdaptDispatch::CursorPrevLine(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Backward(distance), Offset::Absolute(1), true);
 }
@@ -289,7 +289,7 @@ void AdaptDispatch::_ApplyCursorMovementFlags(Cursor& cursor) noexcept
 // - column - Specific X/Column position to move to
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorHorizontalPositionAbsolute(const size_t column)
+bool AdaptDispatch::CursorHorizontalPositionAbsolute(const VTInt column)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Absolute(column), false);
 }
@@ -300,7 +300,7 @@ bool AdaptDispatch::CursorHorizontalPositionAbsolute(const size_t column)
 // - line - Specific Y/Row position to move to
 // Return Value:
 // - True.
-bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
+bool AdaptDispatch::VerticalLinePositionAbsolute(const VTInt line)
 {
     return _CursorMovePosition(Offset::Absolute(line), Offset::Unchanged(), false);
 }
@@ -312,7 +312,7 @@ bool AdaptDispatch::VerticalLinePositionAbsolute(const size_t line)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::HorizontalPositionRelative(const size_t distance)
+bool AdaptDispatch::HorizontalPositionRelative(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Unchanged(), Offset::Forward(distance), false);
 }
@@ -324,7 +324,7 @@ bool AdaptDispatch::HorizontalPositionRelative(const size_t distance)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::VerticalPositionRelative(const size_t distance)
+bool AdaptDispatch::VerticalPositionRelative(const VTInt distance)
 {
     return _CursorMovePosition(Offset::Forward(distance), Offset::Unchanged(), false);
 }
@@ -336,7 +336,7 @@ bool AdaptDispatch::VerticalPositionRelative(const size_t distance)
 // - column - Specific X/Column position to move to
 // Return Value:
 // - True.
-bool AdaptDispatch::CursorPosition(const size_t line, const size_t column)
+bool AdaptDispatch::CursorPosition(const VTInt line, const VTInt column)
 {
     return _CursorMovePosition(Offset::Absolute(line), Offset::Absolute(column), false);
 }
@@ -396,7 +396,7 @@ bool AdaptDispatch::CursorRestoreState()
         const auto viewport = _pConApi->GetViewport();
         const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
         // VT origin is at 1,1 so we need to add 1 to these margins.
-        row = std::clamp(row, topMargin + 1u, bottomMargin + 1u);
+        row = std::clamp(row, topMargin + 1, bottomMargin + 1);
     }
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
@@ -519,7 +519,7 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
 // - delta - Number of characters to modify (positive if inserting, negative if deleting).
 // Return Value:
 // - <none>
-void AdaptDispatch::_InsertDeleteCharacterHelper(const int32_t delta)
+void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 {
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().Y;
@@ -535,9 +535,9 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const int32_t delta)
 // - count - The number of characters to insert
 // Return Value:
 // - True.
-bool AdaptDispatch::InsertCharacter(const size_t count)
+bool AdaptDispatch::InsertCharacter(const VTInt count)
 {
-    _InsertDeleteCharacterHelper(gsl::narrow_cast<int32_t>(count));
+    _InsertDeleteCharacterHelper(count);
     return true;
 }
 
@@ -548,9 +548,9 @@ bool AdaptDispatch::InsertCharacter(const size_t count)
 // - count - The number of characters to delete
 // Return Value:
 // - True.
-bool AdaptDispatch::DeleteCharacter(const size_t count)
+bool AdaptDispatch::DeleteCharacter(const VTInt count)
 {
-    _InsertDeleteCharacterHelper(-gsl::narrow_cast<int32_t>(count));
+    _InsertDeleteCharacterHelper(-count);
     return true;
 }
 
@@ -587,16 +587,16 @@ void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect,
 // - numChars - The number of characters to erase.
 // Return Value:
 // - True.
-bool AdaptDispatch::EraseCharacters(const size_t numChars)
+bool AdaptDispatch::EraseCharacters(const VTInt numChars)
 {
     auto& textBuffer = _pConApi->GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().Y;
     const auto startCol = textBuffer.GetCursor().GetPosition().X;
-    const auto endCol = std::min<size_t>(startCol + numChars, textBuffer.GetLineWidth(row));
+    const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
-    _FillRect(textBuffer, { startCol, row, gsl::narrow_cast<til::CoordType>(endCol), row + 1 }, L' ', eraseAttributes);
+    _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, L' ', eraseAttributes);
 
     return true;
 }
@@ -853,10 +853,10 @@ void AdaptDispatch::_CursorPositionReport()
     const auto& textBuffer = _pConApi->GetTextBuffer();
 
     // First pull the cursor position relative to the entire buffer out of the console.
-    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    til::point cursorPosition{ textBuffer.GetCursor().GetPosition() };
 
     // Now adjust it for its position in respect to the current viewport top.
-    cursorPosition.Y -= gsl::narrow_cast<short>(viewport.top);
+    cursorPosition.Y -= viewport.top;
 
     // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
     cursorPosition.X++;
@@ -866,7 +866,7 @@ void AdaptDispatch::_CursorPositionReport()
     if (_isOriginModeRelative)
     {
         const auto topMargin = _GetVerticalMargins(viewport, false).first;
-        cursorPosition.Y -= gsl::narrow_cast<short>(topMargin);
+        cursorPosition.Y -= topMargin;
     }
 
     // Now send it back into the input channel of the console.
@@ -913,7 +913,7 @@ void AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 // - delta - Distance to move (positive is down, negative is up)
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollMovement(const int32_t delta)
+void AdaptDispatch::_ScrollMovement(const VTInt delta)
 {
     const auto viewport = _pConApi->GetViewport();
     auto& textBuffer = _pConApi->GetTextBuffer();
@@ -928,7 +928,7 @@ void AdaptDispatch::_ScrollMovement(const int32_t delta)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::ScrollUp(const size_t uiDistance)
+bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 {
     _ScrollMovement(-gsl::narrow_cast<int32_t>(uiDistance));
     return true;
@@ -940,7 +940,7 @@ bool AdaptDispatch::ScrollUp(const size_t uiDistance)
 // - distance - Distance to move
 // Return Value:
 // - True.
-bool AdaptDispatch::ScrollDown(const size_t uiDistance)
+bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 {
     _ScrollMovement(gsl::narrow_cast<int32_t>(uiDistance));
     return true;
@@ -954,7 +954,7 @@ bool AdaptDispatch::ScrollDown(const size_t uiDistance)
 // - columns - Number of columns
 // Return Value:
 // - True.
-bool AdaptDispatch::SetColumns(const size_t columns)
+bool AdaptDispatch::SetColumns(const VTInt columns)
 {
     const auto viewport = _pConApi->GetViewport();
     const auto viewportHeight = viewport.bottom - viewport.top;
@@ -969,7 +969,7 @@ bool AdaptDispatch::SetColumns(const size_t columns)
 // - columns - Number of columns
 // Return Value:
 // - True.
-bool AdaptDispatch::_DoDECCOLMHelper(const size_t columns)
+bool AdaptDispatch::_DoDECCOLMHelper(const VTInt columns)
 {
     // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
     if (_isDECCOLMAllowed)
@@ -1213,7 +1213,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
 // - distance - number of lines to insert
 // Return Value:
 // - True.
-bool AdaptDispatch::InsertLine(const size_t distance)
+bool AdaptDispatch::InsertLine(const VTInt distance)
 {
     _InsertDeleteLineHelper(gsl::narrow_cast<int32_t>(distance));
     return true;
@@ -1231,7 +1231,7 @@ bool AdaptDispatch::InsertLine(const size_t distance)
 // - distance - number of lines to delete
 // Return Value:
 // - True.
-bool AdaptDispatch::DeleteLine(const size_t distance)
+bool AdaptDispatch::DeleteLine(const VTInt distance)
 {
     _InsertDeleteLineHelper(-gsl::narrow_cast<int32_t>(distance));
     return true;
@@ -1313,8 +1313,8 @@ bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
 // - bottomMargin - the line number for the bottom margin.
 // Return Value:
 // - <none>
-void AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
-                                                    const size_t bottomMargin)
+void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
+                                                    const VTInt bottomMargin)
 {
     // so notes time: (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
@@ -1373,8 +1373,8 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const size_t topMargin,
 // - bottomMargin - the line number for the bottom margin.
 // Return Value:
 // - True.
-bool AdaptDispatch::SetTopBottomScrollingMargins(const size_t topMargin,
-                                                 const size_t bottomMargin)
+bool AdaptDispatch::SetTopBottomScrollingMargins(const VTInt topMargin,
+                                                 const VTInt bottomMargin)
 {
     // When this is called, the cursor should also be moved to home.
     // Other functions that only need to set/reset the margins should call _DoSetTopBottomScrollingMargins
@@ -1534,13 +1534,13 @@ bool AdaptDispatch::HorizontalTabSet()
 // - numTabs - the number of tabs to perform
 // Return value:
 // - True.
-bool AdaptDispatch::ForwardTab(const size_t numTabs)
+bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
     auto& textBuffer = _pConApi->GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
     auto column = cursor.GetPosition().X;
-    auto tabsPerformed = 0u;
+    auto tabsPerformed = 0;
 
     _InitTabStopsForWidth(width);
     while (column + 1 < width && tabsPerformed < numTabs)
@@ -1564,13 +1564,13 @@ bool AdaptDispatch::ForwardTab(const size_t numTabs)
 // - numTabs - the number of tabs to perform
 // Return value:
 // - True.
-bool AdaptDispatch::BackwardsTab(const size_t numTabs)
+bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
     auto& textBuffer = _pConApi->GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
     auto column = cursor.GetPosition().X;
-    auto tabsPerformed = 0u;
+    auto tabsPerformed = 0;
 
     _InitTabStopsForWidth(width);
     while (column > 0 && tabsPerformed < numTabs)
@@ -1660,12 +1660,13 @@ void AdaptDispatch::_ResetTabStops() noexcept
 // - width - the width of the screen buffer that we need to accommodate
 // Return value:
 // - <none>
-void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
+void AdaptDispatch::_InitTabStopsForWidth(const VTInt width)
 {
+    const auto screenWidth = gsl::narrow<size_t>(width);
     const auto initialWidth = _tabStopColumns.size();
-    if (width > initialWidth)
+    if (screenWidth > initialWidth)
     {
-        _tabStopColumns.resize(width);
+        _tabStopColumns.resize(screenWidth);
         if (_initDefaultTabStops)
         {
             for (auto column = 8u; column < _tabStopColumns.size(); column += 8)
@@ -1725,7 +1726,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 // - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const VTID charset)
+bool AdaptDispatch::Designate94Charset(const VTInt gsetNumber, const VTID charset)
 {
     return _termOutput.Designate94Charset(gsetNumber, charset);
 }
@@ -1740,7 +1741,7 @@ bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const VTID chars
 // - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const VTID charset)
+bool AdaptDispatch::Designate96Charset(const VTInt gsetNumber, const VTID charset)
 {
     return _termOutput.Designate96Charset(gsetNumber, charset);
 }
@@ -1751,7 +1752,7 @@ bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const VTID chars
 // - gsetNumber - The G-set that will be invoked.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::LockingShift(const size_t gsetNumber)
+bool AdaptDispatch::LockingShift(const VTInt gsetNumber)
 {
     return _termOutput.LockingShift(gsetNumber);
 }
@@ -1762,7 +1763,7 @@ bool AdaptDispatch::LockingShift(const size_t gsetNumber)
 // - gsetNumber - The G-set that will be invoked.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::LockingShiftRight(const size_t gsetNumber)
+bool AdaptDispatch::LockingShiftRight(const VTInt gsetNumber)
 {
     return _termOutput.LockingShiftRight(gsetNumber);
 }
@@ -1773,7 +1774,7 @@ bool AdaptDispatch::LockingShiftRight(const size_t gsetNumber)
 // - gsetNumber - The G-set that will be invoked.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::SingleShift(const size_t gsetNumber)
+bool AdaptDispatch::SingleShift(const VTInt gsetNumber)
 {
     return _termOutput.SingleShift(gsetNumber);
 }
@@ -2344,7 +2345,7 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
 // - charsetSize - Whether the character set is 94 or 96 characters.
 // Return Value:
 // - a function to receive the pixel data or nullptr if parameters are invalid
-ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber,
+ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
                                                          const VTParameter startChar,
                                                          const DispatchTypes::DrcsEraseControl eraseControl,
                                                          const DispatchTypes::DrcsCellMatrix cellMatrix,
