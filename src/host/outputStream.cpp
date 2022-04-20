@@ -370,6 +370,17 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
     }
 }
 
+void ConhostInternalGetSet::EndConptyFrame()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+
+    if (gci.IsInVtIoMode() && g.pRender)
+    {
+        g.pRender->TriggerFlush(false);
+    }
+}
+
 void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
 {
     // This will initialize s_interactivityFactory for us. It will also

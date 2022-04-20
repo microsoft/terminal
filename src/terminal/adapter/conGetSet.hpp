@@ -67,6 +67,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
 
+        virtual void EndConptyFrame() = 0;
+
         virtual void ReparentWindow(const uint64_t handle) = 0;
     };
 }

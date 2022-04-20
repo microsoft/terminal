@@ -2336,7 +2336,12 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
 // - false (so that the command gets flushed to terminal)
 bool AdaptDispatch::DoITerm2Action(const std::wstring_view /*string*/) noexcept
 {
-    // TODO! may need to flush manually, to make sure marks end up on the right line, like alt buffer sequence. Maybe.
+    // This is not implemented in conhost.
+
+    // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+    _pConApi->EndConptyFrame();
+
+    // Return false to flush sequence unmodified to ConPTY (if applicable).
     return false;
 }
 

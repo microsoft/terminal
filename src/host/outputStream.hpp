@@ -67,6 +67,8 @@ public:
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
+    void EndConptyFrame() override;
+
     void ReparentWindow(const uint64_t handle);
 
 private:
