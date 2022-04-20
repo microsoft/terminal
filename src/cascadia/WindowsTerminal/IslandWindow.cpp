@@ -28,12 +28,15 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
+static std::chrono::time_point<std::chrono::steady_clock> started; // = std::chrono::high_resolution_clock::now();
+
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
     _source{ nullptr },
     _pfnCreateCallback{ nullptr }
 {
+    started = std::chrono::high_resolution_clock::now();
 }
 
 IslandWindow::~IslandWindow()
@@ -291,6 +294,38 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 {
     LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+
+    auto fmod_1 = [](const float x) -> float {
+        float integer = floor(x);
+        return x - integer;
+    };
+
+    auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
+        return til::color{
+            base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
+        };
+    };
+
+    // Helper for converting a hue [0, 1) to an RGB value.
+    // Credit to https://www.chilliant.com/rgb2hsv.html
+    auto HUEtoRGB = [&](const float H) -> til::color {
+        float R = abs(H * 6 - 3) - 1;
+        float G = 2 - abs(H * 6 - 2);
+        float B = 2 - abs(H * 6 - 4);
+        return saturateAndToColor(R, G, B);
+    };
+    {
+        auto now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> delta{ now - started };
+        auto millis = delta.count();
+
+        auto color = HUEtoRGB(fmod_1(millis));
+        COLORREF ref{ color };
+        DwmSetWindowAttribute(_window.get(), DWMWA_BORDER_COLOR, &ref, sizeof(color));
+        // DWMWA_BORDER_COLOR
+    }
 
     // If we're the quake window, prevent moving the window. If we don't do
     // this, then Alt+Space...Move will still be able to move the window.
