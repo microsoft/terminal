@@ -375,6 +375,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
         ANY_EVENT_MOUSE_MODE = DECPrivateMode(1003),
+        FOCUS_EVENT_MODE = DECPrivateMode(1004),
         UTF8_EXTENDED_MODE = DECPrivateMode(1005),
         SGR_EXTENDED_MODE = DECPrivateMode(1006),
         ALTERNATE_SCROLL = DECPrivateMode(1007),

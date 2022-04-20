@@ -522,6 +522,14 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         return false;
     }
 
+    // GH#11682: If this was a focus event, we can handle this. Steal the
+    // focused state, and return true if we're actually in focus event mode.
+    if (pInEvent->EventType() == InputEventType::FocusEvent)
+    {
+        const auto& focusEvent = *static_cast<const FocusEvent* const>(pInEvent);
+        return HandleFocus(focusEvent.GetFocus());
+    }
+
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() != InputEventType::KeyEvent)
     {
@@ -672,6 +680,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     }
 
     return false;
+}
+
+bool TerminalInput::HandleFocus(const bool focused) noexcept
+{
+    const bool enabled{ _inputMode.test(Mode::FocusEvent) };
+    if (enabled)
+    {
+        _SendInputSequence(focused ? L"\x1b[I" : L"\x1b[O");
+    }
+    return enabled;
 }
 
 // Routine Description:

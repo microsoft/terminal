@@ -747,6 +747,19 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 }
 
 // Method Description:
+// - Tell the terminal input that we gained or lost focus. If the client
+//   requested focus events, this will send a message to them.
+// - ConPTY ALWAYS wants focus events.
+// Arguments:
+// - focused: true if we're focused, false otherwise.
+// Return Value:
+// - none
+void Terminal::FocusChanged(const bool focused) noexcept
+{
+    _terminalInput->HandleFocus(focused);
+}
+
+// Method Description:
 // - Invalidates the regions described in the given pattern tree for the rendering purposes
 // Arguments:
 // - The interval tree containing regions that need to be invalidated

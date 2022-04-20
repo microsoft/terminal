@@ -34,6 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent);
+        bool HandleFocus(const bool focused) noexcept;
 
         enum class Mode : size_t
         {
@@ -48,6 +49,8 @@ namespace Microsoft::Console::VirtualTerminal
             DefaultMouseTracking,
             ButtonEventMouseTracking,
             AnyEventMouseTracking,
+
+            FocusEvent,
 
             AlternateScroll
         };

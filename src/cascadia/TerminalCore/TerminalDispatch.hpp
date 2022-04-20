@@ -74,6 +74,7 @@ public:
     bool EnableSGRExtendedMouseMode(const bool enabled) override; // ?1006
     bool EnableButtonEventMouseMode(const bool enabled) override; // ?1002
     bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
+    bool EnableFocusEventMode(const bool enabled) override; // ?1004
     bool EnableAlternateScroll(const bool enabled) override; // ?1007
     bool EnableXtermBracketedPasteMode(const bool enabled) override; // ?2004
 
