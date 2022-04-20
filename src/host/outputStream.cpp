@@ -152,12 +152,12 @@ void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 //     left and right margins in the future.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetScrollingRegion(const SMALL_RECT& scrollMargins)
+void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scrollMargins)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.Top = scrollMargins.Top;
-    srScrollMargins.Bottom = scrollMargins.Bottom;
+    srScrollMargins.Top = gsl::narrow<short>(scrollMargins.Top);
+    srScrollMargins.Bottom = gsl::narrow<short>(scrollMargins.Bottom);
     screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
 }
 

@@ -3920,10 +3920,12 @@ void ScreenBufferTests::EraseTests()
         TEST_METHOD_PROPERTY(L"Data:eraseScreen", L"{false, true}") // corresponds to Line (false) or Screen (true)
     END_TEST_METHOD_PROPERTIES()
 
-    DispatchTypes::EraseType eraseType;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", (size_t&)eraseType));
+    int eraseTypeValue;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", eraseTypeValue));
     bool eraseScreen;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseScreen", eraseScreen));
+
+    const auto eraseType = gsl::narrow<DispatchTypes::EraseType>(eraseTypeValue);
 
     std::wstringstream escapeSequence;
     escapeSequence << "\x1b[";

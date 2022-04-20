@@ -9,6 +9,8 @@ static constexpr size_t TaskbarMaxProgress{ 100 };
 
 class TerminalDispatch : public Microsoft::Console::VirtualTerminal::TermDispatch
 {
+    using VTInt = Microsoft::Console::VirtualTerminal::VTInt;
+
 public:
     TerminalDispatch(::Microsoft::Terminal::Core::ITerminalApi& terminalApi) noexcept;
 
@@ -20,21 +22,21 @@ public:
     bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
     bool PopGraphicsRendition() override;
 
-    bool CursorPosition(const size_t line,
-                        const size_t column) override; // CUP
+    bool CursorPosition(const VTInt line,
+                        const VTInt column) override; // CUP
 
     bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
 
     bool CursorVisibility(const bool isVisible) override; // DECTCEM
     bool EnableCursorBlinking(const bool enable) override; // ATT610
 
-    bool CursorForward(const size_t distance) override;
-    bool CursorBackward(const size_t distance) override;
-    bool CursorUp(const size_t distance) override;
+    bool CursorForward(const VTInt distance) override;
+    bool CursorBackward(const VTInt distance) override;
+    bool CursorUp(const VTInt distance) override;
 
     bool LineFeed(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::LineFeedType lineFeedType) override;
 
-    bool EraseCharacters(const size_t numChars) override;
+    bool EraseCharacters(const VTInt numChars) override;
     bool WarningBell() override;
     bool CarriageReturn() override;
     bool SetWindowTitle(std::wstring_view title) override;
@@ -43,8 +45,8 @@ public:
     bool UseMainScreenBuffer() override; // ASBRST
 
     bool HorizontalTabSet() override; // HTS
-    bool ForwardTab(const size_t numTabs) override; // CHT, HT
-    bool BackwardsTab(const size_t numTabs) override; // CBT
+    bool ForwardTab(const VTInt numTabs) override; // CHT, HT
+    bool BackwardsTab(const VTInt numTabs) override; // CBT
     bool TabClear(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TabClearType clearType) override; // TBC
 
     bool SetColorTableEntry(const size_t tableIndex, const DWORD color) override;
@@ -56,8 +58,8 @@ public:
     bool SetDefaultForeground(const DWORD color) override;
     bool SetDefaultBackground(const DWORD color) override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override; // ED
-    bool DeleteCharacter(const size_t count) override;
-    bool InsertCharacter(const size_t count) override;
+    bool DeleteCharacter(const VTInt count) override;
+    bool InsertCharacter(const VTInt count) override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
 
     bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM

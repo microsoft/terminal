@@ -257,7 +257,7 @@ static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
 // - coordWinCoordinate - the coordinate to translate
 // Return value:
 // - the translated coordinate.
-static constexpr COORD _winToVTCoord(const COORD coordWinCoordinate) noexcept
+static constexpr til::point _winToVTCoord(const til::point coordWinCoordinate) noexcept
 {
     return { coordWinCoordinate.X + 1, coordWinCoordinate.Y + 1 };
 }
@@ -269,7 +269,7 @@ static constexpr COORD _winToVTCoord(const COORD coordWinCoordinate) noexcept
 // - sCoordinateValue - the value to encode.
 // Return value:
 // - the encoded value.
-static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) noexcept
+static constexpr til::CoordType _encodeDefaultCoordinate(const til::CoordType sCoordinateValue) noexcept
 {
     return sCoordinateValue + 32;
 }
@@ -297,7 +297,7 @@ bool TerminalInput::IsTrackingMouseInput() const noexcept
 // - state - the state of the mouse buttons at this moment
 // Return value:
 // - true if the event was handled and we should stop event propagation to the default window handler.
-bool TerminalInput::HandleMouse(const COORD position,
+bool TerminalInput::HandleMouse(const til::point position,
                                 const unsigned int button,
                                 const short modifierKeyState,
                                 const short delta,
@@ -426,7 +426,7 @@ bool TerminalInput::HandleMouse(const COORD position,
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
-std::wstring TerminalInput::_GenerateDefaultSequence(const COORD position,
+std::wstring TerminalInput::_GenerateDefaultSequence(const til::point position,
                                                      const unsigned int button,
                                                      const bool isHover,
                                                      const short modifierKeyState,
@@ -438,14 +438,14 @@ std::wstring TerminalInput::_GenerateDefaultSequence(const COORD position,
     //   stream without bash.exe trying to convert it into utf8, and generating extra bytes in the process.
     if (position.X <= s_MaxDefaultCoordinate && position.Y <= s_MaxDefaultCoordinate)
     {
-        const COORD vtCoords = _winToVTCoord(position);
-        const short encodedX = _encodeDefaultCoordinate(vtCoords.X);
-        const short encodedY = _encodeDefaultCoordinate(vtCoords.Y);
+        const auto vtCoords = _winToVTCoord(position);
+        const auto encodedX = _encodeDefaultCoordinate(vtCoords.X);
+        const auto encodedY = _encodeDefaultCoordinate(vtCoords.Y);
 
         std::wstring format{ L"\x1b[Mbxy" };
-        format.at(3) = ' ' + gsl::narrow_cast<short>(_windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
-        format.at(4) = encodedX;
-        format.at(5) = encodedY;
+        til::at(format, 3) = gsl::narrow_cast<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
+        til::at(format, 4) = gsl::narrow_cast<wchar_t>(encodedX);
+        til::at(format, 5) = gsl::narrow_cast<wchar_t>(encodedY);
         return format;
     }
 
@@ -463,7 +463,7 @@ std::wstring TerminalInput::_GenerateDefaultSequence(const COORD position,
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
-std::wstring TerminalInput::_GenerateUtf8Sequence(const COORD position,
+std::wstring TerminalInput::_GenerateUtf8Sequence(const til::point position,
                                                   const unsigned int button,
                                                   const bool isHover,
                                                   const short modifierKeyState,
@@ -485,14 +485,14 @@ std::wstring TerminalInput::_GenerateUtf8Sequence(const COORD position,
     // TODO: Followup once the UTF-8 input stack is ready, MSFT:8509613
     if (position.X <= (SHORT_MAX - 33) && position.Y <= (SHORT_MAX - 33))
     {
-        const COORD vtCoords = _winToVTCoord(position);
-        const short encodedX = _encodeDefaultCoordinate(vtCoords.X);
-        const short encodedY = _encodeDefaultCoordinate(vtCoords.Y);
+        const auto vtCoords = _winToVTCoord(position);
+        const auto encodedX = _encodeDefaultCoordinate(vtCoords.X);
+        const auto encodedY = _encodeDefaultCoordinate(vtCoords.Y);
         std::wstring format{ L"\x1b[Mbxy" };
         // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
-        format.at(3) = ' ' + gsl::narrow_cast<short>(_windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
-        format.at(4) = encodedX;
-        format.at(5) = encodedY;
+        til::at(format, 3) = gsl::narrow_cast<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
+        til::at(format, 4) = gsl::narrow_cast<wchar_t>(encodedX);
+        til::at(format, 5) = gsl::narrow_cast<wchar_t>(encodedY);
         return format;
     }
 
@@ -514,7 +514,7 @@ std::wstring TerminalInput::_GenerateUtf8Sequence(const COORD position,
 // Return value:
 // - true if we were able to successfully generate a sequence.
 // On success, caller is responsible for delete[]ing *ppwchSequence.
-std::wstring TerminalInput::_GenerateSGRSequence(const COORD position,
+std::wstring TerminalInput::_GenerateSGRSequence(const til::point position,
                                                  const unsigned int button,
                                                  const bool isDown,
                                                  const bool isHover,

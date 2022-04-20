@@ -29,7 +29,7 @@ static const wchar_t* s_pwszInputExpected;
 
 static wchar_t s_pwszExpectedBuffer[BYTE_MAX]; // big enough for anything
 
-static COORD s_rgTestCoords[] = {
+static til::point s_rgTestCoords[] = {
     { 0, 0 },
     { 0, 1 },
     { 1, 1 },
@@ -302,7 +302,7 @@ public:
 
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
 
@@ -321,7 +321,7 @@ public:
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
 
@@ -340,7 +340,7 @@ public:
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
 
@@ -383,12 +383,12 @@ public:
 
         mouseInput->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, true);
 
-        short MaxCoord = SHORT_MAX - 33;
+        auto MaxCoord = SHORT_MAX - 33;
 
         mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -407,7 +407,7 @@ public:
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -426,7 +426,7 @@ public:
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -476,7 +476,7 @@ public:
         mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
@@ -490,7 +490,7 @@ public:
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
@@ -509,7 +509,7 @@ public:
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
@@ -554,7 +554,7 @@ public:
 
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -572,10 +572,10 @@ public:
 
         // Default Tracking, UTF8 Encoding
         mouseInput->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, true);
-        short MaxCoord = SHORT_MAX - 33;
+        auto MaxCoord = SHORT_MAX - 33;
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -596,7 +596,7 @@ public:
         fExpectedKeyHandled = true; // SGR Mode should be able to handle any arbitrary coords.
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);

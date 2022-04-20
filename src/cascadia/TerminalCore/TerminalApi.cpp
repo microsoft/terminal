@@ -41,28 +41,22 @@ Viewport Terminal::GetBufferSize()
     return _activeBuffer().GetSize();
 }
 
-void Terminal::SetCursorPosition(short x, short y)
+void Terminal::SetCursorPosition(til::point pos)
 {
     const auto viewport = _GetMutableViewport();
-    const auto viewOrigin = viewport.Origin();
-    const short absoluteX = viewOrigin.X + x;
-    const short absoluteY = viewOrigin.Y + y;
-    COORD newPos{ absoluteX, absoluteY };
+    const til::point viewOrigin{ viewport.Origin() };
+    auto newPos = til::unwrap_coord(viewOrigin + pos);
     viewport.Clamp(newPos);
     _activeBuffer().GetCursor().SetPosition(newPos);
 }
 
-COORD Terminal::GetCursorPosition()
+til::point Terminal::GetCursorPosition()
 {
-    const auto absoluteCursorPos = _activeBuffer().GetCursor().GetPosition();
+    const til::point absoluteCursorPos{ _activeBuffer().GetCursor().GetPosition() };
     const auto viewport = _GetMutableViewport();
-    const auto viewOrigin = viewport.Origin();
-    const short relativeX = absoluteCursorPos.X - viewOrigin.X;
-    const short relativeY = absoluteCursorPos.Y - viewOrigin.Y;
-    COORD newPos{ relativeX, relativeY };
-
+    const til::point viewOrigin{ viewport.Origin() };
     // TODO assert that the coord is > (0, 0) && <(view.W, view.H)
-    return newPos;
+    return absoluteCursorPos - viewOrigin;
 }
 
 // Method Description:
@@ -97,21 +91,17 @@ void Terminal::CursorLineFeed(const bool withReturn)
 // - count, the number of characters to delete
 // Return value:
 // - <none>
-void Terminal::DeleteCharacter(const size_t count)
+void Terminal::DeleteCharacter(const til::CoordType count)
 {
-    SHORT dist;
-    THROW_IF_FAILED(SizeTToShort(count, &dist));
     const auto cursorPos = _activeBuffer().GetCursor().GetPosition();
     const auto copyToPos = cursorPos;
-    const COORD copyFromPos{ cursorPos.X + dist, cursorPos.Y };
+    const til::point copyFromPos{ cursorPos.X + count, cursorPos.Y };
     const auto viewport = _GetMutableViewport();
 
     const auto sourceWidth = viewport.RightExclusive() - copyFromPos.X;
-    SHORT width;
-    THROW_IF_FAILED(UIntToShort(sourceWidth, &width));
 
     // Get a rectangle of the source
-    auto source = Viewport::FromDimensions(copyFromPos, width, 1);
+    auto source = Viewport::FromDimensions(til::unwrap_coord(copyFromPos), gsl::narrow<short>(sourceWidth), 1);
 
     // Get a rectangle of the target
     const auto target = Viewport::FromDimensions(copyToPos, source.Dimensions());
@@ -137,28 +127,23 @@ void Terminal::DeleteCharacter(const size_t count)
 // - count, the number of spaces to insert
 // Return value:
 // - <none>
-void Terminal::InsertCharacter(const size_t count)
+void Terminal::InsertCharacter(const til::CoordType count)
 {
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
     // that does the 'move a region from here to there' operation
     // TODO: GitHub issue #2163
-    SHORT dist;
-    THROW_IF_FAILED(SizeTToShort(count, &dist));
     const auto cursorPos = _activeBuffer().GetCursor().GetPosition();
     const auto copyFromPos = cursorPos;
-    const COORD copyToPos{ cursorPos.X + dist, cursorPos.Y };
+    const til::point copyToPos{ cursorPos.X + count, cursorPos.Y };
     const auto viewport = _GetMutableViewport();
     const auto sourceWidth = viewport.RightExclusive() - copyFromPos.X;
-    SHORT width;
-    THROW_IF_FAILED(UIntToShort(sourceWidth, &width));
 
     // Get a rectangle of the source
-    auto source = Viewport::FromDimensions(copyFromPos, width, 1);
-    const auto sourceOrigin = source.Origin();
+    auto source = Viewport::FromDimensions(copyFromPos, gsl::narrow<short>(sourceWidth), 1);
 
     // Get a rectangle of the target
-    const auto target = Viewport::FromDimensions(copyToPos, source.Dimensions());
+    const auto target = Viewport::FromDimensions(til::unwrap_coord(copyToPos), source.Dimensions());
     const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
 
     auto sourcePos = source.GetWalkOrigin(walkDirection);
@@ -170,16 +155,16 @@ void Terminal::InsertCharacter(const size_t count)
         const auto data = OutputCell(*(_activeBuffer().GetCellDataAt(sourcePos)));
         _activeBuffer().Write(OutputCellIterator({ &data, 1 }), targetPos);
     } while (source.WalkInBounds(sourcePos, walkDirection) && target.WalkInBounds(targetPos, walkDirection));
-    const auto eraseIter = OutputCellIterator(UNICODE_SPACE, _activeBuffer().GetCurrentAttributes(), dist);
+    const auto eraseIter = OutputCellIterator(UNICODE_SPACE, _activeBuffer().GetCurrentAttributes(), count);
     _activeBuffer().Write(eraseIter, cursorPos);
 }
 
-void Terminal::EraseCharacters(const size_t numChars)
+void Terminal::EraseCharacters(const til::CoordType numChars)
 {
     const auto absoluteCursorPos = _activeBuffer().GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
-    const short distanceToRight = viewport.RightExclusive() - absoluteCursorPos.X;
-    const short fillLimit = std::min(static_cast<short>(numChars), distanceToRight);
+    const auto distanceToRight = viewport.RightExclusive() - absoluteCursorPos.X;
+    const auto fillLimit = std::min(numChars, distanceToRight);
     const auto eraseIter = OutputCellIterator(UNICODE_SPACE, _activeBuffer().GetCurrentAttributes(), fillLimit);
     _activeBuffer().Write(eraseIter, absoluteCursorPos);
 }
@@ -198,7 +183,7 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
 {
     const auto cursorPos = _activeBuffer().GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
-    COORD startPos = { 0 };
+    til::point startPos;
     startPos.Y = cursorPos.Y;
     // nlength determines the number of spaces we need to write
     DWORD nlength = 0;
@@ -224,7 +209,7 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
     const auto eraseIter = OutputCellIterator(UNICODE_SPACE, _activeBuffer().GetCurrentAttributes(), nlength);
 
     // Explicitly turn off end-of-line wrap-flag-setting when erasing cells.
-    _activeBuffer().Write(eraseIter, startPos, false);
+    _activeBuffer().Write(eraseIter, til::unwrap_coord(startPos), false);
     return true;
 }
 
@@ -275,7 +260,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         short sNewTop = coordLastChar.Y + 1;
 
         // Increment the circular buffer only if the new location of the viewport would be 'below' the buffer
-        const short delta = (sNewTop + viewport.Height()) - (_activeBuffer().GetSize().Height());
+        const auto delta = (sNewTop + viewport.Height()) - (_activeBuffer().GetSize().Height());
         for (auto i = 0; i < delta; i++)
         {
             _activeBuffer().IncrementCircularBuffer();
@@ -297,7 +282,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         // and we have to make sure we erase that text
         const auto eraseStart = viewport.Height();
         const auto eraseEnd = _activeBuffer().GetLastNonSpaceCharacter(viewport).Y;
-        for (SHORT i = eraseStart; i <= eraseEnd; i++)
+        for (auto i = eraseStart; i <= eraseEnd; i++)
         {
             _activeBuffer().GetRowByOffset(i).Reset(_activeBuffer().GetCurrentAttributes());
         }
@@ -316,7 +301,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     // Move the viewport, adjust the scroll bar if needed, and restore the old cursor position
     _mutableViewport = Viewport::FromExclusive(newWin);
     Terminal::_NotifyScrollEvent();
-    SetCursorPosition(relativeCursor.X, relativeCursor.Y);
+    SetCursorPosition(til::point{ relativeCursor });
 
     return true;
 }

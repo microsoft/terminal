@@ -42,7 +42,7 @@ public:
 
     void SetAutoWrapMode(const bool wrapAtEOL) override;
 
-    void SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
+    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
 
     void WarningBell() override;
 
