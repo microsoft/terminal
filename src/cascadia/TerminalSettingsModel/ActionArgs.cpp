@@ -638,7 +638,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 fmt::format(std::wstring_view(RS_(L"AddMarkWithColorCommandKey")),
                             til::color{ Color().Value() }.ToHexString(true))
             };
-
         }
         else
         {

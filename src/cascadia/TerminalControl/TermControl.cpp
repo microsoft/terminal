@@ -425,7 +425,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _showMarksInScrollbar = settings.ShowMarks();
         // Clear out all the current marks
         ScrollBarCanvas().Children().Clear();
-        // When we hotreload the settings, the core will send us a scrollbar
+        // When we hot reload the settings, the core will send us a scrollbar
         // update. If we enabled scrollbar marks, then great, when we handle
         // that message, we'll redraw them.
     }
