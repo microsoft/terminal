@@ -23,6 +23,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
+// C4722 - destructor never returns, potential memory leak
+// We're just exiting the whole process, so I think we're okay, thanks.
+#pragma warning(push)
+#pragma warning(disable : 4722)
     ContentProcess::~ContentProcess()
     {
         // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
@@ -31,8 +35,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // singular ContentProcess instance. When we're destructed, it's because
         // every other window process was done with us. We can die now, knowing
         // that our job is complete.
+
         ExitProcess(0);
     }
+#pragma warning(pop)
 
     Control::ControlInteractivity ContentProcess::GetInteractivity()
     {

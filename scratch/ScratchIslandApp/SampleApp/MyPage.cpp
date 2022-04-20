@@ -149,7 +149,7 @@ namespace winrt::SampleApp::implementation
         }
         catch (winrt::hresult_error hr)
         {
-            _writeToLog(L"CreateInstance the ContentProces object");
+            _writeToLog(L"CreateInstance the ContentProcess object");
             _writeToLog(fmt::format(L"    HR ({}): {}", hr.code(), hr.message().c_str()));
             co_return; // be sure to co_return or we'll fall through to the part where we clear the log
         }

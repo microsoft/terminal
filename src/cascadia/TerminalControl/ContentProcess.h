@@ -9,10 +9,10 @@
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ContentProcess : ContentProcessT<ContentProcess>
-
     {
         ContentProcess();
         ~ContentProcess();
+
         bool Initialize(Control::IControlSettings settings,
                         Control::IControlAppearance unfocusedAppearance,
                         TerminalConnection::ConnectionInformation connectionInfo);
