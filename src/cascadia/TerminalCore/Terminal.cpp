@@ -218,6 +218,11 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     _defaultCursorShape = cursorShape;
+
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks whose color
+    // may have changed.
+    _NotifyScrollEvent();
 }
 
 // Method Description:
@@ -1427,6 +1432,11 @@ void Terminal::ApplyScheme(const Scheme& colorScheme)
     _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
 
     _renderSettings.MakeAdjustedColorArray();
+
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks whose color
+    // may have changed.
+    _NotifyScrollEvent();
 }
 
 bool Terminal::_inAltBuffer() const noexcept
@@ -1464,7 +1474,8 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
 
     _scrollMarks.push_back(m);
 
-    // Tell the control that the scrollbar has somehow changed. Used as a hack.
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
 }
 
@@ -1491,17 +1502,52 @@ void Terminal::ClearMark()
                                       }),
                        _scrollMarks.end());
 
-    // Tell the control that the scrollbar has somehow changed. Used as a hack.
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
 }
 void Terminal::ClearAllMarks()
 {
     _scrollMarks.clear();
-    // Tell the control that the scrollbar has somehow changed. Used as a hack.
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
 }
 
 const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const
 {
     return _scrollMarks;
+}
+
+til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const
+{
+    if (mark.color.has_value())
+    {
+        return *mark.color;
+    }
+
+    switch (mark.category)
+    {
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Prompt:
+    {
+        return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
+    }
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Error:
+    {
+        return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
+    }
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Warning:
+    {
+        return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
+    }
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Success:
+    {
+        return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
+    }
+    default:
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Info:
+    {
+        return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
+    }
+    }
 }

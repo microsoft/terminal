@@ -168,9 +168,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 Windows::UI::Xaml::Shapes::Rectangle r;
                 Media::SolidColorBrush brush{};
-                brush.Color(static_cast<til::color>(m.Color));
+                // Sneaky: technically, a mark doesn't need to have a color set,
+                // it might want to just use the color from the palette for that
+                // kind of mark. Fortunately, ControlCore is kind enough to
+                // pre-evaluate that for us, and shove the real value into the
+                // Color member, regardless if the mark has a literal value set.
+                brush.Color(static_cast<til::color>(m.Color.Color));
                 r.Fill(brush);
-                r.Width(16.0f / 3.0f); // pip width
+                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
                 r.Height(2);
                 const auto markRow = m.Start.Y;
                 const auto fractionalHeight = markRow / totalBufferRows;
@@ -417,7 +422,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                              newMargin.Bottom });
         }
 
-        _showMarksInScrollbar = settings.ShowMarks(); // TODO! hot reload me
+        _showMarksInScrollbar = settings.ShowMarks();
+        // Clear out all the current marks
+        ScrollBarCanvas().Children().Clear();
+        // When we hotreload the settings, the core will send us a scrollbar
+        // update. If we enabled scrollbar marks, then great, when we handle
+        // that message, we'll redraw them.
     }
 
     // Method Description:

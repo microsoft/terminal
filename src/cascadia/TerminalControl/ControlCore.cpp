@@ -37,6 +37,28 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    static constexpr winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
+    {
+        Core::OptionalColor result;
+        result.Color = c;
+        result.HasValue = true;
+        return result;
+    }
+    static constexpr winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
+    {
+        Core::OptionalColor result;
+        if (c.has_value())
+        {
+            result.Color = *c;
+            result.HasValue = true;
+        }
+        else
+        {
+            result.HasValue = false;
+        }
+        return result;
+    }
+
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
     // See microsoft/terminal#2066 for more info.
     static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
@@ -1737,11 +1759,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         for (const auto& mark : internalMarks)
         {
             Control::ScrollMark m{};
-            m.Color = winrt::Microsoft::Terminal::Core::Color(mark.color);
+
+            // sneaky: always evaluate the color of the mark to a real value
+            // before shoving it into the optional. If the mark doesn't have a
+            // specific color set, we'll use the value from the color table
+            // that's appropriate for this category of mark. If we do have a
+            // color set, then great we'll use that. The TermControl can then
+            // always use the value in the Mark regardless if it was actually
+            // set or not.
+            m.Color = OptionalFromColor(_terminal->GetColorForMark(mark));
             m.Start = mark.start.to_core_point();
             m.End = mark.end.to_core_point();
-            // m.Category = (size_t)mark.category; // TODO! whatever
-            m.Comment = winrt::hstring(mark.comment);
 
             v.Append(m);
         }
@@ -1752,7 +1780,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::AddMark(const Control::ScrollMark& mark)
     {
         ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark m{};
-        m.color = til::color{ mark.Color };
+
+        if (mark.Color.HasValue)
+        {
+            m.color = til::color{ mark.Color.Color };
+        }
 
         if (HasSelection())
         {
@@ -1764,7 +1796,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
         }
 
-        // The version of this that only accepts a ScrollMark is buffer2
+        // The version of this that only accepts a ScrollMark will automatically
+        // set the start & end to the cursor position.
         _terminal->AddMark(m, m.start, m.end);
     }
     void ControlCore::ClearMark() { _terminal->ClearMark(); }

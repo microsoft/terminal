@@ -482,13 +482,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Prompt = 0,
         Error = 1,
         Warning = 2,
-        Info = 3
+        Success = 3,
+        Info = 4
     };
 
     struct ScrollMark
     {
-        // TODO! optional color
-        til::color color;
+        std::optional<til::color> color;
         til::point start;
         til::point end; // exclusive
         MarkCategory category;

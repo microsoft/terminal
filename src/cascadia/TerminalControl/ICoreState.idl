@@ -10,13 +10,15 @@ namespace Microsoft.Terminal.Control
         Warning = 2,
         Info = 3
     };
+
     struct ScrollMark
     {
-        Microsoft.Terminal.Core.Color Color;
+        // There are other members of DispatchTypes::ScrollMark, but these are
+        // all we need to expose up and set downwards currently. Additional
+        // members can be bubbled as necessary.
         Microsoft.Terminal.Core.Point Start;
         Microsoft.Terminal.Core.Point End; // exclusive
-        MarkCategory Category;
-        String Comment;
+        Microsoft.Terminal.Core.OptionalColor Color;
     };
 
     // These are properties of the TerminalCore that should be queryable by the

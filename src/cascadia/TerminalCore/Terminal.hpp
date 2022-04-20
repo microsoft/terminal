@@ -150,6 +150,7 @@ public:
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark);
     void ClearMark();
     void ClearAllMarks();
+    til::color GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const;
 
 #pragma endregion
 

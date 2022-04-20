@@ -24,6 +24,15 @@ namespace Microsoft.Terminal.Core
         UInt8 A;
     };
 
+    // Yes, this is also just an IReference<Color>. However, IReference has some
+    // weird ownership semantics that just make it a pain for something as
+    // simple as "maybe this color doesn't have a value set".
+    struct OptionalColor
+    {
+        Boolean HasValue;
+        Microsoft.Terminal.Core.Color Color;
+    };
+
     // TerminalCore declares its own Color struct to avoid depending on
     // Windows.UI. Windows.Foundation.Point also exists, but it's composed of
     // floating-point coordinates, when we almost always need integer coordinates.

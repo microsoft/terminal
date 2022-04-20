@@ -364,7 +364,8 @@ namespace winrt::TerminalApp::implementation
         {
             _ApplyToActiveControls([realArgs](auto& control) {
                 Control::ScrollMark mark;
-                mark.Color = realArgs.Color();
+                mark.Color.Color = realArgs.Color();
+                mark.Color.HasValue = true;
                 control.AddMark(mark);
             });
         }
