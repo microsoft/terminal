@@ -276,12 +276,12 @@ namespace winrt::TerminalApp::implementation
                 const auto marks{ control.ScrollMarks() };
 
                 std::optional<Control::ScrollMark> tgt{ std::nullopt };
-
-                switch (realArgs.Direction())
+                const auto dir{ realArgs.Direction() };
+                switch (dir)
                 {
                 case ScrollToMarkDirection::Last:
                 {
-                    int highest = 0;
+                    int highest = currentOffset;
                     for (const auto& mark : marks)
                     {
                         const auto newY = mark.Start.Y;
@@ -341,6 +341,17 @@ namespace winrt::TerminalApp::implementation
                 if (tgt.has_value())
                 {
                     control.ScrollViewport(tgt->Start.Y);
+                }
+                else
+                {
+                    if (dir == ScrollToMarkDirection::Last || dir == ScrollToMarkDirection::Next)
+                    {
+                        control.ScrollViewport(control.BufferHeight());
+                    }
+                    else if (dir == ScrollToMarkDirection::First || dir == ScrollToMarkDirection::Previous)
+                    {
+                        control.ScrollViewport(0);
+                    }
                 }
             });
         }
