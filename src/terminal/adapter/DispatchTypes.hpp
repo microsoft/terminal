@@ -487,16 +487,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     struct ScrollMark
     {
+        // TODO! optional color
         til::color color;
         til::point start;
         til::point end; // exclusive
-        uint64_t timestamp;
         MarkCategory category;
-        std::wstring comment;
-        // shape? Does that even make sense?
-        // * Arrow (iterm2),
-        // * bracket (terminal.app prompts),
-        // * bar(terminal.app mark),
-        // * brace?
+        // Other things we may want to think about in the future are listed in
+        // GH#11000
     };
 }

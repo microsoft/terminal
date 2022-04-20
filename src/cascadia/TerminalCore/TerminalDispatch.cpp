@@ -599,6 +599,8 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string)
 
 // Method Description:
 // - Performs a iTerm2 action
+// - Currently, the actions we support are:
+//   * `OSC1337;SetMark`: mark a line as a prompt line
 // Arguments:
 // - string: contains the parameters that define which action we do
 // Return Value:
@@ -618,7 +620,6 @@ bool TerminalDispatch::DoITerm2Action(const std::wstring_view string)
     {
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
-        mark.color = til::color(255, 255, 255); // should this be configurable?
         _terminalApi.AddMark(mark);
         return true;
     }

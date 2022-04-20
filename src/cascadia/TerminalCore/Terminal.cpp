@@ -683,14 +683,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         return false;
     }
 
-    //if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
-    //{
-    //    DispatchTypes::ScrollMark mark;
-    //    mark.category = DispatchTypes::MarkCategory::Prompt;
-    //    mark.color = til::color(255, 255, 255); // should this be configurable?
-    //    AddMark(mark);
-    //}
-
     KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
@@ -745,11 +737,19 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
+    // GH#1527: When the user has automark prompts enabled, we're going to try
+    // and heuristically detect if this was the line the prompt was on.
+    // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
+    //   as prompts. That's omitted for now.)
+    // * AND we're not in the alt buffer
+    //
+    // Then treat this line like it's a prompt mark.
     if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
     {
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
-        mark.color = til::color(255, 255, 255); // should this be configurable?
+        // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
+        // color for any MarkCategory::Prompt marks without one set.
         AddMark(mark);
     }
 
@@ -1461,7 +1461,6 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
     DispatchTypes::ScrollMark m = mark;
     m.start = start;
     m.end = end;
-    // // m.timestamp = now()
 
     _scrollMarks.push_back(m);
 

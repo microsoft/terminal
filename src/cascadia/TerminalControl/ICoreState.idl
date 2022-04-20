@@ -15,7 +15,6 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Core.Color Color;
         Microsoft.Terminal.Core.Point Start;
         Microsoft.Terminal.Core.Point End; // exclusive
-        // UInt64 timestamp;
         MarkCategory Category;
         String Comment;
     };
