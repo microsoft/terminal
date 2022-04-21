@@ -56,12 +56,12 @@ bool Terminal::IsCursorOn() const noexcept
     return cursor.IsOn();
 }
 
-ULONG Terminal::GetCursorPixelWidth() const noexcept
+UINT Terminal::GetCursorPixelWidth() const noexcept
 {
     return 1;
 }
 
-ULONG Terminal::GetCursorHeight() const noexcept
+UINT Terminal::GetCursorHeight() const noexcept
 {
     return _activeBuffer().GetCursor().GetSize();
 }

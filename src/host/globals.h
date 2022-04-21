@@ -53,7 +53,7 @@ public:
     SHORT sHorizontalScrollSize;
 
     int dpi = USER_DEFAULT_SCREEN_DPI;
-    ULONG cursorPixelWidth = 1;
+    UINT cursorPixelWidth = 1;
 
     NTSTATUS ntstatusConsoleInputInitStatus;
     wil::unique_event_nothrow hConsoleInputInitEvent;

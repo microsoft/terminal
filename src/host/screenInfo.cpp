@@ -1613,7 +1613,7 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - Visible - cursor visibility
 // Return Value:
 // - None
-void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
+void SCREEN_INFORMATION::SetCursorInformation(const UINT Size,
                                               const bool Visible) noexcept
 {
     Cursor& cursor = _textBuffer->GetCursor();

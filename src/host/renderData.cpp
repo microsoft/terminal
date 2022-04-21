@@ -152,12 +152,12 @@ bool RenderData::IsCursorOn() const noexcept
 // - <none>
 // Return Value:
 // - height of the cursor, out of 100
-ULONG RenderData::GetCursorHeight() const noexcept
+UINT RenderData::GetCursorHeight() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     // Determine cursor height
-    ULONG ulHeight = cursor.GetSize();
+    auto ulHeight = cursor.GetSize();
 
     // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
     // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
@@ -198,7 +198,7 @@ CursorType RenderData::GetCursorStyle() const noexcept
 // - <none>
 // Return Value:
 // - The suggested width of the cursor in pixels.
-ULONG RenderData::GetCursorPixelWidth() const noexcept
+UINT RenderData::GetCursorPixelWidth() const noexcept
 {
     return ServiceLocator::LocateGlobals().cursorPixelWidth;
 }

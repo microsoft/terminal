@@ -183,7 +183,7 @@ public:
     const Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() const;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine();
 
-    void SetCursorInformation(const ULONG Size,
+    void SetCursorInformation(const UINT Size,
                               const bool Visible) noexcept;
 
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;

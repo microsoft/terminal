@@ -160,7 +160,7 @@ public:
     [[nodiscard]] virtual HRESULT SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept = 0;
 
     virtual void GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
-                                          ULONG& size,
+                                          UINT& size,
                                           bool& isVisible) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT SetConsoleCursorInfoImpl(IConsoleOutputObject& context,

@@ -310,7 +310,7 @@ public:
         return false;
     }
 
-    ULONG GetCursorHeight() const noexcept override
+    UINT GetCursorHeight() const noexcept override
     {
         return 42ul;
     }
@@ -320,7 +320,7 @@ public:
         return CursorType::FullBox;
     }
 
-    ULONG GetCursorPixelWidth() const noexcept override
+    UINT GetCursorPixelWidth() const noexcept override
     {
         return 12ul;
     }

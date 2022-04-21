@@ -150,7 +150,7 @@ public:
     [[nodiscard]] HRESULT SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept override;
 
     void GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
-                                  ULONG& size,
+                                  UINT& size,
                                   bool& isVisible) noexcept override;
 
     [[nodiscard]] HRESULT SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,

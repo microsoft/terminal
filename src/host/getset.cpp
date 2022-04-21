@@ -147,7 +147,7 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
 // - size - The size as a percentage of the total possible height (0-100 for percentages).
 // - isVisible - Whether the cursor is displayed or hidden
 void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
-                                           ULONG& size,
+                                           UINT& size,
                                            bool& isVisible) noexcept
 {
     try

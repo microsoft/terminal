@@ -2538,11 +2538,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
     if (SUCCEEDED(hr))
     {
-        // Save old cursor size before we delete it
-        ULONG const ulSize = oldCursor.GetSize();
-
-        // Set size back to real size as it will be taking over the rendering duties.
-        newCursor.SetSize(ulSize);
+        // Restore size as it will be taking over the rendering duties.
+        newCursor.SetSize(oldCursor.GetSize());
     }
 
     return hr;

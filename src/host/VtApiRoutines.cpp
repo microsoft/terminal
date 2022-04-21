@@ -321,7 +321,7 @@ void VtApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
 }
 
 void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
-                                             ULONG& size,
+                                             UINT& size,
                                              bool& isVisible) noexcept
 {
     // TODO GH10001: good luck capturing this out of the input buffer when it comes back in.

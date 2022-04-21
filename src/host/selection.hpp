@@ -172,7 +172,7 @@ private:
     // -- Saved Cursor Data --
     // Saved when a selection is started for restoration later. Position is in character coordinates, not pixels.
     COORD _coordSavedCursorPosition;
-    ULONG _ulSavedCursorSize;
+    UINT _ulSavedCursorSize;
     bool _fSavedCursorVisible;
     CursorType _savedCursorType;
 
