@@ -304,6 +304,7 @@
               Grid.Row="0"
               Grid.Column="1"
               Margin="8"
+              Padding="0,8,0,0"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Top"
               Background="{ThemeResource FlyoutPresenterBackground}"
@@ -320,25 +321,27 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid Margin="8">
-                <TextBox x:Name="_searchBox"
-                         Padding="18,8,8,7"
-                         IsSpellCheckEnabled="False"
-                         PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
-                         Text=""
-                         TextChanged="_filterTextChanged" />
+            <TextBox x:Name="_searchBox"
+                     Grid.Row="0"
+                     Margin="8,0,8,8"
+                     Padding="18,8,8,8"
+                     IsSpellCheckEnabled="False"
+                     PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
+                     Text=""
+                     TextChanged="_filterTextChanged" />
 
-                <TextBlock x:Name="_prefixCharacter"
-                           Margin="8,0,0,0"
-                           HorizontalAlignment="Left"
-                           VerticalAlignment="Center"
-                           FontSize="14"
-                           Text="{x:Bind PrefixCharacter, Mode=OneWay}"
-                           Visibility="{x:Bind PrefixCharacter, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}" />
-            </Grid>
+            <TextBlock x:Name="_prefixCharacter"
+                       Grid.Row="0"
+                       Margin="8,0,8,8"
+                       Padding="8,0,0,0"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Center"
+                       FontSize="14"
+                       Text="{x:Bind PrefixCharacter, Mode=OneWay}"
+                       Visibility="{x:Bind PrefixCharacter, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}" />
 
             <StackPanel Grid.Row="1"
-                        Padding="8,0,8,8"
+                        Margin="8,0,8,8"
                         Orientation="Horizontal"
                         Visibility="{x:Bind ParentCommandName, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}">
 
@@ -353,7 +356,6 @@
                 </Button>
 
                 <TextBlock x:Name="_parentCommandText"
-                           Grid.Row="1"
                            Padding="16,4"
                            VerticalAlignment="Center"
                            FontStyle="Italic"
@@ -362,6 +364,7 @@
 
             <TextBlock x:Name="_noMatchesText"
                        Grid.Row="1"
+                       Margin="8,0,8,8"
                        Padding="16,12"
                        FontStyle="Italic"
                        Text="{x:Bind NoMatchesText, Mode=OneWay}"
@@ -386,7 +389,6 @@
             <ListView x:Name="_filteredActionsView"
                       Grid.Row="2"
                       MinHeight="8"
-                      Margin="0"
                       Padding="4,-2,4,6"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
