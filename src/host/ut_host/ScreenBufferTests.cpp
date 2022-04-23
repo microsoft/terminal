@@ -80,6 +80,8 @@ class ScreenBufferTests
         auto defaultSize = COORD{ CommonState::s_csWindowWidth, CommonState::s_csWindowHeight };
         currentBuffer.SetViewport(Viewport::FromDimensions(defaultSize), true);
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
+        // Make sure the virtual bottom is correctly positioned.
+        currentBuffer.UpdateBottom();
 
         return true;
     }
