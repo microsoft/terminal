@@ -282,7 +282,7 @@ winrt::guid Profile::_GenerateGuidForProfile(const std::wstring_view& name, cons
     // If we have a _source, then we can from a dynamic profile generator. Use
     // our source to build the namespace guid, instead of using the default GUID.
 
-    const GUID namespaceGuid = !source.empty() ?
+    const auto namespaceGuid = !source.empty() ?
                                    Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source))) :
                                    RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
 
@@ -300,12 +300,12 @@ winrt::guid Profile::_GenerateGuidForProfile(const std::wstring_view& name, cons
 Json::Value Profile::ToJson() const
 {
     // Initialize the json with the appearance settings
-    Json::Value json{ winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->ToJson() };
+    auto json{ winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->ToJson() };
 
     // GH #9962:
     //   If the settings.json was missing, when we load the dynamic profiles, they are completely empty.
     //   This caused us to serialize empty profiles "{}" on accident.
-    const bool writeBasicSettings{ !Source().empty() };
+    const auto writeBasicSettings{ !Source().empty() };
 
     // Profile-specific Settings
     JsonUtils::SetValueForKey(json, NameKey, writeBasicSettings ? Name() : _Name);

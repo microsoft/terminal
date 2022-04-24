@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     // You can put your settings.json or state.json in this directory.
     std::filesystem::path GetBaseSettingsPath()
     {
-        static std::filesystem::path baseSettingsPath = []() {
+        static auto baseSettingsPath = []() {
             wil::unique_cotaskmem_string localAppDataFolder;
             // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
             // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
@@ -86,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         // * ReadFile() always returns the requested amount of data (unless the file is smaller)
         // * It's unlikely that the file was changed between GetFileSize() and ReadFile()
         // -> Lets add a retry-loop just in case, to not fail if the file size changed while reading.
-        for (int i = 0; i < 3; ++i)
+        for (auto i = 0; i < 3; ++i)
         {
             wil::unique_hfile file{ CreateFileW(path.c_str(),
                                                 GENERIC_READ,
@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // ReadUTF8File will notice it.
             if (elevatedOnly)
             {
-                const bool hadExpectedPermissions{ _isOwnedByAdministrators(file.get()) };
+                const auto hadExpectedPermissions{ _isOwnedByAdministrators(file.get()) };
                 if (!hadExpectedPermissions)
                 {
                     // Close the handle

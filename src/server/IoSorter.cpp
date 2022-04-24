@@ -20,7 +20,7 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
 {
     NTSTATUS Status;
     HRESULT hr;
-    BOOL ReplyPending = FALSE;
+    auto ReplyPending = FALSE;
 
     ZeroMemory(&pMsg->State, sizeof(pMsg->State));
     ZeroMemory(&pMsg->Complete, sizeof(CD_IO_COMPLETE));

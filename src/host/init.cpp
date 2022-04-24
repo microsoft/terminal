@@ -35,7 +35,7 @@ void InitSideBySide()
     actctx.lpResourceName = MAKEINTRESOURCE(IDR_SYSTEM_MANIFEST);
     actctx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
 
-    HANDLE const hActCtx = CreateActCtxW(&actctx);
+    const auto hActCtx = CreateActCtxW(&actctx);
 
     // The error value is INVALID_HANDLE_VALUE.
     // ACTCTX_FLAG_SET_PROCESS_DEFAULT has nothing to return upon success, so it returns nullptr.

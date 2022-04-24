@@ -1372,7 +1372,7 @@ namespace winrt::TerminalApp::implementation
 
             auto tab{ ptrTab };
 
-            std::optional<winrt::Windows::UI::Color> currentColor = tab->GetTabColor();
+            auto currentColor = tab->GetTabColor();
             if (currentColor.has_value())
             {
                 tab->_ApplyTabColor(currentColor.value());

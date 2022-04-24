@@ -194,7 +194,7 @@ class CopyToCharPopupTests
         cookedReadData._commandHistory = m_pHistory;
 
         const wchar_t* const expectedBufPtr = cookedReadData._bufPtr;
-        const size_t expectedBytesRead = cookedReadData._bytesRead;
+        const auto expectedBytesRead = cookedReadData._bytesRead;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 

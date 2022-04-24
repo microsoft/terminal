@@ -36,8 +36,8 @@ class PointTests
 
     TEST_METHOD(SignedConstruct)
     {
-        const til::CoordType x = -5;
-        const til::CoordType y = -10;
+        const auto x = -5;
+        const auto y = -10;
 
         const til::point pt{ x, y };
         VERIFY_ARE_EQUAL(x, pt.x);
@@ -535,7 +535,7 @@ class PointTests
         Log::Comment(L"Typical situation.");
         {
             const til::point pt{ 5, 10 };
-            POINT val = pt.to_win32_point();
+            auto val = pt.to_win32_point();
             VERIFY_ARE_EQUAL(5, val.x);
             VERIFY_ARE_EQUAL(10, val.y);
         }
@@ -543,23 +543,23 @@ class PointTests
         Log::Comment(L"Fit max x into POINT (may overflow).");
         {
             constexpr auto x = std::numeric_limits<til::CoordType>().max();
-            const til::CoordType y = 10;
+            const auto y = 10;
             const til::point pt{ x, y };
 
             // On some platforms, til::CoordType will fit inside x/y
-            const bool overflowExpected = x > std::numeric_limits<decltype(POINT::x)>().max();
+            const auto overflowExpected = x > std::numeric_limits<decltype(POINT::x)>().max();
 
             if (overflowExpected)
             {
                 auto fn = [&]() {
-                    POINT val = pt.to_win32_point();
+                    auto val = pt.to_win32_point();
                 };
 
                 VERIFY_THROWS(fn(), gsl::narrowing_error);
             }
             else
             {
-                POINT val = pt.to_win32_point();
+                auto val = pt.to_win32_point();
                 VERIFY_ARE_EQUAL(x, val.x);
             }
         }
@@ -567,23 +567,23 @@ class PointTests
         Log::Comment(L"Fit max y into POINT (may overflow).");
         {
             constexpr auto y = std::numeric_limits<til::CoordType>().max();
-            const til::CoordType x = 10;
+            const auto x = 10;
             const til::point pt{ x, y };
 
             // On some platforms, til::CoordType will fit inside x/y
-            const bool overflowExpected = y > std::numeric_limits<decltype(POINT::y)>().max();
+            const auto overflowExpected = y > std::numeric_limits<decltype(POINT::y)>().max();
 
             if (overflowExpected)
             {
                 auto fn = [&]() {
-                    POINT val = pt.to_win32_point();
+                    auto val = pt.to_win32_point();
                 };
 
                 VERIFY_THROWS(fn(), gsl::narrowing_error);
             }
             else
             {
-                POINT val = pt.to_win32_point();
+                auto val = pt.to_win32_point();
                 VERIFY_ARE_EQUAL(y, val.y);
             }
         }
@@ -594,7 +594,7 @@ class PointTests
         Log::Comment(L"Typical situation.");
         {
             const til::point pt{ 5, 10 };
-            D2D1_POINT_2F val = pt.to_d2d_point();
+            auto val = pt.to_d2d_point();
             VERIFY_ARE_EQUAL(5, val.x);
             VERIFY_ARE_EQUAL(10, val.y);
         }
@@ -607,7 +607,7 @@ class PointTests
         Log::Comment(L"Multiplication of two things that should be in bounds.");
         {
             const til::point pt{ 5, 10 };
-            const int scale = 23;
+            const auto scale = 23;
 
             const til::point expected{ pt.x * scale, pt.y * scale };
 
@@ -618,7 +618,7 @@ class PointTests
         {
             constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::point pt{ bigSize, static_cast<til::CoordType>(0) };
-            const int scale = 10;
+            const auto scale = 10;
 
             auto fn = [&]() {
                 pt* scale;
@@ -631,7 +631,7 @@ class PointTests
         {
             constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::point pt{ static_cast<til::CoordType>(0), bigSize };
-            const int scale = 10;
+            const auto scale = 10;
 
             auto fn = [&]() {
                 pt* scale;
@@ -643,7 +643,7 @@ class PointTests
         Log::Comment(L"Division of two things that should be in bounds.");
         {
             const til::point pt{ 555, 510 };
-            const int scale = 23;
+            const auto scale = 23;
 
             const til::point expected{ pt.x / scale, pt.y / scale };
 
@@ -653,7 +653,7 @@ class PointTests
         Log::Comment(L"Division by zero");
         {
             const til::point pt{ 1, 1 };
-            const int scale = 0;
+            const auto scale = 0;
 
             auto fn = [&]() {
                 pt / scale;

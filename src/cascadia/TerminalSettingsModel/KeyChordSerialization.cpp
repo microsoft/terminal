@@ -142,9 +142,9 @@ static KeyChord _fromString(std::wstring_view wstr)
         // clang-format on
     };
 
-    VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
-    int32_t vkey = 0;
-    int32_t scanCode = 0;
+    auto modifiers = VirtualKeyModifiers::None;
+    auto vkey = 0;
+    auto scanCode = 0;
 
     while (!wstr.empty())
     {

@@ -45,7 +45,7 @@ void TextAttributeTests::TestRoundtripLegacy()
     WORD expectedLegacy = FOREGROUND_BLUE | BACKGROUND_RED;
     WORD bgOnly = expectedLegacy & BG_ATTRS;
     WORD bgShifted = bgOnly >> 4;
-    BYTE bgByte = (BYTE)(bgShifted);
+    auto bgByte = (BYTE)(bgShifted);
 
     VERIFY_ARE_EQUAL(FOREGROUND_RED, bgByte);
 
@@ -65,9 +65,9 @@ void TextAttributeTests::TestRoundtripMetaBits()
         COMMON_LVB_UNDERSCORE
     };
 
-    for (int i = 0; i < ARRAYSIZE(metaFlags); ++i)
+    for (auto i = 0; i < ARRAYSIZE(metaFlags); ++i)
     {
-        WORD flag = metaFlags[i];
+        auto flag = metaFlags[i];
         WORD expectedLegacy = FOREGROUND_BLUE | BACKGROUND_RED | flag;
         WORD metaOnly = expectedLegacy & META_ATTRS;
         VERIFY_ARE_EQUAL(flag, metaOnly);
@@ -114,9 +114,9 @@ void TextAttributeTests::TestRoundtripExhaustive()
 void TextAttributeTests::TestTextAttributeColorGetters()
 {
     const auto& colorTable = _renderSettings.GetColorTable();
-    const COLORREF red = RGB(255, 0, 0);
-    const COLORREF faintRed = RGB(127, 0, 0);
-    const COLORREF green = RGB(0, 255, 0);
+    const auto red = RGB(255, 0, 0);
+    const auto faintRed = RGB(127, 0, 0);
+    const auto green = RGB(0, 255, 0);
     TextAttribute attr(red, green);
 
     // verify that calculated foreground/background are the same as the direct
@@ -178,8 +178,8 @@ void TextAttributeTests::TestTextAttributeColorGetters()
 void TextAttributeTests::TestReverseDefaultColors()
 {
     const auto& colorTable = _renderSettings.GetColorTable();
-    const COLORREF red = RGB(255, 0, 0);
-    const COLORREF green = RGB(0, 255, 0);
+    const auto red = RGB(255, 0, 0);
+    const auto green = RGB(0, 255, 0);
     TextAttribute attr{};
 
     // verify that calculated foreground/background are the same as the direct
@@ -260,9 +260,9 @@ void TextAttributeTests::TestRoundtripDefaultColors()
 void TextAttributeTests::TestIntenseAsBright()
 {
     const auto& colorTable = _renderSettings.GetColorTable();
-    const COLORREF darkBlack = til::at(colorTable, 0);
-    const COLORREF brightBlack = til::at(colorTable, 8);
-    const COLORREF darkGreen = til::at(colorTable, 2);
+    const auto darkBlack = til::at(colorTable, 0);
+    const auto brightBlack = til::at(colorTable, 8);
+    const auto darkGreen = til::at(colorTable, 2);
 
     TextAttribute attr{};
 

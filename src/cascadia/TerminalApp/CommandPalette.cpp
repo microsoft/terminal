@@ -119,7 +119,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SelectNextItem(const bool moveDown)
     {
         auto selected = _filteredActionsView().SelectedIndex();
-        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
+        const auto numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
 
         // Do not try to select an item if
         // - the list is empty
@@ -1088,11 +1088,11 @@ namespace winrt::TerminalApp::implementation
         // This allows WinUI to nicely animate the ListView as it changes.
         for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.size(); i++)
         {
-            for (uint32_t j = i; j < _filteredActions.Size(); j++)
+            for (auto j = i; j < _filteredActions.Size(); j++)
             {
                 if (_filteredActions.GetAt(j).Item() == actions[i].Item())
                 {
-                    for (uint32_t k = i; k < j; k++)
+                    for (auto k = i; k < j; k++)
                     {
                         _filteredActions.RemoveAt(i);
                     }

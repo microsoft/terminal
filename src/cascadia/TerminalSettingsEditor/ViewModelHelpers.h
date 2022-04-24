@@ -7,7 +7,7 @@ template<typename T>
 struct ViewModelHelper
 {
 public:
-    winrt::event_token PropertyChanged(::const winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler& handler)
+    winrt::event_token PropertyChanged(const ::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler& handler)
     {
         return _propertyChangedHandlers.add(handler);
     }

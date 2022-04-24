@@ -465,6 +465,6 @@
                 { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
                 { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
-        },
+        }
     ]
 }

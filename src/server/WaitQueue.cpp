@@ -74,12 +74,12 @@ bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll)
 bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
                                      const WaitTerminationReason TerminationReason)
 {
-    bool fResult = false;
+    auto fResult = false;
 
     auto it = _blocks.cbegin();
     while (!_blocks.empty() && it != _blocks.cend())
     {
-        ConsoleWaitBlock* const WaitBlock = (*it);
+        const auto WaitBlock = (*it);
         if (nullptr == WaitBlock)
         {
             break;
@@ -114,7 +114,7 @@ bool ConsoleWaitQueue::_NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,
                                     _In_ WaitTerminationReason TerminationReason)
 {
     // Attempt to notify block with the given reason.
-    const bool fResult = pWaitBlock->Notify(TerminationReason);
+    const auto fResult = pWaitBlock->Notify(TerminationReason);
 
     if (fResult)
     {

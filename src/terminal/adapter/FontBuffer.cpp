@@ -584,7 +584,7 @@ std::array<uint16_t, FontBuffer::MAX_HEIGHT> FontBuffer::_generateErrorGlyph()
         const auto yBit = (1 << y);
         if (heightMask & yBit)
         {
-            const uint16_t inputScanline = til::at(inputBitPattern, y);
+            const auto inputScanline = til::at(inputBitPattern, y);
             uint16_t outputScanline = 0;
             for (auto x = MAX_WIDTH; x-- > 0;)
             {

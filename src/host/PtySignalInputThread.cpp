@@ -45,7 +45,7 @@ PtySignalInputThread::~PtySignalInputThread()
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 {
-    PtySignalInputThread* const pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
+    const auto pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
@@ -213,7 +213,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     //       we want to gracefully close in.
     if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
     {
-        DWORD lastError = GetLastError();
+        auto lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();

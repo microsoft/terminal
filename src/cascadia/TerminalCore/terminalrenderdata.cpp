@@ -151,11 +151,11 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants these const, but they're decremented below.
-    COORD realCoordStart = coordStart;
-    COORD realCoordEnd = coordEnd;
+    auto realCoordStart = coordStart;
+    auto realCoordEnd = coordEnd;
 #pragma warning(pop)
 
-    bool notifyScrollChange = false;
+    auto notifyScrollChange = false;
     if (coordStart.Y < _VisibleStartIndex())
     {
         // recalculate the scrollOffset

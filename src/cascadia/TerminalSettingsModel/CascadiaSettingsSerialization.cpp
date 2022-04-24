@@ -341,7 +341,7 @@ bool SettingsLoader::DisableDeletedProfiles()
 {
     const auto& state = winrt::get_self<ApplicationState>(ApplicationState::SharedInstance());
     auto generatedProfileIds = state->GeneratedProfiles();
-    bool newGeneratedProfiles = false;
+    auto newGeneratedProfiles = false;
 
     for (const auto& profile : _getNonUserOriginProfiles())
     {
@@ -381,7 +381,7 @@ bool SettingsLoader::FixupUserSettings()
         CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
     };
 
-    bool fixedUp = false;
+    auto fixedUp = false;
 
     for (const auto& profile : userSettings.profiles)
     {
@@ -1025,7 +1025,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    Json::Value json{ _globals->ToJson() };
+    auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
     json["$schema"] = "https://aka.ms/terminal-profiles-schema";
 

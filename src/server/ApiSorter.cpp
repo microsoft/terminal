@@ -141,8 +141,8 @@ const CONSOLE_API_LAYER_DESCRIPTOR ConsoleApiLayerTable[] = {
 PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Message)
 {
     // Make sure the indices are valid and retrieve the API descriptor.
-    ULONG const LayerNumber = (Message->msgHeader.ApiNumber >> 24) - 1;
-    ULONG const ApiNumber = Message->msgHeader.ApiNumber & 0xffffff;
+    const auto LayerNumber = (Message->msgHeader.ApiNumber >> 24) - 1;
+    const auto ApiNumber = Message->msgHeader.ApiNumber & 0xffffff;
 
     if ((LayerNumber >= std::size(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
     {
@@ -150,7 +150,7 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         return Message;
     }
 
-    CONSOLE_API_DESCRIPTOR const* Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
+    auto Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
 
     // Validate the argument size and call the API.
     if ((Message->Descriptor.InputSize < sizeof(CONSOLE_MSG_HEADER)) ||
@@ -162,7 +162,7 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         return Message;
     }
 
-    BOOL ReplyPending = FALSE;
+    auto ReplyPending = FALSE;
     Message->Complete.Write.Data = &Message->u;
     Message->Complete.Write.Size = Message->msgHeader.ApiDescriptorSize;
     Message->State.WriteOffset = Message->msgHeader.ApiDescriptorSize;

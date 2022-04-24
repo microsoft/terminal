@@ -96,7 +96,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 {
     // Note that this method is called intensively when the terminal is under heavy load.
     // We need to aggressively optimize it, comparing to the -= operator.
-    ptrdiff_t move = movement;
+    auto move = movement;
     if (move < 0)
     {
         // Early branching to leave the rare case to -= operator.
@@ -165,7 +165,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
         _attrIter += diff;
         _view.UpdateTextAttribute(*_attrIter);
 
-        const CharRow& charRow = _pRow->GetCharRow();
+        const auto& charRow = _pRow->GetCharRow();
         _view.UpdateText(charRow.GlyphAt(newX));
         _view.UpdateDbcsAttribute(charRow.DbcsAttrAt(newX));
         _pos.X = newX;
@@ -191,7 +191,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 // - Reference to self after movement.
 TextBufferCellIterator& TextBufferCellIterator::operator-=(const ptrdiff_t& movement)
 {
-    ptrdiff_t move = movement;
+    auto move = movement;
     if (move < 0)
     {
         return (*this) += (-move);
@@ -233,7 +233,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator--()
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator++(int)
 {
-    auto temp(*this);
+    auto temp = *this;
     operator++();
     return temp;
 }
@@ -244,7 +244,7 @@ TextBufferCellIterator TextBufferCellIterator::operator++(int)
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator--(int)
 {
-    auto temp(*this);
+    auto temp = *this;
     operator--();
     return temp;
 }
@@ -257,7 +257,7 @@ TextBufferCellIterator TextBufferCellIterator::operator--(int)
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator+(const ptrdiff_t& movement)
 {
-    auto temp(*this);
+    auto temp = *this;
     temp += movement;
     return temp;
 }
@@ -270,7 +270,7 @@ TextBufferCellIterator TextBufferCellIterator::operator+(const ptrdiff_t& moveme
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator-(const ptrdiff_t& movement)
 {
-    auto temp(*this);
+    auto temp = *this;
     temp -= movement;
     return temp;
 }

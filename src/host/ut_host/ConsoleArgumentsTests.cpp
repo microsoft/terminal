@@ -36,7 +36,7 @@ public:
 
 ConsoleArguments CreateAndParse(std::wstring& commandline, HANDLE hVtIn, HANDLE hVtOut)
 {
-    ConsoleArguments args = ConsoleArguments(commandline, hVtIn, hVtOut);
+    auto args = ConsoleArguments(commandline, hVtIn, hVtOut);
     VERIFY_SUCCEEDED(args.ParseCommandline());
     return args;
 }
@@ -44,7 +44,7 @@ ConsoleArguments CreateAndParse(std::wstring& commandline, HANDLE hVtIn, HANDLE 
 // Used when you expect args to be invalid
 ConsoleArguments CreateAndParseUnsuccessfully(std::wstring& commandline, HANDLE hVtIn, HANDLE hVtOut)
 {
-    ConsoleArguments args = ConsoleArguments(commandline, hVtIn, hVtOut);
+    auto args = ConsoleArguments(commandline, hVtIn, hVtOut);
     VERIFY_FAILED(args.ParseCommandline());
     return args;
 }
@@ -53,9 +53,9 @@ void ArgTestsRunner(LPCWSTR comment, std::wstring commandline, HANDLE hVtIn, HAN
 {
     Log::Comment(comment);
     Log::Comment(commandline.c_str());
-    const ConsoleArguments actual = shouldBeSuccessful ?
-                                        CreateAndParse(commandline, hVtIn, hVtOut) :
-                                        CreateAndParseUnsuccessfully(commandline, hVtIn, hVtOut);
+    const auto actual = shouldBeSuccessful ?
+                            CreateAndParse(commandline, hVtIn, hVtOut) :
+                            CreateAndParseUnsuccessfully(commandline, hVtIn, hVtOut);
 
     VERIFY_ARE_EQUAL(expected, actual);
 }
@@ -767,8 +767,8 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
     std::wstring commandline;
 
     // Just some assorted positive values that could be valid handles. No specific correlation to anything.
-    HANDLE hInSample = UlongToHandle(0x10);
-    HANDLE hOutSample = UlongToHandle(0x24);
+    auto hInSample = UlongToHandle(0x10);
+    auto hOutSample = UlongToHandle(0x24);
 
     commandline = L"conhost.exe";
     ArgTestsRunner(L"#1 Check that handles with no mode is OK",
@@ -1116,8 +1116,8 @@ void ConsoleArgumentsTests::HeadlessArgTests()
 void ConsoleArgumentsTests::SignalHandleTests()
 {
     // Just some assorted positive values that could be valid handles. No specific correlation to anything.
-    HANDLE hInSample = UlongToHandle(0x10);
-    HANDLE hOutSample = UlongToHandle(0x24);
+    auto hInSample = UlongToHandle(0x10);
+    auto hOutSample = UlongToHandle(0x24);
 
     std::wstring commandline;
 
@@ -1194,8 +1194,8 @@ void ConsoleArgumentsTests::SignalHandleTests()
 void ConsoleArgumentsTests::FeatureArgTests()
 {
     // Just some assorted positive values that could be valid handles. No specific correlation to anything.
-    HANDLE hInSample = UlongToHandle(0x10);
-    HANDLE hOutSample = UlongToHandle(0x24);
+    auto hInSample = UlongToHandle(0x10);
+    auto hOutSample = UlongToHandle(0x24);
 
     std::wstring commandline;
 

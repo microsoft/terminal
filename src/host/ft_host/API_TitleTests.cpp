@@ -91,7 +91,7 @@ void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* 
     TestGetConsoleTitleWFillHelper(wchReadExpected, cchReadExpected, L'Z');
 
     // Prep expected data
-    const size_t cchCopy = std::min(cchTitle, cchTryToRead);
+    const auto cchCopy = std::min(cchTitle, cchTryToRead);
     VERIFY_SUCCEEDED(StringCchCopyNW(wchReadExpected, cchReadBuffer, wchTitle, cchCopy - 1)); // Copy as much room as we said we had leaving space for null terminator
 }
 
@@ -106,8 +106,8 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 
     SetLastError(0);
-    DWORD const dwRetVal = GetConsoleTitleA(chReadBuffer, (DWORD)cchTryToRead);
-    DWORD const dwLastError = GetLastError();
+    const auto dwRetVal = GetConsoleTitleA(chReadBuffer, (DWORD)cchTryToRead);
+    const auto dwLastError = GetLastError();
 
     VERIFY_ARE_EQUAL(dwExpectedRetVal, dwRetVal);
     VERIFY_ARE_EQUAL(dwExpectedLastError, dwLastError);
@@ -142,8 +142,8 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 
     SetLastError(0);
-    DWORD const dwRetVal = GetConsoleTitleW(wchReadBuffer, (DWORD)cchTryToRead);
-    DWORD const dwLastError = GetLastError();
+    const auto dwRetVal = GetConsoleTitleW(wchReadBuffer, (DWORD)cchTryToRead);
+    const auto dwLastError = GetLastError();
 
     VERIFY_ARE_EQUAL(dwExpectedRetVal, dwRetVal);
     VERIFY_ARE_EQUAL(dwExpectedLastError, dwLastError);
@@ -169,17 +169,17 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
 
 void TitleTests::TestGetConsoleTitleA()
 {
-    const char* const szTestTitle = "TestTitle";
-    const size_t cchTestTitle = strlen(szTestTitle);
+    const auto szTestTitle = "TestTitle";
+    const auto cchTestTitle = strlen(szTestTitle);
 
     Log::Comment(NoThrowString().Format(L"Set up the initial console title to '%S'.", szTestTitle));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleTitleA(szTestTitle));
 
-    size_t cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
-    wistd::unique_ptr<char[]> chReadBuffer = wil::make_unique_nothrow<char[]>(cchReadBuffer);
+    auto cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
+    auto chReadBuffer = wil::make_unique_nothrow<char[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(chReadBuffer.get());
 
-    wistd::unique_ptr<char[]> chReadExpected = wil::make_unique_nothrow<char[]>(cchReadBuffer);
+    auto chReadExpected = wil::make_unique_nothrow<char[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(chReadExpected.get());
 
     size_t cchTryToRead = 0;
@@ -253,17 +253,17 @@ void TitleTests::TestGetConsoleTitleA()
 
 void TitleTests::TestGetConsoleTitleW()
 {
-    const wchar_t* const wszTestTitle = L"TestTitle";
-    const size_t cchTestTitle = wcslen(wszTestTitle);
+    const auto wszTestTitle = L"TestTitle";
+    const auto cchTestTitle = wcslen(wszTestTitle);
 
     Log::Comment(NoThrowString().Format(L"Set up the initial console title to '%s'.", wszTestTitle));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleTitleW(wszTestTitle));
 
-    size_t cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
-    wistd::unique_ptr<wchar_t[]> wchReadBuffer = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
+    auto cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
+    auto wchReadBuffer = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(wchReadBuffer.get());
 
-    wistd::unique_ptr<wchar_t[]> wchReadExpected = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
+    auto wchReadExpected = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(wchReadExpected.get());
 
     size_t cchTryToRead = 0;

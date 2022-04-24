@@ -25,7 +25,7 @@ HRESULT RenderEngineBase::InvalidateTitle(const std::wstring_view proposedTitle)
 
 HRESULT RenderEngineBase::UpdateTitle(const std::wstring_view newTitle) noexcept
 {
-    HRESULT hr = S_FALSE;
+    auto hr = S_FALSE;
     if (newTitle != _lastFrameTitle)
     {
         RETURN_IF_FAILED(_DoUpdateTitle(newTitle));

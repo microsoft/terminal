@@ -34,7 +34,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 {
     DBGOUTPUT(("WriteToScreen\n"));
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // update to screen, if we're not iconic.
     if (!screenInfo.IsActiveScreenBuffer() || WI_IsFlagSet(gci.Flags, CONSOLE_IS_ICONIC))
     {
@@ -276,7 +276,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     try
     {
         const OutputCellIterator it(character, lengthToWrite);
@@ -306,9 +306,9 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         {
             const til::size currentBufferDimensions{ screenInfo.GetBufferSize().Dimensions() };
 
-            const bool wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
-            const bool startedAtOrigin = startingCoordinate == COORD{ 0, 0 };
-            const bool wroteSpaces = character == UNICODE_SPACE;
+            const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
+            const auto startedAtOrigin = startingCoordinate == COORD{ 0, 0 };
+            const auto wroteSpaces = character == UNICODE_SPACE;
 
             if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
             {

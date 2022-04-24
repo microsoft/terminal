@@ -630,7 +630,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_core.SwapChainHandle());
+            const auto chainHandle = reinterpret_cast<HANDLE>(control->_core.SwapChainHandle());
             _AttachDxgiSwapChainToXaml(chainHandle);
         }
     }
@@ -772,7 +772,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Set up blinking attributes
-        BOOL animationsEnabled = TRUE;
+        auto animationsEnabled = TRUE;
         SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
         if (animationsEnabled && blinkTime != INFINITE)
         {
@@ -832,7 +832,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             modifiers |= ControlKeyStates::EnhancedKey;
         }
 
-        const bool handled = _core.SendCharEvent(ch, scanCode, modifiers);
+        const auto handled = _core.SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
 
@@ -866,7 +866,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Or do so for alt+space; only send to terminal when explicitly unbound
             //  That is part of #GH7125
             auto bindings{ _core.Settings().KeyBindings() };
-            bool isUnbound = false;
+            auto isUnbound = false;
             const KeyChord kc = {
                 modifiers.IsCtrlPressed(),
                 modifiers.IsAltPressed(),
@@ -886,7 +886,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            const bool sendToTerminal = vkey == VK_F7 || (vkey == VK_SPACE && isUnbound);
+            const auto sendToTerminal = vkey == VK_F7 || (vkey == VK_SPACE && isUnbound);
 
             if (!handled && sendToTerminal)
             {
@@ -1079,7 +1079,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        const ControlKeyStates modifiers,
                                        const bool keyDown)
     {
-        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto window = CoreWindow::GetForCurrentThread();
 
         if (vkey == VK_ESCAPE ||
             vkey == VK_RETURN)
@@ -1225,11 +1225,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // SwapChainPanel, not the entire control. If they drag out of
                 // the bounds of the text, into the padding, we still what that
                 // to auto-scroll
-                const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
-                const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
+                const auto cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
+                const auto cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
 
-                constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
-                double newAutoScrollVelocity = 0.0;
+                constexpr auto MinAutoScrollDist = 2.0; // Arbitrary value
+                auto newAutoScrollVelocity = 0.0;
                 if (cursorBelowBottomDist > MinAutoScrollDist)
                 {
                     newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
@@ -1525,8 +1525,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_lastAutoScrollUpdateTime)
             {
-                static constexpr double microSecPerSec = 1000000.0;
-                const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - *_lastAutoScrollUpdateTime).count() / microSecPerSec;
+                static constexpr auto microSecPerSec = 1000000.0;
+                const auto deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - *_lastAutoScrollUpdateTime).count() / microSecPerSec;
                 ScrollBar().Value(ScrollBar().Value() + _autoScrollVelocity * deltaTime);
 
                 if (_autoScrollingPointerPoint)
@@ -2026,7 +2026,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // this method. In that case, we'll need to pre-calculate the font
             // width, before we actually have a renderer or swapchain.
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
-            const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+            const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
             return GetProposedDimensions(_core.Settings(), dpi, minSize);
         }
@@ -2056,7 +2056,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto gridSize = dimension - nonTerminalArea;
-        const int cells = static_cast<int>(gridSize / fontDimension);
+        const auto cells = static_cast<int>(gridSize / fontDimension);
         return cells * fontDimension + nonTerminalArea;
     }
 
@@ -2072,7 +2072,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Windows::UI::Xaml::Thickness object
     Windows::UI::Xaml::Thickness TermControl::ParseThicknessFromPadding(const hstring padding)
     {
-        const wchar_t singleCharDelim = L',';
+        const auto singleCharDelim = L',';
         std::wstringstream tokenStream(padding.c_str());
         std::wstring token;
         uint8_t paddingPropIndex = 0;
@@ -2125,7 +2125,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     ControlKeyStates TermControl::_GetPressedModifierKeys() noexcept
     {
-        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
         // OR
@@ -2198,7 +2198,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
 
         // This point is the location of the cursor within the actual grid of characters, in DIPs
-        const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;
+        const auto relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;
 
         // Convert it to pixels
         const auto scale = SwapChainPanel().CompositionScaleX();
@@ -2303,7 +2303,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             try
             {
-                Windows::Foundation::Uri link{ co_await e.DataView().GetApplicationLinkAsync() };
+                auto link{ co_await e.DataView().GetApplicationLinkAsync() };
                 _core.PasteText(link.AbsoluteUri());
             }
             CATCH_LOG();
@@ -2312,7 +2312,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             try
             {
-                Windows::Foundation::Uri link{ co_await e.DataView().GetWebLinkAsync() };
+                auto link{ co_await e.DataView().GetWebLinkAsync() };
                 _core.PasteText(link.AbsoluteUri());
             }
             CATCH_LOG();
@@ -2662,9 +2662,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
                     const til::point startPos{ lastHoveredCell.Value() };
                     const til::size fontSize{ til::math::rounding, _core.FontSize() };
-                    const til::point posInPixels{ startPos * fontSize };
+                    const auto posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ til::math::flooring, posInPixels.x / scale, posInPixels.y / scale };
-                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
+                    const auto locationInDIPs{ posInDIPs + marginsInDips };
 
                     // Move the border to the top left corner of the cell
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);

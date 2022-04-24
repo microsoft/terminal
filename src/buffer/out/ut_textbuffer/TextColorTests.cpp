@@ -118,7 +118,7 @@ void TextColorTests::TestBrightIndexColor()
 
 void TextColorTests::TestRgbColor()
 {
-    COLORREF myColor = RGB(7, 8, 9);
+    auto myColor = RGB(7, 8, 9);
     TextColor rgbColor(myColor);
 
     VERIFY_IS_FALSE(rgbColor.IsDefault());
@@ -140,7 +140,7 @@ void TextColorTests::TestRgbColor()
 
 void TextColorTests::TestChangeColor()
 {
-    COLORREF myColor = RGB(7, 8, 9);
+    auto myColor = RGB(7, 8, 9);
     TextColor rgbColor(myColor);
 
     VERIFY_IS_FALSE(rgbColor.IsDefault());

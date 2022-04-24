@@ -205,7 +205,7 @@ CATCH_LOG_RETURN_HR(E_FAIL);
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged || !_queuedOutput.empty();
+    const auto somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged || !_queuedOutput.empty();
 
     // If there's nothing to do, quick return
     RETURN_HR_IF(S_FALSE, !somethingToDo);
@@ -334,7 +334,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // Return Value:
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const gsl::span<const Cluster> /*clusters*/,
-                                                 COORD const /*coord*/,
+                                                 const COORD /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept
 {
@@ -354,7 +354,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 [[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                       COLORREF const /*color*/,
                                                       size_t const /*cchLine*/,
-                                                      COORD const /*coordTarget*/) noexcept
+                                                      const COORD /*coordTarget*/) noexcept
 {
     return S_FALSE;
 }

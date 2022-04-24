@@ -74,11 +74,11 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     // even if it was in windowed mode and wouldn't fit on the monitor.
 
     // Get the window handle
-    HWND const hWindow = GetConsoleWindow();
+    const auto hWindow = GetConsoleWindow();
     VerifySucceededGLE(VERIFY_IS_TRUE(!!IsWindow(hWindow), L"Get the window handle for the window."));
 
     // Get the dimensions of the monitor that the window is on.
-    HMONITOR const hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTONULL);
+    const auto hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTONULL);
     VerifySucceededGLE(VERIFY_IS_NOT_NULL(hMonitor, L"Get the monitor handle corresponding to the console window."));
 
     MONITORINFO mi = { 0 };
@@ -86,9 +86,9 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetMonitorInfoW(hMonitor, &mi), L"Get monitor information for the handle.");
 
     // Get the styles for the window from the handle
-    DWORD const dwStyle = GetWindowStyle(hWindow);
-    DWORD const dwStyleEx = GetWindowExStyle(hWindow);
-    BOOL const bHasMenu = OneCoreDelay::GetMenu(hWindow) != nullptr;
+    const auto dwStyle = GetWindowStyle(hWindow);
+    const auto dwStyleEx = GetWindowExStyle(hWindow);
+    const auto bHasMenu = OneCoreDelay::GetMenu(hWindow) != nullptr;
 
     // Get the current font size
     CONSOLE_FONT_INFO cfi;
@@ -97,7 +97,7 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     // Now use what we've learned to attempt to calculate the expected size
     COORD coordExpected = { 0 };
 
-    RECT rcPixels = mi.rcWork; // start from the monitor work area as the maximum pixel size
+    auto rcPixels = mi.rcWork; // start from the monitor work area as the maximum pixel size
 
     // we have to adjust the work area by the size of the window borders to compensate for a maximized window
     // where the window manager will render the borders off the edges of the screen.
@@ -118,7 +118,7 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     coordExpected.Y = (SHORT)((rcPixels.bottom - rcPixels.top) / cfi.dwFontSize.Y);
 
     // Now finally ask the console what it thinks its largest size should be and compare.
-    COORD const coordLargest = GetLargestConsoleWindowSize(Common::_hConsole);
+    const auto coordLargest = GetLargestConsoleWindowSize(Common::_hConsole);
     VerifySucceededGLE(VERIFY_IS_NOT_NULL(coordLargest, L"Now ask what the console thinks the largest size should be."));
 
     VERIFY_ARE_EQUAL(coordExpected, coordLargest, L"Compare what we calculated to what the console says the largest size should be.");
@@ -160,7 +160,7 @@ void TestSetConsoleWindowInfoHelper(const bool bAbsolute,
                                     const bool bExpectedResult,
                                     PCWSTR pwszDescription)
 {
-    SMALL_RECT srTest = *srViewport;
+    auto srTest = *srViewport;
 
     ConvertAbsoluteToRelative(bAbsolute, &srTest, srOriginalViewport);
 
@@ -236,7 +236,7 @@ void DimensionsTests::TestSetConsoleWindowInfo()
     }
 
     // Store a copy of the original (for comparison in case the relative translation is applied).
-    SMALL_RECT const srViewportBefore = srViewport;
+    const auto srViewportBefore = srViewport;
 
     TestSetConsoleWindowInfoHelper(bAbsolute, &srViewport, &sbiex.srWindow, true, L"Attempt shrinking the window in a valid manner.");
 
@@ -265,8 +265,8 @@ void DimensionsTests::TestSetConsoleScreenBufferSize()
     DWORD dwMode = { 0 };
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"scaleChoices", dwMode), L"Get active mode");
 
-    bool fAdjustX = false;
-    bool fAdjustY = false;
+    auto fAdjustX = false;
+    auto fAdjustY = false;
 
     if ((dwMode & 0x1) != 0)
     {
@@ -328,7 +328,7 @@ void DimensionsTests::TestZeroSizedConsoleScreenBuffers()
 
     for (size_t i = 0; i < ARRAYSIZE(rgTestCoords); i++)
     {
-        const BOOL fSucceeded = SetConsoleScreenBufferSize(Common::_hConsole, rgTestCoords[i]);
+        const auto fSucceeded = SetConsoleScreenBufferSize(Common::_hConsole, rgTestCoords[i]);
         VERIFY_IS_FALSE(!!fSucceeded,
                         NoThrowString().Format(L"Setting zero console size should always fail (x: %d y:%d)",
                                                rgTestCoords[i].X,
@@ -377,7 +377,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiex), L"Get original buffer state.");
 
     // save a copy for the final comparison.
-    CONSOLE_SCREEN_BUFFER_INFOEX const sbiexOriginal = sbiex;
+    const auto sbiexOriginal = sbiex;
 
     // check invalid values of viewport size
     sbiex = sbiexOriginal;
@@ -439,7 +439,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     // The buffer size is weird because there are currently two valid answers.
     // This is due to the word wrap status of the console which is currently not visible through the API.
     // We must accept either answer as valid.
-    bool fBufferSizePassed = false;
+    auto fBufferSizePassed = false;
 
     // 1. The buffer size we set matches exactly with what we retrieved after it was done. (classic behavior, no word wrap)
     if (VerifyCompareTraits<COORD, COORD>().AreEqual(sbiex.dwSize, sbiexAfter.dwSize))
@@ -454,7 +454,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     if (sbiex.dwSize.Y > ((sbiex.srWindow.Bottom - sbiex.srWindow.Top) + 1)) // the bottom index counts as valid, so bottom - top + 1 for total height.
     {
         // Get pixel size of a vertical scroll bar.
-        const short sVerticalScrollWidthPx = (SHORT)GetSystemMetrics(SM_CXVSCROLL);
+        const auto sVerticalScrollWidthPx = (SHORT)GetSystemMetrics(SM_CXVSCROLL);
 
         // Get the current font size
         CONSOLE_FONT_INFO cfi;
@@ -507,7 +507,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     //      trip around. For example, normally we do viewport width as Right-Left+1, and the driver does it as Right-Left.
     //      As this has lasted so long, it's likely a compat issue to fix now. So we'll leave it in and compensate for it in the test here.
     // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms686039(v=vs.85).aspx
-    CONSOLE_SCREEN_BUFFER_INFOEX sbiexBug = sbiexOriginal;
+    auto sbiexBug = sbiexOriginal;
     sbiexBug.srWindow.Bottom++;
     sbiexBug.srWindow.Right++;
 

@@ -49,7 +49,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const;
         BOOL PostUpdateWindowSize() const;
 
-        void UpdateWindowSize(COORD const coordSizeInChars);
+        void UpdateWindowSize(const COORD coordSizeInChars);
         void UpdateWindowText();
 
         void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange);

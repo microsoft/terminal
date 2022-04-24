@@ -821,7 +821,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void Monarch::_renameRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                    const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
     {
-        bool successfullyRenamed = false;
+        auto successfullyRenamed = false;
 
         try
         {
@@ -972,7 +972,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     bool Monarch::DoesQuakeWindowExist()
     {
-        bool result = false;
+        auto result = false;
         const auto func = [&](const auto& /*id*/, const auto& p) {
             if (p.WindowName() == QuakeWindowName)
             {

@@ -284,7 +284,7 @@ bool WddmConEngine::IsInitialized()
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                           COLORREF const /*color*/,
                                                           size_t const /*cchLine*/,
-                                                          COORD const /*coordTarget*/) noexcept
+                                                          const COORD /*coordTarget*/) noexcept
 {
     return S_OK;
 }

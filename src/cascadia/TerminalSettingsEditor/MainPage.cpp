@@ -255,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - args - additional event info from invoking the NavViewItem
     // Return Value:
     // - <none>
-    void MainPage::SettingsNav_ItemInvoked(MUX::const Controls::NavigationView&, MUX::const Controls::NavigationViewItemInvokedEventArgs& args)
+    void MainPage::SettingsNav_ItemInvoked(const MUX::Controls::NavigationView&, const MUX::Controls::NavigationViewItemInvokedEventArgs& args)
     {
         if (const auto clickedItemContainer = args.InvokedItemContainer())
         {
@@ -446,10 +446,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
     {
-        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto window = CoreWindow::GetForCurrentThread();
         const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
         const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+        const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;

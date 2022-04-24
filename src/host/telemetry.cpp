@@ -221,9 +221,9 @@ void Telemetry::TotalCodesForPreviousProcess()
 {
     using namespace Microsoft::Console::VirtualTerminal;
     // Get the values even if we aren't recording the previously connected process, since we want to reset them to 0.
-    unsigned int _uiTimesUsedCurrent = TermTelemetry::Instance().GetAndResetTimesUsedCurrent();
-    unsigned int _uiTimesFailedCurrent = TermTelemetry::Instance().GetAndResetTimesFailedCurrent();
-    unsigned int _uiTimesFailedOutsideRangeCurrent = TermTelemetry::Instance().GetAndResetTimesFailedOutsideRangeCurrent();
+    auto _uiTimesUsedCurrent = TermTelemetry::Instance().GetAndResetTimesUsedCurrent();
+    auto _uiTimesFailedCurrent = TermTelemetry::Instance().GetAndResetTimesFailedCurrent();
+    auto _uiTimesFailedOutsideRangeCurrent = TermTelemetry::Instance().GetAndResetTimesFailedOutsideRangeCurrent();
 
     if (_iProcessConnectedCurrently < c_iMaxProcessesConnected)
     {
@@ -242,10 +242,10 @@ void Telemetry::TotalCodesForPreviousProcess()
 // us from having an additional search through the array, and improves performance.
 bool Telemetry::FindProcessName(const WCHAR* pszProcessName, _Out_ size_t* iPosition) const
 {
-    int iMin = 0;
-    int iMid = 0;
-    int iMax = _uiNumberProcessFileNames - 1;
-    int result = 0;
+    auto iMin = 0;
+    auto iMid = 0;
+    auto iMax = _uiNumberProcessFileNames - 1;
+    auto result = 0;
 
     while (iMin <= iMax)
     {
@@ -294,7 +294,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
         {
             // Stripping out the path also helps with PII issues in case they launched the program
             // from a path containing their username.
-            PWSTR pwszFileName = PathFindFileName(wszFilePathAndName);
+            auto pwszFileName = PathFindFileName(wszFilePathAndName);
 
             size_t iFileName;
             if (FindProcessName(pwszFileName, &iFileName))
@@ -341,7 +341,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
                     _iProcessConnectedCurrently = _uiNumberProcessFileNames++;
 
                     // Packed arrays start with a UINT16 value indicating the number of elements in the array.
-                    BYTE* pbFileNames = reinterpret_cast<BYTE*>(_wchProcessFileNames);
+                    auto pbFileNames = reinterpret_cast<BYTE*>(_wchProcessFileNames);
                     pbFileNames[0] = (BYTE)_uiNumberProcessFileNames;
                     pbFileNames[1] = (BYTE)(_uiNumberProcessFileNames >> 8);
                 }
@@ -355,7 +355,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
 // so we don't overwhelm our servers by sending a constant stream of telemetry while the console is being used.
 void Telemetry::WriteFinalTraceLog()
 {
-    const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& renderSettings = gci.GetRenderSettings();
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
@@ -524,7 +524,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-            for (int n = 0; n < ARRAYSIZE(_rguiTimesApiUsedAnsi); n++)
+            for (auto n = 0; n < ARRAYSIZE(_rguiTimesApiUsedAnsi); n++)
             {
                 if (_rguiTimesApiUsedAnsi[n])
                 {
@@ -571,7 +571,7 @@ void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
     va_list args;
     va_start(args, pszMessage);
     char szMessageEvaluated[200] = "";
-    int cCharsWritten = vsprintf_s(szMessageEvaluated, ARRAYSIZE(szMessageEvaluated), pszMessage, args);
+    auto cCharsWritten = vsprintf_s(szMessageEvaluated, ARRAYSIZE(szMessageEvaluated), pszMessage, args);
     va_end(args);
 
 #if DBG

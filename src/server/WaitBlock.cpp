@@ -86,12 +86,12 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 [[nodiscard]] HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                                      _In_ IWaitRoutine* const pWaiter)
 {
-    ConsoleProcessHandle* const ProcessData = pWaitReplyMessage->GetProcessHandle();
+    const auto ProcessData = pWaitReplyMessage->GetProcessHandle();
     FAIL_FAST_IF_NULL(ProcessData);
 
-    ConsoleWaitQueue* const pProcessQueue = ProcessData->pWaitBlockQueue.get();
+    const auto pProcessQueue = ProcessData->pWaitBlockQueue.get();
 
-    ConsoleHandleData* const pHandleData = pWaitReplyMessage->GetObjectHandle();
+    const auto pHandleData = pWaitReplyMessage->GetObjectHandle();
     FAIL_FAST_IF_NULL(pHandleData);
 
     ConsoleWaitQueue* pObjectQueue = nullptr;
@@ -112,7 +112,7 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
     }
     catch (...)
     {
-        const HRESULT hr = wil::ResultFromCaughtException();
+        const auto hr = wil::ResultFromCaughtException();
         pWaitReplyMessage->SetReplyStatus(NTSTATUS_FROM_HRESULT(hr));
         return hr;
     }
@@ -133,7 +133,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     NTSTATUS status;
     size_t NumBytes = 0;
     DWORD dwControlKeyState;
-    bool fIsUnicode = true;
+    auto fIsUnicode = true;
 
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     // TODO: MSFT 14104228 - get rid of this void* and get the data
@@ -146,20 +146,20 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     {
     case API_NUMBER_GETCONSOLEINPUT:
     {
-        CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
+        auto a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
         fIsUnicode = !!a->Unicode;
         pOutputData = &outEvents;
         break;
     }
     case API_NUMBER_READCONSOLE:
     {
-        CONSOLE_READCONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
+        auto a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
         fIsUnicode = !!a->Unicode;
         break;
     }
     case API_NUMBER_WRITECONSOLE:
     {
-        CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
+        auto a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
         fIsUnicode = !!a->Unicode;
         break;
     }
@@ -182,7 +182,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
             // ReadConsoleInput/PeekConsoleInput has this extra reply
             // information with the number of records, not number of
             // bytes.
-            CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
+            auto a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
 
             void* buffer;
             ULONG cbBuffer;
@@ -191,7 +191,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
                 return false;
             }
 
-            INPUT_RECORD* const pRecordBuffer = static_cast<INPUT_RECORD* const>(buffer);
+            const auto pRecordBuffer = static_cast<INPUT_RECORD* const>(buffer);
             a->NumRecords = static_cast<ULONG>(outEvents.size());
             for (size_t i = 0; i < a->NumRecords; ++i)
             {
@@ -206,7 +206,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
         else if (API_NUMBER_READCONSOLE == _WaitReplyMessage.msgHeader.ApiNumber)
         {
             // ReadConsole has this extra reply information with the control key state.
-            CONSOLE_READCONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
+            auto a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
             a->ControlKeyState = dwControlKeyState;
             a->NumBytes = gsl::narrow<ULONG>(NumBytes);
 
@@ -227,7 +227,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
         }
         else if (API_NUMBER_WRITECONSOLE == _WaitReplyMessage.msgHeader.ApiNumber)
         {
-            CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsoleW);
+            auto a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsoleW);
             a->NumBytes = gsl::narrow<ULONG>(NumBytes);
         }
 

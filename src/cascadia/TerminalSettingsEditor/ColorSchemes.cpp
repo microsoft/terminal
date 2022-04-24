@@ -224,7 +224,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Return Value:
     // - <none>
     void ColorSchemes::ColorPickerChanged(const IInspectable& sender,
-                                          MUX::const Controls::ColorChangedEventArgs& args)
+                                          const MUX::Controls::ColorChangedEventArgs& args)
     {
         const til::color newColor{ args.NewColor() };
         if (const auto& picker{ sender.try_as<MUX::Controls::ColorPicker>() })

@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto window{ CoreWindow::GetForCurrentThread() };
 
-        VirtualKeyModifiers flags = VirtualKeyModifiers::None;
+        auto flags = VirtualKeyModifiers::None;
         for (const auto mod : ModifierKeys)
         {
             const auto state = window.GetKeyState(mod);
@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (auto control{ d.try_as<Editor::KeyChordListener>() })
         {
             auto controlImpl{ get_self<KeyChordListener>(control) };
-            TextBox tb{ controlImpl->FindName(L"KeyChordTextBox").as<TextBox>() };
+            auto tb{ controlImpl->FindName(L"KeyChordTextBox").as<TextBox>() };
             tb.Text(Model::KeyChordSerialization::ToString(unbox_value<Control::KeyChord>(e.NewValue())));
             if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(tb) })
             {

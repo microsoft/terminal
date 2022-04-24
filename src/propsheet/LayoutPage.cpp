@@ -8,7 +8,7 @@ BOOL g_fInScreenSizeSETACTIVE = FALSE;
 
 BOOL GetStateInfo(HWND /*hDlg*/, UINT Item, __out LPINT lpValue)
 {
-    BOOL bRet = TRUE;
+    auto bRet = TRUE;
     int Value;
 
     switch (Item)

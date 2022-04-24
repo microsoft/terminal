@@ -116,12 +116,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 try
                 {
                     FontIconSource<TIconSource>::type icon;
-                    const wchar_t ch = iconPath[0];
+                    const auto ch = iconPath[0];
 
                     // The range of MDL2 Icons isn't explicitly defined, but
                     // we're using this based off the table on:
                     // https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
-                    const bool isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
+                    const auto isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
                     if (isMDL2Icon)
                     {
                         icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });

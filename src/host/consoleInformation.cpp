@@ -103,13 +103,13 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 // - STATUS_SUCCESS if successful.
 [[nodiscard]] NTSTATUS CONSOLE_INFORMATION::AllocateConsole(const std::wstring_view title)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
     WI_SetFlagIf(gci.Flags, CONSOLE_AUTO_POSITION, !!gci.GetAutoPosition());
     WI_SetFlagIf(gci.Flags, CONSOLE_QUICK_EDIT_MODE, !!gci.GetQuickEdit());
     WI_SetFlagIf(gci.Flags, CONSOLE_HISTORY_NODUP, !!gci.GetHistoryNoDup());
 
-    Selection* const pSelection = &Selection::Instance();
+    const auto pSelection = &Selection::Instance();
     pSelection->SetLineSelection(!!gci.GetLineSelection());
 
     SetConsoleCPInfo(TRUE);
@@ -140,7 +140,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    NTSTATUS Status = DoCreateScreenBuffer();
+    auto Status = DoCreateScreenBuffer();
     if (!NT_SUCCESS(Status))
     {
         goto ErrorExit2;

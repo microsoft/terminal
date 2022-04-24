@@ -199,7 +199,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                           std::vector<SettingsLoadWarnings>& warnings)
     {
         // Invalid is our placeholder that the action was not parsed.
-        ShortcutAction action = ShortcutAction::Invalid;
+        auto action = ShortcutAction::Invalid;
 
         // Actions can be serialized in two styles:
         //   "action": "switchToTab0",

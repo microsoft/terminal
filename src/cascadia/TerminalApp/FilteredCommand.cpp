@@ -74,7 +74,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
         auto commandName = _Item.Name();
-        bool isProcessingMatchedSegment = false;
+        auto isProcessingMatchedSegment = false;
         uint32_t nextOffsetToReport = 0;
         uint32_t currentOffset = 0;
 
@@ -191,8 +191,8 @@ namespace winrt::TerminalApp::implementation
     // - the relative weight of this match
     int FilteredCommand::_computeWeight()
     {
-        int result = 0;
-        bool isNextSegmentWordBeginning = true;
+        auto result = 0;
+        auto isNextSegmentWordBeginning = true;
 
         for (const auto& segment : _HighlightedName.Segments())
         {

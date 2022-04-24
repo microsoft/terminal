@@ -79,9 +79,9 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
         if (inputEvent->EventType() == InputEventType::KeyEvent)
         {
-            std::unique_ptr<KeyEvent> keyEvent = std::unique_ptr<KeyEvent>(static_cast<KeyEvent*>(inputEvent.release()));
+            auto keyEvent = std::unique_ptr<KeyEvent>(static_cast<KeyEvent*>(inputEvent.release()));
 
-            bool commandLineEditKey = false;
+            auto commandLineEditKey = false;
             if (pCommandLineEditingKeys)
             {
                 commandLineEditKey = keyEvent->IsCommandLineEditingKey();
@@ -153,14 +153,14 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                 }
                 else
                 {
-                    const short zeroVkeyData = VkKeyScanW(0);
-                    const byte zeroVKey = LOBYTE(zeroVkeyData);
-                    const byte zeroControlKeyState = HIBYTE(zeroVkeyData);
+                    const auto zeroVkeyData = VkKeyScanW(0);
+                    const auto zeroVKey = LOBYTE(zeroVkeyData);
+                    const auto zeroControlKeyState = HIBYTE(zeroVkeyData);
 
                     try
                     {
                         // Convert real Windows NT modifier bit into bizarre Console bits
-                        std::unordered_set<ModifierKeyState> consoleModKeyState = FromVkKeyScan(zeroControlKeyState);
+                        auto consoleModKeyState = FromVkKeyScan(zeroControlKeyState);
 
                         if (zeroVKey == keyEvent->GetVirtualKeyCode() &&
                             keyEvent->DoActiveModifierKeysMatch(consoleModKeyState))
@@ -186,12 +186,12 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
                                    _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
                                    _In_ size_t ulCurrentPosition)
 {
-    SHORT XPosition = sOriginalCursorPositionX;
+    auto XPosition = sOriginalCursorPositionX;
     size_t NumSpaces = 0;
 
     for (size_t i = 0; i < ulCurrentPosition; i++)
     {
-        WCHAR const Char = pwchBuffer[i];
+        const auto Char = pwchBuffer[i];
 
         size_t NumSpacesForChar;
         if (Char == UNICODE_TAB)
@@ -223,11 +223,11 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
                               _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
                               _In_ size_t ulCurrentPosition)
 {
-    WCHAR Char = pwchBuffer[ulCurrentPosition];
+    auto Char = pwchBuffer[ulCurrentPosition];
     if (Char == UNICODE_TAB)
     {
         size_t NumSpaces = 0;
-        SHORT XPosition = sOriginalCursorPositionX;
+        auto XPosition = sOriginalCursorPositionX;
 
         for (size_t i = 0; i <= ulCurrentPosition; i++)
         {
@@ -287,11 +287,11 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
                                                 const bool unicode)
 {
     // TODO: MSFT: 18047766 - Correct this method to not play byte counting games.
-    BOOL fAddDbcsLead = FALSE;
+    auto fAddDbcsLead = FALSE;
     size_t NumToWrite = 0;
     size_t NumToBytes = 0;
-    wchar_t* pBuffer = reinterpret_cast<wchar_t*>(buffer.data());
-    size_t bufferRemaining = buffer.size_bytes();
+    auto pBuffer = reinterpret_cast<wchar_t*>(buffer.data());
+    auto bufferRemaining = buffer.size_bytes();
     bytesRead = 0;
 
     if (buffer.size_bytes() < sizeof(wchar_t))
@@ -300,7 +300,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
     }
 
     const auto pending = readHandleState.GetPendingInput();
-    size_t pendingBytes = pending.size() * sizeof(wchar_t);
+    auto pendingBytes = pending.size() * sizeof(wchar_t);
     auto Tmp = pending.cbegin();
 
     if (readHandleState.IsMultilineInput())
@@ -309,8 +309,8 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
         {
             if (inputBuffer.IsReadPartialByteSequenceAvailable())
             {
-                std::unique_ptr<IInputEvent> event = inputBuffer.FetchReadPartialByteSequence(false);
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                auto event = inputBuffer.FetchReadPartialByteSequence(false);
+                const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                 *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
                 ++pBuffer;
                 bufferRemaining -= sizeof(wchar_t);
@@ -358,8 +358,8 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
         {
             if (inputBuffer.IsReadPartialByteSequenceAvailable())
             {
-                std::unique_ptr<IInputEvent> event = inputBuffer.FetchReadPartialByteSequence(false);
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                auto event = inputBuffer.FetchReadPartialByteSequence(false);
+                const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                 *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
                 ++pBuffer;
                 bufferRemaining -= sizeof(wchar_t);
@@ -403,7 +403,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
     {
         // if ansi, translate string.  we allocated the capture buffer
         // large enough to handle the translated string.
-        std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(NumToBytes);
+        auto tempBuffer = std::make_unique<char[]>(NumToBytes);
         std::unique_ptr<IInputEvent> partialEvent;
 
         NumToWrite = TranslateUnicodeToOem(pBuffer,
@@ -467,10 +467,10 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
                                             const bool unicode,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     RETURN_HR_IF(E_FAIL, !gci.HasActiveOutputBuffer());
 
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
 
     try
     {
@@ -529,10 +529,10 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
                                                   std::unique_ptr<IWaitRoutine>& waiter)
 {
     size_t NumToWrite = 0;
-    bool addDbcsLead = false;
-    NTSTATUS Status = STATUS_SUCCESS;
-    wchar_t* pBuffer = reinterpret_cast<wchar_t*>(buffer.data());
-    size_t bufferRemaining = buffer.size_bytes();
+    auto addDbcsLead = false;
+    auto Status = STATUS_SUCCESS;
+    auto pBuffer = reinterpret_cast<wchar_t*>(buffer.data());
+    auto bufferRemaining = buffer.size_bytes();
     bytesRead = 0;
 
     if (buffer.size() < 1)
@@ -542,14 +542,14 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 
     if (bytesRead < bufferRemaining)
     {
-        wchar_t* pwchBufferTmp = pBuffer;
+        auto pwchBufferTmp = pBuffer;
 
         NumToWrite = 0;
 
         if (!unicode && inputBuffer.IsReadPartialByteSequenceAvailable())
         {
-            std::unique_ptr<IInputEvent> event = inputBuffer.FetchReadPartialByteSequence(false);
-            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+            auto event = inputBuffer.FetchReadPartialByteSequence(false);
+            const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
             *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
             ++pBuffer;
             bufferRemaining -= sizeof(wchar_t);
@@ -799,7 +799,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 
 void UnblockWriteConsole(const DWORD dwReason)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.Flags &= ~dwReason;
 
     if (WI_AreAllFlagsClear(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))

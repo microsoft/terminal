@@ -109,7 +109,7 @@ void TerminalOutput::EnableGrTranslation(boolean enabled)
 
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
-    wchar_t wchFound = wch;
+    auto wchFound = wch;
     if (!_ssTranslationTable.empty())
     {
         if (wch - 0x20u < _ssTranslationTable.size())

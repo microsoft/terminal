@@ -81,7 +81,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -176,10 +176,10 @@ namespace TerminalCoreUnitTests
             term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
-            const SHORT leftBoundary = viewport.Left();
-            const SHORT rightBoundary = viewport.RightInclusive();
-            const SHORT topBoundary = viewport.Top();
-            const SHORT bottomBoundary = viewport.BottomInclusive();
+            const auto leftBoundary = viewport.Left();
+            const auto rightBoundary = viewport.RightInclusive();
+            const auto topBoundary = viewport.Top();
+            const auto bottomBoundary = viewport.BottomInclusive();
 
             // Case 1: Simulate click past right (x,y) = (20,5)
             // should clamp to right boundary
@@ -219,7 +219,7 @@ namespace TerminalCoreUnitTests
 
             auto viewport = term.GetViewport();
             const SHORT leftBoundary = 0;
-            const SHORT rightBoundary = viewport.RightInclusive();
+            const auto rightBoundary = viewport.RightInclusive();
 
             // Simulate click at (x,y) = (5,5)
             term.SetSelectionAnchor({ 5, 5 });
@@ -358,7 +358,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();

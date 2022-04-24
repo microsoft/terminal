@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Divide by three, since we know there are only three buttons. When
         // Windows 12 comes along and adds another, we can update this /s
-        static double width{ MinMaxCloseControl().ActualWidth() / 3.0 };
+        static auto width{ MinMaxCloseControl().ActualWidth() / 3.0 };
         return width;
     }
 
@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
     {
         POINT point1 = {};
         ::GetCursorPos(&point1);
-        const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+        const auto lParam = MAKELPARAM(point1.x, point1.y);
         WINDOWPLACEMENT placement = { sizeof(placement) };
         ::GetWindowPlacement(_window, &placement);
         if (placement.showCmd == SW_SHOWNORMAL)

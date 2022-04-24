@@ -24,14 +24,14 @@ void Scrolling::s_UpdateSystemMetrics()
 
 bool Scrolling::s_IsInScrollMode()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return WI_IsFlagSet(gci.Flags, CONSOLE_SCROLLING);
 }
 
 void Scrolling::s_DoScroll()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (!s_IsInScrollMode())
     {
         // clear any selection we may have -- can't scroll and select at the same time
@@ -48,8 +48,8 @@ void Scrolling::s_DoScroll()
 
 void Scrolling::s_ClearScroll()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     WI_ClearFlag(gci.Flags, CONSOLE_SCROLLING);
     if (pWindow != nullptr)
     {
@@ -59,10 +59,10 @@ void Scrolling::s_ClearScroll()
 
 void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
 {
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     FAIL_FAST_IF_NULL(pWindow);
 
-    Selection* const pSelection = &Selection::Instance();
+    const auto pSelection = &Selection::Instance();
 
     if (pSelection->IsInSelectingState() && pSelection->IsMouseButtonDown())
     {
@@ -87,7 +87,7 @@ void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
             MousePosition.X = (SHORT)CursorPos.x;
             MousePosition.Y = (SHORT)CursorPos.y;
 
-            COORD coordFontSize = ScreenInfo.GetScreenFontSize();
+            auto coordFontSize = ScreenInfo.GetScreenFontSize();
 
             MousePosition.X /= coordFontSize.X;
             MousePosition.Y /= coordFontSize.Y;
@@ -106,13 +106,13 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
                                    _In_ bool hasShift,
                                    SCREEN_INFORMATION& ScreenInfo)
 {
-    COORD NewOrigin = ScreenInfo.GetViewport().Origin();
+    auto NewOrigin = ScreenInfo.GetViewport().Origin();
 
     // s_ucWheelScrollLines == 0 means that it is turned off.
     if (isMouseWheel && s_ucWheelScrollLines > 0)
     {
         // Rounding could cause this to be zero if gucWSL is bigger than 240 or so.
-        ULONG const ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1ul);
+        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1ul);
 
         // If we change direction we need to throw away any remainder we may have in the other direction.
         if ((ScreenInfo.WheelDelta > 0) == (wheelDelta > 0))
@@ -147,7 +147,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             }
 
             NewOrigin.Y -= delta;
-            const COORD coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
+            const auto coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
             if (NewOrigin.Y < 0)
             {
                 NewOrigin.Y = 0;
@@ -161,7 +161,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
     }
     else if (isMouseHWheel && s_ucWheelScrollChars > 0)
     {
-        ULONG const ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1ul);
+        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1ul);
 
         if ((ScreenInfo.HWheelDelta > 0) == (wheelDelta > 0))
         {
@@ -185,7 +185,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             ScreenInfo.HWheelDelta %= ulActualDelta;
 
             NewOrigin.X += delta;
-            const COORD coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
+            const auto coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
             if (NewOrigin.X < 0)
             {
                 NewOrigin.X = 0;
@@ -202,13 +202,13 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
 
 bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     FAIL_FAST_IF_NULL(pWindow);
 
-    const WORD VirtualKeyCode = pKeyInfo->GetVirtualKey();
-    const bool fIsCtrlPressed = pKeyInfo->IsCtrlPressed();
-    const bool fIsEditLineEmpty = CommandLine::Instance().IsEditLineEmpty();
+    const auto VirtualKeyCode = pKeyInfo->GetVirtualKey();
+    const auto fIsCtrlPressed = pKeyInfo->IsCtrlPressed();
+    const auto fIsEditLineEmpty = CommandLine::Instance().IsEditLineEmpty();
 
     // If escape, enter or ctrl-c, cancel scroll.
     if (VirtualKeyCode == VK_ESCAPE ||
@@ -220,7 +220,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
     else
     {
         WORD ScrollCommand;
-        BOOL Horizontal = FALSE;
+        auto Horizontal = FALSE;
         switch (VirtualKeyCode)
         {
         case VK_UP:

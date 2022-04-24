@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 #pragma warning(push)
 #pragma warning(disable : 26490)
         // C++/WinRT just loves it's void**, nothing we can do here _except_ reinterpret_cast
-        ::IInspectable** raw = reinterpret_cast<::IInspectable**>(pointer);
+        auto raw = reinterpret_cast<::IInspectable**>(pointer);
 #pragma warning(pop)
 
         // RoActivateInstance() will try to create an instance of the object,

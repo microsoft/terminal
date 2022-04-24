@@ -146,8 +146,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
         const til::point cursorPos{ til::math::flooring, cursorArgs->CurrentPosition() };
 
-        const double actualCanvasWidth{ Canvas().ActualWidth() };
-        const double actualTextBlockHeight{ TextBlock().ActualHeight() };
+        const auto actualCanvasWidth{ Canvas().ActualWidth() };
+        const auto actualTextBlockHeight{ TextBlock().ActualHeight() };
         const auto actualWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
 
         if (_currentTerminalCursorPos == cursorPos &&
@@ -184,10 +184,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Convert text buffer cursor position to client coordinate position
         // within the window. This point is in _pixels_
-        const til::point clientCursorPos{ _currentTerminalCursorPos * fontSize };
+        const auto clientCursorPos{ _currentTerminalCursorPos * fontSize };
 
         // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
         const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
 
@@ -197,7 +197,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // calculate FontSize in pixels from Points
         const double fontSizePx = (fontSize.height * 72) / USER_DEFAULT_SCREEN_DPI;
-        const double unscaledFontSizePx = fontSizePx / scaleFactor;
+        const auto unscaledFontSizePx = fontSizePx / scaleFactor;
 
         // Make sure to unscale the font size to correct for DPI! XAML needs
         // things in DIPs, and the fontSize is in pixels.
@@ -229,13 +229,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // The controlAbsoluteOrigin is the origin of the control relative to
         // the origin of the displays. THIS IS IN DIPs
-        const til::point controlAbsoluteOrigin{ windowOrigin + controlOrigin };
+        const auto controlAbsoluteOrigin{ windowOrigin + controlOrigin };
 
         // Convert the control origin to pixels
-        const til::point scaledFrameOrigin = til::point{ til::math::flooring, controlAbsoluteOrigin.x * scaleFactor, controlAbsoluteOrigin.y * scaleFactor };
+        const auto scaledFrameOrigin = til::point{ til::math::flooring, controlAbsoluteOrigin.x * scaleFactor, controlAbsoluteOrigin.y * scaleFactor };
 
         // Get the location of the cursor in the display, in pixels.
-        til::point screenCursorPos{ scaledFrameOrigin + clientCursorPos };
+        auto screenCursorPos{ scaledFrameOrigin + clientCursorPos };
 
         // GH #5007 - make sure to account for wrapping the IME composition at
         // the right side of the viewport.

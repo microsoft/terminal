@@ -19,8 +19,8 @@ namespace winrt::Microsoft::Terminal::Settings
 {
     hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable)
     {
-        Controls::ComboBox comboBox = comboBoxAsInspectable.as<Controls::ComboBox>();
-        Controls::ComboBoxItem selectedOption = comboBox.SelectedItem().as<Controls::ComboBoxItem>();
+        auto comboBox = comboBoxAsInspectable.as<Controls::ComboBox>();
+        auto selectedOption = comboBox.SelectedItem().as<Controls::ComboBoxItem>();
 
         return unbox_value<hstring>(selectedOption.Tag());
     }

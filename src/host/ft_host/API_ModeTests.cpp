@@ -43,7 +43,7 @@ void ModeTests::TestGetConsoleModeInvalid()
         TEST_METHOD_PROPERTY(L"IsPerfTest", L"true")
     END_TEST_METHOD_PROPERTIES()
 
-    DWORD dwConsoleMode = (DWORD)-1;
+    auto dwConsoleMode = (DWORD)-1;
     VERIFY_WIN32_BOOL_FAILED(GetConsoleMode(INVALID_HANDLE_VALUE, &dwConsoleMode));
     VERIFY_ARE_EQUAL(dwConsoleMode, (DWORD)-1);
 
@@ -57,7 +57,7 @@ void ModeTests::TestSetConsoleModeInvalid()
     VERIFY_WIN32_BOOL_FAILED(SetConsoleMode(INVALID_HANDLE_VALUE, 0));
     VERIFY_WIN32_BOOL_FAILED(SetConsoleMode(nullptr, 0));
 
-    HANDLE hConsoleInput = GetStdInputHandle();
+    auto hConsoleInput = GetStdInputHandle();
     VERIFY_WIN32_BOOL_FAILED(SetConsoleMode(hConsoleInput, 0xFFFFFFFF), L"Can't set invalid input flags");
     VERIFY_WIN32_BOOL_FAILED(SetConsoleMode(hConsoleInput, ENABLE_ECHO_INPUT),
                              L"Can't set ENABLE_ECHO_INPUT without ENABLE_LINE_INPUT on input handle");
@@ -67,12 +67,12 @@ void ModeTests::TestSetConsoleModeInvalid()
 
 void ModeTests::TestConsoleModeInputScenario()
 {
-    HANDLE hConsoleInput = GetStdInputHandle();
+    auto hConsoleInput = GetStdInputHandle();
 
     const DWORD dwInputModeToSet = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_WINDOW_INPUT;
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hConsoleInput, dwInputModeToSet), L"Set valid flags for input");
 
-    DWORD dwInputMode = (DWORD)-1;
+    auto dwInputMode = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(hConsoleInput, &dwInputMode), L"Get recently set flags for input");
     VERIFY_ARE_EQUAL(dwInputMode, dwInputModeToSet, L"Make sure SetConsoleMode worked for input");
 }
@@ -83,7 +83,7 @@ void ModeTests::TestConsoleModeScreenBufferScenario()
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(Common::_hConsole, dwOutputModeToSet),
                                 L"Set initial output flags");
 
-    DWORD dwOutputMode = (DWORD)-1;
+    auto dwOutputMode = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(Common::_hConsole, &dwOutputMode), L"Get new output flags");
     VERIFY_ARE_EQUAL(dwOutputMode, dwOutputModeToSet, L"Make sure output flags applied appropriately");
 
@@ -123,7 +123,7 @@ void ModeTests::TestGetConsoleProcessList()
     Log::Comment(L"Test valid buffer and a zero length");
     {
         DWORD one = 0;
-        const DWORD oneOriginal = one;
+        const auto oneOriginal = one;
         SetLastError(0);
         VERIFY_ARE_EQUAL(0ul, GetConsoleProcessList(&one, 0), L"Return value should be 0");
         VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_INVALID_PARAMETER), GetLastError(), L"Last error should be invalid parameter.");
@@ -133,7 +133,7 @@ void ModeTests::TestGetConsoleProcessList()
     Log::Comment(L"Test a valid buffer of length 1");
     {
         DWORD one = 0;
-        const DWORD oneOriginal = one;
+        const auto oneOriginal = one;
         SetLastError(0);
         VERIFY_ARE_EQUAL(2ul, GetConsoleProcessList(&one, 1), L"Return value should be 2 because there are at least two processes attached during tests.");
         VERIFY_ARE_EQUAL(static_cast<DWORD>(ERROR_SUCCESS), GetLastError(), L"Last error should be success.");

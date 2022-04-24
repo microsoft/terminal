@@ -145,7 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
     bool Appearances::UsingMonospaceFont() const noexcept
     {
-        bool result{ false };
+        auto result{ false };
         const auto currentFont{ Appearance().FontFace() };
         for (const auto& font : ProfileViewModel::MonospaceFontList())
         {

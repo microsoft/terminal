@@ -110,7 +110,7 @@ CharRowCellReference::const_iterator CharRowCellReference::end() const
 
 bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph)
 {
-    const DbcsAttribute& dbcsAttr = ref._cellData().DbcsAttr();
+    const auto& dbcsAttr = ref._cellData().DbcsAttr();
     if (glyph.size() == 1 && dbcsAttr.IsGlyphStored())
     {
         return false;

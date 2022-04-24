@@ -84,7 +84,7 @@ void OutputTests::BasicWriteConsoleOutputWTest()
     std::vector<CHAR_INFO> buffer(regionSize, testValue);
 
     // Call the API and confirm results.
-    SMALL_RECT affected = region;
+    auto affected = region;
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(region, affected);
 }
@@ -115,7 +115,7 @@ void OutputTests::BasicWriteConsoleOutputATest()
     std::vector<CHAR_INFO> buffer(regionSize, testValue);
 
     // Call the API and confirm results.
-    SMALL_RECT affected = region;
+    auto affected = region;
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputA(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(region, affected);
 }
@@ -182,7 +182,7 @@ void OutputTests::WriteConsoleOutputWOutsideBuffer()
     {
         for (auto col = 0; col < sbiex.dwSize.X; col++)
         {
-            CHAR_INFO readItem = *(readBack.get() + (row * sbiex.dwSize.X) + col);
+            auto readItem = *(readBack.get() + (row * sbiex.dwSize.X) + col);
 
             CHAR_INFO expectedItem;
             expectedItem.Char.UnicodeChar = L' ';
@@ -260,7 +260,7 @@ void OutputTests::WriteConsoleOutputWWithClipping()
     {
         for (auto col = 0; col < sbiex.dwSize.X; col++)
         {
-            CHAR_INFO readItem = *(readBack.get() + (row * sbiex.dwSize.X) + col);
+            auto readItem = *(readBack.get() + (row * sbiex.dwSize.X) + col);
 
             CHAR_INFO expectedItem;
             if (affected.Top <= row && affected.Bottom >= row && affected.Left <= col && affected.Right >= col)
@@ -347,7 +347,7 @@ void OutputTests::WriteConsoleOutputWNegativePositions()
     {
         for (auto col = 0; col < sbiex.dwSize.X; col++)
         {
-            CHAR_INFO readItem = *(readBack.get() + (row * sbiex.dwSize.X) + col);
+            auto readItem = *(readBack.get() + (row * sbiex.dwSize.X) + col);
 
             CHAR_INFO expectedItem;
             if (affected.Top <= row && affected.Bottom >= row && affected.Left <= col && affected.Right >= col)
@@ -445,18 +445,18 @@ void OutputTests::WriteConsoleOutputAttributeCheckerTest()
     const DWORD height = 8;
     const DWORD width = bufferSize.X;
     // todo verify less than or equal to buffer size ^^^
-    const DWORD size = width * height;
-    std::unique_ptr<WORD[]> attrs = std::make_unique<WORD[]>(size);
+    const auto size = width * height;
+    auto attrs = std::make_unique<WORD[]>(size);
 
     std::generate(attrs.get(), attrs.get() + size, [=]() {
-        static int i = 0;
+        static auto i = 0;
         return i++ % 2 == 0 ? red : green;
     });
 
     // write text
     const COORD coord{ 0, 0 };
     DWORD charsWritten = 0;
-    std::unique_ptr<wchar_t[]> wchs = std::make_unique<wchar_t[]>(size);
+    auto wchs = std::make_unique<wchar_t[]>(size);
     std::fill_n(wchs.get(), size, L'*');
     VERIFY_SUCCEEDED(WriteConsoleOutputCharacter(consoleOutputHandle, wchs.get(), size, coord, &charsWritten));
     VERIFY_ARE_EQUAL(charsWritten, size);
@@ -467,13 +467,13 @@ void OutputTests::WriteConsoleOutputAttributeCheckerTest()
     VERIFY_ARE_EQUAL(attrsWritten, size);
 
     // get changed attributes
-    std::unique_ptr<WORD[]> resultAttrs = std::make_unique<WORD[]>(size);
+    auto resultAttrs = std::make_unique<WORD[]>(size);
     DWORD attrsRead = 0;
     VERIFY_SUCCEEDED(ReadConsoleOutputAttribute(consoleOutputHandle, resultAttrs.get(), size, coord, &attrsRead));
     VERIFY_ARE_EQUAL(attrsRead, size);
 
     // get text
-    std::unique_ptr<wchar_t[]> resultWchs = std::make_unique<wchar_t[]>(size);
+    auto resultWchs = std::make_unique<wchar_t[]>(size);
     DWORD charsRead = 0;
     VERIFY_SUCCEEDED(ReadConsoleOutputCharacter(consoleOutputHandle, resultWchs.get(), size, coord, &charsRead));
     VERIFY_ARE_EQUAL(charsRead, size);
@@ -568,7 +568,7 @@ void OutputTests::BasicReadConsoleOutputATest()
     std::vector<CHAR_INFO> buffer(regionSize);
 
     // Call the API and confirm results
-    SMALL_RECT affected = region;
+    auto affected = region;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputA(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(region, affected);
 
@@ -617,7 +617,7 @@ void OutputTests::BasicReadConsoleOutputWTest()
     std::vector<CHAR_INFO> buffer(regionSize);
 
     // Call the API and confirm results
-    SMALL_RECT affected = region;
+    auto affected = region;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(region, affected);
 
@@ -776,7 +776,7 @@ void OutputTests::ReadConsoleOutputWWithClipping()
     {
         for (SHORT col = 0; col < regionDimensions.X; col++)
         {
-            CHAR_INFO bufferItem = *(buffer.begin() + (row * regionDimensions.X) + col);
+            auto bufferItem = *(buffer.begin() + (row * regionDimensions.X) + col);
 
             CHAR_INFO expectedItem;
             if (filledBuffer.IsInBounds({ col, row }))
@@ -877,7 +877,7 @@ void OutputTests::ReadConsoleOutputWNegativePositions()
     {
         for (SHORT col = 0; col < regionDimensions.X; col++)
         {
-            CHAR_INFO bufferItem = *(buffer.begin() + (row * regionDimensions.X) + col);
+            auto bufferItem = *(buffer.begin() + (row * regionDimensions.X) + col);
 
             CHAR_INFO expectedItem;
             if (adjustedBuffer.IsInBounds({ col, row }))
@@ -964,7 +964,7 @@ void OutputTests::ReadConsoleOutputWPartialUserBuffer()
     expected.Top -= expected.Top;
 
     // Call the API and confirm results
-    SMALL_RECT affected = region;
+    auto affected = region;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(consoleOutputHandle, buffer.data(), regionDimensions, regionOrigin, &affected));
     VERIFY_ARE_EQUAL(expected, affected);
 
@@ -973,7 +973,7 @@ void OutputTests::ReadConsoleOutputWPartialUserBuffer()
     {
         for (SHORT col = 0; col < regionDimensions.X; col++)
         {
-            CHAR_INFO bufferItem = *(buffer.begin() + (row * regionDimensions.X) + col);
+            auto bufferItem = *(buffer.begin() + (row * regionDimensions.X) + col);
 
             CHAR_INFO expectedItem;
             if (filledExpected.IsInBounds({ col, row }))
@@ -993,8 +993,8 @@ void OutputTests::ReadConsoleOutputWPartialUserBuffer()
 // Send "Select All", then spawn a thread to hit ESC a moment later.
 static void WinPtyTestStartSelection()
 {
-    const HWND hwnd = GetConsoleWindow();
-    const int SC_CONSOLE_SELECT_ALL = 0xFFF5;
+    const auto hwnd = GetConsoleWindow();
+    const auto SC_CONSOLE_SELECT_ALL = 0xFFF5;
     SendMessage(hwnd, WM_SYSCOMMAND, SC_CONSOLE_SELECT_ALL, 0);
     auto press_escape = std::thread([=]() {
         Sleep(500);
@@ -1019,7 +1019,7 @@ static void WinPtyDoWriteTest(
         static_cast<DWORD>(strlen(buf)),
         &actual,
         NULL);
-    const DWORD last_error = GetLastError();
+    const auto last_error = GetLastError();
     VERIFY_IS_TRUE(ret && actual == strlen(buf),
                    String().Format(L"%s: %s returned %d: actual=%u LastError=%u (%s)\n",
                                    ((ret && actual == strlen(buf)) ? L"SUCCESS" : L"ERROR"),

@@ -198,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring SettingContainer::_GenerateOverrideMessage(const IInspectable& settingOrigin)
     {
         // We only get here if the user had an override in place.
-        Model::OriginTag originTag{ Model::OriginTag::None };
+        auto originTag{ Model::OriginTag::None };
         winrt::hstring source;
 
         if (const auto& profile{ settingOrigin.try_as<Model::Profile>() })
