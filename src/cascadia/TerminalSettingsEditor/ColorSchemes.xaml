@@ -41,12 +41,10 @@
                 <Setter Property="IsTabStop" Value="False" />
             </Style>
 
-            <Style x:Key="ColorButtonStyle"
-                   BasedOn="{StaticResource BaseButtonStyle}"
+            <Style x:Key="ColorSchemesColorButtonStyle"
+                   BasedOn="{StaticResource ColorButtonStyle}"
                    TargetType="Button">
-                <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}" />
-                <Setter Property="Height" Value="30" />
-                <Setter Property="Width" Value="100" />
+                <Setter Property="Width" Value="96" />
             </Style>
 
             <Style TargetType="ColorPicker">
@@ -61,25 +59,8 @@
                           x:DataType="local:ColorTableEntry">
                 <Button AutomationProperties.Name="{x:Bind Name}"
                         Background="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
-                        Style="{StaticResource ColorButtonStyle}"
+                        Style="{StaticResource ColorSchemesColorButtonStyle}"
                         ToolTipService.ToolTip="{x:Bind Name}">
-                    <Button.Resources>
-                        <!--  Resources to colorize hover/pressed states based on the color of the button  -->
-                        <ResourceDictionary>
-                            <ResourceDictionary.ThemeDictionaries>
-                                <ResourceDictionary x:Key="Light">
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                     Color="{x:Bind local:Converters.LightenColor(Color), Mode=OneWay}" />
-                                </ResourceDictionary>
-                                <ResourceDictionary x:Key="Dark">
-                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                     Color="{x:Bind local:Converters.LightenColor(Color), Mode=OneWay}" />
-                                </ResourceDictionary>
-                                <!--  No High contrast dictionary, let's just leave that unchanged.  -->
-                            </ResourceDictionary.ThemeDictionaries>
-                        </ResourceDictionary>
-                    </Button.Resources>
-
                     <Button.Flyout>
                         <Flyout>
                             <muxc:ColorPicker ColorChanged="ColorPickerChanged"

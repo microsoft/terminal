@@ -15,7 +15,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static double FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight);
         static bool InvertBoolean(bool value);
         static winrt::Windows::UI::Xaml::Visibility InvertedBooleanToVisibility(bool value);
-        static winrt::Windows::UI::Color LightenColor(winrt::Windows::UI::Color color);
         static double MaxValueFromPaddingString(winrt::hstring paddingString);
         static int PercentageToPercentageValue(double value);
         static double PercentageValueToPercentage(double value);
