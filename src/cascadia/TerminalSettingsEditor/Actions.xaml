@@ -301,7 +301,7 @@
                             <Button x:Uid="Actions_DeleteButton"
                                     Margin="8,0,0,0"
                                     AutomationProperties.Name="{x:Bind DeleteButtonName}"
-                                    Style="{StaticResource EditButtonStyle}"
+                                    Style="{StaticResource DeleteSmallButtonStyle}"
                                     Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsNewlyAdded), Mode=OneWay}">
                                 <Button.Content>
                                     <FontIcon FontSize="{StaticResource EditButtonIconSize}"
@@ -317,54 +317,6 @@
                                         </StackPanel>
                                     </Flyout>
                                 </Button.Flyout>
-                                <Button.Resources>
-                                    <ResourceDictionary>
-                                        <ResourceDictionary.ThemeDictionaries>
-                                            <ResourceDictionary x:Key="Light">
-                                                <SolidColorBrush x:Key="ButtonBackground"
-                                                                 Color="Firebrick" />
-                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                                 Color="#C23232" />
-                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                                 Color="#A21212" />
-                                                <SolidColorBrush x:Key="ButtonForeground"
-                                                                 Color="White" />
-                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                                 Color="White" />
-                                                <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                                 Color="White" />
-                                            </ResourceDictionary>
-                                            <ResourceDictionary x:Key="Dark">
-                                                <SolidColorBrush x:Key="ButtonBackground"
-                                                                 Color="Firebrick" />
-                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                                 Color="#C23232" />
-                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                                 Color="#A21212" />
-                                                <SolidColorBrush x:Key="ButtonForeground"
-                                                                 Color="White" />
-                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                                 Color="White" />
-                                                <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                                 Color="White" />
-                                            </ResourceDictionary>
-                                            <ResourceDictionary x:Key="HighContrast">
-                                                <SolidColorBrush x:Key="ButtonBackground"
-                                                                 Color="{ThemeResource SystemColorButtonFaceColor}" />
-                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                                 Color="{ThemeResource SystemColorHighlightColor}" />
-                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                                 Color="{ThemeResource SystemColorHighlightColor}" />
-                                                <SolidColorBrush x:Key="ButtonForeground"
-                                                                 Color="{ThemeResource SystemColorButtonTextColor}" />
-                                                <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                                 Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                                <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                                 Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                            </ResourceDictionary>
-                                        </ResourceDictionary.ThemeDictionaries>
-                                    </ResourceDictionary>
-                                </Button.Resources>
                             </Button>
 
                         </StackPanel>
