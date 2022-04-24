@@ -62,6 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
         void FinalizeLayering();
         bool DisableDeletedProfiles();
+        bool RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile);
         bool FixupUserSettings();
 
         ParsedSettings inboxSettings;

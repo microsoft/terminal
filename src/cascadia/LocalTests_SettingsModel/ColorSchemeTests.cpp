@@ -10,6 +10,7 @@
 
 using namespace Microsoft::Console;
 using namespace winrt::Microsoft::Terminal;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -37,6 +38,10 @@ namespace SettingsModelLocalTests
         TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(LayerColorSchemesOnArray);
         TEST_METHOD(UpdateSchemeReferences);
+
+        TEST_METHOD(LayerColorSchemesWithUserOwnedCollision);
+        TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionRetargetsAllProfiles);
+        TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionWithFragments);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -321,6 +326,520 @@ namespace SettingsModelLocalTests
             const auto& prof{ profiles.GetAt(3) };
             VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().ColorSchemeName());
             VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+        }
+    }
+
+    void ColorSchemeTests::LayerColorSchemesWithUserOwnedCollision()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "schemes": [
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                },
+                {
+                    "name": "Vintage",
+                    "foreground": "#C0C0C0",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#800000",
+                    "green": "#008000",
+                    "yellow": "#808000",
+                    "blue": "#000080",
+                    "purple": "#800080",
+                    "cyan": "#008080",
+                    "white": "#C0C0C0",
+                    "brightBlack": "#808080",
+                    "brightRed": "#FF0000",
+                    "brightGreen": "#00FF00",
+                    "brightYellow": "#FFFF00",
+                    "brightBlue": "#0000FF",
+                    "brightPurple": "#FF00FF",
+                    "brightCyan": "#00FFFF",
+                    "brightWhite": "#FFFFFF"
+                }
+            ]
+        })" };
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0"
+                }
+            ],
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Campbell",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                },
+                {
+                    "name": "Vintage",
+                    "foreground": "#C0C0C0",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#800000",
+                    "green": "#008000",
+                    "yellow": "#808000",
+                    "blue": "#000080",
+                    "purple": "#800080",
+                    "cyan": "#008080",
+                    "white": "#C0C0C0",
+                    "brightBlack": "#808080",
+                    "brightRed": "#FF0000",
+                    "brightGreen": "#00FF00",
+                    "brightYellow": "#FFFF00",
+                    "brightBlue": "#0000FF",
+                    "brightPurple": "#FF00FF",
+                    "brightCyan": "#00FFFF",
+                    "brightWhite": "#FFFFFF"
+                }
+            ]
+        })" };
+
+        // In this test, The user has a copy of Campbell which they have modified and a copy of Vintage which they
+        // have not. Campbell should be renamed to Campbell (Modified) and copied while Vintage should simply
+        // be demoted to "Inbox" status.
+
+        const auto settings = winrt::make_self<CascadiaSettings>(userSettings, inboxSettings);
+
+        const auto colorSchemes = settings->GlobalSettings().ColorSchemes();
+        VERIFY_ARE_EQUAL(3u, colorSchemes.Size()); // There should be three: Campbell, Campbell Edited, Vintage
+
+        const auto scheme0 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell (Modified)"));
+        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::User, scheme0->Origin());
+
+        // Stock Campbell is now untouched
+        const auto scheme1 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell"));
+        VERIFY_ARE_EQUAL(rgb(0xcc, 0xcc, 0xcc), scheme1->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x0c, 0x0c, 0x0c), scheme1->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme1->Origin());
+
+        const auto scheme2 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Vintage"));
+        VERIFY_ARE_EQUAL(rgb(0xc0, 0xc0, 0xc0), scheme2->Foreground());
+        VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme2->Origin());
+    }
+
+    void ColorSchemeTests::LayerColorSchemesWithUserOwnedCollisionRetargetsAllProfiles()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "schemes": [
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                },
+                {
+                    "name": "Vintage",
+                    "foreground": "#C0C0C0",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#800000",
+                    "green": "#008000",
+                    "yellow": "#808000",
+                    "blue": "#000080",
+                    "purple": "#800080",
+                    "cyan": "#008080",
+                    "white": "#C0C0C0",
+                    "brightBlack": "#808080",
+                    "brightRed": "#FF0000",
+                    "brightGreen": "#00FF00",
+                    "brightYellow": "#FFFF00",
+                    "brightBlue": "#0000FF",
+                    "brightPurple": "#FF00FF",
+                    "brightCyan": "#00FFFF",
+                    "brightWhite": "#FFFFFF"
+                }
+            ]
+        })" };
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": {
+                "defaults": { }, // We should insert Campbell here
+                "list": [
+                    {
+                        "name" : "profile0" // Does not specify Campbell, should not be edited!
+                    },
+                    {
+                        "name" : "profile1",
+                        "colorScheme": "Vintage" // This should not be changed
+                    },
+                    {
+                        "name" : "profile2",
+                        "colorScheme": "Campbell" // Direct specification should be replaced
+                    },
+                    {
+                        "name" : "profile3",
+                        "unfocusedAppearance": {
+                            "colorScheme": "Campbell" // Direct specification should be replaced
+                        }
+                    }
+                ],
+            },
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Campbell",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                }
+            ]
+        })" };
+
+        // The user has a copy of Campbell that they have modified.
+        // Profile 0 inherited its default value from the compiled-in settings ("Campbell"),
+        // but through the user's perspective _they changed the values in the default scheme._
+        // Therefore, we need to retarget any profile with the compiled-in defaults to the
+        // new copy of Campbell.
+        //
+        // Critically, we need to make sure that we do this at the lowest layer that will apply
+        // to the most profiles... otherwise we'll make the settings really annoying by putting
+        // in so many references to Campbell (Modified)
+
+        const auto settings = winrt::make_self<CascadiaSettings>(userSettings, inboxSettings);
+
+        const auto defaults{ settings->ProfileDefaults() };
+        VERIFY_IS_TRUE(defaults.DefaultAppearance().HasColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell (Modified)", defaults.DefaultAppearance().ColorSchemeName());
+
+        const auto& profiles{ settings->AllProfiles() };
+        {
+            const auto& prof0{ profiles.GetAt(0) };
+            VERIFY_IS_FALSE(prof0.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof0.DefaultAppearance().ColorSchemeName());
+        }
+        {
+            const auto& prof1{ profiles.GetAt(1) };
+            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Vintage", prof1.DefaultAppearance().ColorSchemeName());
+        }
+        {
+            const auto& prof2{ profiles.GetAt(2) };
+            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof2.DefaultAppearance().ColorSchemeName());
+        }
+        {
+            const auto& prof3{ profiles.GetAt(3) };
+            VERIFY_IS_FALSE(prof3.DefaultAppearance().HasColorSchemeName());
+            VERIFY_IS_TRUE(prof3.UnfocusedAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof3.DefaultAppearance().ColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell (Modified)", prof3.UnfocusedAppearance().ColorSchemeName());
+        }
+    }
+
+    void ColorSchemeTests::LayerColorSchemesWithUserOwnedCollisionWithFragments()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "schemes": [
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                },
+                {
+                    "name": "Vintage",
+                    "foreground": "#C0C0C0",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#800000",
+                    "green": "#008000",
+                    "yellow": "#808000",
+                    "blue": "#000080",
+                    "purple": "#800080",
+                    "cyan": "#008080",
+                    "white": "#C0C0C0",
+                    "brightBlack": "#808080",
+                    "brightRed": "#FF0000",
+                    "brightGreen": "#00FF00",
+                    "brightYellow": "#FFFF00",
+                    "brightBlue": "#0000FF",
+                    "brightPurple": "#FF00FF",
+                    "brightCyan": "#00FFFF",
+                    "brightWhite": "#FFFFFF"
+                }
+            ]
+        })" };
+
+        static constexpr std::string_view fragment{ R"({
+            "profiles": [
+                {
+                    "guid": "{347a67b5-b3a3-4484-9f96-a92d68f6e787}",
+                    "name": "fragment profile 0",
+                    "colorScheme": "Tango Light"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "Campbell",
+                    "foreground": "#444444",
+                    "background": "#444444",
+                    "cursorColor": "#999999",
+                    "black": "#444444",
+                    "red": "#994444",
+                    "green": "#494944",
+                    "yellow": "#949444",
+                    "blue": "#444494",
+                    "purple": "#444449",
+                    "cyan": "#444449",
+                    "white": "#949499",
+                    "brightBlack": "#444444",
+                    "brightRed": "#994444",
+                    "brightGreen": "#499444",
+                    "brightYellow": "#999449",
+                    "brightBlue": "#444999",
+                    "brightPurple": "#994994",
+                    "brightCyan": "#449494",
+                    "brightWhite": "#999999"
+                },
+                {
+                    "name": "Tango Dark",
+                    "foreground": "#D3D7CF",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#CC0000",
+                    "green": "#4E9A06",
+                    "yellow": "#C4A000",
+                    "blue": "#3465A4",
+                    "purple": "#75507B",
+                    "cyan": "#06989A",
+                    "white": "#D3D7CF",
+                    "brightBlack": "#555753",
+                    "brightRed": "#EF2929",
+                    "brightGreen": "#8AE234",
+                    "brightYellow": "#FCE94F",
+                    "brightBlue": "#729FCF",
+                    "brightPurple": "#AD7FA8",
+                    "brightCyan": "#34E2E2",
+                    "brightWhite": "#EEEEEC"
+                },
+                {
+                    "name": "Tango Light",
+                    "foreground": "#555753",
+                    "background": "#FFFFFF",
+                    "cursorColor": "#000000",
+                    "black": "#000000",
+                    "red": "#CC0000",
+                    "green": "#4E9A06",
+                    "yellow": "#C4A000",
+                    "blue": "#3465A4",
+                    "purple": "#75507B",
+                    "cyan": "#06989A",
+                    "white": "#D3D7CF",
+                    "brightBlack": "#555753",
+                    "brightRed": "#EF2929",
+                    "brightGreen": "#8AE234",
+                    "brightYellow": "#FCE94F",
+                    "brightBlue": "#729FCF",
+                    "brightPurple": "#AD7FA8",
+                    "brightCyan": "#34E2E2",
+                    "brightWhite": "#EEEEEC"
+                }
+            ]
+        })" };
+
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": {
+                "defaults": { },
+                "list": [
+                    {
+                        "name" : "profile0"
+                    },
+                    {
+                        "name" : "profile1",
+                        "colorScheme": "Vintage"
+                    },
+                    {
+                        "name" : "profile2",
+                        "colorScheme": "Tango Light"
+                    }
+                ],
+            },
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Tango Light",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                }
+            ]
+        })" };
+
+        // In this case, we have a fragment that overrides Campbell and adds Tango Light and Dark.
+        // The user is overriding Tango Light.
+        // We'll want to make sure that:
+        // 1. Campbell has the final modified settings, but does not have a user-owned modified fork.
+        // 2. Vintage is unmodified.
+        // 3. Tango Light needs a modified fork, which contains the user's modified copy
+        // 4. Tango Dark does not need a modified fork.
+        // The fragment also comes with a profile that uses Tango Light; it should be redirected to Tango Light (modified)
+
+        SettingsLoader loader{ userSettings, inboxSettings };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(L"TestFragment", fragment);
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
+
+        // VERIFY SCHEMES
+        const auto colorSchemes = settings->GlobalSettings().ColorSchemes();
+        const auto scheme0 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell"));
+        VERIFY_ARE_EQUAL(rgb(0x44, 0x44, 0x44), scheme0->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x44, 0x44, 0x44), scheme0->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::Fragment, scheme0->Origin());
+
+        // Stock Vintage is untouched
+        const auto scheme1 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Vintage"));
+        VERIFY_ARE_EQUAL(rgb(0xc0, 0xc0, 0xc0), scheme1->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x00, 0x00, 0x00), scheme1->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme1->Origin());
+
+        // Stock Tango Light is untouched as well
+        const auto scheme2 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Tango Light"));
+        VERIFY_ARE_EQUAL(rgb(0x55, 0x57, 0x53), scheme2->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0xff, 0xff, 0xff), scheme2->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::Fragment, scheme2->Origin());
+
+        const auto scheme3 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Tango Light (Modified)"));
+        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme3->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme3->Background());
+        VERIFY_ARE_EQUAL(Model::OriginTag::User, scheme3->Origin());
+
+        // VERIFY PROFILES
+        const auto defaults{ settings->ProfileDefaults() };
+        VERIFY_IS_FALSE(defaults.DefaultAppearance().HasColorSchemeName()); // User did not specify Campbell, Fragment edited it
+        VERIFY_ARE_EQUAL(L"Campbell", defaults.DefaultAppearance().ColorSchemeName());
+
+        const auto& profiles{ settings->AllProfiles() };
+        {
+            const auto& prof0{ profiles.GetAt(0) };
+            VERIFY_ARE_EQUAL(L"Campbell", prof0.DefaultAppearance().ColorSchemeName());
+        }
+        {
+            const auto& prof1{ profiles.GetAt(1) };
+            VERIFY_IS_TRUE(prof1.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Vintage", prof1.DefaultAppearance().ColorSchemeName());
+        }
+        {
+            const auto& prof2{ profiles.GetAt(2) };
+            VERIFY_IS_TRUE(prof2.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Tango Light (Modified)", prof2.DefaultAppearance().ColorSchemeName());
+        }
+        {
+            const auto& prof3{ profiles.GetAt(3) };
+            VERIFY_IS_TRUE(prof3.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Tango Light (Modified)", prof3.DefaultAppearance().ColorSchemeName());
         }
     }
 }

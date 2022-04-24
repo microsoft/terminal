@@ -98,6 +98,7 @@ SettingsLoader SettingsLoader::Default(const std::string_view& userJSON, const s
     SettingsLoader loader{ userJSON, inboxJSON };
     loader.MergeInboxIntoUserSettings();
     loader.FinalizeLayering();
+    loader.FixupUserSettings();
     return loader;
 }
 
@@ -371,6 +372,33 @@ bool SettingsLoader::DisableDeletedProfiles()
     return newGeneratedProfiles;
 }
 
+bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
+{
+    bool modified{ false };
+    if (auto schemeName{ profile->DefaultAppearance().ColorSchemeName() }; !schemeName.empty())
+    {
+        if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+        {
+            profile->DefaultAppearance().ColorSchemeName(found->second);
+            modified = true;
+        }
+    }
+
+    if (auto unfocusedAppearance{ profile->UnfocusedAppearance() })
+    {
+        if (auto schemeName{ unfocusedAppearance.ColorSchemeName() }; !schemeName.empty())
+        {
+            if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+            {
+                unfocusedAppearance.ColorSchemeName(found->second);
+                modified = true;
+            }
+        }
+    }
+
+    return modified;
+}
+
 // Runs migrations and fixups on user settings.
 // Returns true if something got changed and
 // the settings need to be saved to disk.
@@ -390,8 +418,11 @@ bool SettingsLoader::FixupUserSettings()
 
     bool fixedUp = false;
 
+    RemapColorSchemeForProfile(userSettings.baseLayerProfile);
     for (const auto& profile : userSettings.profiles)
     {
+        fixedUp = RemapColorSchemeForProfile(profile) || fixedUp;
+
         if (!profile->HasCommandline())
         {
             continue;
@@ -919,27 +950,6 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     allProfiles.reserve(loader.userSettings.profiles.size());
     activeProfiles.reserve(loader.userSettings.profiles.size());
 
-    auto remapColorSchemesForProfile{ [&](const winrt::com_ptr<implementation::Profile>& profile) {
-        if (auto schemeName{ profile->DefaultAppearance().ColorSchemeName() }; !schemeName.empty())
-        {
-            if (auto found{ loader.userSettings.colorSchemeRemappings.find(schemeName) }; found != loader.userSettings.colorSchemeRemappings.end())
-            {
-                profile->DefaultAppearance().ColorSchemeName(found->second);
-            }
-        }
-
-        if (auto unfocusedAppearance{ profile->UnfocusedAppearance() })
-        {
-            if (auto schemeName{ unfocusedAppearance.ColorSchemeName() }; !schemeName.empty())
-            {
-                if (auto found{ loader.userSettings.colorSchemeRemappings.find(schemeName) }; found != loader.userSettings.colorSchemeRemappings.end())
-                {
-                    unfocusedAppearance.ColorSchemeName(found->second);
-                }
-            }
-        }
-    } };
-
     for (const auto& colorScheme : loader.userSettings.colorSchemes)
     {
         loader.userSettings.globals->AddColorScheme(*colorScheme.second);
@@ -949,8 +959,6 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     // create these two members. We don't want null-pointer exceptions.
     assert(loader.userSettings.globals != nullptr);
     assert(loader.userSettings.baseLayerProfile != nullptr);
-
-    remapColorSchemesForProfile(loader.userSettings.baseLayerProfile);
 
     for (const auto& profile : loader.userSettings.profiles)
     {
@@ -967,8 +975,6 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
                 continue;
             }
         }
-
-        remapColorSchemesForProfile(profile);
 
         allProfiles.emplace_back(*profile);
         if (!profile->Hidden())
