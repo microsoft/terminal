@@ -871,7 +871,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        wchar_t const unicodeFillCharacter = CharToWchar(&fillCharacter, 1);
+        const wchar_t unicodeFillCharacter = CharToWchar(&fillCharacter, 1);
 
         return ScrollConsoleScreenBufferWImpl(context, source, target, clip, unicodeFillCharacter, fillAttribute);
     }
@@ -1324,7 +1324,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
         RETURN_HR_IF(S_OK, 0 == unicodeNeeded);
 
         // Allocate a unicode buffer of the right size.
-        size_t const unicodeSize = unicodeNeeded + 1; // add one for null terminator space
+        const size_t unicodeSize = unicodeNeeded + 1; // add one for null terminator space
         std::unique_ptr<wchar_t[]> unicodeBuffer = std::make_unique<wchar_t[]>(unicodeSize);
         RETURN_IF_NULL_ALLOC(unicodeBuffer);
 

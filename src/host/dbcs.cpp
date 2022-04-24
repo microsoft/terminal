@@ -109,7 +109,7 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo)
     FAIL_FAST_IF_NULL(pCPInfo);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
-    unsigned char const uchComparison = (unsigned char)ch;
+    const unsigned char uchComparison = (unsigned char)ch;
 
     int i = 0;
     // this is ok because the array is guaranteed to have 2

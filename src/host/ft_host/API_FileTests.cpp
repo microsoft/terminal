@@ -460,7 +460,7 @@ void FileTests::TestWriteFileVTProcessing()
     WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTestString, cchTest);
 
     // We only expect characters to be processed and not printed if both processed mode and VT mode are on.
-    bool const fProcessedNotPrinted = fProcessedOn && fVtOn;
+    const bool fProcessedNotPrinted = fProcessedOn && fVtOn;
 
     if (fProcessedNotPrinted)
     {
@@ -633,7 +633,7 @@ void FileTests::TestReadFileBasic()
         VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
     });
 
-    char const chExpected = 'a';
+    const char chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
@@ -652,7 +652,7 @@ void FileTests::TestReadFileBasicSync()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char const chExpected = 'a';
+    const char chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
@@ -683,7 +683,7 @@ void FileTests::TestReadFileBasicEmpty()
         VERIFY_ARE_EQUAL(0u, dwRead, L"We should have read nothing back. It should just return from Ctrl+Z");
     });
 
-    char const chExpected = '\x1a'; // ctrl+z character
+    const char chExpected = '\x1a'; // ctrl+z character
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
@@ -710,7 +710,7 @@ void FileTests::TestReadFileLine()
         VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
     });
 
-    char const chExpected = 'a';
+    const char chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
@@ -742,7 +742,7 @@ void FileTests::TestReadFileLineSync()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char const chExpected = 'a';
+    const char chExpected = 'a';
     Log::Comment(L"Send a key into the console followed by a carriage return.");
     SendFullKeyStrokeHelper(hIn, chExpected);
     SendFullKeyStrokeHelper(hIn, '\r');

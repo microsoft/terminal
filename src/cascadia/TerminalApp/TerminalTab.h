@@ -145,7 +145,7 @@ namespace winrt::TerminalApp::implementation
         void _Setup();
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
-        void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _BellIndicatorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
         void _MakeTabViewItem() override;
 

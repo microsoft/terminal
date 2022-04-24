@@ -21,7 +21,7 @@ namespace winrt::TerminalApp::implementation
 {
     // This class is a wrapper of PaletteItem, that is used as an item of a filterable list in CommandPalette.
     // It manages a highlighted text that is computed by matching search filter characters to item name
-    FilteredCommand::FilteredCommand(winrt::TerminalApp::PaletteItem const& item) :
+    FilteredCommand::FilteredCommand(const winrt::TerminalApp::PaletteItem& item) :
         _Item(item),
         _Filter(L""),
         _Weight(0)
@@ -39,7 +39,7 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void FilteredCommand::UpdateFilter(winrt::hstring const& filter)
+    void FilteredCommand::UpdateFilter(const winrt::hstring& filter)
     {
         // If the filter was not changed we want to prevent the re-computation of matching
         // that might result in triggering a notification event
@@ -225,7 +225,7 @@ namespace winrt::TerminalApp::implementation
     // - other: another instance of FilteredCommand interface
     // Return Value:
     // - Returns true if the first is "bigger" (aka should appear first)
-    int FilteredCommand::Compare(winrt::TerminalApp::FilteredCommand const& first, winrt::TerminalApp::FilteredCommand const& second)
+    int FilteredCommand::Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second)
     {
         auto firstWeight{ first.Weight() };
         auto secondWeight{ second.Weight() };

@@ -173,7 +173,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - handles the different possible inputs in the different states
     // Arguments:
     // the user's input
-    void AzureConnection::WriteInput(hstring const& data)
+    void AzureConnection::WriteInput(const hstring& data)
     {
         // We read input while connected AND connecting.
         if (!_isStateOneOf(ConnectionState::Connected, ConnectionState::Connecting))

@@ -865,7 +865,7 @@ VOID RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
 }
 
 // Given a desired SHORT size, search pTTPoints to determine if size is in the list.
-static bool IsSizePresentInList(__in const SHORT sSizeDesired, __in_ecount(nTTPoints) PSHORT pTTPoints, __in UINT nTTPoints)
+static bool IsSizePresentInList(const __in SHORT sSizeDesired, __in_ecount(nTTPoints) PSHORT pTTPoints, __in UINT nTTPoints)
 {
     bool fSizePresent = false;
     for (UINT i = 0; i < nTTPoints; i++)
@@ -881,7 +881,7 @@ static bool IsSizePresentInList(__in const SHORT sSizeDesired, __in_ecount(nTTPo
 
 // Given a face name, determine if the size provided is custom (i.e. not on the hardcoded list of sizes). Note that the
 // list of sizes we use varies depending on the codepage being used
-bool IsFontSizeCustom(__in PCWSTR pszFaceName, __in const SHORT sSize)
+bool IsFontSizeCustom(__in PCWSTR pszFaceName, const __in SHORT sSize)
 {
     bool fUsingCustomFontSize;
     if (g_fEastAsianSystem && !IsAvailableTTFontCP(pszFaceName, 0))
@@ -904,7 +904,7 @@ static bool IsCurrentFontSizeCustom()
 
 // Given a size, iterate through all TT fonts and load them in the provided size (only used for custom (non-hardcoded)
 // font sizes)
-void CreateSizeForAllTTFonts(__in const SHORT sSize)
+void CreateSizeForAllTTFonts(const __in SHORT sSize)
 {
     HDC hDC = CreateCompatibleDC(nullptr);
 

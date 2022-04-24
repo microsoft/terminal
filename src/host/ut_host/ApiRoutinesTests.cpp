@@ -87,12 +87,12 @@ class ApiRoutinesTests
         // The expected mode set in the buffer is the mode given minus the flags that are stored in different fields.
         ULONG ulModeExpected = ulNewMode;
         WI_ClearAllFlags(ulModeExpected, (ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS));
-        bool const fQuickEditExpected = WI_IsFlagSet(ulNewMode, ENABLE_QUICK_EDIT_MODE);
-        bool const fAutoPositionExpected = WI_IsFlagSet(ulNewMode, ENABLE_AUTO_POSITION);
-        bool const fInsertModeExpected = WI_IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
+        const bool fQuickEditExpected = WI_IsFlagSet(ulNewMode, ENABLE_QUICK_EDIT_MODE);
+        const bool fAutoPositionExpected = WI_IsFlagSet(ulNewMode, ENABLE_AUTO_POSITION);
+        const bool fInsertModeExpected = WI_IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
 
         // If the insert mode changed, we expect the cursor to have turned off.
-        bool const fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
+        const bool fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
 
         // Call the API
         HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(*pii, ulNewMode);
@@ -258,7 +258,7 @@ class ApiRoutinesTests
 
         const auto originalTitle = gci.GetOriginalTitle();
 
-        int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
+        const int iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                      0,
                                                      originalTitle.data(),
                                                      gsl::narrow_cast<int>(originalTitle.size()),

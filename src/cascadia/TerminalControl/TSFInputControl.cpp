@@ -264,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
     // Return Value:
     // - <none>
-    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
+    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, const CoreTextLayoutRequestedEventArgs& args)
     {
         auto request = args.Request();
 
@@ -285,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextCompositionStartedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, CoreTextCompositionStartedEventArgs const& /*args*/)
+    void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, const CoreTextCompositionStartedEventArgs& /*args*/)
     {
         _inComposition = true;
     }
@@ -298,7 +298,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextCompositionCompletedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& /*args*/)
+    void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, const CoreTextCompositionCompletedEventArgs& /*args*/)
     {
         _inComposition = false;
 
@@ -319,7 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - object: CoreTextCompositionStartedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, winrt::Windows::Foundation::IInspectable const& /*object*/)
+    void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, const winrt::Windows::Foundation::IInspectable& /*object*/)
     {
     }
 
@@ -332,7 +332,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextTextRequestedEventArgs to be updated with requested range text.
     // Return Value:
     // - <none>
-    void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, CoreTextTextRequestedEventArgs const& args)
+    void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, const CoreTextTextRequestedEventArgs& args)
     {
         // the range the TSF wants to know about
         const auto range = args.Request().Range();
@@ -358,7 +358,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextSelectionRequestedEventArgs for providing data for the SelectionRequested event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, CoreTextSelectionRequestedEventArgs const& /*args*/)
+    void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, const CoreTextSelectionRequestedEventArgs& /*args*/)
     {
     }
 
@@ -372,7 +372,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextSelectionUpdatingEventArgs for providing data for the SelectionUpdating event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, CoreTextSelectionUpdatingEventArgs const& /*args*/)
+    void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, const CoreTextSelectionUpdatingEventArgs& /*args*/)
     {
     }
 
@@ -384,7 +384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextTextUpdatingEventArgs contains new text to update buffer with.
     // Return Value:
     // - <none>
-    void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
+    void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, const CoreTextTextUpdatingEventArgs& args)
     {
         const auto incomingText = args.Text();
         const auto range = args.Range();
@@ -467,7 +467,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextFormatUpdatingEventArgs Provides data for the FormatUpdating event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& /*args*/)
+    void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, const CoreTextFormatUpdatingEventArgs& /*args*/)
     {
     }
 }

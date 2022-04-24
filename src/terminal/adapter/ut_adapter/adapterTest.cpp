@@ -317,14 +317,14 @@ public:
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
-        size_t const cchResponse = wcslen(pwszExpectedResponse);
-        size_t const eventCount = _events.size();
+        const size_t cchResponse = wcslen(pwszExpectedResponse);
+        const size_t eventCount = _events.size();
 
         VERIFY_ARE_EQUAL(cchResponse * 2, eventCount, L"We should receive TWO input records for every character in the expected string. Key down and key up.");
 
         for (size_t iInput = 0; iInput < eventCount; iInput++)
         {
-            wchar_t const wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
+            const wchar_t wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
 
             VERIFY_ARE_EQUAL(InputEventType::KeyEvent, _events[iInput]->EventType());
 

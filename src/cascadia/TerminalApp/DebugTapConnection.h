@@ -16,7 +16,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
-        void WriteInput(hstring const& data);
+        void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept;

@@ -415,8 +415,8 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
     if (fSuccess)
     {
         // Get the current cursor position
-        short const iRow = GetCursor().GetPosition().Y; // row stored as logical position, not array position
-        short const iCol = GetCursor().GetPosition().X; // column logical and array positions are equal.
+        const short iRow = GetCursor().GetPosition().Y; // row stored as logical position, not array position
+        const short iCol = GetCursor().GetPosition().X; // column logical and array positions are equal.
 
         // Get the row associated with the given logical position
         ROW& Row = GetRowByOffset(iRow);
@@ -528,7 +528,7 @@ bool TextBuffer::IncrementCursor()
 bool TextBuffer::NewlineCursor()
 {
     bool fSuccess = false;
-    short const iFinalRowIndex = GetSize().BottomInclusive();
+    const short iFinalRowIndex = GetSize().BottomInclusive();
 
     // Reset the cursor position to 0 and move down one line
     GetCursor().SetXPosition(0);
@@ -1716,7 +1716,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
     const bool copyTextColor = GetAttributeColors != nullptr;
 
     // preallocate our vectors to reduce reallocs
-    size_t const rows = selectionRects.size();
+    const size_t rows = selectionRects.size();
     data.text.reserve(rows);
     if (copyTextColor)
     {

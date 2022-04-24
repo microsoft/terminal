@@ -962,7 +962,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 
     NTSTATUS Status = STATUS_SUCCESS;
 
-    size_t const BufferSize = *pcb;
+    const size_t BufferSize = *pcb;
     *pcb = 0;
 
     {
@@ -979,7 +979,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 FAIL_FAST_IF(!(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE)));
 
                 StateMachine& machine = screenInfo.GetStateMachine();
-                size_t const cch = BufferSize / sizeof(WCHAR);
+                const size_t cch = BufferSize / sizeof(WCHAR);
 
                 machine.ProcessString({ pwchRealUnicode, cch });
                 *pcb += BufferSize;

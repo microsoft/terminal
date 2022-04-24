@@ -66,7 +66,7 @@ void Utf8ToWideCharParser::SetCodePage(const unsigned int codePage)
 // Return Value:
 // - <none>
 [[nodiscard]] HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cchBuffer) const byte* const pBytes,
-                                                  _In_ unsigned int const cchBuffer,
+                                                  _In_ const unsigned int cchBuffer,
                                                   _Out_ unsigned int& cchConsumed,
                                                   _Inout_ std::unique_ptr<wchar_t[]>& converted,
                                                   _Out_ unsigned int& cchConverted)

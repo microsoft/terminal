@@ -394,7 +394,7 @@ void HandleKeyEvent(const HWND hWnd,
         if (handlingResult == Selection::KeySelectionEventResult::CopyToClipboard)
         {
             // If the ALT key is held, also select HTML as well as plain text.
-            bool const fAlsoSelectHtml = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+            const bool fAlsoSelectHtml = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
             Clipboard::Instance().Copy(fAlsoSelectHtml);
             return;
         }
@@ -828,7 +828,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                         Telemetry::Instance().LogQuickEditCopyRawUsed();
                     }
                     // If the ALT key is held, also select HTML as well as plain text.
-                    bool const fAlsoCopyFormatting = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+                    const bool fAlsoCopyFormatting = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
                     Clipboard::Instance().Copy(fAlsoCopyFormatting);
                 }
                 else if (gci.Flags & CONSOLE_QUICK_EDIT_MODE)

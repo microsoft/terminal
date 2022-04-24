@@ -166,7 +166,7 @@ namespace winrt::TerminalApp::implementation
             const auto darkKey = winrt::box_value(L"Dark");
             const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
 
-            for (auto const& dictionary : res.MergedDictionaries())
+            for (const auto& dictionary : res.MergedDictionaries())
             {
                 // Don't change MUX resources
                 if (dictionary.Source())
@@ -174,7 +174,7 @@ namespace winrt::TerminalApp::implementation
                     continue;
                 }
 
-                for (auto const& kvPair : dictionary.ThemeDictionaries())
+                for (const auto& kvPair : dictionary.ThemeDictionaries())
                 {
                     const auto themeDictionary = kvPair.Value().as<winrt::Windows::UI::Xaml::ResourceDictionary>();
 
@@ -232,7 +232,7 @@ namespace winrt::TerminalApp::implementation
                 page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
         });
-        _newTabButton.Drop([weakThis{ get_weak() }](Windows::Foundation::IInspectable const&, winrt::Windows::UI::Xaml::DragEventArgs e) {
+        _newTabButton.Drop([weakThis{ get_weak() }](const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e) {
             if (auto page{ weakThis.get() })
             {
                 page->NewTerminalByDrop(e);
@@ -791,7 +791,7 @@ namespace winrt::TerminalApp::implementation
         auto actionMap = _settings.ActionMap();
         const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
-        auto const profileCount = gsl::narrow_cast<int>(_settings.ActiveProfiles().Size());
+        const auto profileCount = gsl::narrow_cast<int>(_settings.ActiveProfiles().Size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
             const auto profile = _settings.ActiveProfiles().GetAt(profileIndex);
@@ -1213,7 +1213,7 @@ namespace winrt::TerminalApp::implementation
     // - e: the KeyRoutedEventArgs containing info about the keystroke.
     // Return Value:
     // - <none>
-    void TerminalPage::_KeyDownHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    void TerminalPage::_KeyDownHandler(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto keyStatus = e.KeyStatus();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
@@ -3628,7 +3628,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void TerminalPage::_WindowRenamerKeyDown(const IInspectable& /*sender*/,
-                                             winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+                                             const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto key = e.OriginalKey();
         if (key == Windows::System::VirtualKey::Enter)
@@ -3645,7 +3645,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
-                                           winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+                                           const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto key = e.OriginalKey();
         if (key == Windows::System::VirtualKey::Enter && _renamerPressedEnter)

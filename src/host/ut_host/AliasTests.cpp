@@ -206,7 +206,7 @@ class AliasTests
         size_t cbTargetUsed = cbTarget;
 
         DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
+        const auto dwLinesBefore = dwLines;
 
         std::wstring exeName;
 
@@ -235,12 +235,12 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
         size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
+        const auto cbTargetUsedBefore = cbTargetUsed;
 
         std::wstring exeName(L"exe.exe");
 
         DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
+        const auto dwLinesBefore = dwLines;
 
         Alias::s_MatchAndCopyAliasLegacy(pwszSource,
                                          cbSource,
@@ -268,10 +268,10 @@ class AliasTests
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
         size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
+        const auto cbTargetUsedBefore = cbTargetUsed;
 
         DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
+        const auto dwLinesBefore = dwLines;
 
         // Register the wrong alias name before we try.
         std::wstring exe(L"exe.exe");
@@ -304,10 +304,10 @@ class AliasTests
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
         size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
+        const auto cbTargetUsedBefore = cbTargetUsed;
 
         DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
+        const auto dwLinesBefore = dwLines;
 
         // Register the correct alias name before we try.
         std::wstring exe(L"exe.exe");
@@ -340,10 +340,10 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
         size_t cbTargetUsed = 0;
-        auto const cbTargetUsedExpected = cbTarget;
+        const auto cbTargetUsedExpected = cbTarget;
 
         DWORD dwLines = 0;
-        auto const dwLinesExpected = dwLines + 1;
+        const auto dwLinesExpected = dwLines + 1;
 
         // Register the correct alias name before we try.
         std::wstring exe(L"exe.exe");

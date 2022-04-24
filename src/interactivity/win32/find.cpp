@@ -46,8 +46,8 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
                 lastFindString.clear();
                 break;
             }
-            bool const IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
-            bool const Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
+            const bool IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
+            const bool Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
             fFindSearchUp = !!Reverse;
             SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
 

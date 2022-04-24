@@ -93,7 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void KeyChordListener::_OnKeysChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& e)
+    void KeyChordListener::_OnKeysChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& e)
     {
         if (auto control{ d.try_as<Editor::KeyChordListener>() })
         {
@@ -111,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void KeyChordListener::KeyChordTextBox_KeyDown(IInspectable const& /*sender*/, KeyRoutedEventArgs const& e)
+    void KeyChordListener::KeyChordTextBox_KeyDown(const IInspectable& /*sender*/, const KeyRoutedEventArgs& e)
     {
         const auto key{ e.OriginalKey() };
         for (const auto mod : ModifierKeys)

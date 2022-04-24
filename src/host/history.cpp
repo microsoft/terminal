@@ -677,7 +677,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(const std::wstring_view exeName
         size_t cchNeeded = 0;
 
         // Every command history item is made of a string length followed by 1 null character.
-        size_t const cchNull = 1;
+        const size_t cchNull = 1;
 
         for (SHORT i = 0; i < gsl::narrow<SHORT>(pCommandHistory->GetNumberOfCommands()); i++)
         {
@@ -784,13 +784,13 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
 
         size_t cchTotalLength = 0;
 
-        size_t const cchNull = 1;
+        const size_t cchNull = 1;
 
         for (SHORT i = 0; i < gsl::narrow<SHORT>(CommandHistory->GetNumberOfCommands()); i++)
         {
             const auto command = CommandHistory->GetNth(i);
 
-            size_t const cchCommand = command.size();
+            const size_t cchCommand = command.size();
 
             size_t cchNeeded;
             RETURN_IF_FAILED(SizeTAdd(cchCommand, cchNull, &cchNeeded));

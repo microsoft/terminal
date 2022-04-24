@@ -32,7 +32,7 @@ try
     RETURN_HR_IF_NULL(E_OUTOFMEMORY, currentEnvVars);
 
     // Each entry is NULL-terminated; block is guaranteed to be double-NULL terminated at a minimum.
-    for (wchar_t const* lastCh{ currentEnvVars }; *lastCh != '\0'; ++lastCh)
+    for (const wchar_t* lastCh{ currentEnvVars }; *lastCh != '\0'; ++lastCh)
     {
         // Copy current entry into temporary map.
         const size_t cchEntry{ ::wcslen(lastCh) };

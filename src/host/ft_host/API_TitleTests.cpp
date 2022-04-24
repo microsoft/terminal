@@ -91,7 +91,7 @@ void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* 
     TestGetConsoleTitleWFillHelper(wchReadExpected, cchReadExpected, L'Z');
 
     // Prep expected data
-    size_t const cchCopy = std::min(cchTitle, cchTryToRead);
+    const size_t cchCopy = std::min(cchTitle, cchTryToRead);
     VERIFY_SUCCEEDED(StringCchCopyNW(wchReadExpected, cchReadBuffer, wchTitle, cchCopy - 1)); // Copy as much room as we said we had leaving space for null terminator
 }
 
@@ -116,8 +116,8 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
     {
         for (size_t i = 0; i < cchExpected; i++)
         {
-            wchar_t const wchExpectedVis = chReadExpected[i] < 0x30 ? (wchar_t)chReadExpected[i] + 0x2400 : chReadExpected[i];
-            wchar_t const wchBufferVis = chReadBuffer[i] < 0x30 ? (wchar_t)chReadBuffer[i] + 0x2400 : chReadBuffer[i];
+            const wchar_t wchExpectedVis = chReadExpected[i] < 0x30 ? (wchar_t)chReadExpected[i] + 0x2400 : chReadExpected[i];
+            const wchar_t wchBufferVis = chReadBuffer[i] < 0x30 ? (wchar_t)chReadBuffer[i] + 0x2400 : chReadBuffer[i];
 
             // We must verify every individual character, not as a string, because we might be expecting a null
             // in the middle and need to verify it then keep going and read what's past that.
@@ -152,8 +152,8 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
     {
         for (size_t i = 0; i < cchExpected; i++)
         {
-            wchar_t const wchExpectedVis = wchReadExpected[i] < 0x30 ? wchReadExpected[i] + 0x2400 : wchReadExpected[i];
-            wchar_t const wchBufferVis = wchReadBuffer[i] < 0x30 ? wchReadBuffer[i] + 0x2400 : wchReadBuffer[i];
+            const wchar_t wchExpectedVis = wchReadExpected[i] < 0x30 ? wchReadExpected[i] + 0x2400 : wchReadExpected[i];
+            const wchar_t wchBufferVis = wchReadBuffer[i] < 0x30 ? wchReadBuffer[i] + 0x2400 : wchReadBuffer[i];
 
             // We must verify every individual character, not as a string, because we might be expecting a null
             // in the middle and need to verify it then keep going and read what's past that.
@@ -170,7 +170,7 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
 void TitleTests::TestGetConsoleTitleA()
 {
     const char* const szTestTitle = "TestTitle";
-    size_t const cchTestTitle = strlen(szTestTitle);
+    const size_t cchTestTitle = strlen(szTestTitle);
 
     Log::Comment(NoThrowString().Format(L"Set up the initial console title to '%S'.", szTestTitle));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleTitleA(szTestTitle));
@@ -254,7 +254,7 @@ void TitleTests::TestGetConsoleTitleA()
 void TitleTests::TestGetConsoleTitleW()
 {
     const wchar_t* const wszTestTitle = L"TestTitle";
-    size_t const cchTestTitle = wcslen(wszTestTitle);
+    const size_t cchTestTitle = wcslen(wszTestTitle);
 
     Log::Comment(NoThrowString().Format(L"Set up the initial console title to '%s'.", wszTestTitle));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleTitleW(wszTestTitle));

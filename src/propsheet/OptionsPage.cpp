@@ -326,7 +326,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 }
 
 // enables or disables options page dialog controls depending on whether V2 is enabled or not
-void ToggleV2OptionsControls(__in const HWND hDlg)
+void ToggleV2OptionsControls(const __in HWND hDlg)
 {
     EnableWindow(GetDlgItem(hDlg, IDD_LINE_SELECTION), g_fForceV2);
     CheckDlgButton(hDlg, IDD_LINE_SELECTION, g_fForceV2 ? gpStateInfo->fLineSelection : FALSE);

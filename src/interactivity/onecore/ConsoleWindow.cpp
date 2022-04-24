@@ -30,7 +30,7 @@ bool ConsoleWindow::IsInFullscreen() const
     return true;
 }
 
-void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
+void ConsoleWindow::SetIsFullscreen(const bool /*fFullscreenEnabled*/)
 {
 }
 

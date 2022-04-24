@@ -388,7 +388,7 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
 }
 
 // enables or disables color page dialog controls depending on whether V2 is enabled or not
-void ToggleV2ColorControls(__in const HWND hDlg)
+void ToggleV2ColorControls(const __in HWND hDlg)
 {
     EnableWindow(GetDlgItem(hDlg, IDD_TRANSPARENCY), g_fForceV2);
     SetOpacitySlider(hDlg);

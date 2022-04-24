@@ -719,7 +719,7 @@ class ViewportTests
                 fExpectedResult = false;
             }
 
-            bool const fActualResult = v.MoveInBounds(sAddAmount, coordPos);
+            const bool fActualResult = v.MoveInBounds(sAddAmount, coordPos);
 
             VERIFY_ARE_EQUAL(fExpectedResult, fActualResult);
             VERIFY_ARE_EQUAL(coordPos.X, coordFinal.X);

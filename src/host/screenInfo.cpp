@@ -1297,9 +1297,9 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const RECT* const prcClientNew,
     // being dragged and forced to resize at a monitor boundary, all 4
     // will change. In this case especially, users expect the top left
     // to stay in place and the bottom right to adapt.
-    bool const fResizeFromLeft = prcClientNew->left != prcClientOld->left &&
+    const bool fResizeFromLeft = prcClientNew->left != prcClientOld->left &&
                                  prcClientNew->right == prcClientOld->right;
-    bool const fResizeFromTop = prcClientNew->top != prcClientOld->top &&
+    const bool fResizeFromTop = prcClientNew->top != prcClientOld->top &&
                                 prcClientNew->bottom == prcClientOld->bottom;
 
     const Viewport oldViewport = Viewport(_viewport);

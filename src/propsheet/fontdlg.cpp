@@ -155,7 +155,7 @@ BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
 // 1. Get currently entered font size
 // 2. Check to see if the size is a valid custom size
 // 3. If the size is custom, add it to the points size list
-static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
+static void AddCustomFontSizeToListIfNeeded(const __in HWND hDlg)
 {
     WCHAR wszBuf[3]; // only need space for point sizes. the max we allow is "72"
 

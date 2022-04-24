@@ -18,7 +18,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    ActionPaletteItem::ActionPaletteItem(Microsoft::Terminal::Settings::Model::Command const& command) :
+    ActionPaletteItem::ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command) :
         _Command(command)
     {
         Name(command.Name());

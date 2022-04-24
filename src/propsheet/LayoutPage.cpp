@@ -254,7 +254,7 @@ INT_PTR WINAPI ScreenSizeDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPa
 }
 
 // enables or disables layout page dialog controls depending on whether V2 is enabled or not
-void ToggleV2LayoutControls(__in const HWND hDlg)
+void ToggleV2LayoutControls(const __in HWND hDlg)
 {
     EnableWindow(GetDlgItem(hDlg, IDD_LINE_WRAP), g_fForceV2);
     CheckDlgButton(hDlg, IDD_LINE_WRAP, g_fForceV2 ? gpStateInfo->fWrapText : FALSE);

@@ -143,17 +143,17 @@
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBufferSize));
 
     INPUT_RECORD* const rgRecords = reinterpret_cast<INPUT_RECORD*>(pvBuffer);
-    size_t const cRecords = cbBufferSize / sizeof(INPUT_RECORD);
+    const size_t cRecords = cbBufferSize / sizeof(INPUT_RECORD);
 
-    bool const fIsPeek = WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
-    bool const fIsWaitAllowed = WI_IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
+    const bool fIsPeek = WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
+    const bool fIsWaitAllowed = WI_IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
 
     INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pHandleData->GetClientInput();
 
     std::unique_ptr<IWaitRoutine> waiter;
     HRESULT hr;
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    size_t const eventsToRead = cRecords;
+    const size_t eventsToRead = cRecords;
     if (a->Unicode)
     {
         if (fIsPeek)
@@ -634,7 +634,7 @@
     m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);
 
     a->FullscreenSupported = !!ex.bFullscreenSupported;
-    size_t const ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
+    const size_t ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
     CopyMemory(a->ColorTable, ex.ColorTable, ColorTableSizeInBytes);
     a->CursorPosition = ex.dwCursorPosition;
     a->MaximumWindowSize = ex.dwMaximumWindowSize;
@@ -664,7 +664,7 @@
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     ex.bFullscreenSupported = a->FullscreenSupported;
-    size_t const ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
+    const size_t ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
     CopyMemory(ex.ColorTable, a->ColorTable, ColorTableSizeInBytes);
     ex.dwCursorPosition = a->CursorPosition;
     ex.dwMaximumWindowSize = a->MaximumWindowSize;
@@ -1533,7 +1533,7 @@
     ULONG cbExeNameLength;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvExeName, &cbExeNameLength));
 
-    size_t const NumberOfCommands = a->NumCommands;
+    const size_t NumberOfCommands = a->NumCommands;
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));

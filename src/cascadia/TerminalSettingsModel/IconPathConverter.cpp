@@ -177,20 +177,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - value: the input object to attempt to convert into an IconSource.
     // Return Value:
     // - Visible if the object was a string and wasn't the empty string.
-    Foundation::IInspectable IconPathConverter::Convert(Foundation::IInspectable const& value,
-                                                        Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
-                                                        Foundation::IInspectable const& /* parameter */,
-                                                        hstring const& /* language */)
+    Foundation::IInspectable IconPathConverter::Convert(const Foundation::IInspectable& value,
+                                                        const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                        const Foundation::IInspectable& /* parameter */,
+                                                        const hstring& /* language */)
     {
         const auto& iconPath = winrt::unbox_value_or<winrt::hstring>(value, L"");
         return _getIconSource<Controls::IconSource>(iconPath);
     }
 
     // unused for one-way bindings
-    Foundation::IInspectable IconPathConverter::ConvertBack(Foundation::IInspectable const& /* value */,
-                                                            Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
-                                                            Foundation::IInspectable const& /* parameter */,
-                                                            hstring const& /* language */)
+    Foundation::IInspectable IconPathConverter::ConvertBack(const Foundation::IInspectable& /* value */,
+                                                            const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                            const Foundation::IInspectable& /* parameter */,
+                                                            const hstring& /* language */)
     {
         throw hresult_not_implemented();
     }

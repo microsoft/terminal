@@ -82,10 +82,10 @@ class TextBufferTests
     TEST_METHOD(TestDoubleBytePadFlag);
 
     void DoBoundaryTest(PCWCHAR const pwszInputString,
-                        short const cLength,
-                        short const cMax,
-                        short const cLeft,
-                        short const cRight);
+                        const short cLength,
+                        const short cMax,
+                        const short cLeft,
+                        const short cRight);
 
     TEST_METHOD(TestBoundaryMeasuresRegularString);
 
@@ -99,7 +99,7 @@ class TextBufferTests
 
     TEST_METHOD(TestNewlineCursor);
 
-    void TestLastNonSpace(short const cursorPosY);
+    void TestLastNonSpace(const short cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
 
@@ -303,10 +303,10 @@ void TextBufferTests::TestDoubleBytePadFlag()
 }
 
 void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
-                                     short const cLength,
-                                     short const cMax,
-                                     short const cLeft,
-                                     short const cRight)
+                                     const short cLength,
+                                     const short cMax,
+                                     const short cLeft,
+                                     const short cRight)
 {
     TextBuffer& textBuffer = GetTbi();
 
@@ -440,9 +440,9 @@ void TextBufferTests::TestIncrementCursor()
     // only checking X increments here
     // Y increments are covered in the NewlineCursor test
 
-    short const sBufferWidth = textBuffer.GetSize().Width();
+    const short sBufferWidth = textBuffer.GetSize().Width();
 
-    short const sBufferHeight = textBuffer.GetSize().Height();
+    const short sBufferHeight = textBuffer.GetSize().Height();
     VERIFY_IS_TRUE(sBufferWidth > 1 && sBufferHeight > 1);
 
     Log::Comment(L"Test normal case of moving once to the right within a single line");
@@ -515,7 +515,7 @@ void TextBufferTests::TestNewlineCursor()
     // This is okay because the backing circular buffer changes, not the logical screen position (final visible line of the buffer)
 }
 
-void TextBufferTests::TestLastNonSpace(short const cursorPosY)
+void TextBufferTests::TestLastNonSpace(const short cursorPosY)
 {
     TextBuffer& textBuffer = GetTbi();
     textBuffer.GetCursor().SetYPosition(cursorPosY);
@@ -595,7 +595,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 {
     TextBuffer& textBuffer = GetTbi();
 
-    short const sBufferHeight = textBuffer.GetSize().Height();
+    const short sBufferHeight = textBuffer.GetSize().Height();
 
     VERIFY_IS_TRUE(sBufferHeight > 4); // buffer should be sufficiently large
 

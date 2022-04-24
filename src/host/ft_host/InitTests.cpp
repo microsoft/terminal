@@ -120,7 +120,7 @@ MODULE_SETUP(ModuleSetup)
     }
 
     // Must make mutable string of appropriate length to feed into args.
-    size_t const cchNeeded = value.GetLength() + 1;
+    const size_t cchNeeded = value.GetLength() + 1;
 
     // We use regular new (not a smart pointer) and a scope exit delete because CreateProcess needs mutable space
     // and it'd be annoying to const_cast the smart pointer's .get() just for the sake of.

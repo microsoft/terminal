@@ -15,9 +15,9 @@
 #include <cassert>
 #include <wincon.h>
 
-VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
-                     bool const fHeadless,
-                     bool const fUseConpty,
+VtConsole::VtConsole(const PipeReadCallback pfnReadCallback,
+                     const bool fHeadless,
+                     const bool fUseConpty,
                      COORD const initialSize) :
     _pfnReadCallback(pfnReadCallback),
     _fHeadless(fHeadless),

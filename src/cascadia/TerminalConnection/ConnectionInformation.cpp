@@ -4,7 +4,7 @@
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    ConnectionInformation::ConnectionInformation(hstring const& className,
+    ConnectionInformation::ConnectionInformation(const hstring& className,
                                                  const Windows::Foundation::Collections::ValueSet& settings) :
         _ClassName{ className },
         _Settings{ settings }

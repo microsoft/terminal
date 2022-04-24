@@ -255,7 +255,7 @@ static bool s_IsOnDesktop()
 
     CommandHistory::s_Free((HANDLE)ProcessData);
 
-    bool const fRecomputeOwner = ProcessData->fRootProcess;
+    const bool fRecomputeOwner = ProcessData->fRootProcess;
     gci.ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
@@ -595,8 +595,8 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
                 SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
-                int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
-                int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
+                const int cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
+                const int cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
                 cbConsoleTitle += sizeof(WCHAR); // account for nullptr terminator
 
                 if (fUnexpand &&

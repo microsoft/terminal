@@ -1593,8 +1593,8 @@ class StateMachineExternalTest final
         }
     }
 
-    void TestCsiCursorMovement(wchar_t const wchCommand,
-                               size_t const uiDistance,
+    void TestCsiCursorMovement(const wchar_t wchCommand,
+                               const size_t uiDistance,
                                const bool fUseDistance,
                                const bool fAddExtraParam,
                                const bool* const pfFlag,

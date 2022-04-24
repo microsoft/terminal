@@ -302,7 +302,7 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
         cookedReadData.OriginalCursorPosition().Y += ScrollY;
     }
 
-    size_t const CharsToWrite = cookedReadData.BytesRead() / sizeof(WCHAR);
+    const size_t CharsToWrite = cookedReadData.BytesRead() / sizeof(WCHAR);
     cookedReadData.InsertionPoint() = CharsToWrite;
     cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + CharsToWrite);
 }

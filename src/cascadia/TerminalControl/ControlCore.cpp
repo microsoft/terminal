@@ -890,7 +890,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _refreshSizeUnderLock();
     }
 
-    void ControlCore::SetSelectionAnchor(til::point const& position)
+    void ControlCore::SetSelectionAnchor(const til::point& position)
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SetSelectionAnchor(position.to_win32_coord());
@@ -900,7 +900,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - position: the point in terminal coordinates (in cells, not pixels)
-    void ControlCore::SetEndSelectionPoint(til::point const& position)
+    void ControlCore::SetEndSelectionPoint(const til::point& position)
     {
         if (!_terminal->IsSelectionActive())
         {

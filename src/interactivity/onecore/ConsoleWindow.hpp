@@ -28,7 +28,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         int UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition);
 
         bool IsInFullscreen() const;
-        void SetIsFullscreen(bool const fFullscreenEnabled);
+        void SetIsFullscreen(const bool fFullscreenEnabled);
         void ChangeViewport(const SMALL_RECT NewWindow);
 
         void CaptureMouse();

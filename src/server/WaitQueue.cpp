@@ -85,7 +85,7 @@ bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
             break;
         }
 
-        auto const nextIt = std::next(it); // we have to capture next before it is potentially erased
+        const auto nextIt = std::next(it); // we have to capture next before it is potentially erased
 
         if (_NotifyBlock(WaitBlock, TerminationReason))
         {
@@ -114,7 +114,7 @@ bool ConsoleWaitQueue::_NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,
                                     _In_ WaitTerminationReason TerminationReason)
 {
     // Attempt to notify block with the given reason.
-    bool const fResult = pWaitBlock->Notify(TerminationReason);
+    const bool fResult = pWaitBlock->Notify(TerminationReason);
 
     if (fResult)
     {

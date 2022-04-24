@@ -164,7 +164,7 @@ std::unordered_map<std::wstring,
 
     // TargetLength is a byte count, convert to characters.
     size_t targetSize = targetString.size();
-    size_t const cchNull = 1;
+    const size_t cchNull = 1;
 
     // The total space we need is the length of the string + the null terminator.
     size_t neededSize;
@@ -321,7 +321,7 @@ static std::wstring aliasesSeparator(L"=");
 
         // Each of the aliases will be made up of the source, a separator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
-        size_t const cchNull = 1;
+        const size_t cchNull = 1;
         size_t cchSeparator = aliasesSeparator.size();
         // If we're counting how much multibyte space will be needed, trial convert the separator before we add.
         if (!countInUnicode)
@@ -458,7 +458,7 @@ void Alias::s_ClearCmdExeAliases()
 
     // Each of the aliases will be made up of the source, a separator, the target, then a null character.
     // They are of the form "Source=Target" when returned.
-    size_t const cchNull = 1;
+    const size_t cchNull = 1;
 
     // Find without creating.
     auto exeIter = g_aliasData.find(exeNameString);
@@ -468,8 +468,8 @@ void Alias::s_ClearCmdExeAliases()
         for (auto& pair : list)
         {
             // Alias stores lengths in bytes.
-            size_t const cchSource = pair.first.size();
-            size_t const cchTarget = pair.second.size();
+            const size_t cchSource = pair.first.size();
+            const size_t cchTarget = pair.second.size();
 
             // Add up how many characters we will need for the full alias data.
             size_t cchNeeded = 0;
@@ -623,7 +623,7 @@ void Alias::s_ClearCmdExeAliases()
     size_t cchNeeded = 0;
 
     // Each alias exe will be made up of the string payload and a null terminator.
-    size_t const cchNull = 1;
+    const size_t cchNull = 1;
 
     for (auto& pair : g_aliasData)
     {
@@ -701,12 +701,12 @@ void Alias::s_ClearCmdExeAliases()
     LPWSTR AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer->data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
-    size_t const cchNull = 1;
+    const size_t cchNull = 1;
 
     for (auto& pair : g_aliasData)
     {
         // AliasList stores length in bytes. Add 1 for null terminator.
-        size_t const cchExe = pair.first.size();
+        const size_t cchExe = pair.first.size();
 
         size_t cchNeeded;
         RETURN_IF_FAILED(SizeTAdd(cchExe, cchNull, &cchNeeded));

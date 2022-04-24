@@ -71,7 +71,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
         std::string bottomBorder = std::string(width, '=');
 
         int color = 17;
-        int const colorStep = 1;
+        const int colorStep = 1;
         printf("Buffer size is wxh=%dx%d\n", width, height);
         printCSI("s"); // save cursor
         printCSI("H"); // Go Home

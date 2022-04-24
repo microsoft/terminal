@@ -1667,7 +1667,7 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
                                                 COORD const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -1697,9 +1697,9 @@ CATCH_RETURN()
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLineSet const lines,
+[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(const GridLineSet lines,
                                                      COLORREF const color,
-                                                     size_t const cchLine,
+                                                     const size_t cchLine,
                                                      COORD const coordTarget) noexcept
 try
 {
@@ -2034,7 +2034,7 @@ CATCH_RETURN();
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateDpi(const int iDpi) noexcept
 {
     _dpi = iDpi;
 
@@ -2083,7 +2083,7 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                                                 FontInfo& pfiFontInfo,
-                                                int const iDpi) noexcept
+                                                const int iDpi) noexcept
 try
 {
     DxFontRenderData fontRenderData(_dwriteFactory);

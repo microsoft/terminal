@@ -123,13 +123,13 @@ class ConptyOutputTests
     TEST_METHOD(SetConsoleTitleWithControlChars);
 
 private:
-    bool _writeCallback(const char* const pch, size_t const cch);
+    bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
     std::deque<std::string> expectedOutput;
     std::unique_ptr<CommonState> m_state;
 };
 
-bool ConptyOutputTests::_writeCallback(const char* const pch, size_t const cch)
+bool ConptyOutputTests::_writeCallback(const char* const pch, const size_t cch)
 {
     // Since rendering happens on a background thread that doesn't have the exception handler on it
     // we need to rely on VERIFY's return codes instead of exceptions.

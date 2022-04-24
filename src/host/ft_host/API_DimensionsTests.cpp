@@ -143,7 +143,7 @@ void DimensionsTests::TestGetConsoleScreenBufferInfoAndEx()
     VERIFY_ARE_EQUAL(sbi.wAttributes, sbiex.wAttributes);
 }
 
-void ConvertAbsoluteToRelative(bool const bAbsolute, SMALL_RECT* const srViewport, const SMALL_RECT* const srOriginalWindow)
+void ConvertAbsoluteToRelative(const bool bAbsolute, SMALL_RECT* const srViewport, const SMALL_RECT* const srOriginalWindow)
 {
     if (!bAbsolute)
     {
@@ -154,10 +154,10 @@ void ConvertAbsoluteToRelative(bool const bAbsolute, SMALL_RECT* const srViewpor
     }
 }
 
-void TestSetConsoleWindowInfoHelper(bool const bAbsolute,
+void TestSetConsoleWindowInfoHelper(const bool bAbsolute,
                                     const SMALL_RECT* const srViewport,
                                     const SMALL_RECT* const srOriginalViewport,
-                                    bool const bExpectedResult,
+                                    const bool bExpectedResult,
                                     PCWSTR pwszDescription)
 {
     SMALL_RECT srTest = *srViewport;
@@ -247,7 +247,7 @@ void DimensionsTests::TestSetConsoleWindowInfo()
     VERIFY_ARE_EQUAL(srViewportBefore, sbi.srWindow, L"Match before and after viewport sizes.");
 }
 
-void RestrictDimensionsHelper(COORD* const coordTest, SHORT const x, SHORT const y, bool const fUseX, bool const fUseY)
+void RestrictDimensionsHelper(COORD* const coordTest, SHORT const x, SHORT const y, const bool fUseX, const bool fUseY)
 {
     if (fUseX)
     {
@@ -338,7 +338,7 @@ void DimensionsTests::TestZeroSizedConsoleScreenBuffers()
 }
 
 template<typename T>
-void TestSetConsoleScreenBufferInfoExHelper(bool const fShouldHaveChanged,
+void TestSetConsoleScreenBufferInfoExHelper(const bool fShouldHaveChanged,
                                             T const pOriginal,
                                             T const pTest,
                                             T const pReturned,
@@ -454,7 +454,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     if (sbiex.dwSize.Y > ((sbiex.srWindow.Bottom - sbiex.srWindow.Top) + 1)) // the bottom index counts as valid, so bottom - top + 1 for total height.
     {
         // Get pixel size of a vertical scroll bar.
-        short const sVerticalScrollWidthPx = (SHORT)GetSystemMetrics(SM_CXVSCROLL);
+        const short sVerticalScrollWidthPx = (SHORT)GetSystemMetrics(SM_CXVSCROLL);
 
         // Get the current font size
         CONSOLE_FONT_INFO cfi;

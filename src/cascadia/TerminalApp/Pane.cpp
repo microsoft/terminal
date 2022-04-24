@@ -1138,8 +1138,8 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
 // - <unused>
 // Return Value:
 // - <none>
-void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
-                                   RoutedEventArgs const& /* args */)
+void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                   const RoutedEventArgs& /* args */)
 {
     FocusState f = FocusState::Programmatic;
     if (const auto o = sender.try_as<winrt::Windows::UI::Xaml::Controls::Control>())
@@ -1153,8 +1153,8 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
 // - Called when our control loses focus. We'll use this to trigger our LostFocus
 //   callback. The tab that's hosting us should have registered a callback which
 //   can be used to update its own internal focus state
-void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
-                                    RoutedEventArgs const& /* args */)
+void Pane::_ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                    const RoutedEventArgs& /* args */)
 {
     _LostFocusHandlers(shared_from_this());
 }

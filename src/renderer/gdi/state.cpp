@@ -639,7 +639,7 @@ GdiEngine::~GdiEngine()
         ABC abc;
         if (0 != GetCharABCWidthsW(hdcTemp.get(), '0', '0', &abc))
         {
-            int const abcTotal = abc.abcA + abc.abcB + abc.abcC;
+            const int abcTotal = abc.abcA + abc.abcB + abc.abcC;
 
             // No negatives or zeros or we'll have bad character-to-pixel math later.
             if (abcTotal > 0)

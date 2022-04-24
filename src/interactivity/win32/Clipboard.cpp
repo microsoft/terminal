@@ -192,7 +192,7 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
 // - copyFormatting - This will also place colored HTML & RTF text onto the clipboard as well as the usual plain text.
 // Return Value:
 //   <none>
-void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
+void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 {
     const auto& selection = Selection::Instance();
 
@@ -237,7 +237,7 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
 // Arguments:
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
 {
     std::wstring finalString;
 
@@ -277,7 +277,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
         {
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
-            int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
+            const int iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
             const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
 
             std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);

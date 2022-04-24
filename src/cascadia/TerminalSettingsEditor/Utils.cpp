@@ -17,7 +17,7 @@ UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"Microsoft.Terminal.Settings.Editor/Resourc
 
 namespace winrt::Microsoft::Terminal::Settings
 {
-    hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable)
+    hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable)
     {
         Controls::ComboBox comboBox = comboBoxAsInspectable.as<Controls::ComboBox>();
         Controls::ComboBoxItem selectedOption = comboBox.SelectedItem().as<Controls::ComboBoxItem>();

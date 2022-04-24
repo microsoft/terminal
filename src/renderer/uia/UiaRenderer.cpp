@@ -333,7 +333,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(gsl::span<const Cluster> const /*clusters*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const gsl::span<const Cluster> /*clusters*/,
                                                  COORD const /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept
@@ -424,7 +424,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }
@@ -450,7 +450,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
                                                  FontInfo& /*pfiFontInfo*/,
-                                                 int const /*iDpi*/) noexcept
+                                                 const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }

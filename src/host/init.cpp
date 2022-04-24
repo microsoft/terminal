@@ -43,7 +43,7 @@ void InitSideBySide()
     // is referenced in the PEB, and lasts till process shutdown.
     if (hActCtx == INVALID_HANDLE_VALUE)
     {
-        auto const error = GetLastError();
+        const auto error = GetLastError();
 
         // OpenConsole ships with a single manifest at ID 1, while conhost ships with 2 at ID 1
         // and IDR_SYSTEM_MANIFEST. If we call CreateActCtxW() with IDR_SYSTEM_MANIFEST inside

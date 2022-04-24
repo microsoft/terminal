@@ -50,7 +50,7 @@ using namespace Microsoft::Console::Render;
             ABC abc;
             if (GetCharABCWidthsW(_hdcMemoryContext, wch, wch, &abc))
             {
-                int const totalWidth = abc.abcA + abc.abcB + abc.abcC;
+                const int totalWidth = abc.abcA + abc.abcB + abc.abcC;
 
                 isFullWidth = totalWidth > _GetFontSize().X;
             }

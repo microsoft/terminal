@@ -671,8 +671,8 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
         WindowSizeCurrent.cy = RECT_HEIGHT(&rcWindowCurrent);
 
         // If the current window has a few extra sub-character pixels between the proposed size (WindowSize) and the next size up (WindowSizeMax), then don't change anything.
-        bool const fDeltaXSubstantial = !(WindowSizeCurrent.cx >= WindowSize.cx && WindowSizeCurrent.cx < WindowSizeMax.cx);
-        bool const fDeltaYSubstantial = !(WindowSizeCurrent.cy >= WindowSize.cy && WindowSizeCurrent.cy < WindowSizeMax.cy);
+        const bool fDeltaXSubstantial = !(WindowSizeCurrent.cx >= WindowSize.cx && WindowSizeCurrent.cx < WindowSizeMax.cx);
+        const bool fDeltaYSubstantial = !(WindowSizeCurrent.cy >= WindowSize.cy && WindowSizeCurrent.cy < WindowSizeMax.cy);
 
         // If either change was substantial, update the window accordingly to the newly proposed value.
         if (fDeltaXSubstantial || fDeltaYSubstantial)

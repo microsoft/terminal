@@ -61,8 +61,8 @@ public:
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
 
     // delete these or we can accidentally get copies of the singleton
-    Selection(Selection const&) = delete;
-    void operator=(Selection const&) = delete;
+    Selection(const Selection&) = delete;
+    void operator=(const Selection&) = delete;
 
 protected:
     Selection();

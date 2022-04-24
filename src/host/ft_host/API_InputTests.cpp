@@ -348,7 +348,7 @@ void InputTests::TestReadConsolePasswordScenario()
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0));
 
     // 3. Set up our read loop (mimicking password capture methodology from "net use" command.)
-    size_t const buflen = (cBuffer / 2) + 1; // key down and key up will be coalesced into one.
+    const size_t buflen = (cBuffer / 2) + 1; // key down and key up will be coalesced into one.
     wistd::unique_ptr<wchar_t[]> buf = wil::make_unique_nothrow<wchar_t[]>(buflen);
     size_t len = 0;
     VERIFY_IS_NOT_NULL(buf);

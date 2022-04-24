@@ -849,7 +849,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Arguments:
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
 try
 {
     std::wstring finalString;
@@ -889,7 +889,7 @@ try
         if (fAlsoCopyFormatting)
         {
             const auto& fontData = _actualFont;
-            int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
+            const int iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
             const COLORREF bgColor = _terminal->GetAttributeColors({}).second;
 
             std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);

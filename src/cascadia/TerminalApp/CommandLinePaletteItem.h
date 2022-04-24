@@ -11,7 +11,7 @@ namespace winrt::TerminalApp::implementation
     struct CommandLinePaletteItem : CommandLinePaletteItemT<CommandLinePaletteItem, PaletteItem>
     {
         CommandLinePaletteItem() = default;
-        CommandLinePaletteItem(winrt::hstring const& commandLine);
+        CommandLinePaletteItem(const winrt::hstring& commandLine);
 
         WINRT_PROPERTY(winrt::hstring, CommandLine);
     };

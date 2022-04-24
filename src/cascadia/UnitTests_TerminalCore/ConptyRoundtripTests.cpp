@@ -228,7 +228,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(AltBufferResizeCrash);
 
 private:
-    bool _writeCallback(const char* const pch, size_t const cch);
+    bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
     void _resizeConpty(const unsigned short sx, const unsigned short sy);
     void _clearConpty();
@@ -250,7 +250,7 @@ private:
     ApiRoutines _apiRoutines;
 };
 
-bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cch)
+bool ConptyRoundtripTests::_writeCallback(const char* const pch, const size_t cch)
 {
     std::string actualString = std::string(pch, cch);
 

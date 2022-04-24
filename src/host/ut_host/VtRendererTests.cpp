@@ -86,7 +86,7 @@ class Microsoft::Console::Render::VtRendererTest
     void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
-    bool WriteCallback(const char* const pch, size_t const cch);
+    bool WriteCallback(const char* const pch, const size_t cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
 
@@ -125,7 +125,7 @@ Viewport VtRendererTest::SetUpViewport()
     return Viewport::FromInclusive(view);
 }
 
-bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
+bool VtRendererTest::WriteCallback(const char* const pch, const size_t cch)
 {
     std::string actualString = std::string(pch, cch);
     VERIFY_IS_GREATER_THAN(qExpectedInput.size(),

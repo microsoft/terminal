@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConnectionInformation : ConnectionInformationT<ConnectionInformation>
     {
-        ConnectionInformation(hstring const& className,
+        ConnectionInformation(const hstring& className,
                               const Windows::Foundation::Collections::ValueSet& settings);
 
         static TerminalConnection::ITerminalConnection CreateConnection(TerminalConnection::ConnectionInformation info);

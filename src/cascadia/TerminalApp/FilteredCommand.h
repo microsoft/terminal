@@ -17,11 +17,11 @@ namespace winrt::TerminalApp::implementation
     struct FilteredCommand : FilteredCommandT<FilteredCommand>
     {
         FilteredCommand() = default;
-        FilteredCommand(winrt::TerminalApp::PaletteItem const& item);
+        FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
 
-        void UpdateFilter(winrt::hstring const& filter);
+        void UpdateFilter(const winrt::hstring& filter);
 
-        static int Compare(winrt::TerminalApp::FilteredCommand const& first, winrt::TerminalApp::FilteredCommand const& second);
+        static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::PaletteItem, Item, _PropertyChangedHandlers, nullptr);

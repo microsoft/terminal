@@ -18,7 +18,7 @@ using namespace Microsoft::Console::Render;
 // - Creates a CustomTextLayout object for calculating which glyphs should be placed and where
 // Arguments:
 // - dxFontRenderData - The DirectWrite font render data for our layout
-CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRenderData) :
+CustomTextLayout::CustomTextLayout(const gsl::not_null<DxFontRenderData*> fontRenderData) :
     _fontRenderData{ fontRenderData },
     _formatInUse{ fontRenderData->DefaultTextFormat().Get() },
     _fontInUse{ fontRenderData->DefaultFontFace().Get() },
@@ -1084,7 +1084,7 @@ CATCH_RETURN();
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
                                                                         _Out_ UINT32* textLength,
-                                                                        _Outptr_result_z_ WCHAR const** localeName) noexcept
+                                                                        _Outptr_result_z_ const WCHAR** localeName) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
     RETURN_HR_IF_NULL(E_INVALIDARG, localeName);
@@ -1131,7 +1131,7 @@ CATCH_RETURN();
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPosition,
                                                                             UINT32 textLength,
-                                                                            _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis)
+                                                                            _In_ const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis)
 {
     try
     {
@@ -1438,7 +1438,7 @@ CATCH_RETURN();
 // - textLength - the length of the substring operation
 // Result:
 // - S_OK, STL/GSL errors, or an E_ABORT from mathematical failures.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source,
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(const gsl::not_null<IDWriteTextAnalysisSource*> source,
                                                                              UINT32 textPosition,
                                                                              UINT32 textLength)
 try

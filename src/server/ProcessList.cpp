@@ -170,7 +170,7 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
 {
     HRESULT hr = S_OK;
 
-    size_t const cProcesses = _processes.size();
+    const size_t cProcesses = _processes.size();
 
     // If we can fit inside the given list space, copy out the data.
     if (cProcesses <= *pcProcessList)
@@ -257,7 +257,7 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
         }
 
         // From all found matches, convert to C-style array to return
-        size_t const cchRetVal = TermRecords.size();
+        const size_t cchRetVal = TermRecords.size();
         ConsoleProcessTerminationRecord* pRetVal = new ConsoleProcessTerminationRecord[cchRetVal];
 
         for (size_t i = 0; i < cchRetVal; i++)

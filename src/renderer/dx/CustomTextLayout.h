@@ -21,7 +21,7 @@ namespace Microsoft::Console::Render
     public:
         // Based on the Windows 7 SDK sample at https://github.com/pauldotknopf/WindowsSDK7-Samples/tree/master/multimedia/DirectWrite/CustomLayout
 
-        CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRenderData);
+        CustomTextLayout(const gsl::not_null<DxFontRenderData*> fontRenderData);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters);
 
@@ -45,7 +45,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
                                                               _Out_ UINT32* textLength,
-                                                              _Outptr_result_z_ WCHAR const** localeName) noexcept override;
+                                                              _Outptr_result_z_ const WCHAR** localeName) noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
                                                                       _Out_ UINT32* textLength,
                                                                       _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) noexcept override;
@@ -53,7 +53,7 @@ namespace Microsoft::Console::Render
         // IDWriteTextAnalysisSink methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
                                                                   UINT32 textLength,
-                                                                  _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) override;
+                                                                  _In_ const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis) override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetLineBreakpoints(UINT32 textPosition,
                                                                    UINT32 textLength,
                                                                    _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) override;
@@ -128,7 +128,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFontFace(UINT32 textPosition, UINT32 textLength, const ::Microsoft::WRL::ComPtr<IDWriteFontFace>& fontFace, FLOAT const scale);
 
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source, UINT32 textPosition, UINT32 textLength);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(const gsl::not_null<IDWriteTextAnalysisSource*> source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetBoxEffect(UINT32 textPosition, UINT32 textLength);
 
         [[nodiscard]] HRESULT _AnalyzeTextComplexity() noexcept;
