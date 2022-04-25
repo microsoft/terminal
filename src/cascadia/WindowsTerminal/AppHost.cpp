@@ -401,6 +401,8 @@ void AppHost::Initialize()
     _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
 
+    _revokers.PropertyChanged = _logic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
+
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
     // it will accumulate an unbounded amount of queued animations while
@@ -680,7 +682,9 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 {
     if (_useNonClientArea)
     {
-        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
+        auto nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nciw->SetTitlebarContent(arg);
+        nciw->SetTitlebarBackground(_logic.TitlebarBrush());
     }
 }
 
@@ -1546,4 +1550,14 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 {
     const auto pos = _GetWindowLaunchPosition();
     _logic.CloseWindow(pos);
+}
+
+void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                      const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& e)
+{
+    if (e.PropertyName() == L"TitlebarBrush")
+    {
+        auto nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nciw->SetTitlebarBackground(_logic.TitlebarBrush());
+    }
 }

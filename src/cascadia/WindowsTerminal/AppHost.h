@@ -118,6 +118,10 @@ private:
                                         const winrt::Windows::Foundation::IInspectable& args);
     void _HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& args);
+
+    void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                 const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;
     winrt::event_token _NotificationIconPressedToken;
@@ -160,5 +164,6 @@ private:
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
+        winrt::TerminalApp::AppLogic::PropertyChanged_revoker PropertyChanged;
     } _revokers{};
 };

@@ -1203,6 +1203,15 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
+    winrt::Windows::UI::Xaml::Media::Brush AppLogic::TitlebarBrush()
+    {
+        if (_root)
+        {
+            return _root->TitlebarBrush();
+        }
+        return { nullptr };
+    }
+
     bool AppLogic::HasCommandlineArguments() const noexcept
     {
         return _hasCommandLineArguments;
