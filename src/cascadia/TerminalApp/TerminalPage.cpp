@@ -713,7 +713,7 @@ namespace winrt::TerminalApp::implementation
             // Switch to the BG thread -
             co_await winrt::resume_background();
 
-            // Then enque the rest of this function for after the UI thread settles.
+            // Then enqueue the rest of this function for after the UI thread settles.
             co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
 
             if (auto self{ weak.get() })

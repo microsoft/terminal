@@ -534,7 +534,7 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - None
 void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
-    // GH#11561: Hide the window until we're totallly done being initialized.
+    // GH#11561: Hide the window until we're totally done being initialized.
     // More commentary in TerminalPage::_CompleteInitialization
     BOOL cloak = TRUE;
     LOG_IF_FAILED(DwmSetWindowAttribute(hwnd,
@@ -1560,7 +1560,7 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
-    // GH#11561: We're totallly done being initialized. Uncloak the window, making it visible.
+    // GH#11561: We're totally done being initialized. Uncloak the window, making it visible.
     // More commentary in TerminalPage::_CompleteInitialization
     BOOL cloak = FALSE;
     LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(),
