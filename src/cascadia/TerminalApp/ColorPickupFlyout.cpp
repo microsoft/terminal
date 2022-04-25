@@ -34,8 +34,7 @@ namespace winrt::TerminalApp::implementation
     void ColorPickupFlyout::ColorButton_Click(IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const&)
     {
         auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
-        auto rectangle{ button.Content().as<Windows::UI::Xaml::Shapes::Rectangle>() };
-        auto rectClr{ rectangle.Fill().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
+        auto rectClr{ button.Background().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
         _ColorSelectedHandlers(rectClr.Color());
         Hide();
     }

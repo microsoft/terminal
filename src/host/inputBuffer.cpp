@@ -642,6 +642,7 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
         inEvents.pop_front();
         if (vtInputMode)
         {
+            // GH#11682: TerminalInput::HandleKey can handle both KeyEvents and Focus events seamlessly
             const bool handled = _termInput.HandleKey(inEvent.get());
             if (handled)
             {

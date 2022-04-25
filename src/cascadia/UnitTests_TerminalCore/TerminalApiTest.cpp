@@ -242,19 +242,19 @@ void TerminalApiTest::CheckDoubleWidthCursor()
     stateMachine.ProcessString(doubleWidthText);
 
     // The last 'A'
-    term.SetCursorPosition(97, 0);
+    term.SetCursorPosition({ 97, 0 });
     VERIFY_IS_FALSE(term.IsCursorDoubleWidth());
 
     // This and the next CursorPos are taken up by '我‘
-    term.SetCursorPosition(98, 0);
+    term.SetCursorPosition({ 98, 0 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
-    term.SetCursorPosition(99, 0);
+    term.SetCursorPosition({ 99, 0 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
 
     // This and the next CursorPos are taken up by ’愛‘
-    term.SetCursorPosition(0, 1);
+    term.SetCursorPosition({ 0, 1 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
-    term.SetCursorPosition(1, 1);
+    term.SetCursorPosition({ 1, 1 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
 }
 

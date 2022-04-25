@@ -497,7 +497,7 @@ void FontBuffer::_packAndCenterBitPatterns()
     // cell height, but now that we know the true height, we need to pack the
     // buffer data so that each character occupies the exact number of scanlines
     // that are required.
-    for (auto srcLine = 0u, dstLine = 0u; srcLine < _buffer.size(); srcLine++)
+    for (size_t srcLine = 0, dstLine = 0; srcLine < _buffer.size(); srcLine++)
     {
         if ((srcLine % MAX_HEIGHT) < _fullHeight)
         {
@@ -515,7 +515,7 @@ void FontBuffer::_fillUnusedCharacters()
     // with an error glyph (a reverse question mark). This includes every
     // character prior to the start char, or after the last char.
     const auto errorPattern = _generateErrorGlyph();
-    for (auto ch = 0u; ch < MAX_CHARS; ch++)
+    for (size_t ch = 0; ch < MAX_CHARS; ch++)
     {
         if (ch < _startChar || ch > _lastChar)
         {
