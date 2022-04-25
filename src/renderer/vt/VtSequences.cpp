@@ -434,6 +434,11 @@ using namespace Microsoft::Console::Render;
     return _Write("\x1b[?9001h");
 }
 
+[[nodiscard]] HRESULT VtEngine::_RequestFocusEventMode() noexcept
+{
+    return _Write("\x1b[?1004h");
+}
+
 // Method Description:
 // - Send a sequence to the connected terminal to switch to the alternate or main screen buffer.
 // Arguments:

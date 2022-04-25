@@ -27,6 +27,7 @@ namespace TerminalCoreUnitTests
 {
     class ConptyRoundtripTests;
 };
+class ScreenBufferTests;
 #endif
 
 namespace Microsoft::Console::VirtualTerminal
@@ -200,6 +201,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
         [[nodiscard]] HRESULT _SwitchScreenBuffer(const bool useAltBuffer) noexcept;
 
+        [[nodiscard]] HRESULT _RequestFocusEventMode() noexcept;
+
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
         [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
@@ -228,6 +231,7 @@ namespace Microsoft::Console::Render
 
         friend class VtRendererTest;
         friend class ConptyOutputTests;
+        friend class ScreenBufferTests;
         friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 

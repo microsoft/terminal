@@ -15,6 +15,7 @@
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
                  AllowDropTabs="True"
+                 Background="Transparent"
                  CanDragTabs="True"
                  CanReorderTabs="True"
                  IsAddTabButtonVisible="false"
@@ -32,84 +33,93 @@
         </mux:TabView.TabStripHeader>
 
         <mux:TabView.TabStripFooter>
-            <mux:SplitButton x:Name="NewTabButton"
-                             x:Uid="NewTabSplitButton"
-                             HorizontalAlignment="Left"
-                             VerticalAlignment="Stretch"
-                             AllowDrop="True"
-                             AutomationProperties.AccessibilityView="Control"
-                             BorderThickness="0"
-                             Click="OnNewTabButtonClick"
-                             Content="&#xE710;"
-                             CornerRadius="{Binding Source={ThemeResource OverlayCornerRadius}, Converter={StaticResource TopCornerRadiusFilterConverter}}"
-                             DragOver="OnNewTabButtonDragOver"
-                             Drop="OnNewTabButtonDrop"
-                             FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                             FontSize="12"
-                             FontWeight="SemiLight"
-                             UseLayoutRounding="true">
-                <ToolTipService.ToolTip>
-                    <ToolTip Placement="Mouse">
-                        <TextBlock IsTextSelectionEnabled="False">
-                            <Run x:Uid="NewTabRun" /> <LineBreak />
-                            <Run x:Uid="NewPaneRun"
-                                 FontStyle="Italic" /> <LineBreak />
-                            <Run x:Uid="NewWindowRun"
-                                 FontStyle="Italic" />
-                        </TextBlock>
-                    </ToolTip>
-                </ToolTipService.ToolTip>
-                <!--  U+E710 is the fancy plus icon.  -->
-                <mux:SplitButton.Resources>
-                    <!--  Override the SplitButton* resources to match the tab view's button's styles.  -->
-                    <ResourceDictionary>
-                        <ResourceDictionary.ThemeDictionaries>
-                            <ResourceDictionary x:Key="Light">
-                                <StaticResource x:Key="SplitButtonBackground"
-                                                ResourceKey="TabViewButtonBackground" />
-                                <StaticResource x:Key="SplitButtonForeground"
-                                                ResourceKey="TabViewButtonForeground" />
-                                <StaticResource x:Key="SplitButtonBackgroundPressed"
-                                                ResourceKey="TabViewItemHeaderBackgroundPressed" />
-                                <StaticResource x:Key="SplitButtonForegroundPressed"
-                                                ResourceKey="TabViewItemHeaderForegroundPressed" />
-                                <StaticResource x:Key="SplitButtonBackgroundPointerOver"
-                                                ResourceKey="TabViewItemHeaderBackgroundPointerOver" />
-                                <StaticResource x:Key="SplitButtonForegroundPointerOver"
-                                                ResourceKey="TabViewItemHeaderForegroundPointerOver" />
-                            </ResourceDictionary>
-                            <ResourceDictionary x:Key="Dark">
-                                <StaticResource x:Key="SplitButtonBackground"
-                                                ResourceKey="TabViewButtonBackground" />
-                                <StaticResource x:Key="SplitButtonForeground"
-                                                ResourceKey="TabViewButtonForeground" />
-                                <StaticResource x:Key="SplitButtonBackgroundPressed"
-                                                ResourceKey="TabViewItemHeaderBackgroundPressed" />
-                                <StaticResource x:Key="SplitButtonForegroundPressed"
-                                                ResourceKey="TabViewItemHeaderForegroundPressed" />
-                                <StaticResource x:Key="SplitButtonBackgroundPointerOver"
-                                                ResourceKey="TabViewItemHeaderBackgroundPointerOver" />
-                                <StaticResource x:Key="SplitButtonForegroundPointerOver"
-                                                ResourceKey="TabViewItemHeaderForegroundPointerOver" />
-                            </ResourceDictionary>
-                            <ResourceDictionary x:Key="HighContrast">
-                                <StaticResource x:Key="SplitButtonBackground"
-                                                ResourceKey="TabViewButtonBackground" />
-                                <StaticResource x:Key="SplitButtonForeground"
-                                                ResourceKey="TabViewButtonForeground" />
-                                <StaticResource x:Key="SplitButtonBackgroundPressed"
-                                                ResourceKey="TabViewItemHeaderBackgroundPressed" />
-                                <StaticResource x:Key="SplitButtonForegroundPressed"
-                                                ResourceKey="TabViewItemHeaderForegroundPressed" />
-                                <StaticResource x:Key="SplitButtonBackgroundPointerOver"
-                                                ResourceKey="TabViewItemHeaderBackgroundPointerOver" />
-                                <StaticResource x:Key="SplitButtonForegroundPointerOver"
-                                                ResourceKey="TabViewItemHeaderForegroundPointerOver" />
-                            </ResourceDictionary>
-                        </ResourceDictionary.ThemeDictionaries>
-                    </ResourceDictionary>
-                </mux:SplitButton.Resources>
-            </mux:SplitButton>
+            <Grid>
+                <!--  Remove this border after WinUI 2.8  -->
+                <Border Height="1"
+                        VerticalAlignment="Bottom"
+                        Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                <mux:SplitButton x:Name="NewTabButton"
+                                 x:Uid="NewTabSplitButton"
+                                 Height="24"
+                                 Margin="0,4"
+                                 Padding="0"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Stretch"
+                                 AllowDrop="True"
+                                 AutomationProperties.AccessibilityView="Control"
+                                 BorderThickness="0"
+                                 Click="OnNewTabButtonClick"
+                                 Content="&#xE710;"
+                                 DragOver="OnNewTabButtonDragOver"
+                                 Drop="OnNewTabButtonDrop"
+                                 FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                 FontSize="12">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Placement="Mouse">
+                            <TextBlock IsTextSelectionEnabled="False">
+                                <Run x:Uid="NewTabRun" /> <LineBreak />
+                                <Run x:Uid="NewPaneRun"
+                                     FontStyle="Italic" /> <LineBreak />
+                                <Run x:Uid="NewWindowRun"
+                                     FontStyle="Italic" />
+                            </TextBlock>
+                        </ToolTip>
+                    </ToolTipService.ToolTip>
+                    <!--  U+E710 is the fancy plus icon.  -->
+                    <mux:SplitButton.Resources>
+                        <!--  Override the SplitButton* resources to match the tab view's button's styles.  -->
+                        <ResourceDictionary>
+                            <ResourceDictionary.ThemeDictionaries>
+                                <ResourceDictionary x:Key="Light">
+                                    <StaticResource x:Key="SplitButtonBackground"
+                                                    ResourceKey="TabViewButtonBackground" />
+                                    <StaticResource x:Key="SplitButtonForeground"
+                                                    ResourceKey="TabViewButtonForeground" />
+                                    <StaticResource x:Key="SplitButtonBackgroundPressed"
+                                                    ResourceKey="TabViewButtonBackgroundPressed" />
+                                    <StaticResource x:Key="SplitButtonForegroundPressed"
+                                                    ResourceKey="TabViewButtonForegroundPressed" />
+                                    <StaticResource x:Key="SplitButtonBackgroundPointerOver"
+                                                    ResourceKey="TabViewButtonBackgroundPointerOver" />
+                                    <StaticResource x:Key="SplitButtonForegroundPointerOver"
+                                                    ResourceKey="TabViewButtonForegroundPointerOver" />
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="Dark">
+                                    <StaticResource x:Key="SplitButtonBackground"
+                                                    ResourceKey="TabViewButtonBackground" />
+                                    <StaticResource x:Key="SplitButtonForeground"
+                                                    ResourceKey="TabViewButtonForeground" />
+                                    <StaticResource x:Key="SplitButtonBackgroundPressed"
+                                                    ResourceKey="TabViewButtonBackgroundPressed" />
+                                    <StaticResource x:Key="SplitButtonForegroundPressed"
+                                                    ResourceKey="TabViewButtonForegroundPressed" />
+                                    <StaticResource x:Key="SplitButtonBackgroundPointerOver"
+                                                    ResourceKey="TabViewButtonBackgroundPointerOver" />
+                                    <StaticResource x:Key="SplitButtonForegroundPointerOver"
+                                                    ResourceKey="TabViewButtonForegroundPointerOver" />
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="HighContrast">
+                                    <StaticResource x:Key="SplitButtonBackground"
+                                                    ResourceKey="TabViewButtonBackground" />
+                                    <StaticResource x:Key="SplitButtonForeground"
+                                                    ResourceKey="TabViewButtonForeground" />
+                                    <StaticResource x:Key="SplitButtonBackgroundPressed"
+                                                    ResourceKey="TabViewButtonBackgroundPressed" />
+                                    <StaticResource x:Key="SplitButtonForegroundPressed"
+                                                    ResourceKey="TabViewButtonForegroundPressed" />
+                                    <StaticResource x:Key="SplitButtonBackgroundPointerOver"
+                                                    ResourceKey="TabViewButtonBackgroundPointerOver" />
+                                    <StaticResource x:Key="SplitButtonForegroundPointerOver"
+                                                    ResourceKey="TabViewButtonForegroundPointerOver" />
+                                </ResourceDictionary>
+                            </ResourceDictionary.ThemeDictionaries>
+                            <x:Double x:Key="SplitButtonPrimaryButtonSize">31</x:Double>
+                            <x:Double x:Key="SplitButtonSecondaryButtonSize">31</x:Double>
+                        </ResourceDictionary>
+                    </mux:SplitButton.Resources>
+                </mux:SplitButton>
+            </Grid>
         </mux:TabView.TabStripFooter>
 
     </mux:TabView>

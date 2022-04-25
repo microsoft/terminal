@@ -456,7 +456,22 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         return pReceiveMsg;
     }
 
-    gci.ProcessHandleList.ModifyConsoleProcessFocus(WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS));
+    // For future code archeologists: GH#2988
+    //
+    // Here, the console calls ConsoleControl(ConsoleSetForeground,...) with a
+    // flag depending on if the console is focused or not. This is surprisingly
+    // load bearing. This allows windows spawned by console processes to bring
+    // themselves to the foreground _when the console is focused_.
+    // (Historically, this is also called in the WndProc, when focus changes).
+    //
+    // Notably, before 2022, ConPTY was _never_ focused, so windows could never
+    // bring themselves to the foreground when run from a ConPTY console. We're
+    // not blanket granting the SetForeground right to all console apps when run
+    // in ConPTY. It's the responsibility of the hosting terminal emulator to
+    // always tell ConPTY when a particular instance is focused.
+    const bool hasFocus{ WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS) };
+    const auto grantSetForeground{ hasFocus };
+    gci.ProcessHandleList.ModifyConsoleProcessFocus(grantSetForeground);
 
     // Create the handles.
 

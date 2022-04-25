@@ -24,6 +24,14 @@ Author(s):
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../buffer/out/CharRow.hpp"
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
+#endif
+
 namespace Microsoft::Console::Render
 {
     class Renderer
@@ -118,6 +126,7 @@ namespace Microsoft::Console::Render
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;
+        friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
     };
 }

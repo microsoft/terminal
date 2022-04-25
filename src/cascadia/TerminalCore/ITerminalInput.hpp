@@ -26,6 +26,8 @@ namespace Microsoft::Terminal::Core
 
         virtual void TrySnapOnInput() = 0;
 
+        virtual void FocusChanged(const bool focused) = 0;
+
     protected:
         ITerminalInput() = default;
     };
