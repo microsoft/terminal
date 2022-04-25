@@ -159,41 +159,66 @@ namespace winrt::TerminalApp::implementation
 
         const auto isElevated = IsElevated();
 
+        // if (_settings.GlobalSettings().UseAcrylicInTabRow())
+        // {
+        //     const auto res = Application::Current().Resources();
+        //     const auto lightKey = winrt::box_value(L"Light");
+        //     const auto darkKey = winrt::box_value(L"Dark");
+        //     const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+
+        //         for (auto const& dictionary : res.MergedDictionaries())
+        //         {
+        //             // Don't change MUX resources
+        //             if (dictionary.Source())
+        //             {
+        //                 continue;
+        //             }
+
+        //             for (auto const& kvPair : dictionary.ThemeDictionaries())
+        //             {
+        //                 const auto themeDictionary = kvPair.Value().as<winrt::Windows::UI::Xaml::ResourceDictionary>();
+
+        //                 if (themeDictionary.HasKey(tabViewBackgroundKey))
+        //                 {
+        //                     const auto backgroundSolidBrush = themeDictionary.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
+
+        //                     const til::color backgroundColor = backgroundSolidBrush.Color();
+
+        //                     const auto acrylicBrush = Media::AcrylicBrush();
+        //                     acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+        //                     acrylicBrush.FallbackColor(backgroundColor);
+        //                     acrylicBrush.TintColor(backgroundColor);
+        //                     acrylicBrush.TintOpacity(0.5);
+
+        //                     themeDictionary.Insert(tabViewBackgroundKey, acrylicBrush);
+        //                 }
+        //             }
+        //         }
+        //     }
+
+        // color:SystemAccentColor
+        const auto res = Application::Current().Resources();
+        const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+        const auto backgroundSolidBrush = res.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
-            const auto res = Application::Current().Resources();
-            const auto lightKey = winrt::box_value(L"Light");
-            const auto darkKey = winrt::box_value(L"Dark");
-            const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+            const til::color backgroundColor = backgroundSolidBrush.Color();
+            const auto acrylicBrush = Media::AcrylicBrush();
+            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            acrylicBrush.FallbackColor(backgroundColor);
+            acrylicBrush.TintColor(backgroundColor);
+            acrylicBrush.TintOpacity(0.5);
 
-            for (auto const& dictionary : res.MergedDictionaries())
-            {
-                // Don't change MUX resources
-                if (dictionary.Source())
-                {
-                    continue;
-                }
+            TitlebarBrush(acrylicBrush);
+        }
+        else
+        {
+            // const auto accentColor = res.Lookup(winrt::box_value(L"SystemAccentColor")).as<Media::SolidColorBrush>();
+            auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColor")), backgroundSolidBrush.Color());
+            const auto accentBrush = Media::SolidColorBrush();
+            accentBrush.Color(accentColor);
 
-                for (auto const& kvPair : dictionary.ThemeDictionaries())
-                {
-                    const auto themeDictionary = kvPair.Value().as<winrt::Windows::UI::Xaml::ResourceDictionary>();
-
-                    if (themeDictionary.HasKey(tabViewBackgroundKey))
-                    {
-                        const auto backgroundSolidBrush = themeDictionary.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
-
-                        const til::color backgroundColor = backgroundSolidBrush.Color();
-
-                        const auto acrylicBrush = Media::AcrylicBrush();
-                        acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-                        acrylicBrush.FallbackColor(backgroundColor);
-                        acrylicBrush.TintColor(backgroundColor);
-                        acrylicBrush.TintOpacity(0.5);
-
-                        themeDictionary.Insert(tabViewBackgroundKey, acrylicBrush);
-                    }
-                }
-            }
+            TitlebarBrush(accentBrush);
         }
 
         _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
@@ -217,6 +242,8 @@ namespace winrt::TerminalApp::implementation
 
             // Inform the host that our titlebar content has changed.
             _SetTitleBarContentHandlers(*this, _tabRow);
+
+            _tabRow.Background(TitlebarBrush());
         }
 
         // Hookup our event handlers to the ShortcutActionDispatch
@@ -3906,5 +3933,4 @@ namespace winrt::TerminalApp::implementation
 
         applicationState.DismissedMessages(std::move(messages));
     }
-
 }
