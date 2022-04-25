@@ -30,6 +30,7 @@ DERR
 dlldata
 DONTADDTORECENT
 DWORDLONG
+DWMWA
 endfor
 enumset
 environstrings
