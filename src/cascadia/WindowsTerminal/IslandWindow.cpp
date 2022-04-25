@@ -207,7 +207,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // bad parameters, which we won't have, so no big deal.
     LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
-    const LONG minWidthScaled = minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI;
+    const long minWidthScaled = minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI;
 
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
 
@@ -231,12 +231,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         // If user has dragged anything but the top or bottom border (so e.g. left border,
         // top-right corner etc.), then this means that the width has changed. We thus ask to
         // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
-        clientWidth = static_cast<decltype(clientWidth)>(_pfnSnapDimensionCallback(true, static_cast<float>(clientWidth)));
+        clientWidth = gsl::narrow_cast<decltype(clientWidth)>(_pfnSnapDimensionCallback(true, gsl::narrow_cast<float>(clientWidth)));
     }
     if (wParam != WMSZ_LEFT && wParam != WMSZ_RIGHT)
     {
         // Analogous to above, but for height.
-        clientHeight = static_cast<decltype(clientHeight)>(_pfnSnapDimensionCallback(false, static_cast<float>(clientHeight)));
+        clientHeight = gsl::narrow_cast<decltype(clientHeight)>(_pfnSnapDimensionCallback(false, gsl::narrow_cast<float>(clientHeight)));
     }
 
     // Now make the window rectangle match the calculated client width and height,
