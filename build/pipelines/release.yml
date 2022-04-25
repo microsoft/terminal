@@ -203,7 +203,7 @@ jobs:
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\winconpty_DLL
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\Host_EXE;Conhost\winconpty_DLL
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
   - task: PowerShell@2
