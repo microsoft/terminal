@@ -459,23 +459,12 @@ Each of these themes will only define one property by default: the
 XAML `RequestedTheme` property. With these default themes, the user will still
 be able to use the old names seamlessly to get the same behavior.
 
-Additionally, the user will be able to override individual properties of these
-themes, like they are able to override any layer-able object currently. So, if
-the user wanted to change the light theme to also use the terminal background
-color, all they'd have to do is specify the following in their `settings.json`:
+Additionally, the user will NOT be able to override these built-in themes.
+Experience trying to not serialize the default color schemes has proven
+exceptionally tricky, so we're not going to allow that for the built-in themes.
+The user will always need to fork them to create a new theme. If they're found
+in the user settings file, we'll just ignore them.
 
-```json
-    "themes": [
-        {
-            "name": "light",
-            "tab.background": "terminalBackground",
-        }
-    ]
-```
-
-If the user wanted to be especially tricky, they could of course override the
-`window.applicationTheme` property of these themes as well. That would likely be
-confusing, but they have that freedom.
 
 ## UI/UX Design
 
@@ -601,8 +590,16 @@ a string for a name-based lookup in the list of themes, but als an object. That
 object will accept two properties: `light` and `dark`. Each of these accepts a
 string representing the name of a theme to use for that specific OS theme. These
 strings will default to `"light"` and `"dark"` respectively.
+```jsonc
+{
+    "theme": {
+        "light": "my light theme",
+        "dark": "my dark theme"
+    }
+}
+```
 
-Also considered: allow the user to set their own brushes as part of a theme, like:
+<!-- Also considered: allow the user to set their own brushes as part of a theme, like:
 ```jsonc
 {
     "name": "My theme aware theme",
@@ -618,7 +615,7 @@ Also considered: allow the user to set their own brushes as part of a theme, lik
     "tabRow.background": "key:Foo",
 }
 ```
-This seemed far too complicated to actually understand.
+This seemed far too complicated to actually understand. -->
 
 ### Admin window themes
 
@@ -650,12 +647,19 @@ in the Terminal. Please also refer to:
   - We probably shouldn't allow layering for fragment themes - don't want
     `foo.exe` installing a `light` theme that totally overrides the built-in
     one. Right? **TODO! DISCUSSION**
-* I don't think it's unreasonable to implement support for `theme` as either a
+* ~I don't think it's unreasonable to implement support for `theme` as either a
   string or an object. If `theme` is a string, then we can do a name-based
   lookup in a table of themes. If it's an object, we can just use that object
   immediately. Doing this might provide a simpler implementation plan whereby we
   allow `"default"|"light"|"dark"|{object}` at first, and then later add the
-  list of themes.
+  list of themes.~
+  - This was a cool idea, but ultimately discarded in favor of the OS light/dark
+    theme switching, which needed the object version of `theme` to be reserved
+    for the OS mode lookup.
+* A cool idea from discussion: `window.highContrastSchemes` as a theme member
+  that controls a per-control property. This would override the color scheme of
+  any pane with a high contrast version, ignoring any colors emitted by the
+  client application. Details are left for a future spec.
 
 #### Theming v2 Properties
 
