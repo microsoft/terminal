@@ -534,13 +534,13 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - None
 void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
-    BOOL fCloak = TRUE;
-    auto result = DwmSetWindowAttribute(hwnd,
-                          DWMWA_CLOAK,
-                          &fCloak,
-                          sizeof(fCloak));
-    result;
-    LOG_IF_FAILED(result);
+    // GH#11561: Hide the window until we're totallly done being initialized.
+    // More commentary in TerminalPage::_CompleteInitialization
+    BOOL cloak = TRUE;
+    LOG_IF_FAILED(DwmSetWindowAttribute(hwnd,
+                                        DWMWA_CLOAK,
+                                        &cloak,
+                                        sizeof(cloak)));
 
     launchMode = _logic.GetLaunchMode();
 
@@ -1560,9 +1560,11 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
-    BOOL fCloak = FALSE;
-    DwmSetWindowAttribute(_window->GetHandle(),
-                          DWMWA_CLOAK,
-                          &fCloak,
-                          sizeof(fCloak));
+    // GH#11561: We're totallly done being initialized. Uncloak the window, making it visible.
+    // More commentary in TerminalPage::_CompleteInitialization
+    BOOL cloak = FALSE;
+    LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(),
+                                        DWMWA_CLOAK,
+                                        &cloak,
+                                        sizeof(cloak)));
 }
