@@ -1,16 +1,14 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-12-13
-last updated: 2022-04-19
+last updated: 2022-04-25
 issue id: #3327
 ---
 
 
 TODO!S:
-* whole application window BG images, a la that one post in the theming thread
 * How do themes play with different window title settings? (different themes for different windows. `_quake` esp.))
 * any clever ideas for elevated themes?
-* tab.bottomCornerRadius? or is tab.cornerRadius a "1" = all 1, "1, 2" = tops 1, bottoms 2 kinda situation
 * `tabRow.background` that follows the OS setting for "Use accent color in titlebars"
 * Reconcile with global `experimental.useBackgroundImageForWindow` from [#12893]
 
@@ -126,22 +124,16 @@ Take for example the following settings excerpt:
         },
         {
             "name": "My small light theme",
-            "tabBackground": "#80ff0000",
-            "tabRowBackground": "#ffffffff",
-            "tabHeight": 8,
-            "applicationTheme": "light",
-            "colorScheme": "Solarized Light",
-            "tabIcon": "hidden",
-            "tabCloseButton": "hover"
+            "tab.background": "#80ff0000",
+            "tabRow.background": "#ffffffff",
+            "tab.height": 8,
+            "window.applicationTheme": "light",
+            "tab.icon": "hidden",
+            "tab.closeButton": "hover"
         }
     ]
 }
 ```
-
-> **TODO! FOR DISCUSSION**: I've given both a `tab.<property>` and a
-> `tab<Property>` style here, for comparison. At the time of writing, I'm unsure
-> of which is better. I'll be using `<element>.<property>` for the remainder of
-> the doc.
 
 In the above settings snippet, we see the following things:
 1. A list of `themes` that the user can pick from. Each theme has a `name`
@@ -149,6 +141,15 @@ In the above settings snippet, we see the following things:
 2. The user has set the `theme` to `"My Boxy Theme"`, the first theme
    in the list of themes. If the user wanted to switch to the other installed
    theme, `"My small light theme"`, they'd simply need to change this property.
+
+> _note_: Initially, we had considered a `elementPropertyName`-like syntax as
+opposed to the above `element.propertyName` one. The consensus was the dotted
+version was simpler to mentally parse and overall better.
+
+These Theme objects are designed to make it simple for the user to be able to
+quickly download these as an extension in the future, and hot-switch between
+them. Imagine: an application that would provide a gallery of uploaded themes,
+and the user could install them as [fragment extensions].
 
 ### Exposed theme properties
 
@@ -159,12 +160,44 @@ implementation. In [Future Considerations](#future-considerations), we'll
 enumerate additional properties that could be added in the future to further
 control the UI.
 
-#### Theming v1 Properties
+#### Highest priority theming properties
+
+These are the elements that have orders of magnitude more requests:
+* Customizing the titlebar color, including the unfocused titlebar color. This
+  includes merging with the existing `useAcrylicInTabRow` setting.
+* Customizing the tab color
+* Enabling Mica for the window
+
+These represent the most important asks of theming in the Terminal. Everything
+else that follows is merely "nice to have". The most important elements then
+are:
+
+* Properties:
+    - `tab.background`
+    - `tabRow.background`
+    - `tabRow.acrylicOpacity`
+    - `tabRow.unfocusedBackground`
+    - `window.background.useMica`
+* Theme color variants:
+    - `"#rrggbb"` or `"#aarrggbb"`
+    - `"accent"`
+    - `"terminalBackground"`
+
+#### Additional theming v1 Properties
+
+These are additional settings that seem of higher priority or would be easier to
+implement. They are categorized by the element of the Terminal they are
+controlling:
+
+##### Individual Tabs
 
 * `tab.cornerRadius`: Control the radius of the corners of the tab items.
   Accepts a `double`. If this is set to `0`, then the tabs will have squared-off
   corners. No particular limit is set on the max value accepted, though larger
   values might not be aesthetically pleasing.
+* `tab.bottomCornerRadius`: Control the radius of the bottom corners of the tab
+  items. This can be used to make the tabs look like "buttons" in the tab row,
+  instead of tabs.
 * `tab.closeButton`: Control the visibility of the close button for a tab item.
   Accepts the following values:
     - `visible`: The default behavior of the tab item close button - always
@@ -180,33 +213,72 @@ control the UI.
     - `hidden`: The icon is hidden
 * `tab.background`: Control the color of the background of tab items. See below
   for accepted colors.
-* `tabRow.background`: Control the color of the background of the tab row items.
-  See below for accepted colors.
+
+##### Tab Row / "Titlebar"
+
+* `tabRow.background`: Control the color of the background of the tab row. When
+  tabs in the titlebar are enabled, this sets the color of the titlebar. See
+  below for accepted colors.
+    - Notably, this is named `tabRow.background`, **not** `titlebar.background`.
+      Outside of tabs-in-titlebar mode, we can't control the window titlebar
+      color.
+    - This ignores any alpha and always uses 1.0 for the alpha channel. See
+      [Titlebar complications](#Titlebar-complications) for details.
+* `tabRow.unfocusedBackground`: Control the color of the background of the tab
+  row, when the window is unfocused. See below for accepted colors.
+    - **TODO!** When omitted, should this default to the `tabRow.background`
+      value (if set), or just the normal unfocused window color? "the normal
+      unfocused window color" is a SUBSTANTIALLY easier implementation.
+    - This ignores any alpha and always uses 1.0 for the alpha channel. See
+      [Titlebar complications](#Titlebar-complications) for details.
+* `tabRow.acrylicOpacity`: Optional integer representation of an opacity
+  (0-100). When provided, the `tabRow.background` color is treated as an acrylic
+  brush, with the given `TintOpacity`. When omitted, `tabRow.background` is
+  treated as a solid color.
+    - This is to replace the original `useAcrylicInTabRow` setting.
+    - This is NOT provided for the `tabRow.unfocusedBackground` setting. See
+      [Titlebar complications](#Titlebar-complications) for details.
+
+##### Panes
+
 * `pane.borderColor`: Control the color of the border used to separate panes.
   This is the color of the inactive border between panes.
 * `pane.activeBorderColor`: Control the color of the border of the active pane
 * `pane.borderWidth`: Control the width of the borders used to separate panes.
+
+##### Window Properties
+
 * `window.applicationTheme`: If set, will set the XAML `RequestedTheme`
   property. This can be one of `light`, `dark` or `system`. This controls how
   XAML fundamentally styles UI elements. If not provided, will use the default
   value "system", which will use whatever the system's default theme is.
 * `window.roundedCorners`: A boolean, to control whether the window has rounded
   corners on Windows 11.
+* `window.background.useMica`: a boolean that enables/disables Mica. For more
+  discussion, see [Mica Spec].
+* `window.background.image`: a path to an image to use as the background for the
+  whole of the content of the Terminal, including in the tab row space.
+    - Additional properties to control the sizing of this image (`padding`,
+      `stretchMode`, `opacity`, etc) would also be exposed as
+      `window.background.imagePadding`, a la the similar Profile settings.
 
 #### Theme Colors
 
 For properties like `tab.background` and `tabRow.background`, these colors can
 be one of:
 * an `#rrggbb`, `#aarrggbb` color. (Alpha is ignored for `tabRow.background`)
-* `accent` for the accent color
+* `accent` for the _titlebar_ version of the accent color. Notably, this is
+  **not** just some `SystemAccentColor` value, it's apparently some other value.
+  This has a different value depending on if the window is focused or not. Refer
+  to Edge the the "use accent color on titlebars" setting enabled as a
+  reference.
 * `terminalBackground` to use the default background color of the active
   terminal instance.
 * `terminalForeground` to use the default foreground color of the active
   terminal instance.
 * `key:SomeXamlKey` to try and look `SomeXamlKey` up from our resources as a
   `Color`, and use that color for the value.
-    - **TODO! DISCUSSION**: Does anyone want this?
-    - is `accent` just `key:SystemAccentColor`? If it is, is it a reasonable
+    - `accent` is NOT the same thing as `key:SystemAccentColor`? If it is, is it a reasonable
       alias that we'd want to provide anyways?
     - **TODO! DISCUSSION**: PR[#5280] suggested `{ "key": "SomeResourceKey" }` for
       string resources, should we use that format for colors like this as well?
@@ -278,14 +350,13 @@ changes, or the active pane in a tab changes:
           theme (as the former is a run-time property set to override the
           latter).
 * If `tabRow.background == "terminalBackground"`:
-    - If this control is the active terminal of the active `Tab`, then we should
-      make sure to change the value of the application's `TabViewBackground`.
-      This will update the color of the titlebar area.
-    - Make sure to register an event handler in the `NonClientIslandWindow` to
-      listen for when the `Color` of the `TitlebarControl`'s `Background` brush
-      changes. When that happens, the window will need to be invalidated, so
-      that we can get a `WM_PAINT` and redraw the potion of the titlebar we're
-      drawing with GDI.
+    - If this control is the active terminal of the active `Tab`, then we need
+      to raise an event to communicate this updated value up to the window
+      layer. We'll raise a `"TabRowBackgroundBrush"` property changed event,
+      that the app host can listen for and use to set the titlebar's color, if
+      needed.
+    - The `TerminalPage` also will need to set the Background of the
+      `TabRowControl` to match.
 
 The `tab.cornerRadius` might be a bit trickier to implement. Currently, there's
 not a XAML resource that controls this, nor is this something that's exposed by
@@ -427,11 +498,22 @@ _fig 3_: Using an acrylic terminal background, and the titlebar color is set to
 tab row, and rounded bottoms on the TabViewItems. Courtesy of
 [@Shomnipotence](https://github.com/microsoft/terminal/issues/3327#issuecomment-765493313)
 
+![Tabs with bottom corner radius set](tab-buttons-000.png) _fig
+5_: Using a bottom corner radius to make tabs appear like buttons on the tab row. Courtesy of
+[@simioni](https://github.com/microsoft/terminal/issues/3774#issuecomment-609408305)
+
 
 [TODO!]: # TODO: Settings UI mocks? These pretty substantially affect the UI.
 <!-- We probably need to expose them in the UI in some way, and not just leave them as "power user settings" -->
 
-## Capabilities
+## Potential Issues
+
+It's totally possible for the user to set some sort of theme that just looks
+bad. This is absolutely a "beauty in the eye of the beholder" situation - not
+everyone is going to like the appearance of every theme. The goal of the
+Terminal is to provide a basic theme that's appropriate for anyone, but empower
+users to customize the terminal however they see fit. If the user chooses a
+theme that's not particularly appealing, they can always change it back.
 
 ### Accessibility
 
@@ -463,19 +545,20 @@ This change should not have any particular reliability concerns.
 The biggest compatibility concern is regarding the existing values for the
 `theme` property, which is addressed above.
 
+#### `useAcrylicInTabRow` migration
+
 [TODO!]: # TODO: Deprecating the current titlebar acrylic setting, or totally overriding in theme.
+
+#### `experimental.useBackgroundImageForWindow` migration
+
+[TODO!]: # TODO: Deprecating the current setting or migrating or whatever
 
 
 ### Performance, Power, and Efficiency
 
-## Potential Issues
-
-It's totally possible for the user to set some sort of theme that just looks
-bad. This is absolutely a "beauty in the eye of the beholder" situation - not
-everyone is going to like the appearance of every theme. The goal of the
-Terminal is to provide a basic theme that's appropriate for anyone, but empower
-users to customize the terminal however they see fit. If the user chooses a
-theme that's not particularly appealing, they can always change it back.
+This change should not have any particular performance concerns. Additional
+acrylic usage might impact battery life. There's not much concern for any
+substantial new impacts, hoever.
 
 ### Branding
 
@@ -485,6 +568,20 @@ for potential users see a screenshot of the Terminal and _know_ "Thats the
 Windows Terminal". Is this something we're really all that concerned about
 though? If this is something users want (it is), then shouldn't that be what
 matters?
+
+### Titlebar complications
+
+Unfortunately, the original User32 titlebar is actually always drawn underneath
+our titlebar. Even when the tabs are in the titlebar, that's actually just XAML
+content drawn on top of the original frame. The rest of the window is
+transparent, but the titlebar is there.
+
+Our design to enable unfocused acrylic to work relies on in-app acrylic to allow
+the arcylic to blur with the transparent window contents. However, since the
+User32 titlebar is always there, in-app acrylic would end up always blurring
+_the original titlebar_, which looks ridiculous. This means we can't have
+unfocused acrylic without showing that titlebar. We'd rather remove that
+footgun, and make it explicit that this setting does not exist.
 
 ### Light & dark mode theming
 
@@ -499,14 +596,13 @@ theme, regardless of whatever `window.applicationTheme` is set to. Should the
 user leave `window.applicationTheme` set to `system`, it's entirely likely that
 they would like the rest of their colors to automatically update to match.
 
-[TODO!]: # We should certainly have a plan for this in mind before accepting this spec.
+To address this, we'll allow the window-level `theme` property to not only allow
+a string for a name-based lookup in the list of themes, but als an object. That
+object will accept two properties: `light` and `dark`. Each of these accepts a
+string representing the name of a theme to use for that specific OS theme. These
+strings will default to `"light"` and `"dark"` respectively.
 
-_Terrible ideas_:
-* allow the user to set different themes for different OS themes. Something like
-  `"theme": { "light": "My Light Theme", "dark": "My Dark Theme" }`
-  - This design might complicate the "let `theme` be an object" as mentioned in
-    Future considerations.
-* Allow the user to set their own brushes as part of a theme? So like,
+Also considered: allow the user to set their own brushes as part of a theme, like:
 ```jsonc
 {
     "name": "My theme aware theme",
@@ -522,10 +618,11 @@ _Terrible ideas_:
     "tabRow.background": "key:Foo",
 }
 ```
+This seemed far too complicated to actually understand.
 
 ### Admin window themes
 
-[TODO!]: # TODO!
+[TODO!]: # TODO! Any clever ideas? Bueller?
 
 Same idea as the light vs dark mode theme ideas. How should users be able to
 style admin vs regular windows?
@@ -535,7 +632,7 @@ style admin vs regular windows?
 This spec also has a follow-up spec which elaborates on the complexities of Mica
 in the Terminal. Please also refer to:
 
-* [Mica in the Terminal](./%2310509%20-%20Mica.md)
+* [Mica in the Terminal]
 
 ## Future considerations
 
@@ -573,7 +670,8 @@ in the Terminal. Please also refer to:
   tab row and the Terminal panes beneath it. This border doesn't exist
   currently.
 * `tabRow.underlineColor`: Controls the color of the aforementioned underline
-* `DWMWA_BORDER_COLOR`: That's not super well documented but the name is interesting for sure.
+* `window.frameColor`: The `DWMWA_BORDER_COLOR` DWM attribute is [SUPER fun to
+  play with], and trivial to set. We should definitely exposed it.
 
 <!-- Footnotes -->
 
@@ -594,3 +692,7 @@ in the Terminal. Please also refer to:
 
 [microsoft-ui-xaml#2201]: https://github.com/microsoft/microsoft-ui-xaml/pull/2201#issuecomment-606888293
 [#12893]: https://github.com/microsoft/terminal/pull/12893
+[Mica in the Terminal]: ./%2310509%20-%20Mica.md
+[Mica Spec]: ./%2310509%20-%20Mica.md
+[SUPER fun to play with]: https://github.com/microsoft/terminal/issues/12950
+[fragment extensions]: https://docs.microsoft.com/en-us/windows/terminal/json-fragment-extensions
