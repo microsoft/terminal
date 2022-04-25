@@ -452,7 +452,7 @@ bool TerminalDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
 {
-    bool success = false;
+    auto success = false;
 
     switch (statusType)
     {
@@ -619,7 +619,7 @@ bool TerminalDispatch::_WriteResponse(const std::wstring_view reply) const
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
-    bool success = false;
+    auto success = false;
     switch (param)
     {
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:

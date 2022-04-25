@@ -76,7 +76,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
+            auto convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
@@ -188,7 +188,7 @@ bool InteractDispatch::FocusChanged(const bool focused) const
     // InteractDispatch outside ConPTY mode, but just in case...
     if (gci.IsInVtIoMode())
     {
-        bool shouldActuallyFocus = false;
+        auto shouldActuallyFocus = false;
 
         // From https://github.com/microsoft/terminal/pull/12799#issuecomment-1086289552
         // Make sure that the process that's telling us it's focused, actually

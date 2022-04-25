@@ -39,8 +39,8 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
     try
     {
         // Allocate all necessary state.
-        std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(amDesired,
-                                                                                             ulShareMode);
+        auto pHandleData = std::make_unique<ConsoleHandleData>(amDesired,
+                                                               ulShareMode);
 
         // Check the share mode.
         if (((pHandleData->IsReadAllowed()) && (_ulOpenCount > _ulReadShareCount)) ||

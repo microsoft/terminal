@@ -95,7 +95,7 @@ typename CharRow::const_iterator CharRow::cend() const noexcept
 // - The calculated left boundary of the internal string.
 size_t CharRow::MeasureLeft() const noexcept
 {
-    const_iterator it = _data.cbegin();
+    auto it = _data.cbegin();
     while (it != _data.cend() && it->IsSpace())
     {
         ++it;
@@ -111,7 +111,7 @@ size_t CharRow::MeasureLeft() const noexcept
 // - The calculated right boundary of the internal string.
 size_t CharRow::MeasureRight() const
 {
-    const_reverse_iterator it = _data.crbegin();
+    auto it = _data.crbegin();
     while (it != _data.crend() && it->IsSpace())
     {
         ++it;
@@ -132,7 +132,7 @@ void CharRow::ClearCell(const size_t column)
 // - True if there is valid text in this row. False otherwise.
 bool CharRow::ContainsText() const noexcept
 {
-    for (const value_type& cell : _data)
+    for (const auto& cell : _data)
     {
         if (!cell.IsSpace())
         {

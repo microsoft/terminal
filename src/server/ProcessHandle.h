@@ -28,7 +28,7 @@ Revision History:
 class ConsoleProcessHandle
 {
 public:
-    std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
+    const std::unique_ptr<ConsoleWaitQueue> pWaitBlockQueue;
     std::unique_ptr<ConsoleHandleData> pInputHandle;
     std::unique_ptr<ConsoleHandleData> pOutputHandle;
 

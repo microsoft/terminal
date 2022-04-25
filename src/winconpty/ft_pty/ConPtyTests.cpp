@@ -70,8 +70,8 @@ void ConPtyTests::CreateConPtyNoPipes()
 {
     PseudoConsole pcon{};
 
-    const HANDLE goodIn = (HANDLE)0x4;
-    const HANDLE goodOut = (HANDLE)0x8;
+    const auto goodIn = (HANDLE)0x4;
+    const auto goodOut = (HANDLE)0x8;
 
     // We only need one of the two handles to start successfully. However,
     // INVALID_HANDLE for either will be rejected by CreateProcess, but nullptr
@@ -94,8 +94,8 @@ void ConPtyTests::CreateConPtyBadSize()
 {
     PseudoConsole pcon{};
     COORD badSize = { 0, 0 };
-    const HANDLE goodIn = (HANDLE)0x4;
-    const HANDLE goodOut = (HANDLE)0x8;
+    const auto goodIn = (HANDLE)0x4;
+    const auto goodOut = (HANDLE)0x8;
     VERIFY_FAILED(_CreatePseudoConsole(badSize, goodIn, goodOut, 0, &pcon));
 
     badSize = { 0, defaultSize.Y };

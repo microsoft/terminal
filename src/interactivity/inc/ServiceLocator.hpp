@@ -87,8 +87,8 @@ namespace Microsoft::Console::Interactivity
         static HWND LocatePseudoWindow(const HWND owner = nullptr /*HWND_DESKTOP = 0*/);
 
     protected:
-        ServiceLocator(ServiceLocator const&) = delete;
-        ServiceLocator& operator=(ServiceLocator const&) = delete;
+        ServiceLocator(const ServiceLocator&) = delete;
+        ServiceLocator& operator=(const ServiceLocator&) = delete;
 
     private:
         [[nodiscard]] static NTSTATUS LoadInteractivityFactory();

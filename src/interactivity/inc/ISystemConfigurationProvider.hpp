@@ -41,8 +41,8 @@ namespace Microsoft::Console::Interactivity
     protected:
         ISystemConfigurationProvider(){};
 
-        ISystemConfigurationProvider(ISystemConfigurationProvider const&) = delete;
-        ISystemConfigurationProvider& operator=(ISystemConfigurationProvider const&) = delete;
+        ISystemConfigurationProvider(const ISystemConfigurationProvider&) = delete;
+        ISystemConfigurationProvider& operator=(const ISystemConfigurationProvider&) = delete;
     };
 
     inline ISystemConfigurationProvider::~ISystemConfigurationProvider() {}

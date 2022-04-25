@@ -163,7 +163,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 [[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                        COLORREF const /*color*/,
                                                        size_t const /*cchLine*/,
-                                                       COORD const /*coordTarget*/) noexcept
+                                                       const COORD /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -192,7 +192,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
                                                        const RenderSettings& /*renderSettings*/,
                                                        const gsl::not_null<IRenderData*> /*pData*/,
                                                        const bool /*usingSoftFont*/,
-                                                       bool const /*isSettingDefaultBrushes*/) noexcept
+                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
@@ -204,7 +204,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -221,7 +221,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, const int /*iDpi*/) noexcept
 {
     return S_OK;
 }

@@ -837,7 +837,7 @@ namespace winrt::TerminalApp::implementation
         if (WindowRenamer() == nullptr)
         {
             // We need to use FindName to lazy-load this object
-            if (MUX::Controls::TeachingTip tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            if (auto tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
             {
                 tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
             }

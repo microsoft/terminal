@@ -152,7 +152,7 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
                                                const short modifierKeyState,
                                                const short delta) noexcept
 {
-    int xvalue = 0;
+    auto xvalue = 0;
     switch (button)
     {
     case WM_LBUTTONDBLCLK:
@@ -209,7 +209,7 @@ static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
                                                  const short modifierKeyState,
                                                  const short delta) noexcept
 {
-    int xvalue = 0;
+    auto xvalue = 0;
     switch (button)
     {
     case WM_LBUTTONDBLCLK:
@@ -329,7 +329,7 @@ bool TerminalInput::HandleMouse(const til::point position,
         _mouseInputState.accumulatedDelta = 0;
     }
 
-    bool success = false;
+    auto success = false;
     if (ShouldSendAlternateScroll(button, delta))
     {
         success = _SendAlternateScroll(delta);
@@ -340,10 +340,10 @@ bool TerminalInput::HandleMouse(const til::point position,
         if (success)
         {
             // isHover is only true for WM_MOUSEMOVE events
-            const bool isHover = _isHoverMsg(button);
-            const bool isButton = _isButtonMsg(button);
+            const auto isHover = _isHoverMsg(button);
+            const auto isButton = _isButtonMsg(button);
 
-            const bool sameCoord = (position.X == _mouseInputState.lastPos.X) &&
+            const auto sameCoord = (position.X == _mouseInputState.lastPos.X) &&
                                    (position.Y == _mouseInputState.lastPos.Y) &&
                                    (_mouseInputState.lastButton == button);
 
@@ -352,13 +352,13 @@ bool TerminalInput::HandleMouse(const til::point position,
             //      _GetPressedButton will return the first pressed mouse button.
             // If it returns WM_LBUTTONUP, then we can assume that the mouse
             //      moved without a button being pressed.
-            const unsigned int realButton = isHover ? s_GetPressedButton(state) : button;
+            const auto realButton = isHover ? s_GetPressedButton(state) : button;
 
             // In default mode, only button presses/releases are sent
             // In ButtonEvent mode, changing coord hovers WITH A BUTTON PRESSED
             //      (WM_LBUTTONUP is our sentinel that no button was pressed) are also sent.
             // In AnyEvent, all coord change hovers are sent
-            const bool physicalButtonPressed = realButton != WM_LBUTTONUP;
+            const auto physicalButtonPressed = realButton != WM_LBUTTONUP;
 
             success = (isButton && IsTrackingMouseInput()) ||
                       (isHover && _inputMode.test(Mode::ButtonEventMouseTracking) && ((!sameCoord) && (physicalButtonPressed))) ||
@@ -523,7 +523,7 @@ std::wstring TerminalInput::_GenerateSGRSequence(const til::point position,
 {
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
-    const int xbutton = _windowsButtonToSGREncoding(button, isHover, modifierKeyState, delta);
+    const auto xbutton = _windowsButtonToSGREncoding(button, isHover, modifierKeyState, delta);
 
     auto format = wil::str_printf<std::wstring>(L"\x1b[<%d;%d;%d%c", xbutton, position.X + 1, position.Y + 1, isDown ? L'M' : L'm');
 
@@ -541,9 +541,9 @@ std::wstring TerminalInput::_GenerateSGRSequence(const til::point position,
 // True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
 bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
-    const bool inAltBuffer{ _mouseInputState.inAlternateBuffer };
-    const bool inAltScroll{ _inputMode.test(Mode::AlternateScroll) };
-    const bool wasMouseWheel{ (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0 };
+    const auto inAltBuffer{ _mouseInputState.inAlternateBuffer };
+    const auto inAltScroll{ _inputMode.test(Mode::AlternateScroll) };
+    const auto wasMouseWheel{ (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0 };
     return inAltBuffer && inAltScroll && wasMouseWheel;
 }
 

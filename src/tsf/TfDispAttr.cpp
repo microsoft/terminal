@@ -50,10 +50,10 @@ CicDisplayAttributeMgr::~CicDisplayAttributeMgr()
                                                                                     IEnumTfRanges** ppEnum,
                                                                                     ULONG* pulNumProp)
 {
-    HRESULT hr = E_FAIL;
+    auto hr = E_FAIL;
     try
     {
-        ULONG ulNumProp = static_cast<ULONG>(m_DispAttrProp.size());
+        auto ulNumProp = static_cast<ULONG>(m_DispAttrProp.size());
         if (ulNumProp)
         {
             // TrackProperties wants an array of GUID *'s
@@ -99,7 +99,7 @@ CicDisplayAttributeMgr::~CicDisplayAttributeMgr()
 {
     VARIANT var;
 
-    HRESULT hr = E_FAIL;
+    auto hr = E_FAIL;
 
     if (SUCCEEDED(pProp->GetValue(ec, pRange, &var)))
     {
@@ -118,7 +118,7 @@ CicDisplayAttributeMgr::~CicDisplayAttributeMgr()
 
                 FAIL_FAST_IF(!(tfPropVal.varValue.vt == VT_I4)); // expecting GUIDATOMs
 
-                TfGuidAtom gaVal = (TfGuidAtom)tfPropVal.varValue.lVal;
+                auto gaVal = (TfGuidAtom)tfPropVal.varValue.lVal;
 
                 GUID guid;
                 pcat->GetGUID(gaVal, &guid);

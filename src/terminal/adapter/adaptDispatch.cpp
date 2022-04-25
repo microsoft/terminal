@@ -1054,7 +1054,7 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
-    bool success = false;
+    auto success = false;
     switch (param)
     {
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
@@ -2168,8 +2168,8 @@ bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexce
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    CursorType actualType = CursorType::Legacy;
-    bool fEnableBlinking = false;
+    auto actualType = CursorType::Legacy;
+    auto fEnableBlinking = false;
 
     switch (cursorStyle)
     {

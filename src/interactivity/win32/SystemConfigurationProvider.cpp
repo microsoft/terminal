@@ -62,10 +62,10 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     _In_ PCWSTR pwszCurrDir,
     _In_ PCWSTR pwszAppName)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wszLinkTarget[MAX_PATH] = { 0 };
     WCHAR wszIconLocation[MAX_PATH] = { 0 };
-    int iIconIndex = 0;
+    auto iIconIndex = 0;
 
     pLinkSettings->SetCodePage(ServiceLocator::LocateGlobals().uiOEMCP);
 
@@ -74,35 +74,35 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     {
         if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
         {
-            size_t const cch = *pdwTitleLength / sizeof(wchar_t);
+            const auto cch = *pdwTitleLength / sizeof(wchar_t);
 
             gci.SetLinkTitle(std::wstring(pwszTitle, cch));
 
-            wchar_t* const linkNameForCsi = new (std::nothrow) wchar_t[gci.GetLinkTitle().length() + 1]{ 0 };
+            const auto linkNameForCsi = new (std::nothrow) wchar_t[gci.GetLinkTitle().length() + 1]{ 0 };
             if (linkNameForCsi)
             {
                 gci.GetLinkTitle().copy(linkNameForCsi, gci.GetLinkTitle().length());
             }
 
-            CONSOLE_STATE_INFO csi = pLinkSettings->CreateConsoleStateInfo();
+            auto csi = pLinkSettings->CreateConsoleStateInfo();
             csi.LinkTitle = linkNameForCsi;
             WCHAR wszShortcutTitle[MAX_PATH] = L"\0";
-            BOOL fReadConsoleProperties = FALSE;
-            WORD wShowWindow = pLinkSettings->GetShowWindow();
-            DWORD dwHotKey = pLinkSettings->GetHotKey();
-            int iShowWindow = 0;
+            auto fReadConsoleProperties = FALSE;
+            auto wShowWindow = pLinkSettings->GetShowWindow();
+            auto dwHotKey = pLinkSettings->GetHotKey();
+            auto iShowWindow = 0;
             WORD wHotKey = 0;
-            NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
-                                                                     &fReadConsoleProperties,
-                                                                     wszShortcutTitle,
-                                                                     ARRAYSIZE(wszShortcutTitle),
-                                                                     wszLinkTarget,
-                                                                     ARRAYSIZE(wszLinkTarget),
-                                                                     wszIconLocation,
-                                                                     ARRAYSIZE(wszIconLocation),
-                                                                     &iIconIndex,
-                                                                     &iShowWindow,
-                                                                     &wHotKey);
+            auto Status = ShortcutSerialization::s_GetLinkValues(&csi,
+                                                                 &fReadConsoleProperties,
+                                                                 wszShortcutTitle,
+                                                                 ARRAYSIZE(wszShortcutTitle),
+                                                                 wszLinkTarget,
+                                                                 ARRAYSIZE(wszLinkTarget),
+                                                                 wszIconLocation,
+                                                                 ARRAYSIZE(wszIconLocation),
+                                                                 &iIconIndex,
+                                                                 &iShowWindow,
+                                                                 &wHotKey);
 
             if (NT_SUCCESS(Status))
             {
@@ -171,7 +171,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
         {
             // search for the application along the path so that we can load its icons (if we didn't find one explicitly in
             // the shortcut)
-            const DWORD dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
+            const auto dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
 
             // If we cannot find the application in the path, then try to fall back and see if the window title is a valid path and use that.
             if (dwLinkLen <= 0 || dwLinkLen > ARRAYSIZE(wszIconLocation))

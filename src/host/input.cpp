@@ -20,13 +20,13 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 bool IsInProcessedInputMode()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return (gci.pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0;
 }
 
 bool IsInVirtualTerminalInputMode()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return WI_IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
@@ -98,7 +98,7 @@ ULONG GetControlKeyState(const LPARAM lParam)
 // - returns true if we're in a mode amenable to us taking over keyboard shortcuts
 bool ShouldTakeOverKeyboardShortcuts()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return !gci.GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
@@ -106,8 +106,8 @@ bool ShouldTakeOverKeyboardShortcuts()
 // - handles key events without reference to Win32 elements.
 void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    bool ContinueProcessing = true;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto ContinueProcessing = true;
 
     if (keyEvent.IsCtrlPressed() &&
         !keyEvent.IsAltPressed() &&
@@ -190,11 +190,11 @@ void HandleFocusEvent(const BOOL fSetFocus)
     }
 #endif
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
-        const size_t EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
+        const auto EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
         FAIL_FAST_IF(EventsWritten != 1);
     }
     catch (...)
@@ -205,7 +205,7 @@ void HandleFocusEvent(const BOOL fSetFocus)
 
 void HandleMenuEvent(const DWORD wParam)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     size_t EventsWritten = 0;
     try
@@ -224,7 +224,7 @@ void HandleMenuEvent(const DWORD wParam)
 
 void HandleCtrlEvent(const DWORD EventType)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     switch (EventType)
     {
     case CTRL_C_EVENT:
@@ -243,7 +243,7 @@ void HandleCtrlEvent(const DWORD EventType)
 
 void ProcessCtrlEvents()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.CtrlFlags == 0)
     {
         gci.UnlockConsole();
@@ -251,18 +251,18 @@ void ProcessCtrlEvents()
     }
 
     // Make our own copy of the console process handle list.
-    DWORD const LimitingProcessId = gci.LimitingProcessId;
+    const auto LimitingProcessId = gci.LimitingProcessId;
     gci.LimitingProcessId = 0;
 
     ConsoleProcessTerminationRecord* rgProcessHandleList;
     size_t cProcessHandleList;
 
-    HRESULT hr = gci.ProcessHandleList
-                     .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                                     WI_IsFlagSet(gci.CtrlFlags,
-                                                                  CONSOLE_CTRL_CLOSE_FLAG),
-                                                     &rgProcessHandleList,
-                                                     &cProcessHandleList);
+    auto hr = gci.ProcessHandleList
+                  .GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                  WI_IsFlagSet(gci.CtrlFlags,
+                                                               CONSOLE_CTRL_CLOSE_FLAG),
+                                                  &rgProcessHandleList,
+                                                  &cProcessHandleList);
 
     if (FAILED(hr) || cProcessHandleList == 0)
     {
@@ -271,7 +271,7 @@ void ProcessCtrlEvents()
     }
 
     // Copy ctrl flags.
-    ULONG CtrlFlags = gci.CtrlFlags;
+    auto CtrlFlags = gci.CtrlFlags;
     FAIL_FAST_IF(!(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG)))));
 
     gci.CtrlFlags = 0;
@@ -287,7 +287,7 @@ void ProcessCtrlEvents()
     //        CONSOLE_CTRL_LOGOFF_FLAG
     //        CONSOLE_CTRL_SHUTDOWN_FLAG
 
-    DWORD EventType = (DWORD)-1;
+    auto EventType = (DWORD)-1;
     switch (CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG | CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))
     {
     case CONSOLE_CTRL_CLOSE_FLAG:
@@ -311,7 +311,7 @@ void ProcessCtrlEvents()
         break;
     }
 
-    NTSTATUS Status = STATUS_SUCCESS;
+    auto Status = STATUS_SUCCESS;
     for (size_t i = 0; i < cProcessHandleList; i++)
     {
         /*

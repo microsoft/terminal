@@ -87,7 +87,7 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 [[nodiscard]] NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleInputThread)
     {
@@ -155,7 +155,7 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 [[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleWindow)
     {
@@ -184,7 +184,7 @@ IConsoleWindow* ServiceLocator::LocateConsoleWindow()
 
 IConsoleControl* ServiceLocator::LocateConsoleControl()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_consoleControl)
     {
@@ -211,7 +211,7 @@ IConsoleInputThread* ServiceLocator::LocateConsoleInputThread()
 
 IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_highDpiApi)
     {
@@ -233,7 +233,7 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 
 IWindowMetrics* ServiceLocator::LocateWindowMetrics()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_windowMetrics)
     {
@@ -260,7 +260,7 @@ IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
 
 ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_systemConfigurationProvider)
     {
@@ -294,7 +294,7 @@ Globals& ServiceLocator::LocateGlobals()
 // - a reference to the pseudoconsole window.
 HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
     {
         if (s_interactivityFactory.get() == nullptr)
@@ -320,7 +320,7 @@ HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
 
 [[nodiscard]] NTSTATUS ServiceLocator::LoadInteractivityFactory()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_interactivityFactory.get() == nullptr)
     {

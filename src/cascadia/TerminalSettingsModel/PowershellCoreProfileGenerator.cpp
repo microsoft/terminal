@@ -303,7 +303,7 @@ std::wstring_view PowershellCoreProfileGenerator::GetNamespace() const noexcept
 void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     const auto psInstances = _collectPowerShellInstances();
-    bool first = true;
+    auto first = true;
 
     for (const auto& psI : psInstances)
     {

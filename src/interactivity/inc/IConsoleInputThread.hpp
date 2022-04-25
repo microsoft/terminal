@@ -28,8 +28,8 @@ namespace Microsoft::Console::Interactivity
 
     protected:
         // Prevent accidental copies.
-        IConsoleInputThread(IConsoleInputThread const&) = delete;
-        IConsoleInputThread& operator=(IConsoleInputThread const&) = delete;
+        IConsoleInputThread(const IConsoleInputThread&) = delete;
+        IConsoleInputThread& operator=(const IConsoleInputThread&) = delete;
 
         // .ctor
         IConsoleInputThread() :

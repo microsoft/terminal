@@ -16,8 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        void CreateUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void DeleteUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void CreateUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        void DeleteUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);

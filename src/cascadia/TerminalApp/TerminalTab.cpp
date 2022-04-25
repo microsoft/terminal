@@ -110,7 +110,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the bell indicator from the tab header
     // Arguments:
     // - sender, e: not used
-    void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
+    void TerminalTab::_BellIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
     {
         ShowBellIndicator(false);
         // Just do a sanity check that the timer still exists before we stop it
@@ -1372,7 +1372,7 @@ namespace winrt::TerminalApp::implementation
 
             auto tab{ ptrTab };
 
-            std::optional<winrt::Windows::UI::Color> currentColor = tab->GetTabColor();
+            auto currentColor = tab->GetTabColor();
             if (currentColor.has_value())
             {
                 tab->_ApplyTabColor(currentColor.value());

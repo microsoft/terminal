@@ -54,5 +54,5 @@ public:
     }
 
 private:
-    ReplyDataType const _ReplyType;
+    const ReplyDataType _ReplyType;
 };

@@ -107,7 +107,7 @@ ReadSettings(
     _Inout_ PWDDMCONSOLECONTEXT pCtx
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     DWORD Error = ERROR_SUCCESS;
     HKEY hKey = NULL;
     DWORD ValueType = REG_NONE;
@@ -178,7 +178,7 @@ CreateTextLayout(
     _Out_ IDWriteTextLayout **ppTextLayout
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (pCtx == NULL) {
         hr = E_INVALIDARG;
@@ -252,11 +252,11 @@ CreateDeviceResources(
 
     HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&pCtx->pDXGIFactory2));
 
-    if (SUCCEEDED(hr)) {  
+    if (SUCCEEDED(hr)) {
         hr = pCtx->pDXGIFactory2->QueryInterface(IID_PPV_ARGS(&pCtx->pDXGIFactoryDWM));
     }
 
-    if (SUCCEEDED(hr)) {  
+    if (SUCCEEDED(hr)) {
         hr = pCtx->pDXGIFactory2->EnumAdapters1(0, &pCtx->pDXGIAdapter1);
     }
 
@@ -375,7 +375,7 @@ WDDMConCreate(
     _In_ HANDLE *phDisplay
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     IDWriteTextLayout *pTextLayout = NULL;
     DWRITE_TEXT_METRICS TextMetrics = {};
     PWDDMCONSOLECONTEXT pCtx =
@@ -501,7 +501,7 @@ WDDMConBeginUpdateDisplayBatch(
     _In_ HANDLE hDisplay
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     PWDDMCONSOLECONTEXT pCtx = NULL;
 
     if (hDisplay == NULL) {
@@ -534,7 +534,7 @@ WDDMConEndUpdateDisplayBatch(
     _In_ HANDLE hDisplay
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     PWDDMCONSOLECONTEXT pCtx = NULL;
 
     if (hDisplay == NULL) {
@@ -572,7 +572,7 @@ WDDMConUpdateDisplay(
     _In_ BOOLEAN fInvalidate
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     PWDDMCONSOLECONTEXT pCtx = NULL;
 
     if (hDisplay == NULL || pRowInformation == NULL) {
@@ -580,13 +580,13 @@ WDDMConUpdateDisplay(
     } else {
         pCtx = (PWDDMCONSOLECONTEXT)hDisplay;
     }
-    
+
     // To prevent an infinite loop, we need to limit the number of times we try to render.
     // WDDMCon is used typically in bring-up scenarios, especially ones with unstable graphics drivers.
-    // As such without the limit, an unstable graphics device can cause us to get stuck here 
+    // As such without the limit, an unstable graphics device can cause us to get stuck here
     // and hang console subsystem activities indefinitely.
     ULONG RenderAttempts = 0;
-    
+
 ReRender:
     ULONG ColumnIndex = 0;
     float LineY = 0.0f;
@@ -649,7 +649,7 @@ ReRender:
                                                              CharacterOrigin + pCtx->GlyphWidth * GlyphRunLength,
                                                              LineY + pCtx->LineHeight);
                     D2D1_POINT_2F Origin = D2D1::Point2F(CharacterOrigin, LineY);
-    
+
                     if (ColumnIndexStart == 0) {
                         GlyphRectangle.left = 0.0f;
                     }
@@ -699,7 +699,7 @@ ReRender:
         if (FAILED(hr) && pCtx != NULL && pCtx->fHaveDeviceResources) {
             ReleaseDeviceResources(pCtx);
             RenderAttempts++;
-            
+
             if (RenderAttempts < MAX_RENDER_ATTEMPTS)
             {
                 hr = S_OK;
@@ -719,7 +719,7 @@ WDDMConGetDisplaySize(
     _In_ CD_IO_DISPLAY_SIZE *pDisplaySize
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     PWDDMCONSOLECONTEXT pCtx = NULL;
 
     if (hDisplay == NULL) {
@@ -742,7 +742,7 @@ WDDMConEnableDisplayAccess(
     _In_ BOOLEAN fOutputEnabled
     )
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     PWDDMCONSOLECONTEXT pCtx = NULL;
 
     if (hDisplay == NULL) {

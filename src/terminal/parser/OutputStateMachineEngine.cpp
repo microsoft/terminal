@@ -139,7 +139,7 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
     }
 
     // Stash the last character of the string, if it's a graphical character
-    const wchar_t wch = string.back();
+    const auto wch = string.back();
     if (wch >= AsciiChars::SPC)
     {
         _lastPrintedChar = wch;
@@ -164,7 +164,7 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
-    bool success = true;
+    auto success = true;
     if (_pTtyConnection != nullptr)
     {
         const auto hr = _pTtyConnection->WriteTerminalW(string);
@@ -186,7 +186,7 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
-    bool success = false;
+    auto success = false;
 
     switch (id)
     {
@@ -353,7 +353,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTParameters parameters)
 {
-    bool success = false;
+    auto success = false;
 
     switch (id)
     {
@@ -426,7 +426,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
-    bool success = false;
+    auto success = false;
 
     switch (id)
     {
@@ -714,7 +714,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                  const size_t parameter,
                                                  const std::wstring_view string)
 {
-    bool success = false;
+    auto success = false;
 
     switch (parameter)
     {
@@ -750,7 +750,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscSetColor(string, colors);
         if (success)
         {
-            size_t commandIndex = parameter;
+            auto commandIndex = parameter;
             size_t colorIndex = 0;
 
             if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
@@ -794,7 +794,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetClipboard:
     {
         std::wstring setClipboardContent;
-        bool queryClipboard = false;
+        auto queryClipboard = false;
         success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
         if (success && !queryClipboard)
         {
@@ -907,7 +907,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
         unsigned int tableIndex = 0;
-        const bool indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
+        const auto indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
         const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
         if (indexSuccess && colorOptional.has_value())
         {
@@ -952,7 +952,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
         return true;
     }
 
-    const size_t midPos = string.find(';');
+    const auto midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
         uri = string.substr(midPos + 1);

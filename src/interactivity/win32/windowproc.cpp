@@ -47,12 +47,12 @@ using namespace Microsoft::Console::Types;
     {
         const CREATESTRUCT* const pCreateStruct = reinterpret_cast<CREATESTRUCT*>(lParam);
 
-        Window* const pWindow = reinterpret_cast<Window*>(pCreateStruct->lpCreateParams);
+        const auto pWindow = reinterpret_cast<Window*>(pCreateStruct->lpCreateParams);
         SetWindowLongPtrW(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWindow));
     }
 
     // Dispatch the message to the specific class instance
-    Window* const pWindow = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+    const auto pWindow = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
     if (pWindow != nullptr)
     {
         return pWindow->ConsoleWindowProc(hWnd, Message, wParam, lParam);
@@ -64,14 +64,14 @@ using namespace Microsoft::Console::Types;
 
 [[nodiscard]] LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
-    Globals& g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
     LRESULT Status = 0;
-    BOOL Unlock = TRUE;
+    auto Unlock = TRUE;
 
     LockConsole();
 
-    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
+    auto& ScreenInfo = GetScreenInfo();
     if (hWnd == nullptr) // TODO: this might not be possible anymore
     {
         if (Message == WM_CLOSE)
@@ -106,7 +106,7 @@ using namespace Microsoft::Console::Types;
         //       based on the rectangle that is about to be shown using the nearest monitor.
 
         // Get proposed window rect from create structure
-        CREATESTRUCTW* pcs = (CREATESTRUCTW*)lParam;
+        auto pcs = (CREATESTRUCTW*)lParam;
         RECT rc;
         rc.left = pcs->x;
         rc.top = pcs->y;
@@ -114,7 +114,7 @@ using namespace Microsoft::Console::Types;
         rc.bottom = rc.top + pcs->cy;
 
         // Find nearest monitor.
-        HMONITOR hmon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
+        auto hmon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
 
         // This API guarantees that dpix and dpiy will be equal, but neither is an optional parameter so give two UINTs.
         UINT dpix = USER_DEFAULT_SCREEN_DPI;
@@ -180,35 +180,35 @@ using namespace Microsoft::Console::Types;
         // the same client rendering that we have now.
 
         // First retrieve the new DPI and the current DPI.
-        DWORD const dpiProposed = (WORD)wParam;
+        const auto dpiProposed = (WORD)wParam;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
-        const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();
+        const auto& fiCurrent = ScreenInfo.GetCurrentFont();
         FontInfoDesired fiDesired(fiCurrent);
         FontInfo fiProposed(L"", 0, 0, { 0, 0 }, 0);
 
-        const HRESULT hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
+        const auto hr = g.pRender->GetProposedFont(dpiProposed, fiDesired, fiProposed);
         // fiProposal will be updated by the renderer for this new font.
         // GetProposedFont can fail if there's no render engine yet.
         // This can happen if we're headless.
         // Just assume that the font is 1x1 in that case.
-        const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({ 1, 1 });
+        const auto coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({ 1, 1 });
 
         // Then from that font size, we need to calculate the client area.
         // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
 
         // Retrieve the additional parameters we need for the math call based on the current window & buffer properties.
-        const Viewport viewport = ScreenInfo.GetViewport();
-        COORD coordWindowInChars = viewport.Dimensions();
+        const auto viewport = ScreenInfo.GetViewport();
+        auto coordWindowInChars = viewport.Dimensions();
 
-        const COORD coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
+        const auto coordBufferSize = ScreenInfo.GetTextBuffer().GetSize().Dimensions();
 
         // Now call the math calculation for our proposed size.
         RECT rectProposed = { 0 };
         s_CalculateWindowRect(coordWindowInChars, dpiProposed, coordFontProposed, coordBufferSize, hWnd, &rectProposed);
 
         // Prepare where we're going to keep our final suggestion.
-        SIZE* const pSuggestionSize = (SIZE*)lParam;
+        const auto pSuggestionSize = (SIZE*)lParam;
 
         pSuggestionSize->cx = RECT_WIDTH(&rectProposed);
         pSuggestionSize->cy = RECT_HEIGHT(&rectProposed);
@@ -226,7 +226,7 @@ using namespace Microsoft::Console::Types;
         s_ReinitializeFontsForDPIChange();
 
         // This is the RECT that the system suggests.
-        RECT* const prcNewScale = (RECT*)lParam;
+        const auto prcNewScale = (RECT*)lParam;
         SetWindowPos(hWnd,
                      HWND_TOP,
                      prcNewScale->left,
@@ -350,7 +350,7 @@ using namespace Microsoft::Console::Types;
         // If we return it in WM_GETMINMAXINFO, then it will be enforced when snapping across DPI boundaries (bad.)
 
         // Retrieve the suggested dimensions and make a rect and size.
-        LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
+        auto lpwpos = (LPWINDOWPOS)lParam;
 
         // We only need to apply restrictions if the size is changing.
         if (!WI_IsFlagSet(lpwpos->flags, SWP_NOSIZE))
@@ -366,10 +366,10 @@ using namespace Microsoft::Console::Types;
             szSuggested.cy = RECT_HEIGHT(&rcSuggested);
 
             // Figure out the current dimensions for comparison.
-            RECT rcCurrent = GetWindowRect();
+            auto rcCurrent = GetWindowRect();
 
             // Determine whether we're being resized by someone dragging the edge or completely moved around.
-            bool fIsEdgeResize = false;
+            auto fIsEdgeResize = false;
             {
                 // We can only be edge resizing if our existing rectangle wasn't empty. If it was empty, we're doing the initial create.
                 if (!IsRectEmpty(&rcCurrent))
@@ -461,7 +461,7 @@ using namespace Microsoft::Console::Types;
         // which will have a better suggested rectangle than this one.
         // NOTE: This stopped being possible in RS4 as the DPI now changes when and only when
         // we receive WM_DPICHANGED. We keep this check around so that we perform better downlevel.
-        int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hWnd);
+        const auto dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hWnd);
         if (dpi == ServiceLocator::LocateGlobals().dpi)
         {
             _HandleWindowPosChanged(lParam);
@@ -474,7 +474,7 @@ using namespace Microsoft::Console::Types;
         Telemetry::Instance().SetContextMenuUsed();
         if (DefWindowProcW(hWnd, WM_NCHITTEST, 0, lParam) == HTCLIENT)
         {
-            HMENU hHeirMenu = Menu::s_GetHeirMenuHandle();
+            auto hHeirMenu = Menu::s_GetHeirMenuHandle();
 
             Unlock = FALSE;
             UnlockConsole();
@@ -645,13 +645,13 @@ using namespace Microsoft::Console::Types;
 
         Status = 1;
 
-        bool isMouseWheel = Message == WM_MOUSEWHEEL;
-        bool isMouseHWheel = Message == WM_MOUSEHWHEEL;
+        auto isMouseWheel = Message == WM_MOUSEWHEEL;
+        auto isMouseHWheel = Message == WM_MOUSEHWHEEL;
 
         if (isMouseWheel || isMouseHWheel)
         {
-            short wheelDelta = (short)HIWORD(wParam);
-            bool hasShift = (wParam & MK_SHIFT) ? true : false;
+            auto wheelDelta = (short)HIWORD(wParam);
+            auto hasShift = (wParam & MK_SHIFT) ? true : false;
 
             Scrolling::s_HandleMouseWheel(isMouseWheel,
                                           isMouseHWheel,
@@ -705,7 +705,7 @@ using namespace Microsoft::Console::Types;
 #ifdef DBG
     case CM_SET_KEY_STATE:
     {
-        const int keyboardInputTableStateSize = 256;
+        const auto keyboardInputTableStateSize = 256;
         if (wParam < keyboardInputTableStateSize)
         {
             BYTE keyState[keyboardInputTableStateSize];
@@ -726,7 +726,7 @@ using namespace Microsoft::Console::Types;
         {
             std::wstringstream wss;
             wss << std::setfill(L'0') << std::setw(8) << wParam;
-            std::wstring wstr(wss.str());
+            auto wstr = wss.str();
             LoadKeyboardLayout(wstr.c_str(), KLF_ACTIVATE);
         }
         catch (...)
@@ -777,10 +777,10 @@ using namespace Microsoft::Console::Types;
 
 void Window::_HandleWindowPosChanged(const LPARAM lParam)
 {
-    HWND hWnd = GetWindowHandle();
-    SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
+    auto hWnd = GetWindowHandle();
+    auto& ScreenInfo = GetScreenInfo();
 
-    LPWINDOWPOS const lpWindowPos = (LPWINDOWPOS)lParam;
+    const auto lpWindowPos = (LPWINDOWPOS)lParam;
 
     // If the frame changed, update the system metrics.
     if (WI_IsFlagSet(lpWindowPos->flags, SWP_FRAMECHANGED))
@@ -822,7 +822,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // - S_OK if we succeeded. ERROR_INVALID_HANDLE if there is no HWND. E_FAIL if GDI failed for some reason.
 [[nodiscard]] HRESULT Window::_HandlePaint() const
 {
-    HWND const hwnd = GetWindowHandle();
+    const auto hwnd = GetWindowHandle();
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), hwnd);
 
     // We have to call BeginPaint to retrieve the invalid rectangle state
@@ -833,14 +833,14 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
     // and under certain circumstances (windows with SW_HIDE, SKUs without DWM, etc.)
     // the system either sends WM_PAINT messages ad nauseum or fails to redraw everything correctly.
     PAINTSTRUCT ps;
-    HDC const hdc = BeginPaint(hwnd, &ps);
+    const auto hdc = BeginPaint(hwnd, &ps);
     RETURN_HR_IF_NULL(E_FAIL, hdc);
 
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
         // In lieu of actually painting right now, we're just going to aggregate this information in the renderer
         // and let it paint whenever it feels appropriate.
-        RECT const rcUpdate = ps.rcPaint;
+        const auto rcUpdate = ps.rcPaint;
         ServiceLocator::LocateGlobals().pRender->TriggerSystemRedraw(&rcUpdate);
     }
 
@@ -912,8 +912,8 @@ void Window::_HandleDrop(const WPARAM wParam) const
 
 BOOL Window::PostUpdateWindowSize() const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& ScreenInfo = GetScreenInfo();
 
     if (ScreenInfo.ConvScreenInfo != nullptr)
     {

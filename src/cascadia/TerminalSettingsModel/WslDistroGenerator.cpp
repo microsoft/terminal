@@ -131,7 +131,7 @@ static void legacyGenerate(std::vector<winrt::com_ptr<implementation::Profile>>&
     // If _fdopen is successful, do not call _close on the file descriptor.
     // Calling fclose on the returned FILE * also closes the file descriptor."
     // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fdopen-wfdopen?view=vs-2019
-    FILE* stdioPipeHandle = _wfdopen(_open_osfhandle((intptr_t)wil::detach_from_smart_pointer(readPipe), _O_WTEXT | _O_RDONLY), L"r");
+    auto stdioPipeHandle = _wfdopen(_open_osfhandle((intptr_t)wil::detach_from_smart_pointer(readPipe), _O_WTEXT | _O_RDONLY), L"r");
     auto closeFile = wil::scope_exit([&]() { fclose(stdioPipeHandle); });
 
     std::wfstream pipe{ stdioPipeHandle };
@@ -154,7 +154,7 @@ static void legacyGenerate(std::vector<winrt::com_ptr<implementation::Profile>>&
                 continue;
             }
 
-            const size_t firstChar = distName.find_first_of(L"( ");
+            const auto firstChar = distName.find_first_of(L"( ");
             // Some localizations don't have a space between the name and "(Default)"
             // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
             if (firstChar < distName.size())
@@ -281,7 +281,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
     }
     for (const auto& guid : guidStrings)
     {
-        wil::unique_hkey distroKey{ openDistroKey(wslRootKey, guid) };
+        auto distroKey{ openDistroKey(wslRootKey, guid) };
         if (!distroKey)
         {
             continue;
@@ -319,7 +319,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 // - A list of WSL profiles.
 void WslDistroGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
-    wil::unique_hkey wslRootKey{ openWslRegKey() };
+    auto wslRootKey{ openWslRegKey() };
     if (wslRootKey)
     {
         std::vector<std::wstring> guidStrings{};

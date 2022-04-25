@@ -28,7 +28,7 @@ class UnicodeStorageTests
         // verify it was stored
         auto findIt = storage._map.find(coord);
         VERIFY_ARE_NOT_EQUAL(findIt, storage._map.end());
-        const std::vector<wchar_t>& newMoonGlyph = findIt->second;
+        const auto& newMoonGlyph = findIt->second;
         VERIFY_ARE_EQUAL(newMoonGlyph.size(), newMoon.size());
         for (size_t i = 0; i < newMoon.size(); ++i)
         {
@@ -41,7 +41,7 @@ class UnicodeStorageTests
         // verify the glyph was overwritten
         findIt = storage._map.find(coord);
         VERIFY_ARE_NOT_EQUAL(findIt, storage._map.end());
-        const std::vector<wchar_t>& fullMoonGlyph = findIt->second;
+        const auto& fullMoonGlyph = findIt->second;
         VERIFY_ARE_EQUAL(fullMoonGlyph.size(), fullMoon.size());
         for (size_t i = 0; i < fullMoon.size(); ++i)
         {

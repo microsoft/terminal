@@ -52,7 +52,7 @@ RECT WindowMetrics::GetMinClientRectInPixels()
 RECT WindowMetrics::GetMaxClientRectInPixels()
 {
     // This will retrieve the outer window rect. We need the client area to calculate characters.
-    RECT rc = GetMaxWindowRectInPixels();
+    auto rc = GetMaxWindowRectInPixels();
 
     // convert to client rect
     ConvertWindowRectToClientRect(&rc);
@@ -85,7 +85,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels()
 RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested)
 {
     // prepare rectangle
-    RECT rc = *prcSuggested;
+    auto rc = *prcSuggested;
 
     // use zero rect to compare.
     RECT rcZero;
@@ -233,7 +233,7 @@ BOOL WindowMetrics::UnadjustWindowRectEx(_Inout_ LPRECT prc, const DWORD dwStyle
 {
     RECT rc;
     SetRectEmpty(&rc);
-    BOOL fRc = AdjustWindowRectEx(&rc, dwStyle, fMenu, dwExStyle);
+    auto fRc = AdjustWindowRectEx(&rc, dwStyle, fMenu, dwExStyle);
     if (fRc)
     {
         prc->left -= rc.left;
@@ -258,7 +258,7 @@ void WindowMetrics::ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle 
     DWORD dwStyle = 0;
     DWORD dwExStyle = 0;
 
-    Microsoft::Console::Types::IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         dwStyle = GetWindowStyle(pWindow->GetWindowHandle());

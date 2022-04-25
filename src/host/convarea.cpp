@@ -20,13 +20,13 @@ bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                              const Viewport& convRegion)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!ScreenInfo.IsActiveScreenBuffer())
     {
         return;
     }
 
-    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    const auto pIme = &gci.ConsoleIme;
 
     for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
@@ -65,7 +65,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                     if (ServiceLocator::LocateGlobals().pRender != nullptr)
                     {
                         // convert inclusive rectangle to exclusive rectangle
-                        SMALL_RECT srExclusive = ClippedRegion;
+                        auto srExclusive = ClippedRegion;
                         srExclusive.Right++;
                         srExclusive.Bottom++;
 
@@ -81,8 +81,8 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto pIme = &gci.ConsoleIme;
         pIme->RedrawCompMessage();
     }
     CATCH_RETURN();
@@ -92,8 +92,8 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 
 [[nodiscard]] HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto pIme = &gci.ConsoleIme;
 
     return pIme->ResizeAllAreas(coordNewScreenSize);
 }
@@ -120,7 +120,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    const auto pIme = &gci.ConsoleIme;
     pIme->RestoreCursorVisibility();
 
     gci.pInputBuffer->fInComposition = false;
@@ -133,11 +133,11 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.LockConsole();
         auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+        const auto pIme = &gci.ConsoleIme;
         pIme->WriteCompMessage(text, attributes, colorArray);
     }
     CATCH_RETURN();
@@ -148,11 +148,11 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.LockConsole();
         auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+        const auto pIme = &gci.ConsoleIme;
         pIme->ClearAllAreas();
     }
     CATCH_RETURN();
@@ -163,11 +163,11 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 {
     try
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.LockConsole();
         auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-        ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+        const auto pIme = &gci.ConsoleIme;
         pIme->WriteResultMessage(text);
     }
     CATCH_RETURN();

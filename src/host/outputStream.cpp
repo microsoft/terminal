@@ -31,9 +31,9 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 {
-    size_t dwNumBytes = string.size() * sizeof(wchar_t);
+    auto dwNumBytes = string.size() * sizeof(wchar_t);
 
-    Cursor& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    auto& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     if (!cursor.IsOn())
     {
         cursor.SetIsOn(true);
@@ -304,8 +304,8 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
-    const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
-    const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    const auto oldViewport = Viewport::FromInclusive(csbiex.srWindow);
+    const auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
     // Always resize the width of the console
     csbiex.dwSize.X = sColumns;
     // Only set the screen buffer's height if it's currently less than

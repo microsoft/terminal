@@ -25,7 +25,7 @@ std::optional<std::wstring_view> ConsoleInputReader::Read()
     while (_convertedString.empty())
     {
         _buffer.resize(BufferSize);
-        BOOL succeeded =
+        auto succeeded =
             ReadConsoleInputW(_handle, _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &readCount);
         if (!succeeded)
         {

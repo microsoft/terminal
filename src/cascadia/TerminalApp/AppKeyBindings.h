@@ -18,8 +18,8 @@ namespace winrt::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(winrt::Microsoft::Terminal::Control::KeyChord const& kc);
-        bool IsKeyChordExplicitlyUnbound(winrt::Microsoft::Terminal::Control::KeyChord const& kc);
+        bool TryKeyChord(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
+        bool IsKeyChordExplicitlyUnbound(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);

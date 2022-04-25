@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& /*args*/)
+    void SettingContainer::_OnHasSettingValueChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
     {
         // update visibility for override message and reset button
         const auto& obj{ d.try_as<Editor::SettingContainer>() };
@@ -198,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring SettingContainer::_GenerateOverrideMessage(const IInspectable& settingOrigin)
     {
         // We only get here if the user had an override in place.
-        Model::OriginTag originTag{ Model::OriginTag::None };
+        auto originTag{ Model::OriginTag::None };
         winrt::hstring source;
 
         if (const auto& profile{ settingOrigin.try_as<Model::Profile>() })

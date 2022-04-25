@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
-        void WriteInput(hstring const& data);
+        void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;
         void ClearBuffer();
@@ -43,16 +43,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static void StartInboundListener();
         static void StopInboundListener();
 
-        static winrt::event_token NewConnection(NewConnectionHandler const& handler);
-        static void NewConnection(winrt::event_token const& token);
+        static winrt::event_token NewConnection(const NewConnectionHandler& handler);
+        static void NewConnection(const winrt::event_token& token);
 
         static Windows::Foundation::Collections::ValueSet CreateSettings(const winrt::hstring& cmdline,
                                                                          const winrt::hstring& startingDirectory,
                                                                          const winrt::hstring& startingTitle,
-                                                                         Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                         const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                          uint32_t rows,
                                                                          uint32_t columns,
-                                                                         winrt::guid const& guid);
+                                                                         const winrt::guid& guid);
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 

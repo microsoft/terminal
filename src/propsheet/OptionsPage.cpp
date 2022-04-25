@@ -221,18 +221,18 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         {
             // On non-CJK systems, we show the codepage on a non-default propsheet, but don't allow the user to view or
             // change it on the defaults propsheet
-            const HWND hwndLanguageGroupbox = GetDlgItem(hDlg, IDD_LANGUAGE_GROUPBOX);
+            const auto hwndLanguageGroupbox = GetDlgItem(hDlg, IDD_LANGUAGE_GROUPBOX);
             if (hwndLanguageGroupbox)
             {
                 if (gpStateInfo->Defaults)
                 {
-                    const HWND hwndLanguageList = GetDlgItem(hDlg, IDD_LANGUAGELIST);
+                    const auto hwndLanguageList = GetDlgItem(hDlg, IDD_LANGUAGELIST);
                     ShowWindow(hwndLanguageList, SW_HIDE);
                     ShowWindow(hwndLanguageGroupbox, SW_HIDE);
                 }
                 else
                 {
-                    const HWND hwndLanguage = GetDlgItem(hDlg, IDD_LANGUAGE);
+                    const auto hwndLanguage = GetDlgItem(hDlg, IDD_LANGUAGE);
                     LanguageDisplay(hDlg, gpStateInfo->CodePage);
                     ShowWindow(hwndLanguage, SW_SHOW);
                     ShowWindow(hwndLanguageGroupbox, SW_SHOW);
@@ -258,7 +258,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
             case NM_CLICK:
             case NM_RETURN:
             {
-                PNMLINK pnmLink = (PNMLINK)lParam;
+                auto pnmLink = (PNMLINK)lParam;
                 if (0 == pnmLink->item.iLink)
                 {
                     ShellExecute(nullptr,
@@ -326,7 +326,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 }
 
 // enables or disables options page dialog controls depending on whether V2 is enabled or not
-void ToggleV2OptionsControls(__in const HWND hDlg)
+void ToggleV2OptionsControls(const __in HWND hDlg)
 {
     EnableWindow(GetDlgItem(hDlg, IDD_LINE_SELECTION), g_fForceV2);
     CheckDlgButton(hDlg, IDD_LINE_SELECTION, g_fForceV2 ? gpStateInfo->fLineSelection : FALSE);

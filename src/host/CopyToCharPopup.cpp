@@ -52,10 +52,10 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]] NTSTATUS CopyToCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    wchar_t wch = UNICODE_NULL;
-    bool popupKey = false;
+    auto wch = UNICODE_NULL;
+    auto popupKey = false;
     DWORD modifiers = 0;
-    NTSTATUS Status = _getUserInput(cookedReadData, popupKey, modifiers, wch);
+    auto Status = _getUserInput(cookedReadData, popupKey, modifiers, wch);
     if (!NT_SUCCESS(Status))
     {
         return Status;

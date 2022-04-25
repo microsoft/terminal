@@ -29,7 +29,7 @@ bool FontInfoDesired::operator==(const FontInfoDesired& other) noexcept
 
 COORD FontInfoDesired::GetEngineSize() const noexcept
 {
-    COORD coordSize = _coordSizeDesired;
+    auto coordSize = _coordSizeDesired;
     if (IsTrueTypeFont())
     {
         coordSize.X = 0; // Don't tell the engine about the width for a TrueType font. It makes a mess.

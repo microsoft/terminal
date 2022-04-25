@@ -82,9 +82,9 @@ namespace SettingsModelLocalTests
         expectedArgv.reserve(expectedArgc * 65);
         input.reserve(expectedArgc * 67);
 
-        for (int i = 0; i < expectedArgc; ++i)
+        for (auto i = 0; i < expectedArgc; ++i)
         {
-            const bool useQuotes = static_cast<bool>(rng(2));
+            const auto useQuotes = static_cast<bool>(rng(2));
             // We need to ensure there is at least one character
             const auto count = static_cast<size_t>(rng(64) + 1);
             const auto ch = static_cast<wchar_t>(rng('z' - 'a' + 1) + 'a');

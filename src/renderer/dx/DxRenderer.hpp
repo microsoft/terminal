@@ -94,12 +94,12 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                              COORD const coord,
-                                              bool const fTrimLeft,
+        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
+                                              const COORD coord,
+                                              const bool fTrimLeft,
                                               const bool lineWrapped) noexcept override;
 
-        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, COLORREF const color, const size_t cchLine, const COORD coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
@@ -111,10 +111,10 @@ namespace Microsoft::Console::Render
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
-        [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
+        [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
-        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
+        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const int iDpi) noexcept override;
 
         [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
 

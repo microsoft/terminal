@@ -47,7 +47,7 @@ public:
 private:
     SCREEN_INFORMATION& _siContext;
     wchar_t* const _pwchContext;
-    size_t const _cbContext;
+    const size_t _cbContext;
     UINT const _uiOutputCodepage;
     bool _requiresVtQuirk;
     bool _fLeadByteCaptured;

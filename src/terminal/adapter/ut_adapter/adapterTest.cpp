@@ -317,18 +317,18 @@ public:
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
-        size_t const cchResponse = wcslen(pwszExpectedResponse);
-        size_t const eventCount = _events.size();
+        const auto cchResponse = wcslen(pwszExpectedResponse);
+        const auto eventCount = _events.size();
 
         VERIFY_ARE_EQUAL(cchResponse * 2, eventCount, L"We should receive TWO input records for every character in the expected string. Key down and key up.");
 
         for (size_t iInput = 0; iInput < eventCount; iInput++)
         {
-            wchar_t const wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
+            const auto wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
 
             VERIFY_ARE_EQUAL(InputEventType::KeyEvent, _events[iInput]->EventType());
 
-            const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
+            const auto keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
 
             // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
             VERIFY_ARE_EQUAL((bool)!(iInput % 2), keyEvent->IsKeyDown());
@@ -409,7 +409,7 @@ public:
 
     TEST_METHOD_SETUP(SetupMethods)
     {
-        bool fSuccess = true;
+        auto fSuccess = true;
 
         auto api = std::make_unique<TestGetSet>();
         fSuccess = api.get() != nullptr;
@@ -504,7 +504,7 @@ public:
 
         Log::Comment(L"Test 1b: Cursor moves to left of line with next/prev line command when cursor can't move higher/lower.");
 
-        bool fDoTest1b = false;
+        auto fDoTest1b = false;
 
         switch (direction)
         {
@@ -1438,7 +1438,7 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
-        PCWSTR pwszExpectedResponse = L"\x1b[?1;0c";
+        auto pwszExpectedResponse = L"\x1b[?1;0c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
@@ -1456,7 +1456,7 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->SecondaryDeviceAttributes());
 
-        PCWSTR pwszExpectedResponse = L"\x1b[>0;10;1c";
+        auto pwszExpectedResponse = L"\x1b[>0;10;1c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
@@ -1474,7 +1474,7 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->TertiaryDeviceAttributes());
 
-        PCWSTR pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
+        auto pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");

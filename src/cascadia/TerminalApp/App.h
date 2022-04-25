@@ -12,7 +12,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         App();
-        void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const&);
+        void OnLaunched(const Windows::ApplicationModel::Activation::LaunchActivatedEventArgs&);
 
         TerminalApp::AppLogic Logic();
 

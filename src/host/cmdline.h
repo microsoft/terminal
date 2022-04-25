@@ -94,8 +94,8 @@ protected:
     CommandLine();
 
     // delete these because we don't want to accidentally get copies of the singleton
-    CommandLine(CommandLine const&) = delete;
-    CommandLine& operator=(CommandLine const&) = delete;
+    CommandLine(const CommandLine&) = delete;
+    CommandLine& operator=(const CommandLine&) = delete;
 
     [[nodiscard]] NTSTATUS _startCommandListPopup(COOKED_READ_DATA& cookedReadData);
     [[nodiscard]] NTSTATUS _startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData);

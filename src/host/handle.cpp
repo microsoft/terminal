@@ -12,13 +12,13 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 void LockConsole()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
 }
 
 void UnlockConsole()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetCSRecursionCount() == 1)
     {
         ProcessCtrlEvents();

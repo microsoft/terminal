@@ -41,7 +41,7 @@ void ScreenSizeLimitsTest::ScreenWidthAndHeightAreClampedToBounds()
     Terminal negativeColumnsTerminal;
     DummyRenderer renderer{ &negativeColumnsTerminal };
     negativeColumnsTerminal.CreateFromSettings(negativeColumnsSettings, renderer);
-    COORD actualDimensions = negativeColumnsTerminal.GetViewport().Dimensions();
+    auto actualDimensions = negativeColumnsTerminal.GetViewport().Dimensions();
     VERIFY_ARE_EQUAL(actualDimensions.Y, SHRT_MAX, L"Row count clamped to SHRT_MAX == " WCS(SHRT_MAX));
     VERIFY_ARE_EQUAL(actualDimensions.X, 1, L"Column count clamped to 1");
 
