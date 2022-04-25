@@ -30,6 +30,10 @@ parameters:
     displayName: "Build Windows Terminal VPack"
     type: boolean
     default: false
+  - name: buildConPTY
+    displayName: "Build ConPTY NuGet"
+    type: boolean
+    default: false
   - name: buildWPF
     displayName: "Build Terminal WPF Control"
     type: boolean
@@ -163,7 +167,7 @@ jobs:
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Conhost\winconpty_DLL /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
         clean: true
@@ -191,6 +195,15 @@ jobs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
+        platform: $(BuildPlatform)
+        configuration: $(BuildConfiguration)
+  - ${{ if eq(parameters.buildConPTY, true) }}:
+    - task: VSBuild@1
+      displayName: Build solution **\OpenConsole.sln for ConPTY
+      inputs:
+        solution: '**\OpenConsole.sln'
+        vsVersion: 16.0
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\winconpty_DLL
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
   - task: PowerShell@2
@@ -237,23 +250,24 @@ jobs:
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
         ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
-  - task: CopyFiles@2
-    displayName: Copy ConPTY to Artifacts
-    inputs:
-      Contents: |-
-        $(Build.SourcesDirectory)/bin/**/conpty.dll
-        $(Build.SourcesDirectory)/bin/**/conpty.lib
-        $(Build.SourcesDirectory)/bin/**/conpty.pdb
-        $(Build.SourcesDirectory)/bin/**/OpenConsole.exe
-        $(Build.SourcesDirectory)/bin/**/OpenConsole.pdb
-      TargetFolder: $(Build.ArtifactStagingDirectory)/conpty
-      OverWrite: true
-      flattenFolders: true
-  - task: PublishBuildArtifacts@1
-    displayName: Publish Artifact (ConPTY)
-    inputs:
-      PathtoPublish: $(Build.ArtifactStagingDirectory)/conpty
-      ArtifactName: conpty-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
+  - ${{ if eq(parameters.buildConPTY, true) }}:
+    - task: CopyFiles@2
+      displayName: Copy ConPTY to Artifacts
+      inputs:
+        Contents: |-
+          $(Build.SourcesDirectory)/bin/**/conpty.dll
+          $(Build.SourcesDirectory)/bin/**/conpty.lib
+          $(Build.SourcesDirectory)/bin/**/conpty.pdb
+          $(Build.SourcesDirectory)/bin/**/OpenConsole.exe
+          $(Build.SourcesDirectory)/bin/**/OpenConsole.pdb
+        TargetFolder: $(Build.ArtifactStagingDirectory)/conpty
+        OverWrite: true
+        flattenFolders: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact (ConPTY)
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/conpty
+        ArtifactName: conpty-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
       displayName: Copy PublicTerminalCore.dll to Artifacts
@@ -360,7 +374,7 @@ jobs:
         PathtoPublish: $(System.ArtifactsDirectory)
         ArtifactName: appxbundle-signed-$(TerminalTargetWindowsVersion)
 
-- ${{ if eq(parameters.buildTerminal, true) }}:
+- ${{ if eq(parameters.buildConPTY, true) }}:
   - job: PackageAndSignConPTY
     strategy:
       matrix:
