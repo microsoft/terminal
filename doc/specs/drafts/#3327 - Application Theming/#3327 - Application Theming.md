@@ -9,7 +9,6 @@ issue id: #3327
 TODO!S:
 * How do themes play with different window title settings? (different themes for different windows. `_quake` esp.))
 * any clever ideas for elevated themes?
-* `tabRow.background` that follows the OS setting for "Use accent color in titlebars"
 * Reconcile with global `experimental.useBackgroundImageForWindow` from [#12893]
 
 # Application Theming
@@ -112,24 +111,37 @@ Take for example the following settings excerpt:
     "themes": [
         {
             "name": "My Boxy Theme",
-            "window.applicationTheme": "dark",
-            "tab.radius": 0,
-            "tab.padding": 5,
-            "tab.background": "terminalBackground",
-            "tab.textColor": "key:SystemAccentColorLight3",
-            "tab.icon": "outline",
-            "tab.closeButton": "hidden",
-            "tabRow.background": "accent",
-            "tabRow.shadows": false
+            "window":{
+              "applicationTheme": "dark"
+            },
+            "tab": {
+              "radius": 0,
+              "padding": 5,
+              "background": "terminalBackground",
+              "textColor": "key:SystemAccentColorLight3",
+              "icon": "outline",
+              "closeButton": "hidden",
+            },
+            "tabRow":{
+              "background": "accent",
+              "shadows": false
+            }
         },
         {
             "name": "My small light theme",
-            "tab.background": "#80ff0000",
-            "tabRow.background": "#ffffffff",
-            "tab.height": 8,
-            "window.applicationTheme": "light",
-            "tab.icon": "hidden",
-            "tab.closeButton": "hover"
+            "window":{
+              "applicationTheme": "light"
+            },
+            "tab": {
+              "background": "#80ff0000",
+              "height": 8,
+              "icon": "hidden",
+              "closeButton": "hover"
+            },
+            "tabRow":{
+              "background": "#ffffffff",
+              "acrylicOpacity": 50,
+            }
         }
     ]
 }
@@ -143,8 +155,11 @@ In the above settings snippet, we see the following things:
    theme, `"My small light theme"`, they'd simply need to change this property.
 
 > _note_: Initially, we had considered a `elementPropertyName`-like syntax as
-opposed to the above `element.propertyName` one. The consensus was the dotted
-version was simpler to mentally parse and overall better.
+opposed to the object-grouped one above. We also consided a
+`element.propertyName`-like syntax. Overall, we liked the object based one best.
+>
+> **For simplicity, we'll be using `element.propertyName` syntax throughout to**
+> **refer to these properties, when grouped under `element` objects in the theme.**
 
 These Theme objects are designed to make it simple for the user to be able to
 quickly download these as an extension in the future, and hot-switch between
@@ -441,15 +456,21 @@ themes to `defaults.json`:
     "themes": [
         {
             "name": "light",
-            "window.applicationTheme": "light"
+            "window":{
+              "applicationTheme": "light"
+            },
         },
         {
             "name": "dark",
-            "window.applicationTheme": "dark"
+            "window":{
+              "applicationTheme": "dark"
+            },
         },
         {
             "name": "system",
-            "window.applicationTheme": "system"
+            "window":{
+              "applicationTheme": "system"
+            },
         }
     ]
 ```
@@ -638,9 +659,15 @@ in the Terminal. Please also refer to:
   ```jsonc
   {
       "name": "Edge",
-      "window.applicationTheme": "system",
-      "tab.background": "#whatever-color-edge-is", // Might need a "key:" resource here for light/dark theme switching
-      "tabRow.background": "accent",
+      "window":{
+        "applicationTheme": "system"
+      },
+      "tab": {
+        "background": "#whatever-color-edge-is" // Might need a "key:" resource here for light/dark theme switching
+      },
+      "tabRow":{
+        "background": "accent",
+      }
   },
   ```
 * Applications should be able to install themes as fragments.
