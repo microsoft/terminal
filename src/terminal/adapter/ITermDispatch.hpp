@@ -32,27 +32,27 @@ public:
     virtual void Print(const wchar_t wchPrintable) = 0;
     virtual void PrintString(const std::wstring_view string) = 0;
 
-    virtual bool CursorUp(const size_t distance) = 0; // CUU
-    virtual bool CursorDown(const size_t distance) = 0; // CUD
-    virtual bool CursorForward(const size_t distance) = 0; // CUF
-    virtual bool CursorBackward(const size_t distance) = 0; // CUB, BS
-    virtual bool CursorNextLine(const size_t distance) = 0; // CNL
-    virtual bool CursorPrevLine(const size_t distance) = 0; // CPL
-    virtual bool CursorHorizontalPositionAbsolute(const size_t column) = 0; // HPA, CHA
-    virtual bool VerticalLinePositionAbsolute(const size_t line) = 0; // VPA
-    virtual bool HorizontalPositionRelative(const size_t distance) = 0; // HPR
-    virtual bool VerticalPositionRelative(const size_t distance) = 0; // VPR
-    virtual bool CursorPosition(const size_t line, const size_t column) = 0; // CUP, HVP
+    virtual bool CursorUp(const VTInt distance) = 0; // CUU
+    virtual bool CursorDown(const VTInt distance) = 0; // CUD
+    virtual bool CursorForward(const VTInt distance) = 0; // CUF
+    virtual bool CursorBackward(const VTInt distance) = 0; // CUB, BS
+    virtual bool CursorNextLine(const VTInt distance) = 0; // CNL
+    virtual bool CursorPrevLine(const VTInt distance) = 0; // CPL
+    virtual bool CursorHorizontalPositionAbsolute(const VTInt column) = 0; // HPA, CHA
+    virtual bool VerticalLinePositionAbsolute(const VTInt line) = 0; // VPA
+    virtual bool HorizontalPositionRelative(const VTInt distance) = 0; // HPR
+    virtual bool VerticalPositionRelative(const VTInt distance) = 0; // VPR
+    virtual bool CursorPosition(const VTInt line, const VTInt column) = 0; // CUP, HVP
     virtual bool CursorSaveState() = 0; // DECSC
     virtual bool CursorRestoreState() = 0; // DECRC
     virtual bool CursorVisibility(const bool isVisible) = 0; // DECTCEM
-    virtual bool InsertCharacter(const size_t count) = 0; // ICH
-    virtual bool DeleteCharacter(const size_t count) = 0; // DCH
-    virtual bool ScrollUp(const size_t distance) = 0; // SU
-    virtual bool ScrollDown(const size_t distance) = 0; // SD
-    virtual bool InsertLine(const size_t distance) = 0; // IL
-    virtual bool DeleteLine(const size_t distance) = 0; // DL
-    virtual bool SetColumns(const size_t columns) = 0; // DECCOLM
+    virtual bool InsertCharacter(const VTInt count) = 0; // ICH
+    virtual bool DeleteCharacter(const VTInt count) = 0; // DCH
+    virtual bool ScrollUp(const VTInt distance) = 0; // SU
+    virtual bool ScrollDown(const VTInt distance) = 0; // SD
+    virtual bool InsertLine(const VTInt distance) = 0; // IL
+    virtual bool DeleteLine(const VTInt distance) = 0; // DL
+    virtual bool SetColumns(const VTInt columns) = 0; // DECCOLM
     virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableWin32InputMode(const bool win32InputMode) = 0; // win32-input-mode
@@ -61,7 +61,7 @@ public:
     virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
     virtual bool SetOriginMode(const bool relativeMode) = 0; // DECOM
     virtual bool SetAutoWrapMode(const bool wrapAtEOL) = 0; // DECAWM
-    virtual bool SetTopBottomScrollingMargins(const size_t topMargin, const size_t bottomMargin) = 0; // DECSTBM
+    virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual bool WarningBell() = 0; // BEL
     virtual bool CarriageReturn() = 0; // CR
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
@@ -70,8 +70,8 @@ public:
     virtual bool UseAlternateScreenBuffer() = 0; // ASBSET
     virtual bool UseMainScreenBuffer() = 0; // ASBRST
     virtual bool HorizontalTabSet() = 0; // HTS
-    virtual bool ForwardTab(const size_t numTabs) = 0; // CHT, HT
-    virtual bool BackwardsTab(const size_t numTabs) = 0; // CBT
+    virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
+    virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
     virtual bool EnableDECCOLMSupport(const bool enabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool enabled) = 0; // ?1000
@@ -79,6 +79,7 @@ public:
     virtual bool EnableSGRExtendedMouseMode(const bool enabled) = 0; // ?1006
     virtual bool EnableButtonEventMouseMode(const bool enabled) = 0; // ?1002
     virtual bool EnableAnyEventMouseMode(const bool enabled) = 0; // ?1003
+    virtual bool EnableFocusEventMode(const bool enabled) = 0; // ?1004
     virtual bool EnableAlternateScroll(const bool enabled) = 0; // ?1007
     virtual bool EnableXtermBracketedPasteMode(const bool enabled) = 0; // ?2004
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
@@ -87,7 +88,7 @@ public:
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
-    virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
+    virtual bool EraseCharacters(const VTInt numChars) = 0; // ECH
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
@@ -107,11 +108,11 @@ public:
     virtual bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) = 0; // DECREQTPARM
 
     virtual bool DesignateCodingSystem(const VTID codingSystem) = 0; // DOCS
-    virtual bool Designate94Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS
-    virtual bool Designate96Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS
-    virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
-    virtual bool LockingShiftRight(const size_t gsetNumber) = 0; // LS1R, LS2R, LS3R
-    virtual bool SingleShift(const size_t gsetNumber) = 0; // SS2, SS3
+    virtual bool Designate94Charset(const VTInt gsetNumber, const VTID charset) = 0; // SCS
+    virtual bool Designate96Charset(const VTInt gsetNumber, const VTID charset) = 0; // SCS
+    virtual bool LockingShift(const VTInt gsetNumber) = 0; // LS0, LS1, LS2, LS3
+    virtual bool LockingShiftRight(const VTInt gsetNumber) = 0; // LS1R, LS2R, LS3R
+    virtual bool SingleShift(const VTInt gsetNumber) = 0; // SS2, SS3
     virtual bool AcceptC1Controls(const bool enabled) = 0; // DECAC1
 
     virtual bool SoftReset() = 0; // DECSTR
@@ -133,7 +134,7 @@ public:
 
     virtual bool DoConEmuAction(const std::wstring_view string) = 0;
 
-    virtual StringHandler DownloadDRCS(const size_t fontNumber,
+    virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,
                                        const DispatchTypes::DrcsCellMatrix cellMatrix,

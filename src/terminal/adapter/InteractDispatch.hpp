@@ -31,9 +31,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                 const VTParameter parameter1,
                                 const VTParameter parameter2) override; // DTTERM_WindowManipulation
-        bool MoveCursor(const size_t row, const size_t col) override;
+        bool MoveCursor(const VTInt row, const VTInt col) override;
 
         bool IsVtInputEnabled() const override;
+
+        bool FocusChanged(const bool focused) const override;
 
     private:
         std::unique_ptr<ConGetSet> _pConApi;

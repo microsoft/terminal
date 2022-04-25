@@ -362,9 +362,14 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     // win32-input-mode, and if they did, then we'll just translate the
     // INPUT_RECORD back to the same sequence we say here later on, when the
     // client reads it.
+    //
+    // Focus events in conpty are special, so don't flush those through either.
+    // See GH#12799, GH#12900 for details
     if (_pDispatch->IsVtInputEnabled() &&
         _pfnFlushToInputQueue &&
-        id != CsiActionCodes::Win32KeyboardInput)
+        id != CsiActionCodes::Win32KeyboardInput &&
+        id != CsiActionCodes::FocusIn &&
+        id != CsiActionCodes::FocusOut)
     {
         return _pfnFlushToInputQueue();
     }
@@ -380,8 +385,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     {
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
-        const size_t firstParameter = parameters.at(0).value_or(0);
-        const til::point uiPos{ gsl::narrow_cast<til::CoordType>(parameters.at(1) - 1), gsl::narrow_cast<til::CoordType>(parameters.at(2) - 1) };
+        const auto firstParameter = parameters.at(0).value_or(0);
+        const til::point uiPos{ parameters.at(1) - 1, parameters.at(2) - 1 };
 
         modifierState = _GetSGRMouseModifierState(firstParameter);
         success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags, uiPos);
@@ -425,6 +430,12 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _pDispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
+        break;
+    case CsiActionCodes::FocusIn:
+        success = _pDispatch->FocusChanged(true);
+        break;
+    case CsiActionCodes::FocusOut:
+        success = _pDispatch->FocusChanged(false);
         break;
     case CsiActionCodes::Win32KeyboardInput:
     {
@@ -724,7 +735,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWO
 {
     INPUT_RECORD rgInput;
     rgInput.EventType = MOUSE_EVENT;
-    rgInput.Event.MouseEvent.dwMousePosition = uiPos.to_win32_coord();
+    rgInput.Event.MouseEvent.dwMousePosition = til::unwrap_coord(uiPos);
     rgInput.Event.MouseEvent.dwButtonState = buttonState;
     rgInput.Event.MouseEvent.dwControlKeyState = controlKeyState;
     rgInput.Event.MouseEvent.dwEventFlags = eventFlags;

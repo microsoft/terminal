@@ -141,7 +141,7 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
         auto clampedPosition{ cMousePosition };
         const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
         clampViewport.Clamp(clampedPosition);
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(til::wrap_coord(clampedPosition), uiButton, sModifierKeystate, sWheelDelta, state);
     }
 
     return fWasHandled;

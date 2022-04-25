@@ -29,19 +29,10 @@ void TerminalDispatch::PrintString(const std::wstring_view string)
     _terminalApi.PrintString(string);
 }
 
-bool TerminalDispatch::CursorPosition(const size_t line,
-                                      const size_t column)
+bool TerminalDispatch::CursorPosition(VTInt line,
+                                      VTInt column)
 {
-    SHORT x{ 0 };
-    SHORT y{ 0 };
-
-    THROW_IF_FAILED(SizeTToShort(column, &x));
-    THROW_IF_FAILED(SizeTToShort(line, &y));
-
-    THROW_IF_FAILED(ShortSub(x, 1, &x));
-    THROW_IF_FAILED(ShortSub(y, 1, &y));
-
-    _terminalApi.SetCursorPosition(x, y);
+    _terminalApi.SetCursorPosition({ column - 1, line - 1 });
     return true;
 }
 
@@ -57,27 +48,24 @@ bool TerminalDispatch::EnableCursorBlinking(const bool enable)
     return true;
 }
 
-bool TerminalDispatch::CursorForward(const size_t distance)
+bool TerminalDispatch::CursorForward(const VTInt distance)
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    const COORD newCursorPos{ cursorPos.X + gsl::narrow<short>(distance), cursorPos.Y };
-    _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+    _terminalApi.SetCursorPosition({ cursorPos.X + distance, cursorPos.Y });
     return true;
 }
 
-bool TerminalDispatch::CursorBackward(const size_t distance)
+bool TerminalDispatch::CursorBackward(const VTInt distance)
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    const COORD newCursorPos{ cursorPos.X - gsl::narrow<short>(distance), cursorPos.Y };
-    _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+    _terminalApi.SetCursorPosition({ cursorPos.X - distance, cursorPos.Y });
     return true;
 }
 
-bool TerminalDispatch::CursorUp(const size_t distance)
+bool TerminalDispatch::CursorUp(const VTInt distance)
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    const COORD newCursorPos{ cursorPos.X, cursorPos.Y + gsl::narrow<short>(distance) };
-    _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+    _terminalApi.SetCursorPosition({ cursorPos.X, cursorPos.Y + distance });
     return true;
 }
 
@@ -99,7 +87,7 @@ bool TerminalDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     }
 }
 
-bool TerminalDispatch::EraseCharacters(const size_t numChars)
+bool TerminalDispatch::EraseCharacters(const VTInt numChars)
 {
     _terminalApi.EraseCharacters(numChars);
     return true;
@@ -114,7 +102,7 @@ bool TerminalDispatch::WarningBell()
 bool TerminalDispatch::CarriageReturn()
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    _terminalApi.SetCursorPosition(0, cursorPos.Y);
+    _terminalApi.SetCursorPosition({ 0, cursorPos.Y });
     return true;
 }
 
@@ -134,13 +122,13 @@ bool TerminalDispatch::HorizontalTabSet()
     return true;
 }
 
-bool TerminalDispatch::ForwardTab(const size_t numTabs)
+bool TerminalDispatch::ForwardTab(const VTInt numTabs)
 {
     const auto width = _terminalApi.GetBufferSize().Dimensions().X;
     const auto cursorPosition = _terminalApi.GetCursorPosition();
     auto column = cursorPosition.X;
     const auto row = cursorPosition.Y;
-    auto tabsPerformed = 0u;
+    VTInt tabsPerformed = 0;
     _InitTabStopsForWidth(width);
     while (column + 1 < width && tabsPerformed < numTabs)
     {
@@ -151,17 +139,17 @@ bool TerminalDispatch::ForwardTab(const size_t numTabs)
         }
     }
 
-    _terminalApi.SetCursorPosition(column, row);
+    _terminalApi.SetCursorPosition({ column, row });
     return true;
 }
 
-bool TerminalDispatch::BackwardsTab(const size_t numTabs)
+bool TerminalDispatch::BackwardsTab(const VTInt numTabs)
 {
     const auto width = _terminalApi.GetBufferSize().Dimensions().X;
     const auto cursorPosition = _terminalApi.GetCursorPosition();
     auto column = cursorPosition.X;
     const auto row = cursorPosition.Y;
-    auto tabsPerformed = 0u;
+    VTInt tabsPerformed = 0;
     _InitTabStopsForWidth(width);
     while (column > 0 && tabsPerformed < numTabs)
     {
@@ -172,7 +160,7 @@ bool TerminalDispatch::BackwardsTab(const size_t numTabs)
         }
     }
 
-    _terminalApi.SetCursorPosition(column, row);
+    _terminalApi.SetCursorPosition({ column, row });
     return true;
 }
 
@@ -266,7 +254,7 @@ bool TerminalDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 // - count, the number of characters to delete
 // Return Value:
 // - True.
-bool TerminalDispatch::DeleteCharacter(const size_t count)
+bool TerminalDispatch::DeleteCharacter(const VTInt count)
 {
     _terminalApi.DeleteCharacter(count);
     return true;
@@ -278,7 +266,7 @@ bool TerminalDispatch::DeleteCharacter(const size_t count)
 // - count, the number of spaces to add
 // Return Value:
 // - True.
-bool TerminalDispatch::InsertCharacter(const size_t count)
+bool TerminalDispatch::InsertCharacter(const VTInt count)
 {
     _terminalApi.InsertCharacter(count);
     return true;
@@ -395,7 +383,6 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled)
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
-
 //Arguments:
 // - enabled - true to enable, false to disable.
 // Return value:
@@ -403,6 +390,20 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled)
 bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
     _terminalApi.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
+    return true;
+}
+
+// Method Description:
+// - Enables/disables focus event mode. A client may enable this if they want to
+//   receive focus events.
+// - ConPTY always enables this mode and never disables it. For more details, see GH#12900.
+// Arguments:
+// - enabled - true to enable, false to disable.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableFocusEventMode(const bool enabled)
+{
+    _terminalApi.SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
     return true;
 }
 
@@ -643,6 +644,9 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
         break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        success = EnableFocusEventMode(enable);
+        break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
         break;
@@ -803,7 +807,7 @@ bool TerminalDispatch::CursorSaveState()
     // TODO GH#3849: When de-duplicating this, the AdaptDispatch version of this
     // is more elaborate.
     const auto attributes = _terminalApi.GetTextAttributes();
-    COORD coordCursor = _terminalApi.GetCursorPosition();
+    const auto coordCursor = _terminalApi.GetCursorPosition();
     // The cursor is given to us by the API as relative to current viewport top.
 
     // VT is also 1 based, not 0 based, so correct by 1.

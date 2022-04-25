@@ -708,7 +708,7 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
 #pragma warning(suppress : 26496) // analysis can't tell we're assigning through a reference below
     auto clampedPos{ viewportPos };
     _GetMutableViewport().ToOrigin().Clamp(clampedPos);
-    return _terminalInput->HandleMouse(clampedPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
+    return _terminalInput->HandleMouse(til::point{ clampedPos }, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
 }
 
 // Method Description:
@@ -744,6 +744,19 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     const auto handledDown = _terminalInput->HandleKey(&keyDown);
     const auto handledUp = _terminalInput->HandleKey(&keyUp);
     return handledDown || handledUp;
+}
+
+// Method Description:
+// - Tell the terminal input that we gained or lost focus. If the client
+//   requested focus events, this will send a message to them.
+// - ConPTY ALWAYS wants focus events.
+// Arguments:
+// - focused: true if we're focused, false otherwise.
+// Return Value:
+// - none
+void Terminal::FocusChanged(const bool focused) noexcept
+{
+    _terminalInput->HandleFocus(focused);
 }
 
 // Method Description:
