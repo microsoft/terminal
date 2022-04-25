@@ -1,5 +1,12 @@
 EXPORTS
+    ; Compatibility aliases for P/Invoke
     CreatePseudoConsole = ConptyCreatePseudoConsole
     ResizePseudoConsole = ConptyResizePseudoConsole
     ClosePseudoConsole = ConptyClosePseudoConsole
     ClearPseudoConsole = ConptyClearPseudoConsole
+
+    ; Plain old normal aliases
+    ConptyCreatePseudoConsole = ConptyCreatePseudoConsole
+    ConptyResizePseudoConsole = ConptyResizePseudoConsole
+    ConptyClosePseudoConsole = ConptyClosePseudoConsole
+    ConptyClearPseudoConsole = ConptyClearPseudoConsole

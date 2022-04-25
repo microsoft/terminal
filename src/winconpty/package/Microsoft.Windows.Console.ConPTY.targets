@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
+    <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
+
+    <!-- x86 can run on x64 and ARM64, so needs to ship all three OpenConsoles. -->
+    <ConptyRequiresx86Host Condition="'$(Platform)' == 'Win32'">true</ConptyRequiresx86Host>
+    <ConptyRequiresx64Host Condition="'$(Platform)' == 'Win32'">true</ConptyRequiresx64Host>
+    <ConptyRequiresARM64Host Condition="'$(Platform)' == 'Win32'">true</ConptyRequiresARM64Host>
+
+    <!-- x64 can only run on x64 and ARM64, so needs to ship only two OpenConsoles. -->
+    <!-- ConptyRequirex86Host not set -->
+    <ConptyRequiresx64Host Condition="'$(Platform)' == 'x64'">true</ConptyRequiresx64Host>
+    <ConptyRequiresARM64Host Condition="'$(Platform)' == 'x64'">true</ConptyRequiresARM64Host>
+
+    <!-- ARM64 can only run on ARM64, so only needs to ship the final OpenConsole. -->
+    <!-- ConptyRequirex86Host not set -->
+    <!-- ConptyRequirex64Host not set -->
+    <ConptyRequiresARM64Host Condition="'$(Platform)' == 'ARM64'">true</ConptyRequiresARM64Host>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(Native-Platform)\lib\uap10.0\conpty.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(Native-Platform)\native\conpty.dll" />
+    <ReferenceCopyLocalPaths Condition="'$(ConptyRequiresx86Host)'=='true'" Include="$(MSBuildThisFileDirectory)\runtimes\native\x86\OpenConsole.exe">
+      <DestinationSubDirectory>x86</DestinationSubDirectory>
+    </ReferenceCopyLocalPaths>
+    <ReferenceCopyLocalPaths Condition="'$(ConptyRequiresx64Host)'=='true'" Include="$(MSBuildThisFileDirectory)\runtimes\native\x64\OpenConsole.exe">
+      <DestinationSubDirectory>x64</DestinationSubDirectory>
+    </ReferenceCopyLocalPaths>
+    <ReferenceCopyLocalPaths Condition="'$(ConptyRequiresARM64Host)'=='true'" Include="$(MSBuildThisFileDirectory)\runtimes\native\arm64\OpenConsole.exe">
+      <DestinationSubDirectory>arm64</DestinationSubDirectory>
+    </ReferenceCopyLocalPaths>
+  </ItemGroup>
+</Project>
