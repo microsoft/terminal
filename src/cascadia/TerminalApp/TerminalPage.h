@@ -133,6 +133,7 @@ namespace winrt::TerminalApp::implementation
         bool IsElevated() const noexcept;
 
         void OpenSettingsUI();
+        void WindowActivated(const bool activated);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 

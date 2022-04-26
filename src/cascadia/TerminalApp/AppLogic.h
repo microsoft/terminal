@@ -117,6 +117,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::TaskbarState TaskbarState();
         winrt::Windows::UI::Xaml::Media::Brush TitlebarBrush();
+        void WindowActivated(const bool activated);
 
         bool GetMinimizeToNotificationArea();
         bool GetAlwaysShowNotificationIcon();

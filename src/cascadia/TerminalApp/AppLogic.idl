@@ -94,6 +94,7 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        void WindowActivated(Boolean activated);
 
         Boolean ShouldUsePersistedLayout();
         Boolean ShouldImmediatelyHandoffToElevated();

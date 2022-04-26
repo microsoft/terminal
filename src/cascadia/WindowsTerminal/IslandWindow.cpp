@@ -439,10 +439,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_ACTIVATE:
     {
         // wparam = 0 indicates the window was deactivated
-        if (LOWORD(wparam) != 0)
-        {
-            _WindowActivatedHandlers();
-        }
+        const bool activated = LOWORD(wparam) != 0;
+        _WindowActivatedHandlers(activated);
 
         break;
     }

@@ -1211,6 +1211,10 @@ namespace winrt::TerminalApp::implementation
         }
         return { nullptr };
     }
+    void AppLogic::WindowActivated(const bool activated)
+    {
+        _root->WindowActivated(activated);
+    }
 
     bool AppLogic::HasCommandlineArguments() const noexcept
     {

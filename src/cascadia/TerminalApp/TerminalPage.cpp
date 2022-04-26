@@ -214,7 +214,7 @@ namespace winrt::TerminalApp::implementation
         else
         {
             // const auto accentColor = res.Lookup(winrt::box_value(L"SystemAccentColor")).as<Media::SolidColorBrush>();
-            auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColor")), backgroundSolidBrush.Color());
+            auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColorDark3")), backgroundSolidBrush.Color());
             const auto accentBrush = Media::SolidColorBrush();
             accentBrush.Color(accentColor);
 
@@ -3932,5 +3932,29 @@ namespace winrt::TerminalApp::implementation
         }
 
         applicationState.DismissedMessages(std::move(messages));
+    }
+
+    void TerminalPage::WindowActivated(const bool activated)
+    {
+        if (_settings == nullptr)
+        {
+            return;
+        }
+
+        if (_settings.GlobalSettings().UseAcrylicInTabRow())
+        {
+            // do nothing
+        }
+        else
+        {
+            const auto res = Application::Current().Resources();
+            // const auto accentColor = res.Lookup(winrt::box_value(L"SystemAccentColor")).as<Media::SolidColorBrush>();
+            auto accentColor = winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(activated ? L"SystemAccentColorDark3" : L"SystemAccentColorDark2")));
+            const auto accentBrush = Media::SolidColorBrush();
+            accentBrush.Color(accentColor);
+
+            TitlebarBrush(accentBrush);
+            _tabRow.Background(TitlebarBrush());
+        }
     }
 }
