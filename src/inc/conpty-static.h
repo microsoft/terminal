@@ -39,7 +39,7 @@ CONPTY_EXPORT HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
 
 CONPTY_EXPORT HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
 
-HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newParent);
+CONPTY_EXPORT HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newParent);
 
 CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
 

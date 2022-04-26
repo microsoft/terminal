@@ -1,14 +1,16 @@
 EXPORTS
-    ; Compatibility aliases for P/Invoke
-    CreatePseudoConsole = ConptyCreatePseudoConsole
-    CreatePseudoConsoleAsUser = ConptyCreatePseudoConsoleAsUser
-    ResizePseudoConsole = ConptyResizePseudoConsole
-    ClosePseudoConsole = ConptyClosePseudoConsole
-    ClearPseudoConsole = ConptyClearPseudoConsole
-
     ; Plain old normal aliases
     ConptyCreatePseudoConsole = ConptyCreatePseudoConsole
     ConptyCreatePseudoConsoleAsUser = ConptyCreatePseudoConsoleAsUser
     ConptyResizePseudoConsole = ConptyResizePseudoConsole
     ConptyClosePseudoConsole = ConptyClosePseudoConsole
     ConptyClearPseudoConsole = ConptyClearPseudoConsole
+    ConptyReparentPseudoConsole = ConptyReparentPseudoConsole
+
+    ; Compatibility aliases for P/Invoke; only required for compatibility
+    ; with the ConPTY surface exported from kernel32.
+    ; New consumers are expected to use the Conpty* versions
+    CreatePseudoConsole = ConptyCreatePseudoConsole
+    ResizePseudoConsole = ConptyResizePseudoConsole
+    ClosePseudoConsole = ConptyClosePseudoConsole
+    ClearPseudoConsole = ConptyClearPseudoConsole
