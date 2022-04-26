@@ -283,15 +283,21 @@
     "themes": [
         {
             "name": "light",
-            "window.applicationTheme": "light"
+            "window":{
+                "applicationTheme": "light"
+            }
         },
         {
             "name": "dark",
-            "window.applicationTheme": "dark"
+            "window":{
+                "applicationTheme": "dark"
+            }
         },
         {
             "name": "system",
-            "window.applicationTheme": "system"
+            "window":{
+                "applicationTheme": "system"
+            }
         }
     ],
     "actions":

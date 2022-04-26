@@ -1329,9 +1329,9 @@ void AppHost::_updateTheme()
 {
     auto theme = _logic.Theme();
 
-    _window->OnApplicationThemeChanged(theme.RequestedTheme());
+    _window->OnApplicationThemeChanged(theme.Window().RequestedTheme());
 
-    int attribute = theme.UseMica() ? /* DWMSBT_MAINWINDOW */ 2 : /*DWMSBT_NONE*/ 1;
+    int attribute = theme.Window().UseMica() ? /* DWMSBT_MAINWINDOW */ 2 : /*DWMSBT_NONE*/ 1;
     DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
 }
 
