@@ -197,6 +197,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom{};
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
+        bool _activated{ false };
 
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
@@ -440,7 +441,7 @@ namespace winrt::TerminalApp::implementation
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 
-        void _updateTabRowColors(const bool activated);
+        void _updateTabRowColors();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

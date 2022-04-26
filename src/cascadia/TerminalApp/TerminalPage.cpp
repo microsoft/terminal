@@ -181,7 +181,7 @@ namespace winrt::TerminalApp::implementation
             // Inform the host that our titlebar content has changed.
             _SetTitleBarContentHandlers(*this, _tabRow);
         }
-        _updateTabRowColors(true);
+        _updateTabRowColors();
 
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
@@ -1399,7 +1399,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (e.PropertyName() == L"BackgroundBrush")
                 {
-                    page->_updateTabRowColors(true);
+                    page->_updateTabRowColors();
                 }
             }
         });
@@ -2599,49 +2599,7 @@ namespace winrt::TerminalApp::implementation
 
         ////////////////////////////////////////////////////////////////////////
         // Begin Theme handling
-        // const auto theme = _settings.GlobalSettings().CurrentTheme();
-
-        // const auto res = Application::Current().Resources();
-        // const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-        // const auto backgroundSolidBrush = res.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
-
-        // if (_settings.GlobalSettings().UseAcrylicInTabRow())
-        // {
-        //     const til::color backgroundColor = backgroundSolidBrush.Color();
-        //     const auto acrylicBrush = Media::AcrylicBrush();
-        //     acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-        //     acrylicBrush.FallbackColor(backgroundColor);
-        //     acrylicBrush.TintColor(backgroundColor);
-        //     acrylicBrush.TintOpacity(0.5);
-
-        //     TitlebarBrush(acrylicBrush);
-        // }
-        // else if (const auto tabRowBg = theme.TabRowBackground())
-        // {
-        //     switch (tabRowBg.ColorType())
-        //     {
-        //     case ThemeColorType::Accent:
-        //     {
-        //         auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColorDark3")), backgroundSolidBrush.Color());
-        //         const auto accentBrush = Media::SolidColorBrush();
-        //         accentBrush.Color(accentColor);
-
-        //         TitlebarBrush(accentBrush);
-        //     }
-        //     case ThemeColorType::Color:
-        //     {
-        //         const til::color backgroundColor = tabRowBg.Color();
-        //         const auto solidBrush = Media::SolidColorBrush();
-        //         solidBrush.Color(backgroundColor);
-        //         // Windows::UI::Color newTabButtonColor = backgroundColor;
-        //         TitlebarBrush(solidBrush);
-        //     }
-        //     default:
-        //     {
-        //     }
-        //     }
-        // }
-        _updateTabRowColors(true);
+        _updateTabRowColors();
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -3933,7 +3891,7 @@ namespace winrt::TerminalApp::implementation
         applicationState.DismissedMessages(std::move(messages));
     }
 
-    void TerminalPage::_updateTabRowColors(const bool activated)
+    void TerminalPage::_updateTabRowColors()
     {
         if (_settings == nullptr)
         {
@@ -3945,6 +3903,8 @@ namespace winrt::TerminalApp::implementation
         const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
         const auto backgroundSolidBrush = res.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
 
+        til::color bgColor = backgroundSolidBrush.Color();
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const til::color backgroundColor = backgroundSolidBrush.Color();
@@ -3955,6 +3915,7 @@ namespace winrt::TerminalApp::implementation
             acrylicBrush.TintOpacity(0.5);
 
             TitlebarBrush(acrylicBrush);
+            bgColor = backgroundColor;
         }
         else if (theme.TabRow() && theme.TabRow().Background())
         {
@@ -3965,12 +3926,13 @@ namespace winrt::TerminalApp::implementation
             {
                 // TODO! These colors are NOT right at all. But none of
                 // `SystemAccentColor` is, so we gotta figure this out.
-                auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(activated ?
+                auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(_activated ?
                                                                                                                     L"SystemAccentColorDark3" :
                                                                                                                     L"SystemAccentColorDark2")),
                                                                                     backgroundSolidBrush.Color());
                 const auto accentBrush = Media::SolidColorBrush();
                 accentBrush.Color(accentColor);
+                bgColor = accentColor;
 
                 TitlebarBrush(accentBrush);
                 break;
@@ -3980,6 +3942,7 @@ namespace winrt::TerminalApp::implementation
                 const til::color backgroundColor = tabRowBg.Color();
                 const auto solidBrush = Media::SolidColorBrush();
                 solidBrush.Color(backgroundColor);
+                bgColor = backgroundColor;
                 TitlebarBrush(solidBrush);
                 break;
             }
@@ -3987,7 +3950,17 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto termControl{ _GetActiveControl() })
                 {
-                    TitlebarBrush(termControl.BackgroundBrush());
+                    const auto& brush{ termControl.BackgroundBrush() };
+                    if (auto acrylic = brush.try_as<Media::AcrylicBrush>())
+                    {
+                        bgColor = acrylic.TintColor();
+                    }
+                    else if (auto solidColor = brush.try_as<Media::SolidColorBrush>())
+                    {
+                        bgColor = solidColor.Color();
+                    }
+
+                    TitlebarBrush(brush);
                 }
                 break;
             }
@@ -4003,12 +3976,18 @@ namespace winrt::TerminalApp::implementation
         }
 
         _tabRow.Background(TitlebarBrush());
+
+        // Update the new tab button to have better contrast with the new color.
+        // In theory, it would be convenient to also change these for the
+        // inactive tabs as well, but we're leaving that as a follow up.
+        _SetNewTabButtonColor(bgColor, bgColor);
     }
 
     void TerminalPage::WindowActivated(const bool activated)
     {
-        // TODO! stash if we're activated somewhere - use that when we reload
-        // the settings as the arg to _updateTabRowColors.
-        _updateTabRowColors(activated);
+        // Stash if we're activated. Use that when we reload
+        // the settings, change active panes, etc.
+        _activated = activated;
+        _updateTabRowColors();
     }
 }
