@@ -1441,31 +1441,32 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // react on color changed events
-        hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
+        // // react on color changed events
+        // hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
+        //     auto page{ weakThis.get() };
+        //     auto tab{ weakTab.get() };
 
-            if (page && tab && (tab->FocusState() != FocusState::Unfocused))
-            {
-                page->_SetNonClientAreaColors(color);
-            }
-        });
+        //     if (page && tab && (tab->FocusState() != FocusState::Unfocused))
+        //     {
+        //         page->_SetNonClientAreaColors(color);
+        //     }
+        // });
 
-        hostingTab.ColorCleared([weakTab, weakThis]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
+        // hostingTab.ColorCleared([weakTab, weakThis]() {
+        //     auto page{ weakThis.get() };
+        //     auto tab{ weakTab.get() };
 
-            if (page && tab && (tab->FocusState() != FocusState::Unfocused))
-            {
-                page->_ClearNonClientAreaColors();
-            }
-        });
+        //     if (page && tab && (tab->FocusState() != FocusState::Unfocused))
+        //     {
+        //         page->_ClearNonClientAreaColors();
+        //     }
+        // });
 
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
+        // TODO! delete this?
         // TODO GH#3327: Once we support colorizing the NewTab button based on
         // the color of the tab, we'll want to make sure to call
         // _ClearNewTabButtonColor here, to reset it to the default (for the

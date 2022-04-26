@@ -905,6 +905,8 @@ namespace winrt::TerminalApp::implementation
             {
                 _TitleChangedHandlers(*this, tab.Title());
             }
+
+            _updateTabRowColors(true);
         }
         CATCH_LOG();
     }
