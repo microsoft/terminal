@@ -23,10 +23,6 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view WindowKey{ "window" };
 static constexpr std::string_view TabRowKey{ "tabRow" };
 
-ThemeColor::ThemeColor() noexcept
-{
-}
-
 winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
 {
     auto result = winrt::make_self<implementation::ThemeColor>();
@@ -48,34 +44,35 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromAccent()
 #define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, val.name());
 
-#define THEME_OBJECT_CONVERTER(projected, impl, name, macro)                             \
-    template<>                                                                           \
-    struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<projected> \
-    {                                                                                    \
-        projected FromJson(const Json::Value& json)                                      \
-        {                                                                                \
-            auto result = winrt::make_self<impl>();                                      \
-            macro(THEME_SETTINGS_FROM_JSON) return *result;                              \
-        }                                                                                \
-                                                                                         \
-        bool CanConvert(const Json::Value& json)                                         \
-        {                                                                                \
-            return json.isObject();                                                      \
-        }                                                                                \
-                                                                                         \
-        Json::Value ToJson(const projected& val)                                         \
-        {                                                                                \
-            Json::Value json{ Json::ValueType::objectValue };                            \
-            macro(THEME_SETTINGS_TO_JSON) return json;                                   \
-        }                                                                                \
-                                                                                         \
-        std::string TypeDescription() const                                              \
-        {                                                                                \
-            return "name (You should never see this)";                                   \
-        }                                                                                \
+#define THEME_OBJECT_CONVERTER(nameSpace, name, macro)                                         \
+    template<>                                                                                 \
+    struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<nameSpace::name> \
+    {                                                                                          \
+        nameSpace::name FromJson(const Json::Value& json)                                      \
+        {                                                                                      \
+            auto result = winrt::make_self<nameSpace::implementation::name>();                 \
+            macro(THEME_SETTINGS_FROM_JSON) return *result;                                    \
+        }                                                                                      \
+                                                                                               \
+        bool CanConvert(const Json::Value& json)                                               \
+        {                                                                                      \
+            return json.isObject();                                                            \
+        }                                                                                      \
+                                                                                               \
+        Json::Value ToJson(const nameSpace::name& val)                                         \
+        {                                                                                      \
+            Json::Value json{ Json::ValueType::objectValue };                                  \
+            macro(THEME_SETTINGS_TO_JSON) return json;                                         \
+        }                                                                                      \
+                                                                                               \
+        std::string TypeDescription() const                                                    \
+        {                                                                                      \
+            return "name (You should never see this)";                                         \
+        }                                                                                      \
     };
 
-THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, winrt::Microsoft::Terminal::Settings::Model::implementation::WindowTheme, WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
 
 #undef THEME_SETTINGS_FROM_JSON
 #undef THEME_SETTINGS_TO_JSON
@@ -137,6 +134,7 @@ void Theme::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
 
     JsonUtils::GetValueForKey(json, WindowKey, _Window);
+    JsonUtils::GetValueForKey(json, TabRowKey, _TabRow);
     // if (auto window{ json[JsonKey(WindowKey)] })
     // {
 

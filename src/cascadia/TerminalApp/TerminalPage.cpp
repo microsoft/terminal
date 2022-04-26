@@ -3441,7 +3441,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
     {
         auto theme{ _settings.GlobalSettings().CurrentTheme() };
-        auto requestedTheme{ theme.RequestedTheme() };
+        auto requestedTheme{ theme.Window().RequestedTheme() };
         while (element)
         {
             element.RequestedTheme(requestedTheme);
@@ -3971,8 +3971,9 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (const auto tabRowBg = theme.TabRowBackground())
+        else if (theme.TabRow() && theme.TabRow().Background())
         {
+            const auto tabRowBg = theme.TabRow().Background();
             switch (tabRowBg.ColorType())
             {
             case ThemeColorType::Accent:

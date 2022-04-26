@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ThemeColor : ThemeColorT<ThemeColor>
     {
     public:
-        ThemeColor() noexcept;
+        ThemeColor() noexcept = default;
         static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept;
         static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromAccent() noexcept;
 

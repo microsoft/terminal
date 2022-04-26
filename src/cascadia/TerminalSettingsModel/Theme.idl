@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     runtimeclass ThemeColor
     {
+        ThemeColor();
         static ThemeColor FromColor(Microsoft.Terminal.Core.Color color);
         static ThemeColor FromAccent();
 
