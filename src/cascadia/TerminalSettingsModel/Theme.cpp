@@ -19,6 +19,25 @@ using namespace winrt::Windows::UI;
 
 static constexpr std::string_view NameKey{ "name" };
 
+ThemeColor::ThemeColor() noexcept
+{
+}
+
+winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
+{
+    auto result = winrt::make_self<implementation::ThemeColor>();
+    result->_Color = coreColor;
+    result->_ColorType = ThemeColorType::Color;
+    return *result;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromAccent() noexcept
+{
+    auto result = winrt::make_self<implementation::ThemeColor>();
+    result->_ColorType = ThemeColorType::Accent;
+    return *result;
+}
+
 Theme::Theme() noexcept :
     Theme{ winrt::Windows::UI::Xaml::ElementTheme::Default }
 {
@@ -92,13 +111,4 @@ Json::Value Theme::ToJson() const
 #undef THEME_SETTINGS_TO_JSON
 
     return json;
-}
-
-ThemeColor::ThemeColor() noexcept
-{
-}
-
-ThemeColor::ThemeColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept :
-    _Color{ coreColor }
-{
 }

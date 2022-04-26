@@ -28,9 +28,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         ThemeColor() noexcept;
-        ThemeColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept;
+        static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept;
+        static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromAccent() noexcept;
 
         WINRT_PROPERTY(til::color, Color);
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ThemeColorType, ColorType);
 
     private:
     };

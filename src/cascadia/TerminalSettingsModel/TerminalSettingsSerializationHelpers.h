@@ -552,7 +552,15 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 {
     winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromJson(const Json::Value& json)
     {
-        return winrt::Microsoft::Terminal::Settings::Model::ThemeColor(::Microsoft::Console::Utils::ColorFromHexString(Detail::GetStringView(json)));
+        const auto string{ Detail::GetStringView(json) };
+        if (string == "accent")
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromAccent();
+        }
+        else
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromColor(::Microsoft::Console::Utils::ColorFromHexString(string));
+        }
     }
 
     bool CanConvert(const Json::Value& json)
@@ -563,7 +571,9 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
         }
 
         const auto string{ Detail::GetStringView(json) };
-        return (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
+        const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
+        const auto isAccent = string == "accent";
+        return isColorSpec || isAccent;
     }
 
     Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
@@ -573,6 +583,6 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
     std::string TypeDescription() const
     {
-        return "ThemeColor (#rrggbb, #rgb, #aarrggbb)";
+        return "ThemeColor (#rrggbb, #rgb, #aarrggbb, accent)";
     }
 };

@@ -2648,41 +2648,92 @@ namespace winrt::TerminalApp::implementation
         Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
         _tabView.Background(transparent);
 
+        ////////////////////////////////////////////////////////////////////////
+        // Begin Theme handling
         const auto theme = _settings.GlobalSettings().Theme();
-        if (const auto tabRowBg = theme.TabRowBackground())
+
+        const auto res = Application::Current().Resources();
+        const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+        const auto backgroundSolidBrush = res.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
+
+        if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
-            const til::color backgroundColor = tabRowBg.Color();
-            Windows::UI::Color newTabButtonColor = backgroundColor;
+            const til::color backgroundColor = backgroundSolidBrush.Color();
+            const auto acrylicBrush = Media::AcrylicBrush();
+            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            acrylicBrush.FallbackColor(backgroundColor);
+            acrylicBrush.TintColor(backgroundColor);
+            acrylicBrush.TintOpacity(0.5);
 
-            _SetNewTabButtonColor(newTabButtonColor, newTabButtonColor);
-
-            const auto res = Application::Current().Resources();
-            // const auto tabRowBackgroundKey = winrt::box_value(L"TabRowBackground");
-            // const til::color backgroundColor = tabRowBg.Color();
-            // const auto brush = Media::SolidColorBrush();
-            // brush.Color(backgroundColor);
-            // res.Insert(tabRowBackgroundKey, brush);
-
-            // const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
-            // // const auto brush = Media::AcrylicBrush();
-            // const auto acrylicBrush = Media::AcrylicBrush();
-            // acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            // acrylicBrush.FallbackColor(backgroundColor);
-            // acrylicBrush.TintColor(backgroundColor);
-            // acrylicBrush.TintOpacity(0.5);
-            // res.Insert(terminalBackgroundBrushKey, acrylicBrush);
-
-            // const auto foo{ res.Lookup(winrt::box_value(L"TerminalBackground")).as<winrt::TerminalApp::TerminalBackground>() };
-            // // const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
-            // // const auto brush = Media::AcrylicBrush();
-            // const auto acrylicBrush = Media::AcrylicBrush();
-            // acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            // acrylicBrush.FallbackColor(backgroundColor);
-            // acrylicBrush.TintColor(backgroundColor);
-            // acrylicBrush.TintOpacity(0.5);
-            // // res.Insert(terminalBackgroundBrushKey, acrylicBrush);
-            // foo.Brush(acrylicBrush);
+            TitlebarBrush(acrylicBrush);
         }
+        else if (const auto tabRowBg = theme.TabRowBackground())
+        {
+            switch (tabRowBg.ColorType())
+            {
+            case ThemeColorType::Accent:
+            {
+                auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColorDark3")), backgroundSolidBrush.Color());
+                const auto accentBrush = Media::SolidColorBrush();
+                accentBrush.Color(accentColor);
+
+                TitlebarBrush(accentBrush);
+            }
+            case ThemeColorType::Color:
+            {
+                const til::color backgroundColor = tabRowBg.Color();
+                const auto solidBrush = Media::SolidColorBrush();
+                solidBrush.Color(backgroundColor);
+                // Windows::UI::Color newTabButtonColor = backgroundColor;
+                TitlebarBrush(solidBrush);
+            }
+            default:
+            {
+            }
+            }
+
+            // // const auto accentColor = res.Lookup(winrt::box_value(L"SystemAccentColor")).as<Media::SolidColorBrush>();
+            // auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColorDark3")), backgroundSolidBrush.Color());
+            // const auto accentBrush = Media::SolidColorBrush();
+            // accentBrush.Color(accentColor);
+
+            // TitlebarBrush(accentBrush);
+        }
+
+        // if (const auto tabRowBg = theme.TabRowBackground())
+        // {
+        //     const til::color backgroundColor = tabRowBg.Color();
+        //     Windows::UI::Color newTabButtonColor = backgroundColor;
+
+        //     _SetNewTabButtonColor(newTabButtonColor, newTabButtonColor);
+
+        //     const auto res = Application::Current().Resources();
+        //     // const auto tabRowBackgroundKey = winrt::box_value(L"TabRowBackground");
+        //     // const til::color backgroundColor = tabRowBg.Color();
+        //     // const auto brush = Media::SolidColorBrush();
+        //     // brush.Color(backgroundColor);
+        //     // res.Insert(tabRowBackgroundKey, brush);
+
+        //     // const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
+        //     // // const auto brush = Media::AcrylicBrush();
+        //     // const auto acrylicBrush = Media::AcrylicBrush();
+        //     // acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+        //     // acrylicBrush.FallbackColor(backgroundColor);
+        //     // acrylicBrush.TintColor(backgroundColor);
+        //     // acrylicBrush.TintOpacity(0.5);
+        //     // res.Insert(terminalBackgroundBrushKey, acrylicBrush);
+
+        //     // const auto foo{ res.Lookup(winrt::box_value(L"TerminalBackground")).as<winrt::TerminalApp::TerminalBackground>() };
+        //     // // const auto terminalBackgroundBrushKey = winrt::box_value(L"TerminalBackgroundBrush");
+        //     // // const auto brush = Media::AcrylicBrush();
+        //     // const auto acrylicBrush = Media::AcrylicBrush();
+        //     // acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+        //     // acrylicBrush.FallbackColor(backgroundColor);
+        //     // acrylicBrush.TintColor(backgroundColor);
+        //     // acrylicBrush.TintOpacity(0.5);
+        //     // // res.Insert(terminalBackgroundBrushKey, acrylicBrush);
+        //     // foo.Brush(acrylicBrush);
+        // }
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

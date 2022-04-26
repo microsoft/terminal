@@ -4,10 +4,19 @@
 namespace Microsoft.Terminal.Settings.Model
 {
 
+    enum ThemeColorType
+    {
+        Accent,
+        Color
+    };
+
     runtimeclass ThemeColor
     {
-        ThemeColor(Microsoft.Terminal.Core.Color color);
-        Microsoft.Terminal.Core.Color Color;
+        static ThemeColor FromColor(Microsoft.Terminal.Core.Color color);
+        static ThemeColor FromAccent();
+
+        Microsoft.Terminal.Core.Color Color { get; };
+        ThemeColorType ColorType;
     }
 
     [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {
