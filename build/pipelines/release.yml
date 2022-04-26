@@ -60,6 +60,9 @@ parameters:
 
 variables:
   TerminalInternalPackageVersion: "0.0.7"
+  # Disable branch name in nuget packages
+  # We can't tell it to ignore release-*, so let's just turn it off
+  NoNuGetPackBetaVersion: true
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
