@@ -10,6 +10,8 @@
 #include "TerminalSettingsSerializationHelpers.h"
 
 #include "ThemeColor.g.cpp"
+#include "WindowTheme.g.cpp"
+#include "TabRowTheme.g.cpp"
 #include "Theme.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -18,6 +20,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI;
 
 static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view WindowKey{ "window" };
+static constexpr std::string_view TabRowKey{ "tabRow" };
 
 ThemeColor::ThemeColor() noexcept
 {
@@ -38,14 +42,56 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromAccent()
     return *result;
 }
 
+#define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...) \
+    {                                                      \
+        type tmp = JsonUtils::GetValueForKey<type>(json, jsonKey); \
+        result->name(tmp); \
+    }
+
+#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, val.name());
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::WindowTheme>
+{
+    winrt::Microsoft::Terminal::Settings::Model::WindowTheme FromJson(const Json::Value& json)
+    {
+        auto result = winrt::make_self<winrt::Microsoft::Terminal::Settings::Model::implementation::WindowTheme>();
+        MTSM_THEME_WINDOW_SETTINGS(THEME_SETTINGS_FROM_JSON)
+        return *result;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isObject();
+    }
+
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::WindowTheme& val)
+    {
+        Json::Value json{ Json::ValueType::objectValue };
+        MTSM_THEME_WINDOW_SETTINGS(THEME_SETTINGS_TO_JSON)
+        return json;
+    }
+
+    std::string TypeDescription() const
+    {
+        return "WindowTheme (You should never see this)";
+    }
+};
+
+#undef THEME_SETTINGS_FROM_JSON
+#undef THEME_SETTINGS_TO_JSON
+
 Theme::Theme() noexcept :
     Theme{ winrt::Windows::UI::Xaml::ElementTheme::Default }
 {
 }
 
-Theme::Theme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept :
-    _RequestedTheme{ requestedTheme }
+Theme::Theme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept
 {
+    auto window{ winrt::make_self<implementation::WindowTheme>() };
+    window->RequestedTheme(requestedTheme);
+    _Window = *window;
 }
 
 winrt::com_ptr<Theme> Theme::Copy() const
@@ -79,17 +125,29 @@ void Theme::LayerJson(const Json::Value& json)
     if (json.isString())
     {
         JsonUtils::GetValue(json, _Name);
-        JsonUtils::GetValue(json, _RequestedTheme);
+        winrt::Windows::UI::Xaml::ElementTheme requestedTheme{ winrt::Windows::UI::Xaml::ElementTheme::Default };
+        JsonUtils::GetValue(json, requestedTheme);
+
+        auto window{ winrt::make_self<implementation::WindowTheme>() };
+        window->RequestedTheme(requestedTheme);
+        _Window = *window;
+
         return;
     }
 
     JsonUtils::GetValueForKey(json, NameKey, _Name);
 
-#define THEME_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, WindowKey, _Window);
+    // if (auto window{ json[JsonKey(WindowKey)] })
+    // {
 
-    MTSM_THEME_SETTINGS(THEME_SETTINGS_LAYER_JSON)
-#undef THEME_SETTINGS_LAYER_JSON
+    // }
+
+    // #define THEME_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+//     JsonUtils::GetValueForKey(json, jsonKey, _##name);
+
+    //     MTSM_THEME_SETTINGS(THEME_SETTINGS_LAYER_JSON)
+    // #undef THEME_SETTINGS_LAYER_JSON
 }
 
 // Method Description:
@@ -104,11 +162,11 @@ Json::Value Theme::ToJson() const
 
     JsonUtils::SetValueForKey(json, NameKey, _Name);
 
-#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+    // #define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+//     JsonUtils::SetValueForKey(json, jsonKey, _##name);
 
-    MTSM_THEME_SETTINGS(THEME_SETTINGS_TO_JSON)
-#undef THEME_SETTINGS_TO_JSON
+    //     MTSM_THEME_SETTINGS(THEME_SETTINGS_TO_JSON)
+    // #undef THEME_SETTINGS_TO_JSON
 
     return json;
 }

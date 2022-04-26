@@ -20,6 +20,8 @@ Author(s):
 #include "MTSMSettings.h"
 
 #include "ThemeColor.g.h"
+#include "WindowTheme.g.h"
+#include "TabRowTheme.g.h"
 #include "Theme.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -33,8 +35,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(til::color, Color);
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ThemeColorType, ColorType);
+    };
 
-    private:
+#define THEME_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    WINRT_PROPERTY(type, name, ##__VA_ARGS__)
+
+#define THEME_SETTINGS_COPY(type, name, jsonKey, ...) \
+    result->_##name = _##name;
+
+#define COPY_THEME_OBJECT(T, macro)           \
+    winrt::com_ptr<T> Copy()                  \
+    {                                         \
+        auto result{ winrt::make_self<T>() }; \
+        macro(THEME_SETTINGS_COPY);           \
+        return result;                        \
+    }
+
+    struct WindowTheme : WindowThemeT<WindowTheme>
+    {
+        MTSM_THEME_WINDOW_SETTINGS(THEME_SETTINGS_INITIALIZE);
+
+    public:
+        COPY_THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+    };
+
+    struct TabRowTheme : TabRowThemeT<TabRowTheme>
+    {
+        MTSM_THEME_TABROW_SETTINGS(THEME_SETTINGS_INITIALIZE);
+
+    public:
+        COPY_THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
     };
 
     struct Theme : ThemeT<Theme>
@@ -56,14 +86,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(winrt::hstring, Name);
 
-#define THEME_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    WINRT_PROPERTY(type, name, ##__VA_ARGS__)
-
         MTSM_THEME_SETTINGS(THEME_SETTINGS_INITIALIZE)
-#undef THEME_SETTINGS_INITIALIZE
 
     private:
     };
+
+#undef THEME_SETTINGS_INITIALIZE
+#undef THEME_SETTINGS_COPY
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation

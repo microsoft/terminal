@@ -112,7 +112,13 @@ Author(s):
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
 
-#define MTSM_THEME_SETTINGS(X)                                                                                                            \
-    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "window.applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
-    X(bool, UseMica, "window.useMica", false)                                                                                             \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, TabRowBackground, "tabRow.background", nullptr)
+#define MTSM_THEME_SETTINGS(X)                                                             \
+    X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr)
+
+#define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
+    X(bool, UseMica, "useMica", false)
+
+#define MTSM_THEME_TABROW_SETTINGS(X) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)
