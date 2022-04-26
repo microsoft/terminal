@@ -583,7 +583,21 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
     Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
     {
-        // TODO!
+        switch (val.ColorType())
+        {
+        case ThemeColorType::Accent:
+        {
+            return "accent";
+        }
+        case ThemeColorType::Color:
+        {
+            return til::u16u8(til::color{ val.Color() }.ToHexString(true));
+        }
+        case ThemeColorType::TerminalBackground:
+        {
+            return "terminalBackground";
+        }
+        }
         return til::u16u8(til::color{ val.Color() }.ToHexString(true));
     }
 

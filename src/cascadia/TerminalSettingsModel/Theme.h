@@ -6,7 +6,9 @@ Module Name:
 - Theme.hpp
 
 Abstract:
-- TODO!
+- A Theme represents a collection of settings which control the appearance of
+  the Terminal window itself. Things like the color of the titlebar, the style
+  of the tabs.
 
 Author(s):
 - Mike Griese - March 2022

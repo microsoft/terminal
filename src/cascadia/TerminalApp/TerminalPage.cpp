@@ -1441,38 +1441,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // // react on color changed events
-        // hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
-        //     auto page{ weakThis.get() };
-        //     auto tab{ weakTab.get() };
-
-        //     if (page && tab && (tab->FocusState() != FocusState::Unfocused))
-        //     {
-        //         page->_SetNonClientAreaColors(color);
-        //     }
-        // });
-
-        // hostingTab.ColorCleared([weakTab, weakThis]() {
-        //     auto page{ weakThis.get() };
-        //     auto tab{ weakTab.get() };
-
-        //     if (page && tab && (tab->FocusState() != FocusState::Unfocused))
-        //     {
-        //         page->_ClearNonClientAreaColors();
-        //     }
-        // });
-
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-
-        // TODO! delete this?
-        // TODO GH#3327: Once we support colorizing the NewTab button based on
-        // the color of the tab, we'll want to make sure to call
-        // _ClearNewTabButtonColor here, to reset it to the default (for the
-        // newly created tab).
-        // remove any colors left by other colored tabs
-        // _ClearNewTabButtonColor();
     }
 
     // Method Description:
@@ -2955,32 +2926,6 @@ namespace winrt::TerminalApp::implementation
 
         _newTabButton.Background(backgroundBrush);
         _newTabButton.Foreground(foregroundBrush);
-    }
-
-    // Method Description:
-    // - Sets the tab split button color when a new tab color is selected
-    // - This method could also set the color of the title bar and tab row
-    // in the future
-    // Arguments:
-    // - selectedTabColor: The color of the newly selected tab
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SetNonClientAreaColors(const Windows::UI::Color& /*selectedTabColor*/)
-    {
-        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
-    }
-
-    // Method Description:
-    // - Clears the tab split button color when the tab's color is cleared
-    // - This method could also clear the color of the title bar and tab row
-    // in the future
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_ClearNonClientAreaColors()
-    {
-        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
     // Function Description:

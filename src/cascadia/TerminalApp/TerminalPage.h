@@ -382,8 +382,6 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshUIForSettingsReload();
 
-        void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
-        void _ClearNonClientAreaColors();
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
 
