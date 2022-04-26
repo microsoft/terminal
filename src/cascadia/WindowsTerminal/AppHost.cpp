@@ -73,8 +73,7 @@ AppHost::AppHost() noexcept :
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
                          std::placeholders::_1,
-                         std::placeholders::_2,
-                         std::placeholders::_3);
+                         std::placeholders::_2);
     _window->SetCreateCallback(pfn);
 
     _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::AppLogic::CalcSnappedDimension,
@@ -519,11 +518,30 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 }
 
 // Method Description:
+// - Callback for when the window is first being created (during WM_CREATE).
+//   Stash the proposed size for later. We'll need that once we're totally
+//   initialized, so that we can show the window in the right position *when we
+//   want to show it*. If we did the _initialResizeAndRepositionWindow work now,
+//   it would have no effect, because the window is not yet visible.
+// Arguments:
+// - hwnd: The HWND of the window we're about to create.
+// - proposedRect: The location and size of the window that we're about to
+//   create. We'll use this rect to determine which monitor the window is about
+//   to appear on.
+void AppHost::_HandleCreateWindow(const HWND /* hwnd */, RECT proposedRect)
+{
+    // GH#11561: Hide the window until we're totally done being initialized.
+    // More commentary in TerminalPage::_CompleteInitialization
+    _proposedRect = proposedRect;
+}
+
+// Method Description:
 // - Resize the window we're about to create to the appropriate dimensions, as
-//   specified in the settings. This will be called during the handling of
-//   WM_CREATE. We'll load the settings for the app, then get the proposed size
-//   of the terminal from the app. Using that proposed size, we'll resize the
-//   window we're creating, so that it'll match the values in the settings.
+//   specified in the settings. This is called once the app has finished it's
+//   initial setup, once we have created all the tabs, panes, etc. We'll load
+//   the settings for the app, then get the proposed size of the terminal from
+//   the app. Using that proposed size, we'll resize the window we're creating,
+//   so that it'll match the values in the settings.
 // Arguments:
 // - hwnd: The HWND of the window we're about to create.
 // - proposedRect: The location and size of the window that we're about to
@@ -532,16 +550,8 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
+void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
-    // GH#11561: Hide the window until we're totally done being initialized.
-    // More commentary in TerminalPage::_CompleteInitialization
-    BOOL cloak = TRUE;
-    LOG_IF_FAILED(DwmSetWindowAttribute(hwnd,
-                                        DWMWA_CLOAK,
-                                        &cloak,
-                                        sizeof(cloak)));
-
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
@@ -1560,11 +1570,18 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
-    // GH#11561: We're totally done being initialized. Uncloak the window, making it visible.
-    // More commentary in TerminalPage::_CompleteInitialization
-    BOOL cloak = FALSE;
-    LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(),
-                                        DWMWA_CLOAK,
-                                        &cloak,
-                                        sizeof(cloak)));
+    // GH#11561: We're totally done being initialized. Resize the window to
+    // match the initial settings, and then call ShowWindow to finally make us
+    // visible.
+
+    LaunchMode launchMode{};
+    _initialResizeAndRepositionWindow(_window->GetHandle(), _proposedRect, launchMode);
+
+    int nCmdShow = SW_SHOW;
+    if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
+    {
+        nCmdShow = SW_MAXIMIZE;
+    }
+
+    ShowWindow(_window->GetHandle(), nCmdShow);
 }
