@@ -58,6 +58,8 @@ namespace Microsoft::Console::VirtualTerminal
         ArrowLeft = VTID("D"),
         Home = VTID("H"),
         End = VTID("F"),
+        FocusIn = VTID("I"),
+        FocusOut = VTID("O"),
         MouseDown = VTID("<M"),
         MouseUp = VTID("<m"),
         Generic = VTID("~"), // Used for a whole bunch of possible keys
@@ -130,6 +132,8 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch);
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
+
+        void SetLookingForDSR(const bool looking) noexcept;
 
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;

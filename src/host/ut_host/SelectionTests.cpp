@@ -69,7 +69,7 @@ class SelectionTests
             for (auto iRect = 0; iRect < gsl::narrow<int>(selectionRects.size()); iRect++)
             {
                 // ensure each rectangle is exactly the width requested (block selection)
-                const SMALL_RECT* const psrRect = &selectionRects[iRect];
+                const auto psrRect = &selectionRects[iRect];
 
                 const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
 
@@ -130,7 +130,7 @@ class SelectionTests
 
     void VerifyGetSelectionRects_LineMode()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         const auto selectionRects = m_pSelection->GetSelectionRects();
         const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
@@ -147,14 +147,14 @@ class SelectionTests
             //    Remove from selection (but preserve the anchors themselves).
 
             // RULE #1: If 1 line, entire region selected.
-            bool fHaveOneLine = selectionRects.size() == 1;
+            auto fHaveOneLine = selectionRects.size() == 1;
 
             if (fHaveOneLine)
             {
-                SMALL_RECT srSelectionRect = m_pSelection->_srSelectionRect;
+                auto srSelectionRect = m_pSelection->_srSelectionRect;
                 VERIFY_ARE_EQUAL(srSelectionRect.Top, srSelectionRect.Bottom);
 
-                const SMALL_RECT* const psrRect = &selectionRects[0];
+                const auto psrRect = &selectionRects[0];
 
                 VERIFY_ARE_EQUAL(psrRect->Top, srSelectionRect.Top);
                 VERIFY_ARE_EQUAL(psrRect->Bottom, srSelectionRect.Bottom);
@@ -168,15 +168,15 @@ class SelectionTests
                 for (UINT iRect = 0; iRect < selectionRects.size(); iRect++)
                 {
                     // ensure each rectangle is exactly the width requested (block selection)
-                    const SMALL_RECT* const psrRect = &selectionRects[iRect];
+                    const auto psrRect = &selectionRects[iRect];
 
                     const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
 
                     VERIFY_ARE_EQUAL(psrRect->Top, sRectangleLineNumber);
                     VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
 
-                    bool fIsFirstLine = iRect == 0;
-                    bool fIsLastLine = iRect == selectionRects.size() - 1;
+                    auto fIsFirstLine = iRect == 0;
+                    auto fIsLastLine = iRect == selectionRects.size() - 1;
 
                     // for all lines except the last, the line should reach the right edge of the buffer
                     if (!fIsLastLine)
@@ -194,15 +194,15 @@ class SelectionTests
 
                 // RULE #3: Check first and last line have invalid regions removed, if applicable
                 UINT iFirst = 0;
-                UINT iLast = gsl::narrow<UINT>(selectionRects.size() - 1u);
+                auto iLast = gsl::narrow<UINT>(selectionRects.size() - 1u);
 
-                const SMALL_RECT* const psrFirst = &selectionRects[iFirst];
-                const SMALL_RECT* const psrLast = &selectionRects[iLast];
+                const auto psrFirst = &selectionRects[iFirst];
+                const auto psrLast = &selectionRects[iLast];
 
-                bool fRemoveRegion = false;
+                auto fRemoveRegion = false;
 
-                SMALL_RECT srSelectionRect = m_pSelection->_srSelectionRect;
-                COORD coordAnchor = m_pSelection->_coordSelectionAnchor;
+                auto srSelectionRect = m_pSelection->_srSelectionRect;
+                auto coordAnchor = m_pSelection->_coordSelectionAnchor;
 
                 // if the anchor is in the top right or bottom left corner, we must have removed a region. otherwise, it stays as is.
                 if (coordAnchor.Y == srSelectionRect.Top && coordAnchor.X == srSelectionRect.Right)
@@ -306,8 +306,8 @@ class SelectionTests
 
     void TestBisectSelectionDelta(SHORT sTargetX, SHORT sTargetY, SHORT sLength, SHORT sDeltaLeft, SHORT sDeltaRight)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& screenInfo = gci.GetActiveOutputBuffer();
 
         short sStringLength;
         COORD coordTargetPoint;
@@ -419,8 +419,8 @@ class SelectionInputTests
         m_state = new CommonState();
 
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
         {
@@ -446,7 +446,7 @@ class SelectionInputTests
 
     TEST_METHOD(TestGetInputLineBoundaries)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // 80x80 box
         const SHORT sRowWidth = 80;
 
@@ -457,7 +457,7 @@ class SelectionInputTests
         // false when no cooked read data exists
         VERIFY_IS_FALSE(gci.HasPendingCookedRead());
 
-        bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
+        auto fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);
 
         // prepare some read data
@@ -468,10 +468,10 @@ class SelectionInputTests
         // set up to clean up read data later
         auto cleanupCookedRead = wil::scope_exit([&]() { m_state->CleanupCookedReadData(); });
 
-        COOKED_READ_DATA& readData = gci.CookedReadData();
+        auto& readData = gci.CookedReadData();
 
         // backup text info position over remainder of text execution duration
-        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
+        auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
         COORD coordOldTextInfoPos;
         coordOldTextInfoPos.X = textBuffer.GetCursor().GetPosition().X;
         coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;
@@ -533,8 +533,8 @@ class SelectionInputTests
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         END_TEST_METHOD_PROPERTIES()
 
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& screenInfo = gci.GetActiveOutputBuffer();
 
         const std::wstring text(L"this is some test text.");
         screenInfo.Write(OutputCellIterator(text));
@@ -560,7 +560,7 @@ class SelectionInputTests
         {
             // We expect the result to be left of where we started.
             // It will point at the character just right of the space (or the beginning of the line).
-            COORD resultExpected = point;
+            auto resultExpected = point;
 
             do
             {
@@ -580,8 +580,8 @@ class SelectionInputTests
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         END_TEST_METHOD_PROPERTIES()
 
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& screenInfo = gci.GetActiveOutputBuffer();
 
         const std::wstring text(L"this is some test text.");
         screenInfo.Write(OutputCellIterator(text));
@@ -607,7 +607,7 @@ class SelectionInputTests
         {
             // We expect the result to be right of where we started.
 
-            COORD resultExpected = point;
+            auto resultExpected = point;
 
             do
             {

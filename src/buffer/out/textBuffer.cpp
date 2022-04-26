@@ -91,7 +91,7 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
     const size_t totalRows = TotalRowCount();
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const size_t offsetIndex = (_firstRow + index) % totalRows;
+    const auto offsetIndex = (_firstRow + index) % totalRows;
     return _storage.at(offsetIndex);
 }
 
@@ -107,7 +107,7 @@ ROW& TextBuffer::GetRowByOffset(const size_t index)
     const size_t totalRows = TotalRowCount();
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const size_t offsetIndex = (_firstRow + index) % totalRows;
+    const auto offsetIndex = (_firstRow + index) % totalRows;
     return _storage.at(offsetIndex);
 }
 
@@ -201,8 +201,8 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport 
 bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
-    const COORD coordPrevPosition = _GetPreviousFromCursor();
-    ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
+    const auto coordPrevPosition = _GetPreviousFromCursor();
+    auto& prevRow = GetRowByOffset(coordPrevPosition.Y);
     DbcsAttribute prevDbcsAttr;
     try
     {
@@ -214,8 +214,8 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
         return false;
     }
 
-    bool fValidSequence = true; // Valid until proven otherwise
-    bool fCorrectableByErase = false; // Can't be corrected until proven otherwise
+    auto fValidSequence = true; // Valid until proven otherwise
+    auto fCorrectableByErase = false; // Can't be corrected until proven otherwise
 
     // Here's the matrix of valid items:
     // N = None (single byte)
@@ -290,7 +290,7 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
     // older versions of conhost simply let pass by unflinching.
     LOG_HR_IF(E_NOT_VALID_STATE, !(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
 
-    bool fSuccess = true;
+    auto fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
     // We only need to compensate for leading bytes
     if (dbcsAttribute.IsLeading())
@@ -385,12 +385,12 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     }
 
     //  Get the row and write the cells
-    ROW& row = GetRowByOffset(target.Y);
+    auto& row = GetRowByOffset(target.Y);
     const auto newIt = row.WriteCells(givenIt, target.X, wrap, limitRight);
 
     // Take the cell distance written and notify that it needs to be repainted.
     const auto written = newIt.GetCellDistance(givenIt);
-    const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
+    const auto paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
     TriggerRedraw(paint);
 
     return newIt;
@@ -410,19 +410,19 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
                                  const TextAttribute attr)
 {
     // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
-    bool fSuccess = _PrepareForDoubleByteSequence(dbcsAttribute);
+    auto fSuccess = _PrepareForDoubleByteSequence(dbcsAttribute);
 
     if (fSuccess)
     {
         // Get the current cursor position
-        short const iRow = GetCursor().GetPosition().Y; // row stored as logical position, not array position
-        short const iCol = GetCursor().GetPosition().X; // column logical and array positions are equal.
+        const auto iRow = GetCursor().GetPosition().Y; // row stored as logical position, not array position
+        const auto iCol = GetCursor().GetPosition().X; // column logical and array positions are equal.
 
         // Get the row associated with the given logical position
-        ROW& Row = GetRowByOffset(iRow);
+        auto& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        CharRow& charRow = Row.GetCharRow();
+        auto& charRow = Row.GetCharRow();
 
         try
         {
@@ -506,7 +506,7 @@ bool TextBuffer::IncrementCursor()
     // Move the cursor one position to the right
     GetCursor().IncrementXPosition(1);
 
-    bool fSuccess = true;
+    auto fSuccess = true;
     // If we've passed the final valid column...
     if (GetCursor().GetPosition().X > iFinalColumnIndex)
     {
@@ -527,8 +527,8 @@ bool TextBuffer::IncrementCursor()
 // - true if we successfully moved the cursor.
 bool TextBuffer::NewlineCursor()
 {
-    bool fSuccess = false;
-    short const iFinalRowIndex = GetSize().BottomInclusive();
+    auto fSuccess = false;
+    const auto iFinalRowIndex = GetSize().BottomInclusive();
 
     // Reset the cursor position to 0 and move down one line
     GetCursor().SetXPosition(0);
@@ -562,7 +562,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     if (_isActiveBuffer)
     {
-        _renderer.TriggerCircling();
+        _renderer.TriggerFlush(true);
     }
 
     // Prune hyperlinks to delete obsolete references
@@ -576,7 +576,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
         // the current background color, but with no meta attributes set.
         fillAttributes.SetStandardErase();
     }
-    const bool fSuccess = _storage.at(_firstRow).Reset(fillAttributes);
+    const auto fSuccess = _storage.at(_firstRow).Reset(fillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -618,7 +618,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
-    bool fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop); // this row is empty, and we're not at the top
+    auto fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop); // this row is empty, and we're not at the top
     while (fDoBackUp)
     {
         coordEndOfText.Y--;
@@ -645,7 +645,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
 // - NOTE: Will return 0,0 if already in the top left corner
 COORD TextBuffer::_GetPreviousFromCursor() const
 {
-    COORD coordPosition = GetCursor().GetPosition();
+    auto coordPosition = GetCursor().GetPosition();
 
     // If we're not at the left edge, simply move the cursor to the left by one
     if (coordPosition.X > 0)
@@ -826,7 +826,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             auto fillAttrs = GetCurrentAttributes();
             fillAttrs.SetStandardErase();
             const size_t fillOffset = GetLineWidth(rowIndex);
-            const size_t fillLength = GetSize().Width() - fillOffset;
+            const auto fillLength = GetSize().Width() - fillOffset;
             const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
             row.WriteCells(fillData, fillOffset, false);
             // We also need to make sure the cursor is clamped within the new width.
@@ -917,7 +917,7 @@ void TextBuffer::Reset()
         const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
 
         // rotate rows until the top row is at index 0
-        for (int i = 0; i < TopRowIndex; i++)
+        for (auto i = 0; i < TopRowIndex; i++)
         {
             _storage.emplace_back(std::move(_storage.front()));
             _storage.erase(_storage.begin());
@@ -1081,7 +1081,7 @@ ROW& TextBuffer::_GetFirstRow()
 // - will throw exception if called with the first row of the text buffer
 ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 {
-    int prevRowIndex = Row.GetId() - 1;
+    auto prevRowIndex = Row.GetId() - 1;
     if (prevRowIndex < 0)
     {
         prevRowIndex = TotalRowCount() - 1;
@@ -1167,9 +1167,9 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
 // - The COORD for the first character on the current/previous READABLE "word" (inclusive)
 const COORD TextBuffer::_GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const
 {
-    COORD result = target;
+    auto result = target;
     const auto bufferSize = GetSize();
-    bool stayAtOrigin = false;
+    auto stayAtOrigin = false;
 
     // ignore left boundary. Continue until readable text found
     while (_GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
@@ -1212,7 +1212,7 @@ const COORD TextBuffer::_GetWordStartForAccessibility(const COORD target, const 
 // - The COORD for the first character on the current word or delimiter run (stopped by the left margin)
 const COORD TextBuffer::_GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const
 {
-    COORD result = target;
+    auto result = target;
     const auto bufferSize = GetSize();
 
     const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
@@ -1284,7 +1284,7 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD limit) const
 {
     const auto bufferSize{ GetSize() };
-    COORD result{ target };
+    auto result{ target };
 
     if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
@@ -1341,7 +1341,7 @@ const COORD TextBuffer::_GetWordEndForSelection(const COORD target, const std::w
         return target;
     }
 
-    COORD result = target;
+    auto result = target;
     const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
 
     // expand right until we hit the right boundary or a different delimiter class
@@ -1465,7 +1465,7 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 // - pos - The COORD for the first cell of the current glyph (inclusive)
 const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::point> limitOptional) const
 {
-    COORD resultPos = pos.to_win32_coord();
+    auto resultPos = pos.to_win32_coord();
     const auto bufferSize = GetSize();
     const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
@@ -1493,7 +1493,7 @@ const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<t
 // - pos - The COORD for the last cell of the current glyph (exclusive)
 const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
-    COORD resultPos = pos.to_win32_coord();
+    auto resultPos = pos.to_win32_coord();
     const auto bufferSize = GetSize();
     const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
@@ -1569,7 +1569,7 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
 // - pos - The COORD for the first cell of the previous glyph (inclusive)
 bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional) const
 {
-    COORD resultPos = pos.to_win32_coord();
+    auto resultPos = pos.to_win32_coord();
     const auto bufferSize = GetSize();
     const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
@@ -1582,7 +1582,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
     }
 
     // try to move. If we can't, we're done.
-    const bool success = bufferSize.DecrementInBounds(resultPos, true);
+    const auto success = bufferSize.DecrementInBounds(resultPos, true);
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
         bufferSize.DecrementInBounds(resultPos, true);
@@ -1713,10 +1713,10 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    const bool formatWrappedRows) const
 {
     TextAndColor data;
-    const bool copyTextColor = GetAttributeColors != nullptr;
+    const auto copyTextColor = GetAttributeColors != nullptr;
 
     // preallocate our vectors to reduce reallocs
-    size_t const rows = selectionRects.size();
+    const auto rows = selectionRects.size();
     data.text.reserve(rows);
     if (copyTextColor)
     {
@@ -1729,7 +1729,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
     {
         const UINT iRow = selectionRects.at(i).Top;
 
-        const Viewport highlight = Viewport::FromInclusive(selectionRects.at(i));
+        const auto highlight = Viewport::FromInclusive(selectionRects.at(i));
 
         // retrieve the data from the screen buffer
         auto it = GetCellDataAt(highlight.Origin(), highlight);
@@ -1774,7 +1774,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         }
 
         // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
-        const bool shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).WasWrapForced();
+        const auto shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).WasWrapForced();
 
         if (trimTrailingWhitespace)
         {
@@ -1806,7 +1806,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                 if (copyTextColor)
                 {
                     // can't see CR/LF so just use black FG & BK
-                    COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
+                    const auto Blackness = RGB(0x00, 0x00, 0x00);
                     selectionFgAttr.push_back(Blackness);
                     selectionFgAttr.push_back(Blackness);
                     selectionBkAttr.push_back(Blackness);
@@ -1883,7 +1883,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
         }
 
         // copy text and info color from buffer
-        bool hasWrittenAnyText = false;
+        auto hasWrittenAnyText = false;
         std::optional<COLORREF> fgColor = std::nullopt;
         std::optional<COLORREF> bkColor = std::nullopt;
         for (size_t row = 0; row < rows.text.size(); row++)
@@ -1931,7 +1931,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
                     break;
                 }
 
-                bool colorChanged = false;
+                auto colorChanged = false;
                 if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
                 {
                     fgColor = rows.FgAttr.at(row).at(col);
@@ -1990,10 +1990,10 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
         constexpr size_t ClipboardHeaderSize = 157;
 
         // these values are byte offsets from start of clipboard
-        const size_t htmlStartPos = ClipboardHeaderSize;
-        const size_t htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.tellp());
-        const size_t fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
-        const size_t fragEndPos = htmlEndPos - HtmlFooter.length();
+        const auto htmlStartPos = ClipboardHeaderSize;
+        const auto htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.tellp());
+        const auto fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
+        const auto fragEndPos = htmlEndPos - HtmlFooter.length();
 
         // header required by HTML 0.9 format
         std::ostringstream clipHeaderBuilder;
@@ -2050,7 +2050,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
         // keys are colors represented by COLORREF
         // values are indices of the corresponding colors in the color table
         std::unordered_map<COLORREF, int> colorMap;
-        int nextColorIndex = 1; // leave 0 for the default color and start from 1.
+        auto nextColorIndex = 1; // leave 0 for the default color and start from 1.
 
         // RTF color table
         std::ostringstream colorTableBuilder;
@@ -2103,7 +2103,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                     break;
                 }
 
-                bool colorChanged = false;
+                auto colorChanged = false;
                 if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
                 {
                     fgColor = rows.FgAttr.at(row).at(col);
@@ -2120,7 +2120,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                 {
                     writeAccumulatedChars(false);
 
-                    int bkColorIndex = 0;
+                    auto bkColorIndex = 0;
                     if (colorMap.find(bkColor.value()) != colorMap.end())
                     {
                         // color already exists in the map, just retrieve the index
@@ -2137,7 +2137,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                         bkColorIndex = nextColorIndex++;
                     }
 
-                    int fgColorIndex = 0;
+                    auto fgColorIndex = 0;
                     if (colorMap.find(fgColor.value()) != colorMap.end())
                     {
                         // color already exists in the map, just retrieve the index
@@ -2234,31 +2234,31 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
                            std::optional<std::reference_wrapper<PositionInformation>> positionInfo)
 {
-    const Cursor& oldCursor = oldBuffer.GetCursor();
-    Cursor& newCursor = newBuffer.GetCursor();
+    const auto& oldCursor = oldBuffer.GetCursor();
+    auto& newCursor = newBuffer.GetCursor();
 
     // We need to save the old cursor position so that we can
     // place the new cursor back on the equivalent character in
     // the new buffer.
-    const COORD cOldCursorPos = oldCursor.GetPosition();
-    const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport);
+    const auto cOldCursorPos = oldCursor.GetPosition();
+    const auto cOldLastChar = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport);
 
     const short cOldRowsTotal = cOldLastChar.Y + 1;
 
     COORD cNewCursorPos = { 0 };
-    bool fFoundCursorPos = false;
-    bool foundOldMutable = false;
-    bool foundOldVisible = false;
-    HRESULT hr = S_OK;
+    auto fFoundCursorPos = false;
+    auto foundOldMutable = false;
+    auto foundOldVisible = false;
+    auto hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     short iOldRow = 0;
     for (; iOldRow < cOldRowsTotal; iOldRow++)
     {
         // Fetch the row and its "right" which is the last printable character.
-        const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
-        const short cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
-        const CharRow& charRow = row.GetCharRow();
-        short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+        const auto& row = oldBuffer.GetRowByOffset(iOldRow);
+        const auto cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
+        const auto& charRow = row.GetCharRow();
+        auto iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
 
         // If we're starting a new row, try and preserve the line rendition
         // from the row in the original buffer.
@@ -2297,8 +2297,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // the "right" boundary, which is one past the final valid
         // character)
         short iOldCol = 0;
-        auto chars{ row.GetCharRow().cbegin() };
-        auto attrs{ row.GetAttrRow().begin() };
         const auto copyRight = iRight;
         for (; iOldCol < copyRight; iOldCol++)
         {
@@ -2311,9 +2309,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto glyph = chars->Char();
-                const auto dbcsAttr = chars->DbcsAttr();
-                const auto textAttr = *attrs;
+                const auto glyph = row.GetCharRow().GlyphAt(iOldCol);
+                const auto dbcsAttr = row.GetCharRow().DbcsAttrAt(iOldCol);
+                const auto textAttr = row.GetAttrRow().GetAttrByColumn(iOldCol);
 
                 if (!newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr))
                 {
@@ -2322,9 +2320,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                 }
             }
             CATCH_RETURN();
-
-            ++chars;
-            ++attrs;
         }
 
         // GH#32: Copy the attributes from the rest of the row into this new buffer.
@@ -2353,23 +2348,20 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         const auto newWidth = newBuffer.GetLineWidth(newRowY);
         // Stop when we get to the end of the buffer width, or the new position
         // for inserting an attr would be past the right of the new buffer.
-        for (short copyAttrCol = iOldCol;
+        for (auto copyAttrCol = iOldCol;
              copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
-             copyAttrCol++)
+             copyAttrCol++, newAttrColumn++)
         {
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto textAttr = *attrs;
+                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
                 if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
                 {
                     break;
                 }
             }
             CATCH_LOG(); // Not worth dying over.
-
-            ++newAttrColumn;
-            ++attrs;
         }
 
         // If we found the old row that the caller was interested in, set the
@@ -2444,7 +2436,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                     // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
                     // |                   |
                     //  ^ and the cursor is now here.
-                    const COORD coordNewCursor = newCursor.GetPosition();
+                    const auto coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
                         if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).WasWrapForced())
@@ -2468,7 +2460,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
          iOldRow < oldHeight && newRowY < newHeight;
          iOldRow++)
     {
-        const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
+        const auto& row = oldBuffer.GetRowByOffset(iOldRow);
 
         // Optimization: Since all these rows are below the last printable char,
         // we can reasonably assume that they are filled with just spaces.
@@ -2502,9 +2494,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Advance the cursor to the same offset as before
             // get the number of newlines and spaces between the old end of text and the old cursor,
             //   then advance that many newlines and chars
-            int iNewlines = cOldCursorPos.Y - cOldLastChar.Y;
-            const int iIncrements = cOldCursorPos.X - cOldLastChar.X;
-            const COORD cNewLastChar = newBuffer.GetLastNonSpaceCharacter();
+            auto iNewlines = cOldCursorPos.Y - cOldLastChar.Y;
+            const auto iIncrements = cOldCursorPos.X - cOldLastChar.X;
+            const auto cNewLastChar = newBuffer.GetLastNonSpaceCharacter();
 
             // If the last row of the new buffer wrapped, there's going to be one less newline needed,
             //   because the cursor is already on the next line
@@ -2522,7 +2514,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                 }
             }
 
-            for (int r = 0; r < iNewlines; r++)
+            for (auto r = 0; r < iNewlines; r++)
             {
                 if (!newBuffer.NewlineCursor())
                 {
@@ -2532,7 +2524,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
             if (SUCCEEDED(hr))
             {
-                for (int c = 0; c < iIncrements - 1; c++)
+                for (auto c = 0; c < iIncrements - 1; c++)
                 {
                     if (!newBuffer.IncrementCursor())
                     {
@@ -2547,7 +2539,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     if (SUCCEEDED(hr))
     {
         // Save old cursor size before we delete it
-        ULONG const ulSize = oldCursor.GetSize();
+        const auto ulSize = oldCursor.GetSize();
 
         // Set size back to real size as it will be taking over the rendering duties.
         newCursor.SetSize(ulSize);
@@ -2734,14 +2726,14 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
             size_t prefixSize = 0;
-            for (const std::vector<wchar_t> parsedGlyph : Utf16Parser::Parse(i->prefix().str()))
+            for (const auto parsedGlyph : Utf16Parser::Parse(i->prefix().str()))
             {
                 const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
                 prefixSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto start = lenUpToThis + prefixSize;
             size_t matchSize = 0;
-            for (const std::vector<wchar_t> parsedGlyph : Utf16Parser::Parse(i->str()))
+            for (const auto parsedGlyph : Utf16Parser::Parse(i->str()))
             {
                 const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
                 matchSize += IsGlyphFullWidth(glyph) ? 2 : 1;

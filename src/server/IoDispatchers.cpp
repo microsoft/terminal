@@ -44,8 +44,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 {
     NTSTATUS Status;
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &pMessage->CreateObject;
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto CreateInformation = &pMessage->CreateObject;
 
     LockConsole();
 
@@ -75,7 +75,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
     {
-        SCREEN_INFORMATION& ScreenInformation = gci.GetActiveOutputBuffer().GetMainBuffer();
+        auto& ScreenInformation = gci.GetActiveOutputBuffer().GetMainBuffer();
         Status = NTSTATUS_FROM_HRESULT(ScreenInformation.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                           CreateInformation->DesiredAccess,
                                                                           CreateInformation->ShareMode,
@@ -142,7 +142,7 @@ static bool _isInteractiveUserSession()
     }
 
     // don't call CloseWindowStation on GetProcessWindowStation handle or switch this to a unique_hwinsta
-    HWINSTA winsta{ GetProcessWindowStation() };
+    auto winsta{ GetProcessWindowStation() };
     if (winsta)
     {
         USEROBJECTFLAGS flags{};
@@ -278,8 +278,8 @@ static bool _shouldAttemptHandoff(const Globals& globals,
 // - The response data to this request message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API_MSG pReceiveMsg)
 {
-    Globals& Globals = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = Globals.getConsoleInformation();
+    auto& Globals = ServiceLocator::LocateGlobals();
+    auto& gci = Globals.getConsoleInformation();
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
@@ -302,8 +302,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         UnlockConsole();
     });
 
-    DWORD const dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
-    DWORD const dwThreadId = (DWORD)pReceiveMsg->Descriptor.Object;
+    const auto dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
+    const auto dwThreadId = (DWORD)pReceiveMsg->Descriptor.Object;
 
     CONSOLE_API_CONNECTINFO Cac;
     Status = ConsoleInitializeConnectInfo(pReceiveMsg, &Cac);
@@ -456,7 +456,22 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         return pReceiveMsg;
     }
 
-    gci.ProcessHandleList.ModifyConsoleProcessFocus(WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS));
+    // For future code archeologists: GH#2988
+    //
+    // Here, the console calls ConsoleControl(ConsoleSetForeground,...) with a
+    // flag depending on if the console is focused or not. This is surprisingly
+    // load bearing. This allows windows spawned by console processes to bring
+    // themselves to the foreground _when the console is focused_.
+    // (Historically, this is also called in the WndProc, when focus changes).
+    //
+    // Notably, before 2022, ConPTY was _never_ focused, so windows could never
+    // bring themselves to the foreground when run from a ConPTY console. We're
+    // not blanket granting the SetForeground right to all console apps when run
+    // in ConPTY. It's the responsibility of the hosting terminal emulator to
+    // always tell ConPTY when a particular instance is focused.
+    const auto hasFocus{ WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS) };
+    const auto grantSetForeground{ hasFocus };
+    gci.ProcessHandleList.ModifyConsoleProcessFocus(grantSetForeground);
 
     // Create the handles.
 
@@ -486,7 +501,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     pReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
 
     auto deviceComm{ ServiceLocator::LocateGlobals().pDeviceComm };
-    CD_CONNECTION_INFORMATION ConnectionInformation = ProcessData->GetConnectionInformation(deviceComm);
+    auto ConnectionInformation = ProcessData->GetConnectionInformation(deviceComm);
     pReceiveMsg->Complete.Write.Data = &ConnectionInformation;
     pReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
@@ -511,7 +526,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
 
-    ConsoleProcessHandle* const pProcessData = pMessage->GetProcessHandle();
+    const auto pProcessData = pMessage->GetProcessHandle();
 
     auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
     if (pNotifier)

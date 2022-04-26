@@ -68,7 +68,7 @@ BOOL APIENTRY OneCoreDelay::AddConsoleAliasA(
     _In_ LPSTR Target,
     _In_ LPSTR ExeName)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -95,7 +95,7 @@ BOOL APIENTRY OneCoreDelay::AddConsoleAliasW(
     _In_ LPWSTR Target,
     _In_ LPWSTR ExeName)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -123,7 +123,7 @@ DWORD APIENTRY OneCoreDelay::GetConsoleAliasA(
     _In_ DWORD TargetBufferLength,
     _In_ LPSTR ExeName)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -151,7 +151,7 @@ DWORD APIENTRY OneCoreDelay::GetConsoleAliasW(
     _In_ DWORD TargetBufferLength,
     _In_ LPWSTR ExeName)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -178,7 +178,7 @@ BOOL WINAPI OneCoreDelay::GetCurrentConsoleFont(
     _In_ BOOL bMaximumWindow,
     _Out_ PCONSOLE_FONT_INFO lpConsoleCurrentFont)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -205,7 +205,7 @@ BOOL WINAPI OneCoreDelay::GetCurrentConsoleFontEx(
     _In_ BOOL bMaximumWindow,
     _Out_ PCONSOLE_FONT_INFOEX lpConsoleCurrentFontEx)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -232,7 +232,7 @@ BOOL WINAPI OneCoreDelay::SetCurrentConsoleFontEx(
     _In_ BOOL bMaximumWindow,
     _In_ PCONSOLE_FONT_INFOEX lpConsoleCurrentFontEx)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -258,7 +258,7 @@ COORD WINAPI OneCoreDelay::GetConsoleFontSize(
     _In_ HANDLE hConsoleOutput,
     _In_ DWORD nFont)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -283,7 +283,7 @@ COORD WINAPI OneCoreDelay::GetConsoleFontSize(
 BOOL WINAPI OneCoreDelay::GetNumberOfConsoleMouseButtons(
     _Out_ LPDWORD lpNumberOfMouseButtons)
 {
-    HMODULE h = GetKernel32();
+    auto h = GetKernel32();
 
     if (h != nullptr)
     {
@@ -308,7 +308,7 @@ BOOL WINAPI OneCoreDelay::GetNumberOfConsoleMouseButtons(
 HMENU WINAPI OneCoreDelay::GetMenu(
     _In_ HWND hWnd)
 {
-    HMODULE h = GetUser32();
+    auto h = GetUser32();
 
     if (h != nullptr)
     {

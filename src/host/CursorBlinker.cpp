@@ -12,7 +12,7 @@ using namespace Microsoft::Console::Render;
 
 static void CALLBACK CursorTimerRoutineWrapper(_Inout_ PTP_CALLBACK_INSTANCE /*Instance*/, _Inout_opt_ PVOID /*Context*/, _Inout_ PTP_TIMER /*Timer*/)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // There's a slight race condition here.
     // CreateThreadpoolTimer callbacks may be scheduled even after they were canceled.
@@ -41,7 +41,7 @@ void CursorBlinker::UpdateSystemMetrics() noexcept
     _uCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
 
     // If animations are disabled, or the blink rate is infinite, blinking is not allowed.
-    BOOL animationsEnabled = TRUE;
+    auto animationsEnabled = TRUE;
     SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
     auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
     renderSettings.SetRenderMode(RenderSettings::Mode::BlinkAllowed, animationsEnabled && _uCaretBlinkTime != INFINITE);
@@ -49,7 +49,7 @@ void CursorBlinker::UpdateSystemMetrics() noexcept
 
 void CursorBlinker::SettingsChanged() noexcept
 {
-    DWORD const dwCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
+    const auto dwCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
 
     if (dwCaretBlinkTime != _uCaretBlinkTime)
     {
@@ -82,8 +82,10 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
     auto& cursor = buffer.GetCursor();
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    const auto inConpty{ gci.IsInVtIoMode() };
 
-    if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    // GH#2988: ConPTY can now be focused, but it doesn't need to do any of this work either.
+    if (inConpty || !WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }
@@ -109,7 +111,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
 
         // Send accessibility information
         {
-            IAccessibilityNotifier::ConsoleCaretEventFlags flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
+            auto flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
 
             // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
             if (WI_IsFlagSet(gci.Flags, CONSOLE_SELECTING))

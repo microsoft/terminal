@@ -18,9 +18,9 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumRadioButtonTemplate"
+            <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -51,12 +51,12 @@
                 <local:SettingContainer x:Uid="Profile_AntialiasingMode"
                                         ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"
                                         HasSettingValue="{x:Bind Profile.HasAntialiasingMode, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
-                                       SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}" />
+                                        SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
                 <!--  AltGr Aliasing  -->
@@ -94,12 +94,12 @@
                 <local:SettingContainer x:Uid="Profile_CloseOnExit"
                                         ClearSettingValue="{x:Bind Profile.ClearCloseOnExit}"
                                         HasSettingValue="{x:Bind Profile.HasCloseOnExit, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
-                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
-                                       SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}" />
+                                        SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
                 </local:SettingContainer>
 
                 <!--  Bell Style  -->
@@ -125,6 +125,16 @@
                                         SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}"
                                         Visibility="{x:Bind Profile.AtlasEngineAvailable}">
                     <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+
+                <!--  VtPassthrough  -->
+                <local:SettingContainer x:Uid="Profile_VtPassthrough"
+                                        ClearSettingValue="{x:Bind Profile.ClearVtPassthrough}"
+                                        HasSettingValue="{x:Bind Profile.HasVtPassthrough, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.VtPassthroughOverrideSource, Mode=OneWay}"
+                                        Visibility="{x:Bind Profile.VtPassthroughAvailable}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.VtPassthrough, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>

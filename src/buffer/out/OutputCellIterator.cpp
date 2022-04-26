@@ -97,14 +97,14 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
 // Arguments:
 // - utf16Text - UTF-16 text range
 // - attribute - Color to apply over the entire range
-OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute) :
+OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit) :
     _mode(Mode::Loose),
     _currentView(s_GenerateView(utf16Text, attribute)),
     _run(utf16Text),
     _attr(attribute),
     _distance(0),
     _pos(0),
-    _fillLimit(0)
+    _fillLimit(fillLimit)
 {
 }
 
@@ -302,7 +302,7 @@ OutputCellIterator& OutputCellIterator::operator++()
 // - Reference to self after advancement.
 OutputCellIterator OutputCellIterator::operator++(int)
 {
-    auto temp(*this);
+    auto temp = *this;
     operator++();
     return temp;
 }
@@ -478,7 +478,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch, const Text
 // - Object representing the view into this cell
 OutputCellView OutputCellIterator::s_GenerateViewLegacyAttr(const WORD& legacyAttr) noexcept
 {
-    WORD cleanAttr = legacyAttr;
+    auto cleanAttr = legacyAttr;
     WI_ClearAllFlags(cleanAttr, COMMON_LVB_SBCSDBCS); // don't use legacy lead/trailing byte flags for colors
 
     const TextAttribute attr(cleanAttr);

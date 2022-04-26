@@ -39,12 +39,12 @@ void UtilsTests::TestClampToShortMax()
     const short min = 1;
 
     // Test outside the lower end of the range
-    const short minExpected = min;
+    const auto minExpected = min;
     auto minActual = ClampToShortMax(0, min);
     VERIFY_ARE_EQUAL(minExpected, minActual);
 
     // Test negative numbers
-    const short negativeExpected = min;
+    const auto negativeExpected = min;
     auto negativeActual = ClampToShortMax(-1, min);
     VERIFY_ARE_EQUAL(negativeExpected, negativeActual);
 
@@ -190,7 +190,7 @@ void UtilsTests::TestFilterStringForPaste()
 
 void UtilsTests::TestStringToUint()
 {
-    bool success = false;
+    auto success = false;
     unsigned int value = 0;
     success = StringToUint(L"", value);
     VERIFY_IS_FALSE(success);
@@ -326,14 +326,14 @@ void UtilsTests::TestColorFromXTermColor()
 
 void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)
 {
-    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    auto color = ColorFromXTermColor(wstr);
     VERIFY_IS_TRUE(color.has_value());
     VERIFY_ARE_EQUAL(colorValue, (COLORREF)color.value());
 }
 
 void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)
 {
-    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    auto color = ColorFromXTermColor(wstr);
     VERIFY_IS_FALSE(color.has_value());
 }
 

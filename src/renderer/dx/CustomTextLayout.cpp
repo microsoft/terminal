@@ -18,7 +18,7 @@ using namespace Microsoft::Console::Render;
 // - Creates a CustomTextLayout object for calculating which glyphs should be placed and where
 // Arguments:
 // - dxFontRenderData - The DirectWrite font render data for our layout
-CustomTextLayout::CustomTextLayout(gsl::not_null<DxFontRenderData*> const fontRenderData) :
+CustomTextLayout::CustomTextLayout(const gsl::not_null<DxFontRenderData*> fontRenderData) :
     _fontRenderData{ fontRenderData },
     _formatInUse{ fontRenderData->DefaultTextFormat().Get() },
     _fontInUse{ fontRenderData->DefaultFontFace().Get() },
@@ -137,9 +137,9 @@ try
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
 
-    DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
-    DWRITE_FONT_STYLE style = _fontRenderData->DefaultFontStyle();
-    const DWRITE_FONT_STRETCH stretch = _fontRenderData->DefaultFontStretch();
+    auto weight = _fontRenderData->DefaultFontWeight();
+    auto style = _fontRenderData->DefaultFontStyle();
+    const auto stretch = _fontRenderData->DefaultFontStretch();
 
     if (drawingContext->useBoldFont)
     {
@@ -191,7 +191,7 @@ CATCH_RETURN()
     {
         const auto textLength = gsl::narrow<UINT32>(_text.size());
 
-        BOOL isTextSimple = FALSE;
+        auto isTextSimple = FALSE;
         UINT32 uiLengthRead = 0;
 
         // Start from the beginning.
@@ -199,7 +199,7 @@ CATCH_RETURN()
 
         _glyphIndices.resize(textLength);
 
-        const HRESULT hr = _fontRenderData->Analyzer()->GetTextComplexity(
+        const auto hr = _fontRenderData->Analyzer()->GetTextComplexity(
             _text.c_str(),
             textLength,
             _fontInUse,
@@ -285,7 +285,7 @@ CATCH_RETURN()
         const auto textLength = gsl::narrow<UINT32>(_text.size());
 
         // Estimate the maximum number of glyph indices needed to hold a string.
-        const UINT32 estimatedGlyphCount = _EstimateGlyphCount(textLength);
+        const auto estimatedGlyphCount = _EstimateGlyphCount(textLength);
 
         _glyphIndices.resize(estimatedGlyphCount);
         _glyphOffsets.resize(estimatedGlyphCount);
@@ -337,9 +337,9 @@ CATCH_RETURN()
         // will shape as if the line is not broken.
 
         Run& run = _runs.at(runIndex);
-        const UINT32 textStart = run.textStart;
-        const UINT32 textLength = run.textLength;
-        UINT32 maxGlyphCount = gsl::narrow<UINT32>(_glyphIndices.size() - glyphStart);
+        const auto textStart = run.textStart;
+        const auto textLength = run.textLength;
+        auto maxGlyphCount = gsl::narrow<UINT32>(_glyphIndices.size() - glyphStart);
         UINT32 actualGlyphCount = 0;
 
         run.glyphStart = glyphStart;
@@ -360,7 +360,7 @@ CATCH_RETURN()
         if (textLength > maxGlyphCount)
         {
             maxGlyphCount = _EstimateGlyphCount(textLength);
-            const UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
+            const auto totalGlyphsArrayCount = glyphStart + maxGlyphCount;
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
@@ -377,7 +377,7 @@ CATCH_RETURN()
             _glyphDesignUnitAdvances.resize(textLength);
             _glyphAdvances.resize(textLength);
 
-            USHORT designUnitsPerEm = metrics.designUnitsPerEm;
+            auto designUnitsPerEm = metrics.designUnitsPerEm;
 
             RETURN_IF_FAILED(_fontInUse->GetDesignGlyphAdvances(
                 textLength,
@@ -412,10 +412,10 @@ CATCH_RETURN()
 
         // Get the glyphs from the text, retrying if needed.
 
-        int tries = 0;
+        auto tries = 0;
 
 #pragma warning(suppress : 26485) // so we can pass in the fontFeatureLengths to GetGlyphs without the analyzer complaining
-        HRESULT hr = S_OK;
+        auto hr = S_OK;
         do
         {
             hr = _fontRenderData->Analyzer()->GetGlyphs(
@@ -442,7 +442,7 @@ CATCH_RETURN()
             {
                 // Try again using a larger buffer.
                 maxGlyphCount = _EstimateGlyphCount(maxGlyphCount);
-                const UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
+                const auto totalGlyphsArrayCount = glyphStart + maxGlyphCount;
 
                 glyphProps.resize(maxGlyphCount);
                 _glyphIndices.resize(totalGlyphsArrayCount);
@@ -874,7 +874,7 @@ CATCH_RETURN();
         auto mutableOrigin = origin;
 
         // Draw each run separately.
-        for (INT32 runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
+        for (auto runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
         {
             // Get the run
             const Run& run = _runs.at(runIndex);
@@ -889,8 +889,8 @@ CATCH_RETURN();
             // Then we will draw them in the order abcdGFEh
             else
             {
-                const INT32 originalRunIndex = runIndex;
-                INT32 lastIndexRTL = runIndex;
+                const auto originalRunIndex = runIndex;
+                auto lastIndexRTL = runIndex;
 
                 // Step 1: Get to the last contiguous RTL run from here
                 while (lastIndexRTL < gsl::narrow<INT32>(_runs.size()) - 1) // only could ever advance if there's something left
@@ -1084,7 +1084,7 @@ CATCH_RETURN();
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
                                                                         _Out_ UINT32* textLength,
-                                                                        _Outptr_result_z_ WCHAR const** localeName) noexcept
+                                                                        _Outptr_result_z_ const WCHAR** localeName) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
     RETURN_HR_IF_NULL(E_INVALIDARG, localeName);
@@ -1131,7 +1131,7 @@ CATCH_RETURN();
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPosition,
                                                                             UINT32 textLength,
-                                                                            _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis)
+                                                                            _In_ const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis)
 {
     try
     {
@@ -1292,7 +1292,7 @@ CATCH_RETURN();
             {
                 UINT32 mappedLength = 0;
                 ::Microsoft::WRL::ComPtr<IDWriteFontFace5> mappedFont;
-                FLOAT scale = 0.0f;
+                auto scale = 0.0f;
 
                 fallback1->MapCharacters(source,
                                          textPosition,
@@ -1322,7 +1322,7 @@ CATCH_RETURN();
             {
                 UINT32 mappedLength = 0;
                 ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
-                FLOAT scale = 0.0f;
+                auto scale = 0.0f;
 
                 fallback->MapCharacters(source,
                                         textPosition,
@@ -1438,7 +1438,7 @@ CATCH_RETURN();
 // - textLength - the length of the substring operation
 // Result:
 // - S_OK, STL/GSL errors, or an E_ABORT from mathematical failures.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source,
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(const gsl::not_null<IDWriteTextAnalysisSource*> source,
                                                                              UINT32 textPosition,
                                                                              UINT32 textLength)
 try
@@ -1548,14 +1548,14 @@ CATCH_RETURN();
     const auto originalRunIndex = _runIndex;
 
     auto& run = _runs.at(originalRunIndex);
-    UINT32 runTextLength = run.textLength;
+    auto runTextLength = run.textLength;
 
     // Split the tail if needed (the length remaining is less than the
     // current run's size).
     if (textLength < runTextLength)
     {
         runTextLength = textLength; // Limit to what's actually left.
-        const UINT32 runTextStart = run.textStart;
+        const auto runTextStart = run.textStart;
 
         _SplitCurrentRun(runTextStart + runTextLength);
     }
@@ -1612,13 +1612,13 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 // - <none> - Updates internal state, the back half will be selected after running
 void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 {
-    const UINT32 runTextStart = _runs.at(_runIndex).textStart;
+    const auto runTextStart = _runs.at(_runIndex).textStart;
 
     if (splitPosition <= runTextStart)
         return; // no change
 
     // Grow runs by one.
-    const size_t totalRuns = _runs.size();
+    const auto totalRuns = _runs.size();
     try
     {
         _runs.resize(totalRuns + 1);
@@ -1629,12 +1629,12 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     }
 
     // Copy the old run to the end.
-    LinkedRun& frontHalf = _runs.at(_runIndex);
-    LinkedRun& backHalf = _runs.back();
+    auto& frontHalf = _runs.at(_runIndex);
+    auto& backHalf = _runs.back();
     backHalf = frontHalf;
 
     // Adjust runs' text positions and lengths.
-    const UINT32 splitPoint = splitPosition - runTextStart;
+    const auto splitPoint = splitPosition - runTextStart;
     backHalf.textStart += splitPoint;
     backHalf.textLength -= splitPoint;
     frontHalf.textLength = splitPoint;

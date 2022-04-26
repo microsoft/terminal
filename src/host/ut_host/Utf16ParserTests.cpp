@@ -32,7 +32,7 @@ class Utf16ParserTests
             wstr.push_back(charData.at(0));
         }
 
-        const std::vector<std::vector<wchar_t>> result = Utf16Parser::Parse(wstr);
+        const auto result = Utf16Parser::Parse(wstr);
 
         VERIFY_ARE_EQUAL(expected.size(), result.size());
         for (size_t i = 0; i < result.size(); ++i)
@@ -45,7 +45,7 @@ class Utf16ParserTests
     TEST_METHOD(CanParseSurrogatePairs)
     {
         const std::wstring wstr{ SunglassesEmoji.begin(), SunglassesEmoji.end() };
-        const std::vector<std::vector<wchar_t>> result = Utf16Parser::Parse(wstr);
+        const auto result = Utf16Parser::Parse(wstr);
 
         VERIFY_ARE_EQUAL(result.size(), 1u);
         VERIFY_ARE_EQUAL(result.at(0).size(), SunglassesEmoji.size());
@@ -62,7 +62,7 @@ class Utf16ParserTests
         wstr += wstr;
         wstr.at(1) = SunglassesEmoji.at(0); // wstr contains 3 leading, 1 trailing surrogate sequence
 
-        std::vector<std::vector<wchar_t>> result = Utf16Parser::Parse(wstr);
+        auto result = Utf16Parser::Parse(wstr);
 
         VERIFY_ARE_EQUAL(result.size(), 1u);
         VERIFY_ARE_EQUAL(result.at(0).size(), SunglassesEmoji.size());

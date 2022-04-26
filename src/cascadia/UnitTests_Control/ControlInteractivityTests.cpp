@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "../TerminalControl/EventArgs.h"
 #include "../TerminalControl/ControlInteractivity.h"
+
+#include "../../inc/TestUtils.h"
 #include "MockControlSettings.h"
 #include "MockConnection.h"
 
@@ -37,6 +39,9 @@ namespace ControlUnitTests
 
         TEST_METHOD(PointerClickOutsideActiveRegion);
         TEST_METHOD(IncrementCircularBufferWithSelection);
+
+        TEST_METHOD(GetMouseEventsInTest);
+        TEST_METHOD(AltBufferClampMouse);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -90,6 +95,25 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
             interactivity->Initialize();
         }
+
+        // Returns a scope_exit callback that should be used to ensure all
+        // output is drained.
+        auto _addInputCallback(const winrt::com_ptr<MockConnection>& conn,
+                               std::deque<std::wstring>& expectedOutput)
+        {
+            conn->TerminalOutput([&](const hstring& hstr) {
+                VERIFY_IS_GREATER_THAN(expectedOutput.size(), 0u);
+                const auto expected = expectedOutput.front();
+                expectedOutput.pop_front();
+                Log::Comment(fmt::format(L"Received: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(hstr.c_str())).c_str());
+                Log::Comment(fmt::format(L"Expected: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(expected)).c_str());
+                VERIFY_ARE_EQUAL(expected, hstr);
+            });
+
+            return std::move(wil::scope_exit([&]() {
+                VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
+            }));
+        }
     };
 
     void ControlInteractivityTests::TestAdjustAcrylic()
@@ -113,7 +137,7 @@ namespace ControlUnitTests
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
 
         // A callback to make sure that we're raising TransparencyChanged events
-        double expectedOpacity = 0.5;
+        auto expectedOpacity = 0.5;
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
@@ -132,7 +156,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Scroll in the positive direction, increasing opacity");
         // Scroll more than enough times to get to 1.0 from .5.
-        for (int i = 0; i < 55; i++)
+        for (auto i = 0; i < 55; i++)
         {
             // each mouse wheel only adjusts opacity by .01
             expectedOpacity += 0.01;
@@ -150,7 +174,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Scroll in the negative direction, decreasing opacity");
         // Scroll more than enough times to get to 0.0 from 1.0
-        for (int i = 0; i < 105; i++)
+        for (auto i = 0; i < 105; i++)
         {
             // each mouse wheel only adjusts opacity by .01
             expectedOpacity -= 0.01;
@@ -181,9 +205,9 @@ namespace ControlUnitTests
         // For the sake of this test, scroll one line at a time
         interactivity->_rowsToScroll = 1;
 
-        int expectedTop = 0;
-        int expectedViewHeight = 20;
-        int expectedBufferHeight = 20;
+        auto expectedTop = 0;
+        auto expectedViewHeight = 20;
+        auto expectedBufferHeight = 20;
 
         auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
@@ -193,7 +217,7 @@ namespace ControlUnitTests
         core->ScrollPositionChanged(scrollChangedHandler);
         interactivity->ScrollPositionChanged(scrollChangedHandler);
 
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             Log::Comment(NoThrowString().Format(L"Writing line #%d", i));
             // The \r\n in the 19th loop will cause the view to start moving
@@ -223,7 +247,7 @@ namespace ControlUnitTests
                                   buttonState);
 
         Log::Comment(L"Scroll up 19 more times, to the top");
-        for (int i = 0; i < 20; ++i)
+        for (auto i = 0; i < 20; ++i)
         {
             expectedTop--;
             interactivity->MouseWheel(modifiers,
@@ -243,7 +267,7 @@ namespace ControlUnitTests
                                   buttonState);
 
         Log::Comment(L"Scroll down 21 more times, to the bottom");
-        for (int i = 0; i < 21; ++i)
+        for (auto i = 0; i < 21; ++i)
         {
             Log::Comment(NoThrowString().Format(L"---scroll down #%d---", i));
             expectedTop++;
@@ -280,14 +304,14 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
         const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
 
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 0, 0 };
-        const til::point cursorPosition0 = terminalPosition0 * fontSize;
+        const auto cursorPosition0 = terminalPosition0 * fontSize;
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
@@ -313,7 +337,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Drag the mouse down a whole row");
         const til::point terminalPosition2{ 1, 1 };
-        const til::point cursorPosition2 = terminalPosition2 * fontSize;
+        const auto cursorPosition2 = terminalPosition2 * fontSize;
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
@@ -335,7 +359,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"click outside the current selection");
         const til::point terminalPosition3{ 2, 2 };
-        const til::point cursorPosition3 = terminalPosition3 * fontSize;
+        const auto cursorPosition3 = terminalPosition3 * fontSize;
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
@@ -347,7 +371,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Drag the mouse");
         const til::point terminalPosition4{ 3, 2 };
-        const til::point cursorPosition4 = terminalPosition4 * fontSize;
+        const auto cursorPosition4 = terminalPosition4 * fontSize;
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
@@ -369,7 +393,7 @@ namespace ControlUnitTests
         interactivity->_rowsToScroll = 1;
 
         Log::Comment(L"Add some test to the terminal so we can scroll");
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
@@ -381,13 +405,13 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
 
         const til::size fontSize{ 9, 21 };
 
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 5, 5 };
-        const til::point cursorPosition0{ terminalPosition0 * fontSize };
+        const auto cursorPosition0{ terminalPosition0 * fontSize };
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
@@ -402,7 +426,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Drag the mouse just a little");
         // move not quite a whole cell, but enough to start a selection
-        const til::point cursorPosition1{ cursorPosition0 + til::point{ 6, 0 } };
+        const auto cursorPosition1{ cursorPosition0 + til::point{ 6, 0 } };
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
@@ -446,7 +470,7 @@ namespace ControlUnitTests
         // For the sake of this test, scroll one line at a time
         interactivity->_rowsToScroll = 1;
 
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
@@ -465,7 +489,7 @@ namespace ControlUnitTests
         //
         // WHEEL_DELTA is 120, so we'll use 24 for now as the delta, just so the tests don't take forever.
 
-        const int delta = WHEEL_DELTA / 5;
+        const auto delta = WHEEL_DELTA / 5;
         const Core::Point mousePos{ 0, 0 };
         Control::MouseButtonState state{};
 
@@ -531,7 +555,7 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
 
         const til::size fontSize{ 9, 21 };
 
@@ -576,7 +600,7 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
         const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
@@ -645,14 +669,14 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
         const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
         interactivity->_rowsToScroll = 1;
-        int expectedTop = 0;
-        int expectedViewHeight = 20;
-        int expectedBufferHeight = 20;
+        auto expectedTop = 0;
+        auto expectedViewHeight = 20;
+        auto expectedBufferHeight = 20;
 
         auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
@@ -662,7 +686,7 @@ namespace ControlUnitTests
         core->ScrollPositionChanged(scrollChangedHandler);
         interactivity->ScrollPositionChanged(scrollChangedHandler);
 
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             Log::Comment(NoThrowString().Format(L"Writing line #%d", i));
             // The \r\n in the 19th loop will cause the view to start moving
@@ -684,7 +708,7 @@ namespace ControlUnitTests
         expectedTop = 21;
 
         Log::Comment(L"Scroll up 10 times");
-        for (int i = 0; i < 11; ++i)
+        for (auto i = 0; i < 11; ++i)
         {
             expectedTop--;
             interactivity->MouseWheel(modifiers,
@@ -699,7 +723,7 @@ namespace ControlUnitTests
         // Mouse clicks in the inactive region (i.e. the top 10 rows in this case) should not register
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 4, 4 };
-        const til::point cursorPosition0 = terminalPosition0 * fontSize;
+        const auto cursorPosition0 = terminalPosition0 * fontSize;
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
@@ -712,7 +736,7 @@ namespace ControlUnitTests
         Log::Comment(L"Drag the mouse");
         // move the mouse as if to make a selection
         const til::point terminalPosition1{ 10, 4 };
-        const til::point cursorPosition1 = terminalPosition1 * fontSize;
+        const auto cursorPosition1 = terminalPosition1 * fontSize;
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
@@ -735,20 +759,20 @@ namespace ControlUnitTests
         Log::Comment(L"Fill up the history buffer");
         // Output lines equal to history size + viewport height to make sure we're
         // at the point where outputting more lines causes circular incrementing
-        for (int i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
+        for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
 
         const til::size fontSize{ 9, 21 };
 
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 5, 5 };
-        const til::point cursorPosition0{ terminalPosition0 * fontSize };
+        const auto cursorPosition0{ terminalPosition0 * fontSize };
         interactivity->PointerPressed(leftMouseDown,
                                       WM_LBUTTONDOWN, //pointerUpdateKind
                                       0, // timestamp
@@ -763,7 +787,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Drag the mouse just a little");
         // move not quite a whole cell, but enough to start a selection
-        const til::point cursorPosition1{ cursorPosition0 + til::point{ 6, 0 } };
+        const auto cursorPosition1{ cursorPosition0 + til::point{ 6, 0 } };
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
@@ -791,11 +815,155 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
 
         // Output enough text for the selection to get pushed off the buffer
-        for (int i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
+        for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
         // Verify that the selection got reset
         VERIFY_IS_FALSE(core->HasSelection());
+    }
+
+    void ControlInteractivityTests::GetMouseEventsInTest()
+    {
+        // This is just a simple case that proves you can test mouse events
+        // generated by the terminal
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        std::deque<std::wstring> expectedOutput{};
+        auto validateDrained = _addInputCallback(conn, expectedOutput);
+
+        Log::Comment(L"Enable mouse mode");
+        auto& term{ *core->_terminal };
+        term.Write(L"\x1b[?1000h");
+
+        Log::Comment(L"Click on the terminal");
+
+        expectedOutput.push_back(L"\x1b[M &&");
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const til::size fontSize{ 9, 21 };
+        const til::point terminalPosition0{ 5, 5 };
+        const auto cursorPosition0{ terminalPosition0 * fontSize };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0.to_core_point());
+    }
+
+    void ControlInteractivityTests::AltBufferClampMouse()
+    {
+        // This is a test for
+        // * GH#10642
+        // * a comment in GH#12719
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+        auto& term{ *core->_terminal };
+
+        // Output enough text for view to start scrolling
+        for (auto i = 0; i < core->ViewHeight() * 2; ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+
+        // Start checking output
+        std::deque<std::wstring> expectedOutput{};
+        auto validateDrained = _addInputCallback(conn, expectedOutput);
+
+        const auto originalViewport{ term.GetViewport() };
+        VERIFY_ARE_EQUAL(originalViewport.Width(), 30);
+
+        Log::Comment(L" --- Enable mouse mode ---");
+        term.Write(L"\x1b[?1000h");
+
+        Log::Comment(L" --- Click on the terminal ---");
+        // Recall:
+        //
+        // >  !  specifies the value 1.  The upper left character position on
+        // >  the terminal is denoted as 1,1
+        //
+        // So 5 in our buffer is 32+5+1 = '&'
+        expectedOutput.push_back(L"\x1b[M &&");
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const til::size fontSize{ 9, 21 };
+        const til::point terminalPosition0{ 5, 5 };
+        const auto cursorPosition0{ terminalPosition0 * fontSize };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0.to_core_point());
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
+
+        // These first two bits are a test for GH#10642
+        Log::Comment(L" --- Click on the terminal outside the width of the mutable viewport, see that it's clamped to the viewport ---");
+        // Not actually possible, but for validation.
+        const til::point terminalPosition1{ originalViewport.Width() + 5, 5 };
+        const auto cursorPosition1{ terminalPosition1 * fontSize };
+
+        // The viewport is only 30 wide, so clamping 35 to the buffer size gets
+        // us 29, which converted is (32 + 29 + 1) = 62 = '>'
+        expectedOutput.push_back(L"\x1b[M >&");
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition1.to_core_point());
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
+
+        Log::Comment(L" --- Scroll up, click the terminal. We shouldn't get any event. ---");
+        core->UserScrollViewport(10);
+        VERIFY_IS_GREATER_THAN(core->ScrollOffset(), 0);
+
+        // Viewport is now above the mutable viewport, so the mouse event
+        // straight up won't be sent to the terminal.
+
+        expectedOutput.push_back(L"sentinel"); // Clearly, it won't be this string
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0.to_core_point());
+        // Flush it out.
+        conn->WriteInput(L"sentinel");
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
+
+        // This is the part as mentioned in GH#12719
+        Log::Comment(L" --- Switch to alt buffer ---");
+        term.Write(L"\x1b[?1049h");
+        auto returnToMain = wil::scope_exit([&]() { term.Write(L"\x1b[?1049h"); });
+
+        VERIFY_ARE_EQUAL(0, core->ScrollOffset());
+        Log::Comment(L" --- Click on a spot that's still outside the buffer ---");
+        expectedOutput.push_back(L"\x1b[M >&");
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition1.to_core_point());
+
+        Log::Comment(L" --- Resize the terminal to be 10 columns wider ---");
+        const auto newSizeInDips{ til::size{ 40, 20 } * fontSize };
+        core->SizeChanged(newSizeInDips.width, newSizeInDips.height);
+
+        Log::Comment(L" --- Click on a spot that's NOW INSIDE the buffer ---");
+        // (32 + 35 + 1) = 68 = 'D'
+        expectedOutput.push_back(L"\x1b[M D&");
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition1.to_core_point());
+        VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
     }
 }

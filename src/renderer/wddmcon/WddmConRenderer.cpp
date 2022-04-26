@@ -191,12 +191,6 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
@@ -258,7 +252,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
                                                      const COORD coord,
                                                      const bool /*trimLeft*/,
                                                      const bool /*lineWrapped*/) noexcept
@@ -290,7 +284,7 @@ bool WddmConEngine::IsInitialized()
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                           COLORREF const /*color*/,
                                                           size_t const /*cchLine*/,
-                                                          COORD const /*coordTarget*/) noexcept
+                                                          const COORD /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -309,7 +303,7 @@ bool WddmConEngine::IsInitialized()
                                                           const RenderSettings& /*renderSettings*/,
                                                           const gsl::not_null<IRenderData*> /*pData*/,
                                                           const bool /*usingSoftFont*/,
-                                                          bool const /*isSettingDefaultBrushes*/) noexcept
+                                                          const bool /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
@@ -321,7 +315,7 @@ bool WddmConEngine::IsInitialized()
     return GetProposedFont(fiFontInfoDesired, fiFontInfo, USER_DEFAULT_SCREEN_DPI);
 }
 
-[[nodiscard]] HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -340,7 +334,7 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*fiFontInfoDesired*/,
                                                      FontInfo& fiFontInfo,
-                                                     int const /*iDpi*/) noexcept
+                                                     const int /*iDpi*/) noexcept
 {
     COORD coordSize = { 0 };
     LOG_IF_FAILED(GetFontSize(&coordSize));

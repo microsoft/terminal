@@ -121,8 +121,8 @@ void BufferTests::TestWritingInactiveScreenBuffer()
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(handle, alternative.data(), gsl::narrow<DWORD>(alternative.size()), &written, nullptr));
     VERIFY_ARE_EQUAL(alternative.size(), written);
 
-    std::unique_ptr<wchar_t[]> primaryBuffer = std::make_unique<wchar_t[]>(primary.size());
-    std::unique_ptr<wchar_t[]> alternativeBuffer = std::make_unique<wchar_t[]>(alternative.size());
+    auto primaryBuffer = std::make_unique<wchar_t[]>(primary.size());
+    auto alternativeBuffer = std::make_unique<wchar_t[]>(alternative.size());
 
     Log::Comment(L"Read the first line out of the main/visible screen buffer. It should contain the first thing we wrote.");
     DWORD read = 0;
@@ -183,7 +183,7 @@ void BufferTests::ScrollLargeBufferPerformance()
     const auto now = std::chrono::steady_clock::now();
 
     // Scroll the buffer 1 line up several times
-    for (int i = 0; i != count; ++i)
+    for (auto i = 0; i != count; ++i)
     {
         ScrollConsoleScreenBuffer(Out, &Rect, nullptr, { 0, -1 }, &CharInfo);
     }
@@ -225,7 +225,7 @@ void BufferTests::ChafaGifPerformance()
     DWORD res_size;
 
     // NOTE: providing g_hInstance is important, NULL might not work
-    HMODULE hModule = (HMODULE)&__ImageBase;
+    auto hModule = (HMODULE)&__ImageBase;
 
     res = FindResource(hModule, MAKEINTRESOURCE(CHAFA_CONTENT), RT_RCDATA);
     if (!res)

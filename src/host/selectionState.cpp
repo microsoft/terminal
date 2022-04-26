@@ -18,7 +18,7 @@ using namespace Microsoft::Console::Interactivity;
 // - True if the console is in a selecting state. False otherwise.
 bool Selection::IsInSelectingState() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return WI_IsFlagSet(gci.Flags, CONSOLE_SELECTING);
 }
 
@@ -30,7 +30,7 @@ bool Selection::IsInSelectingState() const
 // - <none>
 void Selection::_SetSelectingState(const bool fSelectingOn)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WI_UpdateFlag(gci.Flags, CONSOLE_SELECTING, fSelectingOn);
 }
 
@@ -43,7 +43,7 @@ void Selection::_SetSelectingState(const bool fSelectingOn)
 // - True if quick edit mode is enabled. False otherwise.
 bool Selection::IsInQuickEditMode() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE);
 }
 
@@ -139,7 +139,7 @@ void Selection::MouseDown()
 
     // We must capture the mouse on button down to ensure we receive messages if
     //      it comes back up outside the window.
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->CaptureMouse();
@@ -150,7 +150,7 @@ void Selection::MouseUp()
 {
     WI_ClearFlag(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->ReleaseMouse();
@@ -250,7 +250,7 @@ void Selection::SetLineSelection(const bool fLineSelectionOn)
 // - true if the selection can be changed by a mouse drag
 bool Selection::ShouldAllowMouseDragSelection(const COORD mousePosition) const noexcept
 {
-    const Viewport viewport = Viewport::FromInclusive(_srSelectionRect);
-    const bool selectionContainsMouse = viewport.IsInBounds(mousePosition);
+    const auto viewport = Viewport::FromInclusive(_srSelectionRect);
+    const auto selectionContainsMouse = viewport.IsInBounds(mousePosition);
     return _allowMouseDragSelection || !selectionContainsMouse;
 }

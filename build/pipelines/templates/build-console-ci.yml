@@ -11,6 +11,7 @@ jobs:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
     WindowsTerminalBranding: ${{ parameters.branding }}
+    EnableRichCodeNavigation: true
   pool: 
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPoolOSS-L

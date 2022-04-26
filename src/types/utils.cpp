@@ -118,10 +118,10 @@ til::color Utils::ColorFromHexString(const std::string_view str)
         bStr = std::string(&str.at(7), 2);
     }
 
-    const BYTE r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    const BYTE g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    const BYTE b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
-    const BYTE a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
+    const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
 
     return til::color{ r, g, b, a };
 }
@@ -162,10 +162,10 @@ std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view str
 std::optional<til::color> Utils::ColorFromXParseColorSpec(const std::wstring_view string) noexcept
 try
 {
-    bool foundXParseColorSpec = false;
-    bool foundValidColorSpec = false;
+    auto foundXParseColorSpec = false;
+    auto foundValidColorSpec = false;
 
-    bool isSharpSignFormat = false;
+    auto isSharpSignFormat = false;
     size_t rgbHexDigitCount = 0;
     std::array<unsigned int, 3> colorValues = { 0 };
     std::array<unsigned int, 3> parameterValues = { 0 };
@@ -238,14 +238,14 @@ try
     // Try to parse the actual color value of each component.
     for (size_t component = 0; component < 3; component++)
     {
-        bool foundColor = false;
+        auto foundColor = false;
         auto& parameterValue = til::at(parameterValues, component);
         // For "sharp sign" format, the rgbHexDigitCount is known.
         // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
         const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
         for (size_t i = 0; i < iteration && curr < string.cend(); i++)
         {
-            const wchar_t wch = *curr++;
+            const auto wch = *curr++;
 
             parameterValue *= 16;
             unsigned int intVal = 0;
@@ -341,7 +341,7 @@ bool Utils::HexToUint(const wchar_t wch,
                       unsigned int& value) noexcept
 {
     value = 0;
-    bool success = false;
+    auto success = false;
     if (wch >= L'0' && wch <= L'9')
     {
         value = wch - L'0';
@@ -379,7 +379,7 @@ bool Utils::StringToUint(const std::wstring_view wstr,
     size_t current = 0;
     while (current < wstr.size())
     {
-        const wchar_t wch = wstr.at(current);
+        const auto wch = wstr.at(current);
         if (_isNumber(wch))
         {
             result *= 10;
@@ -477,7 +477,7 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
 
     while (pos < wstr.size())
     {
-        const wchar_t c = til::at(wstr, pos);
+        const auto c = til::at(wstr, pos);
 
         if (WI_IsFlagSet(option, FilterOption::CarriageReturnNewline) && c == L'\n')
         {
@@ -577,7 +577,7 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
 
 bool Utils::IsElevated()
 {
-    static bool isElevated = []() {
+    static auto isElevated = []() {
         try
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };

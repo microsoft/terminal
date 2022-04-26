@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // creates a FontWeight object, but we need to use the uint16_t value.
     winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> EnumMappings::FontWeight()
     {
-        static IMap<winrt::hstring, uint16_t> enumMap = []() {
+        static auto enumMap = []() {
             auto map = single_threaded_map<winrt::hstring, uint16_t>();
             for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Windows::UI::Text::FontWeight>::mappings)
             {

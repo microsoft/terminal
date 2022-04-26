@@ -19,10 +19,10 @@ using namespace Microsoft::Console::Interactivity;
 
 INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the
     //   find dialog is opened, it will default to the last used option.
-    static bool fFindSearchUp = true;
+    static auto fFindSearchUp = true;
     static std::wstring lastFindString;
 
     WCHAR szBuf[SEARCH_STRING_LENGTH + 1];
@@ -40,16 +40,16 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
         {
         case IDOK:
         {
-            USHORT const StringLength = (USHORT)GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, szBuf, ARRAYSIZE(szBuf));
+            const auto StringLength = (USHORT)GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, szBuf, ARRAYSIZE(szBuf));
             if (StringLength == 0)
             {
                 lastFindString.clear();
                 break;
             }
-            bool const IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
-            bool const Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
+            const auto IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
+            const auto Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
             fFindSearchUp = !!Reverse;
-            SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+            auto& ScreenInfo = gci.GetActiveOutputBuffer();
 
             std::wstring wstr(szBuf, StringLength);
             lastFindString = wstr;
@@ -89,13 +89,13 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
 
 void DoFind()
 {
-    Globals& g = ServiceLocator::LocateGlobals();
-    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    auto& g = ServiceLocator::LocateGlobals();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
 
     UnlockConsole();
     if (pWindow != nullptr)
     {
-        HWND const hwnd = pWindow->GetWindowHandle();
+        const auto hwnd = pWindow->GetWindowHandle();
 
         ++g.uiDialogBoxCount;
         DialogBoxParamW(g.hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, FindDialogProc, (LPARAM) nullptr);

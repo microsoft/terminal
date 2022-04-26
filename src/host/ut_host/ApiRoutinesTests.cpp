@@ -34,9 +34,8 @@ class ApiRoutinesTests
         m_state = std::make_unique<CommonState>();
 
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
-
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
 
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
@@ -65,7 +64,7 @@ class ApiRoutinesTests
     BOOL _fPrevInsertMode;
     void PrepVerifySetConsoleInputModeImpl(const ULONG ulOriginalInputMode)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.Flags = 0;
         gci.pInputBuffer->InputMode = ulOriginalInputMode & ~(ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS);
         gci.SetInsertMode(WI_IsFlagSet(ulOriginalInputMode, ENABLE_INSERT_MODE));
@@ -82,21 +81,21 @@ class ApiRoutinesTests
     void VerifySetConsoleInputModeImpl(const HRESULT hrExpected,
                                        const ULONG ulNewMode)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        InputBuffer* const pii = gci.pInputBuffer;
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto pii = gci.pInputBuffer;
 
         // The expected mode set in the buffer is the mode given minus the flags that are stored in different fields.
-        ULONG ulModeExpected = ulNewMode;
+        auto ulModeExpected = ulNewMode;
         WI_ClearAllFlags(ulModeExpected, (ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_INSERT_MODE | ENABLE_EXTENDED_FLAGS));
-        bool const fQuickEditExpected = WI_IsFlagSet(ulNewMode, ENABLE_QUICK_EDIT_MODE);
-        bool const fAutoPositionExpected = WI_IsFlagSet(ulNewMode, ENABLE_AUTO_POSITION);
-        bool const fInsertModeExpected = WI_IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
+        const auto fQuickEditExpected = WI_IsFlagSet(ulNewMode, ENABLE_QUICK_EDIT_MODE);
+        const auto fAutoPositionExpected = WI_IsFlagSet(ulNewMode, ENABLE_AUTO_POSITION);
+        const auto fInsertModeExpected = WI_IsFlagSet(ulNewMode, ENABLE_INSERT_MODE);
 
         // If the insert mode changed, we expect the cursor to have turned off.
-        bool const fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
+        const auto fCursorDBModeExpected = ((!!_fPrevInsertMode) == fInsertModeExpected);
 
         // Call the API
-        HRESULT const hrActual = _pApiRoutines->SetConsoleInputModeImpl(*pii, ulNewMode);
+        const auto hrActual = _pApiRoutines->SetConsoleInputModeImpl(*pii, ulNewMode);
 
         // Now do verifications of final state.
         VERIFY_ARE_EQUAL(hrExpected, hrActual);
@@ -183,7 +182,7 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiSetConsoleInputModeExtendedFlagBehaviors)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         Log::Comment(L"Verify that we can set various extended flags even without the ENABLE_EXTENDED_FLAGS flag.");
         PrepVerifySetConsoleInputModeImpl(0);
         VerifySetConsoleInputModeImpl(S_OK, ENABLE_INSERT_MODE);
@@ -194,8 +193,8 @@ class ApiRoutinesTests
 
         Log::Comment(L"Verify that we cannot unset various extended flags without the ENABLE_EXTENDED_FLAGS flag.");
         PrepVerifySetConsoleInputModeImpl(ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION);
-        InputBuffer* const pii = gci.pInputBuffer;
-        HRESULT const hr = _pApiRoutines->SetConsoleInputModeImpl(*pii, 0);
+        const auto pii = gci.pInputBuffer;
+        const auto hr = _pApiRoutines->SetConsoleInputModeImpl(*pii, 0);
 
         VERIFY_ARE_EQUAL(S_OK, hr);
         VERIFY_ARE_EQUAL(true, !!gci.GetInsertMode());
@@ -214,7 +213,7 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiGetConsoleTitleA)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         // SetTitle() runs some extra code. Let's not skip it since this is a test.
         gci.SetTitle(L"Test window title.");
@@ -234,7 +233,7 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiGetConsoleTitleW)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetTitle(L"Test window title.");
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
@@ -254,21 +253,21 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiGetConsoleOriginalTitleA)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetOriginalTitle(L"Test original window title.");
 
         const auto originalTitle = gci.GetOriginalTitle();
 
-        int const iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
-                                                     0,
-                                                     originalTitle.data(),
-                                                     gsl::narrow_cast<int>(originalTitle.size()),
-                                                     nullptr,
-                                                     0,
-                                                     nullptr,
-                                                     nullptr);
+        const auto iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
+                                                      0,
+                                                      originalTitle.data(),
+                                                      gsl::narrow_cast<int>(originalTitle.size()),
+                                                      nullptr,
+                                                      0,
+                                                      nullptr,
+                                                      nullptr);
 
-        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded + 1);
+        auto pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded + 1);
         VERIFY_IS_NOT_NULL(pszExpected);
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
@@ -297,7 +296,7 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiGetConsoleOriginalTitleW)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetOriginalTitle(L"Test original window title.");
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
@@ -338,8 +337,8 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"dwIncrement", dwIncrement),
                          L"Get how many chars we should feed in at a time. This validates lead bytes and bytes held across calls.");
 
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
@@ -364,7 +363,7 @@ class ApiRoutinesTests
             VERIFY_FAIL(L"Test is not ready for this codepage.");
             return;
         }
-        size_t cchTestText = strlen(pszTestText);
+        auto cchTestText = strlen(pszTestText);
 
         // Set our increment value for the loop.
         // 0 represents the special case of feeding the whole string in at at time.
@@ -385,10 +384,10 @@ class ApiRoutinesTests
             std::unique_ptr<IWaitRoutine> waiter;
 
             // The increment is either the specified length or the remaining text in the string (if that is smaller).
-            const size_t cchWriteLength = std::min(cchIncrement, cchTestText - i);
+            const auto cchWriteLength = std::min(cchIncrement, cchTestText - i);
 
             // Run the test method
-            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, { pszTestText + i, cchWriteLength }, cchRead, false, waiter);
+            const auto hr = _pApiRoutines->WriteConsoleAImpl(si, { pszTestText + i, cchWriteLength }, cchRead, false, waiter);
 
             VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
             if (!fInduceWait)
@@ -404,7 +403,7 @@ class ApiRoutinesTests
                 Log::Comment(L"Unblocking global output state so the wait can be serviced.");
                 s_AdjustOutputWait(false);
                 Log::Comment(L"Dispatching the wait.");
-                NTSTATUS Status = STATUS_SUCCESS;
+                auto Status = STATUS_SUCCESS;
                 size_t dwNumBytes = 0;
                 DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
                 void* pOutputData = nullptr; // unused for writes but used for read.
@@ -413,7 +412,7 @@ class ApiRoutinesTests
                 VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
                 VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
 
-                const size_t dwBytesExpected = cchWriteLength;
+                const auto dwBytesExpected = cchWriteLength;
                 VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
             }
         }
@@ -428,8 +427,8 @@ class ApiRoutinesTests
         bool fInduceWait;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"fInduceWait", fInduceWait), L"Get whether or not we should exercise this function off a wait state.");
 
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& si = gci.GetActiveOutputBuffer();
 
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
@@ -444,7 +443,7 @@ class ApiRoutinesTests
 
         size_t cchRead = 0;
         std::unique_ptr<IWaitRoutine> waiter;
-        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, testText, cchRead, false, waiter);
+        const auto hr = _pApiRoutines->WriteConsoleWImpl(si, testText, cchRead, false, waiter);
 
         VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
         if (!fInduceWait)
@@ -460,7 +459,7 @@ class ApiRoutinesTests
             Log::Comment(L"Unblocking global output state so the wait can be serviced.");
             s_AdjustOutputWait(false);
             Log::Comment(L"Dispatching the wait.");
-            NTSTATUS Status = STATUS_SUCCESS;
+            auto Status = STATUS_SUCCESS;
             size_t dwNumBytes = 0;
             DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
             void* pOutputData = nullptr; // unused for writes but used for read.
@@ -469,7 +468,7 @@ class ApiRoutinesTests
             VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
             VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
 
-            const size_t dwBytesExpected = testText.size() * sizeof(wchar_t);
+            const auto dwBytesExpected = testText.size() * sizeof(wchar_t);
             VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
         }
     }
@@ -485,7 +484,7 @@ class ApiRoutinesTests
         auto bufferSize = activeSi.GetBufferSize();
 
         // Find the background area viewport by taking the size, translating it by the delta, then cropping it back to the buffer size.
-        Viewport backgroundArea = Viewport::Offset(bufferSize, delta);
+        auto backgroundArea = Viewport::Offset(bufferSize, delta);
         bufferSize.Clamp(backgroundArea);
 
         auto it = activeSi.GetCellDataAt({ 0, 0 }); // We're going to walk the whole thing. Start in the top left corner.
@@ -524,7 +523,7 @@ class ApiRoutinesTests
         delta.Y = destPoint.Y - scrollArea.Top();
 
         // Find the area where the scroll text should have gone by taking the scrolled area by the delta
-        Viewport scrolledDestination = Viewport::Offset(scrollArea, delta);
+        auto scrolledDestination = Viewport::Offset(scrollArea, delta);
         bufferSize.Clamp(scrolledDestination);
 
         auto it = activeSi.GetCellDataAt({ 0, 0 }); // We're going to walk the whole thing. Start in the top left corner.
@@ -605,8 +604,8 @@ class ApiRoutinesTests
         bool checkClipped;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"checkClipped", checkClipped), L"Get whether or not we should check all the options using a clipping rectangle.");
 
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& si = gci.GetActiveOutputBuffer();
 
         VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional({ 5, 5 }), L"Make the buffer small so this doesn't take forever.");
 
@@ -631,7 +630,7 @@ class ApiRoutinesTests
         std::optional<Viewport> clipViewport = std::nullopt;
         const auto bufferSize = si.GetBufferSize();
 
-        SMALL_RECT scroll = bufferSize.ToInclusive();
+        auto scroll = bufferSize.ToInclusive();
         COORD destination{ 0, -2 }; // scroll up.
 
         Log::Comment(L"Fill screen with green Zs. Scroll all up by two, backfilling with red As. Confirm every cell.");
@@ -646,7 +645,7 @@ class ApiRoutinesTests
         if (checkClipped)
         {
             // for scrolling up and down, we're going to clip to only modify the left half of the buffer
-            COORD clipRectDimensions = bufferSize.Dimensions();
+            auto clipRectDimensions = bufferSize.Dimensions();
             clipRectDimensions.X /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
@@ -670,7 +669,7 @@ class ApiRoutinesTests
         if (checkClipped)
         {
             // for scrolling left and right, we're going to clip to only modify the top half of the buffer
-            COORD clipRectDimensions = bufferSize.Dimensions();
+            auto clipRectDimensions = bufferSize.Dimensions();
             clipRectDimensions.Y /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
@@ -739,7 +738,7 @@ class ApiRoutinesTests
         if (checkClipped)
         {
             // for scrolling up and down, we're going to clip to only modify the left half of the buffer
-            COORD clipRectDimensions = bufferSize.Dimensions();
+            auto clipRectDimensions = bufferSize.Dimensions();
             clipRectDimensions.X /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);

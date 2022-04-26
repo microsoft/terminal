@@ -91,13 +91,13 @@ bool FileTests::MethodCleanup()
 void FileTests::TestUtf8WriteFileInvalid()
 {
     Log::Comment(L"Backup original console codepage.");
-    UINT const uiOriginalCP = GetConsoleOutputCP();
+    const auto uiOriginalCP = GetConsoleOutputCP();
     auto restoreOriginalCP = wil::scope_exit([&] {
         Log::Comment(L"Restore original console codepage.");
         SetConsoleOutputCP(uiOriginalCP);
     });
 
-    HANDLE const hOut = GetStdOutputHandle();
+    const auto hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(CP_UTF8), L"Set output codepage to UTF8");
@@ -146,11 +146,11 @@ void FileTests::TestWriteFileRaw()
     // \xa is linefeed
     // \xd is carriage return
     // All should be ignored/printed in raw mode.
-    PCSTR strTest = "z\x7y\x8z\x9y\xaz\xdy";
-    DWORD const cchTest = (DWORD)strlen(strTest);
+    auto strTest = "z\x7y\x8z\x9y\xaz\xdy";
+    const auto cchTest = (DWORD)strlen(strTest);
     String strReadBackExpected(strTest);
 
-    HANDLE const hOut = GetStdOutputHandle();
+    const auto hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
@@ -159,7 +159,7 @@ void FileTests::TestWriteFileRaw()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, 0), L"Set raw write mode.");
 
-    COORD const coordZero = { 0 };
+    const COORD coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexBefore.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
 
     DWORD dwWritten = 0;
@@ -173,8 +173,8 @@ void FileTests::TestWriteFileRaw()
     csbiexBefore.dwCursorPosition.X += (SHORT)cchTest;
     VERIFY_ARE_EQUAL(csbiexBefore.dwCursorPosition, csbiexAfter.dwCursorPosition, L"Verify cursor moved expected number of squares for the write length.");
 
-    DWORD const cbReadBackBuffer = cchTest + 2; // +1 so we can read back a "space" that should be after what we wrote. +1 more so this can be null terminated for String class comparison.
-    wistd::unique_ptr<char[]> strReadBack = wil::make_unique_failfast<char[]>(cbReadBackBuffer);
+    const auto cbReadBackBuffer = cchTest + 2; // +1 so we can read back a "space" that should be after what we wrote. +1 more so this can be null terminated for String class comparison.
+    auto strReadBack = wil::make_unique_failfast<char[]>(cbReadBackBuffer);
     ZeroMemory(strReadBack.get(), cbReadBackBuffer * sizeof(char));
 
     DWORD dwRead = 0;
@@ -209,8 +209,8 @@ void ReadBackHelper(HANDLE hOut,
                     wistd::unique_ptr<char[]>& pszReadBack)
 {
     // Add one so it can be zero terminated.
-    DWORD cbBuffer = dwReadBackLength + 1;
-    wistd::unique_ptr<char[]> pszRead = wil::make_unique_failfast<char[]>(cbBuffer);
+    auto cbBuffer = dwReadBackLength + 1;
+    auto pszRead = wil::make_unique_failfast<char[]>(cbBuffer);
     ZeroMemory(pszRead.get(), cbBuffer * sizeof(char));
 
     DWORD dwRead = 0;
@@ -229,7 +229,7 @@ void FileTests::TestWriteFileProcessed()
     // \xd is carriage return
     // All should cause activity in processed mode.
 
-    HANDLE const hOut = GetStdOutputHandle();
+    const auto hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -238,7 +238,7 @@ void FileTests::TestWriteFileProcessed()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, ENABLE_PROCESSED_OUTPUT), L"Set processed write mode.");
 
-    COORD const coordZero = { 0 };
+    const COORD coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
 
     // Declare variables needed for each character test.
@@ -374,7 +374,7 @@ void FileTests::TestWriteFileWrapEOL()
     bool fFlagOn;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fFlagOn", fFlagOn));
 
-    HANDLE const hOut = GetStdOutputHandle();
+    const auto hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -390,7 +390,7 @@ void FileTests::TestWriteFileWrapEOL()
         VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, 0), L"Make sure wrap at EOL is off.");
     }
 
-    COORD const coordZero = { 0 };
+    const COORD coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
 
     // Fill first row of the buffer with Z characters until 1 away from the end.
@@ -433,7 +433,7 @@ void FileTests::TestWriteFileVTProcessing()
     bool fProcessedOn;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fProcessedOn", fProcessedOn));
 
-    HANDLE const hOut = GetStdOutputHandle();
+    const auto hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -445,12 +445,12 @@ void FileTests::TestWriteFileVTProcessing()
     WI_SetFlagIf(dwFlags, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwFlags), L"Turn on relevant flags for test.");
 
-    COORD const coordZero = { 0 };
+    const COORD coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
 
-    PCSTR pszTestString = "\x1b"
-                          "[14m";
-    DWORD const cchTest = (DWORD)strlen(pszTestString);
+    auto pszTestString = "\x1b"
+                         "[14m";
+    const auto cchTest = (DWORD)strlen(pszTestString);
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
     csbiexBefore.cbSize = sizeof(csbiexBefore);
@@ -460,12 +460,12 @@ void FileTests::TestWriteFileVTProcessing()
     WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTestString, cchTest);
 
     // We only expect characters to be processed and not printed if both processed mode and VT mode are on.
-    bool const fProcessedNotPrinted = fProcessedOn && fVtOn;
+    const auto fProcessedNotPrinted = fProcessedOn && fVtOn;
 
     if (fProcessedNotPrinted)
     {
-        PCSTR pszReadBackExpected = "      ";
-        DWORD const cchReadBackExpected = (DWORD)strlen(pszReadBackExpected);
+        auto pszReadBackExpected = "      ";
+        const auto cchReadBackExpected = (DWORD)strlen(pszReadBackExpected);
 
         VERIFY_ARE_EQUAL(csbiexBefore.dwCursorPosition, csbiexAfter.dwCursorPosition, L"Verify cursor didn't move because the VT sequence was processed instead of printed.");
 
@@ -475,7 +475,7 @@ void FileTests::TestWriteFileVTProcessing()
     }
     else
     {
-        COORD coordExpected = csbiexBefore.dwCursorPosition;
+        auto coordExpected = csbiexBefore.dwCursorPosition;
         coordExpected.X += (SHORT)cchTest;
         VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved as characters should have been emitted, not consumed.");
 
@@ -493,7 +493,7 @@ void FileTests::TestWriteFileDisableNewlineAutoReturn()
     bool fProcessedOn;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fProcessedOn", fProcessedOn));
 
-    HANDLE const hOut = GetStdOutputHandle();
+    const auto hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -505,7 +505,7 @@ void FileTests::TestWriteFileDisableNewlineAutoReturn()
     WI_SetFlagIf(dwMode, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwMode), L"Set console mode for test.");
 
-    COORD const coordZero = { 0 };
+    const COORD coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
@@ -567,10 +567,10 @@ void UnpauseHelper(HANDLE hIn)
 
 void FileTests::TestWriteFileSuspended()
 {
-    HANDLE const hOut = GetStdOutputHandle();
+    const auto hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
-    HANDLE const hIn = GetStdInputHandle();
+    const auto hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -580,7 +580,7 @@ void FileTests::TestWriteFileSuspended()
     DWORD dwMode = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwMode), L"Set console mode for test.");
 
-    COORD const coordZero = { 0 };
+    const COORD coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "abc", 3, nullptr, nullptr), L"Test first write success.");
@@ -617,7 +617,7 @@ void SendFullKeyStrokeHelper(HANDLE hIn, char ch)
 
 void FileTests::TestReadFileBasic()
 {
-    HANDLE const hIn = GetStdInputHandle();
+    const auto hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = 0;
@@ -625,7 +625,7 @@ void FileTests::TestReadFileBasic()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char ch = '\0';
+    auto ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
     auto BackgroundRead = std::async([&] {
         DWORD dwRead = 0;
@@ -633,7 +633,7 @@ void FileTests::TestReadFileBasic()
         VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
     });
 
-    char const chExpected = 'a';
+    const auto chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
@@ -644,7 +644,7 @@ void FileTests::TestReadFileBasic()
 
 void FileTests::TestReadFileBasicSync()
 {
-    HANDLE const hIn = GetStdInputHandle();
+    const auto hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = 0;
@@ -652,11 +652,11 @@ void FileTests::TestReadFileBasicSync()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char const chExpected = 'a';
+    const auto chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
-    char ch = '\0';
+    auto ch = '\0';
     Log::Comment(L"Read with synchronous blocking read.");
     DWORD dwRead = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful.");
@@ -667,7 +667,7 @@ void FileTests::TestReadFileBasicSync()
 
 void FileTests::TestReadFileBasicEmpty()
 {
-    HANDLE const hIn = GetStdInputHandle();
+    const auto hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = 0;
@@ -675,7 +675,7 @@ void FileTests::TestReadFileBasicEmpty()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char ch = '\0';
+    auto ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
     auto BackgroundRead = std::async([&] {
         DWORD dwRead = 0;
@@ -683,7 +683,7 @@ void FileTests::TestReadFileBasicEmpty()
         VERIFY_ARE_EQUAL(0u, dwRead, L"We should have read nothing back. It should just return from Ctrl+Z");
     });
 
-    char const chExpected = '\x1a'; // ctrl+z character
+    const auto chExpected = '\x1a'; // ctrl+z character
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
@@ -694,7 +694,7 @@ void FileTests::TestReadFileBasicEmpty()
 
 void FileTests::TestReadFileLine()
 {
-    HANDLE const hIn = GetStdInputHandle();
+    const auto hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = ENABLE_LINE_INPUT;
@@ -702,7 +702,7 @@ void FileTests::TestReadFileLine()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char ch = '\0';
+    auto ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
     auto BackgroundRead = std::async([&] {
         DWORD dwRead = 0;
@@ -710,7 +710,7 @@ void FileTests::TestReadFileLine()
         VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
     });
 
-    char const chExpected = 'a';
+    const auto chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
 
@@ -734,7 +734,7 @@ void FileTests::TestReadFileLine()
 
 void FileTests::TestReadFileLineSync()
 {
-    HANDLE const hIn = GetStdInputHandle();
+    const auto hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = ENABLE_LINE_INPUT;
@@ -742,12 +742,12 @@ void FileTests::TestReadFileLineSync()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char const chExpected = 'a';
+    const auto chExpected = 'a';
     Log::Comment(L"Send a key into the console followed by a carriage return.");
     SendFullKeyStrokeHelper(hIn, chExpected);
     SendFullKeyStrokeHelper(hIn, '\r');
 
-    char ch = '\0';
+    auto ch = '\0';
     Log::Comment(L"Read back the input with a synchronous blocking read.");
     DWORD dwRead = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, nullptr), L"Read file was successful.");
@@ -761,10 +761,10 @@ void FileTests::TestReadFileLineSync()
 //    bool fUseBlockedRead;
 //    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseBlockedRead", fUseBlockedRead));
 //
-//    HANDLE const hOut = GetStdOutputHandle();
+//    const auto hOut = GetStdOutputHandle();
 //    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 //
-//    HANDLE const hIn = GetStdInputHandle();
+//    const auto hIn = GetStdInputHandle();
 //    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 //
 //    DWORD dwMode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
@@ -776,7 +776,7 @@ void FileTests::TestReadFileLineSync()
 //    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
 //    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve output screen buffer information.");
 //
-//    COORD const coordZero = { 0 };
+//    const COORD coordZero = { 0 };
 //    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"We expect the cursor to be at 0,0 for the start of this test.");
 //
 //    char ch = '\0';
@@ -807,13 +807,13 @@ void FileTests::TestReadFileLineSync()
 //    Log::Comment(L"Read back the first line of the buffer to see that it is empty.");
 //    wistd::unique_ptr<char[]> pszBefore;
 //    PCSTR pszBeforeExpected = "     ";
-//    DWORD const cchBeforeExpected = (DWORD)strlen(pszBeforeExpected);
+//    const auto cchBeforeExpected = (DWORD)strlen(pszBeforeExpected);
 //    ReadBackHelper(hOut, coordZero, cchBeforeExpected, pszBefore);
 //    VERIFY_ARE_EQUAL(String(pszBeforeExpected), String(pszBefore.get()), L"Verify the first few characters of the buffer are empty (spaces)");
 //
 //    PCSTR pszAfterExpected = "qzmp ";
 //    COORD coordCursorAfter = { 0 };
-//    DWORD const cchAfterExpected = (DWORD)strlen(pszAfterExpected);
+//    const auto cchAfterExpected = (DWORD)strlen(pszAfterExpected);
 //
 //    Log::Comment(L"Now write in a few input characters to the buffer.");
 //    for (DWORD i = 0; i < cchAfterExpected - 1; i++)

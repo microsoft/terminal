@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         UINT32 localizedNameIndex;
 
         // use our current locale to find the localized name
-        BOOL exists{ FALSE };
+        auto exists{ FALSE };
         HRESULT hr;
         wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
         if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
@@ -296,6 +296,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::AtlasEngineAvailable() const noexcept
     {
         return Feature_AtlasEngine::IsEnabled();
+    }
+
+    bool ProfileViewModel::VtPassthroughAvailable() const noexcept
+    {
+        return Feature_VtPassthroughMode::IsEnabled();
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()

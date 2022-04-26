@@ -111,6 +111,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             THROW_IF_FAILED(_uiaEngine->Enable());
         }
 
+        _core->GotFocus();
+
         _updateSystemParameterSettings();
     }
 
@@ -120,6 +122,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             THROW_IF_FAILED(_uiaEngine->Disable());
         }
+
+        _core->LostFocus();
     }
 
     // Method Description
@@ -194,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                               const Core::Point pixelPosition)
     {
-        const til::point terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
 
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
@@ -235,7 +239,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     _lastMouseClickPosNoSelection = pixelPosition;
                 }
             }
-            const bool isOnOriginalPosition = _lastMouseClickPosNoSelection == pixelPosition;
+            const auto isOnOriginalPosition = _lastMouseClickPosNoSelection == pixelPosition;
 
             _core->LeftClickOnTerminal(terminalPosition,
                                        multiClickMapper,
@@ -277,7 +281,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const Core::Point pixelPosition,
                                             const bool pointerPressedInBounds)
     {
-        const til::point terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
 
         // Short-circuit isReadOnly check to avoid warning dialog
         if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
@@ -363,7 +367,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const Core::Point pixelPosition)
     {
-        const til::point terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
@@ -373,7 +377,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Only a left click release when copy on select is active should perform a copy.
         // Right clicks and middle clicks should not need to do anything when released.
-        const bool isLeftMouseRelease = pointerUpdateKind == WM_LBUTTONUP;
+        const auto isLeftMouseRelease = pointerUpdateKind == WM_LBUTTONUP;
 
         if (_core->CopyOnSelect() &&
             isLeftMouseRelease &&
@@ -407,10 +411,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
-        const til::point terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
 
-        // Short-circuit isReadOnly check to avoid warning dialog
-        if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
+        // Short-circuit isReadOnly check to avoid warning dialog.
+        //
+        // GH#3321: Alternate scroll mode is a special type of mouse input mode
+        // where the terminal sends arrow keys when the user mouse wheels, but
+        // the client app doesn't care for other mouse input. It's tracked
+        // separately from _canSendVTMouseInput.
+        if (!_core->IsInReadOnlyMode() &&
+            (_canSendVTMouseInput(modifiers) || _shouldSendAlternateScroll(modifiers, delta)))
         {
             // Most mouse event handlers call
             //      _trySendMouseEvent(point);
@@ -486,23 +496,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // underneath us. We wouldn't know - we don't want the overhead of
         // another ScrollPositionChanged handler. If the scrollbar should be
         // somewhere other than where it is currently, then start from that row.
-        const int currentInternalRow = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
-        const int currentCoreRow = _core->ScrollOffset();
-        const double currentOffset = currentInternalRow == currentCoreRow ?
-                                         _internalScrollbarPosition :
-                                         currentCoreRow;
+        const auto currentInternalRow = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        const auto currentCoreRow = _core->ScrollOffset();
+        const auto currentOffset = currentInternalRow == currentCoreRow ?
+                                       _internalScrollbarPosition :
+                                       currentCoreRow;
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
         // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
         // but the "smooth scrolling" mode results in non-int values
-        const double rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
+        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const double rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ::base::saturated_cast<double>(_core->ViewHeight()) : _rowsToScroll };
-        double newValue = (rowsToScroll * rowDelta) + (currentOffset);
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? ::base::saturated_cast<double>(_core->ViewHeight()) : _rowsToScroll };
+        auto newValue = (rowsToScroll * rowDelta) + (currentOffset);
 
         // Update the Core's viewport position, and raise a
         // ScrollPositionChanged event to update the scrollbar
@@ -542,7 +552,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If the new scrollbar position, rounded to an int, is at a different
         // row, then actually update the scroll position in the core, and raise
         // a ScrollPositionChanged to inform the control.
-        int viewTop = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
+        auto viewTop = ::base::saturated_cast<int>(::std::round(_internalScrollbarPosition));
         if (viewTop != _core->ScrollOffset())
         {
             _core->UserScrollViewport(viewTop);
@@ -569,6 +579,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
         return _core->IsVtMouseModeEnabled();
+    }
+
+    bool ControlInteractivity::_shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta)
+    {
+        // If the user is holding down Shift, suppress mouse events
+        // TODO GH#4875: disable/customize this functionality
+        if (modifiers.IsShiftPressed())
+        {
+            return false;
+        }
+        return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta);
     }
 
     // Method Description:

@@ -25,7 +25,7 @@ COORD Terminal::GetTextBufferEndPosition() const noexcept
 
 const TextBuffer& Terminal::GetTextBuffer() noexcept
 {
-    return *_buffer;
+    return _activeBuffer();
 }
 
 const FontInfo& Terminal::GetFontInfo() noexcept
@@ -40,19 +40,19 @@ void Terminal::SetFontInfo(const FontInfo& fontInfo)
 
 COORD Terminal::GetCursorPosition() const noexcept
 {
-    const auto& cursor = _buffer->GetCursor();
+    const auto& cursor = _activeBuffer().GetCursor();
     return cursor.GetPosition();
 }
 
 bool Terminal::IsCursorVisible() const noexcept
 {
-    const auto& cursor = _buffer->GetCursor();
+    const auto& cursor = _activeBuffer().GetCursor();
     return cursor.IsVisible() && !cursor.IsPopupShown();
 }
 
 bool Terminal::IsCursorOn() const noexcept
 {
-    const auto& cursor = _buffer->GetCursor();
+    const auto& cursor = _activeBuffer().GetCursor();
     return cursor.IsOn();
 }
 
@@ -63,18 +63,18 @@ ULONG Terminal::GetCursorPixelWidth() const noexcept
 
 ULONG Terminal::GetCursorHeight() const noexcept
 {
-    return _buffer->GetCursor().GetSize();
+    return _activeBuffer().GetCursor().GetSize();
 }
 
 CursorType Terminal::GetCursorStyle() const noexcept
 {
-    return _buffer->GetCursor().GetType();
+    return _activeBuffer().GetCursor().GetType();
 }
 
 bool Terminal::IsCursorDoubleWidth() const
 {
-    const auto position = _buffer->GetCursor().GetPosition();
-    TextBufferTextIterator it(TextBufferCellIterator(*_buffer, position));
+    const auto position = _activeBuffer().GetCursor().GetPosition();
+    TextBufferTextIterator it(TextBufferCellIterator(_activeBuffer(), position));
     return IsGlyphFullWidth(*it);
 }
 
@@ -90,12 +90,12 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
 
 const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const noexcept
 {
-    return _buffer->GetHyperlinkUriFromId(id);
+    return _activeBuffer().GetHyperlinkUriFromId(id);
 }
 
 const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const noexcept
 {
-    return _buffer->GetCustomIdFromId(id);
+    return _activeBuffer().GetCustomIdFromId(id);
 }
 
 // Method Description:
@@ -151,11 +151,11 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants these const, but they're decremented below.
-    COORD realCoordStart = coordStart;
-    COORD realCoordEnd = coordEnd;
+    auto realCoordStart = coordStart;
+    auto realCoordEnd = coordEnd;
 #pragma warning(pop)
 
-    bool notifyScrollChange = false;
+    auto notifyScrollChange = false;
     if (coordStart.Y < _VisibleStartIndex())
     {
         // recalculate the scrollOffset
@@ -174,7 +174,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 
     if (notifyScrollChange)
     {
-        _buffer->TriggerScroll();
+        _activeBuffer().TriggerScroll();
         _NotifyScrollEvent();
     }
 
@@ -227,5 +227,5 @@ const bool Terminal::IsUiaDataInitialized() const noexcept
     // when a screen reader requests it. However, the terminal might not be fully
     // initialized yet. So we use this to check if any crucial components of
     // UiaData are not yet initialized.
-    return !!_buffer;
+    return !!_mainBuffer;
 }

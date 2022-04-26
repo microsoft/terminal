@@ -81,7 +81,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -176,10 +176,10 @@ namespace TerminalCoreUnitTests
             term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
-            const SHORT leftBoundary = viewport.Left();
-            const SHORT rightBoundary = viewport.RightInclusive();
-            const SHORT topBoundary = viewport.Top();
-            const SHORT bottomBoundary = viewport.BottomInclusive();
+            const auto leftBoundary = viewport.Left();
+            const auto rightBoundary = viewport.RightInclusive();
+            const auto topBoundary = viewport.Top();
+            const auto bottomBoundary = viewport.BottomInclusive();
 
             // Case 1: Simulate click past right (x,y) = (20,5)
             // should clamp to right boundary
@@ -219,7 +219,7 @@ namespace TerminalCoreUnitTests
 
             auto viewport = term.GetViewport();
             const SHORT leftBoundary = 0;
-            const SHORT rightBoundary = viewport.RightInclusive();
+            const auto rightBoundary = viewport.RightInclusive();
 
             // Simulate click at (x,y) = (5,5)
             term.SetSelectionAnchor({ 5, 5 });
@@ -358,7 +358,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -394,7 +394,7 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -417,7 +417,7 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -440,11 +440,11 @@ namespace TerminalCoreUnitTests
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(burrito);
 
             // Insert wide glyph at position (7,11)
-            term.SetCursorPosition(7, 11);
+            term.SetCursorPosition({ 7, 11 });
             term.Write(burrito);
 
             // Simulate ALT + click at (x,y) = (5,8)
@@ -496,7 +496,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe";
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -540,7 +540,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"C:\\Terminal>";
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate click at (x,y) = (15,10)
@@ -568,7 +568,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -597,7 +597,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (21,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (21,10)
@@ -685,7 +685,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.SetCursorPosition({ 4, 10 });
             term.Write(text);
 
             // Step 1: Create a selection on "doubleClickMe"

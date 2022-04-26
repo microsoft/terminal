@@ -29,6 +29,7 @@
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
   <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
+  <Import Project="$(OpenConsoleDir)\src\common.nugetversions.props" />
 
   <!-- This project is _heavily_ cribbed directly from the TAEF samples. In
   order to avoid breaking this project, it's been left largely unmodified. The
@@ -116,7 +117,7 @@
 
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
-      <HintPath>$(OpenConsoleDir)\packages\Microsoft.Taef.10.60.210621002\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
+      <HintPath>$(TAEFPackagePathRoot)\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
 
       <!-- This path is _relative to the .winmd_ -->
@@ -127,6 +128,7 @@
   <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
 
   <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)\src\common.nugetversions.targets" />
 
   <ItemGroup>
     <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" />

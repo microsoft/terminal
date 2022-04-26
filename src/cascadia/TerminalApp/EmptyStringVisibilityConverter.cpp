@@ -18,20 +18,20 @@ namespace winrt::TerminalApp::implementation
     // - value: the input object to attempt to convert into a Visibility.
     // Return Value:
     // - Visible if the object was a string and wasn't the empty string.
-    Foundation::IInspectable EmptyStringVisibilityConverter::Convert(Foundation::IInspectable const& value,
-                                                                     Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
-                                                                     Foundation::IInspectable const& /* parameter */,
-                                                                     hstring const& /* language */)
+    Foundation::IInspectable EmptyStringVisibilityConverter::Convert(const Foundation::IInspectable& value,
+                                                                     const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                                     const Foundation::IInspectable& /* parameter */,
+                                                                     const hstring& /* language */)
     {
         const auto& name = winrt::unbox_value_or<hstring>(value, L"");
         return winrt::box_value(name.empty() ? Visibility::Collapsed : Visibility::Visible);
     }
 
     // unused for one-way bindings
-    Foundation::IInspectable EmptyStringVisibilityConverter::ConvertBack(Foundation::IInspectable const& /* value */,
-                                                                         Windows::UI::Xaml::Interop::TypeName const& /* targetType */,
-                                                                         Foundation::IInspectable const& /* parameter */,
-                                                                         hstring const& /* language */)
+    Foundation::IInspectable EmptyStringVisibilityConverter::ConvertBack(const Foundation::IInspectable& /* value */,
+                                                                         const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                                         const Foundation::IInspectable& /* parameter */,
+                                                                         const hstring& /* language */)
     {
         throw hresult_not_implemented();
     }

@@ -28,8 +28,8 @@ namespace Microsoft::Console::Interactivity
     protected:
         IConsoleControl() {}
 
-        IConsoleControl(IConsoleControl const&) = delete;
-        IConsoleControl& operator=(IConsoleControl const&) = delete;
+        IConsoleControl(const IConsoleControl&) = delete;
+        IConsoleControl& operator=(const IConsoleControl&) = delete;
     };
 
     inline IConsoleControl::~IConsoleControl() {}

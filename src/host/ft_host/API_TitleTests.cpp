@@ -91,7 +91,7 @@ void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* 
     TestGetConsoleTitleWFillHelper(wchReadExpected, cchReadExpected, L'Z');
 
     // Prep expected data
-    size_t const cchCopy = std::min(cchTitle, cchTryToRead);
+    const auto cchCopy = std::min(cchTitle, cchTryToRead);
     VERIFY_SUCCEEDED(StringCchCopyNW(wchReadExpected, cchReadBuffer, wchTitle, cchCopy - 1)); // Copy as much room as we said we had leaving space for null terminator
 }
 
@@ -106,8 +106,8 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 
     SetLastError(0);
-    DWORD const dwRetVal = GetConsoleTitleA(chReadBuffer, (DWORD)cchTryToRead);
-    DWORD const dwLastError = GetLastError();
+    const auto dwRetVal = GetConsoleTitleA(chReadBuffer, (DWORD)cchTryToRead);
+    const auto dwLastError = GetLastError();
 
     VERIFY_ARE_EQUAL(dwExpectedRetVal, dwRetVal);
     VERIFY_ARE_EQUAL(dwExpectedLastError, dwLastError);
@@ -116,8 +116,8 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
     {
         for (size_t i = 0; i < cchExpected; i++)
         {
-            wchar_t const wchExpectedVis = chReadExpected[i] < 0x30 ? (wchar_t)chReadExpected[i] + 0x2400 : chReadExpected[i];
-            wchar_t const wchBufferVis = chReadBuffer[i] < 0x30 ? (wchar_t)chReadBuffer[i] + 0x2400 : chReadBuffer[i];
+            const wchar_t wchExpectedVis = chReadExpected[i] < 0x30 ? (wchar_t)chReadExpected[i] + 0x2400 : chReadExpected[i];
+            const wchar_t wchBufferVis = chReadBuffer[i] < 0x30 ? (wchar_t)chReadBuffer[i] + 0x2400 : chReadBuffer[i];
 
             // We must verify every individual character, not as a string, because we might be expecting a null
             // in the middle and need to verify it then keep going and read what's past that.
@@ -142,8 +142,8 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
 
     SetLastError(0);
-    DWORD const dwRetVal = GetConsoleTitleW(wchReadBuffer, (DWORD)cchTryToRead);
-    DWORD const dwLastError = GetLastError();
+    const auto dwRetVal = GetConsoleTitleW(wchReadBuffer, (DWORD)cchTryToRead);
+    const auto dwLastError = GetLastError();
 
     VERIFY_ARE_EQUAL(dwExpectedRetVal, dwRetVal);
     VERIFY_ARE_EQUAL(dwExpectedLastError, dwLastError);
@@ -152,8 +152,8 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
     {
         for (size_t i = 0; i < cchExpected; i++)
         {
-            wchar_t const wchExpectedVis = wchReadExpected[i] < 0x30 ? wchReadExpected[i] + 0x2400 : wchReadExpected[i];
-            wchar_t const wchBufferVis = wchReadBuffer[i] < 0x30 ? wchReadBuffer[i] + 0x2400 : wchReadBuffer[i];
+            const wchar_t wchExpectedVis = wchReadExpected[i] < 0x30 ? wchReadExpected[i] + 0x2400 : wchReadExpected[i];
+            const wchar_t wchBufferVis = wchReadBuffer[i] < 0x30 ? wchReadBuffer[i] + 0x2400 : wchReadBuffer[i];
 
             // We must verify every individual character, not as a string, because we might be expecting a null
             // in the middle and need to verify it then keep going and read what's past that.
@@ -169,17 +169,17 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
 
 void TitleTests::TestGetConsoleTitleA()
 {
-    const char* const szTestTitle = "TestTitle";
-    size_t const cchTestTitle = strlen(szTestTitle);
+    const auto szTestTitle = "TestTitle";
+    const auto cchTestTitle = strlen(szTestTitle);
 
     Log::Comment(NoThrowString().Format(L"Set up the initial console title to '%S'.", szTestTitle));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleTitleA(szTestTitle));
 
-    size_t cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
-    wistd::unique_ptr<char[]> chReadBuffer = wil::make_unique_nothrow<char[]>(cchReadBuffer);
+    auto cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
+    auto chReadBuffer = wil::make_unique_nothrow<char[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(chReadBuffer.get());
 
-    wistd::unique_ptr<char[]> chReadExpected = wil::make_unique_nothrow<char[]>(cchReadBuffer);
+    auto chReadExpected = wil::make_unique_nothrow<char[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(chReadExpected.get());
 
     size_t cchTryToRead = 0;
@@ -199,7 +199,7 @@ void TitleTests::TestGetConsoleTitleA()
     // Run the call and test it out.
     TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, 0, S_OK, chReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 2: Say we have have exactly the string length with no null space.");
+    Log::Comment(L"Test 2: Say we have exactly the string length with no null space.");
     cchTryToRead = cchTestTitle;
 
     // Prepare the buffers and expected data
@@ -214,7 +214,7 @@ void TitleTests::TestGetConsoleTitleA()
     // Run the call and test it out.
     TestGetConsoleTitleAVerifyHelper(chReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, chReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 3: Say we have have the string length plus one null space.");
+    Log::Comment(L"Test 3: Say we have the string length plus one null space.");
     cchTryToRead = cchTestTitle + 1;
 
     // Prepare the buffers and expected data
@@ -253,17 +253,17 @@ void TitleTests::TestGetConsoleTitleA()
 
 void TitleTests::TestGetConsoleTitleW()
 {
-    const wchar_t* const wszTestTitle = L"TestTitle";
-    size_t const cchTestTitle = wcslen(wszTestTitle);
+    const auto wszTestTitle = L"TestTitle";
+    const auto cchTestTitle = wcslen(wszTestTitle);
 
     Log::Comment(NoThrowString().Format(L"Set up the initial console title to '%s'.", wszTestTitle));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleTitleW(wszTestTitle));
 
-    size_t cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
-    wistd::unique_ptr<wchar_t[]> wchReadBuffer = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
+    auto cchReadBuffer = cchTestTitle + 1 + 4; // string length + null terminator + 4 bonus spots to check overruns/extra length.
+    auto wchReadBuffer = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(wchReadBuffer.get());
 
-    wistd::unique_ptr<wchar_t[]> wchReadExpected = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
+    auto wchReadExpected = wil::make_unique_nothrow<wchar_t[]>(cchReadBuffer);
     VERIFY_IS_NOT_NULL(wchReadExpected.get());
 
     size_t cchTryToRead = 0;
@@ -283,7 +283,7 @@ void TitleTests::TestGetConsoleTitleW()
     // Run the call and test it out.
     TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 2: Say we have have exactly the string length with no null space.");
+    Log::Comment(L"Test 2: Say we have exactly the string length with no null space.");
     cchTryToRead = cchTestTitle;
 
     // Prepare the buffers and expected data
@@ -298,7 +298,7 @@ void TitleTests::TestGetConsoleTitleW()
     // Run the call and test it out.
     TestGetConsoleTitleWVerifyHelper(wchReadBuffer.get(), cchReadBuffer, cchTryToRead, (DWORD)cchTestTitle, S_OK, wchReadExpected.get(), cchReadBuffer);
 
-    Log::Comment(L"Test 3: Say we have have the string length plus one null space.");
+    Log::Comment(L"Test 3: Say we have the string length plus one null space.");
     cchTryToRead = cchTestTitle + 1;
 
     // Prepare the buffers and expected data

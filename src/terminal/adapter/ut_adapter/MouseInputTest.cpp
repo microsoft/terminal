@@ -29,7 +29,7 @@ static const wchar_t* s_pwszInputExpected;
 
 static wchar_t s_pwszExpectedBuffer[BYTE_MAX]; // big enough for anything
 
-static COORD s_rgTestCoords[] = {
+static til::point s_rgTestCoords[] = {
     { 0, 0 },
     { 0, 1 },
     { 1, 1 },
@@ -99,7 +99,7 @@ public:
             for (size_t i = 0; i < events.size(); ++i)
             {
                 KeyEvent expectedKeyEvent(TRUE, 1, 0, 0, s_pwszInputExpected[i], 0);
-                KeyEvent testKeyEvent = *static_cast<const KeyEvent* const>(events[i].get());
+                auto testKeyEvent = *static_cast<const KeyEvent* const>(events[i].get());
                 VERIFY_ARE_EQUAL(expectedKeyEvent, testKeyEvent, NoThrowString().Format(L"Chars='%c','%c'", s_pwszInputExpected[i], testKeyEvent.GetCharData()));
             }
         }
@@ -125,7 +125,7 @@ public:
         memcpy(s_pwszExpectedBuffer, pwchTestOutput, cchInputExpected * sizeof(wchar_t));
 
         // Change the expected button value
-        wchar_t wch = GetDefaultCharFromButton(uiButton, sModifierKeystate, sScrollDelta);
+        auto wch = GetDefaultCharFromButton(uiButton, sModifierKeystate, sScrollDelta);
         Log::Comment(NoThrowString().Format(L"Button Char was:\'%d\' for uiButton '%d", (int)wch, uiButton));
 
         s_pwszExpectedBuffer[3] = wch;
@@ -154,7 +154,7 @@ public:
 
     wchar_t GetDefaultCharFromButton(unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
     {
-        wchar_t wch = L'\x0';
+        auto wch = L'\x0';
         Log::Comment(NoThrowString().Format(L"uiButton '%d'", uiButton));
         switch (uiButton)
         {
@@ -195,7 +195,7 @@ public:
 
     int GetSgrCharFromButton(unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
     {
-        int result = 0;
+        auto result = 0;
         switch (uiButton)
         {
         case WM_LBUTTONDBLCLK:
@@ -233,7 +233,7 @@ public:
 
     bool IsButtonDown(unsigned int uiButton)
     {
-        bool fIsDown = false;
+        auto fIsDown = false;
         switch (uiButton)
         {
         case WM_LBUTTONDBLCLK:
@@ -284,25 +284,25 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
+        auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        auto sModifierKeystate = (SHORT)uiModifierKeystate;
         short sScrollDelta = 0;
 
         unsigned int uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
-        bool fExpectedKeyHandled = false;
+        auto fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
 
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
 
@@ -319,9 +319,9 @@ public:
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
 
@@ -338,9 +338,9 @@ public:
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
 
@@ -367,28 +367,28 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
+        auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        auto sModifierKeystate = (SHORT)uiModifierKeystate;
         short sScrollDelta = 0;
 
         unsigned int uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
-        bool fExpectedKeyHandled = false;
+        auto fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, true);
 
-        short MaxCoord = SHORT_MAX - 33;
+        auto MaxCoord = SHORT_MAX - 33;
 
         mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -405,9 +405,9 @@ public:
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -424,9 +424,9 @@ public:
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -454,16 +454,16 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
+        auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        auto sModifierKeystate = (SHORT)uiModifierKeystate;
         short sScrollDelta = 0;
 
         unsigned int uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
-        bool fExpectedKeyHandled = false;
+        auto fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
@@ -474,9 +474,9 @@ public:
         fExpectedKeyHandled = uiButton != WM_MOUSEMOVE;
 
         mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
@@ -488,9 +488,9 @@ public:
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
@@ -507,9 +507,9 @@ public:
 
         fExpectedKeyHandled = true;
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
@@ -535,26 +535,26 @@ public:
 
         Log::Comment(L"Starting test...");
 
-        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
+        auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        short sModifierKeystate = (SHORT)uiModifierKeystate;
+        auto sModifierKeystate = (SHORT)uiModifierKeystate;
 
         unsigned int uiButton = WM_MOUSEWHEEL;
-        int iScrollDelta = 0;
+        auto iScrollDelta = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"sScrollDelta", iScrollDelta));
-        short sScrollDelta = (short)(iScrollDelta);
+        auto sScrollDelta = (short)(iScrollDelta);
 
-        bool fExpectedKeyHandled = false;
+        auto fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         // Default Tracking, Default Encoding
         mouseInput->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
 
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -572,10 +572,10 @@ public:
 
         // Default Tracking, UTF8 Encoding
         mouseInput->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, true);
-        short MaxCoord = SHORT_MAX - 33;
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        auto MaxCoord = SHORT_MAX - 33;
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
@@ -594,9 +594,9 @@ public:
         // Default Tracking, SGR Encoding
         mouseInput->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, true);
         fExpectedKeyHandled = true; // SGR Mode should be able to handle any arbitrary coords.
-        for (int i = 0; i < s_iTestCoordsLength; i++)
+        for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
-            COORD Coord = s_rgTestCoords[i];
+            auto Coord = s_rgTestCoords[i];
 
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
@@ -615,7 +615,7 @@ public:
     TEST_METHOD(AlternateScrollModeTests)
     {
         Log::Comment(L"Starting test...");
-        std::unique_ptr<TerminalInput> mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
+        auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         const short noModifierKeys = 0;
 
         Log::Comment(L"Enable alternate scroll mode in the alt screen buffer");

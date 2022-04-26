@@ -68,7 +68,7 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
     };
 
-    [default_interface] runtimeclass Monarch : IMonarch
+    runtimeclass Monarch : [default] IMonarch
     {
         Monarch();
     };

@@ -7,6 +7,7 @@
 #include "CommandlineArgs.h"
 #include "../inc/WindowingBehavior.h"
 #include "FindTargetWindowArgs.h"
+#include "ProposeCommandlineResult.h"
 
 #include "WindowManager.g.cpp"
 #include "../../types/inc/utils.hpp"
@@ -25,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Register with COM as a server for the Monarch class
         _registerAsMonarch();
         // Instantiate an instance of the Monarch. This may or may not be in-proc!
-        bool foundMonarch = false;
+        auto foundMonarch = false;
         while (!foundMonarch)
         {
             try
@@ -82,8 +83,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                           winrt::hstring& givenName)
     {
         // these two errors are Win32 errors, convert them to HRESULTS so we can actually compare below.
-        static constexpr HRESULT RPC_SERVER_UNAVAILABLE_HR = HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
-        static constexpr HRESULT RPC_CALL_FAILED_HR = HRESULT_FROM_WIN32(RPC_S_CALL_FAILED);
+        static constexpr auto RPC_SERVER_UNAVAILABLE_HR = HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
+        static constexpr auto RPC_CALL_FAILED_HR = HRESULT_FROM_WIN32(RPC_S_CALL_FAILED);
 
         // The monarch may respond back "you should be a new
         // window, with ID,name of (id, name)". Really the responses are:
@@ -100,13 +101,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // starting a defterm, and when that BP gets hit, kill the original
         // monarch, and see what happens here.
 
-        bool proposedCommandline = false;
+        auto proposedCommandline = false;
         Remoting::ProposeCommandlineResult result{ nullptr };
         while (!proposedCommandline)
         {
             try
             {
-                result = _monarch.ProposeCommandline(args);
+                // MSFT:38542548 _We believe_ that this is the source of the
+                // crash here. After we get the result, stash it's values into a
+                // local copy, so that we can check them later. If the Monarch
+                // dies between now and the inspection of
+                // `result.ShouldCreateWindow` below, we don't want to explode
+                // (since _proposeToMonarch is not try/caught).
+                auto outOfProcResult = _monarch.ProposeCommandline(args);
+                result = winrt::make<implementation::ProposeCommandlineResult>(outOfProcResult);
+
                 proposedCommandline = true;
             }
             catch (const winrt::hresult_error& e)
@@ -332,8 +341,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //
         // * If we're running unpackaged: the .winmd must be a sibling of the .exe
         // * If we're running packaged: the .winmd must be in the package root
-        _monarch = create_instance<Remoting::Monarch>(Monarch_clsid,
-                                                      CLSCTX_LOCAL_SERVER);
+        _monarch = create_instance<Remoting::IMonarch>(Monarch_clsid,
+                                                       CLSCTX_LOCAL_SERVER);
     }
 
     // NOTE: This can throw! Callers include:
@@ -347,6 +356,52 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void WindowManager::_createMonarchAndCallbacks()
     {
         _createMonarch();
+
+        if (_monarch == nullptr)
+        {
+            // See MSFT:38540483, GH#12774 for details.
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "WindowManager_NullMonarchTryAgain",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            // Here we're gonna just give it a quick second try.Probably not
+            // definitive, but might help.
+            _createMonarch();
+        }
+
+        if (_monarch == nullptr)
+        {
+            // See MSFT:38540483, GH#12774 for details.
+            if constexpr (Feature_IsolatedMonarchMode::IsEnabled())
+            {
+                // Fall back to having a in proc monarch. Were now isolated from
+                // other windows. This is a pretty torn state, but at least we
+                // didn't just explode.
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_NullMonarchIsolateMode",
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+                _monarch = winrt::make<winrt::Microsoft::Terminal::Remoting::implementation::Monarch>();
+            }
+            else
+            {
+                // The monarch is null. We're hoping that we can find another,
+                // hopefully us. We're gonna go back around the loop again and
+                // see what happens. If this is really an infinite loop (where
+                // the OS won't even give us back US as the monarch), then I
+                // suppose we'll find out soon enough.
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_NullMonarchTryAgain",
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+                winrt::hresult_error(E_UNEXPECTED, L"Did not expect the Monarch to ever be null");
+            }
+        }
+
+        // We're pretty confident that we have a Monarch here.
+
         // Save the result of checking if we're the king. We want to avoid
         // unnecessary calls back and forth if we can.
         _isKing = _areWeTheKing();
@@ -495,7 +550,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         waits[1] = _monarchWaitInterrupt.get();
         const auto peasantID = _peasant.GetID(); // safe: _peasant is in-proc.
 
-        bool exitThreadRequested = false;
+        auto exitThreadRequested = false;
         while (!exitThreadRequested)
         {
             // At any point in all this, the current monarch might die. If it
@@ -597,7 +652,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-                bool foundNewMonarch = false;
+                auto foundNewMonarch = false;
                 while (!foundNewMonarch)
                 {
                     try

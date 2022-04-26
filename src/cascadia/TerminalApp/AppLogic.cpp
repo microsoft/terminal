@@ -122,10 +122,10 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     textRun.Text(text);
 
     // Color the text red (light theme) or yellow (dark theme) based on the system theme
-    winrt::IInspectable key = winrt::box_value(L"ErrorTextBrush");
+    auto key = winrt::box_value(L"ErrorTextBrush");
     if (resources.HasKey(key))
     {
-        winrt::IInspectable g = resources.Lookup(key);
+        auto g = resources.Lookup(key);
         auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
         textRun.Foreground(brush);
     }
@@ -348,11 +348,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         _dialog = dialog;
-        // GH#12622: After the dialog is displayed, always clear it out. If we
-        // don't, we won't be able to display another!
-        const auto cleanup = wil::scope_exit([this]() {
-            _dialog = nullptr;
-        });
+
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
         // Since we're hosting the dialog in a Xaml island, we need to connect it to the
         // xaml tree somehow.
@@ -399,14 +395,6 @@ namespace winrt::TerminalApp::implementation
         {
             localDialog.Hide();
         }
-    }
-
-    // Method Description:
-    // - Returns true if there is no dialog currently being shown (meaning that we can show a dialog)
-    // - Returns false if there is a dialog currently being shown (meaning that we cannot show another dialog)
-    bool AppLogic::CanShowDialog()
-    {
-        return (_dialog == nullptr);
     }
 
     // Method Description:
@@ -614,7 +602,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::Size proposedSize{};
 
-        const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (const auto layout = _root->LoadPersistedLayout(_settings))
         {
             if (layout.InitialSize())
@@ -794,7 +782,7 @@ namespace winrt::TerminalApp::implementation
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
     [[nodiscard]] HRESULT AppLogic::_TryLoadSettings() noexcept
     {
-        HRESULT hr = E_FAIL;
+        auto hr = E_FAIL;
 
         try
         {
@@ -1367,7 +1355,7 @@ namespace winrt::TerminalApp::implementation
             // now.
             if (parsedTarget.empty())
             {
-                int32_t windowId = WindowingBehaviorUseNew;
+                auto windowId = WindowingBehaviorUseNew;
                 switch (windowingBehavior)
                 {
                 case WindowingMode::UseNew:
@@ -1388,7 +1376,7 @@ namespace winrt::TerminalApp::implementation
             // window's ID:
             try
             {
-                int32_t windowId = ::base::saturated_cast<int32_t>(std::stoi(parsedTarget));
+                auto windowId = ::base::saturated_cast<int32_t>(std::stoi(parsedTarget));
 
                 // If the user provides _any_ negative number, then treat it as
                 // -1, for "use a new window".

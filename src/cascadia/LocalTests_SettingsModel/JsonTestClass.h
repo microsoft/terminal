@@ -24,7 +24,7 @@ public:
 
         Json::Value root;
         std::string errs;
-        const bool parseResult = reader->parse(content.data(), content.data() + content.size(), &root, &errs);
+        const auto parseResult = reader->parse(content.data(), content.data() + content.size(), &root, &errs);
         VERIFY_IS_TRUE(parseResult, winrt::to_hstring(errs).c_str());
         return root;
     };

@@ -24,6 +24,7 @@ const std::wstring_view ConsoleArguments::WIN32_INPUT_MODE = L"--win32input";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
+const std::wstring_view ConsoleArguments::PASSTHROUGH_ARG = L"--passthrough";
 
 std::wstring EscapeArgument(std::wstring_view ac)
 {
@@ -31,7 +32,7 @@ std::wstring EscapeArgument(std::wstring_view ac)
     {
         return L"\"\"";
     }
-    bool hasSpace = false;
+    auto hasSpace = false;
     auto n = ac.size();
     for (auto c : ac)
     {
@@ -186,7 +187,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
                                                            _Inout_ size_t& index,
                                                            _Out_opt_ std::wstring* const pSetting)
 {
-    bool hasNext = (index + 1) < args.size();
+    auto hasNext = (index + 1) < args.size();
     if (hasNext)
     {
         s_ConsumeArg(args, index);
@@ -215,12 +216,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      failure.
 [[nodiscard]] HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
 {
-    HRESULT hr = E_INVALIDARG;
-    bool hasNext = (index + 1) < args.size();
+    auto hr = E_INVALIDARG;
+    auto hasNext = (index + 1) < args.size();
     if (hasNext)
     {
         s_ConsumeArg(args, index);
-        std::wstring value = args[index];
+        auto value = args[index];
         if (value == FEATURE_PTY_ARG)
         {
             hr = S_OK;
@@ -247,7 +248,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
                                                            _Inout_ size_t& index,
                                                            _Out_opt_ short* const pSetting)
 {
-    bool succeeded = (index + 1) < args.size();
+    auto succeeded = (index + 1) < args.size();
     if (succeeded)
     {
         s_ConsumeArg(args, index);
@@ -256,7 +257,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             try
             {
                 size_t pos = 0;
-                int value = std::stoi(args[index], &pos);
+                auto value = std::stoi(args[index], &pos);
                 // If the entire string was a number, pos will be equal to the
                 //      length of the string. Otherwise, a string like 8foo will
                 //       be parsed as "8"
@@ -291,7 +292,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //                if the handle value was already filled.
 [[nodiscard]] HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // The handle should have a valid prefix.
     if (handleAsText.substr(0, HANDLE_PREFIX.length()) != HANDLE_PREFIX)
@@ -378,18 +379,18 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     }
 
     std::vector<std::wstring> args;
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // Make a mutable copy of the commandline for tokenizing
-    std::wstring copy = _commandline;
+    auto copy = _commandline;
 
     // Tokenize the commandline
-    int argc = 0;
+    auto argc = 0;
     wil::unique_hlocal_ptr<PWSTR[]> argv;
     argv.reset(CommandLineToArgvW(copy.c_str(), &argc));
     RETURN_LAST_ERROR_IF(argv == nullptr);
 
-    for (int i = 1; i < argc; ++i)
+    for (auto i = 1; i < argc; ++i)
     {
         args.push_back(argv[i]);
     }
@@ -401,7 +402,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     {
         hr = E_INVALIDARG;
 
-        std::wstring arg = args[i];
+        auto arg = args[i];
 
         if (arg.substr(0, HANDLE_PREFIX.length()) == HANDLE_PREFIX ||
             arg == SERVER_HANDLE_ARG)
@@ -410,7 +411,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             // --server 0x4 (new method)
             // 0x4 (legacy method)
             // If we see >1 of these, it's invalid.
-            std::wstring serverHandleVal = arg;
+            auto serverHandleVal = arg;
 
             if (arg == SERVER_HANDLE_ARG)
             {
@@ -458,6 +459,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         else if (arg == COM_SERVER_ARG)
         {
             _runAsComServer = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == PASSTHROUGH_ARG)
+        {
+            _passthroughMode = true;
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
@@ -594,6 +601,11 @@ bool ConsoleArguments::ShouldCreateServerHandle() const
 bool ConsoleArguments::ShouldRunAsComServer() const
 {
     return _runAsComServer;
+}
+
+bool ConsoleArguments::IsPassthroughMode() const noexcept
+{
+    return _passthroughMode;
 }
 
 HANDLE ConsoleArguments::GetServerHandle() const

@@ -57,7 +57,7 @@ using namespace Microsoft::Console::Render;
 
 // Routine Description:
 // - Implementation of IDWritePixelSnapping::GetCurrentTransform
-// - Retrieves the the matrix transform to be used while laying pixels onto the
+// - Retrieves the matrix transform to be used while laying pixels onto the
 //   drawing context
 // Arguments:
 // - clientDrawingContext - Pointer to structure of information required to draw
@@ -172,7 +172,7 @@ using namespace Microsoft::Console::Render;
                                                          DWRITE_READING_DIRECTION /*readingDirection*/,
                                                          DWRITE_FLOW_DIRECTION /*flowDirection*/) noexcept
 {
-    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    auto drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
     // Get brush
@@ -183,7 +183,7 @@ using namespace Microsoft::Console::Render;
         brush = static_cast<ID2D1Brush*>(clientDrawingEffect);
     }
 
-    const D2D1_RECT_F rect = D2D1::RectF(x, y, x + width, y + thickness);
+    const auto rect = D2D1::RectF(x, y, x + width, y + thickness);
     drawingContext->renderTarget->FillRectangle(&rect, brush);
 
     return S_OK;
@@ -257,7 +257,7 @@ try
         return S_FALSE;
     }
 
-    const bool fInvert = !options.fUseColor;
+    const auto fInvert = !options.fUseColor;
     // The normal, colored FullBox and legacy cursors are drawn in the first pass
     // so they go behind the text.
     // Inverted cursors are drawn in two passes.
@@ -295,13 +295,13 @@ try
         return S_FALSE;
     }
 
-    CursorPaintType paintType = CursorPaintType::Fill;
+    auto paintType = CursorPaintType::Fill;
     switch (options.cursorType)
     {
     case CursorType::Legacy:
     {
         // Enforce min/max cursor height
-        ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
+        auto ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
         ulHeight = gsl::narrow_cast<ULONG>(drawingContext.cellSize.height * ulHeight) / 100;
         ulHeight = std::max(ulHeight, MinCursorHeightPixels); // No smaller than 1px
 
@@ -437,7 +437,7 @@ try
     if (options.cursorType == CursorType::DoubleUnderscore)
     {
         // Draw upper line directly.
-        D2D1_RECT_F upperLine = rect;
+        auto upperLine = rect;
         upperLine.top -= 2;
         upperLine.bottom -= 2;
         d2dContext->FillRectangle(upperLine, brush.Get());
@@ -486,11 +486,11 @@ CATCH_RETURN()
     // Color glyph rendering sourced from https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/DWriteColorGlyph
 
 #pragma warning(suppress : 26429) // Symbol 'drawingContext' is never tested for nullness, it can be marked as not_null (f.23).
-    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    auto drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
     // Since we've delegated the drawing of the background of the text into this function, the origin passed in isn't actually the baseline.
     // It's the top left corner. Save that off first.
-    const D2D1_POINT_2F origin = D2D1::Point2F(baselineOriginX, baselineOriginY);
+    const auto origin = D2D1::Point2F(baselineOriginX, baselineOriginY);
 
     // Then make a copy for the baseline origin (which is part way down the left side of the text, not the top or bottom).
     // We'll use this baseline Origin for drawing the actual text.
@@ -594,7 +594,7 @@ CATCH_RETURN()
 
     // First check if we want a color font and try to extract color emoji first.
     // Color emoji are only available on Windows 10+
-    static const bool s_isWindows10OrGreater = IsWindows10OrGreater();
+    static const auto s_isWindows10OrGreater = IsWindows10OrGreater();
     if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT) && s_isWindows10OrGreater)
     {
         ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
@@ -604,7 +604,7 @@ CATCH_RETURN()
         RETURN_IF_FAILED(drawingContext->dwriteFactory->QueryInterface(dwriteFactory4.GetAddressOf()));
 
         // The list of glyph image formats this renderer is prepared to support.
-        const DWRITE_GLYPH_IMAGE_FORMATS supportedFormats =
+        const auto supportedFormats =
             DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE |
             DWRITE_GLYPH_IMAGE_FORMATS_CFF |
             DWRITE_GLYPH_IMAGE_FORMATS_COLR |
@@ -617,14 +617,14 @@ CATCH_RETURN()
         // Determine whether there are any color glyph runs within glyphRun. If
         // there are, glyphRunEnumerator can be used to iterate through them.
         ::Microsoft::WRL::ComPtr<IDWriteColorGlyphRunEnumerator1> glyphRunEnumerator;
-        const HRESULT hr = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin,
-                                                                  glyphRun,
-                                                                  glyphRunDescription,
-                                                                  supportedFormats,
-                                                                  measuringMode,
-                                                                  nullptr,
-                                                                  0,
-                                                                  &glyphRunEnumerator);
+        const auto hr = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin,
+                                                               glyphRun,
+                                                               glyphRunDescription,
+                                                               supportedFormats,
+                                                               measuringMode,
+                                                               nullptr,
+                                                               0,
+                                                               &glyphRunEnumerator);
 
         // If the analysis found no color glyphs in the run, just draw normally.
         if (hr == DWRITE_E_NOCOLOR)
@@ -655,7 +655,7 @@ CATCH_RETURN()
                 DWRITE_COLOR_GLYPH_RUN1 const* colorRun;
                 RETURN_IF_FAILED(glyphRunEnumerator->GetCurrentRun(&colorRun));
 
-                const D2D1_POINT_2F currentBaselineOrigin = D2D1::Point2F(colorRun->baselineOriginX, colorRun->baselineOriginY);
+                const auto currentBaselineOrigin = D2D1::Point2F(colorRun->baselineOriginX, colorRun->baselineOriginY);
 
                 switch (colorRun->glyphImageFormat)
                 {
@@ -750,7 +750,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT CustomTextRenderer::EndClip(void* clientDrawingContext) noexcept
 try
 {
-    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    auto drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
     RETURN_HR_IF(E_INVALIDARG, !drawingContext);
 
     if (_clipRect.has_value())
@@ -948,7 +948,7 @@ CATCH_RETURN();
 
     geometrySink->Close();
 
-    D2D1::Matrix3x2F const matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
+    const auto matrixAlign = D2D1::Matrix3x2F::Translation(baselineOrigin.x, baselineOrigin.y);
 
     ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> transformedGeometry;
     d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),

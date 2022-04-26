@@ -42,8 +42,8 @@ class CommandNumberPopupTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareReadHandle();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
@@ -166,7 +166,7 @@ class CommandNumberPopupTests
 
         // the buffer should contain the least recent history item
 
-        const std::wstring_view expected = m_pHistory->GetLastCommand();
+        const auto expected = m_pHistory->GetLastCommand();
         const std::wstring resultString(buffer, buffer + expected.size());
         VERIFY_ARE_EQUAL(expected, resultString);
     }
@@ -180,7 +180,7 @@ class CommandNumberPopupTests
                                                          bool& popupKey,
                                                          DWORD& modifiers,
                                                          wchar_t& wch) {
-                static bool needReturn = false;
+                static auto needReturn = false;
                 popupKey = false;
                 modifiers = 0;
                 if (!needReturn)
@@ -225,7 +225,7 @@ class CommandNumberPopupTests
 
         // simulates user pressing 1, 2, 3, 4, 5, enter
         Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
-            static int num = 1;
+            static auto num = 1;
             popupKey = false;
             modifiers = 0;
             if (num <= 5)
@@ -258,7 +258,7 @@ class CommandNumberPopupTests
 
         // the buffer should contain the most recent history item
 
-        const std::wstring_view expected = m_pHistory->GetLastCommand();
+        const auto expected = m_pHistory->GetLastCommand();
         const std::wstring resultString(buffer, buffer + expected.size());
         VERIFY_ARE_EQUAL(expected, resultString);
     }

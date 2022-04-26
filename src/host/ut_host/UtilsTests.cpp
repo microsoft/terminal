@@ -32,7 +32,7 @@ class UtilsTests
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
-        UINT const seed = (UINT)time(nullptr);
+        const auto seed = (UINT)time(nullptr);
         Log::Comment(String().Format(L"Setting random seed to : %d", seed));
         srand(seed);
 
@@ -74,13 +74,13 @@ class UtilsTests
 
     void SubtractRandom(short& psValue)
     {
-        SHORT const sRand = RandomShort();
+        const auto sRand = RandomShort();
         psValue -= gsl::narrow<SHORT>(std::max(sRand % psValue, 1));
     }
 
     TEST_METHOD(TestCompareCoords)
     {
-        int result = 5; // not 1, 0, or -1
+        auto result = 5; // not 1, 0, or -1
         COORD coordA;
         COORD coordB;
 

@@ -232,7 +232,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 //              - If fallback occurred, this is updated to what we retrieved instead.
 // Return Value:
 // - Localized string name of the font family
-[[nodiscard]] std::wstring DxFontInfo::_GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
+[[nodiscard]] std::wstring DxFontInfo::_GetFontFamilyName(const gsl::not_null<IDWriteFontFamily*> fontFamily,
                                                           std::wstring& localeName)
 {
     // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection

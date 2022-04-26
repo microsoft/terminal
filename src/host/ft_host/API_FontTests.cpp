@@ -59,7 +59,7 @@ void FontTests::TestCurrentFontAPIsInvalid()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"bMaximumWindow", bMaximumWindow), L"Get maximized window value");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"strOperation", strOperation), L"Get operation value");
 
-    const bool bUseValidOutputHandle = (dwConsoleOutput == 1);
+    const auto bUseValidOutputHandle = (dwConsoleOutput == 1);
     HANDLE hConsoleOutput;
     if (bUseValidOutputHandle)
     {
@@ -107,7 +107,7 @@ void FontTests::TestGetFontSizeInvalid()
     // Need to make sure that last error is cleared so that we can verify that lasterror was set by GetConsoleFontSize
     SetLastError(0);
 
-    COORD coordFontSize = OneCoreDelay::GetConsoleFontSize((HANDLE)dwConsoleOutput, 0);
+    auto coordFontSize = OneCoreDelay::GetConsoleFontSize((HANDLE)dwConsoleOutput, 0);
     VERIFY_ARE_EQUAL(coordFontSize, c_coordZero, L"Ensure (0,0) coord returned to indicate failure");
     VERIFY_ARE_EQUAL(GetLastError(), (DWORD)ERROR_INVALID_HANDLE, L"Ensure last error was set appropriately");
 }
@@ -115,14 +115,14 @@ void FontTests::TestGetFontSizeInvalid()
 void FontTests::TestGetFontSizeLargeIndexInvalid()
 {
     SetLastError(0);
-    COORD coordFontSize = OneCoreDelay::GetConsoleFontSize(GetStdOutputHandle(), 0xFFFFFFFF);
+    auto coordFontSize = OneCoreDelay::GetConsoleFontSize(GetStdOutputHandle(), 0xFFFFFFFF);
     VERIFY_ARE_EQUAL(coordFontSize, c_coordZero, L"Ensure (0,0) coord returned to indicate failure");
     VERIFY_ARE_EQUAL(GetLastError(), (DWORD)ERROR_INVALID_PARAMETER, L"Ensure last error was set appropriately");
 }
 
 void FontTests::TestSetConsoleFontNegativeSize()
 {
-    const HANDLE hConsoleOutput = GetStdOutputHandle();
+    const auto hConsoleOutput = GetStdOutputHandle();
     CONSOLE_FONT_INFOEX cfie = { 0 };
     cfie.cbSize = sizeof(cfie);
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
@@ -138,7 +138,7 @@ void FontTests::TestSetConsoleFontNegativeSize()
 
 void FontTests::TestFontScenario()
 {
-    const HANDLE hConsoleOutput = GetStdOutputHandle();
+    const auto hConsoleOutput = GetStdOutputHandle();
 
     Log::Comment(L"1. Ensure that the various GET APIs for font information align with each other.");
     CONSOLE_FONT_INFOEX cfie = { 0 };
@@ -152,7 +152,7 @@ void FontTests::TestFontScenario()
     VERIFY_ARE_NOT_EQUAL(cfi.dwFontSize, c_coordZero, L"Ensure non-zero font size");
     VERIFY_ARE_EQUAL(cfi.dwFontSize, cfie.dwFontSize, L"Ensure regular and Ex APIs return same dwFontSize");
 
-    const COORD coordCurrentFontSize = OneCoreDelay::GetConsoleFontSize(hConsoleOutput, cfi.nFont);
+    const auto coordCurrentFontSize = OneCoreDelay::GetConsoleFontSize(hConsoleOutput, cfi.nFont);
     VERIFY_ARE_EQUAL(coordCurrentFontSize, cfi.dwFontSize, L"Ensure GetConsoleFontSize output matches GetCurrentConsoleFont");
 
     // ---------------------
@@ -206,7 +206,7 @@ void FontTests::TestFontScenario()
 
 void FontTests::TestLongFontNameScenario()
 {
-    std::wstring expandedLongFontPath = wil::ExpandEnvironmentStringsW<std::wstring>(pwszLongFontPath);
+    auto expandedLongFontPath = wil::ExpandEnvironmentStringsW<std::wstring>(pwszLongFontPath);
 
     if (!CheckIfFileExists(expandedLongFontPath.c_str()))
     {
@@ -215,7 +215,7 @@ void FontTests::TestLongFontNameScenario()
         return;
     }
 
-    const HANDLE hConsoleOutput = GetStdOutputHandle();
+    const auto hConsoleOutput = GetStdOutputHandle();
 
     CONSOLE_FONT_INFOEX cfieSetLong = { 0 };
     cfieSetLong.cbSize = sizeof(cfieSetLong);
@@ -243,8 +243,8 @@ void FontTests::TestSetFontAdjustsWindow()
         return;
     }
 
-    const HANDLE hConsoleOutput = GetStdOutputHandle();
-    const HWND hwnd = GetConsoleWindow();
+    const auto hConsoleOutput = GetStdOutputHandle();
+    const auto hwnd = GetConsoleWindow();
     VERIFY_IS_TRUE(!!IsWindow(hwnd));
     RECT rc = { 0 };
 

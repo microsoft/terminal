@@ -21,19 +21,21 @@ namespace Microsoft::Terminal::Core
 
         virtual void PrintString(std::wstring_view string) = 0;
 
+        virtual bool ReturnResponse(std::wstring_view responseString) = 0;
+
         virtual TextAttribute GetTextAttributes() const = 0;
         virtual void SetTextAttributes(const TextAttribute& attrs) = 0;
 
         virtual Microsoft::Console::Types::Viewport GetBufferSize() = 0;
-        virtual void SetCursorPosition(short x, short y) = 0;
-        virtual COORD GetCursorPosition() = 0;
+        virtual void SetCursorPosition(til::point pos) = 0;
+        virtual til::point GetCursorPosition() = 0;
         virtual void SetCursorVisibility(const bool visible) = 0;
         virtual void CursorLineFeed(const bool withReturn) = 0;
         virtual void EnableCursorBlinking(const bool enable) = 0;
 
-        virtual void DeleteCharacter(const size_t count) = 0;
-        virtual void InsertCharacter(const size_t count) = 0;
-        virtual void EraseCharacters(const size_t numChars) = 0;
+        virtual void DeleteCharacter(const til::CoordType count) = 0;
+        virtual void InsertCharacter(const til::CoordType count) = 0;
+        virtual void EraseCharacters(const til::CoordType numChars) = 0;
         virtual bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) = 0;
         virtual bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) = 0;
 
@@ -66,6 +68,9 @@ namespace Microsoft::Terminal::Core
 
         virtual void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) = 0;
         virtual void PopGraphicsRendition() = 0;
+
+        virtual void UseAlternateScreenBuffer() = 0;
+        virtual void UseMainScreenBuffer() = 0;
 
     protected:
         ITerminalApi() = default;

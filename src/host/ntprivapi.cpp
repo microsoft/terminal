@@ -16,7 +16,7 @@
     ClientId.UniqueThread = nullptr;
 
     HANDLE ProcessHandle;
-    NTSTATUS Status = s_NtOpenProcess(&ProcessHandle, PROCESS_QUERY_LIMITED_INFORMATION, &oa, &ClientId);
+    auto Status = s_NtOpenProcess(&ProcessHandle, PROCESS_QUERY_LIMITED_INFORMATION, &oa, &ClientId);
 
     PROCESS_BASIC_INFORMATION BasicInfo = { 0 };
     if (NT_SUCCESS(Status))
@@ -40,13 +40,13 @@
                                                   _In_ POBJECT_ATTRIBUTES ObjectAttributes,
                                                   _In_opt_ PCLIENT_ID ClientId)
 {
-    HMODULE hNtDll = _Instance()._hNtDll;
+    auto hNtDll = _Instance()._hNtDll;
 
     if (hNtDll != nullptr)
     {
         typedef NTSTATUS (*PfnNtOpenProcess)(HANDLE ProcessHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PCLIENT_ID ClientId);
 
-        static PfnNtOpenProcess pfn = (PfnNtOpenProcess)GetProcAddress(hNtDll, "NtOpenProcess");
+        static auto pfn = (PfnNtOpenProcess)GetProcAddress(hNtDll, "NtOpenProcess");
 
         if (pfn != nullptr)
         {
@@ -63,13 +63,13 @@
                                                               _In_ ULONG ProcessInformationLength,
                                                               _Out_opt_ PULONG ReturnLength)
 {
-    HMODULE hNtDll = _Instance()._hNtDll;
+    auto hNtDll = _Instance()._hNtDll;
 
     if (hNtDll != nullptr)
     {
         typedef NTSTATUS (*PfnNtQueryInformationProcess)(HANDLE ProcessHandle, PROCESSINFOCLASS ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 
-        static PfnNtQueryInformationProcess pfn = (PfnNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
+        static auto pfn = (PfnNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
 
         if (pfn != nullptr)
         {
@@ -82,13 +82,13 @@
 
 [[nodiscard]] NTSTATUS NtPrivApi::s_NtClose(_In_ HANDLE Handle)
 {
-    HMODULE hNtDll = _Instance()._hNtDll;
+    auto hNtDll = _Instance()._hNtDll;
 
     if (hNtDll != nullptr)
     {
         typedef NTSTATUS (*PfnNtClose)(HANDLE Handle);
 
-        static PfnNtClose pfn = (PfnNtClose)GetProcAddress(hNtDll, "NtClose");
+        static auto pfn = (PfnNtClose)GetProcAddress(hNtDll, "NtClose");
 
         if (pfn != nullptr)
         {

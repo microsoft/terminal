@@ -51,7 +51,7 @@ namespace Microsoft::Console::Render
     private:
         [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(IDWriteFontCollection* fontCollection, std::wstring& localeName);
 
-        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
+        [[nodiscard]] std::wstring _GetFontFamilyName(const gsl::not_null<IDWriteFontFamily*> fontFamily,
                                                       std::wstring& localeName);
 
         // The font name we should be looking for

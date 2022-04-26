@@ -404,7 +404,6 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
 // - <none>
 void CascadiaSettings::_validateSettings()
 {
-    _validateCorrectDefaultShellPaths();
     _validateAllSchemesExist();
     _validateMediaResources();
     _validateKeybindings();
@@ -424,7 +423,7 @@ void CascadiaSettings::_validateSettings()
 void CascadiaSettings::_validateAllSchemesExist()
 {
     const auto colorSchemes = _globals->ColorSchemes();
-    bool foundInvalidScheme = false;
+    auto foundInvalidScheme = false;
 
     for (const auto& profile : _allProfiles)
     {
@@ -458,8 +457,8 @@ void CascadiaSettings::_validateAllSchemesExist()
 //   we find any invalid icon images.
 void CascadiaSettings::_validateMediaResources()
 {
-    bool invalidBackground{ false };
-    bool invalidIcon{ false };
+    auto invalidBackground{ false };
+    auto invalidIcon{ false };
 
     for (auto profile : _allProfiles)
     {
@@ -690,13 +689,13 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
     // One of the most important things this function does is to strip quotes.
     // That way the commandLine "foo.exe -bar" and "\"foo.exe\" \"-bar\"" appear identical.
     // We'll abuse CommandLineToArgvW for that as it's close to what CreateProcessW uses.
-    int argc = 0;
+    auto argc = 0;
     wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
     THROW_LAST_ERROR_IF(!argc);
 
     // The index of the first argument in argv for our executable in argv[0].
     // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
-    int startOfArguments = 1;
+    auto startOfArguments = 1;
 
     // The given commandLine should start with an executable name or path.
     // For instance given the following argv arrays:
@@ -876,7 +875,7 @@ void CascadiaSettings::_validateKeybindings() const
 //   we find any command with an invalid color scheme.
 void CascadiaSettings::_validateColorSchemesInCommands() const
 {
-    bool foundInvalidScheme{ false };
+    auto foundInvalidScheme{ false };
     for (const auto& nameAndCmd : _globals->ActionMap().NameMap())
     {
         if (_hasInvalidColorScheme(nameAndCmd.Value()))
@@ -894,7 +893,7 @@ void CascadiaSettings::_validateColorSchemesInCommands() const
 
 bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) const
 {
-    bool invalid{ false };
+    auto invalid{ false };
     if (command.HasNestedCommands())
     {
         for (const auto& nested : command.NestedCommands())

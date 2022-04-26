@@ -172,7 +172,7 @@ void Tracing::s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSO
     // clang-format off
     if (a->Unicode)
     {
-        const wchar_t* const buf = static_cast<const wchar_t* const>(buffer);
+        const auto buf = static_cast<const wchar_t* const>(buffer);
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "API_WriteConsole",
@@ -185,7 +185,7 @@ void Tracing::s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSO
     }
     else
     {
-        const char* const buf = static_cast<const char* const>(buffer);
+        const auto buf = static_cast<const char* const>(buffer);
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "API_WriteConsole",
@@ -426,7 +426,7 @@ void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConso
 {
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach))
     {
-        bool bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
+        auto bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
 
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,

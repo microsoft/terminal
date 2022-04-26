@@ -168,20 +168,6 @@ CATCH_RETURN();
     return S_OK;
 }
 
-// Routine Description:
-// - This currently has no effect in this renderer.
-// Arguments:
-// - pForcePaint - Always filled with false
-// Return Value:
-// - S_FALSE because we don't use this.
-[[nodiscard]] HRESULT UiaEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
 [[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
 try
 {
@@ -219,7 +205,7 @@ CATCH_LOG_RETURN_HR(E_FAIL);
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
     // add more events here
-    const bool somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged || !_queuedOutput.empty();
+    const auto somethingToDo = _selectionChanged || _textBufferChanged || _cursorChanged || !_queuedOutput.empty();
 
     // If there's nothing to do, quick return
     RETURN_HR_IF(S_FALSE, !somethingToDo);
@@ -347,8 +333,8 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(gsl::span<const Cluster> const /*clusters*/,
-                                                 COORD const /*coord*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const gsl::span<const Cluster> /*clusters*/,
+                                                 const COORD /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept
 {
@@ -368,7 +354,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 [[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                       COLORREF const /*color*/,
                                                       size_t const /*cchLine*/,
-                                                      COORD const /*coordTarget*/) noexcept
+                                                      const COORD /*coordTarget*/) noexcept
 {
     return S_FALSE;
 }
@@ -438,7 +424,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }
@@ -464,7 +450,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
                                                  FontInfo& /*pfiFontInfo*/,
-                                                 int const /*iDpi*/) noexcept
+                                                 const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }

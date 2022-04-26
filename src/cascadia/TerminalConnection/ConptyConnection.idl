@@ -13,6 +13,7 @@ namespace Microsoft.Terminal.TerminalConnection
         Guid Guid { get; };
         String Commandline { get; };
         void ClearBuffer();
+        void ReparentWindow(UInt64 newParent);
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();

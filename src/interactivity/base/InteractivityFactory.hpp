@@ -25,8 +25,7 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] NTSTATUS CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics);
         [[nodiscard]] NTSTATUS CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier);
         [[nodiscard]] NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider);
-        [[nodiscard]] NTSTATUS CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services);
 
-        [[nodiscard]] NTSTATUS CreatePseudoWindow(HWND& hwnd);
+        [[nodiscard]] NTSTATUS CreatePseudoWindow(HWND& hwnd, const HWND owner);
     };
 }

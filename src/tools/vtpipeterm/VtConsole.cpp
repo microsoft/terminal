@@ -15,10 +15,10 @@
 #include <cassert>
 #include <wincon.h>
 
-VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
-                     bool const fHeadless,
-                     bool const fUseConpty,
-                     COORD const initialSize) :
+VtConsole::VtConsole(const PipeReadCallback pfnReadCallback,
+                     const bool fHeadless,
+                     const bool fUseConpty,
+                     const COORD initialSize) :
     _pfnReadCallback(pfnReadCallback),
     _fHeadless(fHeadless),
     _fUseConPty(fUseConpty),
@@ -80,7 +80,7 @@ HRESULT CreatePseudoConsoleAndHandles(COORD size,
     HANDLE outPipePseudoConsoleSide;
     HANDLE inPipePseudoConsoleSide;
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (!CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, nullptr, 0))
     {
         hr = HRESULT_FROM_WIN32(GetLastError());

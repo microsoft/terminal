@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         // remove the TextBox from the UI tree, then the following KeyUp
         // will bubble to the NewTabButton, which we don't want to have
         // happen.
-        HeaderRenamerTextBox().KeyUp([&](auto&&, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e) {
+        HeaderRenamerTextBox().KeyUp([&](auto&&, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e) {
             if (_receivedKeyDown)
             {
                 if (e.OriginalKey() == Windows::System::VirtualKey::Enter)
@@ -94,8 +94,8 @@ namespace winrt::TerminalApp::implementation
     // - Event handler for when the rename box loses focus
     // - When the rename box loses focus, we send a request for the title change depending
     //   on whether the rename was cancelled
-    void TabHeaderControl::RenameBoxLostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                                     Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    void TabHeaderControl::RenameBoxLostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                                     const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
     {
         // If the context menu associated with the renamer text box is open we know it gained the focus.
         // In this case we ignore this event (we will regain the focus once the menu will be closed).

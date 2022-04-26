@@ -22,7 +22,7 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
 }
 
 // Routine Description:
-// - Takes the incoming information from COM and and prepares a console hosting session in this process.
+// - Takes the incoming information from COM and prepares a console hosting session in this process.
 // Arguments:
 // - server - Console driver server handle
 // - inputEvent - Event already established that we signal when new input data is available in case the driver is waiting on us

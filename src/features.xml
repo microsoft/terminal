@@ -84,4 +84,26 @@
             <brandingToken>Dev</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
+    
+    <feature>
+        <name>Feature_VtPassthroughMode</name>
+        <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
+        <stage>AlwaysDisabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_IsolatedMonarchMode</name>
+        <description>Enables a test flag for MSFT:38540483. When enabled, if we ever create a null Monarch, we'll stealthily try to fall back to an in-proc monarch instance.</description>
+        <stage>AlwaysEnabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it will go into Windows Inbox -->
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
 </featureStaging>

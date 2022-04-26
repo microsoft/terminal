@@ -16,7 +16,7 @@ class BaseTests
 
     TEST_METHOD(ManageVector)
     {
-        constexpr float shrinkThreshold = 0.5f;
+        constexpr auto shrinkThreshold = 0.5f;
 
         std::vector<int> foo;
         foo.reserve(20);

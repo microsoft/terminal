@@ -80,11 +80,11 @@ DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
     }
 
     // Zero out the remaining part of the destination buffer that we didn't use.
-    DWORD const cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
+    const auto cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
 
     if (cchDstToClear > 0)
     {
-        CHAR_INFO* const pciDstClearStart = buffer.data() + iDst;
+        const auto pciDstClearStart = buffer.data() + iDst;
         ZeroMemory(pciDstClearStart, cchDstToClear * sizeof(CHAR_INFO));
     }
 
@@ -109,9 +109,9 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo)
     FAIL_FAST_IF_NULL(pCPInfo);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
-    unsigned char const uchComparison = (unsigned char)ch;
+    const auto uchComparison = (unsigned char)ch;
 
-    int i = 0;
+    auto i = 0;
     // this is ok because the array is guaranteed to have 2
     // null bytes at the end.
     while (pCPInfo->LeadByte[i])
@@ -127,12 +127,36 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo)
 
 BYTE CodePageToCharSet(const UINT uiCodePage)
 {
-    CHARSETINFO csi;
+    CHARSETINFO csi{};
 
-    const auto inputServices = ServiceLocator::LocateInputServices();
-    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo((DWORD*)IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
+    if (!TranslateCharsetInfo((DWORD*)IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
     {
-        csi.ciCharset = OEM_CHARSET;
+        // On OneCore-based editions of Windows, the extension apiset containing
+        // TranslateCharsetInfo is not hosted. OneCoreUAP hosts it, but the lower
+        // editions do not. If we find that we failed to delay-load it, fall back
+        // to our "simple" OneCore-OK implementation.
+        if (GetLastError() == ERROR_PROC_NOT_FOUND)
+        {
+            switch (uiCodePage)
+            {
+            case CP_JAPANESE:
+                csi.ciCharset = SHIFTJIS_CHARSET;
+                break;
+            case CP_CHINESE_SIMPLIFIED:
+                csi.ciCharset = GB2312_CHARSET;
+                break;
+            case CP_KOREAN:
+                csi.ciCharset = HANGEUL_CHARSET;
+                break;
+            case CP_CHINESE_TRADITIONAL:
+                csi.ciCharset = CHINESEBIG5_CHARSET;
+                break;
+            }
+        }
+        else
+        {
+            csi.ciCharset = OEM_CHARSET;
+        }
     }
 
     return (BYTE)csi.ciCharset;
@@ -140,7 +164,7 @@ BYTE CodePageToCharSet(const UINT uiCodePage)
 
 BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
 {
-    BYTE const CharSet = CodePageToCharSet(uiCodePage);
+    const auto CharSet = CodePageToCharSet(uiCodePage);
 
     switch (CharSet)
     {
@@ -161,8 +185,8 @@ _Ret_range_(0, cbAnsi)
                                 const ULONG cbAnsi,
                                 _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PWCHAR const TmpUni = new (std::nothrow) WCHAR[cchUnicode];
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto TmpUni = new (std::nothrow) WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
         return 0;
@@ -178,7 +202,7 @@ _Ret_range_(0, cbAnsi)
     {
         if (IsGlyphFullWidth(TmpUni[i]))
         {
-            ULONG const NumBytes = sizeof(AsciiDbcs);
+            const auto NumBytes = sizeof(AsciiDbcs);
             ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR)&AsciiDbcs[0], NumBytes);
             if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
             {
@@ -211,7 +235,7 @@ _Ret_range_(0, cbAnsi)
     {
         try
         {
-            std::unique_ptr<KeyEvent> keyEvent = std::make_unique<KeyEvent>();
+            auto keyEvent = std::make_unique<KeyEvent>();
             if (keyEvent.get())
             {
                 keyEvent->SetCharData(AsciiDbcs[1]);

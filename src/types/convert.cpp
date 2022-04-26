@@ -36,7 +36,7 @@
     // difference that we **don't actually care about** between failing and successfully producing zero characters.,
     // Anyway: we need to clear the last error so that we can fail out and IGNORE_BAD_GLE after it inevitably succeed-fails.
     SetLastError(0);
-    int const iTarget = MultiByteToWideChar(codePage, 0, source.data(), iSource, nullptr, 0);
+    const auto iTarget = MultiByteToWideChar(codePage, 0, source.data(), iSource, nullptr, 0);
     THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == iTarget);
 
     size_t cchNeeded;
@@ -77,7 +77,7 @@
     // clang-format off
 #pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     // clang-format on
-    int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
+    const auto iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
     THROW_LAST_ERROR_IF(0 == iTarget);
 
     size_t cchNeeded;
@@ -120,7 +120,7 @@
     // clang-format off
 #pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     // clang-format on
-    int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
+    const auto iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
     THROW_LAST_ERROR_IF(0 == iTarget);
 
     // Convert types safely.

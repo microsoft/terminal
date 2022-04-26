@@ -45,7 +45,7 @@ const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 [[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
 try
 {
-    Globals& Globals = ServiceLocator::LocateGlobals();
+    auto& Globals = ServiceLocator::LocateGlobals();
 
     if (!Globals.pDeviceComm)
     {
@@ -64,7 +64,7 @@ try
 
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
-    bool isEnabled = false;
+    auto isEnabled = false;
     if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled)) && isEnabled)
     {
         IID delegationClsid;
@@ -107,13 +107,13 @@ CATCH_RETURN()
 static bool s_IsOnDesktop()
 {
     // Persist this across calls so we don't dig it out a whole bunch of times. Once is good enough for the system.
-    static bool fAlreadyQueried = false;
-    static bool fIsDesktop = false;
+    static auto fAlreadyQueried = false;
+    static auto fIsDesktop = false;
 
     if (!fAlreadyQueried)
     {
         Microsoft::Console::Interactivity::ApiLevel level;
-        const NTSTATUS status = Microsoft::Console::Interactivity::ApiDetector::DetectNtUserWindow(&level);
+        const auto status = Microsoft::Console::Interactivity::ApiDetector::DetectNtUserWindow(&level);
         LOG_IF_NTSTATUS_FAILED(status);
 
         if (NT_SUCCESS(status))
@@ -153,7 +153,7 @@ static bool s_IsOnDesktop()
 
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
-    CONSOLE_INFORMATION& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& launchArgs = ServiceLocator::LocateGlobals().launchArgs;
     // 4b. On Desktop editions, we need to apply a series of Desktop-specific defaults that are better than the
     // ones from the constructor (which are great for OneCore systems.)
@@ -216,7 +216,7 @@ static bool s_IsOnDesktop()
     // Set the process's default dpi awareness context to PMv2 so that new top level windows
     // inherit their WM_DPICHANGED* broadcast mode (and more, like dialog scaling) from the thread.
 
-    IHighDpiApi* pHighDpiApi = ServiceLocator::LocateHighDpiApi();
+    auto pHighDpiApi = ServiceLocator::LocateHighDpiApi();
     if (pHighDpiApi)
     {
         // N.B.: There is no high DPI support on OneCore (non-UAP) systems.
@@ -238,7 +238,7 @@ static bool s_IsOnDesktop()
 
     // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation
     // for the settings we just set.
-    NTSTATUS Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t) });
+    auto Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t) });
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -249,18 +249,18 @@ static bool s_IsOnDesktop()
 
 [[nodiscard]] NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
-    NTSTATUS Status = STATUS_SUCCESS;
+    auto Status = STATUS_SUCCESS;
 
     CommandHistory::s_Free((HANDLE)ProcessData);
 
-    bool const fRecomputeOwner = ProcessData->fRootProcess;
+    const auto fRecomputeOwner = ProcessData->fRootProcess;
     gci.ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
-        Microsoft::Console::Types::IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+        auto pWindow = ServiceLocator::LocateConsoleWindow();
         if (pWindow != nullptr)
         {
             pWindow->SetOwner();
@@ -279,7 +279,7 @@ void ConsoleCheckDebug()
 #ifdef DBG
     wil::unique_hkey hCurrentUser;
     wil::unique_hkey hConsole;
-    NTSTATUS status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUser, &hConsole);
+    auto status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUser, &hConsole);
 
     if (NT_SUCCESS(status))
     {
@@ -362,7 +362,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
         connectMessage = heapConnectMessage.get();
     }
 
-    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
+    const auto hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
 
     // If we successfully started the other thread, it's that guy's problem to free the connect message.
@@ -587,7 +587,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     size_t cbConsoleTitle;
     size_t cbSystemRoot;
 
-    LPWSTR pwszSysRoot = new (std::nothrow) wchar_t[MAX_PATH];
+    auto pwszSysRoot = new (std::nothrow) wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
         if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
@@ -595,8 +595,8 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
                 SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
-                int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
-                int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
+                const auto cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
+                const auto cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
                 cbConsoleTitle += sizeof(WCHAR); // account for nullptr terminator
 
                 if (fUnexpand &&
@@ -614,7 +614,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
                 }
 
                 LPWSTR pszTranslatedConsoleTitle;
-                const size_t cbTranslatedConsoleTitle = cbSystemRoot + cbConsoleTitle;
+                const auto cbTranslatedConsoleTitle = cbSystemRoot + cbConsoleTitle;
                 Tmp = pszTranslatedConsoleTitle = (PWSTR) new BYTE[cbTranslatedConsoleTitle];
                 if (pszTranslatedConsoleTitle == nullptr)
                 {
@@ -654,7 +654,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
 [[nodiscard]] NTSTATUS GetConsoleLangId(const UINT uiOutputCP, _Out_ LANGID* const pLangId)
 {
-    NTSTATUS Status = STATUS_NOT_SUPPORTED;
+    auto Status = STATUS_NOT_SUPPORTED;
 
     // -- WARNING -- LOAD BEARING CODE --
     // Only attempt to return the Lang ID if the Windows ACP on console launch was an East Asian Code Page.
@@ -713,7 +713,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 {
     try
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
@@ -737,7 +737,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 {
     CONSOLE_SERVER_MSG Data = { 0 };
     // Try to receive the data sent by the client.
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
+    auto Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -782,7 +782,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
 [[nodiscard]] bool ConsoleConnectionDeservesVisibleWindow(PCONSOLE_API_CONNECTINFO p)
 {
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
     // processes that are created ...
     //  ... with CREATE_NO_WINDOW never get a window.
     //  ... on Desktop, with a visible window always get one (even a fake one)
@@ -797,9 +797,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
 
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
 
-    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    auto& gci = g.getConsoleInformation();
 
     // No matter what, create a renderer.
     try
@@ -831,7 +831,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // where the TextBuffer is created (ultimately in the SCREEN_INFORMATION
     // CreateInstance method), and the TextBuffer needs to be constructed with
     // a reference to the renderer, so the renderer must be created first.
-    NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
+    auto Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -903,7 +903,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // We'll need the size of the screen buffer in the vt i/o initialization
     if (NT_SUCCESS(Status))
     {
-        HRESULT hr = gci.GetVtIo()->CreateIoHandlers();
+        auto hr = gci.GetVtIo()->CreateIoHandlers();
         if (hr == S_FALSE)
         {
             // We're not in VT I/O mode, this is fine.
@@ -944,7 +944,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
     auto& globals = ServiceLocator::LocateGlobals();
 
     CONSOLE_API_MSG ReceiveMsg;
-    ReceiveMsg._pApiRoutines = &globals.api;
+    ReceiveMsg._pApiRoutines = globals.api;
     ReceiveMsg._pDeviceComm = globals.pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
 
@@ -956,12 +956,12 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
         std::unique_ptr<CONSOLE_API_MSG> capturedMessage{ static_cast<PCONSOLE_API_MSG>(lpParameter) };
 
         ReceiveMsg = *capturedMessage.get();
-        ReceiveMsg._pApiRoutines = &globals.api;
+        ReceiveMsg._pApiRoutines = globals.api;
         ReceiveMsg._pDeviceComm = globals.pDeviceComm;
         IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);
     }
 
-    bool fShouldExit = false;
+    auto fShouldExit = false;
     while (!fShouldExit)
     {
         if (ReplyMsg != nullptr)
@@ -970,7 +970,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
+        auto hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
             if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
@@ -984,7 +984,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
             ReplyMsg = nullptr;
             continue;
         }
-
+        ReceiveMsg._pApiRoutines = globals.api;
         IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);
     }
 

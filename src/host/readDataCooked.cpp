@@ -101,7 +101,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 
         _bytesRead += initialData.size();
 
-        const size_t cchInitialData = initialData.size() / sizeof(wchar_t);
+        const auto cchInitialData = initialData.size() / sizeof(wchar_t);
         VisibleCharCount() = cchInitialData;
         _bufPtr += cchInitialData;
         _currentPosition = cchInitialData;
@@ -109,7 +109,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
         OriginalCursorPosition().X -= (SHORT)_currentPosition;
 
-        const SHORT sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
+        const auto sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
         while (OriginalCursorPosition().X < 0)
         {
             OriginalCursorPosition().X += sScreenBufferSizeX;
@@ -316,7 +316,7 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                               _Out_ DWORD* const pControlKeyState,
                               _Out_ void* const /*pOutputData*/)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // this routine should be called by a thread owning the same
     // lock on the same console as we're reading from.
@@ -442,7 +442,7 @@ bool COOKED_READ_DATA::AtEol() const noexcept
 {
     controlKeyState = 0;
 
-    NTSTATUS Status = _readCharInputLoop(isUnicode, numBytes);
+    auto Status = _readCharInputLoop(isUnicode, numBytes);
 
     // if the read was completed (status != wait), free the cooked read
     // data.  also, close the temporary output handle that was opened to
@@ -480,11 +480,11 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                     const DWORD keyState,
                                     NTSTATUS& status)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     size_t NumSpaces = 0;
     SHORT ScrollY = 0;
     size_t NumToWrite;
-    WCHAR wch = wchOrig;
+    auto wch = wchOrig;
     bool fStartFromDelim;
 
     status = STATUS_SUCCESS;
@@ -520,7 +520,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
         {
             fStartFromDelim = IsWordDelim(_bufPtr[-1]);
 
-            bool loop = true;
+            auto loop = true;
             while (loop)
             {
                 loop = false;
@@ -577,8 +577,8 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     }
     else
     {
-        bool CallWrite = true;
-        const SHORT sScreenBufferSizeX = _screenInfo.GetBufferSize().Width();
+        auto CallWrite = true;
+        const auto sScreenBufferSizeX = _screenInfo.GetBufferSize().Width();
 
         // processing in the middle of the line is more complex:
 
@@ -598,7 +598,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             {
                 fStartFromDelim = IsWordDelim(_bufPtr[-1]);
 
-                bool loop = true;
+                auto loop = true;
                 while (loop)
                 {
                     loop = false;
@@ -630,7 +630,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                             _bufPtr + 1,
                             _bytesRead - (_currentPosition * sizeof(WCHAR)));
                     {
-                        PWCHAR buf = (PWCHAR)((PBYTE)_backupLimit + _bytesRead);
+                        auto buf = (PWCHAR)((PBYTE)_backupLimit + _bytesRead);
                         *buf = (WCHAR)' ';
                     }
                     NumSpaces = 0;
@@ -662,7 +662,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             }
             else
             {
-                bool fBisect = false;
+                auto fBisect = false;
 
                 if (_echoInput)
                 {
@@ -825,7 +825,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
 {
     auto end = wstr.end();
-    const size_t charsRemaining = (_bufferSize / sizeof(wchar_t)) - (_bufPtr - _backupLimit);
+    const auto charsRemaining = (_bufferSize / sizeof(wchar_t)) - (_bufPtr - _backupLimit);
     if (wstr.size() > charsRemaining)
     {
         end = std::next(wstr.begin(), charsRemaining);
@@ -833,7 +833,7 @@ size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
 
     std::copy(wstr.begin(), end, _bufPtr);
     const size_t charsInserted = end - wstr.begin();
-    size_t bytesInserted = charsInserted * sizeof(wchar_t);
+    auto bytesInserted = charsInserted * sizeof(wchar_t);
     _currentPosition += charsInserted;
     _bytesRead += bytesInserted;
 
@@ -868,7 +868,7 @@ size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
 size_t COOKED_READ_DATA::SavePromptToUserBuffer(const size_t cch)
 {
     size_t bytesToWrite = 0;
-    const HRESULT hr = SizeTMult(cch, sizeof(wchar_t), &bytesToWrite);
+    const auto hr = SizeTMult(cch, sizeof(wchar_t), &bytesToWrite);
     if (FAILED(hr))
     {
         return 0;
@@ -881,8 +881,8 @@ size_t COOKED_READ_DATA::SavePromptToUserBuffer(const size_t cch)
         try
         {
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const std::wstring wstr = ConvertToW(gci.CP, { reinterpret_cast<char*>(_userBuffer), cch });
-            const size_t copyAmount = std::min(wstr.size(), _userBufferSize / sizeof(wchar_t));
+            const auto wstr = ConvertToW(gci.CP, { reinterpret_cast<char*>(_userBuffer), cch });
+            const auto copyAmount = std::min(wstr.size(), _userBufferSize / sizeof(wchar_t));
             std::copy_n(wstr.begin(), copyAmount, _userBuffer);
             return copyAmount * sizeof(wchar_t);
         }
@@ -898,7 +898,7 @@ size_t COOKED_READ_DATA::SavePromptToUserBuffer(const size_t cch)
 // - multiline - whether the pending input should be saved as multiline or not
 void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline)
 {
-    INPUT_READ_HANDLE_DATA& inputReadHandleData = *GetInputReadHandleData();
+    auto& inputReadHandleData = *GetInputReadHandleData();
     const std::wstring_view pending{ _backupLimit + index,
                                      BytesRead() / sizeof(wchar_t) - index };
     if (multiline)
@@ -921,12 +921,12 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
 // - Status code that indicates success, wait, etc.
 [[nodiscard]] NTSTATUS COOKED_READ_DATA::_readCharInputLoop(const bool isUnicode, size_t& numBytes) noexcept
 {
-    NTSTATUS Status = STATUS_SUCCESS;
+    auto Status = STATUS_SUCCESS;
 
     while (_bytesRead < _bufferSize)
     {
-        wchar_t wch = UNICODE_NULL;
-        bool commandLineEditingKeys = false;
+        auto wch = UNICODE_NULL;
+        auto commandLineEditingKeys = false;
         DWORD keyState = 0;
 
         // This call to GetChar may block.
@@ -983,7 +983,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
         {
             if (ProcessInput(wch, keyState, Status))
             {
-                CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+                auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
                 gci.Flags |= CONSOLE_IGNORE_NEXT_KEYUP;
                 break;
             }
@@ -1008,9 +1008,9 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
     if (_echoInput)
     {
         // Figure out where real string ends (at carriage return or end of buffer).
-        PWCHAR StringPtr = _backupLimit;
-        size_t StringLength = _bytesRead / sizeof(WCHAR);
-        bool FoundCR = false;
+        auto StringPtr = _backupLimit;
+        auto StringLength = _bytesRead / sizeof(WCHAR);
+        auto FoundCR = false;
         for (size_t i = 0; i < StringLength; i++)
         {
             if (*StringPtr++ == UNICODE_CARRIAGERETURN)
@@ -1026,7 +1026,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
             if (_commandHistory)
             {
                 // add to command line recall list if we have a history list.
-                CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+                auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
                 LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, StringLength },
                                                    WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
             }
@@ -1040,7 +1040,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
         }
     }
 
-    bool fAddDbcsLead = false;
+    auto fAddDbcsLead = false;
     size_t NumBytes = 0;
     // at this point, a->NumBytes contains the number of bytes in
     // the UNICODE string read.  UserBufferSize contains the converted
@@ -1055,8 +1055,8 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                 if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
                 {
                     fAddDbcsLead = true;
-                    std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                    auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
+                    const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                     *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
                     _userBuffer++;
                     _userBufferSize -= sizeof(wchar_t);
@@ -1090,14 +1090,14 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                 if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
                 {
                     fAddDbcsLead = true;
-                    std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                    auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
+                    const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                     *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
                     _userBuffer++;
                     _userBufferSize -= sizeof(wchar_t);
                 }
                 NumBytes = 0;
-                size_t NumToWrite = _bytesRead;
+                auto NumToWrite = _bytesRead;
                 for (Tmp = _backupLimit;
                      NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
                      Tmp++, NumToWrite -= sizeof(WCHAR))
@@ -1111,7 +1111,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
         __analysis_assume(numBytes <= _userBufferSize);
         memmove(_userBuffer, _backupLimit, numBytes);
 
-        INPUT_READ_HANDLE_DATA* const pInputReadHandleData = GetInputReadHandleData();
+        const auto pInputReadHandleData = GetInputReadHandleData();
         const std::wstring_view pending{ _backupLimit + (numBytes / sizeof(wchar_t)), (_bytesRead - numBytes) / sizeof(wchar_t) };
         if (LineCount > 1)
         {
@@ -1131,8 +1131,8 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
             if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
             {
                 fAddDbcsLead = true;
-                std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
+                const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
                 *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
                 _userBuffer++;
                 _userBufferSize -= sizeof(wchar_t);
@@ -1144,7 +1144,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                 }
             }
             NumBytes = 0;
-            size_t NumToWrite = _bytesRead;
+            auto NumToWrite = _bytesRead;
             for (Tmp = _backupLimit;
                  NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
                  Tmp++, NumToWrite -= sizeof(WCHAR))

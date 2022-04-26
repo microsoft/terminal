@@ -8,15 +8,15 @@ namespace winrt::TerminalApp::implementation
     {
         EmptyStringVisibilityConverter() = default;
 
-        Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value,
-                                                  Windows::UI::Xaml::Interop::TypeName const& targetType,
-                                                  Windows::Foundation::IInspectable const& parameter,
-                                                  hstring const& language);
+        Windows::Foundation::IInspectable Convert(const Windows::Foundation::IInspectable& value,
+                                                  const Windows::UI::Xaml::Interop::TypeName& targetType,
+                                                  const Windows::Foundation::IInspectable& parameter,
+                                                  const hstring& language);
 
-        Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value,
-                                                      Windows::UI::Xaml::Interop::TypeName const& targetType,
-                                                      Windows::Foundation::IInspectable const& parameter,
-                                                      hstring const& language);
+        Windows::Foundation::IInspectable ConvertBack(const Windows::Foundation::IInspectable& value,
+                                                      const Windows::UI::Xaml::Interop::TypeName& targetType,
+                                                      const Windows::Foundation::IInspectable& parameter,
+                                                      const hstring& language);
     };
 }
 

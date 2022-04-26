@@ -13,7 +13,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
 {
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         CONSOLE_CARET_INFO caretInfo;
@@ -28,7 +28,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
 
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     DWORD dwFlags = 0;
 
     if (flags == ConsoleCaretEventFlags::CaretSelection)
@@ -42,7 +42,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
 
     // UIA event notification
     static COORD previousCursorLocation = { 0, 0 };
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
 
     if (pWindow != nullptr)
     {
@@ -52,8 +52,8 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
                        position);
 
         const auto& screenInfo = gci.GetActiveOutputBuffer();
-        const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
-        const COORD currentCursorPosition = cursor.GetPosition();
+        const auto& cursor = screenInfo.GetTextBuffer().GetCursor();
+        const auto currentCursorPosition = cursor.GetPosition();
         if (currentCursorPosition != previousCursorLocation)
         {
             LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
@@ -64,7 +64,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
 
 void AccessibilityNotifier::NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y)
 {
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL,
@@ -76,7 +76,7 @@ void AccessibilityNotifier::NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LON
 
 void AccessibilityNotifier::NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute)
 {
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE,
@@ -88,7 +88,7 @@ void AccessibilityNotifier::NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_
 
 void AccessibilityNotifier::NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _In_ LONG endXY)
 {
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION,
@@ -100,7 +100,7 @@ void AccessibilityNotifier::NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _I
 
 void AccessibilityNotifier::NotifyConsoleLayoutEvent()
 {
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_LAYOUT,
@@ -112,7 +112,7 @@ void AccessibilityNotifier::NotifyConsoleLayoutEvent()
 
 void AccessibilityNotifier::NotifyConsoleStartApplicationEvent(_In_ DWORD processId)
 {
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION,
@@ -124,7 +124,7 @@ void AccessibilityNotifier::NotifyConsoleStartApplicationEvent(_In_ DWORD proces
 
 void AccessibilityNotifier::NotifyConsoleEndApplicationEvent(_In_ DWORD processId)
 {
-    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION,

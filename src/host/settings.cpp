@@ -123,7 +123,7 @@ void Settings::ApplyDesktopSpecificDefaults()
 
 void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
 {
-    const DWORD dwFlags = pStartupSettings->_dwStartupFlags;
+    const auto dwFlags = pStartupSettings->_dwStartupFlags;
 
     // See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 
@@ -172,8 +172,8 @@ void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
 // - <none>
 void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
 {
-    const short width = consoleArgs.GetWidth();
-    const short height = consoleArgs.GetHeight();
+    const auto width = consoleArgs.GetWidth();
+    const auto height = consoleArgs.GetHeight();
 
     if (width > 0 && height > 0)
     {
@@ -283,7 +283,7 @@ void Settings::Validate()
     {
         // TODO: FIX
         //// Get the font that we're going to use to convert pixels to characters.
-        //DWORD const dwFontIndexWant = FindCreateFont(_uFontFamily,
+        // const auto dwFontIndexWant = FindCreateFont(_uFontFamily,
         //                                             _FaceName,
         //                                             _dwFontSize,
         //                                             _uFontWeight,
@@ -297,7 +297,7 @@ void Settings::Validate()
     _dwScreenBufferSize.X = std::max(_dwScreenBufferSize.X, 1i16);
     _dwScreenBufferSize.Y = std::max(_dwScreenBufferSize.Y, 1i16);
 
-    // minimum window size size 1x1
+    // minimum window size 1x1
     _dwWindowSize.X = std::max(_dwWindowSize.X, 1i16);
     _dwWindowSize.Y = std::max(_dwWindowSize.Y, 1i16);
 

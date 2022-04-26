@@ -22,8 +22,8 @@ Revision History:
 // handler callback from the event
 #define DECLARE_EVENT(name, eventHandler, args)          \
 public:                                                  \
-    winrt::event_token name(args const& handler);        \
-    void name(winrt::event_token const& token) noexcept; \
+    winrt::event_token name(const args& handler);        \
+    void name(const winrt::event_token& token) noexcept; \
                                                          \
 protected:                                               \
     winrt::event<args> eventHandler;
@@ -33,8 +33,8 @@ protected:                                               \
 //      the callback. This macro will define them both for you, because they
 //      don't really vary from event to event.
 #define DEFINE_EVENT(className, name, eventHandler, args)                                         \
-    winrt::event_token className::name(args const& handler) { return eventHandler.add(handler); } \
-    void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+    winrt::event_token className::name(const args& handler) { return eventHandler.add(handler); } \
+    void className::name(const winrt::event_token& token) noexcept { eventHandler.remove(token); }
 
 // This is a helper macro to make declaring events easier.
 // This will declare the event handler and the methods for adding and removing a
@@ -42,8 +42,8 @@ protected:                                               \
 // Use this if you have a Windows.Foundation.TypedEventHandler
 #define DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(name, eventHandler, sender, args)                  \
 public:                                                                                           \
-    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& handler); \
-    void name(winrt::event_token const& token) noexcept;                                          \
+    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& handler); \
+    void name(const winrt::event_token& token) noexcept;                                          \
                                                                                                   \
 private:                                                                                          \
     winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> eventHandler;
@@ -54,8 +54,8 @@ private:                                                                        
 //      don't really vary from event to event.
 // Use this if you have a Windows.Foundation.TypedEventHandler
 #define DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(className, name, eventHandler, sender, args)                                                        \
-    winrt::event_token className::name(Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return eventHandler.add(handler); } \
-    void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+    winrt::event_token className::name(const Windows::Foundation::TypedEventHandler<sender, args>& handler) { return eventHandler.add(handler); } \
+    void className::name(const winrt::event_token& token) noexcept { eventHandler.remove(token); }
 
 // This is a helper macro for both declaring the signature of an event, and
 // defining the body. Winrt events need a method for adding a callback to the
@@ -65,8 +65,8 @@ private:                                                                        
 // Use this in a classes header if you have a Windows.Foundation.TypedEventHandler
 #define TYPED_EVENT(name, sender, args)                                                                                                            \
 public:                                                                                                                                            \
-    winrt::event_token name(winrt::Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return _##name##Handlers.add(handler); } \
-    void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }                                                                \
+    winrt::event_token name(const winrt::Windows::Foundation::TypedEventHandler<sender, args>& handler) { return _##name##Handlers.add(handler); } \
+    void name(const winrt::event_token& token) { _##name##Handlers.remove(token); }                                                                \
                                                                                                                                                    \
 private:                                                                                                                                           \
     winrt::event<winrt::Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
@@ -79,8 +79,8 @@ private:                                                                        
 // Use this in a class's header if you have a "delegate" type in your IDL.
 #define WINRT_CALLBACK(name, args)                                                          \
 public:                                                                                     \
-    winrt::event_token name(args const& handler) { return _##name##Handlers.add(handler); } \
-    void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }         \
+    winrt::event_token name(const args& handler) { return _##name##Handlers.add(handler); } \
+    void name(const winrt::event_token& token) { _##name##Handlers.remove(token); }         \
                                                                                             \
 protected:                                                                                  \
     winrt::event<args> _##name##Handlers;
@@ -93,14 +93,14 @@ protected:                                                                      
 // method signatures and define them both for you.
 #define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                                        \
 public:                                                                                                                        \
-    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& h) { return handler->handlerName(h); } \
-    void name(winrt::event_token const& token) noexcept { handler->handlerName(token); }
+    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& h) { return handler->handlerName(h); } \
+    void name(const winrt::event_token& token) noexcept { handler->handlerName(token); }
 
 // Same thing, but handler is a projected type, not an implementation
 #define PROJECTED_FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                             \
 public:                                                                                                                       \
-    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& h) { return handler.handlerName(h); } \
-    void name(winrt::event_token const& token) noexcept { handler.handlerName(token); }
+    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& h) { return handler.handlerName(h); } \
+    void name(const winrt::event_token& token) noexcept { handler.handlerName(token); }
 
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
@@ -187,15 +187,15 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
         {                                                                                                         \
             className() = default;                                                                                \
                                                                                                                   \
-            Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value,             \
-                                                      Windows::UI::Xaml::Interop::TypeName const& targetType,     \
-                                                      Windows::Foundation::IInspectable const& parameter,         \
-                                                      hstring const& language);                                   \
+            Windows::Foundation::IInspectable Convert(const Windows::Foundation::IInspectable& value,             \
+                                                      const Windows::UI::Xaml::Interop::TypeName& targetType,     \
+                                                      const Windows::Foundation::IInspectable& parameter,         \
+                                                      const hstring& language);                                   \
                                                                                                                   \
-            Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value,         \
-                                                          Windows::UI::Xaml::Interop::TypeName const& targetType, \
-                                                          Windows::Foundation::IInspectable const& parameter,     \
-                                                          hstring const& language);                               \
+            Windows::Foundation::IInspectable ConvertBack(const Windows::Foundation::IInspectable& value,         \
+                                                          const Windows::UI::Xaml::Interop::TypeName& targetType, \
+                                                          const Windows::Foundation::IInspectable& parameter,     \
+                                                          const hstring& language);                               \
         };                                                                                                        \
     }                                                                                                             \
                                                                                                                   \

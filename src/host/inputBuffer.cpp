@@ -388,17 +388,17 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
 
     while (!_storage.empty() && virtualReadCount < readCount)
     {
-        bool performNormalRead = true;
+        auto performNormalRead = true;
         // for stream reads we need to split any key events that have been coalesced
         if (streamRead)
         {
             if (_storage.front()->EventType() == InputEventType::KeyEvent)
             {
-                KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.front().get());
+                const auto pKeyEvent = static_cast<KeyEvent* const>(_storage.front().get());
                 if (pKeyEvent->GetRepeatCount() > 1)
                 {
                     // split the key event
-                    std::unique_ptr<KeyEvent> streamKeyEvent = std::make_unique<KeyEvent>(*pKeyEvent);
+                    auto streamKeyEvent = std::make_unique<KeyEvent>(*pKeyEvent);
                     streamKeyEvent->SetRepeatCount(1);
                     readEvents.push_back(std::move(streamKeyEvent));
                     pKeyEvent->SetRepeatCount(pKeyEvent->GetRepeatCount() - 1);
@@ -418,7 +418,7 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
         {
             if (readEvents.back()->EventType() == InputEventType::KeyEvent)
             {
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
+                const auto pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
                 if (IsGlyphFullWidth(pKeyEvent->GetCharData()))
                 {
                     ++virtualReadCount;
@@ -444,7 +444,7 @@ void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& ou
                 _CanCoalesce(static_cast<const KeyEvent&>(*readEvents.back()),
                              static_cast<const KeyEvent&>(*_storage.front())))
             {
-                KeyEvent& keyEvent = static_cast<KeyEvent&>(*_storage.front());
+                auto& keyEvent = static_cast<KeyEvent&>(*_storage.front());
                 keyEvent.SetRepeatCount(keyEvent.GetRepeatCount() + 1);
             }
             else
@@ -507,7 +507,7 @@ size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& in
         // However, because we swapped the storage out from under it with an empty deque, it will always
         // return true after the first one (as it is filling the newly emptied backing deque.)
         // Then after the second one, because we've inserted some input, it will always say false.
-        bool unusedWaitStatus = false;
+        auto unusedWaitStatus = false;
 
         // write the prepend records
         size_t prependEventsWritten;
@@ -627,9 +627,9 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
 {
     eventsWritten = 0;
     setWaitEvent = false;
-    const bool initiallyEmptyQueue = _storage.empty();
-    const size_t initialInEventsSize = inEvents.size();
-    const bool vtInputMode = IsInVirtualTerminalInputMode();
+    const auto initiallyEmptyQueue = _storage.empty();
+    const auto initialInEventsSize = inEvents.size();
+    const auto vtInputMode = IsInVirtualTerminalInputMode();
 
     while (!inEvents.empty())
     {
@@ -638,11 +638,12 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
         // If it was handled, do nothing else for it.
         // If there was one event passed in, try coalescing it with the previous event currently in the buffer.
         // If it's not coalesced, append it to the buffer.
-        std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
+        auto inEvent = std::move(inEvents.front());
         inEvents.pop_front();
         if (vtInputMode)
         {
-            const bool handled = _termInput.HandleKey(inEvent.get());
+            // GH#11682: TerminalInput::HandleKey can handle both KeyEvents and Focus events seamlessly
+            const auto handled = _termInput.HandleKey(inEvent.get());
             if (handled)
             {
                 eventsWritten++;
@@ -659,7 +660,7 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
             // coalescing requires a deque of events, so push it back onto the front.
             inEvents.push_front(std::move(inEvent));
 
-            bool coalesced = false;
+            auto coalesced = false;
             // this looks kinda weird but we don't want to coalesce a
             // mouse event and then try to coalesce a key event right after.
             //
@@ -722,14 +723,14 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
     if (pFirstInEvent->EventType() == InputEventType::MouseEvent &&
         pLastStoredEvent->EventType() == InputEventType::MouseEvent)
     {
-        const MouseEvent* const pInMouseEvent = static_cast<const MouseEvent* const>(pFirstInEvent);
-        const MouseEvent* const pLastMouseEvent = static_cast<const MouseEvent* const>(pLastStoredEvent);
+        const auto pInMouseEvent = static_cast<const MouseEvent* const>(pFirstInEvent);
+        const auto pLastMouseEvent = static_cast<const MouseEvent* const>(pLastStoredEvent);
 
         if (pInMouseEvent->IsMouseMoveEvent() &&
             pLastMouseEvent->IsMouseMoveEvent())
         {
             // update mouse moved position
-            MouseEvent* const pMouseEvent = static_cast<MouseEvent* const>(_storage.back().release());
+            const auto pMouseEvent = static_cast<MouseEvent* const>(_storage.back().release());
             pMouseEvent->SetPosition(pInMouseEvent->GetPosition());
             std::unique_ptr<IInputEvent> tempPtr(pMouseEvent);
             tempPtr.swap(_storage.back());
@@ -789,8 +790,8 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
     if (pFirstInEvent->EventType() == InputEventType::KeyEvent &&
         pLastStoredEvent->EventType() == InputEventType::KeyEvent)
     {
-        const KeyEvent* const pInKeyEvent = static_cast<const KeyEvent* const>(pFirstInEvent);
-        const KeyEvent* const pLastKeyEvent = static_cast<const KeyEvent* const>(pLastStoredEvent);
+        const auto pInKeyEvent = static_cast<const KeyEvent* const>(pFirstInEvent);
+        const auto pLastKeyEvent = static_cast<const KeyEvent* const>(pLastStoredEvent);
 
         if (pInKeyEvent->IsKeyDown() &&
             pLastKeyEvent->IsKeyDown() &&
@@ -798,7 +799,7 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
             _CanCoalesce(*pInKeyEvent, *pLastKeyEvent))
         {
             // increment repeat count
-            KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
+            const auto pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
             WORD repeatCount = pKeyEvent->GetRepeatCount() + pInKeyEvent->GetRepeatCount();
             pKeyEvent->SetRepeatCount(repeatCount);
             std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
@@ -822,16 +823,16 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
 // - will throw exception on error
 void InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     while (!inEvents.empty())
     {
-        std::unique_ptr<IInputEvent> currEvent = std::move(inEvents.front());
+        auto currEvent = std::move(inEvents.front());
         inEvents.pop_front();
         if (currEvent->EventType() == InputEventType::KeyEvent)
         {
-            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
+            const auto pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
             if (pKeyEvent->IsKeyDown())
             {
                 if (WI_IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
@@ -877,7 +878,7 @@ void InputBuffer::_HandleTerminalInputCallback(std::deque<std::unique_ptr<IInput
         // add all input events to the storage queue
         while (!inEvents.empty())
         {
-            std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
+            auto inEvent = std::move(inEvents.front());
             inEvents.pop_front();
             _storage.push_back(std::move(inEvent));
         }

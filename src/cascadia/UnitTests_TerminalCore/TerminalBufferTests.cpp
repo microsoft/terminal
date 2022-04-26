@@ -8,7 +8,7 @@
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "MockTermSettings.h"
 #include "consoletaeftemplates.hpp"
-#include "TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
@@ -79,7 +79,7 @@ private:
 
 void TerminalBufferTests::TestSimpleBufferWriting()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
 
@@ -98,7 +98,7 @@ void TerminalBufferTests::TestSimpleBufferWriting()
 
 void TerminalBufferTests::TestWrappingCharByChar()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
@@ -112,7 +112,7 @@ void TerminalBufferTests::TestWrappingCharByChar()
     {
         // This is a handy way of just printing the printable characters that
         // _aren't_ the space character.
-        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        const auto wch = static_cast<wchar_t>(33 + (i % 94));
         termSm.ProcessCharacter(wch);
     }
 
@@ -137,7 +137,7 @@ void TerminalBufferTests::TestWrappingCharByChar()
 
 void TerminalBufferTests::TestWrappingALongString()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
@@ -171,7 +171,7 @@ void TerminalBufferTests::TestWrappingALongString()
 
 void TerminalBufferTests::DontSnapToOutputTest()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
 
@@ -180,7 +180,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
     VERIFY_ARE_EQUAL(0, term->_scrollOffset);
 
     // -1 so that we don't print the last \n
-    for (int i = 0; i < TerminalViewHeight + 8 - 1; i++)
+    for (auto i = 0; i < TerminalViewHeight + 8 - 1; i++)
     {
         termSm.ProcessString(L"x\n");
     }
@@ -200,7 +200,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
     VERIFY_ARE_EQUAL(1, term->_scrollOffset);
 
     Log::Comment(L"Print a few lines, to see that the viewport stays where it was");
-    for (int i = 0; i < 8; i++)
+    for (auto i = 0; i < 8; i++)
     {
         termSm.ProcessString(L"x\n");
     }
@@ -226,7 +226,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
 
     Log::Comment(L"Print 3 more lines, and see that we stick to where the old "
                  L"rows now are in the buffer (after circling)");
-    for (int i = 0; i < 3; i++)
+    for (auto i = 0; i < 3; i++)
     {
         termSm.ProcessString(L"x\n");
         Log::Comment(NoThrowString().Format(
@@ -239,7 +239,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
 
     Log::Comment(L"Print 8 more lines, and see that we're now just stuck at the"
                  L"top of the buffer");
-    for (int i = 0; i < 8; i++)
+    for (auto i = 0; i < 8; i++)
     {
         termSm.ProcessString(L"x\n");
         Log::Comment(NoThrowString().Format(
@@ -253,7 +253,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
 
 void TerminalBufferTests::_SetTabStops(std::list<short> columns, bool replace)
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     auto& cursor = termTb.GetCursor();
 
@@ -275,7 +275,7 @@ void TerminalBufferTests::_SetTabStops(std::list<short> columns, bool replace)
 std::list<short> TerminalBufferTests::_GetTabStops()
 {
     std::list<short> columns;
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
     const auto lastColumn = initialView.RightInclusive();
@@ -321,7 +321,7 @@ void TerminalBufferTests::TestResetClearTabStops()
 
 void TerminalBufferTests::TestAddTabStop()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     auto& cursor = termTb.GetCursor();
 
@@ -366,7 +366,7 @@ void TerminalBufferTests::TestAddTabStop()
 
 void TerminalBufferTests::TestClearTabStop()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     auto& cursor = termTb.GetCursor();
 
@@ -475,7 +475,7 @@ void TerminalBufferTests::TestClearTabStop()
 
 void TerminalBufferTests::TestGetForwardTab()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
@@ -485,17 +485,17 @@ void TerminalBufferTests::TestGetForwardTab()
     std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
     _SetTabStops(inputData, true);
 
-    const COORD coordScreenBufferSize = initialView.Dimensions();
+    const auto coordScreenBufferSize = initialView.Dimensions();
 
     Log::Comment(L"Find next tab from before front.");
     {
         cursor.SetXPosition(0);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = inputData.front();
 
         termSm.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor advanced to first tab stop from sample list.");
@@ -505,11 +505,11 @@ void TerminalBufferTests::TestGetForwardTab()
     {
         cursor.SetXPosition(6);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = *std::next(inputData.begin(), 3);
 
         termSm.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor advanced to middle tab stop from sample list.");
@@ -519,11 +519,11 @@ void TerminalBufferTests::TestGetForwardTab()
     {
         cursor.SetXPosition(30);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = coordScreenBufferSize.X - 1;
 
         termSm.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor advanced to end of screen buffer.");
@@ -533,10 +533,10 @@ void TerminalBufferTests::TestGetForwardTab()
     {
         cursor.SetXPosition(coordScreenBufferSize.X - 1);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
 
         termSm.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor remains in rightmost column.");
@@ -545,7 +545,7 @@ void TerminalBufferTests::TestGetForwardTab()
 
 void TerminalBufferTests::TestGetReverseTab()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     auto& cursor = termTb.GetCursor();
 
@@ -558,11 +558,11 @@ void TerminalBufferTests::TestGetReverseTab()
     {
         cursor.SetXPosition(1);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = 0;
 
         termSm.ProcessString(nextReverseTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor adjusted to beginning of the buffer when it started before sample list.");
@@ -572,11 +572,11 @@ void TerminalBufferTests::TestGetReverseTab()
     {
         cursor.SetXPosition(6);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = *std::next(inputData.begin());
 
         termSm.ProcessString(nextReverseTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor adjusted back one tab spot from middle of sample list.");
@@ -586,11 +586,11 @@ void TerminalBufferTests::TestGetReverseTab()
     {
         cursor.SetXPosition(30);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = inputData.back();
 
         termSm.ProcessString(nextReverseTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor adjusted to last item in the sample list from position beyond end.");
@@ -605,8 +605,8 @@ void TerminalBufferTests::TestCursorNotifications()
     // TAEF, which is annoying.
     const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
 
-    bool callbackWasCalled = false;
-    int expectedCallbacks = 0;
+    auto callbackWasCalled = false;
+    auto expectedCallbacks = 0;
     auto cb = [&expectedCallbacks, &callbackWasCalled]() mutable {
         Log::Comment(L"Callback triggered");
         callbackWasCalled = true;

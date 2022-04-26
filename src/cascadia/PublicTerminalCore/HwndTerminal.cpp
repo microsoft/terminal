@@ -38,7 +38,7 @@ static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
 static bool _EnsureStaticInitialization()
 {
     // use C++11 magic statics to make sure we only do this once.
-    static bool initialized = []() {
+    static auto initialized = []() {
         // *** THIS IS A SINGLETON ***
         SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
 
@@ -55,7 +55,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
 try
 {
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
-    HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    auto terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
     if (terminal)
     {
@@ -178,7 +178,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
 {
     _EnsureStaticInitialization();
 
-    HINSTANCE hInstance = wil::GetModuleInstanceHandle();
+    auto hInstance = wil::GetModuleInstanceHandle();
 
     if (RegisterTermClass(hInstance))
     {
@@ -242,7 +242,7 @@ HRESULT HwndTerminal::Initialize()
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
     _terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
     _terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
-    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept { _WriteTextToConnection(input); });
+    _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
@@ -282,7 +282,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
     _terminal->SetScrollPositionChangedCallback(callback);
 }
 
-void HwndTerminal::_WriteTextToConnection(const std::wstring& input) noexcept
+void HwndTerminal::_WriteTextToConnection(const std::wstring_view input) noexcept
 {
     if (!_pfnWriteCallback)
     {
@@ -536,7 +536,7 @@ try
     };
 
     auto lock = _terminal->LockForWriting();
-    const bool altPressed = GetKeyState(VK_MENU) < 0;
+    const auto altPressed = GetKeyState(VK_MENU) < 0;
     const til::size fontSize{ this->_actualFont.GetSize() };
 
     this->_terminal->SetBlockSelection(altPressed);
@@ -626,7 +626,7 @@ void _stdcall TerminalClearSelection(void* terminal)
 bool _stdcall TerminalIsSelectionActive(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
+    const auto selectionActive = publicTerminal->_terminal->IsSelectionActive();
     return selectionActive;
 }
 
@@ -684,7 +684,7 @@ static ControlKeyStates getControlKeyState() noexcept
 bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 {
     // Only allow the transit of mouse events if shift isn't pressed.
-    const bool shiftPressed = GetKeyState(VK_SHIFT) < 0;
+    const auto shiftPressed = GetKeyState(VK_SHIFT) < 0;
     return !shiftPressed && _focused && _terminal->IsTrackingMouseInput();
 }
 
@@ -703,7 +703,7 @@ try
         wheelDelta = HIWORD(wParam);
 
         // If it's a *WHEEL event, it's in screen coordinates, not window (?!)
-        POINT coordsToTransform = cursorPosition.to_win32_point();
+        auto coordsToTransform = cursorPosition.to_win32_point();
         ScreenToClient(_hwnd.get(), &coordsToTransform);
         cursorPosition = til::point{ coordsToTransform };
     }
@@ -849,7 +849,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Arguments:
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
 try
 {
     std::wstring finalString;
@@ -861,17 +861,17 @@ try
     }
 
     // allocate the final clipboard data
-    const size_t cchNeeded = finalString.size() + 1;
-    const size_t cbNeeded = sizeof(wchar_t) * cchNeeded;
+    const auto cchNeeded = finalString.size() + 1;
+    const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
 
-    PWSTR pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
+    auto pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
     RETURN_LAST_ERROR_IF_NULL(pwszClipboard);
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
     // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const HRESULT hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
     GlobalUnlock(globalHandle.get());
     RETURN_IF_FAILED(hr);
 
@@ -889,13 +889,13 @@ try
         if (fAlsoCopyFormatting)
         {
             const auto& fontData = _actualFont;
-            int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
-            const COLORREF bgColor = _terminal->GetAttributeColors({}).second;
+            const int iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
+            const auto bgColor = _terminal->GetAttributeColors({}).second;
 
-            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
-            std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
         }
     }
@@ -916,22 +916,22 @@ CATCH_RETURN()
 // - lpszFormat - the name of the format
 HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
 {
-    const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
+    const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)
     {
         wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
         RETURN_LAST_ERROR_IF_NULL(globalHandleData.get());
 
-        PSTR pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
+        auto pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
         RETURN_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
         // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
+        const auto hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
         GlobalUnlock(globalHandleData.get());
         RETURN_IF_FAILED(hr2);
 
-        UINT const CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
+        const auto CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
         RETURN_LAST_ERROR_IF(0 == CF_FORMAT);
 
         RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
@@ -953,14 +953,14 @@ void HwndTerminal::_PasteTextFromClipboard() noexcept
         return;
     }
 
-    HANDLE ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
+    auto ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
     if (ClipboardDataHandle == nullptr)
     {
         CloseClipboard();
         return;
     }
 
-    PCWCH pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
+    auto pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
 
     _StringPaste(pwstr);
 
