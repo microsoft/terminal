@@ -395,7 +395,7 @@ jobs:
         disableOutputRedirect: true
     - ${{ each platform in parameters.buildPlatforms }}:
       - task: DownloadBuildArtifacts@0
-        displayName: Download ${{ platform }} PublicTerminalCore
+        displayName: Download ${{ platform }} ConPTY binaries
         inputs:
           artifactName: conpty-dll-${{ platform }}-$(BuildConfiguration)-Win10
           downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
