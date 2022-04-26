@@ -43,44 +43,43 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromAccent()
 }
 
 #define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...) \
-    {                                                      \
-        type tmp = JsonUtils::GetValueForKey<type>(json, jsonKey); \
-        result->name(tmp); \
-    }
+    result->name(JsonUtils::GetValueForKey<type>(json, jsonKey));
 
 #define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, val.name());
 
-template<>
-struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::WindowTheme>
-{
-    winrt::Microsoft::Terminal::Settings::Model::WindowTheme FromJson(const Json::Value& json)
-    {
-        auto result = winrt::make_self<winrt::Microsoft::Terminal::Settings::Model::implementation::WindowTheme>();
-        MTSM_THEME_WINDOW_SETTINGS(THEME_SETTINGS_FROM_JSON)
-        return *result;
-    }
+#define THEME_OBJECT_CONVERTER(projected, impl, name, macro)                             \
+    template<>                                                                           \
+    struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<projected> \
+    {                                                                                    \
+        projected FromJson(const Json::Value& json)                                      \
+        {                                                                                \
+            auto result = winrt::make_self<impl>();                                      \
+            macro(THEME_SETTINGS_FROM_JSON) return *result;                              \
+        }                                                                                \
+                                                                                         \
+        bool CanConvert(const Json::Value& json)                                         \
+        {                                                                                \
+            return json.isObject();                                                      \
+        }                                                                                \
+                                                                                         \
+        Json::Value ToJson(const projected& val)                                         \
+        {                                                                                \
+            Json::Value json{ Json::ValueType::objectValue };                            \
+            macro(THEME_SETTINGS_TO_JSON) return json;                                   \
+        }                                                                                \
+                                                                                         \
+        std::string TypeDescription() const                                              \
+        {                                                                                \
+            return "name (You should never see this)";                                   \
+        }                                                                                \
+    };
 
-    bool CanConvert(const Json::Value& json)
-    {
-        return json.isObject();
-    }
-
-    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::WindowTheme& val)
-    {
-        Json::Value json{ Json::ValueType::objectValue };
-        MTSM_THEME_WINDOW_SETTINGS(THEME_SETTINGS_TO_JSON)
-        return json;
-    }
-
-    std::string TypeDescription() const
-    {
-        return "WindowTheme (You should never see this)";
-    }
-};
+THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, winrt::Microsoft::Terminal::Settings::Model::implementation::WindowTheme, WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
 
 #undef THEME_SETTINGS_FROM_JSON
 #undef THEME_SETTINGS_TO_JSON
+#undef THEME_OBJECT_CONVERTER
 
 Theme::Theme() noexcept :
     Theme{ winrt::Windows::UI::Xaml::ElementTheme::Default }
