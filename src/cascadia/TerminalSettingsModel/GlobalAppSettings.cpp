@@ -66,6 +66,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
             globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
         }
     }
+    if (_themes)
+    {
+        for (auto kv : _themes)
+        {
+            const auto themeImpl{ winrt::get_self<implementation::Theme>(kv.Value()) };
+            globals->_themes.Insert(kv.Key(), *themeImpl->Copy());
+        }
+    }
 
     for (const auto& parent : _parents)
     {
@@ -142,10 +150,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         }
     }
 
-    if (auto themeJson{ json[JsonKey(ThemeKey)] })
-    {
-        _theme->LayerJson(themeJson);
-    }
+    // if (auto themeJson{ json[JsonKey(ThemeKey)] })
+    // {
+    //     _theme->LayerJson(themeJson);
+    // }
 }
 
 // Method Description:
@@ -199,7 +207,17 @@ Json::Value GlobalAppSettings::ToJson() const
     return json;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::Theme() noexcept
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
-    return *_theme;
+    return _themes.HasKey(Theme()) ? _themes.Lookup(Theme()) : nullptr;
+    // return *_theme;
+}
+void GlobalAppSettings::AddTheme(const Model::Theme& theme)
+{
+    _themes.Insert(theme.Name(), theme);
+}
+
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Theme> GlobalAppSettings::Themes() noexcept
+{
+    return _themes.GetView();
 }

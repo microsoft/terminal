@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const Json::Value& colorSchemes;
             const Json::Value& profileDefaults;
             const Json::Value& profilesList;
+            const Json::Value& themes;
         };
 
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);

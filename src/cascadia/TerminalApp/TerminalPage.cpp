@@ -2614,7 +2614,7 @@ namespace winrt::TerminalApp::implementation
 
         ////////////////////////////////////////////////////////////////////////
         // Begin Theme handling
-        // const auto theme = _settings.GlobalSettings().Theme();
+        // const auto theme = _settings.GlobalSettings().CurrentTheme();
 
         // const auto res = Application::Current().Resources();
         // const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
@@ -3440,7 +3440,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
     {
-        auto theme{ _settings.GlobalSettings().Theme() };
+        auto theme{ _settings.GlobalSettings().CurrentTheme() };
         auto requestedTheme{ theme.RequestedTheme() };
         while (element)
         {
@@ -3954,7 +3954,7 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
-        const auto theme = _settings.GlobalSettings().Theme();
+        const auto theme = _settings.GlobalSettings().CurrentTheme();
 
         const auto res = Application::Current().Resources();
         const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");

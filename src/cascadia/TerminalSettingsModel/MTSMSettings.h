@@ -32,6 +32,7 @@ Author(s):
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                              \
+    X(hstring, Theme, "theme")                                                                                                                             \
     X(hstring, Language, "language")                                                                                                                       \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal) \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                               \
@@ -111,7 +112,7 @@ Author(s):
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
 
-#define MTSM_THEME_SETTINGS(X)                                                                                                          \
-    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "window.requestedTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
-    X(bool, UseMica, "window.useMica", false)                                                                                           \
+#define MTSM_THEME_SETTINGS(X)                                                                                                            \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "window.applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
+    X(bool, UseMica, "window.useMica", false)                                                                                             \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, TabRowBackground, "tabRow.background", nullptr)

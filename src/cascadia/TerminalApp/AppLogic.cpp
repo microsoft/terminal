@@ -367,7 +367,7 @@ namespace winrt::TerminalApp::implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings.GlobalSettings().Theme() };
+            auto theme{ _settings.GlobalSettings().CurrentTheme() };
             auto requestedTheme{ theme.RequestedTheme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
@@ -744,7 +744,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings.GlobalSettings().Theme().RequestedTheme();
+        return _settings.GlobalSettings().CurrentTheme().RequestedTheme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -965,7 +965,7 @@ namespace winrt::TerminalApp::implementation
 
     void AppLogic::_RefreshThemeRoutine()
     {
-        _ApplyTheme(_settings.GlobalSettings().Theme().RequestedTheme());
+        _ApplyTheme(_settings.GlobalSettings().CurrentTheme().RequestedTheme());
     }
 
     // Function Description:
@@ -1651,7 +1651,7 @@ namespace winrt::TerminalApp::implementation
             // Load settings if we haven't already
             LoadSettings();
         }
-        return _settings.GlobalSettings().Theme();
+        return _settings.GlobalSettings().CurrentTheme();
     }
 
 }
