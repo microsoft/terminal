@@ -116,6 +116,8 @@ namespace winrt::TerminalApp::implementation
         void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
+        winrt::Windows::UI::Xaml::Media::Brush TitlebarBrush();
+        void WindowActivated(const bool activated);
 
         bool GetMinimizeToNotificationArea();
         bool GetAlwaysShowNotificationIcon();
@@ -129,6 +131,10 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::Theme Theme();
 
         // -------------------------------- WinRT Events ---------------------------------
+        // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
+        winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler) { return _root->PropertyChanged(handler); }
+        void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
+
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);

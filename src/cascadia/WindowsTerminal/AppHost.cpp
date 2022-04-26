@@ -401,6 +401,8 @@ void AppHost::Initialize()
     _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
 
+    _revokers.PropertyChanged = _logic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
+
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
     // it will accumulate an unbounded amount of queued animations while
@@ -680,7 +682,9 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 {
     if (_useNonClientArea)
     {
-        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
+        auto nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nciw->SetTitlebarContent(arg);
+        nciw->SetTitlebarBackground(_logic.TitlebarBrush());
     }
 
     _updateTheme();
@@ -887,8 +891,15 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
     args.ResultTargetWindowName(targetWindow.WindowName());
 }
 
-winrt::fire_and_forget AppHost::_WindowActivated()
+winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
 {
+    _logic.WindowActivated(activated);
+
+    if (!activated)
+    {
+        co_return;
+    }
+
     co_await winrt::resume_background();
 
     if (auto peasant{ _windowManager.CurrentWindow() })
@@ -1317,39 +1328,6 @@ void AppHost::_updateTheme()
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
-    if (_useNonClientArea)
-    {
-        auto* nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
-        const auto titlebar{ nciw->TitlebarControl() };
-
-        if (const auto tabRowBg = theme.TabRowBackground())
-        {
-            // const til::color backgroundColor = tabRowBg.Color();
-            // const auto brush = Media::SolidColorBrush();
-            // brush.Color(backgroundColor);
-            // titlebar.Background(brush);
-
-            // const auto bgBrush{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundBrush")).as<Media::SolidColorBrush>() };
-            // bgBrush.Color(backgroundColor);
-            // const auto style{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackgroundStyle")).as<winrt::Windows::UI::Xaml::Style>() };
-            // titlebar.Style(style);
-            //winrt::Windows::UI::Xaml::Data::Binding b{};
-            //// TerminalBackground
-            //auto bg{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackground")).as<winrt::TerminalApp::TerminalBackground>() };
-
-            //b.Source(bg);
-            //b.Mode(Xaml::Data::BindingMode::OneWay);
-            //b.Path(Xaml::PropertyPath{ L"Brush" });
-            //Xaml::Controls::Grid::
-            //winrt::Windows::UI::Xaml::Controls::IPanelStatics s{};
-            //titlebar.SetBinding(s.BackgroundProperty(), b);
-
-            auto bg{ _app.Resources().Lookup(winrt::box_value(L"TerminalBackground")).as<winrt::TerminalApp::TerminalBackground>() };
-            auto binder{ _app.Resources().Lookup(winrt::box_value(L"Binder")).as<winrt::Windows::UI::Xaml::Data::Binding>() };
-
-        }
-    }
-
     int attribute = theme.UseMica() ? /* DWMSBT_MAINWINDOW */ 2 : /*DWMSBT_NONE*/ 1;
     DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
 }
@@ -1593,4 +1571,14 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 {
     const auto pos = _GetWindowLaunchPosition();
     _logic.CloseWindow(pos);
+}
+
+void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                      const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& e)
+{
+    if (e.PropertyName() == L"TitlebarBrush")
+    {
+        auto nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nciw->SetTitlebarBackground(_logic.TitlebarBrush());
+    }
 }

@@ -506,8 +506,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -1131,7 +1131,7 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
     return !(_fullscreen || _borderless);
 }
 
-winrt::TerminalApp::TitlebarControl NonClientIslandWindow::TitlebarControl()
+void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
 {
-    return _titlebar;
+    _titlebar.Background(brush);
 }

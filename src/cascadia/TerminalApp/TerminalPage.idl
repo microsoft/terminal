@@ -45,6 +45,9 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
 
+        Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        void WindowActivated(Boolean activated);
+
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;

@@ -25,9 +25,5 @@ namespace Microsoft.Terminal.Settings.Model
         // tabRow.* Namespace
         ThemeColor TabRowBackground { get; };
 
-        // Microsoft.Terminal.Core.Color Foreground;
-        // Microsoft.Terminal.Core.Color Background;
-        // Microsoft.Terminal.Core.Color SelectionBackground;
-        // Microsoft.Terminal.Core.Color CursorColor;
     }
 }

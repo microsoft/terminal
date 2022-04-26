@@ -133,6 +133,7 @@ namespace winrt::TerminalApp::implementation
         bool IsElevated() const noexcept;
 
         void OpenSettingsUI();
+        void WindowActivated(const bool activated);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -154,6 +155,8 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
