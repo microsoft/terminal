@@ -14,10 +14,7 @@
       d:DesignHeight="36"
       d:DesignWidth="400"
       SizeChanged="Root_SizeChanged"
-      Style="{ThemeResource TerminalBackgroundStyle}"
       mc:Ignorable="d">
-
-    <!--  Background="{Binding Brush, Mode=TwoWay, Source={StaticResource TerminalBackground}}"  -->
 
     <!--
         TODO:GH#1988

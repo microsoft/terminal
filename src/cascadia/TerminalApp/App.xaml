@@ -37,30 +37,6 @@
                         <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
                     </Style>
 
-
-                    <!-- <SolidColorBrush x:Name="TerminalBackgroundBrush"
-                                     Color="{ThemeResource ApplicationPageBackgroundThemeBrush}" />-->
-
-                    <SolidColorBrush x:Name="TerminalBackgroundBrush"
-                                     Color="#00ff00" />
-                    <local:TerminalBackground x:Key="TerminalBackground" />
-
-                    <Style x:Name="TerminalBackgroundStyle"
-                           TargetType="Grid">
-                        <!-- <Setter Property="Background" Value="{Binding Brush, Mode=TwoWay, Source={StaticResource TerminalBackground}}" /> -->
-                        <!--<Setter Property="Background" Value="{ThemeResource TabViewBackground}" />-->
-                        <Setter Property="Background" Value="{StaticResource TerminalBackgroundBrush}" />
-                    </Style>
-                    <Binding x:Name="Binder"
-                             Mode="OneWay"
-                             Path="Brush" />
-                    <Style x:Name="AutoTerminalBackgroundStyle"
-                           TargetType="Grid">
-                        <Setter Property="Background" Value="{Binding Brush, Mode=TwoWay, Source={StaticResource TerminalBackground}}" />
-                        <!--<Setter Property="Background" Value="{ThemeResource TabViewBackground}" />-->
-                        <!-- <Setter Property="Background" Value="{StaticResource TerminalBackgroundBrush}" /> -->
-                    </Style>
-
                     <!--
                         We need to manually create the error text brush as a
                         theme-dependent brush. SystemControlErrorTextForegroundBrush
@@ -135,7 +111,6 @@
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>
-
 
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
