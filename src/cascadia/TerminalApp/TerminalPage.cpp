@@ -159,31 +159,6 @@ namespace winrt::TerminalApp::implementation
 
         const auto isElevated = IsElevated();
 
-        // // color:SystemAccentColor
-        // const auto res = Application::Current().Resources();
-        // const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-        // const auto backgroundSolidBrush = res.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
-        // if (_settings.GlobalSettings().UseAcrylicInTabRow())
-        // {
-        //     const til::color backgroundColor = backgroundSolidBrush.Color();
-        //     const auto acrylicBrush = Media::AcrylicBrush();
-        //     acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-        //     acrylicBrush.FallbackColor(backgroundColor);
-        //     acrylicBrush.TintColor(backgroundColor);
-        //     acrylicBrush.TintOpacity(0.5);
-
-        //     TitlebarBrush(acrylicBrush);
-        // }
-        // else
-        // {
-        //     // const auto accentColor = res.Lookup(winrt::box_value(L"SystemAccentColor")).as<Media::SolidColorBrush>();
-        //     auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColorDark3")), backgroundSolidBrush.Color());
-        //     const auto accentBrush = Media::SolidColorBrush();
-        //     accentBrush.Color(accentColor);
-
-        //     TitlebarBrush(accentBrush);
-        // }
-
         _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
@@ -205,8 +180,6 @@ namespace winrt::TerminalApp::implementation
 
             // Inform the host that our titlebar content has changed.
             _SetTitleBarContentHandlers(*this, _tabRow);
-
-            // _tabRow.Background(TitlebarBrush());
         }
         _updateTabRowColors(true);
 
@@ -1419,6 +1392,17 @@ namespace winrt::TerminalApp::implementation
         term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
+
+        auto weakThis{ get_weak() };
+        term.PropertyChanged([weakThis](auto& /*sender*/, auto& e) {
+            if (auto page{ weakThis.get() })
+            {
+                if (e.PropertyName() == L"BackgroundBrush")
+                {
+                    page->_updateTabRowColors(true);
+                }
+            }
+        });
     }
 
     // Method Description:
@@ -3996,6 +3980,14 @@ namespace winrt::TerminalApp::implementation
                 const auto solidBrush = Media::SolidColorBrush();
                 solidBrush.Color(backgroundColor);
                 TitlebarBrush(solidBrush);
+                break;
+            }
+            case ThemeColorType::TerminalBackground:
+            {
+                if (const auto termControl{ _GetActiveControl() })
+                {
+                    TitlebarBrush(termControl.BackgroundBrush());
+                }
                 break;
             }
             default:

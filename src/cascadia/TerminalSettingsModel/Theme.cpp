@@ -36,6 +36,13 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromAccent()
     return *result;
 }
 
+winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromTerminalBackground() noexcept
+{
+    auto result = winrt::make_self<implementation::ThemeColor>();
+    result->_ColorType = ThemeColorType::TerminalBackground;
+    return *result;
+}
+
 #define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...) \
     result->name(JsonUtils::GetValueForKey<type>(json, jsonKey));
 

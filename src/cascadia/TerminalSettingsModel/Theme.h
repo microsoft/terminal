@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ThemeColor() noexcept = default;
         static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept;
         static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromAccent() noexcept;
+        static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromTerminalBackground() noexcept;
 
         WINRT_PROPERTY(til::color, Color);
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ThemeColorType, ColorType);

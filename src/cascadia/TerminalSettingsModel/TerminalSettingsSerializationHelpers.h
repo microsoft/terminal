@@ -557,6 +557,10 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
         {
             return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromAccent();
         }
+        else if (string == "terminalBackground")
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromTerminalBackground();
+        }
         else
         {
             return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromColor(::Microsoft::Console::Utils::ColorFromHexString(string));
@@ -573,16 +577,18 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
         const auto string{ Detail::GetStringView(json) };
         const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
         const auto isAccent = string == "accent";
-        return isColorSpec || isAccent;
+        const auto isterminalBackground = string == "terminalBackground";
+        return isColorSpec || isAccent || isterminalBackground;
     }
 
     Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
     {
+        // TODO!
         return til::u16u8(til::color{ val.Color() }.ToHexString(true));
     }
 
     std::string TypeDescription() const
     {
-        return "ThemeColor (#rrggbb, #rgb, #aarrggbb, accent)";
+        return "ThemeColor (#rrggbb, #rgb, #aarrggbb, accent, terminalBackground)";
     }
 };

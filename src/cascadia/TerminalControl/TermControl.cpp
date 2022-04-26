@@ -490,6 +490,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             RootGrid().Background(solidColor);
         }
+
+        BackgroundBrush(RootGrid().Background());
     }
 
     // Method Description:

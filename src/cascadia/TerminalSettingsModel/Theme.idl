@@ -7,7 +7,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum ThemeColorType
     {
         Accent,
-        Color
+        Color,
+        TerminalBackground
     };
 
     runtimeclass ThemeColor
@@ -15,6 +16,7 @@ namespace Microsoft.Terminal.Settings.Model
         ThemeColor();
         static ThemeColor FromColor(Microsoft.Terminal.Core.Color color);
         static ThemeColor FromAccent();
+        static ThemeColor FromTerminalBackground();
 
         Microsoft.Terminal.Core.Color Color { get; };
         ThemeColorType ColorType;
