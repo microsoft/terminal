@@ -713,12 +713,21 @@ namespace winrt::TerminalApp::implementation
             // Switch to the BG thread -
             co_await winrt::resume_background();
 
-            // Then enqueue the rest of this function for after the UI thread settles.
-            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+            if (auto self{ weak.get() })
+            {
+                // Then enqueue the rest of this function for after the UI thread settles.
+                co_await wil::resume_foreground(self->Dispatcher(), CoreDispatcherPriority::Low);
+            }
+            else
+            {
+                // We don't exist anymore? Well, we probably don't need to fire
+                // off an Initialized event then...
+                co_return;
+            }
 
             if (auto self{ weak.get() })
             {
-                _InitializedHandlers(*self, nullptr);
+                self->_InitializedHandlers(*self, nullptr);
             }
         }
     }
