@@ -3977,13 +3977,12 @@ namespace winrt::TerminalApp::implementation
             {
             case ThemeColorType::Accent:
             {
+                // TODO! These colors are NOT right at all. But none of
+                // `SystemAccentColor` is, so we gotta figure this out.
                 auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(activated ?
                                                                                                                     L"SystemAccentColorDark3" :
                                                                                                                     L"SystemAccentColorDark2")),
                                                                                     backgroundSolidBrush.Color());
-                // auto accentColor = winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(activated ?
-                //                                                                                                  L"SystemAccentColorDark3" :
-                //                                                                                                  L"SystemAccentColorDark2")));
                 const auto accentBrush = Media::SolidColorBrush();
                 accentBrush.Color(accentColor);
 
@@ -3995,7 +3994,6 @@ namespace winrt::TerminalApp::implementation
                 const til::color backgroundColor = tabRowBg.Color();
                 const auto solidBrush = Media::SolidColorBrush();
                 solidBrush.Color(backgroundColor);
-                // Windows::UI::Color newTabButtonColor = backgroundColor;
                 TitlebarBrush(solidBrush);
                 break;
             }
@@ -4004,58 +4002,19 @@ namespace winrt::TerminalApp::implementation
             }
             }
         }
+        else
+        {
+            // Nothing was set in the theme - fall back to our original `TabViewBackground` color.
+            TitlebarBrush(backgroundSolidBrush);
+        }
 
         _tabRow.Background(TitlebarBrush());
     }
 
     void TerminalPage::WindowActivated(const bool activated)
     {
+        // TODO! stash if we're activated somewhere - use that when we reload
+        // the settings as the arg to _updateTabRowColors.
         _updateTabRowColors(activated);
-        // if (_settings == nullptr)
-        // {
-        //     return;
-        // }
-
-        // if (_settings.GlobalSettings().UseAcrylicInTabRow())
-        // {
-        //     // do nothing
-        // }
-        // else
-        // {
-        //     const auto res = Application::Current().Resources();
-
-        //     const auto theme = _settings.GlobalSettings().Theme();
-        //     /*if (const auto tabRowBg = theme.TabRowUnfocusedBackground())
-        // else */
-        //     if (const auto tabRowBg = theme.TabRowBackground())
-        //     {
-        //         switch (tabRowBg.ColorType())
-        //         {
-        //         case ThemeColorType::Accent:
-        //         {
-        //             auto accentColor = winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(activated ?
-        //                                                                                                              L"SystemAccentColorDark3" :
-        //                                                                                                              L"SystemAccentColorDark2")));
-        //             const auto accentBrush = Media::SolidColorBrush();
-        //             accentBrush.Color(accentColor);
-        //             accentBrush.Opacity(1.0);
-        //             TitlebarBrush(accentBrush);
-        //             _tabRow.Background(TitlebarBrush());
-        //         }
-        //         case ThemeColorType::Color:
-        //         {
-        //             const til::color backgroundColor = tabRowBg.Color();
-        //             const auto solidBrush = Media::SolidColorBrush();
-        //             solidBrush.Color(backgroundColor);
-        //             // Windows::UI::Color newTabButtonColor = backgroundColor;
-        //             TitlebarBrush(solidBrush);
-        //             _tabRow.Background(TitlebarBrush());
-        //         }
-        //         default:
-        //         {
-        //         }
-        //         }
-        //     }
-        // }
     }
 }

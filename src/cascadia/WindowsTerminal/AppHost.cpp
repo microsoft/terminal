@@ -388,6 +388,11 @@ void AppHost::Initialize()
         }
     });
 
+    // Load bearing: make sure the PropertyChanged handler is added before we
+    // call Create, so that when the app sets up the titlebar brush, we're
+    // already prepared to listen for the change notification
+    _revokers.PropertyChanged = _logic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
+
     _logic.Create();
 
     _revokers.TitleChanged = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
@@ -400,8 +405,6 @@ void AppHost::Initialize()
     _revokers.SummonWindowRequested = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
     _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
-
-    _revokers.PropertyChanged = _logic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
