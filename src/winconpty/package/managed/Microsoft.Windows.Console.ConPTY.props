@@ -12,13 +12,13 @@
     <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'Win32'">true</ConptyRequiresARM64Host>
 
     <!-- x64 can only run on x64 and ARM64, so needs to ship only two OpenConsoles. -->
-    <!-- ConptyRequirex86Host not set -->
+    <!-- ConptyRequiresx86Host not set -->
     <ConptyRequiresx64Host   Condition="'$(ConptyNativePlatform)' == 'x64'">true</ConptyRequiresx64Host>
     <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'x64'">true</ConptyRequiresARM64Host>
 
     <!-- ARM64 can only run on ARM64, so only needs to ship the final OpenConsole. -->
-    <!-- ConptyRequirex86Host not set -->
-    <!-- ConptyRequirex64Host not set -->
+    <!-- ConptyRequiresx86Host not set -->
+    <!-- ConptyRequiresx64Host not set -->
     <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'ARM64'">true</ConptyRequiresARM64Host>
   </PropertyGroup>
 </Project>

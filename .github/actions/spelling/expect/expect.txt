@@ -946,6 +946,7 @@ gridline
 groupbox
 gset
 gsl
+gtm
 GTP
 GTR
 guardxfg
@@ -1113,6 +1114,7 @@ Imatch
 ime
 Imm
 IMouse
+IMPEXP
 impl
 inbox
 inclusivity
@@ -1432,6 +1434,7 @@ mimetype
 mincore
 mindbogglingly
 mingw
+Minimatch
 minimizeall
 minkernel
 MINMAXINFO
@@ -1604,6 +1607,7 @@ novtable
 NOWAIT
 NOYIELD
 NOZORDER
+NPH
 NPM
 npos
 nrcs
@@ -2013,6 +2017,7 @@ reparenting
 replatformed
 Replymessage
 repositorypath
+Requiresx
 rescap
 Resequence
 RESETCONTENT
@@ -2200,6 +2205,7 @@ SHRT
 sidebyside
 SIF
 SIGDN
+Signtool
 SINGLEFLAG
 SINGLETHREADED
 siup
