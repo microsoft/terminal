@@ -48,6 +48,37 @@ static wchar_t* _ConsoleHostPath()
         modulePath.replace_filename(L"OpenConsole.exe");
         if (!std::filesystem::exists(modulePath))
         {
+            std::wstring_view architectureInfix{};
+            USHORT unusedImageFileMachine{}, nativeMachine{};
+            if (IsWow64Process2(GetCurrentProcess(), &unusedImageFileMachine, &nativeMachine))
+            {
+                // Despite being a machine type, the values IsWow64Process2 returns are *image* types
+                switch (nativeMachine)
+                {
+                case IMAGE_FILE_MACHINE_AMD64:
+                    architectureInfix = L"x64";
+                    break;
+                case IMAGE_FILE_MACHINE_ARM64:
+                    architectureInfix = L"arm64";
+                    break;
+                case IMAGE_FILE_MACHINE_I386:
+                    architectureInfix = L"x86";
+                    break;
+                default:
+                    break;
+                }
+            }
+            if (architectureInfix.empty())
+            {
+                // WHAT?
+                return _InboxConsoleHostPath();
+            }
+            modulePath.replace_filename(architectureInfix);
+            modulePath.append(L"OpenConsole.exe");
+        }
+        if (!std::filesystem::exists(modulePath))
+        {
+            // We tried the architecture infix version and failed, fall back to conhost.
             return _InboxConsoleHostPath();
         }
         auto modulePathAsString{ modulePath.wstring() };
