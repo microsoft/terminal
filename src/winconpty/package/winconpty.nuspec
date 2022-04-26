@@ -7,7 +7,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/microsoft/terminal</projectUrl>
-    <description>Pseudoconsole stuff</description>
+    <description>This package allows applications to host Windows Console sessions. It should work on all versions of Windows 10.0.17763.0 and above.</description>
     <copyright>© Microsoft Corporation</copyright>
     <dependencies />
   </metadata>
