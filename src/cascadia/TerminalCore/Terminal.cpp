@@ -1291,6 +1291,15 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
 }
 
 // Method Description:
+// - Propagates an incoming set window visibility call from the PTY up into our window control layers
+// Arguments:
+// - pfn: a function callback that accepts true as "make window visible" and false as "hide window"
+void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
+{
+    _pfnShowWindowChanged.swap(pfn);
+}
+
+// Method Description:
 // - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor
 //   blinker. Visibility is usually controlled by the client application. If the

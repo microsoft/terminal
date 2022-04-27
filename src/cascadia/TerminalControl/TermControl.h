@@ -42,6 +42,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
+        void WindowVisibilityChanged(const bool showOrHide);
+
 #pragma region ICoreState
         const uint64_t TaskbarState() const noexcept;
         const uint64_t TaskbarProgress() const noexcept;
@@ -124,6 +126,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 

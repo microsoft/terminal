@@ -794,6 +794,23 @@ bool TerminalDispatch::HardReset()
     return true;
 }
 
+bool TerminalDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                          const VTParameter /*parameter1*/,
+                                          const VTParameter /*parameter2*/)
+{
+    switch (function)
+    {
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _terminalApi.ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _terminalApi.ShowWindow(false);
+        return true;
+    default:
+        return false;
+    }
+}
+
 // Routine Description:
 // - DECSC - Saves the current "cursor state" into a memory buffer. This
 //   includes the cursor position, origin mode, graphic rendition, and

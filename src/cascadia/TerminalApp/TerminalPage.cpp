@@ -1,3 +1,4 @@
+
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -1428,6 +1429,8 @@ namespace winrt::TerminalApp::implementation
         term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
+
+        term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
     }
 
     // Method Description:
@@ -2341,6 +2344,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Send an event (which will be caught by AppHost) to change the show window state of the entire hosting window
+    // Arguments:
+    // - sender (not used)
+    // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
+    winrt::fire_and_forget TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
+    {
+        co_await resume_foreground(Dispatcher());
+        _ShowWindowChangedHandlers(*this, args);
+    }
+
+    // Method Description:
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
@@ -2415,6 +2429,9 @@ namespace winrt::TerminalApp::implementation
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
+
+        // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
+        term.WindowVisibilityChanged(_visible);
 
         if (_hostingHwnd.has_value())
         {
@@ -2846,6 +2863,33 @@ namespace winrt::TerminalApp::implementation
             _newTabButton.Flyout().Hide();
         }
         _DismissTabContextMenus();
+    }
+
+    // Method Description:
+    // - Notifies all attached console controls that the visibility of the
+    //   hosting window has changed. The underlying PTYs may need to know this
+    //   for the proper response to `::GetConsoleWindow()` from a Win32 console app.
+    // Arguments:
+    // - showOrHide: Show is true; hide is false.
+    // Return Value:
+    // - <none>
+    void TerminalPage::WindowVisibilityChanged(const bool showOrHide)
+    {
+        _visible = showOrHide;
+        for (const auto& tab : _tabs)
+        {
+            if (auto terminalTab{ _GetTerminalTabImpl(tab) })
+            {
+                // Manually enumerate the panes in each tab; this will let us recycle TerminalSettings
+                // objects but only have to iterate one time.
+                terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                    if (auto control = pane->GetTerminalControl())
+                    {
+                        control.WindowVisibilityChanged(showOrHide);
+                    }
+                });
+            }
+        }
     }
 
     // Method Description:

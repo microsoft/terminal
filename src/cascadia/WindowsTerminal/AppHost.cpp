@@ -373,6 +373,8 @@ void AppHost::Initialize()
     // application layer.
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
+    _window->WindowVisibilityChanged([this](bool showOrHide) { _logic.WindowVisibilityChanged(showOrHide); });
+
     _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
     _revokers.FocusModeChanged = _logic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
@@ -400,6 +402,7 @@ void AppHost::Initialize()
     _revokers.SummonWindowRequested = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
     _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
+    _revokers.ShowWindowChanged = _logic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -1389,6 +1392,12 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
     // Tell the monarch to wait for the window layouts to save before
     // everyone quits.
     args.BeforeQuitAllAction(_SaveWindowLayouts());
+}
+
+void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
+{
+    _window->ShowWindowChanged(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

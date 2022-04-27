@@ -476,13 +476,18 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED)
         {
+            _WindowVisibilityChangedHandlers(true);
             _MaximizeChangedHandlers(wparam == SIZE_MAXIMIZED);
         }
 
-        if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
+        if (wparam == SIZE_MINIMIZED)
         {
-            ShowWindow(GetHandle(), SW_HIDE);
-            return 0;
+            _WindowVisibilityChangedHandlers(false);
+            if (_isQuakeWindow)
+            {
+                ShowWindow(GetHandle(), SW_HIDE);
+                return 0;
+            }
         }
         break;
     }
@@ -817,6 +822,22 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
                      0,
                      0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+}
+
+// Method Description:
+// - Posts a message to the window message queue that the window visibility has changed
+//   and should then be minimized or restored.
+// Arguments:
+// - showOrHide: True for show; false for hide.
+// Return Value:
+// - <none>
+void IslandWindow::ShowWindowChanged(const bool showOrHide)
+{
+    const auto hwnd = GetHandle();
+    if (hwnd)
+    {
+        PostMessage(hwnd, WM_SYSCOMMAND, showOrHide ? SC_RESTORE : SC_MINIMIZE, 0);
     }
 }
 

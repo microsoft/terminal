@@ -35,6 +35,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;
         void ClearBuffer();
+
+        void ShowHide(const bool show);
+
         void ReparentWindow(const uint64_t newParent);
 
         winrt::guid Guid() const noexcept;
@@ -70,6 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _commandline{};
         hstring _startingDirectory{};
         hstring _startingTitle{};
+        bool _initialVisibility{ false };
         Windows::Foundation::Collections::ValueSet _environment{ nullptr };
         guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
