@@ -155,7 +155,7 @@ In the above settings snippet, we see the following things:
    theme, `"My small light theme"`, they'd simply need to change this property.
 
 > _note_: Initially, we had considered a `elementPropertyName`-like syntax as
-opposed to the object-grouped one above. We also consided a
+opposed to the object-grouped one above. We also considered a
 `element.propertyName`-like syntax. Overall, we liked the object based one best.
 >
 > **For simplicity, we'll be using `element.propertyName` syntax throughout to**
@@ -568,7 +568,7 @@ The biggest compatibility concern is regarding the existing values for the
 
 This change should not have any particular performance concerns. Additional
 acrylic usage might impact battery life. There's not much concern for any
-substantial new impacts, hoever.
+substantial new impacts, however.
 
 ### Branding
 
@@ -587,11 +587,11 @@ content drawn on top of the original frame. The rest of the window is
 transparent, but the titlebar is there.
 
 Our design to enable unfocused acrylic to work relies on in-app acrylic to allow
-the arcylic to blur with the transparent window contents. However, since the
+the acrylic to blur with the transparent window contents. However, since the
 User32 titlebar is always there, in-app acrylic would end up always blurring
 _the original titlebar_, which looks ridiculous. This means we can't have
 unfocused acrylic without showing that titlebar. We'd rather remove that
-footgun, and make it explicit that this setting does not exist.
+foot gun, and make it explicit that this setting does not exist.
 
 ### Light & dark mode theming
 
@@ -640,7 +640,7 @@ This seemed far too complicated to actually understand. -->
 
 ### Admin window themes
 
-[TODO!]: # TODO! Any clever ideas? Bueller?
+[TODO!]: # TODO! Any clever ideas?
 
 Same idea as the light vs dark mode theme ideas. How should users be able to
 style admin vs regular windows?
