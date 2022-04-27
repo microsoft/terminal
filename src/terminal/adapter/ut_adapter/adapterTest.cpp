@@ -403,18 +403,7 @@ public:
     std::wstring_view _expectedWindowTitle{};
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
-<<<<<<< HEAD
-    bool _moveToBottomResult = false;
     bool _expectedShowWindow = false;
-
-    bool _getColorTableEntryResult = false;
-    bool _setColorTableEntryResult = false;
-    size_t _expectedColorTableIndex = SIZE_MAX;
-    COLORREF _expectedColorValue = INVALID_COLOR;
-
-    SIZE _expectedCellSize = {};
-=======
->>>>>>> origin/main
 
 private:
     HANDLE _hCon;
