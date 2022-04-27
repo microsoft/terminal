@@ -372,8 +372,8 @@ void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableInde
 // - <none>
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    CursorType finalCursorType = CursorType::Legacy;
-    bool shouldBlink = false;
+    auto finalCursorType = CursorType::Legacy;
+    auto shouldBlink = false;
 
     switch (cursorStyle)
     {
@@ -576,7 +576,7 @@ void Terminal::PushGraphicsRendition(const VTParameters options)
 // - <none>
 void Terminal::PopGraphicsRendition()
 {
-    const TextAttribute current = _activeBuffer().GetCurrentAttributes();
+    const auto current = _activeBuffer().GetCurrentAttributes();
     _activeBuffer().SetCurrentAttributes(_sgrStack.Pop(current));
 }
 

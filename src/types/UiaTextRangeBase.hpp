@@ -159,25 +159,25 @@ namespace Microsoft::Console::Types
         void
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
-                                     gsl::not_null<int*> const pAmountMoved,
+                                     const gsl::not_null<int*> pAmountMoved,
                                      _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitWord(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                gsl::not_null<int*> const pAmountMoved,
+                                const gsl::not_null<int*> pAmountMoved,
                                 _In_ const bool preventBufferEnd = false);
 
         void
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
-                                gsl::not_null<int*> const pAmountMoved,
+                                const gsl::not_null<int*> pAmountMoved,
                                 _In_ const bool preventBoundary = false) noexcept;
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
-                                    gsl::not_null<int*> const pAmountMoved,
+                                    const gsl::not_null<int*> pAmountMoved,
                                     _In_ const bool preventBoundary = false) noexcept;
 
         std::optional<bool> _verifyAttr(TEXTATTRIBUTEID attributeId, VARIANT val, const TextAttribute& attr) const;

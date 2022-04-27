@@ -18,7 +18,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK or math failure
 [[nodiscard]] HRESULT GdiEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    RECT rc = _psInvalidData.rcPaint;
+    auto rc = _psInvalidData.rcPaint;
 
     SMALL_RECT sr = { 0 };
     RETURN_IF_FAILED(_ScaleByFont(&rc, &sr));
@@ -40,24 +40,24 @@ using namespace Microsoft::Console::Render;
 // - S_OK
 [[nodiscard]] HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
 {
-    bool isFullWidth = false;
+    auto isFullWidth = false;
 
     if (glyph.size() == 1)
     {
-        const wchar_t wch = glyph.front();
+        const auto wch = glyph.front();
         if (_IsFontTrueType())
         {
             ABC abc;
             if (GetCharABCWidthsW(_hdcMemoryContext, wch, wch, &abc))
             {
-                int const totalWidth = abc.abcA + abc.abcB + abc.abcC;
+                const int totalWidth = abc.abcA + abc.abcB + abc.abcC;
 
                 isFullWidth = totalWidth > _GetFontSize().X;
             }
         }
         else
         {
-            INT cpxWidth = 0;
+            auto cpxWidth = 0;
             if (GetCharWidth32W(_hdcMemoryContext, wch, wch, &cpxWidth))
             {
                 isFullWidth = cpxWidth > _GetFontSize().X;
@@ -84,7 +84,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK or safe math failure value.
 [[nodiscard]] HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const noexcept
 {
-    COORD const coordFontSize = _GetFontSize();
+    const auto coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     RECT rc;
@@ -107,7 +107,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK or safe math failure value.
 [[nodiscard]] HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const noexcept
 {
-    COORD const coordFontSize = _GetFontSize();
+    const auto coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     POINT pt;
@@ -128,7 +128,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK or safe math failure value.
 [[nodiscard]] HRESULT GdiEngine::_ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const noexcept
 {
-    COORD const coordFontSize = _GetFontSize();
+    const auto coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     SMALL_RECT sr;
@@ -155,8 +155,8 @@ using namespace Microsoft::Console::Render;
     // So the algorithm below is using the C conclusion's math.
 
     // Do math as long and fit to short at the end.
-    LONG lRight = prc->right;
-    LONG lBottom = prc->bottom;
+    auto lRight = prc->right;
+    auto lBottom = prc->bottom;
 
     // Add the width of a font (in pixels) to the rect
     RETURN_IF_FAILED(LongAdd(lRight, coordFontSize.X, &lRight));

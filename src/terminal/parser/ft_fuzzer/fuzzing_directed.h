@@ -504,7 +504,7 @@ namespace fuzz
             if (!m_fFuzzed)
             {
                 m_fFuzzed = TRUE;
-                WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
+                auto wRandom = CFuzzChance::GetRandom<WORD>(100);
                 for (auto& r : m_map)
                 {
                     if (r.range.iLow <= wRandom && wRandom < r.range.iHigh)
@@ -847,7 +847,7 @@ namespace fuzz
             {
                 m_fFuzzed = TRUE;
                 m_t = m_tInit;
-                WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
+                auto wRandom = CFuzzChance::GetRandom<WORD>(100);
                 for (auto& r : m_map)
                 {
                     if (r.range.iLow <= wRandom && wRandom < r.range.iHigh)
@@ -986,9 +986,9 @@ namespace fuzz
                 _Type* pszFuzzed = psz;
                 if (psz && psz != this->m_tInit)
                 {
-                    size_t cb = (sizeof(_Type) == sizeof(char)) ?
-                                    (strlen(reinterpret_cast<LPSTR>(psz)) + 1) * sizeof(char) :
-                                    (wcslen(reinterpret_cast<LPWSTR>(psz)) + 1) * sizeof(WCHAR);
+                    auto cb = (sizeof(_Type) == sizeof(char)) ?
+                                  (strlen(reinterpret_cast<LPSTR>(psz)) + 1) * sizeof(char) :
+                                  (wcslen(reinterpret_cast<LPWSTR>(psz)) + 1) * sizeof(WCHAR);
                     m_pszFuzzed = reinterpret_cast<_Type*>(_Alloc::Allocate(cb));
                     if (m_pszFuzzed)
                     {
@@ -1081,11 +1081,11 @@ namespace fuzz
                     // Generate a new random value during each map entry
                     // and use it to evaluate if each individual fuzz map
                     // entry should be applied.
-                    WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
+                    auto wRandom = CFuzzChance::GetRandom<WORD>(100);
 
                     // Translate percentages to allow for each flag to be considered
                     // for inclusion independently.
-                    int iHigh = 100;
+                    auto iHigh = 100;
                     int iLow = iHigh - (r.range.iHigh - r.range.iLow);
                     if (iLow <= wRandom && wRandom < iHigh)
                     {

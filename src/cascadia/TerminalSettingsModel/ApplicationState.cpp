@@ -260,7 +260,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        std::filesystem::path root{ GetBaseSettingsPath() };
+        auto root{ GetBaseSettingsPath() };
         static auto state = winrt::make_self<ApplicationState>(root);
         return *state;
     }

@@ -147,8 +147,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool HasSelection() const;
         bool CopyOnSelect() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(til::point const& position);
-        void SetEndSelectionPoint(til::point const& position);
+        void SetSelectionAnchor(const til::point& position);
+        void SetEndSelectionPoint(const til::point& position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,

@@ -19,8 +19,8 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 WCHAR CharToWchar(_In_reads_(cch) const char* const pch, const UINT cch)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    WCHAR wc = L'\0';
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto wc = L'\0';
 
     FAIL_FAST_IF(!(IsDBCSLeadByteConsole(*pch, &gci.OutputCPInfo) || cch == 1));
 
@@ -31,7 +31,7 @@ WCHAR CharToWchar(_In_reads_(cch) const char* const pch, const UINT cch)
 
 void SetConsoleCPInfo(const BOOL fOutput)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fOutput)
     {
         if (!GetCPInfo(gci.OutputCP, &gci.OutputCPInfo))
@@ -109,7 +109,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
     {
         while (cWords && cBytes)
         {
-            WCHAR const Char = *pwchBuffer;
+            const auto Char = *pwchBuffer;
             if (Char >= UNICODE_SPACE)
             {
                 if (IsGlyphFullWidth(Char))
@@ -191,24 +191,24 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
 // Note: may throw on error
 void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+    const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
 
     // convert events to oem codepage
     std::deque<std::unique_ptr<IInputEvent>> convertedEvents;
     while (!events.empty())
     {
-        std::unique_ptr<IInputEvent> currentEvent = std::move(events.front());
+        auto currentEvent = std::move(events.front());
         events.pop_front();
         if (currentEvent->EventType() == InputEventType::KeyEvent)
         {
-            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
+            const auto pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
             // convert from wchar to char
             std::wstring wstr{ pKeyEvent->GetCharData() };
             const auto str = ConvertToA(codepage, wstr);
 
             for (auto& ch : str)
             {
-                std::unique_ptr<KeyEvent> tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
+                auto tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
                 tempEvent->SetCharData(ch);
                 convertedEvents.push_back(std::move(tempEvent));
             }
@@ -310,7 +310,7 @@ bool DoBuffersOverlap(const BYTE* const pBufferA,
                       const BYTE* const pBufferB,
                       const UINT cbBufferB) noexcept
 {
-    const BYTE* const pBufferAEnd = pBufferA + cbBufferA;
-    const BYTE* const pBufferBEnd = pBufferB + cbBufferB;
+    const auto pBufferAEnd = pBufferA + cbBufferA;
+    const auto pBufferBEnd = pBufferB + cbBufferB;
     return (pBufferA <= pBufferB && pBufferAEnd >= pBufferB) || (pBufferB <= pBufferA && pBufferBEnd >= pBufferA);
 }

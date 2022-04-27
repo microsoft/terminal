@@ -19,17 +19,17 @@
 RECT GetImeSuggestionWindowPos()
 {
     using Microsoft::Console::Interactivity::ServiceLocator;
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& screenBuffer = gci.GetActiveOutputBuffer();
 
-    const COORD coordFont = screenBuffer.GetCurrentFont().GetSize();
-    COORD coordCursor = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
+    const auto coordFont = screenBuffer.GetCurrentFont().GetSize();
+    auto coordCursor = screenBuffer.GetTextBuffer().GetCursor().GetPosition();
 
     // Adjust the cursor position to be relative to the viewport.
     // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen
     // that the "relative" position is that it is on the 11th line from the top (or 10th by index).
     // Correct by subtracting the top/left corner from the cursor's position.
-    SMALL_RECT const srViewport = screenBuffer.GetViewport().ToInclusive();
+    const auto srViewport = screenBuffer.GetViewport().ToInclusive();
     coordCursor.X -= srViewport.Left;
     coordCursor.Y -= srViewport.Top;
 

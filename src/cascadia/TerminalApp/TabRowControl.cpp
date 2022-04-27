@@ -30,7 +30,7 @@ namespace winrt::TerminalApp::implementation
     // - Bound in the Xaml editor to the [+] button.
     // Arguments:
     // <unused>
-    void TabRowControl::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
+    void TabRowControl::OnNewTabButtonClick(const IInspectable&, const Controls::SplitButtonClickEventArgs&)
     {
     }
 
@@ -38,7 +38,7 @@ namespace winrt::TerminalApp::implementation
     // - Bound in Drag&Drop of the Xaml editor to the [+] button.
     // Arguments:
     // <unused>
-    void TabRowControl::OnNewTabButtonDrop(IInspectable const&, winrt::Windows::UI::Xaml::DragEventArgs const&)
+    void TabRowControl::OnNewTabButtonDrop(const IInspectable&, const winrt::Windows::UI::Xaml::DragEventArgs&)
     {
     }
 
@@ -48,7 +48,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     //  - <unused>
     //  - e: DragEventArgs which hold the items
-    void TabRowControl::OnNewTabButtonDragOver(IInspectable const&, winrt::Windows::UI::Xaml::DragEventArgs const& e)
+    void TabRowControl::OnNewTabButtonDragOver(const IInspectable&, const winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         // We can only handle drag/dropping StorageItems (files).
         // If the format on the clipboard is anything else, returning

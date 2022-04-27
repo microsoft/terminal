@@ -68,7 +68,7 @@ Terminal::Terminal() :
         {
             return;
         }
-        std::wstring wstr = _KeyEventsToText(inEventsToWrite);
+        auto wstr = _KeyEventsToText(inEventsToWrite);
         _pfnWriteInput(wstr);
     };
 
@@ -177,13 +177,13 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     const til::color newCursorColor{ appearance.CursorColor() };
     _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
 
-    for (int i = 0; i < 16; i++)
+    for (auto i = 0; i < 16; i++)
     {
         _renderSettings.SetColorTableEntry(i, til::color{ appearance.GetColorTableEntry(i) });
     }
     _renderSettings.MakeAdjustedColorArray();
 
-    CursorType cursorShape = CursorType::VerticalBar;
+    auto cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
     {
     case CursorStyle::Underscore:
@@ -266,13 +266,13 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     COORD bufferSize{ viewportSize.X, newBufferHeight };
 
     // This will be used to determine where the viewport should be in the new buffer.
-    const short oldViewportTop = _mutableViewport.Top();
-    short newViewportTop = oldViewportTop;
-    short newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
+    const auto oldViewportTop = _mutableViewport.Top();
+    auto newViewportTop = oldViewportTop;
+    auto newVisibleTop = ::base::saturated_cast<short>(_VisibleStartIndex());
 
     // If the original buffer had _no_ scroll offset, then we should be at the
     // bottom in the new buffer as well. Track that case now.
-    const bool originalOffsetWasZero = _scrollOffset == 0;
+    const auto originalOffsetWasZero = _scrollOffset == 0;
 
     // skip any drawing updates that might occur until we swap _buffer with the new buffer or if we exit early.
     _mainBuffer->GetCursor().StartDeferDrawing();
@@ -353,10 +353,10 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // * Where the bottom of the text in the new buffer is (and using that to
     //   calculate another proposed top location).
 
-    const COORD newCursorPos = newTextBuffer->GetCursor().GetPosition();
+    const auto newCursorPos = newTextBuffer->GetCursor().GetPosition();
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants this const, but it's assigned immediately below...
-    COORD newLastChar = newCursorPos;
+    auto newLastChar = newCursorPos;
     try
     {
         newLastChar = newTextBuffer->GetLastNonSpaceCharacter();
@@ -367,10 +367,10 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
 
     const short proposedTopFromLastLine = ::base::ClampAdd(::base::ClampSub(maxRow, viewportSize.Y), 1);
-    const short proposedTopFromScrollback = newViewportTop;
+    const auto proposedTopFromScrollback = newViewportTop;
 
-    short proposedTop = std::max(proposedTopFromLastLine,
-                                 proposedTopFromScrollback);
+    auto proposedTop = std::max(proposedTopFromLastLine,
+                                proposedTopFromScrollback);
 
     // If we're using the new location of the old top line to place the
     // viewport, we might need to make an adjustment to it.
@@ -478,7 +478,7 @@ void Terminal::WritePastedText(std::wstring_view stringView)
     auto option = ::Microsoft::Console::Utils::FilterOption::CarriageReturnNewline |
                   ::Microsoft::Console::Utils::FilterOption::ControlCodes;
 
-    std::wstring filtered = ::Microsoft::Console::Utils::FilterStringForPaste(stringView, option);
+    auto filtered = ::Microsoft::Console::Utils::FilterStringForPaste(stringView, option);
     if (IsXtermBracketedPasteModeEnabled())
     {
         filtered.insert(0, L"\x1b[200~");
@@ -990,8 +990,8 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
     // viewport's size hasn't been updated yet. In that case, use the
     // temporarily stashed _altBufferSize instead.
     const COORD origin{ 0, gsl::narrow<short>(_VisibleStartIndex()) };
-    const COORD size{ _inAltBuffer() ? _altBufferSize.to_win32_coord() :
-                                       _mutableViewport.Dimensions() };
+    const auto size{ _inAltBuffer() ? _altBufferSize.to_win32_coord() :
+                                      _mutableViewport.Dimensions() };
     return Viewport::FromDimensions(origin,
                                     size);
 }
@@ -1015,8 +1015,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
     for (size_t i = 0; i < stringView.size(); i++)
     {
         const auto wch = stringView.at(i);
-        const COORD cursorPosBefore = cursor.GetPosition();
-        COORD proposedCursorPosition = cursorPosBefore;
+        const auto cursorPosBefore = cursor.GetPosition();
+        auto proposedCursorPosition = cursorPosBefore;
 
         // TODO: MSFT 21006766
         // This is not great but I need it demoable. Fix by making a buffer stream writer.
@@ -1078,7 +1078,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 #pragma warning(suppress : 26496) // cpp core checks wants this const but it's modified below.
     auto proposedCursorPosition = proposedPosition;
     auto& cursor = _activeBuffer().GetCursor();
-    const Viewport bufferSize = _activeBuffer().GetSize();
+    const auto bufferSize = _activeBuffer().GetSize();
 
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
@@ -1129,7 +1129,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     // Obviously, don't need to do this in the alt buffer.
     if (!_inAltBuffer())
     {
-        bool updatedViewport = false;
+        auto updatedViewport = false;
         const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
         if (scrollAmount > 0)
         {
@@ -1152,7 +1152,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             // scroll if...
             //   - no selection is active
             //   - viewport is already at the bottom
-            const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
+            const auto scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
 
             _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 

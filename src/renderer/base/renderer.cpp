@@ -118,7 +118,7 @@ try
     _CheckViewportAndScroll();
 
     // Try to start painting a frame
-    HRESULT const hr = pEngine->StartPaint();
+    const auto hr = pEngine->StartPaint();
     RETURN_IF_FAILED(hr);
 
     // Return early if there's nothing to paint.
@@ -216,8 +216,8 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    Viewport view = _viewport;
-    SMALL_RECT srUpdateRegion = region.ToExclusive();
+    auto view = _viewport;
+    auto srUpdateRegion = region.ToExclusive();
 
     // If the dirty region has double width lines, we need to double the size of
     // the right margin to make sure all the affected cells are invalidated.
@@ -273,19 +273,19 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
         // We then calculate the region covered by the cursor. This requires
         // converting the buffer coordinates to an equivalent range of screen
         // cells for the cursor, taking line rendition into account.
-        const LineRendition lineRendition = buffer.GetLineRendition(pcoord->Y);
+        const auto lineRendition = buffer.GetLineRendition(pcoord->Y);
         const SHORT cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
         const SMALL_RECT cursorRect = { pcoord->X, pcoord->Y, pcoord->X + cursorWidth - 1, pcoord->Y };
-        Viewport cursorView = Viewport::FromInclusive(BufferToScreenLine(cursorRect, lineRendition));
+        auto cursorView = Viewport::FromInclusive(BufferToScreenLine(cursorRect, lineRendition));
 
         // The region is clamped within the viewport boundaries and we only
         // trigger a redraw if the region is not empty.
-        Viewport view = _pData->GetViewport();
+        auto view = _pData->GetViewport();
         cursorView = view.Clamp(cursorView);
 
         if (cursorView.IsValid())
         {
-            const SMALL_RECT updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
+            const auto updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
             FOREACH_ENGINE(pEngine)
             {
                 LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
@@ -328,8 +328,8 @@ void Renderer::TriggerTeardown() noexcept
     // Then walk through and do one final paint on the caller's thread.
     FOREACH_ENGINE(pEngine)
     {
-        bool fEngineRequestsRepaint = false;
-        HRESULT hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
+        auto fEngineRequestsRepaint = false;
+        auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
@@ -389,8 +389,8 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
-    SMALL_RECT const srOldViewport = _viewport.ToInclusive();
-    SMALL_RECT const srNewViewport = _pData->GetViewport().ToInclusive();
+    const auto srOldViewport = _viewport.ToInclusive();
+    const auto srNewViewport = _pData->GetViewport().ToInclusive();
 
     if (srOldViewport == srNewViewport)
     {
@@ -462,8 +462,8 @@ void Renderer::TriggerFlush(const bool circling)
 
     FOREACH_ENGINE(pEngine)
     {
-        bool fEngineRequestsRepaint = false;
-        HRESULT hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
+        auto fEngineRequestsRepaint = false;
+        auto hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
 
         LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
@@ -580,7 +580,7 @@ bool Renderer::s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSo
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     FOREACH_ENGINE(pEngine)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
+        const auto hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {
@@ -603,7 +603,7 @@ bool Renderer::s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSo
 // - True if the codepoint is full-width (two wide), false if it is half-width (one wide).
 bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
 {
-    bool fIsFullWidth = false;
+    auto fIsFullWidth = false;
 
     // There will only every really be two engines - the real head and the VT
     //      renderer. We won't know which is which, so iterate over them.
@@ -611,7 +611,7 @@ bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     FOREACH_ENGINE(pEngine)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->IsGlyphWideByFont(glyph, &fIsFullWidth));
+        const auto hr = LOG_IF_FAILED(pEngine->IsGlyphWideByFont(glyph, &fIsFullWidth));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {
@@ -811,10 +811,10 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Reset our flag to know when we're in the special circumstance
             // of attempting to draw only the right-half of a two-column character
             // as the first item in our run.
-            bool trimLeft = false;
+            auto trimLeft = false;
 
             // Run contains wide character (>1 columns)
-            bool containsWideCharacter = false;
+            auto containsWideCharacter = false;
 
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
@@ -841,7 +841,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
                 // Walk through the text data and turn it into rendering clusters.
                 // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
-                size_t columnCount = it->Columns();
+                auto columnCount = it->Columns();
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
@@ -999,7 +999,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     if (lines.any())
     {
         // Get the current foreground color to render the lines.
-        const COLORREF rgb = _renderSettings.GetAttributeColors(textAttribute).first;
+        const auto rgb = _renderSettings.GetAttributeColors(textAttribute).first;
         // Draw the lines
         LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
     }
@@ -1020,7 +1020,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     if (_pData->IsCursorVisible())
     {
         // Get cursor position in buffer
-        COORD coordCursor = _pData->GetCursorPosition();
+        auto coordCursor = _pData->GetCursorPosition();
 
         // GH#3166: Only draw the cursor if it's actually in the viewport. It
         // might be on the line that's in that partially visible row at the
@@ -1047,8 +1047,8 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
             // The viewport X offset is saved in the options and handled with a transform.
             coordCursor.Y -= view.Top;
 
-            COLORREF cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
-            bool useColor = cursorColor != INVALID_COLOR;
+            auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
+            auto useColor = cursorColor != INVALID_COLOR;
 
             // Build up the cursor parameters including position, color, and drawing options
             CursorOptions options;
@@ -1116,18 +1116,18 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
     try
     {
         // First get the screen buffer's viewport.
-        Viewport view = _pData->GetViewport();
+        auto view = _pData->GetViewport();
 
         // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
 
-        SMALL_RECT srCaView = overlay.region.ToInclusive();
+        auto srCaView = overlay.region.ToInclusive();
         srCaView.Top += overlay.origin.Y;
         srCaView.Bottom += overlay.origin.Y;
         srCaView.Left += overlay.origin.X;
         srCaView.Right += overlay.origin.X;
 
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
-        Viewport viewConv = Viewport::FromInclusive(srCaView);
+        auto viewConv = Viewport::FromInclusive(srCaView);
 
         gsl::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(engine.GetDirtyArea(dirtyAreas));
@@ -1141,9 +1141,9 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 
             if (viewConv.TrimToViewport(&srDirty))
             {
-                Viewport viewDirty = Viewport::FromInclusive(srDirty);
+                auto viewDirty = Viewport::FromInclusive(srDirty);
 
-                for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+                for (auto iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
                 {
                     const COORD target{ viewDirty.Left(), iRow };
                     const auto source = target - overlay.origin;
@@ -1202,7 +1202,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
                 // Make a copy as `TrimToViewport` will manipulate it and
                 // can destroy it for the next dirtyRect to test against.
                 auto rectCopy = rect;
-                Viewport dirtyView = Viewport::FromInclusive(dirtyRect.to_small_rect());
+                auto dirtyView = Viewport::FromInclusive(dirtyRect.to_small_rect());
                 if (dirtyView.TrimToViewport(&rectCopy))
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
@@ -1257,7 +1257,7 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
     const auto& buffer = _pData->GetTextBuffer();
     auto rects = _pData->GetSelectionRects();
     // Adjust rectangles to viewport
-    Viewport view = _pData->GetViewport();
+    auto view = _pData->GetViewport();
 
     std::vector<SMALL_RECT> result;
     result.reserve(rects.size());

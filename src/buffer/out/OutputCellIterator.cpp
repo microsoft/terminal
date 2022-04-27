@@ -302,7 +302,7 @@ OutputCellIterator& OutputCellIterator::operator++()
 // - Reference to self after advancement.
 OutputCellIterator OutputCellIterator::operator++(int)
 {
-    auto temp(*this);
+    auto temp = *this;
     operator++();
     return temp;
 }
@@ -478,7 +478,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch, const Text
 // - Object representing the view into this cell
 OutputCellView OutputCellIterator::s_GenerateViewLegacyAttr(const WORD& legacyAttr) noexcept
 {
-    WORD cleanAttr = legacyAttr;
+    auto cleanAttr = legacyAttr;
     WI_ClearAllFlags(cleanAttr, COMMON_LVB_SBCSDBCS); // don't use legacy lead/trailing byte flags for colors
 
     const TextAttribute attr(cleanAttr);

@@ -112,10 +112,10 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
 // - a WORD with legacy-style attributes for this textattribute.
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
-    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
-    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
+    const auto fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const auto bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = IsIntense() && _foreground.CanBeBrightened();
+    const auto brighten = IsIntense() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 

@@ -143,7 +143,7 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
-    const COORD textBufferEndPosition = uiaData.GetTextBufferEndPosition();
+    const auto textBufferEndPosition = uiaData.GetTextBufferEndPosition();
     if (uiaData.IsSelectionActive())
     {
         // Convert the screen position of the selection anchor into an equivalent
@@ -192,7 +192,7 @@ bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) 
     start = { 0 };
     end = { 0 };
 
-    COORD bufferPos = pos;
+    auto bufferPos = pos;
 
     for (const auto& needleCell : _needle)
     {
@@ -307,7 +307,7 @@ void Search::_UpdateNextPosition()
     // We put the next position to:
     // Forward: (0, 0)
     // Backward: the position of the end of the text buffer
-    const COORD bufferEndPosition = _uiaData.GetTextBufferEndPosition();
+    const auto bufferEndPosition = _uiaData.GetTextBufferEndPosition();
 
     if (_coordNext.Y > bufferEndPosition.Y ||
         (_coordNext.Y == bufferEndPosition.Y && _coordNext.X > bufferEndPosition.X))

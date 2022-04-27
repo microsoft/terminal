@@ -147,7 +147,7 @@ CATCH_RETURN();
 
     if (!_pipeBroken)
     {
-        bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
@@ -245,9 +245,9 @@ CATCH_RETURN();
 // - HRESULT S_OK
 [[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
-    HRESULT hr = S_OK;
-    const Viewport oldView = _lastViewport;
-    const Viewport newView = Viewport::FromInclusive(srNewViewport);
+    auto hr = S_OK;
+    const auto oldView = _lastViewport;
+    const auto newView = Viewport::FromInclusive(srNewViewport);
 
     _lastViewport = newView;
 

@@ -33,7 +33,7 @@ Registry::~Registry()
 // - <none>
 void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status;
     HKEY hCurrentUserKey = nullptr;
     if (hConsoleKey == nullptr)
@@ -99,7 +99,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
         {
             // we read something, set it as the word delimiters
             const std::wstring regWordDelimiters{ awchBuffer, cbWritten / sizeof(wchar_t) };
-            for (const wchar_t wch : regWordDelimiters)
+            for (const auto wch : regWordDelimiters)
             {
                 if (wch == '\0')
                 {
@@ -130,9 +130,9 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
     // Iterate through properties table and load each setting for common property types
     for (UINT iMapping = 0; iMapping < cPropertyMappings; iMapping++)
     {
-        const RegistrySerialization::RegPropertyMap* const pPropMap = &(rgPropertyMappings[iMapping]);
+        const auto pPropMap = &(rgPropertyMappings[iMapping]);
 
-        NTSTATUS Status = STATUS_SUCCESS;
+        auto Status = STATUS_SUCCESS;
 
         switch (pPropMap->propertyType)
         {
@@ -170,7 +170,7 @@ void Registry::LoadGlobalsFromRegistry()
 {
     HKEY hCurrentUserKey;
     HKEY hConsoleKey;
-    NTSTATUS status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
+    auto status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
 
     if (NT_SUCCESS(status))
     {
@@ -202,14 +202,14 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
 {
     HKEY hCurrentUserKey;
     HKEY hConsoleKey;
-    NTSTATUS Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
+    auto Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
     if (!NT_SUCCESS(Status))
     {
         return;
     }
 
     // Open the console title subkey.
-    LPWSTR TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, TRUE);
+    auto TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, TRUE);
     if (TranslatedConsoleTitle == nullptr)
     {
         RegCloseKey(hConsoleKey);

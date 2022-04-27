@@ -337,7 +337,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();
@@ -360,7 +360,7 @@ class UiaTextRangeTests
         // fill first half of text buffer with text
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
         {
-            ROW& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetRowByOffset(i);
             auto& charRow = row.GetCharRow();
             for (auto& cell : charRow)
             {
@@ -494,13 +494,13 @@ class UiaTextRangeTests
         // Let's start by filling the text buffer with something useful:
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
-            ROW& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetRowByOffset(i);
             auto& charRow = row.GetCharRow();
             for (size_t j = 0; j < charRow.size(); ++j)
             {
                 // every 5th cell is a space, otherwise a letter
                 // this is used to simulate words
-                CharRowCellReference cell = charRow.GlyphAt(j);
+                auto cell = charRow.GlyphAt(j);
                 if (j % 5 == 0)
                 {
                     cell = L" ";
@@ -734,7 +734,7 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveByCharacter)
     {
-        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().RightInclusive();
+        const auto lastColumnIndex = _pScreenInfo->GetBufferSize().RightInclusive();
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -1056,7 +1056,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveEndpointByUnitLine)
     {
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
+        const auto bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -1194,7 +1194,7 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveEndpointByUnitDocument)
     {
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
+        const auto bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -1343,7 +1343,7 @@ class UiaTextRangeTests
         const til::point documentEndExclusive{ static_cast<short>(bufferSize.left), base::ClampAdd(documentEndInclusive.y, 1) };
 
         const til::point lastLineStart{ static_cast<short>(bufferSize.left), documentEndInclusive.y };
-        const til::point secondToLastLinePos{ point_offset_by_line(til::point{ lastLineStart }, bufferSize, -1) };
+        const auto secondToLastLinePos{ point_offset_by_line(til::point{ lastLineStart }, bufferSize, -1) };
         const til::point secondToLastCharacterPos{ documentEndInclusive.x - 1, documentEndInclusive.y };
 
         // Iterate over each TextUnit. If we don't support
@@ -1361,7 +1361,7 @@ class UiaTextRangeTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"textUnit", unit), L"Get TextUnit variant");
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"degenerate", degenerate), L"Get degenerate variant");
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"atDocumentEnd", atDocumentEnd), L"Get atDocumentEnd variant");
-        TextUnit textUnit{ static_cast<TextUnit>(unit) };
+        auto textUnit{ static_cast<TextUnit>(unit) };
 
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
         int moveAmt;
@@ -1542,7 +1542,7 @@ class UiaTextRangeTests
         // Iterate over UIA's Text Attribute Identifiers
         // Validate that we know which ones are (not) supported
         // source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
-        for (long uiaAttributeId = UIA_AnimationStyleAttributeId; uiaAttributeId <= UIA_AfterParagraphSpacingAttributeId; ++uiaAttributeId)
+        for (auto uiaAttributeId = UIA_AnimationStyleAttributeId; uiaAttributeId <= UIA_AfterParagraphSpacingAttributeId; ++uiaAttributeId)
         {
             Microsoft::WRL::ComPtr<UiaTextRange> utr;
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider));
@@ -1603,7 +1603,7 @@ class UiaTextRangeTests
             VARIANT result;
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_BackgroundColorAttributeId, &result));
 
-            const COLORREF realBackgroundColor{ _pUiaData->GetAttributeColors(attr).second & 0x00ffffff };
+            const auto realBackgroundColor{ _pUiaData->GetAttributeColors(attr).second & 0x00ffffff };
             VERIFY_ARE_EQUAL(realBackgroundColor, static_cast<COLORREF>(result.lVal));
         }
         {
@@ -1839,13 +1839,13 @@ class UiaTextRangeTests
         Microsoft::WRL::ComPtr<ITextRangeProvider> clone1;
         THROW_IF_FAILED(utr->Clone(&clone1));
 
-        UiaTextRange* cloneUtr1 = static_cast<UiaTextRange*>(clone1.Get());
+        auto cloneUtr1 = static_cast<UiaTextRange*>(clone1.Get());
         VERIFY_IS_FALSE(cloneUtr1->_blockRange);
         cloneUtr1->_blockRange = true;
 
         Microsoft::WRL::ComPtr<ITextRangeProvider> clone2;
         cloneUtr1->Clone(&clone2);
-        UiaTextRange* cloneUtr2 = static_cast<UiaTextRange*>(clone2.Get());
+        auto cloneUtr2 = static_cast<UiaTextRange*>(clone2.Get());
         VERIFY_IS_TRUE(cloneUtr2->_blockRange);
     }
 
@@ -1872,7 +1872,7 @@ class UiaTextRangeTests
             const auto segment{ bufferSize.width() / 5 };
             while (iter.Pos() != documentEnd.to_win32_coord())
             {
-                bool fill{ true };
+                auto fill{ true };
                 if (i % segment == 0)
                 {
                     fill = !fill;
@@ -1938,7 +1938,7 @@ class UiaTextRangeTests
             short i = 0;
             auto iter{ _pTextBuffer->GetCellDataAt(bufferSize.origin().to_win32_coord()) };
             const auto segment{ bufferSize.width() / 10 };
-            bool fill{ true };
+            auto fill{ true };
             while (iter.Pos() != docEnd.to_win32_coord())
             {
                 if (iter.Pos().X == bufferSize.left)
