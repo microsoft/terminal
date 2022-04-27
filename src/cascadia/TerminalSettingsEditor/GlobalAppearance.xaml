@@ -48,7 +48,7 @@
                           Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="model:Theme">
-                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
+                            <TextBlock Text="{x:Bind local:GlobalAppearance.WellKnownThemeNameConverter((model:Theme)), Mode=OneWay}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>

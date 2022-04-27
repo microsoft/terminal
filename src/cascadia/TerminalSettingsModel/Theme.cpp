@@ -180,3 +180,8 @@ Json::Value Theme::ToJson() const
 
     return json;
 }
+
+winrt::hstring Theme::ToString()
+{
+    return Name();
+}

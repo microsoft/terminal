@@ -232,4 +232,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    winrt::hstring GlobalAppearance::WellKnownThemeNameConverter(const Model::Theme& theme)
+    {
+        if (theme.Name() == L"dark")
+        {
+            return RS_(L"Globals_ThemeDark/Content");
+        }
+        if (theme.Name() == L"light")
+        {
+            return RS_(L"Globals_ThemeLight/Content");
+        }
+        if (theme.Name() == L"system")
+        {
+            return RS_(L"Globals_ThemeSystem/Content");
+        }
+        return theme.Name();
+    }
 }

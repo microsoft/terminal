@@ -78,10 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         com_ptr<Theme> Copy() const;
 
-        hstring ToString()
-        {
-            return Name();
-        }
+        hstring ToString();
 
         static com_ptr<Theme> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
