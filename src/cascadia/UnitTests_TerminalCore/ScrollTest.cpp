@@ -178,12 +178,12 @@ void ScrollTest::TestNotifyScrolling()
 
         // When we're on TerminalViewHeight-1, we'll emit the newline that
         // causes the first scroll event
-        bool scrolled = currentRow >= TerminalViewHeight - 1;
+        auto scrolled = currentRow >= TerminalViewHeight - 1;
 
         // When we circle the buffer, the scroll bar's position does not
         // change.
-        bool circledBuffer = currentRow >= totalBufferSize - 1;
-        bool expectScrollBarNotification = scrolled && !circledBuffer;
+        auto circledBuffer = currentRow >= totalBufferSize - 1;
+        auto expectScrollBarNotification = scrolled && !circledBuffer;
 
         if (expectScrollBarNotification)
         {
@@ -218,11 +218,11 @@ void ScrollTest::TestNotifyScrolling()
         {
             const auto tmp = _scrollBarNotification->value();
 
-            const int expectedTop = std::clamp<int>(currentRow - TerminalViewHeight + 2,
-                                                    0,
-                                                    TerminalHistoryLength);
+            const auto expectedTop = std::clamp<int>(currentRow - TerminalViewHeight + 2,
+                                                     0,
+                                                     TerminalHistoryLength);
             const int expectedHeight = TerminalViewHeight;
-            const int expectedBottom = expectedTop + TerminalViewHeight;
+            const auto expectedBottom = expectedTop + TerminalViewHeight;
             if ((tmp.ViewportTop != expectedTop) ||
                 (tmp.ViewportHeight != expectedHeight) ||
                 (tmp.BufferHeight != expectedBottom))

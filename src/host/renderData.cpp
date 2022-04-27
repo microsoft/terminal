@@ -22,7 +22,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - Viewport describing rectangular region of TextBuffer that should be displayed.
 Microsoft::Console::Types::Viewport RenderData::GetViewport() noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetViewport();
 }
 
@@ -33,8 +33,8 @@ Microsoft::Console::Types::Viewport RenderData::GetViewport() noexcept
 // - COORD of the end position of the text buffer
 COORD RenderData::GetTextBufferEndPosition() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    Viewport bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
     COORD endPosition{ bufferSize.Width() - 1, bufferSize.BottomInclusive() };
     return endPosition;
 }
@@ -46,7 +46,7 @@ COORD RenderData::GetTextBufferEndPosition() const noexcept
 // - Text buffer with cell information for display
 const TextBuffer& RenderData::GetTextBuffer() noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
@@ -56,7 +56,7 @@ const TextBuffer& RenderData::GetTextBuffer() noexcept
 // - Font description structure
 const FontInfo& RenderData::GetFontInfo() noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetCurrentFont();
 }
 
@@ -110,7 +110,7 @@ void RenderData::UnlockConsole() noexcept
 // - the cursor's position in the buffer relative to the buffer origin.
 COORD RenderData::GetCursorPosition() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     return cursor.GetPosition();
 }
@@ -125,7 +125,7 @@ COORD RenderData::GetCursorPosition() const noexcept
 // - true if the cursor is set to the visible state, regardless of blink state
 bool RenderData::IsCursorVisible() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     return cursor.IsVisible() && !cursor.IsPopupShown();
 }
@@ -140,7 +140,7 @@ bool RenderData::IsCursorVisible() const noexcept
 // - true if the cursor is currently visually visible, depending upon blink state
 bool RenderData::IsCursorOn() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     return cursor.IsVisible() && cursor.IsOn();
 }
@@ -154,10 +154,10 @@ bool RenderData::IsCursorOn() const noexcept
 // - height of the cursor, out of 100
 ULONG RenderData::GetCursorHeight() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     // Determine cursor height
-    ULONG ulHeight = cursor.GetSize();
+    auto ulHeight = cursor.GetSize();
 
     // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
     // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
@@ -186,7 +186,7 @@ ULONG RenderData::GetCursorHeight() const noexcept
 // - the CursorType of the cursor.
 CursorType RenderData::GetCursorStyle() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     return cursor.GetType();
 }
@@ -216,7 +216,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
     try
     {
         // First retrieve the IME information and build overlays.
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto& ime = gci.ConsoleIme;
 
         for (const auto& composition : ime.ConvAreaCompStr)
@@ -253,7 +253,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - true if the cursor should be drawn twice as wide as usual
 bool RenderData::IsCursorDoubleWidth() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
 }
 
@@ -265,7 +265,7 @@ bool RenderData::IsCursorDoubleWidth() const
 // - If false, it should be ignored and never drawn
 const bool RenderData::IsGridLineDrawingAllowed() noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
     if (WI_IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
@@ -295,7 +295,7 @@ const bool RenderData::IsGridLineDrawingAllowed() noexcept
 // - String with title information
 const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetTitleAndPrefix();
 }
 
@@ -307,7 +307,7 @@ const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 // - The URI
 const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
 }
 
@@ -319,7 +319,7 @@ const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
 // - The custom ID if there was one, empty string otherwise
 const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
 }
 
@@ -426,8 +426,8 @@ const COORD RenderData::GetSelectionEnd() const noexcept
     // Then choose the opposite corner.
     const auto anchor = Selection::Instance().GetSelectionAnchor();
 
-    const short x_pos = (selectionRect.Left == anchor.X) ? selectionRect.Right : selectionRect.Left;
-    const short y_pos = (selectionRect.Top == anchor.Y) ? selectionRect.Bottom : selectionRect.Top;
+    const auto x_pos = (selectionRect.Left == anchor.X) ? selectionRect.Right : selectionRect.Left;
+    const auto y_pos = (selectionRect.Top == anchor.Y) ? selectionRect.Bottom : selectionRect.Top;
 
     return { x_pos, y_pos };
 }

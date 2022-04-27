@@ -164,7 +164,7 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 {
     if (auto commandline{ GetCommandLineW() })
     {
-        int argc = 0;
+        auto argc = 0;
 
         // Get the argv, and turn them into a hstring array to pass to the app.
         wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
@@ -203,7 +203,7 @@ void AppHost::_HandleCommandlineArgs()
 {
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
-    std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+    auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
     _windowManager.ProposeCommandline(eventArgs);
@@ -432,7 +432,7 @@ void AppHost::Initialize()
     // time when this object would actually need to get cleaned up is _during
     // exit_. So we can safely leak this Application object, and have it just
     // get cleaned up normally when our process exits.
-    ::winrt::TerminalApp::App a{ _app };
+    auto a{ _app };
     ::winrt::detach_abi(a);
 }
 
@@ -564,7 +564,7 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRe
     long adjustedWidth = 0;
 
     // Find nearest monitor.
-    HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    auto hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
     // Get nearest monitor information
     MONITORINFO monitorInfo;
@@ -585,7 +585,7 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRe
     offScreenTestRect.right = offScreenTestRect.left + 1;
     offScreenTestRect.bottom = offScreenTestRect.top + 1;
 
-    bool isTitlebarIntersectWithMonitors = false;
+    auto isTitlebarIntersectWithMonitors = false;
     EnumDisplayMonitors(
         nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
             auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
@@ -605,9 +605,9 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRe
 
     auto initialSize = _logic.GetLaunchDimensions(dpix);
 
-    const short islandWidth = Utils::ClampToShortMax(
+    const auto islandWidth = Utils::ClampToShortMax(
         static_cast<long>(ceil(initialSize.Width)), 1);
-    const short islandHeight = Utils::ClampToShortMax(
+    const auto islandHeight = Utils::ClampToShortMax(
         static_cast<long>(ceil(initialSize.Height)), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
@@ -621,7 +621,7 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRe
                           Utils::ClampToShortMax(adjustedHeight, 1) };
 
     // Find nearest monitor for the position that we've actually settled on
-    HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    auto hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
     MONITORINFO nearestMonitorInfo;
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
     // Get monitor dimensions:
@@ -641,7 +641,7 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRe
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
-        const til::size availableSpace = desktopDimensions + nonClientSize;
+        const auto availableSpace = desktopDimensions + nonClientSize;
 
         origin = til::point{
             ::base::ClampSub(nearestMonitorInfo.rcWork.left, (nonClientSize.width / 2)),
@@ -737,7 +737,7 @@ void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspec
         // since there doesn't seem to be another way to handle this
         POINT point1 = {};
         ::GetCursorPos(&point1);
-        const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+        const auto lParam = MAKELPARAM(point1.x, point1.y);
         WINDOWPLACEMENT placement = { sizeof(placement) };
         ::GetWindowPlacement(handle, &placement);
         if (placement.showCmd == SW_SHOWNORMAL)
@@ -807,7 +807,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
                     const auto transform = e.TransformToVisual(nullptr);
                     const til::point controlOrigin{ til::math::flooring, transform.TransformPoint({}) };
 
-                    const til::point offsetPoint = coord - controlOrigin;
+                    const auto offsetPoint = coord - controlOrigin;
 
                     const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
                     const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
@@ -1064,7 +1064,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     // If a hotkey with a given HWND and ID combination already exists
     // then a duplicate one will be added, which we don't want.
     // (Additionally we want to remove hotkeys that were removed from the settings.)
-    for (int i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
+    for (auto i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
     {
         _window->UnregisterHotKey(i);
     }
@@ -1076,8 +1076,8 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            int index = gsl::narrow_cast<int>(_hotkeys.size());
-            const bool succeeded = _window->RegisterHotKey(index, keyChord);
+            auto index = gsl::narrow_cast<int>(_hotkeys.size());
+            const auto succeeded = _window->RegisterHotKey(index, keyChord);
 
             TraceLoggingWrite(g_hWindowsTerminalProvider,
                               "AppHost_setupGlobalHotkey",
@@ -1577,7 +1577,7 @@ void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspecta
     LaunchMode launchMode{};
     _initialResizeAndRepositionWindow(_window->GetHandle(), _proposedRect, launchMode);
 
-    int nCmdShow = SW_SHOWDEFAULT;
+    auto nCmdShow = SW_SHOWDEFAULT;
     if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;

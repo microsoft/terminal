@@ -39,7 +39,7 @@ static wil::unique_process_heap_string _InboxConsoleHostPath()
 static wchar_t* _ConsoleHostPath()
 {
     // Use the magic of magic statics to only calculate this once.
-    static wil::unique_process_heap_string consoleHostPath = []() {
+    static auto consoleHostPath = []() {
 #if defined(__INSIDE_WINDOWS)
         return _InboxConsoleHostPath();
 #else
@@ -94,7 +94,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
-    const wchar_t* pwszFormat = L"\"%s\" --headless %s%s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
+    auto pwszFormat = L"\"%s\" --headless %s%s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
@@ -134,7 +134,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     InitializeProcThreadAttributeList(nullptr, 1, 0, &listSize);
 
     // I have to use a HeapAlloc here because kernelbase can't link new[] or delete[]
-    PPROC_THREAD_ATTRIBUTE_LIST attrList = static_cast<PPROC_THREAD_ATTRIBUTE_LIST>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, listSize));
+    auto attrList = static_cast<PPROC_THREAD_ATTRIBUTE_LIST>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, listSize));
     RETURN_IF_NULL_ALLOC(attrList);
     auto attrListDelete = wil::scope_exit([&]() noexcept {
         HeapFree(GetProcessHeap(), 0, attrList);
@@ -229,7 +229,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
     signalPacket[1] = size.X;
     signalPacket[2] = size.Y;
 
-    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    const auto fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
@@ -250,7 +250,7 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
     unsigned short signalPacket[1];
     signalPacket[0] = PTY_SIGNAL_CLEAR_WINDOW;
 
-    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    const auto fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
@@ -283,7 +283,7 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
     } data{ PTY_SIGNAL_REPARENT_WINDOW, (uint64_t)(newParent) };
 #pragma pack(pop)
 
-    const BOOL fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
+    const auto fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
@@ -409,7 +409,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
         return E_INVALIDARG;
     }
 
-    PseudoConsole* pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
+    auto pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
     auto cleanupPty = wil::scope_exit([&]() noexcept {
         _ClosePseudoConsole(pPty);
@@ -433,7 +433,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;
-    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    auto hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
         hr = _ResizePseudoConsole(pPty, size);
@@ -450,7 +450,7 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
 extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;
-    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    auto hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
         hr = _ClearPseudoConsole(pPty);
@@ -467,7 +467,7 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newParent)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;
-    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    auto hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
         hr = _ReparentPseudoConsole(pPty, newParent);
@@ -483,7 +483,7 @@ extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newPa
 //      terminated, or if the pseudoconsole was already terminated.
 extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
-    PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    const auto pPty = (PseudoConsole*)hPC;
     if (pPty != nullptr)
     {
         _ClosePseudoConsole(pPty);
@@ -510,7 +510,7 @@ extern "C" HRESULT WINAPI ConptyPackPseudoConsole(_In_ HANDLE hProcess,
     RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hRef));
     RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hSignal));
 
-    PseudoConsole* pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
+    auto pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
 
     pPty->hConPtyProcess = hProcess;

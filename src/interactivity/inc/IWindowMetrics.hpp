@@ -27,8 +27,8 @@ namespace Microsoft::Console::Interactivity
     protected:
         IWindowMetrics() {}
 
-        IWindowMetrics(IWindowMetrics const&) = delete;
-        IWindowMetrics& operator=(IWindowMetrics const&) = delete;
+        IWindowMetrics(const IWindowMetrics&) = delete;
+        IWindowMetrics& operator=(const IWindowMetrics&) = delete;
     };
 
     inline IWindowMetrics::~IWindowMetrics() {}

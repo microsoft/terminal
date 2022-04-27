@@ -146,8 +146,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
         const til::point cursorPos{ til::math::flooring, cursorArgs->CurrentPosition() };
 
-        const double actualCanvasWidth{ Canvas().ActualWidth() };
-        const double actualTextBlockHeight{ TextBlock().ActualHeight() };
+        const auto actualCanvasWidth{ Canvas().ActualWidth() };
+        const auto actualTextBlockHeight{ TextBlock().ActualHeight() };
         const auto actualWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
 
         if (_currentTerminalCursorPos == cursorPos &&
@@ -184,10 +184,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Convert text buffer cursor position to client coordinate position
         // within the window. This point is in _pixels_
-        const til::point clientCursorPos{ _currentTerminalCursorPos * fontSize };
+        const auto clientCursorPos{ _currentTerminalCursorPos * fontSize };
 
         // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
         const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
 
@@ -197,7 +197,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // calculate FontSize in pixels from Points
         const double fontSizePx = (fontSize.height * 72) / USER_DEFAULT_SCREEN_DPI;
-        const double unscaledFontSizePx = fontSizePx / scaleFactor;
+        const auto unscaledFontSizePx = fontSizePx / scaleFactor;
 
         // Make sure to unscale the font size to correct for DPI! XAML needs
         // things in DIPs, and the fontSize is in pixels.
@@ -229,13 +229,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // The controlAbsoluteOrigin is the origin of the control relative to
         // the origin of the displays. THIS IS IN DIPs
-        const til::point controlAbsoluteOrigin{ windowOrigin + controlOrigin };
+        const auto controlAbsoluteOrigin{ windowOrigin + controlOrigin };
 
         // Convert the control origin to pixels
-        const til::point scaledFrameOrigin = til::point{ til::math::flooring, controlAbsoluteOrigin.x * scaleFactor, controlAbsoluteOrigin.y * scaleFactor };
+        const auto scaledFrameOrigin = til::point{ til::math::flooring, controlAbsoluteOrigin.x * scaleFactor, controlAbsoluteOrigin.y * scaleFactor };
 
         // Get the location of the cursor in the display, in pixels.
-        til::point screenCursorPos{ scaledFrameOrigin + clientCursorPos };
+        auto screenCursorPos{ scaledFrameOrigin + clientCursorPos };
 
         // GH #5007 - make sure to account for wrapping the IME composition at
         // the right side of the viewport.
@@ -264,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
     // Return Value:
     // - <none>
-    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
+    void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, const CoreTextLayoutRequestedEventArgs& args)
     {
         auto request = args.Request();
 
@@ -285,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextCompositionStartedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, CoreTextCompositionStartedEventArgs const& /*args*/)
+    void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, const CoreTextCompositionStartedEventArgs& /*args*/)
     {
         _inComposition = true;
     }
@@ -298,7 +298,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextCompositionCompletedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& /*args*/)
+    void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, const CoreTextCompositionCompletedEventArgs& /*args*/)
     {
         _inComposition = false;
 
@@ -319,7 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - object: CoreTextCompositionStartedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, winrt::Windows::Foundation::IInspectable const& /*object*/)
+    void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, const winrt::Windows::Foundation::IInspectable& /*object*/)
     {
     }
 
@@ -332,7 +332,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextTextRequestedEventArgs to be updated with requested range text.
     // Return Value:
     // - <none>
-    void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, CoreTextTextRequestedEventArgs const& args)
+    void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, const CoreTextTextRequestedEventArgs& args)
     {
         // the range the TSF wants to know about
         const auto range = args.Request().Range();
@@ -358,7 +358,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextSelectionRequestedEventArgs for providing data for the SelectionRequested event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, CoreTextSelectionRequestedEventArgs const& /*args*/)
+    void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, const CoreTextSelectionRequestedEventArgs& /*args*/)
     {
     }
 
@@ -372,7 +372,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextSelectionUpdatingEventArgs for providing data for the SelectionUpdating event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, CoreTextSelectionUpdatingEventArgs const& /*args*/)
+    void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, const CoreTextSelectionUpdatingEventArgs& /*args*/)
     {
     }
 
@@ -384,7 +384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextTextUpdatingEventArgs contains new text to update buffer with.
     // Return Value:
     // - <none>
-    void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
+    void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, const CoreTextTextUpdatingEventArgs& args)
     {
         const auto incomingText = args.Text();
         const auto range = args.Range();
@@ -467,7 +467,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextFormatUpdatingEventArgs Provides data for the FormatUpdating event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& /*args*/)
+    void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, const CoreTextFormatUpdatingEventArgs& /*args*/)
     {
     }
 }

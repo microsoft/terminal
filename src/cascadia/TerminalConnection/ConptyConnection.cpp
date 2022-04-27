@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                              nullptr,
                                                              nullptr));
 
-        std::wstring cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
+        auto cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
         Utils::EnvironmentVariableMapW environment;
         auto zeroEnvMap = wil::scope_exit([&]() noexcept {
@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
-            std::wstring wsGuid{ Utils::GuidToString(_guid) };
+            auto wsGuid{ Utils::GuidToString(_guid) };
             wsGuid.pop_back();
 
             const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         RETURN_IF_FAILED(Utils::EnvironmentMapToEnvironmentStringsW(environment, newEnvVars));
 
-        LPWCH lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
+        auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
 
         // If we have a startingTitle, create a mutable character buffer to add
         // it to the STARTUPINFO.
@@ -164,7 +164,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         auto [newCommandLine, newStartingDirectory] = Utils::MangleStartingDirectoryForWSL(cmdline, _startingDirectory);
-        const wchar_t* const startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
+        const auto startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
 
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
@@ -225,10 +225,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     Windows::Foundation::Collections::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
                                                                                 const winrt::hstring& startingDirectory,
                                                                                 const winrt::hstring& startingTitle,
-                                                                                Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                                const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
-                                                                                winrt::guid const& guid)
+                                                                                const winrt::guid& guid)
     {
         Windows::Foundation::Collections::ValueSet vs{};
 
@@ -345,7 +345,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             nullptr,
             0,
             [](LPVOID lpParameter) noexcept {
-                ConptyConnection* const pInstance = static_cast<ConptyConnection*>(lpParameter);
+                const auto pInstance = static_cast<ConptyConnection*>(lpParameter);
                 if (pInstance)
                 {
                     return pInstance->_OutputThread();
@@ -362,7 +362,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _clientExitWait.reset(CreateThreadpoolWait(
             [](PTP_CALLBACK_INSTANCE /*callbackInstance*/, PVOID context, PTP_WAIT /*wait*/, TP_WAIT_RESULT /*waitResult*/) noexcept {
-                ConptyConnection* const pInstance = static_cast<ConptyConnection*>(context);
+                const auto pInstance = static_cast<ConptyConnection*>(context);
                 if (pInstance)
                 {
                     pInstance->_ClientTerminated();
@@ -450,7 +450,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-    void ConptyConnection::WriteInput(hstring const& data)
+    void ConptyConnection::WriteInput(const hstring& data)
     {
         if (!_isConnected())
         {
@@ -459,7 +459,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // convert from UTF-16LE to UTF-8 as ConPty expects UTF-8
         // TODO GH#3378 reconcile and unify UTF-8 converters
-        std::string str = winrt::to_string(data);
+        auto str = winrt::to_string(data);
         LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
     }
 
@@ -595,7 +595,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
             }
 
-            const HRESULT result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
+            const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
             if (FAILED(result))
             {
                 if (_isStateAtOrBeyond(ConnectionState::Closing))
@@ -640,8 +640,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     static winrt::event<NewConnectionHandler> _newConnectionHandlers;
 
-    winrt::event_token ConptyConnection::NewConnection(NewConnectionHandler const& handler) { return _newConnectionHandlers.add(handler); };
-    void ConptyConnection::NewConnection(winrt::event_token const& token) { _newConnectionHandlers.remove(token); };
+    winrt::event_token ConptyConnection::NewConnection(const NewConnectionHandler& handler) { return _newConnectionHandlers.add(handler); };
+    void ConptyConnection::NewConnection(const winrt::event_token& token) { _newConnectionHandlers.remove(token); };
 
     HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
     try

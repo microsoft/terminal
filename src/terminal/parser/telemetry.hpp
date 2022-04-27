@@ -122,7 +122,7 @@ namespace Microsoft::Console::VirtualTerminal
         // Used to prevent multiple instances
         TermTelemetry() noexcept;
         ~TermTelemetry();
-        TermTelemetry(TermTelemetry const&) = delete;
+        TermTelemetry(const TermTelemetry&) = delete;
         TermTelemetry(TermTelemetry&&) = delete;
         TermTelemetry& operator=(const TermTelemetry&) = delete;
         TermTelemetry& operator=(TermTelemetry&&) = delete;

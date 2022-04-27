@@ -35,7 +35,7 @@ using namespace Microsoft::Console::Interactivity;
 {
     FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
-    ConsoleProcessHandle* pProcessData = FindProcessInList(dwProcessId);
+    auto pProcessData = FindProcessInList(dwProcessId);
     if (nullptr != pProcessData)
     {
         // In the GenerateConsoleCtrlEvent it's OK for this process to already have a ProcessData object. However, the other case is someone
@@ -108,7 +108,7 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(const DWORD dwProces
 
     while (it != _processes.cend())
     {
-        ConsoleProcessHandle* const pProcessHandleRecord = *it;
+        const auto pProcessHandleRecord = *it;
 
         if (ROOT_PROCESS_ID != dwProcessId)
         {
@@ -143,7 +143,7 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
 
     while (it != _processes.cend())
     {
-        ConsoleProcessHandle* const pProcessHandleRecord = *it;
+        const auto pProcessHandleRecord = *it;
         if (pProcessHandleRecord->_ulProcessGroupId == ulProcessGroupId)
         {
             return pProcessHandleRecord;
@@ -168,9 +168,9 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
 [[nodiscard]] HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                                                          _Inout_ size_t* const pcProcessList) const
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
-    size_t const cProcesses = _processes.size();
+    const auto cProcesses = _processes.size();
 
     // If we can fit inside the given list space, copy out the data.
     if (cProcesses <= *pcProcessList)
@@ -223,13 +223,13 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
         auto it = _processes.cbegin();
         while (it != _processes.cend())
         {
-            ConsoleProcessHandle* const pProcessHandleRecord = *it;
+            const auto pProcessHandleRecord = *it;
 
             // If no limit was specified OR if we have a match, generate a new termination record.
             if (0 == dwLimitingProcessId ||
                 pProcessHandleRecord->_ulProcessGroupId == dwLimitingProcessId)
             {
-                std::unique_ptr<ConsoleProcessTerminationRecord> pNewRecord = std::make_unique<ConsoleProcessTerminationRecord>();
+                auto pNewRecord = std::make_unique<ConsoleProcessTerminationRecord>();
 
                 // If the duplicate failed, the best we can do is to skip including the process in the list and hope it goes away.
                 LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
@@ -257,8 +257,8 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
         }
 
         // From all found matches, convert to C-style array to return
-        size_t const cchRetVal = TermRecords.size();
-        ConsoleProcessTerminationRecord* pRetVal = new ConsoleProcessTerminationRecord[cchRetVal];
+        const auto cchRetVal = TermRecords.size();
+        auto pRetVal = new ConsoleProcessTerminationRecord[cchRetVal];
 
         for (size_t i = 0; i < cchRetVal; i++)
         {
@@ -303,7 +303,7 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
     auto it = _processes.cbegin();
     while (it != _processes.cend())
     {
-        ConsoleProcessHandle* const pProcessHandle = *it;
+        const auto pProcessHandle = *it;
 
         if (pProcessHandle->_hProcess != nullptr)
         {

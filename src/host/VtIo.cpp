@@ -142,7 +142,7 @@ VtIo::VtIo() :
     }
     auto& globals = ServiceLocator::LocateGlobals();
 
-    const CONSOLE_INFORMATION& gci = globals.getConsoleInformation();
+    const auto& gci = globals.getConsoleInformation();
 
     try
     {
@@ -153,9 +153,9 @@ VtIo::VtIo() :
 
         if (IsValidHandle(_hOutput.get()))
         {
-            Viewport initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                                gci.GetWindowSize().X,
-                                                                gci.GetWindowSize().Y);
+            auto initialViewport = Viewport::FromDimensions({ 0, 0 },
+                                                            gci.GetWindowSize().X,
+                                                            gci.GetWindowSize().Y);
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
@@ -248,7 +248,7 @@ bool VtIo::IsUsingVt() const
     {
         return S_FALSE;
     }
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
 
     if (_pVtRenderEngine)
     {
@@ -354,7 +354,7 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::SuppressResizeRepaint()
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SuppressResizeRepaint();
@@ -372,7 +372,7 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT
 [[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_lookingForCursorPosition)
     {
         if (_pVtRenderEngine)
@@ -387,7 +387,7 @@ bool VtIo::IsUsingVt() const
 
 [[nodiscard]] HRESULT VtIo::SwitchScreenBuffer(const bool useAltBuffer)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SwitchScreenBuffer(useAltBuffer);
@@ -408,7 +408,7 @@ void VtIo::CloseOutput()
     // This will release the lock when it goes out of scope
     std::lock_guard<std::mutex> lk(_shutdownLock);
 
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
     // DON'T RemoveRenderEngine, as that requires the engine list lock, and this
     // is usually being triggered on a paint operation, when the lock is already
     // owned by the paint.

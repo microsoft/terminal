@@ -31,7 +31,7 @@ using namespace Microsoft::Console::Interactivity;
 
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
@@ -73,7 +73,7 @@ using namespace Microsoft::Console::Interactivity;
 
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
@@ -115,7 +115,7 @@ using namespace Microsoft::Console::Interactivity;
 
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpiApi>& api)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
@@ -157,7 +157,7 @@ using namespace Microsoft::Console::Interactivity;
 
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
@@ -199,7 +199,7 @@ using namespace Microsoft::Console::Interactivity;
 
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
@@ -241,7 +241,7 @@ using namespace Microsoft::Console::Interactivity;
 
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
@@ -296,13 +296,13 @@ using namespace Microsoft::Console::Interactivity;
 {
     hwnd = nullptr;
     ApiLevel level;
-    NTSTATUS status = ApiDetector::DetectNtUserWindow(&level);
+    auto status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
         try
         {
-            static const wchar_t* const PSEUDO_WINDOW_CLASS = L"PseudoConsoleWindow";
+            static const auto PSEUDO_WINDOW_CLASS = L"PseudoConsoleWindow";
             WNDCLASS pseudoClass{ 0 };
             switch (level)
             {
@@ -340,7 +340,7 @@ using namespace Microsoft::Console::Interactivity;
 
                 if (hwnd == nullptr)
                 {
-                    DWORD const gle = GetLastError();
+                    const auto gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
 

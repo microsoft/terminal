@@ -27,8 +27,8 @@ namespace Microsoft::Console::Interactivity
     protected:
         IHighDpiApi() {}
 
-        IHighDpiApi(IHighDpiApi const&) = delete;
-        IHighDpiApi& operator=(IHighDpiApi const&) = delete;
+        IHighDpiApi(const IHighDpiApi&) = delete;
+        IHighDpiApi& operator=(const IHighDpiApi&) = delete;
     };
 
     inline IHighDpiApi::~IHighDpiApi() {}

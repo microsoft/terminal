@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-void ToggleV2ColorControls(__in const HWND hDlg);
+void ToggleV2ColorControls(const __in HWND hDlg);
 INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam);
 void SetOpacitySlider(__in HWND hDlg);
 void PreviewOpacity(HWND hDlg, BYTE bOpacity);

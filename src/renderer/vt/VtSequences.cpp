@@ -171,7 +171,7 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
 {
     // VT coords start at 1,1
-    COORD coordVt = coord;
+    auto coordVt = coord;
     coordVt.X++;
     coordVt.Y++;
 
@@ -252,9 +252,9 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
                                                               const bool fIsForeground) noexcept
 {
-    const uint8_t r = GetRValue(color);
-    const uint8_t g = GetGValue(color);
-    const uint8_t b = GetBValue(color);
+    const auto r = GetRValue(color);
+    const auto g = GetGValue(color);
+    const auto b = GetBValue(color);
     return _WriteFormatted(FMT_COMPILE("\x1b[{}8;2;{};{};{}m"), fIsForeground ? '3' : '4', r, g, b);
 }
 

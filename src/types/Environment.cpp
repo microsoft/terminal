@@ -32,10 +32,10 @@ try
     RETURN_HR_IF_NULL(E_OUTOFMEMORY, currentEnvVars);
 
     // Each entry is NULL-terminated; block is guaranteed to be double-NULL terminated at a minimum.
-    for (wchar_t const* lastCh{ currentEnvVars }; *lastCh != '\0'; ++lastCh)
+    for (const wchar_t* lastCh{ currentEnvVars }; *lastCh != '\0'; ++lastCh)
     {
         // Copy current entry into temporary map.
-        const size_t cchEntry{ ::wcslen(lastCh) };
+        const auto cchEntry{ ::wcslen(lastCh) };
         const std::wstring_view entry{ lastCh, cchEntry };
 
         // Every entry is of the form "name=value\0".
@@ -67,7 +67,7 @@ HRESULT Microsoft::Console::Utils::EnvironmentMapToEnvironmentStringsW(Environme
 try
 {
     // Clear environment block before use.
-    constexpr size_t cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
+    constexpr auto cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
 
     if (!newEnvVars.empty())
     {
@@ -89,14 +89,14 @@ try
     });
 
     // Transform each map entry and copy it into the new environment block.
-    LPWCH pEnvVars{ newEnvVars.data() };
-    size_t cbRemaining{ cchEnv * cbChar };
+    auto pEnvVars{ newEnvVars.data() };
+    auto cbRemaining{ cchEnv * cbChar };
     for (const auto& [name, value] : map)
     {
         // Final form of "name=value\0" for every entry.
         {
-            const size_t cchSrc{ name.size() };
-            const size_t cbSrc{ cchSrc * cbChar };
+            const auto cchSrc{ name.size() };
+            const auto cbSrc{ cchSrc * cbChar };
             RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, name.c_str(), cbSrc) != 0);
             pEnvVars += cchSrc;
             cbRemaining -= cbSrc;
@@ -107,8 +107,8 @@ try
         cbRemaining -= cbChar;
 
         {
-            const size_t cchSrc{ value.size() };
-            const size_t cbSrc{ cchSrc * cbChar };
+            const auto cchSrc{ value.size() };
+            const auto cbSrc{ cchSrc * cbChar };
             RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, value.c_str(), cbSrc) != 0);
             pEnvVars += cchSrc;
             cbRemaining -= cbSrc;

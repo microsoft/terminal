@@ -34,7 +34,7 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwch
 
     while (*pwchToConvert != L'\0')
     {
-        WCHAR ch = *pwchToConvert;
+        auto ch = *pwchToConvert;
         if (L'0' <= ch && ch <= L'9')
         {
             val = (val * 10) + (ch - L'0');
@@ -63,12 +63,12 @@ WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwch
 // - The string resource
 std::wstring _LoadString(const UINT id)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR ItemString[70];
     size_t ItemLength = 0;
     LANGID LangId;
 
-    const NTSTATUS Status = GetConsoleLangId(gci.OutputCP, &LangId);
+    const auto Status = GetConsoleLangId(gci.OutputCP, &LangId);
     if (NT_SUCCESS(Status))
     {
         ItemLength = s_LoadStringEx(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString), LangId);
@@ -100,11 +100,11 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
     UINT cch = 0;
 
     // String Tables are broken up into 16 string segments.  Find the segment containing the string we are interested in.
-    HANDLE const hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR)((LONG_PTR)(((USHORT)wID >> 4) + 1)), wLangId);
+    const auto hResInfo = FindResourceEx(hModule, RT_STRING, (LPTSTR)((LONG_PTR)(((USHORT)wID >> 4) + 1)), wLangId);
     if (hResInfo != nullptr)
     {
         // Load that segment.
-        HANDLE const hStringSeg = (HRSRC)LoadResource(hModule, (HRSRC)hResInfo);
+        const auto hStringSeg = (HRSRC)LoadResource(hModule, (HRSRC)hResInfo);
 
         // Lock the resource.
         LPTSTR lpsz;
@@ -169,10 +169,10 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
 int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const COORD coordSecond) noexcept
 {
-    const short cRowWidth = bufferSize.X;
+    const auto cRowWidth = bufferSize.X;
 
     // Assert that our coordinates are within the expected boundaries
-    const short cRowHeight = bufferSize.Y;
+    const auto cRowHeight = bufferSize.Y;
     FAIL_FAST_IF(!(coordFirst.X >= 0 && coordFirst.X < cRowWidth));
     FAIL_FAST_IF(!(coordSecond.X >= 0 && coordSecond.X < cRowWidth));
     FAIL_FAST_IF(!(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight));
@@ -181,7 +181,7 @@ int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
     //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
-    int retVal = (coordFirst.Y - coordSecond.Y) * cRowWidth;
+    auto retVal = (coordFirst.Y - coordSecond.Y) * cRowWidth;
 
     // Now adjust for horizontal differences
     //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
@@ -211,9 +211,9 @@ int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
 int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
-    const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
+    const auto coordScreenBufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
     return s_CompareCoords(coordScreenBufferSize, coordFirst, coordSecond);
 }
 

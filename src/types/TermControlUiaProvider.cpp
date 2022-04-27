@@ -49,7 +49,7 @@ IFACEMETHODIMP TermControlUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRec
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    const RECT rc = _controlInfo->GetBounds();
+    const auto rc = _controlInfo->GetBounds();
 
     pRect->left = rc.left;
     pRect->top = rc.top;

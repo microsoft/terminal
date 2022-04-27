@@ -35,13 +35,13 @@ ConsoleProcessPolicy::~ConsoleProcessPolicy()
 ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(const HANDLE hProcess)
 {
     // If we cannot determine the policy status, then we block access by default.
-    bool fCanReadOutputBuffer = false;
-    bool fCanWriteInputBuffer = false;
+    auto fCanReadOutputBuffer = false;
+    auto fCanWriteInputBuffer = false;
 
     wil::unique_handle hToken;
     if (LOG_IF_WIN32_BOOL_FALSE(OpenProcessToken(hProcess, TOKEN_READ, &hToken)))
     {
-        bool fIsWrongWayBlocked = true;
+        auto fIsWrongWayBlocked = true;
 
         // First check AppModel Policy:
         LOG_IF_FAILED(Microsoft::Console::Internal::ProcessPolicy::CheckAppModelPolicy(hToken.get(), fIsWrongWayBlocked));

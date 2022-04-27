@@ -149,7 +149,7 @@ BOOL UnadjustWindowRectEx(
 {
     RECT rc;
     SetRectEmpty(&rc);
-    BOOL fRc = AdjustWindowRectEx(&rc, dwStyle, fMenu, dwExStyle);
+    auto fRc = AdjustWindowRectEx(&rc, dwStyle, fMenu, dwExStyle);
     if (fRc)
     {
         prc->left -= rc.left;
@@ -162,7 +162,7 @@ BOOL UnadjustWindowRectEx(
 
 static HANDLE GetStdHandleVerify(const DWORD dwHandleType)
 {
-    const HANDLE hConsole = GetStdHandle(dwHandleType);
+    const auto hConsole = GetStdHandle(dwHandleType);
     VERIFY_ARE_NOT_EQUAL(hConsole, INVALID_HANDLE_VALUE, L"Ensure we got a valid console handle");
     VERIFY_IS_NOT_NULL(hConsole, L"Ensure we got a non-null console handle");
 
@@ -221,7 +221,7 @@ CommonV1V2Helper::CommonV1V2Helper(const ForceV2States ForceV2StateDesired)
         return;
     }
 
-    LSTATUS lstatus = RegOpenKeyExW(HKEY_CURRENT_USER, pwszConsoleKeyName, 0, KEY_READ | KEY_WRITE, &_consoleKey);
+    auto lstatus = RegOpenKeyExW(HKEY_CURRENT_USER, pwszConsoleKeyName, 0, KEY_READ | KEY_WRITE, &_consoleKey);
     if (ERROR_ACCESS_DENIED == lstatus)
     {
         // UAP and some systems won't let us modify the registry. That's OK. Try to run the tests.

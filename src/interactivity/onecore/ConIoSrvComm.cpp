@@ -352,7 +352,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
         if (Event->FocusEvent.IsActive)
         {
-            HRESULT hr = S_OK;
+            auto hr = S_OK;
 
             // Lazy-initialize the WddmCon engine.
             //

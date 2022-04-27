@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     static bool _EnsureStaticInitialization()
     {
         // use C++11 magic statics to make sure we only do this once.
-        static bool initialized = []() {
+        static auto initialized = []() {
             // *** THIS IS A SINGLETON ***
             SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
 
@@ -706,8 +706,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   concerned with initialization process. Value forwarded to event handler.
     void ControlCore::_updateFont(const bool initialUpdate)
     {
-        const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
-                                            _compositionScale);
+        const auto newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
+                                             _compositionScale);
 
         _terminal->SetFontInfo(_actualFont);
 
@@ -844,7 +844,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
-        const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
             _connection.Resize(vp.Height(), vp.Width());
@@ -890,7 +890,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _refreshSizeUnderLock();
     }
 
-    void ControlCore::SetSelectionAnchor(til::point const& position)
+    void ControlCore::SetSelectionAnchor(const til::point& position)
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SetSelectionAnchor(position.to_win32_coord());
@@ -900,7 +900,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - position: the point in terminal coordinates (in cells, not pixels)
-    void ControlCore::SetEndSelectionPoint(til::point const& position)
+    void ControlCore::SetEndSelectionPoint(const til::point& position)
     {
         if (!_terminal->IsSelectionActive())
         {
@@ -1261,17 +1261,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const Search::Direction direction = goForward ?
-                                                Search::Direction::Forward :
-                                                Search::Direction::Backward;
+        const auto direction = goForward ?
+                                   Search::Direction::Forward :
+                                   Search::Direction::Backward;
 
-        const Search::Sensitivity sensitivity = caseSensitive ?
-                                                    Search::Sensitivity::CaseSensitive :
-                                                    Search::Sensitivity::CaseInsensitive;
+        const auto sensitivity = caseSensitive ?
+                                     Search::Sensitivity::CaseSensitive :
+                                     Search::Sensitivity::CaseInsensitive;
 
         ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
-        const bool foundMatch{ search.FindNext() };
+        const auto foundMatch{ search.FindNext() };
         if (foundMatch)
         {
             _terminal->SetBlockSelection(false);
@@ -1423,7 +1423,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        ::Terminal::SelectionExpansion mode = ::Terminal::SelectionExpansion::Char;
+        auto mode = ::Terminal::SelectionExpansion::Char;
         if (numberOfClicks == 1)
         {
             mode = ::Terminal::SelectionExpansion::Char;
