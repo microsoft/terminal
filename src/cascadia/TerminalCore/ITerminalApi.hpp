@@ -69,6 +69,8 @@ namespace Microsoft::Terminal::Core
         virtual void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) = 0;
         virtual void PopGraphicsRendition() = 0;
 
+        virtual void ShowWindow(bool showOrHide) = 0;
+
         virtual void UseAlternateScreenBuffer() = 0;
         virtual void UseMainScreenBuffer() = 0;
 

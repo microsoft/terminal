@@ -311,6 +311,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, flags, &_inPipe, &_outPipe, &_hPC));
 
+            // GH#12515: The conpty assumes it's hidden at the start. If we're visible, let it know now.
+            THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
             if (_initialParentHwnd != 0)
             {
                 THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
@@ -486,6 +488,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_isConnected())
         {
             THROW_IF_FAILED(ConptyClearPseudoConsole(_hPC.get()));
+        }
+    }
+
+    void ConptyConnection::ShowHide(const bool show)
+    {
+        // If we haven't connected yet, then stash for when we do connect.
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), show));
+        }
+        else
+        {
+            _initialVisibility = show;
         }
     }
 

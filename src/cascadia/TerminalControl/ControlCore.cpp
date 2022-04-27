@@ -108,6 +108,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
+        auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
+        _terminal->SetShowWindowCallback(pfnShowWindowChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -1214,6 +1217,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _TaskbarProgressChangedHandlers(*this, nullptr);
     }
 
+    void ControlCore::_terminalShowWindowChanged(bool showOrHide)
+    {
+        auto showWindow = winrt::make_self<implementation::ShowWindowArgs>(showOrHide);
+        _ShowWindowChangedHandlers(*this, *showWindow);
+    }
+
     bool ControlCore::HasSelection() const
     {
         return _terminal->IsSelectionActive();
@@ -1693,6 +1702,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             _setOpacity(opacityAdjust);
+        }
+    }
+
+    // Method Description:
+    // - Notifies the attached PTY that the window has changed visibility state
+    // - NOTE: Most VT commands are generated in `TerminalDispatch` and sent to this
+    //         class as the target for transmission. But since this message isn't
+    //         coming in via VT parsing (and rather from a window state transition)
+    //         we generate and send it here.
+    // Arguments:
+    // - visible: True for visible; false for not visible.
+    // Return Value:
+    // - <none>
+    void ControlCore::WindowVisibilityChanged(const bool showOrHide)
+    {
+        // show is true, hide is false
+        if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+        {
+            conpty.ShowHide(showOrHide);
         }
     }
 

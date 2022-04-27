@@ -84,6 +84,7 @@ namespace Microsoft::Console::Interactivity
 
         static Globals& LocateGlobals();
 
+        static void SetPseudoWindowCallback(std::function<void(bool)> func);
         static HWND LocatePseudoWindow(const HWND owner = nullptr /*HWND_DESKTOP = 0*/);
 
     protected:

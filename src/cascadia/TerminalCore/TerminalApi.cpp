@@ -684,3 +684,17 @@ void Terminal::UseMainScreenBuffer()
     }
     CATCH_LOG();
 }
+
+// Method Description:
+// - Reacts to a client asking us to show or hide the window.
+// Arguments:
+// - showOrHide - True for show. False for hide.
+// Return Value:
+// - <none>
+void Terminal::ShowWindow(bool showOrHide)
+{
+    if (_pfnShowWindowChanged)
+    {
+        _pfnShowWindowChanged(showOrHide);
+    }
+}

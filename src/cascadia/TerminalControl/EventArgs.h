@@ -12,6 +12,7 @@
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
 #include "FoundResultsArgs.g.h"
+#include "ShowWindowArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -144,5 +145,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(bool, FoundMatch);
+    };
+
+    struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>
+    {
+    public:
+        ShowWindowArgs(const bool showOrHide) :
+            _ShowOrHide(showOrHide)
+        {
+        }
+
+        WINRT_PROPERTY(bool, ShowOrHide);
     };
 }

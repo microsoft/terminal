@@ -37,13 +37,16 @@ CONPTY_EXPORT HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(HANDLE hToken, COOR
 
 CONPTY_EXPORT HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
 
+
 CONPTY_EXPORT HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
+
+CONPTY_EXPORT HRESULT WINAPI ConptyShowHidePseudoConsole(HPCON hPC, bool show);
 
 CONPTY_EXPORT HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newParent);
 
 CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
 
-HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);
+CONPTY_EXPORT HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);
 
 #ifdef __cplusplus
 }
