@@ -79,6 +79,13 @@ variables:
       NoNuGetPackBetaVersion: true
     ${{ else }}:
       NuGetPackBetaVersion: preview
+  # The NuGet packages have to use *somebody's* DLLs. We used to force them to
+  # use the Win10 build outputs, but if there isn't a Win10 build we should use
+  # the Win11 one.
+  ${{ if contains(parameters.buildWindowsVersions, 'Win10') }}:
+    TerminalBestVersionForNuGetPackages: Win10
+  ${{ else }}:
+    TerminalBestVersionForNuGetPackages: Win11
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
@@ -412,7 +419,7 @@ jobs:
       - task: DownloadBuildArtifacts@0
         displayName: Download ${{ platform }} ConPTY binaries
         inputs:
-          artifactName: conpty-dll-${{ platform }}-$(BuildConfiguration)-Win10
+          artifactName: conpty-dll-${{ platform }}-$(BuildConfiguration)-$(TerminalBestVersionForNuGetPackages)
           downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
           extractTars: false
     - task: PowerShell@2
@@ -503,7 +510,7 @@ jobs:
       - task: DownloadBuildArtifacts@0
         displayName: Download ${{ platform }} PublicTerminalCore
         inputs:
-          artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)-Win10
+          artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)-$(TerminalBestVersionForNuGetPackages)
           itemPattern: '**/*.dll'
           downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
           extractTars: false
