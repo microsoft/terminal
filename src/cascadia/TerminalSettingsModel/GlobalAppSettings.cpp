@@ -40,6 +40,14 @@ void GlobalAppSettings::_FinalizeInheritance()
                 _colorSchemes.Insert(k, v);
             }
         }
+
+        for (const auto& [k, v] : parent->_themes)
+        {
+            if (!_themes.HasKey(k))
+            {
+                _themes.Insert(k, v);
+            }
+        }
     }
 }
 
