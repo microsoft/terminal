@@ -487,13 +487,8 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 // - For more information, refer to GH#12515.
 extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, bool show)
 {
-    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
-    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
-    if (SUCCEEDED(hr))
-    {
-        hr = _ShowHidePseudoConsole(pPty, show);
-    }
-    return hr;
+    // _ShowHidePseudoConsole will return E_INVALIDARG for us if the hPC is nullptr.
+    return _ShowHidePseudoConsole((PseudoConsole*)hPC, show);
 }
 
 // - Sends a message to the pseudoconsole informing it that it should use the

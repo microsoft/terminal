@@ -1,3 +1,4 @@
+
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -2430,10 +2431,7 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
 
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
-        if (_visible)
-        {
-            term.WindowVisibilityChanged(_visible);
-        }
+        term.WindowVisibilityChanged(_visible);
 
         if (_hostingHwnd.has_value())
         {

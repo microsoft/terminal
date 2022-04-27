@@ -312,10 +312,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, flags, &_inPipe, &_outPipe, &_hPC));
 
             // GH#12515: The conpty assumes it's hidden at the start. If we're visible, let it know now.
-            if (_initialVisibility)
-            {
-                THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
-            }
+            THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
             if (_initialParentHwnd != 0)
             {
                 THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
