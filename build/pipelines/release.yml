@@ -82,7 +82,7 @@ variables:
   # The NuGet packages have to use *somebody's* DLLs. We used to force them to
   # use the Win10 build outputs, but if there isn't a Win10 build we should use
   # the Win11 one.
-  ${{ if contains(parameters.buildWindowsVersions, 'Win10') }}:
+  ${{ if containsValue(parameters.buildWindowsVersions, 'Win10') }}:
     TerminalBestVersionForNuGetPackages: Win10
   ${{ else }}:
     TerminalBestVersionForNuGetPackages: Win11
