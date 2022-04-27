@@ -41,7 +41,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"zh-Hant-TW",
     };
 
-    GlobalAppearance::GlobalAppearance()
+    GlobalAppearance::GlobalAppearance() :
+        _ThemeList{ single_threaded_observable_vector<Model::Theme>() }
     {
         InitializeComponent();
 
@@ -52,6 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::GlobalAppearancePageNavigationState>();
+        _UpdateThemeList();
     }
 
     winrt::hstring GlobalAppearance::LanguageDisplayConverter(const winrt::hstring& tag)
@@ -193,6 +195,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             globals.Language(currentLanguage);
         }
+    }
+
+    // Function Description:
+    // - Updates the list of all color schemes available to choose from.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void GlobalAppearance::_UpdateThemeList()
+    {
+        // Surprisingly, though this is called every time we navigate to the page,
+        // the list does not keep growing on each navigation.
+        const auto& ThemeMap{ _State.Globals().Themes() };
+        for (const auto& pair : ThemeMap)
+        {
+            const auto& theme{ pair.Value() };
+            const auto& name{ theme.Name() };
+            theme;
+            name;
+
+            _ThemeList.Append(theme);
+        }
+    }
+
+    winrt::Windows::Foundation::IInspectable GlobalAppearance::CurrentTheme()
+    {
+        // if (_currentTheme)
+        // {
+        //     return _currentTheme;
+        // }
+
+        // // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
+        // auto currentLanguage = _State.Settings().GlobalSettings().CurrentTheme();
+
+        // _currentLanguage = winrt::box_value(currentLanguage);
+        // return _currentLanguage;
+
+        return _State.Globals().CurrentTheme();
+    }
+
+    void GlobalAppearance::CurrentTheme(const winrt::Windows::Foundation::IInspectable& /*tag*/)
+    {
+        // _currentLanguage = tag;
+
+        // const auto currentLanguage = winrt::unbox_value<winrt::hstring>(_currentLanguage);
+        // const auto globals = _State.Globals();
+        // if (currentLanguage == systemLanguageTag)
+        // {
+        //     globals.ClearLanguage();
+        // }
+        // else
+        // {
+        //     globals.Language(currentLanguage);
+        // }
     }
 
 }

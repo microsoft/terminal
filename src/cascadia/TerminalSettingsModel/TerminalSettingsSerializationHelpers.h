@@ -585,20 +585,20 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
     {
         switch (val.ColorType())
         {
-        case ThemeColorType::Accent:
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::Accent:
         {
             return "accent";
         }
-        case ThemeColorType::Color:
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::Color:
         {
-            return til::u16u8(til::color{ val.Color() }.ToHexString(true));
+            return til::u16u8(til::color{ val.Color() }.ToHexString(false));
         }
-        case ThemeColorType::TerminalBackground:
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::TerminalBackground:
         {
             return "terminalBackground";
         }
         }
-        return til::u16u8(til::color{ val.Color() }.ToHexString(true));
+        return til::u16u8(til::color{ val.Color() }.ToHexString(false));
     }
 
     std::string TypeDescription() const

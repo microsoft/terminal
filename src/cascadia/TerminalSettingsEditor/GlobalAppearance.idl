@@ -21,8 +21,9 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentLanguage;
 
         // TODO!
-        // IInspectable CurrentTheme;
+        IInspectable CurrentTheme;
         // Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ThemeList { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Theme> ThemeList { get; };
 
         IInspectable CurrentTabWidthMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModeList { get; };

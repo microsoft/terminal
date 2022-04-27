@@ -56,7 +56,8 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromTerminal
         nameSpace::name FromJson(const Json::Value& json)                                      \
         {                                                                                      \
             auto result = winrt::make_self<nameSpace::implementation::name>();                 \
-            macro(THEME_SETTINGS_FROM_JSON) return *result;                                    \
+            macro(THEME_SETTINGS_FROM_JSON);                                                   \
+            return *result;                                                                    \
         }                                                                                      \
                                                                                                \
         bool CanConvert(const Json::Value& json)                                               \
@@ -66,8 +67,11 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromTerminal
                                                                                                \
         Json::Value ToJson(const nameSpace::name& val)                                         \
         {                                                                                      \
+            if (val == nullptr)                                                                \
+                return Json::Value::null;                                                      \
             Json::Value json{ Json::ValueType::objectValue };                                  \
-            macro(THEME_SETTINGS_TO_JSON) return json;                                         \
+            macro(THEME_SETTINGS_TO_JSON);                                                     \
+            return json;                                                                       \
         }                                                                                      \
                                                                                                \
         std::string TypeDescription() const                                                    \
@@ -99,11 +103,16 @@ winrt::com_ptr<Theme> Theme::Copy() const
 {
     auto theme{ winrt::make_self<Theme>() };
 
-#define THEME_SETTINGS_COPY(type, name, jsonKey, ...) \
-    theme->_##name = _##name;
+    theme->_Name = _Name;
 
-    MTSM_THEME_SETTINGS(THEME_SETTINGS_COPY)
-#undef THEME_SETTINGS_COPY
+    if (_Window)
+    {
+        theme->_Window = *winrt::get_self<implementation::WindowTheme>(_Window)->Copy();
+    }
+    if (_TabRow)
+    {
+        theme->_TabRow = *winrt::get_self<implementation::TabRowTheme>(_TabRow)->Copy();
+    }
 
     return theme;
 }
@@ -161,8 +170,10 @@ Json::Value Theme::ToJson() const
 
     JsonUtils::SetValueForKey(json, NameKey, _Name);
 
+    // Don't serialize anything if the object is null.
 #define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+    if (_##name)                                         \
+        JsonUtils::SetValueForKey(json, jsonKey, _##name);
 
     MTSM_THEME_SETTINGS(THEME_SETTINGS_TO_JSON)
 #undef THEME_SETTINGS_TO_JSON
