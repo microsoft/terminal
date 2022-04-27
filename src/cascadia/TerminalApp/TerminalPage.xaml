@@ -73,7 +73,11 @@
         <Grid x:Name="TabContent"
               Grid.Row="2"
               HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch" />
+              VerticalAlignment="Stretch">
+            <Grid.Background>
+                <ImageBrush />
+            </Grid.Background>
+        </Grid>
 
         <!--
             GH#12775 et. al: After switching to ControlsV2, it seems that
