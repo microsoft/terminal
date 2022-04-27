@@ -1577,7 +1577,7 @@ void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspecta
     LaunchMode launchMode{};
     _initialResizeAndRepositionWindow(_window->GetHandle(), _proposedRect, launchMode);
 
-    int nCmdShow = SW_SHOW;
+    int nCmdShow = SW_SHOWDEFAULT;
     if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;

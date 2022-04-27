@@ -706,8 +706,6 @@ namespace winrt::TerminalApp::implementation
             // after the frame is displayed before the XAML content first draws,
             // so that didn't actually resolve any issues.
 
-            // Capture calling context.
-            winrt::apartment_context ui_thread;
             auto weak{ get_weak() };
 
             // Switch to the BG thread -
