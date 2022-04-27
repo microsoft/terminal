@@ -221,34 +221,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::Windows::Foundation::IInspectable GlobalAppearance::CurrentTheme()
     {
-        // if (_currentTheme)
-        // {
-        //     return _currentTheme;
-        // }
-
-        // // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
-        // auto currentLanguage = _State.Settings().GlobalSettings().CurrentTheme();
-
-        // _currentLanguage = winrt::box_value(currentLanguage);
-        // return _currentLanguage;
-
         return _State.Globals().CurrentTheme();
     }
 
-    void GlobalAppearance::CurrentTheme(const winrt::Windows::Foundation::IInspectable& /*tag*/)
+    void GlobalAppearance::CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag)
     {
-        // _currentLanguage = tag;
-
-        // const auto currentLanguage = winrt::unbox_value<winrt::hstring>(_currentLanguage);
-        // const auto globals = _State.Globals();
-        // if (currentLanguage == systemLanguageTag)
-        // {
-        //     globals.ClearLanguage();
-        // }
-        // else
-        // {
-        //     globals.Language(currentLanguage);
-        // }
+        if (const auto& theme{ tag.try_as<Model::Theme>() })
+        {
+            _State.Globals().Theme(theme.Name());
+        }
     }
 
 }
