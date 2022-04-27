@@ -71,8 +71,9 @@ variables:
   # release-*         | 1.12.20220427          | 1.13.20220427-preview
   # all others        | 1.14.20220427-mybranch | 1.14.20220427-mybranch
   ${{ if startsWith(variables['Build.SourceBranchName'], 'release-') }}:
-    NoNuGetPackBetaVersion: ${{ eq(parameters.branding, 'Release') }}
     NuGetPackBetaVersion: preview
+    ${{ if eq(parameters.branding, 'Release') }}:
+      NoNuGetPackBetaVersion: true
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
