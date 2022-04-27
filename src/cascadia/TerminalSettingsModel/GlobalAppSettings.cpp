@@ -157,11 +157,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     }
-
-    // if (auto themeJson{ json[JsonKey(ThemeKey)] })
-    // {
-    //     _theme->LayerJson(themeJson);
-    // }
 }
 
 // Method Description:
@@ -218,7 +213,6 @@ Json::Value GlobalAppSettings::ToJson() const
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
     return _themes.HasKey(Theme()) ? _themes.Lookup(Theme()) : nullptr;
-    // return *_theme;
 }
 void GlobalAppSettings::AddTheme(const Model::Theme& theme)
 {

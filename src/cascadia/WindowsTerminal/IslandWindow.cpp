@@ -77,7 +77,7 @@ void IslandWindow::MakeWindow() noexcept
     WINRT_VERIFY(CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP | (_alwaysOnTop ? WS_EX_TOPMOST : 0),
                                 wc.lpszClassName,
                                 L"Windows Terminal",
-                                WS_OVERLAPPEDWINDOW, // WS_OVERLAPPEDWINDOW,
+                                WS_OVERLAPPEDWINDOW,
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,
@@ -86,14 +86,6 @@ void IslandWindow::MakeWindow() noexcept
                                 nullptr,
                                 wc.hInstance,
                                 this));
-
-    // WS_OVERLAPPEDWINDOW = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)
-
-    // WS_OVERLAPPED | WS_SYSMENU | WS_THICKFRAME didn't work: still had titlebar
-    // WS_SYSMENU | WS_THICKFRAME: still a border
-    // WS_BORDER: No close button, but still a titlebar
-    // WS_POPUP: No titlebar! but also no window border at all. Fooey.
-    // WS_POPUP | WS_BORDER: did not add titlebar back.
 
     WINRT_ASSERT(_window);
 }

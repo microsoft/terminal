@@ -146,9 +146,6 @@
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
-    <ClInclude Include="TerminalBackground.h">
-      <DependentUpon>TerminalBackground.idl</DependentUpon>
-    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -243,9 +240,6 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
-    <ClCompile Include="TerminalBackground.cpp">
-      <DependentUpon>TerminalBackground.idl</DependentUpon>
-    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -307,7 +301,6 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="TerminalBackground.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

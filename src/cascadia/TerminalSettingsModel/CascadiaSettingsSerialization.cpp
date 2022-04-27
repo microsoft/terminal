@@ -1074,10 +1074,11 @@ Json::Value CascadiaSettings::ToJson() const
     }
     json[JsonKey(SchemesKey)] = schemes;
 
-    //
     Json::Value themes{ Json::ValueType::arrayValue };
     for (const auto& entry : _globals->Themes())
     {
+        // Ignore the built in themes, when serializing the themes back out. We
+        // don't want to re-include them in the user settings file.
         const auto theme{ winrt::get_self<Theme>(entry.Value()) };
         if (theme->Name() == L"system" || theme->Name() == L"light" || theme->Name() == L"dark")
         {

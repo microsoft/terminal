@@ -707,7 +707,6 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& /*arg*/)
 {
     _updateTheme();
-    // _window->OnApplicationThemeChanged(arg);
 }
 
 void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,

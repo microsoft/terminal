@@ -858,32 +858,32 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     // vintage opacity set.
     //
     // We can't set it to all 0's unfortunately.
-    // if (_borderless)
-    // {
-    margins.cyTopHeight = 1;
-    // }
-    // else if (_GetTopBorderHeight() != 0)
-    // {
-    //     RECT frame = {};
-    //     winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
+    if (_borderless)
+    {
+        margins.cyTopHeight = 1;
+    }
+    else if (_GetTopBorderHeight() != 0)
+    {
+        RECT frame = {};
+        winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
 
-    //     // We removed the whole top part of the frame (see handling of
-    //     // WM_NCCALCSIZE) so the top border is missing now. We add it back here.
-    //     // Note #1: You might wonder why we don't remove just the title bar instead
-    //     //  of removing the whole top part of the frame and then adding the little
-    //     //  top border back. I tried to do this but it didn't work: DWM drew the
-    //     //  whole title bar anyways on top of the window. It seems that DWM only
-    //     //  wants to draw either nothing or the whole top part of the frame.
-    //     // Note #2: For some reason if you try to set the top margin to just the
-    //     //  top border height (what we want to do), then there is a transparency
-    //     //  bug when the window is inactive, so I've decided to add the whole top
-    //     //  part of the frame instead and then we will hide everything that we
-    //     //  don't need (that is, the whole thing but the little 1 pixel wide border
-    //     //  at the top) in the WM_PAINT handler. This eliminates the transparency
-    //     //  bug and it's what a lot of Win32 apps that customize the title bar do
-    //     //  so it should work fine.
-    //     margins.cyTopHeight = -frame.top;
-    // }
+        // We removed the whole top part of the frame (see handling of
+        // WM_NCCALCSIZE) so the top border is missing now. We add it back here.
+        // Note #1: You might wonder why we don't remove just the title bar instead
+        //  of removing the whole top part of the frame and then adding the little
+        //  top border back. I tried to do this but it didn't work: DWM drew the
+        //  whole title bar anyways on top of the window. It seems that DWM only
+        //  wants to draw either nothing or the whole top part of the frame.
+        // Note #2: For some reason if you try to set the top margin to just the
+        //  top border height (what we want to do), then there is a transparency
+        //  bug when the window is inactive, so I've decided to add the whole top
+        //  part of the frame instead and then we will hide everything that we
+        //  don't need (that is, the whole thing but the little 1 pixel wide border
+        //  at the top) in the WM_PAINT handler. This eliminates the transparency
+        //  bug and it's what a lot of Win32 apps that customize the title bar do
+        //  so it should work fine.
+        margins.cyTopHeight = -frame.top;
+    }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
     // the failure here, don't crash. If DWM crashes for any reason, calling
