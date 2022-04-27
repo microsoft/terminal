@@ -43,6 +43,7 @@ public:
     void FocusModeChanged(const bool focusMode);
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
+    void ShowWindowChanged(const bool showOrHide);
 
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
@@ -77,6 +78,7 @@ public:
     WINRT_CALLBACK(MaximizeChanged, winrt::delegate<void(bool)>);
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
+    WINRT_CALLBACK(WindowVisibilityChanged, winrt::delegate<void(bool)>);
 
 protected:
     void ForceResize()

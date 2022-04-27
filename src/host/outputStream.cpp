@@ -259,6 +259,19 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 }
 
 // Routine Description:
+// - Shows or hides the active window when asked.
+// Arguments:
+// - showOrHide - True for show, False for hide. Matching WM_SHOWWINDOW lParam.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ShowWindow(bool showOrHide)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    ::ShowWindow(hwnd, showOrHide ? SW_NORMAL : SW_MINIMIZE);
+}
+
+// Routine Description:
 // - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - codepage - the new output codepage of the console.

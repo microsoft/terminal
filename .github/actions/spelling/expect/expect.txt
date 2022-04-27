@@ -580,6 +580,7 @@ DEFFACE
 defing
 DEFPUSHBUTTON
 defterm
+deiconify
 DELAYLOAD
 deletable
 DELETEONRELEASE
@@ -670,6 +671,7 @@ dwl
 DWLP
 dwm
 dwmapi
+DWMWA
 dword
 dwrite
 dwriteglyphrundescriptionclustermap
@@ -1062,6 +1064,7 @@ ico
 IComponent
 ICONERROR
 Iconified
+Iconify
 ICONINFORMATION
 IConsole
 ICONSTOP
@@ -1200,6 +1203,7 @@ IWin
 IWindow
 IXaml
 IXMP
+IXP
 ixx
 jconcpp
 JOBOBJECT
@@ -1936,6 +1940,7 @@ qos
 QRSTU
 qsort
 queryable
+QUERYOPEN
 QUESTIONMARK
 quickedit
 QUZ
@@ -2191,8 +2196,10 @@ shlobj
 shlwapi
 SHORTPATH
 SHOWCURSOR
+SHOWDEFAULT
 SHOWMAXIMIZED
 SHOWMINNOACTIVE
+SHOWNA
 SHOWNOACTIVATE
 SHOWNORMAL
 SHOWWINDOW
@@ -2424,10 +2431,12 @@ tofrom
 tokenhelpers
 tokenized
 tokenizing
+toolbar
 toolbars
 TOOLINFO
 Toolset
 tooltip
+TOOLWINDOW
 TOPDOWNDIB
 TOPLEFT
 toplevel
@@ -2738,6 +2747,7 @@ windowsdeveloper
 windowsinternalstring
 WINDOWSIZE
 windowsx
+windowsterminal
 WINDOWTEXT
 windowtheme
 WINDOWTITLE
@@ -2880,6 +2890,7 @@ xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
+XTWINOPS
 Xzn
 yact
 YAML

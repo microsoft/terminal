@@ -172,6 +172,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        void WindowVisibilityChanged(const bool showOrHide);
+
         // TODO:GH#1256 - When a tab can be torn out or otherwise reparented to
         // another window, this value will need a custom setter, so that we can
         // also update the connection.
@@ -201,6 +203,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
         TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
+        TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         // clang-format on
 
     private:
@@ -268,6 +271,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const int bufferSize);
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
+        void _terminalShowWindowChanged(bool showOrHide);
 #pragma endregion
 
 #pragma region RendererCallbacks

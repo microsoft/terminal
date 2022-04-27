@@ -181,6 +181,12 @@ public:
         return CursorType::Legacy;
     }
 
+    void ShowWindow(bool showOrHide) override
+    {
+        Log::Comment(L"ShowWindow MOCK called...");
+        VERIFY_ARE_EQUAL(_expectedShowWindow, showOrHide);
+    }
+
     bool ResizeWindow(const size_t /*width*/, const size_t /*height*/) override
     {
         Log::Comment(L"ResizeWindow MOCK called...");
@@ -397,6 +403,7 @@ public:
     std::wstring_view _expectedWindowTitle{};
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
+    bool _expectedShowWindow = false;
 
 private:
     HANDLE _hCon;

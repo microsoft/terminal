@@ -25,6 +25,8 @@ HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
 
 HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
 
+HRESULT WINAPI ConptyShowHidePseudoConsole(HPCON hPC, bool show);
+
 HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newParent);
 
 VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);

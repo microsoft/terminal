@@ -75,6 +75,7 @@ namespace winrt::TerminalApp::implementation
         hstring Title();
 
         void TitlebarClicked();
+        void WindowVisibilityChanged(const bool showOrHide);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
@@ -155,6 +156,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
+        TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
@@ -197,7 +199,9 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom{};
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
+
         bool _activated{ false };
+        bool _visible{ true };
 
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
@@ -259,6 +263,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
+        void _SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance);
 
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commandsToExpand,
                                                                                                                                             Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
@@ -366,6 +371,7 @@ namespace winrt::TerminalApp::implementation
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
         void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
         void _UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab);
+        void _UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
 
         void _OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command);
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
@@ -440,6 +446,8 @@ namespace winrt::TerminalApp::implementation
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 
         void _updateTabRowColors();
+
+        winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

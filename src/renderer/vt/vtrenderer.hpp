@@ -86,6 +86,7 @@ namespace Microsoft::Console::Render
         void SetTerminalCursorTextPosition(const COORD coordCursor) noexcept;
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
         [[nodiscard]] HRESULT RequestWin32Input() noexcept;
+        [[nodiscard]] virtual HRESULT SetWindowVisibility(const bool showOrHide) noexcept = 0;
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer) noexcept;
 
     protected:

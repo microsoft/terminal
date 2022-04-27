@@ -308,7 +308,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
+        if (_core.Settings().UseBackgroundImageForWindow())
+        {
+            foregroundBrush.Color(Windows::UI::Colors::Transparent());
+        }
+        else
+        {
+            foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
+        }
         TSFInputControl().Foreground(foregroundBrush);
 
         _core.ApplyAppearance(_focused);
@@ -394,7 +401,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_SetBackgroundImage(const IControlAppearance& newAppearance)
     {
-        if (newAppearance.BackgroundImage().empty())
+        if (newAppearance.BackgroundImage().empty() || _core.Settings().UseBackgroundImageForWindow())
         {
             BackgroundImage().Source(nullptr);
             return;
@@ -452,10 +459,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto settings{ _core.Settings() };
         auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
+
+        auto transparentBg = settings.UseBackgroundImageForWindow();
+        if (transparentBg)
+        {
+            bgColor = Windows::UI::Colors::Transparent();
+        }
         // GH#11743: Make sure to use the Core's current UseAcrylic value, not
         // the one from the settings. The Core's runtime UseAcrylic may have
         // changed from what was in the original settings.
-        if (_core.UseAcrylic())
+        if (_core.UseAcrylic() && !transparentBg)
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
@@ -520,8 +533,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This needs to be called on the UI thread.
     // Arguments:
     // - bg: the new color to use as the background color.
-    void TermControl::_changeBackgroundColor(const til::color bg)
+    void TermControl::_changeBackgroundColor(til::color bg)
     {
+        auto transparent_bg = _core.Settings().UseBackgroundImageForWindow();
+        if (transparent_bg)
+        {
+            bg = Windows::UI::Colors::Transparent();
+        }
+
         if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
         {
             acrylic.FallbackColor(bg);
@@ -531,7 +550,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto originalOpacity = solidColor.Opacity();
             solidColor.Color(bg);
-            solidColor.Opacity(originalOpacity);
         }
     }
 
@@ -2060,6 +2078,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto gridSize = dimension - nonTerminalArea;
         const auto cells = static_cast<int>(gridSize / fontDimension);
         return cells * fontDimension + nonTerminalArea;
+    }
+
+    // Method Description:
+    // - Forwards window visibility changing event down into the control core
+    //   to eventually let the hosting PTY know whether the window is visible or
+    //   not (which can be relevant to `::GetConsoleWindow()` calls.)
+    // Arguments:
+    // - showOrHide: Show is true; hide is false.
+    // Return Value:
+    // - <none>
+    void TermControl::WindowVisibilityChanged(const bool showOrHide)
+    {
+        _core.WindowVisibilityChanged(showOrHide);
     }
 
     // Method Description:
