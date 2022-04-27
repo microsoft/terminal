@@ -7,9 +7,9 @@
     <ConptyNativePlatform Condition="'$(ConptyNativePlatform)'=='Win32'">x86</ConptyNativePlatform>
 
     <!-- x86 can run on x64 and ARM64, so needs to ship all three OpenConsoles. -->
-    <ConptyRequiresx86Host   Condition="'$(ConptyNativePlatform)' == 'Win32'">true</ConptyRequiresx86Host>
-    <ConptyRequiresx64Host   Condition="'$(ConptyNativePlatform)' == 'Win32'">true</ConptyRequiresx64Host>
-    <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'Win32'">true</ConptyRequiresARM64Host>
+    <ConptyRequiresx86Host   Condition="'$(ConptyNativePlatform)' == 'x86'">true</ConptyRequiresx86Host>
+    <ConptyRequiresx64Host   Condition="'$(ConptyNativePlatform)' == 'x86'">true</ConptyRequiresx64Host>
+    <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'x86'">true</ConptyRequiresARM64Host>
 
     <!-- x64 can only run on x64 and ARM64, so needs to ship only two OpenConsoles. -->
     <!-- ConptyRequiresx86Host not set -->
