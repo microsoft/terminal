@@ -198,11 +198,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     // Function Description:
-    // - Updates the list of all color schemes available to choose from.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
+    // - Updates the list of all themes available to choose from.
     void GlobalAppearance::_UpdateThemeList()
     {
         // Surprisingly, though this is called every time we navigate to the page,
@@ -224,6 +220,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _State.Globals().CurrentTheme();
     }
 
+    // Get the name out of the newly selected item, stash that as the Theme name
+    // set for the globals. That controls which theme is actually the current
+    // theme.
     void GlobalAppearance::CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag)
     {
         if (const auto& theme{ tag.try_as<Model::Theme>() })
@@ -232,6 +231,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Method Description:
+    // - Convert the names of the inbox themes to some more descriptive,
+    //   well-known values. If the passed in theme isn't an inbox one, then just
+    //   return its set Name.
+    //    - "light" becomes "Light"
+    //    - "dark" becomes "Dark"
+    //    - "system" becomes "Use Windows theme"
+    // - These values are all localized based on the app language.
+    // Arguments:
+    // - theme: the theme to get the display name for.
+    // Return Value:
+    // - the potentially localized name to use for this Theme.
     winrt::hstring GlobalAppearance::WellKnownThemeNameConverter(const Model::Theme& theme)
     {
         if (theme.Name() == L"dark")

@@ -40,7 +40,7 @@
                 </ComboBox>
             </local:SettingContainer>
 
-            <!--  Theme TODO!  -->
+            <!--  Theme  -->
             <local:SettingContainer x:Uid="Globals_Theme">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
