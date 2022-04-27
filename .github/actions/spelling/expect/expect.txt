@@ -946,7 +946,6 @@ gridline
 groupbox
 gset
 gsl
-gtm
 GTP
 GTR
 guardxfg
@@ -1434,7 +1433,6 @@ mimetype
 mincore
 mindbogglingly
 mingw
-Minimatch
 minimizeall
 minkernel
 MINMAXINFO
@@ -1607,7 +1605,6 @@ novtable
 NOWAIT
 NOYIELD
 NOZORDER
-NPH
 NPM
 npos
 nrcs
@@ -2205,7 +2202,6 @@ SHRT
 sidebyside
 SIF
 SIGDN
-Signtool
 SINGLEFLAG
 SINGLETHREADED
 siup
