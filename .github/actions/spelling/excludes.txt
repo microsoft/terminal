@@ -52,6 +52,7 @@ SUMS$
 \.xpm$
 \.yml$
 \.zip$
+^build/config/
 ^consolegit2gitfilters\.json$
 ^dep/
 ^doc/reference/master-sequence-list.csv$
