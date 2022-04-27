@@ -72,7 +72,7 @@ variables:
   # all others        | 1.14.20220427-mybranch | 1.14.20220427-mybranch
   ${{ if startsWith(variables['Build.SourceBranchName'], 'release-') }}:
     NoNuGetPackBetaVersion: ${{ eq(parameters.branding, 'Release') }}
-    NuGetPackBetaBranchName: preview
+    NuGetPackBetaVersion: preview
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
