@@ -35,18 +35,18 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Stop previewing the currently previewed action. We can use this to
     //   clean up any state from that action's preview.
-    // - We use _lastPreviewedCommand to determine what type of action to clean up.
+    // - We use _lastPreviewedAction to determine what type of action to clean up.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TerminalPage::_EndPreview()
     {
-        if (_lastPreviewedCommand == nullptr || _lastPreviewedCommand.ActionAndArgs() == nullptr)
+        if (_lastPreviewedAction == nullptr)
         {
             return;
         }
-        switch (_lastPreviewedCommand.ActionAndArgs().Action())
+        switch (_lastPreviewedAction.Action())
         {
         case ShortcutAction::SetColorScheme:
         case ShortcutAction::AdjustOpacity:
@@ -55,7 +55,7 @@ namespace winrt::TerminalApp::implementation
             break;
         }
         }
-        _lastPreviewedCommand = nullptr;
+        _lastPreviewedAction = nullptr;
     }
 
     // Method Description:
@@ -140,6 +140,33 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    void TerminalPage::_PreviewAction(const Settings::Model::ActionAndArgs& args)
+    {
+        switch (args.Action())
+        {
+        case ShortcutAction::SetColorScheme:
+        {
+            _PreviewColorScheme(args.Args().try_as<SetColorSchemeArgs>());
+            break;
+        }
+        case ShortcutAction::AdjustOpacity:
+        {
+            _PreviewAdjustOpacity(args.Args().try_as<AdjustOpacityArgs>());
+            break;
+        }
+        }
+
+        // GH#9818 Other ideas for actions that could be preview-able:
+        // * Set Font size
+        // * Set acrylic true/false/opacity?
+        // * SetPixelShaderPath?
+        // * SetWindowTheme (light/dark/system/<some theme from #3327>)?
+
+        // Stash this action, so we know what to do when we're done
+        // previewing.
+        _lastPreviewedAction = args;
+    }
+
     // Method Description:
     // - Handler for the CommandPalette::PreviewAction event. The Command
     //   Palette will raise this even when an action is selected, but _not_
@@ -186,7 +213,7 @@ namespace winrt::TerminalApp::implementation
 
             // Stash this action, so we know what to do when we're done
             // previewing.
-            _lastPreviewedCommand = args;
+            _lastPreviewedAction = args.ActionAndArgs();
         }
     }
 }

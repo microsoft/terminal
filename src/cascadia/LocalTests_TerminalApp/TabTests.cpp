@@ -1312,7 +1312,8 @@ namespace TerminalAppLocalTests
         TestOnUIThread([&page]() {
             Log::Comment(L"Emulate previewing the SetColorScheme action");
             SetColorSchemeArgs args{ L"Vintage" };
-            page->_PreviewColorScheme(args);
+            ActionAndArgs actionAndArgs{ ShortcutAction::SetColorScheme, args };
+            page->_PreviewAction(actionAndArgs);
         });
 
         TestOnUIThread([&page]() {
@@ -1379,7 +1380,8 @@ namespace TerminalAppLocalTests
         TestOnUIThread([&page]() {
             Log::Comment(L"Emulate previewing the SetColorScheme action");
             SetColorSchemeArgs args{ L"Vintage" };
-            page->_PreviewColorScheme(args);
+            ActionAndArgs actionAndArgs{ ShortcutAction::SetColorScheme, args };
+            page->_PreviewAction(actionAndArgs);
         });
 
         TestOnUIThread([&page]() {
