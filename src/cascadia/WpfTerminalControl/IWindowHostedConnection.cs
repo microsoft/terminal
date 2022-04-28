@@ -12,6 +12,9 @@ namespace Microsoft.Terminal.Wpf
     /// </summary>
     public interface IWindowHostedConnection
     {
+
+        void ShowHide(bool show);
+
         /// <summary>
         /// Inform the connection that the HWND we are hosted in has changed.
         /// </summary>

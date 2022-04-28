@@ -29,4 +29,10 @@ namespace Microsoft.Terminal.TerminalConnection
         event Windows.Foundation.TypedEventHandler<ITerminalConnection, Object> StateChanged;
         ConnectionState State { get; };
     };
+
+    interface IWindowHostedConnection
+    {
+        void ShowHide(Boolean show);
+        void ReparentWindow(UInt64 newParent);
+    };
 }

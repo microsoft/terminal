@@ -15,7 +15,7 @@ using System.Windows;
 
 namespace WpfTerminalTestNetCore
 {
-    public class EchoConnection : Microsoft.Terminal.Wpf.ITerminalConnection
+    public class EchoConnection : Microsoft.Terminal.Wpf.ITerminalConnection, Microsoft.Terminal.Wpf.IWindowHostedConnection
     {
         public event EventHandler<TerminalOutputEventArgs> TerminalOutput;
 

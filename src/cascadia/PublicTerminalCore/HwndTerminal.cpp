@@ -836,12 +836,14 @@ void __stdcall TerminalSetFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = true;
+    // TODO!: somehow let the core terminal know about focus events?
 }
 
 void __stdcall TerminalKillFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = false;
+    // TODO!: somehow let the core terminal know about focus events?
 }
 
 // Routine Description:
