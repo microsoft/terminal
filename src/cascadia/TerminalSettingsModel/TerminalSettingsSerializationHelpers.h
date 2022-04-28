@@ -577,8 +577,8 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
         const auto string{ Detail::GetStringView(json) };
         const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
         const auto isAccent = string == "accent";
-        const auto isterminalBackground = string == "terminalBackground";
-        return isColorSpec || isAccent || isterminalBackground;
+        const auto isTerminalBackground = string == "terminalBackground";
+        return isColorSpec || isAccent || isTerminalBackground;
     }
 
     Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
