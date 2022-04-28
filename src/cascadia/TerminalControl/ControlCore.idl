@@ -101,6 +101,7 @@ namespace Microsoft.Terminal.Control
         String ReadEntireBuffer();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
+        void WindowVisibilityChanged(Boolean showOrHide);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 
@@ -121,6 +122,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, TransparencyChangedEventArgs> TransparencyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReceivedOutput;
         event Windows.Foundation.TypedEventHandler<Object, FoundResultsArgs> FoundMatch;
+        event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
 
     };
 }

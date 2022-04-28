@@ -383,7 +383,6 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled)
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
-
 //Arguments:
 // - enabled - true to enable, false to disable.
 // Return value:
@@ -391,6 +390,20 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled)
 bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
     _terminalApi.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
+    return true;
+}
+
+// Method Description:
+// - Enables/disables focus event mode. A client may enable this if they want to
+//   receive focus events.
+// - ConPTY always enables this mode and never disables it. For more details, see GH#12900.
+// Arguments:
+// - enabled - true to enable, false to disable.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableFocusEventMode(const bool enabled)
+{
+    _terminalApi.SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
     return true;
 }
 
@@ -439,7 +452,7 @@ bool TerminalDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
 {
-    bool success = false;
+    auto success = false;
 
     switch (statusType)
     {
@@ -606,7 +619,7 @@ bool TerminalDispatch::_WriteResponse(const std::wstring_view reply) const
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
-    bool success = false;
+    auto success = false;
     switch (param)
     {
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
@@ -630,6 +643,9 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
         break;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
+        break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        success = EnableFocusEventMode(enable);
         break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
@@ -776,6 +792,23 @@ bool TerminalDispatch::HardReset()
     _ResetTabStops();
 
     return true;
+}
+
+bool TerminalDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
+                                          const VTParameter /*parameter1*/,
+                                          const VTParameter /*parameter2*/)
+{
+    switch (function)
+    {
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _terminalApi.ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _terminalApi.ShowWindow(false);
+        return true;
+    default:
+        return false;
+    }
 }
 
 // Routine Description:

@@ -466,8 +466,8 @@ try
 {
     std::stringstream ss;
     size_t variantIndex = 0;
-    bool foundVariant = false;
-    for (const wchar_t c : wstr)
+    auto foundVariant = false;
+    for (const auto c : wstr)
     {
         // X11 guarantees that characters are all Latin1.
         // Return early if an invalid character is seen.
@@ -501,7 +501,7 @@ try
         ss << gsl::narrow_cast<char>(std::towlower(c));
     }
 
-    std::string name(ss.str());
+    auto name = ss.str();
     const auto variantColorIter = xorgAppVariantColorTable.find(name);
     if (variantColorIter != xorgAppVariantColorTable.end())
     {

@@ -65,7 +65,7 @@ class ScreenBufferTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         // Set up some sane defaults
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
         gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
@@ -238,20 +238,20 @@ class ScreenBufferTests
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
     Log::Comment(L"Testing creating one alternate buffer, then returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
+    const auto psiOriginal = &gci.GetActiveOutputBuffer();
     VERIFY_IS_NULL(psiOriginal->_psiAlternateBuffer);
     VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
 
-    NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
+    auto Status = psiOriginal->UseAlternateScreenBuffer();
     if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* const psiFirstAlternate = &gci.GetActiveOutputBuffer();
+        const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -260,7 +260,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 
         psiFirstAlternate->UseMainScreenBuffer();
         Log::Comment(L"successfully swapped to the main buffer");
-        SCREEN_INFORMATION* const psiFinal = &gci.GetActiveOutputBuffer();
+        const auto psiFinal = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
         VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
@@ -270,7 +270,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 
 void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
@@ -279,12 +279,12 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         L"alternate from that first alternate, before returning to the "
         L"main buffer.");
 
-    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
-    NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
+    const auto psiOriginal = &gci.GetActiveOutputBuffer();
+    auto Status = psiOriginal->UseAlternateScreenBuffer();
     if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* const psiFirstAlternate = &gci.GetActiveOutputBuffer();
+        const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -295,7 +295,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"Second alternate buffer successfully created");
-            SCREEN_INFORMATION* psiSecondAlternate = &gci.GetActiveOutputBuffer();
+            auto psiSecondAlternate = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
             VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -305,7 +305,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 
             psiSecondAlternate->UseMainScreenBuffer();
             Log::Comment(L"successfully swapped to the main buffer");
-            SCREEN_INFORMATION* const psiFinal = &gci.GetActiveOutputBuffer();
+            const auto psiFinal = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
             VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -317,19 +317,19 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 
 void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
     Log::Comment(
         L"Testing creating one alternate buffer, then creating another"
         L" alternate from the main, before returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
-    NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
+    const auto psiOriginal = &gci.GetActiveOutputBuffer();
+    auto Status = psiOriginal->UseAlternateScreenBuffer();
     if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* const psiFirstAlternate = &gci.GetActiveOutputBuffer();
+        const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -340,7 +340,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"Second alternate buffer successfully created");
-            SCREEN_INFORMATION* const psiSecondAlternate = &gci.GetActiveOutputBuffer();
+            const auto psiSecondAlternate = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
             VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -350,7 +350,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 
             psiSecondAlternate->UseMainScreenBuffer();
             Log::Comment(L"successfully swapped to the main buffer");
-            SCREEN_INFORMATION* const psiFinal = &gci.GetActiveOutputBuffer();
+            const auto psiFinal = &gci.GetActiveOutputBuffer();
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
             VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -423,8 +423,8 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
 
 void ScreenBufferTests::TestReverseLineFeed()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
     auto& stateMachine = screenInfo.GetStateMachine();
     auto& cursor = screenInfo._textBuffer->GetCursor();
     auto viewport = screenInfo.GetViewport();
@@ -554,8 +554,8 @@ void ScreenBufferTests::TestResetClearTabStops()
     m_state->PrepareGlobalScreenBuffer();
     m_state->PrepareNewTextBufferInfo();
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
     auto& stateMachine = screenInfo.GetStateMachine();
 
     const auto clearTabStops = L"\033[3g";
@@ -578,8 +578,8 @@ void ScreenBufferTests::TestResetClearTabStops()
 
 void ScreenBufferTests::TestAddTabStop()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
     auto& stateMachine = screenInfo.GetStateMachine();
     auto& cursor = screenInfo.GetTextBuffer().GetCursor();
 
@@ -624,8 +624,8 @@ void ScreenBufferTests::TestAddTabStop()
 
 void ScreenBufferTests::TestClearTabStop()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
     auto& stateMachine = screenInfo.GetStateMachine();
     auto& cursor = screenInfo.GetTextBuffer().GetCursor();
 
@@ -734,8 +734,8 @@ void ScreenBufferTests::TestClearTabStop()
 
 void ScreenBufferTests::TestGetForwardTab()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si.GetTextBuffer().GetCursor();
 
@@ -744,17 +744,17 @@ void ScreenBufferTests::TestGetForwardTab()
     std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
     _SetTabStops(si, inputData, true);
 
-    const COORD coordScreenBufferSize = si.GetBufferSize().Dimensions();
+    const auto coordScreenBufferSize = si.GetBufferSize().Dimensions();
 
     Log::Comment(L"Find next tab from before front.");
     {
         cursor.SetXPosition(0);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = inputData.front();
 
         stateMachine.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor advanced to first tab stop from sample list.");
@@ -764,11 +764,11 @@ void ScreenBufferTests::TestGetForwardTab()
     {
         cursor.SetXPosition(6);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = *std::next(inputData.begin(), 3);
 
         stateMachine.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor advanced to middle tab stop from sample list.");
@@ -778,11 +778,11 @@ void ScreenBufferTests::TestGetForwardTab()
     {
         cursor.SetXPosition(30);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = coordScreenBufferSize.X - 1;
 
         stateMachine.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor advanced to end of screen buffer.");
@@ -792,10 +792,10 @@ void ScreenBufferTests::TestGetForwardTab()
     {
         cursor.SetXPosition(coordScreenBufferSize.X - 1);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
 
         stateMachine.ProcessString(nextForwardTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor remains in rightmost column.");
@@ -804,8 +804,8 @@ void ScreenBufferTests::TestGetForwardTab()
 
 void ScreenBufferTests::TestGetReverseTab()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si.GetTextBuffer().GetCursor();
 
@@ -818,11 +818,11 @@ void ScreenBufferTests::TestGetReverseTab()
     {
         cursor.SetXPosition(1);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = 0;
 
         stateMachine.ProcessString(nextReverseTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor adjusted to beginning of the buffer when it started before sample list.");
@@ -832,11 +832,11 @@ void ScreenBufferTests::TestGetReverseTab()
     {
         cursor.SetXPosition(6);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = *std::next(inputData.begin());
 
         stateMachine.ProcessString(nextReverseTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor adjusted back one tab spot from middle of sample list.");
@@ -846,11 +846,11 @@ void ScreenBufferTests::TestGetReverseTab()
     {
         cursor.SetXPosition(30);
 
-        COORD coordCursorExpected = cursor.GetPosition();
+        auto coordCursorExpected = cursor.GetPosition();
         coordCursorExpected.X = inputData.back();
 
         stateMachine.ProcessString(nextReverseTab);
-        COORD const coordCursorResult = cursor.GetPosition();
+        const auto coordCursorResult = cursor.GetPosition();
         VERIFY_ARE_EQUAL(coordCursorExpected,
                          coordCursorResult,
                          L"Cursor adjusted to last item in the sample list from position beyond end.");
@@ -859,11 +859,11 @@ void ScreenBufferTests::TestGetReverseTab()
 
 void ScreenBufferTests::TestAltBufferTabStops()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to swap buffers.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
     // Make sure we're in VT mode
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
@@ -874,7 +874,7 @@ void ScreenBufferTests::TestAltBufferTabStops()
     VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(mainBuffer));
 
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
-    SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+    auto& altBuffer = gci.GetActiveOutputBuffer();
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
     Log::Comment(NoThrowString().Format(
@@ -900,8 +900,8 @@ void ScreenBufferTests::TestAltBufferTabStops()
 
 void ScreenBufferTests::EraseAllTests()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si._textBuffer->GetCursor();
 
@@ -921,7 +921,7 @@ void ScreenBufferTests::EraseAllTests()
 
     auto viewport = si._viewport;
     VERIFY_ARE_EQUAL(viewport.Top(), 1);
-    COORD newRelativePos = originalRelativePosition;
+    auto newRelativePos = originalRelativePosition;
     viewport.ConvertFromOrigin(&newRelativePos);
     VERIFY_ARE_EQUAL(cursor.GetPosition(), newRelativePos);
     Log::Comment(NoThrowString().Format(
@@ -1039,11 +1039,11 @@ void ScreenBufferTests::VtResize()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD_PROPERTIES()
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -1172,11 +1172,11 @@ void ScreenBufferTests::VtResizeComprehensive()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -1345,11 +1345,11 @@ void ScreenBufferTests::VtResizeDECCOLM()
 
 void ScreenBufferTests::VtSoftResetCursorPosition()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
@@ -1397,19 +1397,19 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 
 void ScreenBufferTests::VtScrollMarginsNewlineColor()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
     auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition(COORD({ 0, 0 }));
 
-    const COLORREF yellow = RGB(255, 255, 0);
-    const COLORREF magenta = RGB(255, 0, 255);
+    const auto yellow = RGB(255, 255, 0);
+    const auto magenta = RGB(255, 0, 255);
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     gci.CalculateDefaultColorIndices();
@@ -1428,14 +1428,14 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
     // Make sure we clear the margins to not screw up another test.
     auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
-    for (int iteration = 0; iteration < 10; iteration++)
+    for (auto iteration = 0; iteration < 10; iteration++)
     {
         Log::Comment(NoThrowString().Format(
             L"Iteration:%d", iteration));
         stateMachine.ProcessString(L"X");
         stateMachine.ProcessString(L"\n");
 
-        const COORD cursorPos = cursor.GetPosition();
+        const auto cursorPos = cursor.GetPosition();
 
         Log::Comment(NoThrowString().Format(
             L"Cursor=%s",
@@ -1448,10 +1448,10 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
         for (int y = viewTop; y < viewTop + 10; y++)
         {
             SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
-            const ROW& row = tbi.GetRowByOffset(y);
+            const auto& row = tbi.GetRowByOffset(y);
             const auto attrRow = &row.GetAttrRow();
             const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-            for (int x = 0; x < viewport.RightInclusive(); x++)
+            for (auto x = 0; x < viewport.RightInclusive(); x++)
             {
                 const auto& attr = attrs[x];
                 VERIFY_ARE_EQUAL(false, attr.IsLegacy());
@@ -1464,11 +1464,11 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
 
 void ScreenBufferTests::VtNewlinePastViewport()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
 
     // Make sure we're in VT mode
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -1516,20 +1516,20 @@ void ScreenBufferTests::VtNewlinePastViewport()
     for (int y = viewport.Top(); y < viewport.BottomInclusive(); y++)
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
-        const ROW& row = tbi.GetRowByOffset(y);
+        const auto& row = tbi.GetRowByOffset(y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-        for (int x = 0; x < viewport.RightInclusive(); x++)
+        for (auto x = 0; x < viewport.RightInclusive(); x++)
         {
             const auto& attr = attrs[x];
             VERIFY_ARE_EQUAL(defaultAttrs, attr);
         }
     }
 
-    const ROW& row = tbi.GetRowByOffset(viewport.BottomInclusive());
+    const auto& row = tbi.GetRowByOffset(viewport.BottomInclusive());
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    for (int x = 0; x < viewport.RightInclusive(); x++)
+    for (auto x = 0; x < viewport.RightInclusive(); x++)
     {
         const auto& attr = attrs[x];
         VERIFY_ARE_EQUAL(expectedFillAttr, attr);
@@ -1538,11 +1538,11 @@ void ScreenBufferTests::VtNewlinePastViewport()
 
 void ScreenBufferTests::VtNewlinePastEndOfBuffer()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
 
     // Make sure we're in VT mode
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -1593,20 +1593,20 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     for (int y = viewport.Top(); y < viewport.BottomInclusive(); y++)
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
-        const ROW& row = tbi.GetRowByOffset(y);
+        const auto& row = tbi.GetRowByOffset(y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-        for (int x = 0; x < viewport.RightInclusive(); x++)
+        for (auto x = 0; x < viewport.RightInclusive(); x++)
         {
             const auto& attr = attrs[x];
             VERIFY_ARE_EQUAL(defaultAttrs, attr);
         }
     }
 
-    const ROW& row = tbi.GetRowByOffset(viewport.BottomInclusive());
+    const auto& row = tbi.GetRowByOffset(viewport.BottomInclusive());
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    for (int x = 0; x < viewport.RightInclusive(); x++)
+    for (auto x = 0; x < viewport.RightInclusive(); x++)
     {
         const auto& attr = attrs[x];
         VERIFY_ARE_EQUAL(expectedFillAttr, attr);
@@ -1646,9 +1646,9 @@ void ScreenBufferTests::VtNewlineOutsideMargins()
 
 void ScreenBufferTests::VtSetColorTable()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
 
     // Start with a known value
     gci.SetColorTableEntry(0, RGB(0, 0, 0));
@@ -1730,11 +1730,11 @@ void ScreenBufferTests::VtSetColorTable()
 void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
 {
     // there is not much to verify here, this test passes if the console doesn't crash.
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
 
     gci.SetWrapText(false);
-    COORD newBufferSize = si.GetBufferSize().Dimensions();
+    auto newBufferSize = si.GetBufferSize().Dimensions();
     newBufferSize.Y--;
 
     VERIFY_SUCCEEDED(si.ResizeTraditional(newBufferSize));
@@ -1757,26 +1757,26 @@ void ScreenBufferTests::ResizeCursorUnchanged()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dx", dx), L"change in width of buffer");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"dy", dy), L"change in height of buffer");
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     const auto& initialCursor = si.GetTextBuffer().GetCursor();
 
     // Get initial cursor values
-    const CursorType initialType = initialCursor.GetType();
+    const auto initialType = initialCursor.GetType();
     const auto initialSize = initialCursor.GetSize();
 
     // set our wrap mode accordingly - ResizeScreenBuffer will be smart enough
     //  to call the appropriate implementation
     gci.SetWrapText(useResizeWithReflow);
 
-    COORD newBufferSize = si.GetBufferSize().Dimensions();
+    auto newBufferSize = si.GetBufferSize().Dimensions();
     newBufferSize.X += static_cast<short>(dx);
     newBufferSize.Y += static_cast<short>(dy);
 
     VERIFY_SUCCEEDED(si.ResizeScreenBuffer(newBufferSize, false));
 
     const auto& finalCursor = si.GetTextBuffer().GetCursor();
-    const CursorType finalType = finalCursor.GetType();
+    const auto finalType = finalCursor.GetType();
     const auto finalSize = finalCursor.GetSize();
 
     VERIFY_ARE_EQUAL(initialType, finalType);
@@ -1785,18 +1785,18 @@ void ScreenBufferTests::ResizeCursorUnchanged()
 
 void ScreenBufferTests::ResizeAltBuffer()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
 
     Log::Comment(NoThrowString().Format(
         L"Try resizing the alt buffer. Make sure the call doesn't stack overflow."));
 
     VERIFY_IS_FALSE(si._IsAltBuffer());
-    const Viewport originalMainSize = Viewport(si._viewport);
+    const auto originalMainSize = Viewport(si._viewport);
 
     Log::Comment(NoThrowString().Format(
         L"Switch to alt buffer"));
@@ -1804,9 +1804,9 @@ void ScreenBufferTests::ResizeAltBuffer()
 
     VERIFY_IS_FALSE(si._IsAltBuffer());
     VERIFY_IS_NOT_NULL(si._psiAlternateBuffer);
-    SCREEN_INFORMATION* const psiAlt = si._psiAlternateBuffer;
+    const auto psiAlt = si._psiAlternateBuffer;
 
-    COORD newSize = originalMainSize.Dimensions();
+    auto newSize = originalMainSize.Dimensions();
     newSize.X += 2;
     newSize.Y += 2;
 
@@ -1840,15 +1840,15 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
         L"buffer's size, not the main buffer's size."));
 
     auto& g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    auto& gci = g.getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+    auto& mainBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = mainBuffer.GetStateMachine();
 
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
-    const Viewport originalMainSize = Viewport(mainBuffer._viewport);
+    const auto originalMainSize = Viewport(mainBuffer._viewport);
 
     Log::Comment(NoThrowString().Format(
         L"Switch to alt buffer"));
@@ -1860,11 +1860,11 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
     auto& altBuffer = *(mainBuffer._psiAlternateBuffer);
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
-    COORD newBufferSize = originalMainSize.Dimensions();
+    auto newBufferSize = originalMainSize.Dimensions();
     newBufferSize.X += static_cast<short>(dx);
     newBufferSize.Y += static_cast<short>(dy);
 
-    const Viewport originalAltSize = Viewport(altBuffer._viewport);
+    const auto originalAltSize = Viewport(altBuffer._viewport);
 
     VERIFY_ARE_EQUAL(originalMainSize.Width(), originalAltSize.Width());
     VERIFY_ARE_EQUAL(originalMainSize.Height(), originalAltSize.Height());
@@ -1890,11 +1890,11 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
 
 void ScreenBufferTests::VtEraseAllPersistCursor()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"));
@@ -1918,10 +1918,10 @@ void ScreenBufferTests::VtEraseAllPersistCursor()
 
 void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure the viewport is at 0,0"));
@@ -1953,9 +1953,9 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
     auto iter = tbi.GetCellDataAt(newViewport.Origin());
     auto height = newViewport.Height();
     auto width = newViewport.Width();
-    for (int i = 0; i < height; i++)
+    for (auto i = 0; i < height; i++)
     {
-        for (int j = 0; j < width; j++)
+        for (auto j = 0; j < width; j++)
         {
             VERIFY_ARE_EQUAL(expectedAttr, iter->TextAttr());
             iter++;
@@ -1965,8 +1965,8 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
 
 void ScreenBufferTests::GetWordBoundary()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
 
     const auto text = L"This is some test text for word boundaries.";
     const auto length = wcslen(text);
@@ -2041,8 +2041,8 @@ void ScreenBufferTests::GetWordBoundary()
 
 void ScreenBufferTests::GetWordBoundaryTrimZeros(const bool on)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
 
     const auto text = L"000fe12 0xfe12 0Xfe12 0nfe12 0Nfe12";
     const auto length = wcslen(text);
@@ -2108,7 +2108,7 @@ void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
 
 void ScreenBufferTests::TestAltBufferCursorState()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
@@ -2117,7 +2117,7 @@ void ScreenBufferTests::TestAltBufferCursorState()
     VERIFY_IS_NULL(original._psiAlternateBuffer);
     VERIFY_IS_NULL(original._psiMainBuffer);
 
-    NTSTATUS Status = original.UseAlternateScreenBuffer();
+    auto Status = original.UseAlternateScreenBuffer();
     if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"Alternate buffer successfully created");
@@ -2148,7 +2148,7 @@ void ScreenBufferTests::TestAltBufferCursorState()
 
 void ScreenBufferTests::TestAltBufferVtDispatching()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     Log::Comment(L"Creating one alternate buffer");
@@ -2162,7 +2162,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
     VERIFY_IS_NULL(mainBuffer._psiAlternateBuffer);
     VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
 
-    NTSTATUS Status = mainBuffer.UseAlternateScreenBuffer();
+    auto Status = mainBuffer.UseAlternateScreenBuffer();
     if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"Alternate buffer successfully created");
@@ -2200,7 +2200,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
 
         std::unique_ptr<WriteData> waiter;
         std::wstring seq = L"\x1b[5;6H";
-        size_t seqCb = 2 * seq.size();
+        auto seqCb = 2 * seq.size();
         VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, false, waiter));
 
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), mainCursor.GetPosition());
@@ -2208,7 +2208,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         VERIFY_ARE_EQUAL(COORD({ 5, 4 }), altCursor.GetPosition());
 
         const TextAttribute expectedDefaults = {};
-        TextAttribute expectedRgb = expectedDefaults;
+        auto expectedRgb = expectedDefaults;
         expectedRgb.SetBackground(RGB(255, 0, 255));
 
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
@@ -2230,7 +2230,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
 
         // Recall we didn't print an 'X' to the main buffer, so there's no
         //      char to inspect the attributes of.
-        const ROW& altRow = alternate.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto& altRow = alternate.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
         const auto altAttrRow = &altRow.GetAttrRow();
         const std::vector<TextAttribute> altAttrs{ altAttrRow->begin(), altAttrRow->end() };
         const auto altAttrA = altAttrs[altCursor.GetPosition().X - 1];
@@ -2240,12 +2240,12 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
 
 void ScreenBufferTests::TestAltBufferRIS()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
 
     Log::Comment(L"Initially in main buffer");
     VERIFY_IS_FALSE(gci.GetActiveOutputBuffer()._IsAltBuffer());
@@ -2263,21 +2263,21 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
 {
     // Tests MSFT:19828103
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
     auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition({ 0, 0 });
 
-    COLORREF magenta = RGB(255, 0, 255);
-    COLORREF yellow = RGB(255, 255, 0);
-    COLORREF brightGreen = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
-    COLORREF darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
+    auto magenta = RGB(255, 0, 255);
+    auto yellow = RGB(255, 255, 0);
+    auto brightGreen = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
+    auto darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
@@ -2315,17 +2315,17 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     TextAttribute expectedTwo;
     expectedTwo.SetIndexedForeground(TextColor::BRIGHT_GREEN);
     expectedTwo.SetIndexedBackground(TextColor::DARK_BLUE);
-    TextAttribute expectedThree = expectedTwo;
+    auto expectedThree = expectedTwo;
     expectedThree.SetDefaultForeground();
     // Four is the same as Defaults
     // Five is the same as two
-    TextAttribute expectedSix = expectedTwo;
+    auto expectedSix = expectedTwo;
     expectedSix.SetDefaultBackground();
 
     COORD expectedCursor{ 6, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
-    const ROW& row = tbi.GetRowByOffset(0);
+    const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[0];
@@ -2368,20 +2368,20 @@ void ScreenBufferTests::SetDefaultsTogether()
 {
     // Tests MSFT:19828103
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
     auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition({ 0, 0 });
 
-    COLORREF magenta = RGB(255, 0, 255);
-    COLORREF yellow = RGB(255, 255, 0);
-    COLORREF color250 = gci.GetColorTableEntry(250);
+    auto magenta = RGB(255, 0, 255);
+    auto yellow = RGB(255, 255, 0);
+    auto color250 = gci.GetColorTableEntry(250);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
@@ -2416,7 +2416,7 @@ void ScreenBufferTests::SetDefaultsTogether()
     COORD expectedCursor{ 3, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
-    const ROW& row = tbi.GetRowByOffset(0);
+    const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[0];
@@ -2443,18 +2443,18 @@ void ScreenBufferTests::SetDefaultsTogether()
 void ScreenBufferTests::ReverseResetWithDefaultBackground()
 {
     // Tests MSFT:19694089
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
     auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition({ 0, 0 });
 
-    COLORREF magenta = RGB(255, 0, 255);
+    auto magenta = RGB(255, 0, 255);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
@@ -2474,13 +2474,13 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     TextAttribute expectedDefaults{ gci.GetFillAttribute() };
     expectedDefaults.SetDefaultBackground();
-    TextAttribute expectedReversed = expectedDefaults;
+    auto expectedReversed = expectedDefaults;
     expectedReversed.Invert();
 
     COORD expectedCursor{ 3, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
-    const ROW& row = tbi.GetRowByOffset(0);
+    const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[0];
@@ -2514,18 +2514,18 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     // That bug actually involves the input line, and that needs to use
     //      TextAttributes instead of WORDs
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
     auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition({ 0, 0 });
 
-    COLORREF magenta = RGB(255, 0, 255);
+    auto magenta = RGB(255, 0, 255);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     gci.CalculateDefaultColorIndices();
@@ -2543,7 +2543,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     COORD expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
-    const ROW& row = tbi.GetRowByOffset(0);
+    const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[0];
@@ -2579,18 +2579,18 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     // Kinda the same as above, but with WriteCharsLegacy instead.
     // The variable that really breaks this scenario
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
     auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition({ 0, 0 });
 
-    COLORREF magenta = RGB(255, 0, 255);
+    auto magenta = RGB(255, 0, 255);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     gci.CalculateDefaultColorIndices();
@@ -2622,7 +2622,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     COORD expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
-    const ROW& row = tbi.GetRowByOffset(0);
+    const auto& row = tbi.GetRowByOffset(0);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[0];
@@ -2646,11 +2646,11 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     // Tests MSFT:19853701 - when you edit the prompt line at a bash prompt,
     //  make sure that the end of the line isn't filled with default/garbage attributes.
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = si.GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
 
     // Make sure we're in VT mode
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -2660,7 +2660,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     cursor.SetPosition({ 0, 0 });
 
-    COLORREF magenta = RGB(255, 0, 255);
+    auto magenta = RGB(255, 0, 255);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     gci.CalculateDefaultColorIndices();
@@ -2676,7 +2676,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     stateMachine.ProcessString(L"\x1b[2J");
 
     const auto viewport = si.GetViewport();
-    const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+    const auto& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
     const auto attrRow = &row.GetAttrRow();
 
     {
@@ -2686,7 +2686,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
             L"It should entirely be filled with defaults"));
 
         const std::vector<TextAttribute> initialAttrs{ attrRow->begin(), attrRow->end() };
-        for (int x = 0; x <= viewport.RightInclusive(); x++)
+        for (auto x = 0; x <= viewport.RightInclusive(); x++)
         {
             const auto& attr = initialAttrs[x];
             VERIFY_ARE_EQUAL(expectedDefaults, attr);
@@ -2704,7 +2704,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
-    for (int x = 0; x <= viewport.RightInclusive(); x++)
+    for (auto x = 0; x <= viewport.RightInclusive(); x++)
     {
         const auto& attr = attrs[x];
         VERIFY_ARE_EQUAL(expectedDefaults, attr);
@@ -2720,25 +2720,25 @@ void ScreenBufferTests::SetGlobalColorTable()
     //      global property. This behavior is consistent with other terminals
     //      tested.
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to swap buffers.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
-    StateMachine& stateMachine = mainBuffer.GetStateMachine();
-    Cursor& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+    auto& stateMachine = mainBuffer.GetStateMachine();
+    auto& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
     const auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     mainCursor.SetPosition({ 0, 0 });
 
-    const COLORREF originalRed = gci.GetColorTableEntry(TextColor::DARK_RED);
-    const COLORREF testColor = RGB(0x11, 0x22, 0x33);
+    const auto originalRed = gci.GetColorTableEntry(TextColor::DARK_RED);
+    const auto testColor = RGB(0x11, 0x22, 0x33);
     VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
 
     stateMachine.ProcessString(L"\x1b[41m");
@@ -2746,7 +2746,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     COORD expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
     {
-        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
+        const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -2757,13 +2757,13 @@ void ScreenBufferTests::SetGlobalColorTable()
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
 
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
-    SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+    auto& altBuffer = gci.GetActiveOutputBuffer();
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
     WI_SetFlag(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
-    Cursor& altCursor = altBuffer.GetTextBuffer().GetCursor();
+    auto& altCursor = altBuffer.GetTextBuffer().GetCursor();
     altCursor.SetPosition({ 0, 0 });
 
     Log::Comment(NoThrowString().Format(
@@ -2772,7 +2772,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
     {
-        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -2787,7 +2787,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(COORD({ 2, 0 }), altCursor.GetPosition());
     {
-        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -2810,7 +2810,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(COORD({ 2, 0 }), mainCursor.GetPosition());
     {
-        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
+        const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -2827,25 +2827,25 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     // Created for MSFT:19723934.
     // Changing the value of the color table above index 99 should work
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to swap buffers.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
-    StateMachine& stateMachine = mainBuffer.GetStateMachine();
-    Cursor& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+    auto& stateMachine = mainBuffer.GetStateMachine();
+    auto& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
     const auto& renderSettings = gci.GetRenderSettings();
 
     Log::Comment(NoThrowString().Format(L"Make sure the viewport is at 0,0"));
     VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     mainCursor.SetPosition({ 0, 0 });
 
-    const COLORREF originalRed = gci.GetColorTableEntry(123);
-    const COLORREF testColor = RGB(0x11, 0x22, 0x33);
+    const auto originalRed = gci.GetColorTableEntry(123);
+    const auto testColor = RGB(0x11, 0x22, 0x33);
     VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
 
     stateMachine.ProcessString(L"\x1b[48;5;123m");
@@ -2853,7 +2853,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     COORD expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
     {
-        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
+        const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -2864,13 +2864,13 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
 
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
-    SCREEN_INFORMATION& altBuffer = gci.GetActiveOutputBuffer();
+    auto& altBuffer = gci.GetActiveOutputBuffer();
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
     WI_SetFlag(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(altBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
-    Cursor& altCursor = altBuffer.GetTextBuffer().GetCursor();
+    auto& altCursor = altBuffer.GetTextBuffer().GetCursor();
     altCursor.SetPosition({ 0, 0 });
 
     Log::Comment(NoThrowString().Format(
@@ -2879,7 +2879,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
     {
-        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -2897,7 +2897,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     stateMachine.ProcessString(L"X");
     VERIFY_ARE_EQUAL(COORD({ 2, 0 }), altCursor.GetPosition());
     {
-        const ROW& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
+        const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrB = attrs[1];
@@ -2911,20 +2911,20 @@ void ScreenBufferTests::SetDefaultForegroundColor()
 {
     // Setting the default foreground color should work
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to swap buffers.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
-    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+    auto& stateMachine = mainBuffer.GetStateMachine();
 
-    COLORREF originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
-    COLORREF newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
-    COLORREF testColor = RGB(0x33, 0x66, 0x99);
+    auto originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    auto newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    auto testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
@@ -2956,20 +2956,20 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
 {
     // Setting the default Background color should work
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to swap buffers.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
     WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 
-    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+    auto& stateMachine = mainBuffer.GetStateMachine();
 
-    COLORREF originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
-    COLORREF newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
-    COLORREF testColor = RGB(0x33, 0x66, 0x99);
+    auto originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+    auto newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+    auto testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
@@ -3058,7 +3058,7 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
     VERIFY_ARE_EQUAL(mainBuffer.GetBufferSize().Width(), mainView.Width());
     VERIFY_IS_GREATER_THAN(mainView.Width(), (dx + numCharsToDelete));
 
-    for (int x = 0; x < mainView.Width(); x++)
+    for (auto x = 0; x < mainView.Width(); x++)
     {
         stateMachine.ProcessString(L"X");
     }
@@ -3080,7 +3080,7 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
     VERIFY_ARE_EQUAL(COORD({ mainView.Width() - static_cast<short>(dx), 0 }), mainCursor.GetPosition());
     auto iter = tbi.GetCellDataAt({ 0, 0 });
     auto expectedNumSpaces = std::min(dx, numCharsToDelete);
-    for (int x = 0; x < mainView.Width() - expectedNumSpaces; x++)
+    for (auto x = 0; x < mainView.Width() - expectedNumSpaces; x++)
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
         if (iter->Chars() != L"X")
@@ -3090,7 +3090,7 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
         VERIFY_ARE_EQUAL(L"X", iter->Chars());
         iter++;
     }
-    for (int x = mainView.Width() - expectedNumSpaces; x < mainView.Width(); x++)
+    for (auto x = mainView.Width() - expectedNumSpaces; x < mainView.Width(); x++)
     {
         if (iter->Chars() != L"\x20")
         {
@@ -3258,7 +3258,7 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
         L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
     VERIFY_ARE_EQUAL(2, cursor.GetPosition().X);
     {
-        const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+        const auto& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -3289,7 +3289,7 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
 
     VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
     {
-        const ROW& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
+        const auto& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
         const auto attrA = attrs[0];
@@ -4022,7 +4022,7 @@ void ScreenBufferTests::EraseTests()
     // When erasing from the beginning, the cursor column is included in the range.
     suffixPos.X += (eraseType == DispatchTypes::EraseType::FromBeginning);
     size_t prefixWidth = suffixPos.X;
-    size_t suffixWidth = bufferWidth - prefixWidth;
+    auto suffixWidth = bufferWidth - prefixWidth;
     if (eraseType == DispatchTypes::EraseType::ToEnd)
     {
         Log::Comment(L"The start of the cursor line should remain unchanged.");
@@ -4494,7 +4494,7 @@ void ScreenBufferTests::LineFeedEscapeSequences()
         Log::Comment(L"Starting at the top of viewport");
         const short initialY = 0;
         const short expectedY = initialY + 1;
-        const short expectedViewportTop = si.GetViewport().Top();
+        const auto expectedViewportTop = si.GetViewport().Top();
         cursor.SetPosition(COORD{ initialX, initialY });
         stateMachine.ProcessString(escapeSequence);
 
@@ -4505,7 +4505,7 @@ void ScreenBufferTests::LineFeedEscapeSequences()
 
     {
         Log::Comment(L"Starting at the bottom of viewport");
-        const short initialY = si.GetViewport().BottomInclusive();
+        const auto initialY = si.GetViewport().BottomInclusive();
         const short expectedY = initialY + 1;
         const short expectedViewportTop = si.GetViewport().Top() + 1;
         cursor.SetPosition(COORD{ initialX, initialY });
@@ -4524,8 +4524,8 @@ void ScreenBufferTests::LineFeedEscapeSequences()
         auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
         const short initialY = si.GetViewport().Top() + 9;
-        const short expectedY = initialY;
-        const short expectedViewportTop = si.GetViewport().Top();
+        const auto expectedY = initialY;
+        const auto expectedViewportTop = si.GetViewport().Top();
         _FillLine(initialY, L'Q', {});
         cursor.SetPosition(COORD{ initialX, initialY });
         stateMachine.ProcessString(escapeSequence);
@@ -4548,15 +4548,15 @@ void ScreenBufferTests::ScrollLines256Colors()
 
     // colorStyle will be used to control whether we use a color from the 16
     // color table, a color from the 256 color table, or a pure RGB color.
-    const int Use16Color = 0;
-    const int Use256Color = 1;
-    const int UseRGBColor = 2;
+    const auto Use16Color = 0;
+    const auto Use256Color = 1;
+    const auto UseRGBColor = 2;
 
     // scrollType will be used to control whether we use InsertLines,
     // DeleteLines, or ReverseIndex to scroll the contents of the buffer.
-    const int InsertLines = 0;
-    const int DeleteLines = 1;
-    const int ReverseLineFeed = 2;
+    const auto InsertLines = 0;
+    const auto DeleteLines = 1;
+    const auto ReverseLineFeed = 2;
 
     int scrollType;
     int colorStyle;
@@ -4575,7 +4575,7 @@ void ScreenBufferTests::ScrollLines256Colors()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = si.GetTextBuffer().GetCursor();
 
-    TextAttribute expectedAttr{ si.GetAttributes() };
+    auto expectedAttr{ si.GetAttributes() };
     std::wstring_view sgrSeq = L"\x1b[42m";
     if (colorStyle == Use16Color)
     {
@@ -4863,13 +4863,13 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
     // This is a test for microsoft/terminal#1206. Refer to that issue for more
     // context
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetTerminalScrolling(true);
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
     auto& siMain = gci.GetActiveOutputBuffer();
-    COORD const coordFontSize = siMain.GetScreenFontSize();
+    const auto coordFontSize = siMain.GetScreenFontSize();
     siMain._virtualBottom = siMain._viewport.BottomInclusive();
 
     auto originalView = siMain._viewport;
@@ -4887,7 +4887,7 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
 
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
-        const COORD originalSize = originalView.Dimensions();
+        const auto originalSize = originalView.Dimensions();
         const COORD doubledSize = { originalSize.X * 2, originalSize.Y * 2 };
 
         // Create some RECTs, which are dimensions in pixels, because
@@ -4930,7 +4930,7 @@ void ScreenBufferTests::SnapCursorWithTerminalScrolling()
     // context
 
     auto& g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    auto& gci = g.getConsoleInformation();
     gci.SetTerminalScrolling(true);
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
@@ -5004,7 +5004,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
     // This is a test for microsoft/terminal#1189. Refer to that issue for more
     // context
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& g = ServiceLocator::LocateGlobals();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
@@ -5128,7 +5128,7 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = tbi.GetCursor();
 
-    ExtendedAttributes expectedAttrs{ ExtendedAttributes::Normal };
+    auto expectedAttrs{ ExtendedAttributes::Normal };
     std::wstring vtSeq = L"";
 
     // Collect up a VT sequence to set the state given the method properties
@@ -5181,7 +5181,7 @@ void ScreenBufferTests::TestExtendedTextAttributes()
 
         // Convert the vtSequence to something printable. Lets not set these
         // attrs on the test console
-        std::wstring debugString = vtSequence;
+        auto debugString = vtSequence;
         {
             size_t start_pos = 0;
             while ((start_pos = debugString.find(L"\x1b", start_pos)) != std::string::npos)
@@ -5277,10 +5277,10 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
 
     // colorStyle will be used to control whether we use a color from the 16
     // color table, a color from the 256 color table, or a pure RGB color.
-    const int UseDefault = 0;
-    const int Use16Color = 1;
-    const int Use256Color = 2;
-    const int UseRGBColor = 3;
+    const auto UseDefault = 0;
+    const auto Use16Color = 1;
+    const auto Use256Color = 2;
+    const auto UseRGBColor = 3;
 
     bool intense, faint, italics, underlined, doublyUnderlined, blink, invisible, crossedOut;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"intense", intense));
@@ -5303,7 +5303,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = tbi.GetCursor();
 
-    TextAttribute expectedAttr{ si.GetAttributes() };
+    auto expectedAttr{ si.GetAttributes() };
     std::wstring vtSeq = L"";
 
     // Collect up a VT sequence to set the state given the method properties
@@ -5400,7 +5400,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
 
         // Convert the vtSequence to something printable. Lets not set these
         // attrs on the test console
-        std::wstring debugString = vtSequence;
+        auto debugString = vtSequence;
         {
             size_t start_pos = 0;
             while ((start_pos = debugString.find(L"\x1b", start_pos)) != std::string::npos)
@@ -5419,7 +5419,7 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
         stateMachine.ProcessString(L"X");
 
         auto iter = tbi.GetCellDataAt(cursorPos);
-        const TextAttribute currentAttrs = iter->TextAttr();
+        const auto currentAttrs = iter->TextAttr();
         VERIFY_ARE_EQUAL(attr, currentAttrs);
     };
 
@@ -6180,7 +6180,7 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     bool useQuirk;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"useQuirk", useQuirk), L"whether to enable the quirk");
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
@@ -6195,7 +6195,7 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     mainBuffer.SetAttributes(defaultAttribute);
 
     const auto verifyLastAttribute = [&](const TextAttribute& expected) {
-        const ROW& row = mainBuffer.GetTextBuffer().GetRowByOffset(cursor.GetPosition().Y);
+        const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(cursor.GetPosition().Y);
         const auto attrRow = &row.GetAttrRow();
         auto iter{ attrRow->begin() };
         iter += cursor.GetPosition().X - 1;
@@ -6232,7 +6232,7 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
         vtWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
         vtWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
 
-        const TextAttribute quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
+        const auto quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
 
         seq = L"\x1b[37;40m"; // the quirk should suppress this, turning it into "defaults"
         seqCb = 2 * seq.size();
@@ -6254,10 +6254,10 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
         vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
         vtBrightWhiteOnBlackAttribute.SetIntense(true);
 
-        TextAttribute vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
+        auto vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
         vtBrightWhiteOnDefaultAttribute.SetDefaultBackground();
 
-        const TextAttribute quirkExpectedAttribute{ useQuirk ? vtBrightWhiteOnDefaultAttribute : vtBrightWhiteOnBlackAttribute };
+        const auto quirkExpectedAttribute{ useQuirk ? vtBrightWhiteOnDefaultAttribute : vtBrightWhiteOnBlackAttribute };
 
         seq = L"\x1b[1;37;40m"; // the quirk should suppress black only, turning it into "default background"
         seqCb = 2 * seq.size();
@@ -6336,7 +6336,7 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
     stateMachine.ProcessString(L"\x1b[2;6H"); // move the cursor to the end of the BBBBB's
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool /*before*/) {
-        const short width = tb.GetSize().Width();
+        const auto width = tb.GetSize().Width();
         Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
 
         auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L'A', red, 5u);
@@ -6366,7 +6366,7 @@ void ScreenBufferTests::TestReflowEndOfLineColor()
     Log::Comment(L"========== resize buffer ==========");
     const til::point delta{ dx, dy };
     const til::point oldSize{ si.GetBufferSize().Dimensions() };
-    const til::point newSize{ oldSize + delta };
+    const auto newSize{ oldSize + delta };
     VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
 
     Log::Comment(L"========== Checking the buffer state (after) ==========");
@@ -6408,7 +6408,7 @@ void ScreenBufferTests::TestReflowSmallerLongLineWithColor()
     // Attributes fill 70 red, 5 green, the last 5 are {whatever it was before}
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool before) {
-        const short width = tb.GetSize().Width();
+        const auto width = tb.GetSize().Width();
         Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
 
         if (before)
@@ -6444,7 +6444,7 @@ void ScreenBufferTests::TestReflowSmallerLongLineWithColor()
     Log::Comment(L"========== resize buffer ==========");
     const til::point delta{ -15, 0 };
     const til::point oldSize{ si.GetBufferSize().Dimensions() };
-    const til::point newSize{ oldSize + delta };
+    const auto newSize{ oldSize + delta };
     VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
 
     // Buffer is now 65 wide. 65 A's that wrapped onto the next row, where there
@@ -6487,7 +6487,7 @@ void ScreenBufferTests::TestReflowBiggerLongLineWithColor()
     // Attributes fill 85 red, 5 green, the rest are {whatever it was before}
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& /*viewport*/, const bool before) {
-        const short width = tb.GetSize().Width();
+        const auto width = tb.GetSize().Width();
         Log::Comment(NoThrowString().Format(L"Buffer width: %d", width));
 
         if (before)
@@ -6525,7 +6525,7 @@ void ScreenBufferTests::TestReflowBiggerLongLineWithColor()
     Log::Comment(L"========== resize buffer ==========");
     const til::point delta{ 15, 0 };
     const til::point oldSize{ si.GetBufferSize().Dimensions() };
-    const til::point newSize{ oldSize + delta };
+    const auto newSize{ oldSize + delta };
     VERIFY_SUCCEEDED(si.ResizeWithReflow(newSize.to_win32_coord()));
 
     // Buffer is now 95 wide. 85 A's that de-flowed onto the first row, where
@@ -6564,8 +6564,8 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
 
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Set up an xterm-256 renderer for conpty
-        wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        Viewport initialViewport = currentBuffer.GetViewport();
+        auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto initialViewport = currentBuffer.GetViewport();
         auto vtRenderEngine = std::make_unique<Microsoft::Console::Render::Xterm256Engine>(std::move(hFile),
                                                                                            initialViewport);
         // We don't care about the output, so let it just drain to the void.

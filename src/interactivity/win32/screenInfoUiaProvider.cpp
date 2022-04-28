@@ -57,7 +57,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    RECT rc = _pUiaParent->GetWindowRect();
+    auto rc = _pUiaParent->GetWindowRect();
 
     pRect->left = rc.left;
     pRect->top = rc.top;

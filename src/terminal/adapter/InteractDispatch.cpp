@@ -76,7 +76,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
+            auto convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
@@ -109,6 +109,12 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     //  MSFT:13271146 - QueryScreenSize
     switch (function)
     {
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _pConApi->ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _pConApi->ShowWindow(false);
+        return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
         _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;
@@ -175,7 +181,6 @@ bool InteractDispatch::IsVtInputEnabled() const
 //   which will end up here. This will update the console's internal tracker if
 //   it's focused or not, as to match the end-terminal's state.
 // - Used to call ConsoleControl(ConsoleSetForeground,...).
-// - Full support for this sequence is tracked in GH#11682.
 // Arguments:
 // - focused: if the terminal is now focused
 // Return Value:
@@ -189,7 +194,7 @@ bool InteractDispatch::FocusChanged(const bool focused) const
     // InteractDispatch outside ConPTY mode, but just in case...
     if (gci.IsInVtIoMode())
     {
-        bool shouldActuallyFocus = false;
+        auto shouldActuallyFocus = false;
 
         // From https://github.com/microsoft/terminal/pull/12799#issuecomment-1086289552
         // Make sure that the process that's telling us it's focused, actually
@@ -234,11 +239,9 @@ bool InteractDispatch::FocusChanged(const bool focused) const
 
         WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
         gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
+        gci.pInputBuffer->Write(std::make_unique<FocusEvent>(focused));
     }
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
-
-    // Theoretically, this could be propagated as a focus event as well, to the
-    // input buffer. That should be considered when implementing GH#11682.
 
     return true;
 }

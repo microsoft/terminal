@@ -39,7 +39,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         // ensure that each value fits in a byte
         if (red <= 255 && green <= 255 && blue <= 255)
         {
-            const COLORREF rgbColor = RGB(red, green, blue);
+            const auto rgbColor = RGB(red, green, blue);
             attr.SetColor(rgbColor, isForeground);
         }
     }
@@ -75,7 +75,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 // - True.
 bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
-    TextAttribute attr = _pConApi->GetTextBuffer().GetCurrentAttributes();
+    auto attr = _pConApi->GetTextBuffer().GetCurrentAttributes();
 
     // Run through the graphics options and apply them
     for (size_t i = 0; i < options.size(); i++)

@@ -33,7 +33,7 @@ size_t TerminalDispatch::_SetRgbColorsHelper(const VTParameters options,
         // ensure that each value fits in a byte
         if (red <= 255 && green <= 255 && blue <= 255)
         {
-            const COLORREF rgbColor = RGB(red, green, blue);
+            const auto rgbColor = RGB(red, green, blue);
             attr.SetColor(rgbColor, isForeground);
         }
     }
@@ -69,7 +69,7 @@ size_t TerminalDispatch::_SetRgbColorsHelper(const VTParameters options,
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::SetGraphicsRendition(const VTParameters options)
 {
-    TextAttribute attr = _terminalApi.GetTextAttributes();
+    auto attr = _terminalApi.GetTextAttributes();
 
     // Run through the graphics options and apply them
     for (size_t i = 0; i < options.size(); i++)

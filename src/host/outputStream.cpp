@@ -31,9 +31,9 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 {
-    size_t dwNumBytes = string.size() * sizeof(wchar_t);
+    auto dwNumBytes = string.size() * sizeof(wchar_t);
 
-    Cursor& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    auto& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     if (!cursor.IsOn())
     {
         cursor.SetIsOn(true);
@@ -259,6 +259,19 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 }
 
 // Routine Description:
+// - Shows or hides the active window when asked.
+// Arguments:
+// - showOrHide - True for show, False for hide. Matching WM_SHOWWINDOW lParam.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ShowWindow(bool showOrHide)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    ::ShowWindow(hwnd, showOrHide ? SW_NORMAL : SW_MINIMIZE);
+}
+
+// Routine Description:
 // - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - codepage - the new output codepage of the console.
@@ -304,8 +317,8 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
-    const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
-    const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    const auto oldViewport = Viewport::FromInclusive(csbiex.srWindow);
+    const auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
     // Always resize the width of the console
     csbiex.dwSize.X = sColumns;
     // Only set the screen buffer's height if it's currently less than

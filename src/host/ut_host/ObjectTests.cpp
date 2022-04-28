@@ -67,7 +67,7 @@ class ObjectTests
                                                              existingOutput.GetTextBuffer().GetCursor().GetSize(),
                                                              &newOutput));
 
-        ConsoleObjectHeader* newOutputAsHeader = static_cast<ConsoleObjectHeader*>(newOutput);
+        auto newOutputAsHeader = static_cast<ConsoleObjectHeader*>(newOutput);
 
         VERIFY_ARE_EQUAL(0ul, newOutputAsHeader->_ulOpenCount);
         VERIFY_ARE_EQUAL(0ul, newOutputAsHeader->_ulReaderCount);

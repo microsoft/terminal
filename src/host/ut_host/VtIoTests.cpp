@@ -98,7 +98,7 @@ void VtIoTests::DtorTestJustEngine()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
@@ -136,16 +136,16 @@ void VtIoTests::DtorTestDeleteVtio()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
 
-        wil::unique_hfile hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        VtIo* vtio = new VtIo();
+        auto vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
                                                                   SetUpViewport());
@@ -185,7 +185,7 @@ void VtIoTests::DtorTestStackAlloc()
 
     Log::Comment(NoThrowString().Format(
         L"make some engines and let them fall out of scope"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Scope Exit Auto cleanup #%d", i));
@@ -227,7 +227,7 @@ void VtIoTests::DtorTestStackAllocMany()
 
     Log::Comment(NoThrowString().Format(
         L"Try an make a whole bunch all at once, and have them all fall out of scope at once."));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Multiple engines, one scope loop #%d", i));
@@ -403,7 +403,7 @@ void VtIoTests::RendererDtorAndThread()
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
@@ -429,7 +429,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();

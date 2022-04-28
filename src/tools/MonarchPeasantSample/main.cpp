@@ -156,7 +156,7 @@ int main(int argc, char** argv)
     {
         appLoop(state);
     }
-    catch (hresult_error const& e)
+    catch (const hresult_error& e)
     {
         printf("Error: %ls\n", e.message().c_str());
     }

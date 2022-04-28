@@ -79,6 +79,7 @@ public:
     virtual bool EnableSGRExtendedMouseMode(const bool enabled) = 0; // ?1006
     virtual bool EnableButtonEventMouseMode(const bool enabled) = 0; // ?1002
     virtual bool EnableAnyEventMouseMode(const bool enabled) = 0; // ?1003
+    virtual bool EnableFocusEventMode(const bool enabled) = 0; // ?1004
     virtual bool EnableAlternateScroll(const bool enabled) = 0; // ?1007
     virtual bool EnableXtermBracketedPasteMode(const bool enabled) = 0; // ?2004
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable

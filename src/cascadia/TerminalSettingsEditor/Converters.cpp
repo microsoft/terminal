@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     double Converters::MaxValueFromPaddingString(winrt::hstring paddingString)
     {
-        const wchar_t singleCharDelim = L',';
+        const auto singleCharDelim = L',';
         std::wstringstream tokenStream(paddingString.c_str());
         std::wstring token;
         double maxVal = 0;

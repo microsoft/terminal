@@ -36,7 +36,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     auto pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
 
@@ -98,7 +98,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
-    VtInputThread* const pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
+    const auto pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
@@ -114,7 +114,7 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
 {
     char buffer[256];
     DWORD dwRead = 0;
-    bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+    auto fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
     // If we failed to read because the terminal broke our pipe (usually due
     //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
@@ -127,7 +127,7 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
         return;
     }
 
-    HRESULT hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
+    auto hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
     if (FAILED(hr))
     {
         if (throwOnFail)

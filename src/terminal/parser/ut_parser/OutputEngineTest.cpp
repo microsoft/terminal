@@ -63,7 +63,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         // The OscString state shouldn't escape out after an ESC.
         // Same for DcsPassThrough and SosPmApcString state.
-        bool shouldEscapeOut = true;
+        auto shouldEscapeOut = true;
 
         switch (uiTest)
         {
@@ -376,12 +376,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'[');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
-        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        for (auto i = 0; i < 50; i++) // Any number of leading zeros should be supported
         {
             mach.ProcessCharacter(L'0');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         }
-        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
@@ -538,7 +538,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'0');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         mach.ProcessCharacter(L';');
-        for (int i = 0; i < 260u; i++) // The buffer is only 256 long, so any longer value should work :P
+        for (auto i = 0; i < 260u; i++) // The buffer is only 256 long, so any longer value should work :P
         {
             mach.ProcessCharacter(L's');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
@@ -559,7 +559,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L']');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
-        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
@@ -584,12 +584,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L']');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
-        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        for (auto i = 0; i < 50; i++) // Any number of leading zeros should be supported
         {
             mach.ProcessCharacter(L'0');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
@@ -1249,7 +1249,7 @@ public:
 
     bool _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
     {
-        bool fSuccess = false;
+        auto fSuccess = false;
         switch (param)
         {
         case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
@@ -1563,11 +1563,11 @@ class StateMachineExternalTest final
         static const size_t cchBufferMax = 20;
 
         wchar_t pwszDistance[cchBufferMax];
-        int cchDistance = swprintf_s(pwszDistance, cchBufferMax, L"%zu", number);
+        auto cchDistance = swprintf_s(pwszDistance, cchBufferMax, L"%zu", number);
 
         if (cchDistance > 0 && cchDistance < cchBufferMax)
         {
-            for (int i = 0; i < cchDistance; i++)
+            for (auto i = 0; i < cchDistance; i++)
             {
                 pMachine->ProcessCharacter(pwszDistance[i]);
             }
@@ -1593,8 +1593,8 @@ class StateMachineExternalTest final
         }
     }
 
-    void TestCsiCursorMovement(wchar_t const wchCommand,
-                               size_t const uiDistance,
+    void TestCsiCursorMovement(const wchar_t wchCommand,
+                               const size_t uiDistance,
                                const bool fUseDistance,
                                const bool fAddExtraParam,
                                const bool* const pfFlag,
@@ -2055,7 +2055,7 @@ class StateMachineExternalTest final
         size_t uiDispatchTypes;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDispatchTypes::EraseType", uiDispatchTypes));
 
-        WCHAR wchOp = L'\0';
+        auto wchOp = L'\0';
         bool* pfOperationCallback = nullptr;
 
         auto dispatch = std::make_unique<StatefulDispatch>();
@@ -2137,7 +2137,7 @@ class StateMachineExternalTest final
                              const StatefulDispatch& dispatch)
     {
         VERIFY_ARE_EQUAL(expectedOptions.size(), dispatch._options.size());
-        bool optionsValid = true;
+        auto optionsValid = true;
 
         for (size_t i = 0; i < dispatch._options.size(); i++)
         {

@@ -148,8 +148,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool HasSelection() const;
         bool CopyOnSelect() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(til::point const& position);
-        void SetEndSelectionPoint(til::point const& position);
+        void SetSelectionAnchor(const til::point& position);
+        void SetEndSelectionPoint(const til::point& position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
@@ -172,6 +172,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool IsVintageOpacityAvailable() noexcept;
 
         void AdjustOpacity(const double opacity, const bool relative);
+
+        void WindowVisibilityChanged(const bool showOrHide);
 
         // TODO:GH#1256 - When a tab can be torn out or otherwise reparented to
         // another window, this value will need a custom setter, so that we can
@@ -202,6 +204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
         TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
+        TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         // clang-format on
 
     private:
@@ -269,6 +272,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const int bufferSize);
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
+        void _terminalShowWindowChanged(bool showOrHide);
 #pragma endregion
 
 #pragma region RendererCallbacks
