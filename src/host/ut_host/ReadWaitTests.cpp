@@ -26,7 +26,7 @@ class InputRecordConversionTests
 
     TEST_CLASS_SETUP(ClassSetup)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         savedCodepage = gci.CP;
         gci.CP = CP_JAPANESE;
         VERIFY_IS_TRUE(!!GetCPInfo(gci.CP, &gci.CPInfo));
@@ -35,7 +35,7 @@ class InputRecordConversionTests
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.CP = savedCodepage;
         VERIFY_IS_TRUE(!!GetCPInfo(gci.CP, &gci.CPInfo));
         return true;
@@ -90,7 +90,7 @@ class InputRecordConversionTests
     {
         Log::Comment(L"dbcs chars should be split");
 
-        const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+        const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
 
         INPUT_RECORD inRecords[INPUT_RECORD_COUNT * 2] = { 0 };
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
@@ -99,7 +99,7 @@ class InputRecordConversionTests
         wchar_t inChars[INPUT_RECORD_COUNT];
         for (size_t i = 0; i < INPUT_RECORD_COUNT; ++i)
         {
-            wchar_t currentChar = static_cast<wchar_t>(hiraganaA + (i * 2));
+            auto currentChar = static_cast<wchar_t>(hiraganaA + (i * 2));
             inRecords[i].EventType = KEY_EVENT;
             inRecords[i].Event.KeyEvent.uChar.UnicodeChar = currentChar;
             inChars[i] = currentChar;
@@ -111,18 +111,18 @@ class InputRecordConversionTests
 
         // create the data to compare the output to
         char dbcsChars[INPUT_RECORD_COUNT * 2] = { 0 };
-        int writtenBytes = WideCharToMultiByte(codepage,
-                                               0,
-                                               inChars,
-                                               INPUT_RECORD_COUNT,
-                                               dbcsChars,
-                                               INPUT_RECORD_COUNT * 2,
-                                               nullptr,
-                                               FALSE);
+        auto writtenBytes = WideCharToMultiByte(codepage,
+                                                0,
+                                                inChars,
+                                                INPUT_RECORD_COUNT,
+                                                dbcsChars,
+                                                INPUT_RECORD_COUNT * 2,
+                                                nullptr,
+                                                FALSE);
         VERIFY_ARE_EQUAL(writtenBytes, static_cast<int>(INPUT_RECORD_COUNT * 2));
         for (size_t i = 0; i < INPUT_RECORD_COUNT * 2; ++i)
         {
-            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(inEvents[i].get());
+            const auto pKeyEvent = static_cast<const KeyEvent* const>(inEvents[i].get());
             VERIFY_ARE_EQUAL(static_cast<char>(pKeyEvent->GetCharData()), dbcsChars[i]);
         }
     }

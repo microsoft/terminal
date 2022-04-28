@@ -54,7 +54,7 @@ class MultipleInflightMessageTests
         std::array<wchar_t, 129> buffer;
         DWORD read{};
 
-        bool readerThreadLaunched{ false };
+        auto readerThreadLaunched{ false };
         std::condition_variable readerThreadLaunchCV;
         std::mutex readerThreadLaunchMutex;
 

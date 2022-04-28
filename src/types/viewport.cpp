@@ -28,7 +28,7 @@ Viewport Viewport::FromInclusive(const SMALL_RECT sr) noexcept
 
 Viewport Viewport::FromExclusive(const SMALL_RECT sr) noexcept
 {
-    SMALL_RECT _sr = sr;
+    auto _sr = sr;
     _sr.Bottom -= 1;
     _sr.Right -= 1;
     return Viewport::FromInclusive(_sr);
@@ -260,9 +260,9 @@ Viewport Viewport::Clamp(const Viewport& other) const noexcept
 bool Viewport::MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept
 {
     const auto backup = pos;
-    bool success = true; // If nothing happens, we're still successful (e.g. add = 0)
+    auto success = true; // If nothing happens, we're still successful (e.g. add = 0)
 
-    for (int i = 0; i < move; i++)
+    for (auto i = 0; i < move; i++)
     {
         success = IncrementInBounds(pos);
 
@@ -273,7 +273,7 @@ bool Viewport::MoveInBounds(const ptrdiff_t move, COORD& pos) const noexcept
         }
     }
 
-    for (int i = 0; i > move; i--)
+    for (auto i = 0; i > move; i--)
     {
         success = DecrementInBounds(pos);
 
@@ -371,7 +371,7 @@ int Viewport::CompareInBounds(const COORD& first, const COORD& second, bool allo
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
     //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
-    int retVal = (first.Y - second.Y) * Width();
+    auto retVal = (first.Y - second.Y) * Width();
 
     // Now adjust for horizontal differences
     //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
@@ -708,8 +708,8 @@ bool Viewport::TrimToViewport(_Inout_ SMALL_RECT* const psr) const noexcept
 // - <none>
 void Viewport::ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const noexcept
 {
-    const short dx = Left();
-    const short dy = Top();
+    const auto dx = Left();
+    const auto dy = Top();
     psr->Left -= dx;
     psr->Right -= dx;
     psr->Top -= dy;
@@ -738,8 +738,8 @@ void Viewport::ConvertToOrigin(_Inout_ COORD* const pcoord) const noexcept
 // - <none>
 void Viewport::ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const noexcept
 {
-    const short dx = Left();
-    const short dy = Top();
+    const auto dx = Left();
+    const auto dy = Top();
     psr->Left += dx;
     psr->Right += dx;
     psr->Top += dy;
@@ -808,7 +808,7 @@ SMALL_RECT Viewport::ToInclusive() const noexcept
 // - a new viewport with the same dimensions as this viewport with top, left = 0, 0
 Viewport Viewport::ToOrigin() const noexcept
 {
-    Viewport returnVal = *this;
+    auto returnVal = *this;
     ConvertToOrigin(&returnVal._sr);
     return returnVal;
 }
@@ -825,7 +825,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // - the input viewport in a the coordinate space with origin at (this.Top, this.Left)
 [[nodiscard]] Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 {
-    Viewport returnVal = other;
+    auto returnVal = other;
     ConvertToOrigin(&returnVal._sr);
     return returnVal;
 }
@@ -842,7 +842,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // - the input viewport in a the coordinate space with origin at (0, 0)
 [[nodiscard]] Viewport Viewport::ConvertFromOrigin(const Viewport& other) const noexcept
 {
-    Viewport returnVal = other;
+    auto returnVal = other;
     ConvertFromOrigin(&returnVal._sr);
     return returnVal;
 }
@@ -864,10 +864,10 @@ Viewport Viewport::ToOrigin() const noexcept
         return original;
     }
 
-    SHORT newTop = original._sr.Top;
-    SHORT newLeft = original._sr.Left;
-    SHORT newRight = original._sr.Right;
-    SHORT newBottom = original._sr.Bottom;
+    auto newTop = original._sr.Top;
+    auto newLeft = original._sr.Left;
+    auto newRight = original._sr.Right;
+    auto newBottom = original._sr.Bottom;
 
     THROW_IF_FAILED(ShortAdd(newLeft, delta.X, &newLeft));
     THROW_IF_FAILED(ShortAdd(newRight, delta.X, &newRight));

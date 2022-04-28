@@ -58,7 +58,7 @@ void KeyEvent::SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept
 
 void KeyEvent::DeactivateModifierKey(const ModifierKeyState modifierKey) noexcept
 {
-    DWORD const bitFlag = ToConsoleControlKeyFlag(modifierKey);
+    const auto bitFlag = ToConsoleControlKeyFlag(modifierKey);
     auto keys = GetActiveModifierKeys();
     WI_ClearAllFlags(keys, bitFlag);
     SetActiveModifierKeys(keys);
@@ -66,7 +66,7 @@ void KeyEvent::DeactivateModifierKey(const ModifierKeyState modifierKey) noexcep
 
 void KeyEvent::ActivateModifierKey(const ModifierKeyState modifierKey) noexcept
 {
-    DWORD const bitFlag = ToConsoleControlKeyFlag(modifierKey);
+    const auto bitFlag = ToConsoleControlKeyFlag(modifierKey);
     auto keys = GetActiveModifierKeys();
     WI_SetAllFlags(keys, bitFlag);
     SetActiveModifierKeys(keys);
@@ -75,7 +75,7 @@ void KeyEvent::ActivateModifierKey(const ModifierKeyState modifierKey) noexcept
 bool KeyEvent::DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept
 {
     DWORD consoleBits = 0;
-    for (const ModifierKeyState& mod : consoleModifiers)
+    for (const auto& mod : consoleModifiers)
     {
         WI_SetAllFlags(consoleBits, ToConsoleControlKeyFlag(mod));
     }

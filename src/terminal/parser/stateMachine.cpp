@@ -666,7 +666,7 @@ void StateMachine::_ActionDcsDispatch(const wchar_t wch) noexcept
 {
     _trace.TraceOnAction(L"DcsDispatch");
 
-    const bool success = _SafeExecuteWithLog(wch, [=]() {
+    const auto success = _SafeExecuteWithLog(wch, [=]() {
         _dcsStringHandler = _engine->ActionDcsDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
         // If the returned handler is null, the sequence is not supported.
         return _dcsStringHandler != nullptr;
@@ -1693,7 +1693,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     _trace.TraceCharInput(wch);
 
     // Process "from anywhere" events first.
-    const bool isFromAnywhereChar = (wch == AsciiChars::CAN || wch == AsciiChars::SUB);
+    const auto isFromAnywhereChar = (wch == AsciiChars::CAN || wch == AsciiChars::SUB);
 
     // GH#4201 - If this sequence was ^[^X or ^[^Z, then we should
     // _ActionExecuteFromEscape, as to send a Ctrl+Alt+key key. We should only
@@ -1788,7 +1788,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
 // - true if the engine successfully handled the string.
 bool StateMachine::FlushToTerminal() noexcept
 {
-    bool success{ true };
+    auto success{ true };
 
     if (success && _cachedSequence.has_value())
     {
@@ -1827,7 +1827,7 @@ bool StateMachine::FlushToTerminal() noexcept
 void StateMachine::ProcessString(const std::wstring_view string)
 {
     size_t start = 0;
-    size_t current = start;
+    auto current = start;
 
     _currentString = string;
     _runOffset = 0;
@@ -1998,9 +1998,9 @@ void StateMachine::ResetState() noexcept
 // - value - The value to update with the printable character. See example above.
 // Return Value:
 // - <none> - But really it's the update to the given value parameter.
-void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value) noexcept
+void StateMachine::_AccumulateTo(const wchar_t wch, VTInt& value) noexcept
 {
-    const size_t digit = wch - L'0';
+    const auto digit = wch - L'0';
 
     value = value * 10 + digit;
 

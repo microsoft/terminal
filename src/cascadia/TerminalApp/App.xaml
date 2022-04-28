@@ -46,7 +46,7 @@
                                      Color="{ThemeResource SystemErrorTextColor}" />
 
                     <!--  Suppress top padding  -->
-                    <Thickness x:Key="TabViewHeaderPadding">9,0,8,0</Thickness>
+                    <Thickness x:Key="TabViewHeaderPadding">9,0,5,0</Thickness>
 
                     <!--  Remove when implementing WinUI 2.6  -->
                     <Thickness x:Key="FlyoutContentPadding">12</Thickness>

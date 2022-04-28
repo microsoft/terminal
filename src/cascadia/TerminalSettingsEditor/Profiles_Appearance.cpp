@@ -64,12 +64,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _AppearanceViewModelChangedRevoker.revoke();
     }
 
-    void Profiles_Appearance::CreateUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void Profiles_Appearance::CreateUnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _Profile.CreateUnfocusedAppearance();
     }
 
-    void Profiles_Appearance::DeleteUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void Profiles_Appearance::DeleteUnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _Profile.DeleteUnfocusedAppearance();
     }

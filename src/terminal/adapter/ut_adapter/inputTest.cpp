@@ -150,14 +150,14 @@ void InputTest::TerminalInputTests()
 {
     Log::Comment(L"Starting test...");
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
         Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
 
-        bool fExpectedKeyHandled = true;
+        auto fExpectedKeyHandled = true;
 
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
@@ -322,17 +322,17 @@ void InputTest::TerminalInputModifierKeyTests()
     unsigned int uiKeystate;
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiKeystate));
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
-    const BYTE slashVkey = LOBYTE(VkKeyScanW(L'/'));
-    const BYTE nullVkey = LOBYTE(VkKeyScanW(0));
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto slashVkey = LOBYTE(VkKeyScanW(L'/'));
+    const auto nullVkey = LOBYTE(VkKeyScanW(0));
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
         Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
 
-        bool fExpectedKeyHandled = true;
-        bool fModifySequence = false;
+        auto fExpectedKeyHandled = true;
+        auto fModifySequence = false;
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
         irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
@@ -473,7 +473,7 @@ void InputTest::TerminalInputModifierKeyTests()
             }
             break;
         default:
-            wchar_t ch = irTest.Event.KeyEvent.uChar.UnicodeChar;
+            auto ch = irTest.Event.KeyEvent.uChar.UnicodeChar;
 
             // Alt+Key generates [0x1b, Ctrl+key] into the stream
             // Pressing the control key causes all bits but the 5 least
@@ -516,9 +516,9 @@ void InputTest::TerminalInputModifierKeyTests()
 
         if (fModifySequence && s_expectedInput.size() > 1)
         {
-            bool fShift = !!(uiKeystate & SHIFT_PRESSED);
-            bool fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
-            bool fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
+            auto fShift = !!(uiKeystate & SHIFT_PRESSED);
+            auto fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
+            auto fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
             s_expectedInput[s_expectedInput.size() - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
         }
 
@@ -536,7 +536,7 @@ void InputTest::TerminalInputNullKeyTests()
 
     unsigned int uiKeystate = LEFT_CTRL_PRESSED;
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestNullCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestNullCallback);
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
@@ -595,7 +595,7 @@ void InputTest::DifferentModifiersTest()
 {
     Log::Comment(L"Starting test...");
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending a bunch of keystrokes that are a little weird.");
 
@@ -694,7 +694,7 @@ void InputTest::CtrlNumTest()
 {
     Log::Comment(L"Starting test...");
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending the various Ctrl+Num keys.");
 

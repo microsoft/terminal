@@ -76,7 +76,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
+            auto convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
@@ -109,6 +109,12 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     //  MSFT:13271146 - QueryScreenSize
     switch (function)
     {
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _pConApi->ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _pConApi->ShowWindow(false);
+        return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
         _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;
@@ -134,39 +140,26 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // - col: The column to move the cursor to.
 // Return value:
 // - True.
-bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
+bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
-    // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-    THROW_HR_IF(E_INVALIDARG, row == 0);
-    THROW_HR_IF(E_INVALIDARG, col == 0);
+    // First retrieve some information about the buffer
+    const auto viewport = _pConApi->GetViewport();
 
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-    const size_t rowFixed = row - 1;
-    const size_t colFixed = col - 1;
-
-    // First retrieve some information about the buffer
-    const auto viewport = _pConApi->GetViewport().to_small_rect();
-    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
-    auto coordCursor = cursor.GetPosition();
-
-    // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
-    THROW_IF_FAILED(SizeTToShort(rowFixed, &coordCursor.Y));
-    THROW_IF_FAILED(SizeTToShort(colFixed, &coordCursor.X));
-
-    // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-    THROW_IF_FAILED(ShortAdd(coordCursor.Y, viewport.Top, &coordCursor.Y));
-    THROW_IF_FAILED(ShortAdd(coordCursor.X, viewport.Left, &coordCursor.X));
-
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
+    til::point coordCursor{ col - 1 + viewport.Left, row - 1 + viewport.Top };
     coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, viewport.Bottom);
     coordCursor.X = std::clamp(coordCursor.X, viewport.Left, viewport.Right);
 
+    const auto coordCursorShort = til::unwrap_coord(coordCursor);
+
     // MSFT: 15813316 - Try to use this MoveCursor call to inherit the cursor position.
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursor));
+    RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursorShort));
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    cursor.SetPosition(coordCursor);
+    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    cursor.SetPosition(coordCursorShort);
     cursor.SetHasMoved(true);
     return true;
 }
@@ -188,7 +181,6 @@ bool InteractDispatch::IsVtInputEnabled() const
 //   which will end up here. This will update the console's internal tracker if
 //   it's focused or not, as to match the end-terminal's state.
 // - Used to call ConsoleControl(ConsoleSetForeground,...).
-// - Full support for this sequence was added in GH#11682.
 // Arguments:
 // - focused: if the terminal is now focused
 // Return Value:
@@ -198,9 +190,11 @@ bool InteractDispatch::FocusChanged(const bool focused) const
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
 
+    // This should likely always be true - we shouldn't ever have an
+    // InteractDispatch outside ConPTY mode, but just in case...
     if (gci.IsInVtIoMode())
     {
-        bool shouldActuallyFocus = false;
+        auto shouldActuallyFocus = false;
 
         // From https://github.com/microsoft/terminal/pull/12799#issuecomment-1086289552
         // Make sure that the process that's telling us it's focused, actually
@@ -209,15 +203,15 @@ bool InteractDispatch::FocusChanged(const bool focused) const
         // FG.
         if (focused)
         {
-            if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow() })
+            if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow() })
             {
                 // They want focus, we found a pseudo hwnd.
 
-                // Note: ::GetParent(psuedoHwnd) will return 0. GetAncestor works though.
+                // Note: ::GetParent(pseudoHwnd) will return 0. GetAncestor works though.
                 // GA_PARENT and GA_ROOT seemingly return the same thing for
                 // Terminal. We're going with GA_ROOT since it seems
                 // semantically more correct here.
-                if (const auto ownerHwnd{ ::GetAncestor(psuedoHwnd, GA_ROOT) })
+                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOT) })
                 {
                     // We have an owner from a previous call to ReparentWindow
 
@@ -245,6 +239,7 @@ bool InteractDispatch::FocusChanged(const bool focused) const
 
         WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
         gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
+        gci.pInputBuffer->Write(std::make_unique<FocusEvent>(focused));
     }
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
 

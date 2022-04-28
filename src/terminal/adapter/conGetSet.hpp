@@ -49,7 +49,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void SetAutoWrapMode(const bool wrapAtEOL) = 0;
 
-        virtual void SetScrollingRegion(const SMALL_RECT& scrollMargins) = 0;
+        virtual void SetScrollingRegion(const til::inclusive_rect& scrollMargins) = 0;
         virtual void WarningBell() = 0;
         virtual bool GetLineFeedMode() const = 0;
         virtual void LineFeed(const bool withReturn) = 0;
@@ -58,6 +58,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void UseMainScreenBuffer() = 0;
 
         virtual CursorType GetUserDefaultCursorStyle() const = 0;
+
+        virtual void ShowWindow(bool showOrHide) = 0;
 
         virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;
         virtual unsigned int GetConsoleOutputCP() const = 0;

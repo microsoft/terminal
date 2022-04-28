@@ -45,7 +45,7 @@ PtySignalInputThread::~PtySignalInputThread()
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 {
-    PtySignalInputThread* const pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
+    const auto pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
@@ -71,6 +71,10 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoResizeWindow(*_earlyResize);
     }
+    if (_initialShowHide)
+    {
+        _DoShowHide(_initialShowHide->show);
+    }
 
     // If we were given a owner HWND, then manually start the pseudo window now.
     if (_earlyReparent)
@@ -91,6 +95,33 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         switch (signalId)
         {
+        case PtySignal::ShowHideWindow:
+        {
+            ShowHideData msg = { 0 };
+            _GetData(&msg, sizeof(msg));
+
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // If the client app hasn't yet connected, stash our initial
+            // visibility for when we do. We default to not being visible - if a
+            // terminal wants the ConPTY windows to start "visible", then they
+            // should send a ShowHidePseudoConsole(..., true) to tell us to
+            // initially be visible.
+            //
+            // Notably, if they don't, then a ShowWindow(SW_HIDE) on the ConPTY
+            // HWND will initially do _nothing_, because the OS will think that
+            // the window is already hidden.
+            if (!_consoleConnected)
+            {
+                _initialShowHide = msg;
+            }
+            else
+            {
+                _DoShowHide(msg.show);
+            }
+            break;
+        }
         case PtySignal::ClearBuffer:
         {
             LockConsole();
@@ -181,6 +212,11 @@ void PtySignalInputThread::_DoClearBuffer()
     THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
 }
 
+void PtySignalInputThread::_DoShowHide(const bool show)
+{
+    _pConApi->ShowWindow(show);
+}
+
 // Method Description:
 // - Update the owner of the pseudo-window we're using for the conpty HWND. This
 //   allows to mark the pseudoconsole windows as "owner" by the terminal HWND
@@ -213,7 +249,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     //       we want to gracefully close in.
     if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
     {
-        DWORD lastError = GetLastError();
+        auto lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();

@@ -101,14 +101,14 @@ public:
     TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
     Microsoft::Console::Types::Viewport GetBufferSize() override;
-    void SetCursorPosition(short x, short y) override;
-    COORD GetCursorPosition() override;
+    void SetCursorPosition(til::point pos) override;
+    til::point GetCursorPosition() override;
     void SetCursorVisibility(const bool visible) override;
     void EnableCursorBlinking(const bool enable) override;
     void CursorLineFeed(const bool withReturn) override;
-    void DeleteCharacter(const size_t count) override;
-    void InsertCharacter(const size_t count) override;
-    void EraseCharacters(const size_t numChars) override;
+    void DeleteCharacter(const til::CoordType count) override;
+    void InsertCharacter(const til::CoordType count) override;
+    void EraseCharacters(const til::CoordType numChars) override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     void WarningBell() override;
@@ -138,8 +138,11 @@ public:
     void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
     void PopGraphicsRendition() override;
 
+    void ShowWindow(bool showOrHide) override;
+
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
+
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -212,6 +215,7 @@ public:
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept;
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
+    void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -279,6 +283,7 @@ private:
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
+    std::function<void(bool)> _pfnShowWindowChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

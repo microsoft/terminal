@@ -204,11 +204,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // transfer ownership of UiaTextRanges to this new vector
         auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
-        int count = gsl::narrow<int>(providers.size());
+        auto count = gsl::narrow<int>(providers.size());
 
         std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);
-        for (int i = 0; i < count; i++)
+        for (auto i = 0; i < count; i++)
         {
             if (auto xutr = _CreateXamlUiaTextRange(providers[i].detach()))
             {

@@ -334,11 +334,14 @@ void SettingsLoader::FinalizeLayering()
 // This section of code recognizes if a profile was seen before and marks it as
 // `"hidden": true` by default and thus ensures the behavior the user expects:
 // Profiles won't show up again after they've been removed from settings.json.
+//
+// Returns true if something got changed and
+// the settings need to be saved to disk.
 bool SettingsLoader::DisableDeletedProfiles()
 {
     const auto& state = winrt::get_self<ApplicationState>(ApplicationState::SharedInstance());
     auto generatedProfileIds = state->GeneratedProfiles();
-    bool newGeneratedProfiles = false;
+    auto newGeneratedProfiles = false;
 
     for (const auto& profile : _getNonUserOriginProfiles())
     {
@@ -359,6 +362,56 @@ bool SettingsLoader::DisableDeletedProfiles()
     }
 
     return newGeneratedProfiles;
+}
+
+// Runs migrations and fixups on user settings.
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::FixupUserSettings()
+{
+    struct CommandlinePatch
+    {
+        winrt::guid guid;
+        std::wstring_view before;
+        std::wstring_view after;
+    };
+
+    static constexpr std::array commandlinePatches{
+        CommandlinePatch{ DEFAULT_COMMAND_PROMPT_GUID, L"cmd.exe", L"%SystemRoot%\\System32\\cmd.exe" },
+        CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
+    };
+
+    auto fixedUp = false;
+
+    for (const auto& profile : userSettings.profiles)
+    {
+        if (!profile->HasCommandline())
+        {
+            continue;
+        }
+
+        for (const auto& patch : commandlinePatches)
+        {
+            if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+            {
+                profile->ClearCommandline();
+
+                // GH#12842:
+                // With the commandline field on the user profile gone, it's actually unknown what
+                // commandline it'll inherit, since a user profile can have multiple parents. We have to
+                // make sure we restore the correct commandline in case we don't inherit the expected one.
+                if (profile->Commandline() != patch.after)
+                {
+                    profile->Commandline(winrt::hstring{ patch.after });
+                }
+
+                fixedUp = true;
+                break;
+            }
+        }
+    }
+
+    return fixedUp;
 }
 
 // Give a string of length N and a position of [0,N) this function returns
@@ -750,9 +803,9 @@ try
     loader.FinalizeLayering();
 
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
-    // Coincidentally this is also the time we should write the new settings.json
-    // to disk (so that it contains the new profiles for manual editing by the user).
+    // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
+    mustWriteToDisk |= loader.FixupUserSettings();
 
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
@@ -972,7 +1025,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    Json::Value json{ _globals->ToJson() };
+    auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
     json["$schema"] = "https://aka.ms/terminal-profiles-schema";
 
@@ -1023,21 +1076,4 @@ void CascadiaSettings::_resolveDefaultProfile() const
 
     // Use the first profile as the new default.
     GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
-}
-
-void CascadiaSettings::_validateCorrectDefaultShellPaths() const
-{
-    for (auto profile : _allProfiles)
-    {
-        if (profile.Guid() == DEFAULT_COMMAND_PROMPT_GUID &&
-            profile.Commandline() == L"cmd.exe")
-        {
-            profile.ClearCommandline();
-        }
-        else if (profile.Guid() == DEFAULT_WINDOWS_POWERSHELL_GUID &&
-                 profile.Commandline() == L"powershell.exe")
-        {
-            profile.ClearCommandline();
-        }
-    }
 }

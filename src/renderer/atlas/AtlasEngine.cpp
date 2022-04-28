@@ -469,7 +469,7 @@ try
             _api.bufferLineColumn.pop_back();
         }
 
-        u16 column = x;
+        auto column = x;
         for (const auto& cluster : clusters)
         {
             for (const auto& ch : cluster.GetText())
@@ -693,7 +693,7 @@ void AtlasEngine::_createResources()
             D3D_FEATURE_LEVEL_10_1,
         };
 
-        HRESULT hr = S_OK;
+        auto hr = S_OK;
         for (const auto& [driverType, additionalFlags] : driverTypes)
         {
             hr = D3D11CreateDevice(
@@ -1194,7 +1194,7 @@ void AtlasEngine::_flushBufferLine()
     {
         if (_sr.systemFontFallback)
         {
-            float scale = 1.0f;
+            auto scale = 1.0f;
             u32 mappedLength = 0;
 
             if (textFormatAxis)

@@ -42,7 +42,7 @@ public:
 
     void SetAutoWrapMode(const bool wrapAtEOL) override;
 
-    void SetScrollingRegion(const SMALL_RECT& scrollMargins) override;
+    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
 
     void WarningBell() override;
 
@@ -56,6 +56,8 @@ public:
     void UseMainScreenBuffer() override;
 
     CursorType GetUserDefaultCursorStyle() const override;
+
+    void ShowWindow(bool showOrHide) override;
 
     bool ResizeWindow(const size_t width, const size_t height) override;
 

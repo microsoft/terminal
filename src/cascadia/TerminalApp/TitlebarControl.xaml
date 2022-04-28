@@ -43,5 +43,12 @@
     <local:MinMaxCloseControl x:Name="MinMaxCloseControl"
                               Grid.Column="2"
                               HorizontalAlignment="Right" />
+
+    <!--  This border needs to be added manually until GH#10320 is fixed  -->
+    <Border Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Height="1"
+            VerticalAlignment="Bottom"
+            Background="{ThemeResource CardStrokeColorDefaultBrush}" />
 </Grid>
 

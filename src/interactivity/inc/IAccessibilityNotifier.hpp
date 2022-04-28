@@ -41,8 +41,8 @@ namespace Microsoft::Console::Interactivity
     protected:
         IAccessibilityNotifier() {}
 
-        IAccessibilityNotifier(IAccessibilityNotifier const&) = delete;
-        IAccessibilityNotifier& operator=(IAccessibilityNotifier const&) = delete;
+        IAccessibilityNotifier(const IAccessibilityNotifier&) = delete;
+        IAccessibilityNotifier& operator=(const IAccessibilityNotifier&) = delete;
     };
 
     inline IAccessibilityNotifier::~IAccessibilityNotifier() {}
