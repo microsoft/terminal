@@ -681,6 +681,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryZoomPane()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
@@ -1295,6 +1299,8 @@ namespace TerminalAppLocalTests
     void TabTests::TestPreviewCommitScheme()
     {
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
+
+        // DebugBreak();
 
         auto page = _commonSetup();
         VERIFY_IS_NOT_NULL(page);
