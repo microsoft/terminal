@@ -46,6 +46,8 @@ namespace Microsoft.Terminal.Control
         // We expose this and ConnectionState here so that it might eventually be data bound.
         event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
 
+        event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void ClearBuffer(ClearBufferType clearType);
@@ -53,6 +55,8 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
         Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
+
+        void WindowVisibilityChanged(Boolean showOrHide);
 
         void ScrollViewport(Int32 viewTop);
 

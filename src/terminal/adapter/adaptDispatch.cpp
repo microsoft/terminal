@@ -2313,6 +2313,12 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     //  MSFT:13271146 - QueryScreenSize
     switch (function)
     {
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _pConApi->ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _pConApi->ShowWindow(false);
+        return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
         _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;

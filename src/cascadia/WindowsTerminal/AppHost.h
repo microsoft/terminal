@@ -116,6 +116,9 @@ private:
     void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args);
 
+    void _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args);
+
     void _CreateNotificationIcon();
     void _DestroyNotificationIcon();
     void _ShowNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -165,6 +168,7 @@ private:
         winrt::TerminalApp::AppLogic::SummonWindowRequested_revoker SummonWindowRequested;
         winrt::TerminalApp::AppLogic::OpenSystemMenu_revoker OpenSystemMenu;
         winrt::TerminalApp::AppLogic::QuitRequested_revoker QuitRequested;
+        winrt::TerminalApp::AppLogic::ShowWindowChanged_revoker ShowWindowChanged;
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;

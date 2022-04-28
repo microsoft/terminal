@@ -48,6 +48,37 @@ static wchar_t* _ConsoleHostPath()
         modulePath.replace_filename(L"OpenConsole.exe");
         if (!std::filesystem::exists(modulePath))
         {
+            std::wstring_view architectureInfix{};
+            USHORT unusedImageFileMachine{}, nativeMachine{};
+            if (IsWow64Process2(GetCurrentProcess(), &unusedImageFileMachine, &nativeMachine))
+            {
+                // Despite being a machine type, the values IsWow64Process2 returns are *image* types
+                switch (nativeMachine)
+                {
+                case IMAGE_FILE_MACHINE_AMD64:
+                    architectureInfix = L"x64";
+                    break;
+                case IMAGE_FILE_MACHINE_ARM64:
+                    architectureInfix = L"arm64";
+                    break;
+                case IMAGE_FILE_MACHINE_I386:
+                    architectureInfix = L"x86";
+                    break;
+                default:
+                    break;
+                }
+            }
+            if (architectureInfix.empty())
+            {
+                // WHAT?
+                return _InboxConsoleHostPath();
+            }
+            modulePath.replace_filename(architectureInfix);
+            modulePath.append(L"OpenConsole.exe");
+        }
+        if (!std::filesystem::exists(modulePath))
+        {
+            // We tried the architecture infix version and failed, fall back to conhost.
             return _InboxConsoleHostPath();
         }
         auto modulePathAsString{ modulePath.wstring() };
@@ -255,6 +286,28 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 }
 
 // Function Description:
+// - Shows or hides the internal HWND used by ConPTY. This should be kept in
+//   sync with the hosting application's window.
+// Arguments:
+// - hSignal: A signal pipe as returned by CreateConPty.
+// - show: true if the window should be shown, false to mark it as iconic.
+// Return Value:
+// - S_OK if the call succeeded, else an appropriate HRESULT for failing to
+//      write the clear message to the pty.
+HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show)
+{
+    if (pPty == nullptr)
+    {
+        return E_INVALIDARG;
+    }
+    unsigned short signalPacket[2];
+    signalPacket[0] = PTY_SIGNAL_SHOWHIDE_WINDOW;
+    signalPacket[1] = show;
+
+    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
 // - Sends a message to the pseudoconsole informing it that it should use the
 //   given window handle as the owner for the conpty's pseudo window. This
 //   allows the response given to GetConsoleWindow() to be a HWND that's owned
@@ -273,7 +326,6 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
     {
         return E_INVALIDARG;
     }
-
     // sneaky way to pack a short and a uint64_t in a relatively literal way.
 #pragma pack(push, 1)
     struct _signal
@@ -284,6 +336,7 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
 #pragma pack(pop)
 
     const auto fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
+
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
@@ -459,6 +512,16 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 }
 
 // Function Description:
+// - Tell the ConPTY about the state of the hosting window. This should be used
+//   to keep ConPTY's internal HWND state in sync with the state of whatever the
+//   hosting window is.
+// - For more information, refer to GH#12515.
+extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, bool show)
+{
+    // _ShowHidePseudoConsole will return E_INVALIDARG for us if the hPC is nullptr.
+    return _ShowHidePseudoConsole((PseudoConsole*)hPC, show);
+}
+
 // - Sends a message to the pseudoconsole informing it that it should use the
 //   given window handle as the owner for the conpty's pseudo window. This
 //   allows the response given to GetConsoleWindow() to be a HWND that's owned

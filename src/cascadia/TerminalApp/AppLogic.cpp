@@ -1124,6 +1124,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Used to tell the PTY connection that the window visibility has changed.
+    //   The underlying PTY might need to expose window visibility status to the
+    //   client application for the `::GetConsoleWindow()` API.
+    // Arguments:
+    // - showOrHide - True is show; false is hide.
+    // Return Value:
+    // - <none>
+    void AppLogic::WindowVisibilityChanged(const bool showOrHide)
+    {
+        if (_root)
+        {
+            _root->WindowVisibilityChanged(showOrHide);
+        }
+    }
+
+    // Method Description:
     // - Implements the F7 handler (per GH#638)
     // - Implements the Alt handler (per GH#6421)
     // Return value:
