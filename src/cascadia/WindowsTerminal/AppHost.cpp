@@ -688,9 +688,9 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 {
     if (_useNonClientArea)
     {
-        auto nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
-        nciw->SetTitlebarContent(arg);
-        nciw->SetTitlebarBackground(_logic.TitlebarBrush());
+        auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nonClientWindow->SetTitlebarContent(arg);
+        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
     }
 
     _updateTheme();
@@ -1589,7 +1589,7 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 {
     if (e.PropertyName() == L"TitlebarBrush")
     {
-        auto nciw{ static_cast<NonClientIslandWindow*>(_window.get()) };
-        nciw->SetTitlebarBackground(_logic.TitlebarBrush());
+        auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
     }
 }
