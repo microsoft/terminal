@@ -9,7 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+      Background="{ThemeResource SolidBackgroundFillColorTertiary}"
       mc:Ignorable="d">
 
     <Page.Resources>
@@ -18,25 +18,19 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <AcrylicBrush x:Key="NavigationViewDefaultPaneBackground"
-                          BackgroundSource="Backdrop"
-                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
-                          TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.5" />
-            <AcrylicBrush x:Key="NavigationViewTopPaneBackground"
-                          BackgroundSource="Backdrop"
-                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
-                          TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.5" />
-            <AcrylicBrush x:Key="NavigationViewExpandedPaneBackground"
-                          BackgroundSource="HostBackdrop"
-                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
-                          TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.7" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"
+                             Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground"
+                             Color="Transparent" />
+
+            <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
+            <Thickness x:Key="NavigationViewMinimalContentGridBorderThickness">0</Thickness>
+
         </ResourceDictionary>
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
+                         Background="Transparent"
                          IsBackButtonVisible="Collapsed"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
@@ -156,7 +150,7 @@
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"
                   Height="80"
-                  BorderBrush="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                  BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                   BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

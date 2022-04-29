@@ -23,16 +23,13 @@
                                        MaximumRowsOrColumns="4"
                                        Orientation="Horizontal">
                     <VariableSizedWrapGrid.Resources>
-                        <Style TargetType="Rectangle">
-                            <Setter Property="Width" Value="30" />
-                            <Setter Property="Height" Value="30" />
-                        </Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Padding" Value="-1" />
+                        <Style x:Name="ColorPickerColorButtonStyle"
+                               BasedOn="{StaticResource ColorButtonStyle}"
+                               TargetType="Button">
                             <Setter Property="Margin" Value="2" />
-                            <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-                            <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}" />
                         </Style>
+                        <Style BasedOn="{StaticResource ColorPickerColorButtonStyle}"
+                               TargetType="Button" />
                     </VariableSizedWrapGrid.Resources>
                     <Button x:Uid="CrimsonColorButton"
                             AutomationProperties.Name="Crimson"
