@@ -203,6 +203,10 @@ namespace winrt::TerminalApp::implementation
                 _PreviewSendInput(args.ActionAndArgs().Args().try_as<SendInputArgs>());
                 break;
             }
+            default:
+            {
+                _EndPreview();
+            }
             }
 
             // GH#9818 Other ideas for actions that could be preview-able:

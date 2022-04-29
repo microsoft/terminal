@@ -1278,11 +1278,6 @@ namespace winrt::TerminalApp::implementation
         {
             p.Visibility(Visibility::Collapsed);
         }
-        if (const auto p = AutoCompleteMenu(); p.Visibility() == Visibility::Visible &&
-                                               cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
-        {
-            p.Visibility(Visibility::Collapsed);
-        }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
         // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.

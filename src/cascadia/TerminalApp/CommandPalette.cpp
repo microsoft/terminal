@@ -245,10 +245,13 @@ namespace winrt::TerminalApp::implementation
             _switchToTab(filteredCommand);
         }
         else if (_currentMode == CommandPaletteMode::ActionMode &&
-                 filteredCommand != nullptr && 
                  currentlyVisible)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (filteredCommand == nullptr)
+            {
+                _PreviewActionHandlers(*this, nullptr);
+            }
+            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
                 _PreviewActionHandlers(*this, actionPaletteItem.Command());
             }
