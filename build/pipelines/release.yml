@@ -30,6 +30,10 @@ parameters:
     displayName: "Build Windows Terminal VPack"
     type: boolean
     default: false
+  - name: buildConPTY
+    displayName: "Build ConPTY NuGet"
+    type: boolean
+    default: false
   - name: buildWPF
     displayName: "Build Terminal WPF Control"
     type: boolean
@@ -75,6 +79,13 @@ variables:
       NoNuGetPackBetaVersion: true
     ${{ else }}:
       NuGetPackBetaVersion: preview
+  # The NuGet packages have to use *somebody's* DLLs. We used to force them to
+  # use the Win10 build outputs, but if there isn't a Win10 build we should use
+  # the Win11 one.
+  ${{ if containsValue(parameters.buildWindowsVersions, 'Win10') }}:
+    TerminalBestVersionForNuGetPackages: Win10
+  ${{ else }}:
+    TerminalBestVersionForNuGetPackages: Win11
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
@@ -208,6 +219,15 @@ jobs:
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
+  - ${{ if eq(parameters.buildConPTY, true) }}:
+    - task: VSBuild@1
+      displayName: Build solution **\OpenConsole.sln for ConPTY
+      inputs:
+        solution: '**\OpenConsole.sln'
+        vsVersion: 16.0
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\Host_EXE;Conhost\winconpty_DLL
+        platform: $(BuildPlatform)
+        configuration: $(BuildConfiguration)
   - task: PowerShell@2
     displayName: Source Index PDBs
     inputs:
@@ -252,6 +272,24 @@ jobs:
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
         ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
+  - ${{ if eq(parameters.buildConPTY, true) }}:
+    - task: CopyFiles@2
+      displayName: Copy ConPTY to Artifacts
+      inputs:
+        Contents: |-
+          $(Build.SourcesDirectory)/bin/**/conpty.dll
+          $(Build.SourcesDirectory)/bin/**/conpty.lib
+          $(Build.SourcesDirectory)/bin/**/conpty.pdb
+          $(Build.SourcesDirectory)/bin/**/OpenConsole.exe
+          $(Build.SourcesDirectory)/bin/**/OpenConsole.pdb
+        TargetFolder: $(Build.ArtifactStagingDirectory)/conpty
+        OverWrite: true
+        flattenFolders: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact (ConPTY)
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/conpty
+        ArtifactName: conpty-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
       displayName: Copy PublicTerminalCore.dll to Artifacts
@@ -358,6 +396,97 @@ jobs:
         PathtoPublish: $(System.ArtifactsDirectory)
         ArtifactName: appxbundle-signed-$(TerminalTargetWindowsVersion)
 
+- ${{ if eq(parameters.buildConPTY, true) }}:
+  - job: PackageAndSignConPTY
+    strategy:
+      matrix:
+        ${{ each config in parameters.buildConfigurations }}:
+          ${{ config }}:
+            BuildConfiguration: ${{ config }}
+    displayName: Create NuGet Package (ConPTY)
+    dependsOn: Build
+    steps:
+    - checkout: self
+      clean: true
+      fetchDepth: 1
+      submodules: true
+      persistCredentials: True
+    - task: PkgESSetupBuild@12
+      displayName: Package ES - Setup Build
+      inputs:
+        disableOutputRedirect: true
+    - ${{ each platform in parameters.buildPlatforms }}:
+      - task: DownloadBuildArtifacts@0
+        displayName: Download ${{ platform }} ConPTY binaries
+        inputs:
+          artifactName: conpty-dll-${{ platform }}-$(BuildConfiguration)-$(TerminalBestVersionForNuGetPackages)
+          downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
+          extractTars: false
+    - task: PowerShell@2
+      displayName: Move downloaded artifacts around
+      inputs:
+        targetType: inline
+        # Find all artifact files and move them up a directory. Ugh.
+        script: |-
+          Get-ChildItem bin -Recurse -Directory -Filter conpty-dll-* | % {
+            $_ | Get-ChildItem -Recurse -File | % {
+              Move-Item -Verbose $_.FullName $_.Directory.Parent.FullName
+            }
+          }
+          Move-Item bin\x86 bin\Win32
+
+    - task: EsrpCodeSigning@1
+      displayName: Submit ConPTY libraries and OpenConsole for code signing
+      inputs:
+        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        FolderPath: '$(Build.SourcesDirectory)/bin'
+        signType: batchSigning
+        batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_ConPTY.json'
+
+    - task: NuGetToolInstaller@1
+      displayName: Use NuGet 5.10.0
+      inputs:
+        versionSpec: 5.10.0
+    - task: NuGetCommand@2
+      displayName: NuGet pack
+      inputs:
+        command: pack
+        packagesToPack: $(Build.SourcesDirectory)\src\winconpty\package\winconpty.nuspec
+        packDestination: '$(Build.ArtifactStagingDirectory)/nupkg'
+        versioningScheme: byEnvVar
+        versionEnvVar: XES_PACKAGEVERSIONNUMBER
+    - task: EsrpCodeSigning@1
+      displayName: Submit *.nupkg to ESRP for code signing
+      inputs:
+        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
+        Pattern: '*.nupkg'
+        UseMinimatch: true
+        signConfigType: inlineSignParams
+        inlineOperation: >-
+          [
+              {
+                  "KeyCode": "CP-401405",
+                  "OperationCode": "NuGetSign",
+                  "Parameters": {},
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0"
+              },
+              {
+                  "KeyCode": "CP-401405",
+                  "OperationCode": "NuGetVerify",
+                  "Parameters": {},
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0"
+              }
+          ]
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact (nupkg)
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)\nupkg
+        ArtifactName: conpty-nupkg-$(BuildConfiguration)
+
+
 - ${{ if eq(parameters.buildWPF, true) }}:
   - job: PackageAndSignWPF
     strategy:
@@ -381,7 +510,7 @@ jobs:
       - task: DownloadBuildArtifacts@0
         displayName: Download ${{ platform }} PublicTerminalCore
         inputs:
-          artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)-Win10
+          artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)-$(TerminalBestVersionForNuGetPackages)
           itemPattern: '**/*.dll'
           downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
           extractTars: false
