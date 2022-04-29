@@ -318,6 +318,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
@@ -362,14 +363,6 @@
                            Text="{x:Bind ParentCommandName, Mode=OneWay}" />
             </StackPanel>
 
-            <TextBlock x:Name="_noMatchesText"
-                       Grid.Row="1"
-                       Margin="8,0,8,8"
-                       Padding="16,12"
-                       FontStyle="Italic"
-                       Text="{x:Bind NoMatchesText, Mode=OneWay}"
-                       Visibility="Collapsed" />
-
             <Border Grid.Row="1"
                     Margin="8,0,8,8"
                     Padding="16,12"
@@ -386,9 +379,19 @@
                 </ScrollViewer>
             </Border>
 
+            <Border x:Name="_noMatchesText"
+                    Grid.Row="3"
+                    Height="36"
+                    Margin="8,0,8,8"
+                    Visibility="Collapsed">
+                <TextBlock Padding="12,0"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           Text="{x:Bind NoMatchesText, Mode=OneWay}" />
+            </Border>
+
             <ListView x:Name="_filteredActionsView"
-                      Grid.Row="2"
-                      MinHeight="8"
+                      Grid.Row="3"
                       Padding="4,-2,4,6"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
