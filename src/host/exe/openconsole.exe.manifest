@@ -15,6 +15,7 @@
     <application xmlns="urn:schemas-microsoft-com:asm.v3">
         <windowsSettings>
             <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+            <heapType xmlns="http://schemas.microsoft.com/SMI/2020/WindowsSettings">SegmentHeap</heapType>
             <!--Enable longPath support-->
         </windowsSettings>
     </application>
