@@ -864,7 +864,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -1069,7 +1069,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
@@ -1334,7 +1334,7 @@ namespace winrt::TerminalApp::implementation
 
         return til::coalesce(_runtimeTabColor,
                              controlTabColor,
-                             _themeTabColor,
+                             _themeTabColor, // TODO! what the fuck when did I leave this here? This legit isn't used.
                              std::optional<Windows::UI::Color>(std::nullopt));
     }
 
@@ -1350,6 +1350,51 @@ namespace winrt::TerminalApp::implementation
     {
         _runtimeTabColor.emplace(color);
         _RecalculateAndApplyTabColor();
+    }
+
+    void TerminalTab::ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color)
+    {
+        _themeColor = color;
+        _RecalculateAndApplyTabColor();
+    }
+
+    std::optional<til::color> TerminalTab::_evaluateThemeColor()
+    {
+        if (_themeColor == nullptr)
+        {
+            return std::nullopt;
+        }
+
+        switch (_themeColor.ColorType())
+        {
+        case ThemeColorType::Accent:
+        {
+            const auto res = Application::Current().Resources();
+            static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
+            return til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
+        }
+        case ThemeColorType::Color:
+        {
+            return _themeColor.Color();
+        }
+        case ThemeColorType::TerminalBackground:
+        {
+            if (const auto termControl{ GetActiveTerminalControl() })
+            {
+                const auto& brush{ termControl.BackgroundBrush() };
+                if (auto acrylic = brush.try_as<Media::AcrylicBrush>())
+                {
+                    return acrylic.TintColor();
+                }
+                else if (auto solidColor = brush.try_as<Media::SolidColorBrush>())
+                {
+                    return solidColor.Color();
+                }
+            }
+            return std::nullopt;
+        }
+        }
+        return std::nullopt;
     }
 
     // Method Description:
@@ -1379,7 +1424,14 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                tab->_ClearTabBackgroundColor();
+                if (const auto themeColor{ tab->_evaluateThemeColor() })
+                {
+                    tab->_ApplyTabColor(themeColor.value());
+                }
+                else
+                {
+                    tab->_ClearTabBackgroundColor();
+                }
             }
         });
     }

@@ -3953,6 +3953,18 @@ namespace winrt::TerminalApp::implementation
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         auto requestedTheme{ theme.Window().RequestedTheme() };
 
+        // TODO! move me somewhere else
+        {
+            auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
+            for (const auto& tab : _tabs)
+            {
+                if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
+                {
+                    terminalTabImpl->ThemeColor(tabBackground);
+                }
+            }
+        }
+
         const auto res = Application::Current().Resources();
 
         // XAML Hacks:

@@ -71,6 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
+        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color);
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
         void ActivateColorPicker();
@@ -116,6 +117,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
 
         struct ControlEventTokens
         {
@@ -173,6 +175,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateProgressState();
 
         void _DuplicateTab();
+        std::optional<til::color> _evaluateThemeColor();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
