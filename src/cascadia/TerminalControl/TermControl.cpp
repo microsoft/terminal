@@ -546,7 +546,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
         {
-            const auto originalOpacity = solidColor.Opacity();
             solidColor.Color(bg);
         }
     }
