@@ -247,6 +247,8 @@ namespace winrt::TerminalApp::implementation
         else if (_currentMode == CommandPaletteMode::ActionMode &&
                  currentlyVisible)
         {
+            // If we don't have a selected command, then end any previews we
+            // might currently be showing.
             if (filteredCommand == nullptr)
             {
                 _PreviewActionHandlers(*this, nullptr);
