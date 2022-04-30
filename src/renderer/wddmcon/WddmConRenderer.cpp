@@ -151,13 +151,13 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::Enable() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, TRUE);
 }
 
 [[nodiscard]] HRESULT WddmConEngine::Disable() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, FALSE);
 }
 
@@ -199,13 +199,13 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::StartPaint() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConBeginUpdateDisplayBatch(_hWddmConCtx);
 }
 
 [[nodiscard]] HRESULT WddmConEngine::EndPaint() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConEndUpdateDisplayBatch(_hWddmConCtx);
 }
 
@@ -229,7 +229,7 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::PaintBackground() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
     PCD_IO_CHARACTER OldChar;
     PCD_IO_CHARACTER NewChar;
@@ -259,7 +259,7 @@ bool WddmConEngine::IsInitialized()
 {
     try
     {
-        RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+        RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
         PCD_IO_CHARACTER OldChar;
         PCD_IO_CHARACTER NewChar;

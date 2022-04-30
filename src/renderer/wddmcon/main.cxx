@@ -97,8 +97,8 @@ WDDMConDestroy(
         SafeRelease(pCtx->pDWriteFactory);
         SafeRelease(pCtx->pD2DFactory);
 
-        RtlFreeHeap(RtlProcessHeap(), 0, (PVOID)pCtx->pwszGlyphRunAccel);
-        RtlFreeHeap(RtlProcessHeap(), 0, (PVOID)pCtx);
+        free(pCtx->pwszGlyphRunAccel);
+        free(pCtx);
     }
 }
 
@@ -173,7 +173,7 @@ ReadSettings(
 HRESULT
 CreateTextLayout(
     _In_ PWDDMCONSOLECONTEXT pCtx,
-    _In_reads_(StringLength) WCHAR *String,
+    _In_reads_(StringLength) const wchar_t *String,
     _In_ size_t StringLength,
     _Out_ IDWriteTextLayout **ppTextLayout
     )
@@ -379,9 +379,7 @@ WDDMConCreate(
     IDWriteTextLayout *pTextLayout = NULL;
     DWRITE_TEXT_METRICS TextMetrics = {};
     PWDDMCONSOLECONTEXT pCtx =
-        (PWDDMCONSOLECONTEXT)RtlAllocateHeap(RtlProcessHeap(),
-                                             0,
-                                             sizeof(WDDMCONSOLECONTEXT));
+        (PWDDMCONSOLECONTEXT)malloc(sizeof(WDDMCONSOLECONTEXT));
 
     if (pCtx == NULL) {
         hr = E_OUTOFMEMORY;
@@ -459,9 +457,7 @@ WDDMConCreate(
     }
 
     if (SUCCEEDED(hr)) {
-        pCtx->pwszGlyphRunAccel = (WCHAR*)RtlAllocateHeap(RtlProcessHeap(),
-                                                          0,
-                                                          sizeof(WCHAR) * (pCtx->DisplaySize.Width + 1));
+        pCtx->pwszGlyphRunAccel = (WCHAR*)malloc(sizeof(WCHAR) * (pCtx->DisplaySize.Width + 1));
         if (pCtx->pwszGlyphRunAccel == NULL) {
             hr = E_OUTOFMEMORY;
         }

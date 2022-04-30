@@ -9,14 +9,16 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>IS_INTERACTIVITYBASE_CONSUMER;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\host\newdelete.cpp" />
     <ClCompile Include="..\AccessibilityNotifier.cpp" />
+    <ClCompile Include="..\BgfxEngine.cpp" />
+    <ClCompile Include="..\ConIoSrvComm.cpp" />
     <ClCompile Include="..\ConsoleControl.cpp" />
     <ClCompile Include="..\ConsoleInputThread.cpp" />
     <ClCompile Include="..\ConsoleWindow.cpp" />
@@ -27,8 +29,9 @@
     <ClCompile Include="..\WindowMetrics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\host\newdelete.hpp" />
     <ClInclude Include="..\AccessibilityNotifier.hpp" />
+    <ClInclude Include="..\BgfxEngine.hpp" />
+    <ClInclude Include="..\ConIoSrvComm.hpp" />
     <ClInclude Include="..\ConsoleControl.hpp" />
     <ClInclude Include="..\ConsoleInputThread.hpp" />
     <ClInclude Include="..\ConsoleWindow.hpp" />
@@ -36,6 +39,12 @@
     <ClInclude Include="..\SystemConfigurationProvider.hpp" />
     <ClInclude Include="..\WindowMetrics.hpp" />
   </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>
