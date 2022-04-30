@@ -9,7 +9,7 @@
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../types/inc/sgrStack.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
-#include "../../renderer/inc/RenderSettings.hpp"
+#include "../../terminal/adapter/ITerminalApi.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
 
@@ -51,6 +51,7 @@ namespace TerminalCoreUnitTests
 #endif
 
 class Microsoft::Terminal::Core::Terminal final :
+    public Microsoft::Console::VirtualTerminal::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
     public Microsoft::Console::Render::IRenderData,
@@ -96,10 +97,16 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    void PrintString(std::wstring_view stringView) override;
-    bool ReturnResponse(std::wstring_view responseString) override;
+    void PrintString(const std::wstring_view string) override;
+    void ReturnResponse(const std::wstring_view response) override;
+    Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
+    TextBuffer& GetTextBuffer() override;
+    til::rect GetViewport() const override;
+    void SetViewportPosition(const til::point position) override;
     TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
+    void SetAutoWrapMode(const bool wrapAtEOL) override;
+    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
     Microsoft::Console::Types::Viewport GetBufferSize() override;
     void SetCursorPosition(til::point pos) override;
     til::point GetCursorPosition() override;
@@ -112,7 +119,13 @@ public:
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     void WarningBell() override;
-    void SetWindowTitle(std::wstring_view title) override;
+    bool GetLineFeedMode() const override;
+    void LineFeed(const bool withReturn) override;
+    void SetWindowTitle(const std::wstring_view title) override;
+    CursorType GetUserDefaultCursorStyle() const override;
+    bool ResizeWindow(const size_t width, const size_t height) override;
+    void SetConsoleOutputCP(const unsigned int codepage) override;
+    unsigned int GetConsoleOutputCP() const override;
     COLORREF GetColorTableEntry(const size_t tableIndex) const override;
     void SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
     void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
@@ -142,7 +155,8 @@ public:
 
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
-
+    bool IsConsolePty() const override;
+    void NotifyAccessibilityChange(const til::rect& changedRect) override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -169,8 +183,8 @@ public:
 #pragma region IBaseData(base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     COORD GetTextBufferEndPosition() const noexcept override;
-    const TextBuffer& GetTextBuffer() noexcept override;
-    const FontInfo& GetFontInfo() noexcept override;
+    const TextBuffer& GetTextBuffer() const noexcept override;
+    const FontInfo& GetFontInfo() const noexcept override;
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;

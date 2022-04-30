@@ -21,7 +21,7 @@ namespace Microsoft::Terminal::Core
 
         virtual void PrintString(std::wstring_view string) = 0;
 
-        virtual bool ReturnResponse(std::wstring_view responseString) = 0;
+        virtual void ReturnResponse(std::wstring_view responseString) = 0;
 
         virtual TextAttribute GetTextAttributes() const = 0;
         virtual void SetTextAttributes(const TextAttribute& attrs) = 0;

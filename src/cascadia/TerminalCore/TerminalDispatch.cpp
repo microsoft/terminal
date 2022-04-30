@@ -607,7 +607,8 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string)
 // - True if the string was sent to the connected application. False otherwise.
 bool TerminalDispatch::_WriteResponse(const std::wstring_view reply) const
 {
-    return _terminalApi.ReturnResponse(reply);
+    _terminalApi.ReturnResponse(reply);
+    return true;
 }
 
 // Routine Description:

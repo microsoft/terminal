@@ -11,9 +11,9 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Print puts the text in the buffer and moves the cursor
-void Terminal::PrintString(std::wstring_view stringView)
+void Terminal::PrintString(const std::wstring_view string)
 {
-    _WriteBuffer(stringView);
+    _WriteBuffer(string);
 }
 
 TextAttribute Terminal::GetTextAttributes() const
@@ -21,19 +21,49 @@ TextAttribute Terminal::GetTextAttributes() const
     return _activeBuffer().GetCurrentAttributes();
 }
 
-bool Terminal::ReturnResponse(std::wstring_view responseString)
+void Terminal::ReturnResponse(const std::wstring_view response)
 {
-    if (!_pfnWriteInput)
+    if (_pfnWriteInput)
     {
-        return false;
+        _pfnWriteInput(response);
     }
-    _pfnWriteInput(responseString);
-    return true;
+}
+
+Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine()
+{
+    return *_stateMachine;
+}
+
+TextBuffer& Terminal::GetTextBuffer()
+{
+    return _activeBuffer();
+}
+
+til::rect Terminal::GetViewport() const
+{
+    return til::rect{ _GetMutableViewport().ToInclusive() };
+}
+
+void Terminal::SetViewportPosition(const til::point position)
+{
+    const auto dimensions = _GetMutableViewport().Dimensions();
+    _mutableViewport = Viewport::FromDimensions(position.to_win32_coord(), dimensions);
+    Terminal::_NotifyScrollEvent();
 }
 
 void Terminal::SetTextAttributes(const TextAttribute& attrs)
 {
     _activeBuffer().SetCurrentAttributes(attrs);
+}
+
+void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/)
+{
+    // TODO: This will be needed to support DECAWM.
+}
+
+void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/)
+{
+    // TODO: This will be needed to fully support DECSTBM.
 }
 
 Viewport Terminal::GetBufferSize()
@@ -311,13 +341,46 @@ void Terminal::WarningBell()
     _pfnWarningBell();
 }
 
-void Terminal::SetWindowTitle(std::wstring_view title)
+bool Terminal::GetLineFeedMode() const
+{
+    // TODO: This will be needed to support LNM.
+    return false;
+}
+
+void Terminal::LineFeed(const bool withReturn)
+{
+    CursorLineFeed(withReturn);
+}
+
+void Terminal::SetWindowTitle(const std::wstring_view title)
 {
     if (!_suppressApplicationTitle)
     {
         _title.emplace(title);
         _pfnTitleChanged(_title.value());
     }
+}
+
+CursorType Terminal::GetUserDefaultCursorStyle() const
+{
+    return _defaultCursorShape;
+}
+
+bool Terminal::ResizeWindow(const size_t /*width*/, const size_t /*height*/)
+{
+    // TODO: This will be needed to support various resizing sequences. See also GH#1860.
+    return false;
+}
+
+void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/)
+{
+    // TODO: This will be needed to support 8-bit charsets and DOCS sequences.
+}
+
+unsigned int Terminal::GetConsoleOutputCP() const
+{
+    // TODO: See SetConsoleOutputCP above.
+    return CP_UTF8;
 }
 
 // Method Description:
@@ -440,8 +503,7 @@ bool Terminal::IsXtermBracketedPasteModeEnabled() const
 
 bool Terminal::IsVtInputEnabled() const
 {
-    // We should never be getting this call in Terminal.
-    FAIL_FAST();
+    return false;
 }
 
 void Terminal::SetCursorVisibility(const bool visible)
@@ -697,4 +759,14 @@ void Terminal::ShowWindow(bool showOrHide)
     {
         _pfnShowWindowChanged(showOrHide);
     }
+}
+
+bool Terminal::IsConsolePty() const
+{
+    return false;
+}
+
+void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/)
+{
+    // This is only needed in conhost. Terminal handles accessibility in another way.
 }
