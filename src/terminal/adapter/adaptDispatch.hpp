@@ -184,7 +184,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _OperatingStatus() const;
         void _CursorPositionReport();
 
-        void _WriteResponse(const std::wstring_view reply) const;
         bool _GetParserMode(const StateMachine::Mode mode) const;
         void _SetParserMode(const StateMachine::Mode mode, const bool enable);
         bool _SetInputMode(const TerminalInput::Mode mode, const bool enable);

@@ -37,8 +37,8 @@ InteractDispatch::InteractDispatch() :
 // - True.
 bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
-    size_t written = 0;
-    _api.WriteInput(inputEvents, written);
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveInputBuffer()->Write(inputEvents);
     return true;
 }
 

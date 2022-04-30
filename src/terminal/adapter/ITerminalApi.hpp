@@ -33,6 +33,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual ~ITerminalApi() = default;
 
         virtual void PrintString(const std::wstring_view string) = 0;
+        virtual void ReturnResponse(const std::wstring_view response) = 0;
 
         virtual StateMachine& GetStateMachine() = 0;
         virtual TextBuffer& GetTextBuffer() = 0;
@@ -42,8 +43,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool IsVtInputEnabled() const = 0;
 
         virtual void SetTextAttributes(const TextAttribute& attrs) = 0;
-
-        virtual void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) = 0;
 
         virtual void SetAutoWrapMode(const bool wrapAtEOL) = 0;
 

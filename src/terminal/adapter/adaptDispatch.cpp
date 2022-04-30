@@ -733,7 +733,7 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statu
 bool AdaptDispatch::DeviceAttributes()
 {
     // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
-    _WriteResponse(L"\x1b[?1;0c");
+    _api.ReturnResponse(L"\x1b[?1;0c");
     return true;
 }
 
@@ -748,7 +748,7 @@ bool AdaptDispatch::DeviceAttributes()
 // - True.
 bool AdaptDispatch::SecondaryDeviceAttributes()
 {
-    _WriteResponse(L"\x1b[>0;10;1c");
+    _api.ReturnResponse(L"\x1b[>0;10;1c");
     return true;
 }
 
@@ -761,7 +761,7 @@ bool AdaptDispatch::SecondaryDeviceAttributes()
 // - True.
 bool AdaptDispatch::TertiaryDeviceAttributes()
 {
-    _WriteResponse(L"\x1bP!|00000000\x1b\\");
+    _api.ReturnResponse(L"\x1bP!|00000000\x1b\\");
     return true;
 }
 
@@ -775,7 +775,7 @@ bool AdaptDispatch::TertiaryDeviceAttributes()
 // - True.
 bool AdaptDispatch::Vt52DeviceAttributes()
 {
-    _WriteResponse(L"\x1b/Z");
+    _api.ReturnResponse(L"\x1b/Z");
     return true;
 }
 
@@ -805,10 +805,10 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
     switch (permission)
     {
     case DispatchTypes::ReportingPermission::Unsolicited:
-        _WriteResponse(L"\x1b[2;1;1;128;128;1;0x");
+        _api.ReturnResponse(L"\x1b[2;1;1;128;128;1;0x");
         return true;
     case DispatchTypes::ReportingPermission::Solicited:
-        _WriteResponse(L"\x1b[3;1;1;128;128;1;0x");
+        _api.ReturnResponse(L"\x1b[3;1;1;128;128;1;0x");
         return true;
     default:
         return false;
@@ -824,7 +824,7 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 void AdaptDispatch::_OperatingStatus() const
 {
     // We always report a good operating condition.
-    _WriteResponse(L"\x1b[0n");
+    _api.ReturnResponse(L"\x1b[0n");
 }
 
 // Routine Description:
@@ -858,39 +858,7 @@ void AdaptDispatch::_CursorPositionReport()
     // Now send it back into the input channel of the console.
     // First format the response string.
     const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
-    _WriteResponse(response);
-}
-
-// Routine Description:
-// - Helper to send a string reply to the input stream of the console.
-// - Used by various commands where the program attached would like a reply to one of the commands issued.
-// - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
-// Arguments:
-// - reply - The reply string to transmit back to the input stream
-// Return Value:
-// - <none>
-void AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
-{
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
-
-    // generate a paired key down and key up event for every
-    // character to be sent into the console's input buffer
-    for (const auto& wch : reply)
-    {
-        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
-
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        keyEvent.SetKeyDown(false);
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-    }
-
-    size_t eventsWritten;
-    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
-    // to make sure that "response" input is spooled directly into the application.
-    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
-    // could collide with each other.
-    _api.WriteInput(inEvents, eventsWritten);
+    _api.ReturnResponse(response);
 }
 
 // Routine Description:
@@ -2566,7 +2534,7 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
                 _ReportDECSTBMSetting();
                 break;
             default:
-                _WriteResponse(L"\033P0$r\033\\");
+                _api.ReturnResponse(L"\033P0$r\033\\");
                 break;
             }
             return false;
@@ -2644,7 +2612,7 @@ void AdaptDispatch::_ReportSGRSetting() const
 
     // The 'm' indicates this is an SGR response, and ST ends the sequence.
     response.append(L"m\033\\"sv);
-    _WriteResponse({ response.data(), response.size() });
+    _api.ReturnResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -2668,5 +2636,5 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
-    _WriteResponse({ response.data(), response.size() });
+    _api.ReturnResponse({ response.data(), response.size() });
 }

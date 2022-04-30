@@ -30,6 +30,7 @@ public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
     void PrintString(const std::wstring_view string) override;
+    void ReturnResponse(const std::wstring_view response) override;
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
     TextBuffer& GetTextBuffer() override;
@@ -37,8 +38,6 @@ public:
     void SetViewportPosition(const til::point position) override;
 
     void SetTextAttributes(const TextAttribute& attrs) override;
-
-    void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
 
     void SetAutoWrapMode(const bool wrapAtEOL) override;
 

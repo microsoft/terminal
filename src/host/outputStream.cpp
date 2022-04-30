@@ -56,6 +56,36 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
     THROW_IF_NTSTATUS_FAILED(ntstatus);
 }
 
+// - Sends a string response to the input stream of the console.
+// - Used by various commands where the program attached would like a reply to one of the commands issued.
+// - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
+// Arguments:
+// - response - The response string to transmit back to the input stream
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
+{
+    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+
+    // generate a paired key down and key up event for every
+    // character to be sent into the console's input buffer
+    for (const auto& wch : response)
+    {
+        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
+        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
+
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        keyEvent.SetKeyDown(false);
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+    }
+
+    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
+    // to make sure that "response" input is spooled directly into the application.
+    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
+    // could collide with each other.
+    _io.GetActiveInputBuffer()->Write(inEvents);
+}
+
 // Routine Description:
 // - Retrieves the state machine for the active output buffer.
 // Arguments:
@@ -113,19 +143,6 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 {
     _io.GetActiveOutputBuffer().SetAttributes(attrs);
-}
-
-// Routine Description:
-// - Writes events to the input buffer already formed into IInputEvents
-// Arguments:
-// - events - the input events to be copied into the head of the input
-//            buffer for the underlying attached process
-// - eventsWritten - on output, the number of events written
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
-{
-    eventsWritten = _io.GetActiveInputBuffer()->Write(events);
 }
 
 // Routine Description:
