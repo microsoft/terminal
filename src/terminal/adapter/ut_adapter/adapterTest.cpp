@@ -237,11 +237,6 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
-    void ReparentWindow(const uint64_t /*handle*/)
-    {
-        Log::Comment(L"ReparentWindow MOCK called...");
-    }
-
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.

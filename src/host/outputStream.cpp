@@ -437,17 +437,3 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
             gsl::narrow_cast<short>(changedRect.bottom - 1));
     }
 }
-
-void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
-{
-    // This will initialize s_interactivityFactory for us. It will also
-    // conveniently return 0 when we're on OneCore.
-    //
-    // If the window hasn't been created yet, by some other call to
-    // LocatePseudoWindow, then this will also initialize the owner of the
-    // window.
-    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
-    {
-        LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, reinterpret_cast<HWND>(handle)));
-    }
-}

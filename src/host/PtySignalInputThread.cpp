@@ -227,7 +227,16 @@ void PtySignalInputThread::_DoShowHide(const bool show)
 // - <none>
 void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 {
-    _api.ReparentWindow(data.handle);
+    // This will initialize s_interactivityFactory for us. It will also
+    // conveniently return 0 when we're on OneCore.
+    //
+    // If the window hasn't been created yet, by some other call to
+    // LocatePseudoWindow, then this will also initialize the owner of the
+    // window.
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(data.handle)) })
+    {
+        LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, reinterpret_cast<HWND>(data.handle)));
+    }
 }
 
 // Method Description:

@@ -71,7 +71,5 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool IsConsolePty() const = 0;
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
-
-        virtual void ReparentWindow(const uint64_t handle) = 0;
     };
 }
