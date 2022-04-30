@@ -93,14 +93,15 @@ typedef CONST OBJECT_ATTRIBUTES* PCOBJECT_ATTRIBUTES;
 //--
 
 #define InitializeObjectAttributes(p, n, a, r, s) \
+    do                                            \
     {                                             \
         (p)->Length = sizeof(OBJECT_ATTRIBUTES);  \
         (p)->RootDirectory = r;                   \
         (p)->Attributes = a;                      \
         (p)->ObjectName = n;                      \
         (p)->SecurityDescriptor = s;              \
-        (p)->SecurityQualityOfService = NULL;     \
-    }
+        (p)->SecurityQualityOfService = nullptr;  \
+    } while (0)
 
 // UNICODE_STRING
 

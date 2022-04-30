@@ -12,6 +12,15 @@
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemDefinitionGroup>
     <ClCompile>
+      <!--
+        C26429: Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
+        C26432: If you define or delete any default operation in the type '...', define or delete them all (c.21).
+        C26462: The value pointed to by '...' is assigned only once, mark it as a pointer to const (con.4).
+        C26481: Don't use pointer arithmetic. Use span instead (bounds.1).
+        C26490: Don't use reinterpret_cast (type.1).
+        C26494: Variable '...' is uninitialized. Always initialize an object (type.5).
+      -->
+      <DisableSpecificWarnings>26429;26432;26462;26481;26490;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>IS_INTERACTIVITYBASE_CONSUMER;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
