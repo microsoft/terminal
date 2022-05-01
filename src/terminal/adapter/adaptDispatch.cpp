@@ -1985,8 +1985,11 @@ void AdaptDispatch::_EraseAll()
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().Y - viewport.top;
 
-    // Calculate new viewport position
-    short newViewportTop = textBuffer.GetLastNonSpaceCharacter().Y + 1;
+    // Calculate new viewport position. Typically we want to move one line below
+    // the last non-space row, but if the last non-space character is the very
+    // start of the buffer, then we shouldn't move down at all.
+    const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
+    short newViewportTop = (!lastChar.X && !lastChar.Y) ? 0 : lastChar.Y + 1;
     const short newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
     for (auto i = 0; i < delta; i++)
