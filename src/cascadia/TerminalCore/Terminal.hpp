@@ -7,7 +7,6 @@
 
 #include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../types/inc/sgrStack.hpp"
 #include "../../renderer/inc/IRenderData.hpp"
 #include "../../terminal/adapter/ITerminalApi.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
@@ -16,7 +15,6 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/IUiaData.h"
-#include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 #include <til/ticket_lock.h>
@@ -32,6 +30,11 @@ namespace winrt::Microsoft::Terminal::Core
     struct ICoreSettings;
     struct ICoreAppearance;
     struct Scheme;
+}
+
+namespace Microsoft::Console::VirtualTerminal
+{
+    class AdaptDispatch;
 }
 
 namespace Microsoft::Terminal::Core
@@ -52,7 +55,6 @@ namespace TerminalCoreUnitTests
 
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Console::VirtualTerminal::ITerminalApi,
-    public Microsoft::Terminal::Core::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
     public Microsoft::Console::Render::IRenderData,
     public Microsoft::Console::Types::IUiaData
@@ -77,6 +79,10 @@ public:
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
     void SetFontInfo(const FontInfo& fontInfo);
+    void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
+    void EraseScrollback();
+    bool IsXtermBracketedPasteModeEnabled() const;
+    std::wstring_view GetWorkingDirectory();
 
     // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
@@ -103,21 +109,9 @@ public:
     TextBuffer& GetTextBuffer() override;
     til::rect GetViewport() const override;
     void SetViewportPosition(const til::point position) override;
-    TextAttribute GetTextAttributes() const override;
     void SetTextAttributes(const TextAttribute& attrs) override;
     void SetAutoWrapMode(const bool wrapAtEOL) override;
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
-    Microsoft::Console::Types::Viewport GetBufferSize() override;
-    void SetCursorPosition(til::point pos) override;
-    til::point GetCursorPosition() override;
-    void SetCursorVisibility(const bool visible) override;
-    void EnableCursorBlinking(const bool enable) override;
-    void CursorLineFeed(const bool withReturn) override;
-    void DeleteCharacter(const til::CoordType count) override;
-    void InsertCharacter(const til::CoordType count) override;
-    void EraseCharacters(const til::CoordType numChars) override;
-    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
-    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     void WarningBell() override;
     bool GetLineFeedMode() const override;
     void LineFeed(const bool withReturn) override;
@@ -126,36 +120,15 @@ public:
     bool ResizeWindow(const size_t width, const size_t height) override;
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
-    COLORREF GetColorTableEntry(const size_t tableIndex) const override;
-    void SetColorTableEntry(const size_t tableIndex, const COLORREF color) override;
-    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) override;
-    void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
-
-    void SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
-    void SetRenderMode(const ::Microsoft::Console::Render::RenderSettings::Mode mode, const bool enabled) override;
-
     void EnableXtermBracketedPasteMode(const bool enabled) override;
-    bool IsXtermBracketedPasteModeEnabled() const override;
-
-    bool IsVtInputEnabled() const override;
-
     void CopyToClipboard(std::wstring_view content) override;
-
-    void AddHyperlink(std::wstring_view uri, std::wstring_view params) override;
-    void EndHyperlink() override;
-
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
-    std::wstring_view GetWorkingDirectory() override;
-
-    void PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) override;
-    void PopGraphicsRendition() override;
-
     void ShowWindow(bool showOrHide) override;
-
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
     bool IsConsolePty() const override;
+    bool IsVtInputEnabled() const override;
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 #pragma endregion
 
@@ -276,6 +249,8 @@ public:
 #pragma endregion
 
 private:
+    std::function<void(::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle)> _pfnSetCursorStyle;
+    std::function<void()> _pfnEraseScrollback;
     std::function<void(std::wstring_view)> _pfnWriteInput;
     std::function<void()> _pfnWarningBell;
     std::function<void(std::wstring_view)> _pfnTitleChanged;
@@ -417,8 +392,6 @@ private:
     void _MoveByViewport(SelectionDirection direction, COORD& pos);
     void _MoveByBuffer(SelectionDirection direction, COORD& pos);
 #pragma endregion
-
-    Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ClInclude Include="..\ControlKeyStates.hpp" />
-    <ClInclude Include="..\ITerminalApi.hpp" />
     <ClInclude Include="..\pch.h" />
     <ClInclude Include="..\Terminal.hpp" />
   </ItemGroup>
