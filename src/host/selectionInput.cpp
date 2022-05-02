@@ -927,7 +927,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
             cursor.SetHasMoved(true);
             _coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
-            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor, false);
+            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor);
             _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
             _srSelectionRect.Top = _srSelectionRect.Bottom = _coordSelectionAnchor.Y;
         }
