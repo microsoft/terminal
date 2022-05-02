@@ -1398,6 +1398,7 @@ namespace winrt::TerminalApp::implementation
         Media::SolidColorBrush selectedTabBrush{};
         Media::SolidColorBrush deselectedTabBrush{};
         Media::SolidColorBrush fontBrush{};
+        Media::SolidColorBrush secondaryFontBrush{};
         Media::SolidColorBrush hoverTabBrush{};
         // calculate the luminance of the current color and select a font
         // color based on that
@@ -1405,10 +1406,18 @@ namespace winrt::TerminalApp::implementation
         if (TerminalApp::ColorHelper::IsBrightColor(color))
         {
             fontBrush.Color(winrt::Windows::UI::Colors::Black());
+            auto secondaryFontColor = winrt::Windows::UI::Colors::Black();
+            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L269
+            secondaryFontColor.A = 0x9E;
+            secondaryFontBrush.Color(secondaryFontColor);
         }
         else
         {
             fontBrush.Color(winrt::Windows::UI::Colors::White());
+            auto secondaryFontColor = winrt::Windows::UI::Colors::White();
+            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L14
+            secondaryFontColor.A = 0xC5;
+            secondaryFontBrush.Color(secondaryFontColor);
         }
 
         hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
@@ -1445,6 +1454,12 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPressed"), secondaryFontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPointerOver"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderPressedCloseButtonForeground"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderPointerOverCloseButtonForeground"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderSelectedCloseButtonForeground"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
@@ -1481,12 +1496,20 @@ namespace winrt::TerminalApp::implementation
             L"TabViewItemHeaderBackground",
             L"TabViewItemHeaderBackgroundSelected",
             L"TabViewItemHeaderBackgroundPointerOver",
+            L"TabViewItemHeaderBackgroundPressed",
             L"TabViewItemHeaderForeground",
             L"TabViewItemHeaderForegroundSelected",
             L"TabViewItemHeaderForegroundPointerOver",
-            L"TabViewItemHeaderBackgroundPressed",
             L"TabViewItemHeaderForegroundPressed",
-            L"TabViewButtonForegroundActiveTab"
+            L"TabViewItemHeaderCloseButtonForeground",
+            L"TabViewItemHeaderCloseButtonForegroundPressed",
+            L"TabViewItemHeaderCloseButtonForegroundPointerOver",
+            L"TabViewItemHeaderPressedCloseButtonForeground",
+            L"TabViewItemHeaderPointerOverCloseButtonForeground",
+            L"TabViewItemHeaderSelectedCloseButtonForeground",
+            L"TabViewButtonForegroundActiveTab",
+            L"TabViewButtonForegroundPressed",
+            L"TabViewButtonForegroundPointerOver"
         };
 
         // simply clear any of the colors in the tab's dict
