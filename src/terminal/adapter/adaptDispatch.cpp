@@ -2234,12 +2234,14 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
         return false;
     }
 
-    // TODO: In the Terminal we also need to call the _pfnBackgroundColorChanged
-    // handler when this is going to affect the background color.
+    // If we're updating the background color, we need to let the renderer
+    // know, since it may want to repaint the window background to match.
+    const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+    const auto backgroundChanged = (tableIndex == backgroundIndex);
 
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
-    _renderer.TriggerRedrawAll();
+    _renderer.TriggerRedrawAll(backgroundChanged);
     return true;
 }
 

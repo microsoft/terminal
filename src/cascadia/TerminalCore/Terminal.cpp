@@ -1302,15 +1302,6 @@ void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexc
 }
 
 // Method Description:
-// - Allows setting a callback for when the background color is changed
-// Arguments:
-// - pfn: a function callback that takes a color
-void Terminal::SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept
-{
-    _pfnBackgroundColorChanged.swap(pfn);
-}
-
-// Method Description:
 // - Allows settings a callback for settings the taskbar progress indicator
 // Arguments:
 // - pfn: a function callback that takes 2 size_t parameters, one indicating the progress state

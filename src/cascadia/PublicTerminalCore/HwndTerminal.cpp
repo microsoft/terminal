@@ -239,8 +239,6 @@ HRESULT HwndTerminal::Initialize()
 
     _renderEngine = std::move(dxEngine);
 
-    _terminal->SetBackgroundCallback([](auto) {});
-
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
