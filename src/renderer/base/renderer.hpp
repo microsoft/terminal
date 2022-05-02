@@ -123,6 +123,7 @@ namespace Microsoft::Console::Render
         std::vector<SMALL_RECT> _previousSelection;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
+        bool _forceUpdateViewport = true;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;

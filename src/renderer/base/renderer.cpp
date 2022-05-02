@@ -390,12 +390,13 @@ bool Renderer::_CheckViewportAndScroll()
     const auto srOldViewport = _viewport.ToInclusive();
     const auto srNewViewport = _pData->GetViewport().ToInclusive();
 
-    if (srOldViewport == srNewViewport)
+    if (!_forceUpdateViewport && srOldViewport == srNewViewport)
     {
         return false;
     }
 
     _viewport = Viewport::FromInclusive(srNewViewport);
+    _forceUpdateViewport = false;
 
     COORD coordDelta;
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;

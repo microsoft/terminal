@@ -246,18 +246,41 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
     auto hr = S_OK;
-    const auto oldView = _lastViewport;
     const auto newView = Viewport::FromInclusive(srNewViewport);
+    const auto oldSize = _lastViewport.Dimensions();
+    const auto newSize = newView.Dimensions();
 
-    _lastViewport = newView;
-
-    if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
+    if (oldSize != newSize)
     {
         // Don't emit a resize event if we've requested it be suppressed
         if (!_suppressResizeRepaint)
         {
-            hr = _ResizeWindow(newView.Width(), newView.Height());
+            hr = _ResizeWindow(newSize.X, newSize.Y);
         }
+
+        if (_resizeQuirk)
+        {
+            // GH#3490 - When the viewport width changed, don't do anything extra here.
+            // If the buffer had areas that were invalid due to the resize, then the
+            // buffer will have triggered it's own invalidations for what it knows is
+            // invalid. Previously, we'd invalidate everything if the width changed,
+            // because we couldn't be sure if lines were reflowed.
+            _invalidMap.resize(til::size{ newSize });
+        }
+        else
+        {
+            if (SUCCEEDED(hr))
+            {
+                _invalidMap.resize(til::size{ newSize }, true); // resize while filling in new space with repaint requests.
+
+                // Viewport is smaller now - just update it all.
+                if (oldSize.Y > newSize.Y || oldSize.X > newSize.X)
+                {
+                    hr = InvalidateAll();
+                }
+            }
+        }
+
         _resized = true;
     }
 
@@ -269,29 +292,7 @@ CATCH_RETURN();
     // If we only clear the flag when the new viewport is different, this can
     //      lead to the first _actual_ resize being suppressed.
     _suppressResizeRepaint = false;
-
-    if (_resizeQuirk)
-    {
-        // GH#3490 - When the viewport width changed, don't do anything extra here.
-        // If the buffer had areas that were invalid due to the resize, then the
-        // buffer will have triggered it's own invalidations for what it knows is
-        // invalid. Previously, we'd invalidate everything if the width changed,
-        // because we couldn't be sure if lines were reflowed.
-        _invalidMap.resize(til::size{ newView.Dimensions() });
-    }
-    else
-    {
-        if (SUCCEEDED(hr))
-        {
-            _invalidMap.resize(til::size{ newView.Dimensions() }, true); // resize while filling in new space with repaint requests.
-
-            // Viewport is smaller now - just update it all.
-            if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
-            {
-                hr = InvalidateAll();
-            }
-        }
-    }
+    _lastViewport = newView;
 
     return hr;
 }
