@@ -281,9 +281,7 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
         // The region is clamped within the viewport boundaries and we only
         // trigger a redraw if the region is not empty.
         auto view = _pData->GetViewport();
-        cursorView = view.Clamp(cursorView);
-
-        if (cursorView.IsValid())
+        if (view.IsInBounds(cursorView))
         {
             const auto updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
             FOREACH_ENGINE(pEngine)
