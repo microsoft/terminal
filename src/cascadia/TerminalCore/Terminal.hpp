@@ -248,8 +248,6 @@ public:
 #pragma endregion
 
 private:
-    std::function<void(::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle)> _pfnSetCursorStyle;
-    std::function<void()> _pfnEraseScrollback;
     std::function<void(std::wstring_view)> _pfnWriteInput;
     std::function<void()> _pfnWarningBell;
     std::function<void(std::wstring_view)> _pfnTitleChanged;

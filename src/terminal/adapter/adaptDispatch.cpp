@@ -1988,9 +1988,9 @@ void AdaptDispatch::_EraseAll()
     // Calculate new viewport position. Typically we want to move one line below
     // the last non-space row, but if the last non-space character is the very
     // start of the buffer, then we shouldn't move down at all.
-    const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
-    short newViewportTop = (!lastChar.X && !lastChar.Y) ? 0 : lastChar.Y + 1;
-    const short newViewportBottom = newViewportTop + viewportHeight;
+    const til::point lastChar{ textBuffer.GetLastNonSpaceCharacter() };
+    auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.Y + 1;
+    const auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
     for (auto i = 0; i < delta; i++)
     {

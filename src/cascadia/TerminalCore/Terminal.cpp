@@ -77,11 +77,6 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, Renderer& rende
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, *_terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-
-    auto& dispatchRef = engine->Dispatch();
-    _pfnSetCursorStyle = [&](auto style) { dispatchRef.SetCursorStyle(style); };
-    _pfnEraseScrollback = [&]() { dispatchRef.EraseInDisplay(DispatchTypes::EraseType::Scrollback); };
-
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
     // Until we have a true pass-through mode (GH#1173), the decision as to
@@ -224,18 +219,14 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    if (_pfnSetCursorStyle)
-    {
-        _pfnSetCursorStyle(cursorStyle);
-    }
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().SetCursorStyle(cursorStyle);
 }
 
 void Terminal::EraseScrollback()
 {
-    if (_pfnEraseScrollback)
-    {
-        _pfnEraseScrollback();
-    }
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const
