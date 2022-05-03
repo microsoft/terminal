@@ -2116,7 +2116,8 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool enabled)
 {
-    // If we're a conpty, always return false
+    // Return false to forward the operation to the hosting terminal,
+    // since ConPTY can't handle this itself.
     if (_api.IsConsolePty())
     {
         return false;
@@ -2205,13 +2206,14 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 {
-    // If we're a conpty, always return false
+    // Return false to forward the operation to the hosting terminal,
+    // since ConPTY can't handle this itself.
     if (_api.IsConsolePty())
     {
         return false;
     }
     _api.CopyToClipboard(content);
-    return false;
+    return true;
 }
 
 // Method Description:
@@ -2347,7 +2349,8 @@ bool AdaptDispatch::EndHyperlink()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 {
-    // If we're a conpty, always return false
+    // Return false to forward the operation to the hosting terminal,
+    // since ConPTY can't handle this itself.
     if (_api.IsConsolePty())
     {
         return false;
