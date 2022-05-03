@@ -348,9 +348,9 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
             // This is necessary because the engine cannot be allowed to
             // request ownership of the display before whatever instance
             // of conhost was using it before has relinquished it.
-            if (!wddmConEngine.IsInitialized())
+            if (!pWddmConEngine->IsInitialized())
             {
-                hr = wddmConEngine.Initialize();
+                hr = pWddmConEngine->Initialize();
                 LOG_IF_FAILED(hr);
 
                 // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
@@ -359,11 +359,11 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
                     const RECT rcOld{};
 
                     // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
-                    auto rcDisplay = wddmConEngine.GetDisplaySize();
+                    auto rcDisplay = pWddmConEngine->GetDisplaySize();
 
                     // Get font to adjust char to pixels.
                     COORD coordFont{};
-                    LOG_IF_FAILED(wddmConEngine.GetFontSize(&coordFont));
+                    LOG_IF_FAILED(pWddmConEngine->GetFontSize(&coordFont));
 
                     rcDisplay.right *= coordFont.X;
                     rcDisplay.bottom *= coordFont.Y;
@@ -376,7 +376,7 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
             if (SUCCEEDED(hr))
             {
                 // Allow acquiring device resources before drawing.
-                hr = wddmConEngine.Enable();
+                hr = pWddmConEngine->Enable();
                 LOG_IF_FAILED(hr);
                 if (SUCCEEDED(hr))
                 {
@@ -390,7 +390,7 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
         }
         else
         {
-            if (wddmConEngine.IsInitialized())
+            if (pWddmConEngine->IsInitialized())
             {
                 // Wait for the currently running paint operation, if any,
                 // and prevent further attempts to render.
@@ -399,7 +399,7 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
                 // Relinquish control of the graphics device (only one
                 // DirectX application may control the device at any one
                 // time).
-                LOG_IF_FAILED(wddmConEngine.Disable());
+                LOG_IF_FAILED(pWddmConEngine->Disable());
 
                 // Let the Console IO Server that we have relinquished
                 // control of the display.
@@ -538,7 +538,7 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
 
     // Fetch the display size from the console driver.
     const auto DisplaySize = Metrics->GetMaxClientRectInPixels();
-    NTSTATUS Status = GetLastError();
+    auto Status = GetLastError();
 
     if (NT_SUCCESS(Status))
     {
@@ -551,13 +551,14 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
             try
             {
                 // Create and set the render engine.
-                _bgfxEngine = BgfxEngine(GetSharedViewBase(),
-                                         DisplaySize.bottom / FontSize.Height,
-                                         DisplaySize.right / FontSize.Width,
-                                         FontSize.Width,
-                                         FontSize.Height);
+                _bgfxEngine = std::make_unique<BgfxEngine>(
+                    GetSharedViewBase(),
+                    DisplaySize.bottom / FontSize.Height,
+                    DisplaySize.right / FontSize.Width,
+                    FontSize.Width,
+                    FontSize.Height);
 
-                globals.pRender->AddRenderEngine(&_bgfxEngine);
+                globals.pRender->AddRenderEngine(_bgfxEngine.get());
             }
             catch (...)
             {
@@ -576,7 +577,8 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
 
     try
     {
-        globals.pRender->AddRenderEngine(&wddmConEngine);
+        pWddmConEngine = std::make_unique<WddmConEngine>();
+        globals.pRender->AddRenderEngine(pWddmConEngine.get());
     }
     catch (...)
     {

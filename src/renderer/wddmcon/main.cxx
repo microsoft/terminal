@@ -377,8 +377,7 @@ WDDMConCreate(
     auto hr = S_OK;
     IDWriteTextLayout *pTextLayout = nullptr;
     DWRITE_TEXT_METRICS TextMetrics = {};
-    const auto pCtx =
-        static_cast<PWDDMCONSOLECONTEXT>(malloc(sizeof(WDDMCONSOLECONTEXT)));
+    const auto pCtx = static_cast<PWDDMCONSOLECONTEXT>(malloc(sizeof(WDDMCONSOLECONTEXT)));
 
     if (pCtx == nullptr) {
         hr = E_OUTOFMEMORY;

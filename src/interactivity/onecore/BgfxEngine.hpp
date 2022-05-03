@@ -29,7 +29,6 @@ namespace Microsoft::Console::Render
     class BgfxEngine final : public RenderEngineBase
     {
     public:
-        explicit constexpr BgfxEngine() noexcept = default;
         BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight) noexcept;
 
         // IRenderEngine Members
@@ -76,15 +75,15 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
-        std::byte* _sharedViewBase{};
-        SIZE_T _runLength{};
+        std::byte* _sharedViewBase;
+        SIZE_T _runLength;
 
-        SIZE_T _displayHeight{};
-        SIZE_T _displayWidth{};
+        SIZE_T _displayHeight;
+        SIZE_T _displayWidth;
         til::rect _dirtyArea;
 
-        COORD _fontSize{};
+        COORD _fontSize;
 
-        WORD _currentLegacyColorAttribute{};
+        WORD _currentLegacyColorAttribute;
     };
 }

@@ -90,8 +90,8 @@ RECT WindowMetrics::GetMinClientRectInPixels()
     }
     case CIS_DISPLAY_MODE_DIRECTX:
     {
-        LOG_IF_FAILED(Server->wddmConEngine.GetFontSize(&FontSize));
-        DisplaySize = Server->wddmConEngine.GetDisplaySize();
+        LOG_IF_FAILED(Server->pWddmConEngine->GetFontSize(&FontSize));
+        DisplaySize = Server->pWddmConEngine->GetDisplaySize();
         break;
     }
     case CIS_DISPLAY_MODE_NONE:
