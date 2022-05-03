@@ -3943,6 +3943,54 @@ namespace winrt::TerminalApp::implementation
         applicationState.DismissedMessages(std::move(messages));
     }
 
+    static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
+    static constexpr wchar_t RegKeyColorizationColor[] = L"ColorizationColor";
+    static constexpr wchar_t RegKeyColorizationColorBalance[] = L"ColorizationColorBalance";
+
+    static til::color alphaBlend(const til::color& one, const til::color& two, const float& weight)
+    {
+        const float firstWeight = weight;
+        const float secondWeight = 1 - weight;
+        return til::color{
+            static_cast<uint8_t>(one.r * firstWeight + two.r * secondWeight),
+            static_cast<uint8_t>(one.g * firstWeight + two.g * secondWeight),
+            static_cast<uint8_t>(one.b * firstWeight + two.b * secondWeight)
+        };
+    }
+
+    static wil::unique_hkey openDwmRegKey()
+    {
+        HKEY hKey{ nullptr };
+        if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyDwm, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+        {
+            return wil::unique_hkey{ hKey };
+        }
+        return nullptr;
+    }
+    static DWORD readDwmSubValue(const wil::unique_hkey& dwmRootKey, const wchar_t* key)
+    {
+        DWORD val{ 0 };
+        DWORD size{ sizeof(val) };
+        LOG_IF_FAILED(RegQueryValueExW(dwmRootKey.get(), key, nullptr, nullptr, reinterpret_cast<BYTE*>(&val), &size));
+        return val;
+    }
+
+    static std::optional<til::color> _getAccentColorForTitlebar()
+    {
+        auto dwmKey{ openDwmRegKey() };
+        if (!dwmKey)
+        {
+            return std::nullopt;
+        }
+        const til::color regValue = static_cast<COLORREF>(readDwmSubValue(dwmKey, RegKeyColorizationColor));
+        const til::color colorizationColor{ regValue.b, regValue.g, regValue.r };
+        const auto colorBalance{ readDwmSubValue(dwmKey, RegKeyColorizationColorBalance) };
+        static const til::color blendWith{ 0xd9, 0xd9, 0xd9 };
+        auto blended = alphaBlend(colorizationColor, blendWith, (colorBalance / 100.0f));
+        blended;
+        return colorizationColor;
+    }
+
     void TerminalPage::_updateTabRowColors()
     {
         if (_settings == nullptr)
@@ -4036,12 +4084,26 @@ namespace winrt::TerminalApp::implementation
             {
             case ThemeColorType::Accent:
             {
-                // TODO! These colors are NOT right at all. But none of
-                // `SystemAccentColor` is, so we gotta figure this out.
-                auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(_activated ?
-                                                                                                                    L"SystemAccentColorDark3" :
-                                                                                                                    L"SystemAccentColorDark2")),
-                                                                                    backgroundSolidBrush.Color());
+                til::color accentColor;
+                if (const auto accentFromReg{ _getAccentColorForTitlebar() })
+                {
+                    accentColor = accentFromReg.value();
+                }
+                else
+                {
+                    // winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(_activated ?
+                    //                                                                                  L"SystemAccentColorDark3" :
+                    //                                                                                  L"SystemAccentColorDark2")),
+                    accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColor")),
+                                                                                   backgroundSolidBrush.Color());
+                }
+
+                // // TODO! These colors are NOT right at all. But none of
+                // // `SystemAccentColor` is, so we gotta figure this out.
+                // auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(_activated ?
+                //                                                                                                     L"SystemAccentColorDark3" :
+                //                                                                                                     L"SystemAccentColorDark2")),
+                //                                                                     backgroundSolidBrush.Color());
                 const auto accentBrush = Media::SolidColorBrush();
                 accentBrush.Color(accentColor);
                 bgColor = accentColor;
