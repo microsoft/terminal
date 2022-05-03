@@ -3946,6 +3946,7 @@ namespace winrt::TerminalApp::implementation
     static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
     static constexpr wchar_t RegKeyColorizationColor[] = L"ColorizationColor";
     static constexpr wchar_t RegKeyColorizationColorBalance[] = L"ColorizationColorBalance";
+    static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
 
     static til::color alphaBlend(const til::color& one, const til::color& two, const float& weight)
     {
@@ -3982,13 +3983,14 @@ namespace winrt::TerminalApp::implementation
         {
             return std::nullopt;
         }
-        const til::color regValue = static_cast<COLORREF>(readDwmSubValue(dwmKey, RegKeyColorizationColor));
-        const til::color colorizationColor{ regValue.b, regValue.g, regValue.r };
-        const auto colorBalance{ readDwmSubValue(dwmKey, RegKeyColorizationColorBalance) };
-        static const til::color blendWith{ 0xd9, 0xd9, 0xd9 };
-        auto blended = alphaBlend(colorizationColor, blendWith, (colorBalance / 100.0f));
-        blended;
-        return colorizationColor;
+        // const til::color regValue = static_cast<COLORREF>(readDwmSubValue(dwmKey, RegKeyColorizationColor));
+        // const til::color colorizationColor{ regValue.b, regValue.g, regValue.r };
+        // const auto colorBalance{ readDwmSubValue(dwmKey, RegKeyColorizationColorBalance) };
+        // static const til::color blendWith{ 0xd9, 0xd9, 0xd9 };
+        // auto blended = alphaBlend(colorizationColor, blendWith, (colorBalance / 100.0f));
+        // blended;
+        const til::color accentColor{ static_cast<COLORREF>(readDwmSubValue(dwmKey, RegKeyAccentColor)) };
+        return accentColor;
     }
 
     void TerminalPage::_updateTabRowColors()
