@@ -818,7 +818,10 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
     // Update our internal virtual bottom tracker if requested. This helps keep
     //      the viewport's logical position consistent from the perspective of a
     //      VT client application, even if the user scrolls the viewport with the mouse.
-    if (updateBottom)
+    //      We typically only want to this to move the virtual bottom down, though,
+    //      otherwise it can end up "truncating" the buffer if the user is viewing
+    //      the scrollback at the time the viewport origin is updated.
+    if (updateBottom && _virtualBottom < _viewport.BottomInclusive())
     {
         UpdateBottom();
     }
@@ -1239,23 +1242,21 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
         srNewViewport.Top = std::max<SHORT>(0, srNewViewport.Top - offBottomDelta);
     }
 
-    // See MSFT:19917443
-    // If we're in terminal scrolling mode, and we've changed the height of the
-    //      viewport, the new viewport's bottom to the _virtualBottom.
-    // GH#1206 - Only do this if the viewport is _growing_ in height. This can
-    // cause unexpected behavior if we try to anchor the _virtualBottom to a
-    // position that will be greater than the height of the buffer.
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto newViewport = Viewport::FromInclusive(srNewViewport);
-    if (gci.IsTerminalScrolling() && newViewport.Height() >= _viewport.Height())
+    // In general we want to avoid moving the virtual bottom unless it's aligned with
+    // the visible viewport, so we check whether the changes we're making would cause
+    // the bottom of the visible viewport to intersect the virtual bottom at any point.
+    // If so, we update the virtual bottom to match. We also update the virtual bottom
+    // if it's less than the new viewport height minus 1, because that would otherwise
+    // leave the virtual viewport extended past the top of the buffer.
+    const auto newViewport = Viewport::FromInclusive(srNewViewport);
+    if ((_virtualBottom >= _viewport.BottomInclusive() && _virtualBottom < newViewport.BottomInclusive()) ||
+        (_virtualBottom <= _viewport.BottomInclusive() && _virtualBottom > newViewport.BottomInclusive()) ||
+        _virtualBottom < newViewport.Height() - 1)
     {
-        const auto newTop = static_cast<short>(std::max(0, _virtualBottom - (newViewport.Height() - 1)));
-
-        newViewport = Viewport::FromDimensions(COORD({ newViewport.Left(), newTop }), newViewport.Dimensions());
+        _virtualBottom = srNewViewport.Bottom;
     }
 
     _viewport = newViewport;
-    UpdateBottom();
     Tracing::s_TraceWindowViewport(_viewport);
 
     // In Conpty mode, call TriggerScroll here without params. By not providing
@@ -1267,6 +1268,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     // till the start of the next frame. If any other text gets output before
     // that frame starts, there's a very real chance that it'll cause errors as
     // the engine tries to invalidate those regions.
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.IsInVtIoMode() && ServiceLocator::LocateGlobals().pRender)
     {
         ServiceLocator::LocateGlobals().pRender->TriggerScroll();
@@ -1462,12 +1464,17 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (SUCCEEDED(hr))
     {
-        auto& newCursor = newTextBuffer->GetCursor();
+        // Make sure the new virtual bottom is far enough down to include both
+        // the cursor row and the last non-space row.
+        const auto cursorRow = newTextBuffer->GetCursor().GetPosition().Y;
+        const auto lastNonSpaceRow = newTextBuffer->GetLastNonSpaceCharacter().Y;
+        _virtualBottom = std::max({ cursorRow, lastNonSpaceRow });
+
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-        const auto sCursorHeightInViewportAfter = newCursor.GetPosition().Y - _viewport.Top();
+        const auto sCursorHeightInViewportAfter = cursorRow - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = gsl::narrow_cast<short>(sCursorHeightInViewportAfter - sCursorHeightInViewportBefore);
-        LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
+        LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, false));
 
         newTextBuffer->SetCurrentAttributes(oldPrimaryAttributes);
 
@@ -1749,7 +1756,7 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition, const bool updateBottom)
+void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition)
 {
     COORD WindowOrigin;
 
@@ -1781,7 +1788,7 @@ void SCREEN_INFORMATION::MakeCursorVisible(const COORD CursorPosition, const boo
 
     if (WindowOrigin.X != 0 || WindowOrigin.Y != 0)
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, updateBottom));
+        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, false));
     }
 }
 
@@ -2307,6 +2314,10 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 
     const COORD coordNewOrigin = { 0, sNewTop };
     RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
+
+    // SetViewportOrigin will only move the virtual bottom down, but in this
+    // case we need to reset it to the top, so we have to update it explicitly.
+    UpdateBottom();
 
     // Place the cursor at the same x coord, on the row that's now the top
     RETURN_IF_FAILED(SetCursorPosition(COORD{ oldCursorPos.X, sNewTop }, false));

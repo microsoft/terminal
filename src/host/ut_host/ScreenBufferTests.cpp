@@ -80,6 +80,8 @@ class ScreenBufferTests
         auto defaultSize = COORD{ CommonState::s_csWindowWidth, CommonState::s_csWindowHeight };
         currentBuffer.SetViewport(Viewport::FromDimensions(defaultSize), true);
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
+        // Make sure the virtual bottom is correctly positioned.
+        currentBuffer.UpdateBottom();
 
         return true;
     }
@@ -225,6 +227,12 @@ class ScreenBufferTests
     TEST_METHOD(TestAddHyperlinkCustomIdDifferentUri);
 
     TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
+    TEST_METHOD(UpdateVirtualBottomWithSetConsoleCursorPosition);
+    TEST_METHOD(UpdateVirtualBottomAfterInternalSetViewportSize);
+    TEST_METHOD(UpdateVirtualBottomAfterResizeWithReflow);
+    TEST_METHOD(DontChangeVirtualBottomWithOffscreenLinefeed);
+    TEST_METHOD(DontChangeVirtualBottomAfterResizeWindow);
+    TEST_METHOD(DontChangeVirtualBottomWithMakeCursorVisible);
     TEST_METHOD(RetainHorizontalOffsetWhenMovingToBottom);
 
     TEST_METHOD(TestWriteConsoleVTQuirkMode);
@@ -6131,6 +6139,272 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
     Log::Comment(L"But after moving to the virtual viewport, we should align with the new virtual bottom");
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, si.GetVirtualViewport().Origin(), true));
     VERIFY_ARE_EQUAL(newVirtualBottom, si.GetViewport().BottomInclusive());
+}
+
+void ScreenBufferTests::UpdateVirtualBottomWithSetConsoleCursorPosition()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Pan down so the initial viewport is a couple of pages down");
+    const auto initialOrigin = COORD{ 0, si.GetViewport().Height() * 2 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, initialOrigin, true));
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Make sure the initial virtual bottom is at the bottom of the viewport");
+    const auto initialVirtualBottom = si.GetViewport().BottomInclusive();
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Pan to the top of the buffer without changing the virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, false));
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Set the cursor position to the initial origin");
+    VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(si, initialOrigin));
+    VERIFY_ARE_EQUAL(initialOrigin, cursor.GetPosition());
+
+    Log::Comment(L"Confirm that the viewport has moved down");
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Pan further down so the viewport is below the cursor");
+    const auto belowCursor = COORD{ 0, cursor.GetPosition().Y + 10 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, belowCursor, false));
+    VERIFY_ARE_EQUAL(belowCursor, si.GetViewport().Origin());
+
+    Log::Comment(L"Set the cursor position one line down, still inside the virtual viewport");
+    const auto oneLineDown = COORD{ 0, cursor.GetPosition().Y + 1 };
+    VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(si, oneLineDown));
+    VERIFY_ARE_EQUAL(oneLineDown, cursor.GetPosition());
+
+    Log::Comment(L"Confirm that the viewport has moved back to the initial origin");
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Set the cursor position to the top of the buffer");
+    const auto topOfBuffer = COORD{ 0, 0 };
+    VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(si, topOfBuffer));
+    VERIFY_ARE_EQUAL(topOfBuffer, cursor.GetPosition());
+
+    Log::Comment(L"Confirm that the viewport has moved to the top of the buffer");
+    VERIFY_ARE_EQUAL(topOfBuffer, si.GetViewport().Origin());
+
+    Log::Comment(L"Confirm that the virtual bottom has also moved up");
+    VERIFY_ARE_EQUAL(si.GetViewport().BottomInclusive(), si._virtualBottom);
+}
+
+void ScreenBufferTests::UpdateVirtualBottomAfterInternalSetViewportSize()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Pan down so the initial viewport is a couple of pages down");
+    const auto initialOrigin = COORD{ 0, si.GetViewport().Height() * 2 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, initialOrigin, true));
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Make sure the initial virtual bottom is at the bottom of the viewport");
+    const auto initialVirtualBottom = si.GetViewport().BottomInclusive();
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Set the cursor to the bottom of the current page");
+    stateMachine.ProcessString(L"\033[9999H");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, cursor.GetPosition().Y);
+
+    Log::Comment(L"Pan to the top of the buffer without changing the virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, false));
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Shrink the viewport height by two lines");
+    auto viewportSize = si.GetViewport().Dimensions();
+    viewportSize.Y -= 2;
+    si._InternalSetViewportSize(&viewportSize, false, false);
+    VERIFY_ARE_EQUAL(viewportSize, si.GetViewport().Dimensions());
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Position the viewport just above the virtual bottom");
+    short viewportTop = si._virtualBottom - viewportSize.Y;
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, viewportTop }, false));
+    VERIFY_ARE_EQUAL(si._virtualBottom - 1, si.GetViewport().BottomInclusive());
+
+    Log::Comment(L"Expand the viewport height so it 'passes through' the virtual bottom");
+    viewportSize.Y += 2;
+    si._InternalSetViewportSize(&viewportSize, false, false);
+    VERIFY_ARE_EQUAL(viewportSize, si.GetViewport().Dimensions());
+
+    Log::Comment(L"Confirm that the virtual bottom has aligned with the viewport bottom");
+    VERIFY_ARE_EQUAL(si._virtualBottom, si.GetViewport().BottomInclusive());
+
+    Log::Comment(L"Position the viewport bottom just below the virtual bottom");
+    viewportTop = si._virtualBottom - viewportSize.Y + 2;
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, viewportTop }, false));
+    VERIFY_ARE_EQUAL(si._virtualBottom + 1, si.GetViewport().BottomInclusive());
+
+    Log::Comment(L"Shrink the viewport height so it 'passes through' the virtual bottom");
+    viewportSize.Y -= 2;
+    si._InternalSetViewportSize(&viewportSize, false, false);
+    VERIFY_ARE_EQUAL(viewportSize, si.GetViewport().Dimensions());
+
+    Log::Comment(L"Confirm that the virtual bottom has aligned with the viewport bottom");
+    VERIFY_ARE_EQUAL(si._virtualBottom, si.GetViewport().BottomInclusive());
+}
+
+void ScreenBufferTests::UpdateVirtualBottomAfterResizeWithReflow()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Output a couple of pages of content");
+    auto bufferSize = si.GetTextBuffer().GetSize().Dimensions();
+    const auto viewportSize = si.GetViewport().Dimensions();
+    const auto line = std::wstring(bufferSize.X - 1, L'X') + L'\n';
+    for (auto i = 0; i < viewportSize.Y * 2; i++)
+    {
+        stateMachine.ProcessString(line);
+    }
+
+    Log::Comment(L"Set the cursor to the top of the current page");
+    stateMachine.ProcessString(L"\033[H");
+    VERIFY_ARE_EQUAL(si.GetViewport().Origin(), cursor.GetPosition());
+
+    Log::Comment(L"Pan to the top of the buffer without changing the virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, false));
+
+    Log::Comment(L"Shrink the viewport width by a half");
+    bufferSize.X /= 2;
+    VERIFY_NT_SUCCESS(si.ResizeWithReflow(bufferSize));
+
+    Log::Comment(L"Confirm that the virtual viewport includes the last non-space row");
+    const auto lastNonSpaceRow = si.GetTextBuffer().GetLastNonSpaceCharacter().Y;
+    VERIFY_IS_GREATER_THAN_OR_EQUAL(si._virtualBottom, lastNonSpaceRow);
+}
+
+void ScreenBufferTests::DontChangeVirtualBottomWithOffscreenLinefeed()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Pan down so the initial viewport is a couple of pages down");
+    const auto initialOrigin = COORD{ 0, si.GetViewport().Height() * 2 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, initialOrigin, true));
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Make sure the initial virtual bottom is at the bottom of the viewport");
+    const auto initialVirtualBottom = si.GetViewport().BottomInclusive();
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Set the cursor to the top of the current page");
+    stateMachine.ProcessString(L"\033[H");
+    VERIFY_ARE_EQUAL(initialOrigin, cursor.GetPosition());
+
+    Log::Comment(L"Pan to the top of the buffer without changing the virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, false));
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Output a line feed");
+    stateMachine.ProcessString(L"\n");
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+}
+
+void ScreenBufferTests::DontChangeVirtualBottomAfterResizeWindow()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Pan down so the initial viewport is a couple of pages down");
+    const auto initialOrigin = COORD{ 0, si.GetViewport().Height() * 2 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, initialOrigin, true));
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Make sure the initial virtual bottom is at the bottom of the viewport");
+    const auto initialVirtualBottom = si.GetViewport().BottomInclusive();
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Set the cursor to the bottom of the current page");
+    stateMachine.ProcessString(L"\033[9999H");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, cursor.GetPosition().Y);
+
+    Log::Comment(L"Pan to the top of the buffer without changing the virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, false));
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Shrink the viewport height");
+    std::wstringstream ss;
+    auto viewportWidth = si.GetViewport().Width();
+    auto viewportHeight = si.GetViewport().Height() - 2;
+    ss << L"\x1b[8;" << viewportHeight << L";" << viewportWidth << L"t";
+    stateMachine.ProcessString(ss.str());
+    VERIFY_ARE_EQUAL(viewportHeight, si.GetViewport().Height());
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+}
+
+void ScreenBufferTests::DontChangeVirtualBottomWithMakeCursorVisible()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Pan down so the initial viewport is a couple of pages down");
+    const auto initialOrigin = COORD{ 0, si.GetViewport().Height() * 2 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, initialOrigin, true));
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetViewport().Origin());
+
+    Log::Comment(L"Make sure the initial virtual bottom is at the bottom of the viewport");
+    const auto initialVirtualBottom = si.GetViewport().BottomInclusive();
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Set the cursor to the top of the current page");
+    stateMachine.ProcessString(L"\033[H");
+    VERIFY_ARE_EQUAL(initialOrigin, cursor.GetPosition());
+
+    Log::Comment(L"Pan to the top of the buffer without changing the virtual bottom");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, false));
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Make the cursor visible");
+    si.MakeCurrentCursorVisible();
+    VERIFY_ARE_EQUAL(si.GetViewport().BottomInclusive(), cursor.GetPosition().Y);
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
+
+    Log::Comment(L"Pan further down so the viewport is below the cursor");
+    const auto belowCursor = COORD{ 0, cursor.GetPosition().Y + 10 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, belowCursor, false));
+    VERIFY_ARE_EQUAL(belowCursor, si.GetViewport().Origin());
+
+    Log::Comment(L"Make the cursor visible");
+    si.MakeCurrentCursorVisible();
+    VERIFY_ARE_EQUAL(si.GetViewport().Top(), cursor.GetPosition().Y);
+
+    Log::Comment(L"Confirm that the virtual bottom has not changed");
+    VERIFY_ARE_EQUAL(initialVirtualBottom, si._virtualBottom);
 }
 
 void ScreenBufferTests::RetainHorizontalOffsetWhenMovingToBottom()

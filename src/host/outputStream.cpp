@@ -317,8 +317,8 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
-    const auto oldViewport = Viewport::FromInclusive(csbiex.srWindow);
-    const auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    const auto oldViewport = screenInfo.GetVirtualViewport();
+    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
     // Always resize the width of the console
     csbiex.dwSize.X = sColumns;
     // Only set the screen buffer's height if it's currently less than
@@ -326,6 +326,16 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     if (sRows > csbiex.dwSize.Y)
     {
         csbiex.dwSize.Y = sRows;
+    }
+
+    // If the cursor row is now past the bottom of the viewport, we'll have to
+    // move the viewport down to bring it back into view. However, we don't want
+    // to do this in pty mode, because the conpty resize operation is dependent
+    // on the viewport *not* being adjusted.
+    const short cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
+    if (cursorOverflow > 0 && !IsConsolePty())
+    {
+        newViewport = Viewport::Offset(newViewport, { 0, cursorOverflow });
     }
 
     // SetWindowInfo expect inclusive rects
