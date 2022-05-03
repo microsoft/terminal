@@ -146,6 +146,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
+        if (const auto& child{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            {
+                // apply header text as name (automation property)
+                if (const auto& header{ Header() })
+                {
+                    const auto headerText{ header.try_as<hstring>() };
+                    if (headerText && !headerText->empty())
+                    {
+                        Automation::AutomationProperties::SetName(expander, *headerText);
+                    }
+                }
+
+                // apply help text as tooltip and full description (automation property)
+                const auto& helpText{ HelpText() };
+                if (!helpText.empty())
+                {
+                    Controls::ToolTipService::SetToolTip(expander, box_value(helpText));
+                    Automation::AutomationProperties::SetFullDescription(expander, helpText);
+                }
+            }
+        }
+
         if (HelpText().empty())
         {
             if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
