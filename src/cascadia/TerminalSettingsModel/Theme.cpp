@@ -21,6 +21,9 @@ using namespace winrt::Windows::UI;
 
 static constexpr std::string_view NameKey{ "name" };
 
+static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
+static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
+
 winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
 {
     auto result = winrt::make_self<implementation::ThemeColor>();
@@ -41,6 +44,79 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromTerminal
     auto result = winrt::make_self<implementation::ThemeColor>();
     result->_ColorType = ThemeColorType::TerminalBackground;
     return *result;
+}
+
+static wil::unique_hkey openDwmRegKey()
+{
+    HKEY hKey{ nullptr };
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyDwm, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+    {
+        return wil::unique_hkey{ hKey };
+    }
+    return nullptr;
+}
+static DWORD readDwmSubValue(const wil::unique_hkey& dwmRootKey, const wchar_t* key)
+{
+    DWORD val{ 0 };
+    DWORD size{ sizeof(val) };
+    LOG_IF_FAILED(RegQueryValueExW(dwmRootKey.get(), key, nullptr, nullptr, reinterpret_cast<BYTE*>(&val), &size));
+    return val;
+}
+
+static til::color _getAccentColorForTitlebar()
+{
+    return til::color{ static_cast<COLORREF>(readDwmSubValue(openDwmRegKey(), RegKeyAccentColor)) };
+}
+
+til::color ThemeColor::ColorFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
+{
+    if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+    {
+        return acrylic.TintColor();
+    }
+    else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+    {
+        return solidColor.Color();
+    }
+    return {};
+}
+
+winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows::UI::Xaml::ResourceDictionary& res,
+                                                            const winrt::Windows::UI::Xaml::Media::Brush& terminalBackground,
+                                                            const bool forTitlebar)
+{
+    static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
+
+    switch (ColorType())
+    {
+    case ThemeColorType::Accent:
+    {
+        til::color accentColor;
+        if (forTitlebar)
+        {
+            accentColor = _getAccentColorForTitlebar();
+        }
+        else
+        {
+            accentColor = winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey));
+        }
+
+        const auto accentBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
+        accentBrush.Color(accentColor);
+        return accentBrush;
+    }
+    case ThemeColorType::Color:
+    {
+        const auto solidBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
+        solidBrush.Color(Color());
+        return solidBrush;
+    }
+    case ThemeColorType::TerminalBackground:
+    {
+        return terminalBackground;
+    }
+    }
+    return nullptr;
 }
 
 #define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...) \
