@@ -122,19 +122,39 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _UpdateOverrideSystem();
 
-        // Apply automation properties as necessary
+        // Get the correct base to apply automation properties to
+        DependencyObject base{ nullptr };
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
             if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
             {
-                _ApplyNameAndFullDescription(child);
+                base = child;
             }
         }
         else if (const auto& content{ Content() })
         {
             if (const auto& obj{ content.try_as<DependencyObject>() })
             {
-                _ApplyNameAndFullDescription(obj);
+                base = obj;
+            }
+        }
+
+        if (base)
+        {
+            // apply header as name (automation property)
+            if (const auto& header{ Header() })
+            {
+                if (const auto headerText{ header.try_as<hstring>() })
+                {
+                    Automation::AutomationProperties::SetName(base, *headerText);
+                }
+            }
+
+            // apply help text as tooltip and full description (automation property)
+            if (const auto& helpText{ HelpText() }; !helpText.empty())
+            {
+                Controls::ToolTipService::SetToolTip(base, box_value(helpText));
+                Automation::AutomationProperties::SetFullDescription(base, helpText);
             }
         }
 
@@ -147,29 +167,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     textBlock.Visibility(Visibility::Collapsed);
                 }
             }
-        }
-    }
-
-    // Method Description:
-    // - Helper for applying the name and full description
-    //   automation properties to a dependency object
-    // Arguments:
-    // - d: the DependencyObject to apply the automation properties to
-    void SettingContainer::_ApplyNameAndFullDescription(const DependencyObject& d)
-    {
-        if (const auto& header{ Header() })
-        {
-            if (const auto headerText{ header.try_as<hstring>() })
-            {
-                Automation::AutomationProperties::SetName(d, *headerText);
-            }
-        }
-
-        // apply help text as tooltip and full description (automation property)
-        if (const auto& helpText{ HelpText() }; !helpText.empty())
-        {
-            Controls::ToolTipService::SetToolTip(d, box_value(helpText));
-            Automation::AutomationProperties::SetFullDescription(d, helpText);
         }
     }
 

@@ -41,7 +41,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void _OnHasSettingValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static hstring _GenerateOverrideMessage(const IInspectable& settingOrigin);
         void _UpdateOverrideSystem();
-        void _ApplyNameAndFullDescription(const Windows::UI::Xaml::DependencyObject& d);
     };
 }
 
