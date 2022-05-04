@@ -44,7 +44,7 @@ public:
 
 #pragma endregion
 
-    virtual ~IApiRoutines(){};
+    virtual ~IApiRoutines() = default;
 
 #pragma region L1
     virtual void GetConsoleInputCodePageImpl(ULONG& codepage) noexcept = 0;

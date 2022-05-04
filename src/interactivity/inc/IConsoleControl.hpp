@@ -20,17 +20,9 @@ namespace Microsoft::Console::Interactivity
     class IConsoleControl
     {
     public:
-        virtual ~IConsoleControl() = 0;
+        virtual ~IConsoleControl() = default;
         [[nodiscard]] virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
         [[nodiscard]] virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
         [[nodiscard]] virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
-
-    protected:
-        IConsoleControl() {}
-
-        IConsoleControl(const IConsoleControl&) = delete;
-        IConsoleControl& operator=(const IConsoleControl&) = delete;
     };
-
-    inline IConsoleControl::~IConsoleControl() {}
 }
