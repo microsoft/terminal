@@ -122,27 +122,39 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _UpdateOverrideSystem();
 
-        if (const auto& content{ Content() })
+        // Get the correct base to apply automation properties to
+        DependencyObject base{ nullptr };
+        if (const auto& child{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            {
+                base = child;
+            }
+        }
+        else if (const auto& content{ Content() })
         {
             if (const auto& obj{ content.try_as<DependencyObject>() })
             {
-                // apply header text as name (automation property)
-                if (const auto& header{ Header() })
-                {
-                    const auto headerText{ header.try_as<hstring>() };
-                    if (headerText && !headerText->empty())
-                    {
-                        Automation::AutomationProperties::SetName(obj, *headerText);
-                    }
-                }
+                base = obj;
+            }
+        }
 
-                // apply help text as tooltip and full description (automation property)
-                const auto& helpText{ HelpText() };
-                if (!helpText.empty())
+        if (base)
+        {
+            // apply header as name (automation property)
+            if (const auto& header{ Header() })
+            {
+                if (const auto headerText{ header.try_as<hstring>() })
                 {
-                    Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
-                    Automation::AutomationProperties::SetFullDescription(obj, helpText);
+                    Automation::AutomationProperties::SetName(base, *headerText);
                 }
+            }
+
+            // apply help text as tooltip and full description (automation property)
+            if (const auto& helpText{ HelpText() }; !helpText.empty())
+            {
+                Controls::ToolTipService::SetToolTip(base, box_value(helpText));
+                Automation::AutomationProperties::SetFullDescription(base, helpText);
             }
         }
 
