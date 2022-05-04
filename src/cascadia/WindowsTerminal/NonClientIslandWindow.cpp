@@ -166,7 +166,17 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
     {
         // Try to determine what part of the window is being hovered here. This
         // is absolutely critical to making sure Snap Layouts (GH#9443) works!
-        return _dragBarNcHitTest(til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
+        // return _dragBarNcHitTest(til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
+        LRESULT lResult = 0;
+
+        if (!DwmDefWindowProc(GetHandle(), message, wparam, lparam, &lResult))
+        {
+            return _dragBarNcHitTest(til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
+        }
+        else
+        {
+            return lResult;
+        }
     }
     break;
 
@@ -950,6 +960,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
                                                             WPARAM const wParam,
                                                             LPARAM const lParam) noexcept
 {
+    // DwmDefWindowProc(GetHandle(), message, wParam, lParam, &lRet)
     switch (message)
     {
     case WM_SETCURSOR:
