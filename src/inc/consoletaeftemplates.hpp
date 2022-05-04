@@ -20,9 +20,9 @@ Revision History:
 #include <til/bit.h>
 
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
-#define INIT_TEST_PROPERTY(type, identifer, description) \
-    type identifer;                                      \
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L## #identifer, identifer), description);
+#define INIT_TEST_PROPERTY(type, identifier, description) \
+    type identifier;                                      \
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L## #identifier, identifier), description);
 
 // Thinking of adding a new VerifyOutputTraits for a new type? MAKE SURE that
 // you include this header (or at least the relevant definition) before _every_
@@ -505,10 +505,10 @@ namespace WEX::TestExecution
         static WEX::Common::NoThrowString ToString(const CHAR_INFO& ci)
         {
             // 0x2400 is the Unicode symbol for a printable 'NUL' inscribed in a 1 column block. It's for communicating NUL without printing 0x0.
-            wchar_t const wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
+            const wchar_t wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
 
             // 0x20 is a standard space character.
-            char const ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
+            const char ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
 
             return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x),  Attributes: 0x%x,  [Ascii Char: %c (0x%hhx)]",
                                                        wch,

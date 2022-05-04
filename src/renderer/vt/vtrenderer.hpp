@@ -27,6 +27,7 @@ namespace TerminalCoreUnitTests
 {
     class ConptyRoundtripTests;
 };
+class ScreenBufferTests;
 #endif
 
 namespace Microsoft::Console::VirtualTerminal
@@ -56,7 +57,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* pForcePaint) noexcept override;
+        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> clusters, COORD coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept override;
@@ -80,8 +81,13 @@ namespace Microsoft::Console::Render
         void BeginResizeRequest();
         void EndResizeRequest();
         void SetResizeQuirk(const bool resizeQuirk);
+        void SetPassthroughMode(const bool passthrough) noexcept;
+        void SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept;
+        void SetTerminalCursorTextPosition(const COORD coordCursor) noexcept;
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
         [[nodiscard]] HRESULT RequestWin32Input() noexcept;
+        [[nodiscard]] virtual HRESULT SetWindowVisibility(const bool showOrHide) noexcept = 0;
+        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer) noexcept;
 
     protected:
         wil::unique_hfile _hFile;
@@ -91,6 +97,8 @@ namespace Microsoft::Console::Render
         std::string _conversionBuffer;
 
         TextAttribute _lastTextAttributes;
+
+        std::function<void(bool)> _pfnSetLookingForDSR;
 
         Microsoft::Console::Types::Viewport _lastViewport;
 
@@ -126,8 +134,10 @@ namespace Microsoft::Console::Render
         bool _delayedEolWrap{ false };
 
         bool _resizeQuirk{ false };
+        bool _passthrough{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
+        [[nodiscard]] HRESULT _WriteFill(const size_t n, const char c) noexcept;
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _Flush() noexcept;
 
@@ -186,8 +196,12 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _EndHyperlink() noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
+        [[nodiscard]] HRESULT _ListenForDSR() noexcept;
 
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
+        [[nodiscard]] HRESULT _SwitchScreenBuffer(const bool useAltBuffer) noexcept;
+
+        [[nodiscard]] HRESULT _RequestFocusEventMode() noexcept;
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
@@ -198,11 +212,11 @@ namespace Microsoft::Console::Render
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop
         std::wstring _bufferLine;
-        [[nodiscard]] HRESULT _PaintUtf8BufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
                                                    const COORD coord,
                                                    const bool lineWrapped) noexcept;
 
-        [[nodiscard]] HRESULT _PaintAsciiBufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
                                                     const COORD coord) noexcept;
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
@@ -217,6 +231,7 @@ namespace Microsoft::Console::Render
 
         friend class VtRendererTest;
         friend class ConptyOutputTests;
+        friend class ScreenBufferTests;
         friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 

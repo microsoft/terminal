@@ -11,6 +11,7 @@
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.build.pre.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
 
   <!-- Source Files -->
   <ItemGroup>
@@ -24,6 +25,7 @@
   </ItemGroup>
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <ItemDefinitionGroup>
     <Link>

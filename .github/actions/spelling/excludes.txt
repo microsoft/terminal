@@ -52,6 +52,7 @@ SUMS$
 \.xpm$
 \.yml$
 \.zip$
+^build/config/
 ^consolegit2gitfilters\.json$
 ^dep/
 ^doc/reference/master-sequence-list.csv$
@@ -76,6 +77,7 @@ SUMS$
 ^src/tools/texttests/fira\.txt$
 ^src/tools/U8U16Test/(?:fr|ru|zh)\.txt$
 ^src/types/ut_types/UtilsTests.cpp$
+^tools/ReleaseEngineering/ServicingPipeline.ps1$
 ^\.github/actions/spelling/
 ^\.gitignore$
 ^\XamlStyler.json$

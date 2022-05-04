@@ -13,7 +13,12 @@
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
 
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
+
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <PropertyGroup>
@@ -32,9 +37,6 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ConsoleInputReader.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
@@ -57,6 +59,7 @@
   </PropertyGroup>
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <!-- These have to come after post.props because the Cpp common targets will inexplicably overwrite them. -->
   <ItemDefinitionGroup>

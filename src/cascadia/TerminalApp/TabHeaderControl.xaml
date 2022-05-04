@@ -13,22 +13,6 @@
              MinHeight="16"
              mc:Ignorable="d">
 
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
-        </ResourceDictionary>
-    </UserControl.Resources>
-
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
         <mux:ProgressRing x:Name="HeaderProgressRing"
@@ -48,19 +32,19 @@
         -->
         <FontIcon x:Name="HeaderBellIndicator"
                   Margin="0,0,8,0"
-                  FontFamily="Segoe MDL2 Assets"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                   FontSize="12"
                   Glyph="&#xEA8F;"
                   Visibility="{x:Bind TabStatus.BellIndicator, Mode=OneWay}" />
         <FontIcon x:Name="HeaderZoomIcon"
                   Margin="0,0,8,0"
-                  FontFamily="Segoe MDL2 Assets"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                   FontSize="12"
                   Glyph="&#xE8A3;"
                   Visibility="{x:Bind TabStatus.IsPaneZoomed, Mode=OneWay}" />
         <FontIcon x:Name="HeaderLockIcon"
                   Margin="0,0,8,0"
-                  FontFamily="Segoe MDL2 Assets"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                   FontSize="12"
                   Glyph="&#xE72E;"
                   Visibility="{x:Bind TabStatus.IsReadOnlyActive, Mode=OneWay}" />
@@ -68,10 +52,10 @@
                    Text="{x:Bind Title, Mode=OneWay}"
                    Visibility="Visible" />
         <TextBox x:Name="HeaderRenamerTextBox"
-                 Height="16"
+                 Height="24"
                  MinHeight="0"
                  MaxWidth="{x:Bind RenamerMaxWidth, Mode=OneWay}"
-                 Padding="4,0,4,0"
+                 Padding="4,4,4,3"
                  FontSize="12"
                  IsSpellCheckEnabled="False"
                  LostFocus="RenameBoxLostFocusHandler"

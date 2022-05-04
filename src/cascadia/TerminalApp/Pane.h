@@ -241,7 +241,7 @@ private:
 
     bool _zoomed{ false };
 
-    winrt::Windows::Media::Playback::MediaPlayer _bellPlayer;
+    winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
     winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
 
     bool _IsLeaf() const noexcept;
@@ -278,12 +278,12 @@ private:
     void _Focus();
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
-    void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
-                                    winrt::Windows::Foundation::IInspectable const& e);
-    void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
-                                 winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-    void _ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
-                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+    void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                    const winrt::Windows::Foundation::IInspectable& e);
+    void _ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                 const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+    void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;

@@ -5,6 +5,8 @@
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    using VTInt = int32_t;
+
     class VTID
     {
     public:
@@ -98,8 +100,8 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        constexpr VTParameter(const size_t rhs) noexcept :
-            _value{ gsl::narrow_cast<decltype(_value)>(rhs) }
+        constexpr VTParameter(const VTInt rhs) noexcept :
+            _value{ rhs }
         {
         }
 
@@ -109,31 +111,33 @@ namespace Microsoft::Console::VirtualTerminal
             return _value >= 0;
         }
 
-        constexpr size_t value() const noexcept
+        constexpr VTInt value() const noexcept
         {
             return _value;
         }
 
-        constexpr size_t value_or(size_t defaultValue) const noexcept
+        constexpr VTInt value_or(VTInt defaultValue) const noexcept
         {
-            return has_value() ? _value : defaultValue;
+            // A negative value indicates that the parameter was omitted.
+            return _value < 0 ? defaultValue : _value;
         }
 
-        template<typename T, std::enable_if_t<sizeof(T) == sizeof(size_t), int> = 0>
+        template<typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
         constexpr operator T() const noexcept
         {
             // For most selective parameters, omitted values will default to 0.
             return static_cast<T>(value_or(0));
         }
 
-        constexpr operator size_t() const noexcept
+        constexpr operator VTInt() const noexcept
         {
             // For numeric parameters, both 0 and omitted values will default to 1.
-            return has_value() && _value != 0 ? _value : 1;
+            // The parameter is omitted if _value is less than 0.
+            return _value <= 0 ? 1 : _value;
         }
 
     private:
-        std::make_signed<size_t>::type _value;
+        VTInt _value;
     };
 
     class VTParameters
@@ -201,19 +205,13 @@ namespace Microsoft::Console::VirtualTerminal
     // };
     //
     // It will produce an error if the provided flag value sets multiple bits.
-    template<typename T, T Flag>
+    template<VTInt Flag>
     class FlaggedEnumValue
     {
-        template<T Value>
-        struct ZeroOrOneBitChecker
-        {
-            static_assert(Value == 0 || (((Value - 1) & Value) == 0), "zero or one flags expected");
-            static constexpr T value = Value;
-        };
-
     public:
-        static constexpr T mask{ ZeroOrOneBitChecker<Flag>::value };
-        constexpr FlaggedEnumValue(const T value) :
+        static constexpr VTInt mask{ WI_StaticAssertSingleBitSet(Flag) };
+
+        constexpr FlaggedEnumValue(const VTInt value) :
             _value{ value }
         {
         }
@@ -223,25 +221,25 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        template<typename U, std::enable_if_t<sizeof(U) == sizeof(size_t), int> = 0>
-        constexpr operator U() const noexcept
+        template<typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
+        constexpr operator T() const noexcept
         {
-            return static_cast<U>(_value | mask);
+            return static_cast<T>(_value | mask);
         }
 
-        constexpr operator T() const noexcept
+        constexpr operator VTInt() const noexcept
         {
             return _value | mask;
         }
 
     private:
-        T _value;
+        VTInt _value;
     };
 }
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
-    enum class EraseType : size_t
+    enum class EraseType : VTInt
     {
         ToEnd = 0,
         FromBeginning = 1,
@@ -249,7 +247,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
-    enum class TaskbarState : size_t
+    enum class TaskbarState : VTInt
     {
         Clear = 0,
         Set = 1,
@@ -258,7 +256,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Paused = 4
     };
 
-    enum GraphicsOptions : size_t
+    enum GraphicsOptions : VTInt
     {
         Off = 0,
         Intense = 1,
@@ -337,7 +335,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     //      Ps = 3 0  =>  Foreground color.
     //      Ps = 3 1  =>  Background color.
     //
-    enum class SgrSaveRestoreStackOptions : size_t
+    enum class SgrSaveRestoreStackOptions : VTInt
     {
         All = 0,
         Intense = 1,
@@ -354,16 +352,16 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Max = SaveBackgroundColor
     };
 
-    enum class AnsiStatusType : size_t
+    enum class AnsiStatusType : VTInt
     {
         OS_OperatingStatus = 5,
         CPR_CursorPositionReport = 6,
     };
 
-    using ANSIStandardMode = FlaggedEnumValue<size_t, 0x00000000>;
-    using DECPrivateMode = FlaggedEnumValue<size_t, 0x01000000>;
+    using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
+    using DECPrivateMode = FlaggedEnumValue<0x01000000>;
 
-    enum ModeParams : size_t
+    enum ModeParams : VTInt
     {
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
@@ -377,6 +375,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
         ANY_EVENT_MOUSE_MODE = DECPrivateMode(1003),
+        FOCUS_EVENT_MODE = DECPrivateMode(1004),
         UTF8_EXTENDED_MODE = DECPrivateMode(1005),
         SGR_EXTENDED_MODE = DECPrivateMode(1006),
         ALTERNATE_SCROLL = DECPrivateMode(1007),
@@ -397,20 +396,22 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         UTF8 = VTID("G")
     };
 
-    enum TabClearType : size_t
+    enum TabClearType : VTInt
     {
         ClearCurrentColumn = 0,
         ClearAllColumns = 3
     };
 
-    enum WindowManipulationType : size_t
+    enum WindowManipulationType : VTInt
     {
         Invalid = 0,
+        DeIconifyWindow = 1,
+        IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
     };
 
-    enum class CursorStyle : size_t
+    enum class CursorStyle : VTInt
     {
         UserDefault = 0, // Implemented as "restore cursor to user default".
         BlinkingBlock = 1,
@@ -421,27 +422,27 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SteadyBar = 6
     };
 
-    enum class ReportingPermission : size_t
+    enum class ReportingPermission : VTInt
     {
         Unsolicited = 0,
         Solicited = 1
     };
 
-    enum class LineFeedType : unsigned int
+    enum class LineFeedType : VTInt
     {
         WithReturn,
         WithoutReturn,
         DependsOnMode
     };
 
-    enum class DrcsEraseControl : size_t
+    enum class DrcsEraseControl : VTInt
     {
         AllChars = 0,
         ReloadedChars = 1,
         AllRenditions = 2
     };
 
-    enum class DrcsCellMatrix : size_t
+    enum class DrcsCellMatrix : VTInt
     {
         Default = 0,
         Invalid = 1,
@@ -450,7 +451,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size7x10 = 4
     };
 
-    enum class DrcsFontSet : size_t
+    enum class DrcsFontSet : VTInt
     {
         Default = 0,
         Size80x24 = 1,
@@ -461,20 +462,20 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size132x48 = 22
     };
 
-    enum class DrcsFontUsage : size_t
+    enum class DrcsFontUsage : VTInt
     {
         Default = 0,
         Text = 1,
         FullCell = 2
     };
 
-    enum class DrcsCharsetSize : size_t
+    enum class DrcsCharsetSize : VTInt
     {
         Size94 = 0,
         Size96 = 1
     };
 
-    constexpr short s_sDECCOLMSetColumns = 132;
-    constexpr short s_sDECCOLMResetColumns = 80;
+    constexpr VTInt s_sDECCOLMSetColumns = 132;
+    constexpr VTInt s_sDECCOLMResetColumns = 80;
 
 }

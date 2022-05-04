@@ -241,6 +241,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();
+        _VtPassthrough = profile.VtPassthrough();
 
         _StartingDirectory = profile.EvaluatedStartingDirectory();
 
@@ -283,6 +284,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _FocusFollowMouse = globalSettings.FocusFollowMouse();
         _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
         _SoftwareRendering = globalSettings.SoftwareRendering();
+        _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();

@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             nullptr,
             0,
             [](LPVOID lpParameter) noexcept {
-                AzureConnection* const pInstance = static_cast<AzureConnection*>(lpParameter);
+                const auto pInstance = static_cast<AzureConnection*>(lpParameter);
                 if (pInstance)
                 {
                     return pInstance->_OutputThread();
@@ -173,7 +173,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - handles the different possible inputs in the different states
     // Arguments:
     // the user's input
-    void AzureConnection::WriteInput(hstring const& data)
+    void AzureConnection::WriteInput(const hstring& data)
     {
         // We read input while connected AND connecting.
         if (!_isStateOneOf(ConnectionState::Connected, ConnectionState::Connecting))
@@ -429,7 +429,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to get the stored credentials (if any) and let the user choose what to do next
     void AzureConnection::_RunAccessState()
     {
-        bool oldVersionEncountered = false;
+        auto oldVersionEncountered = false;
         auto vault = PasswordVault();
         winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
         // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
@@ -444,7 +444,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        int numTenants{ 0 };
+        auto numTenants{ 0 };
         _tenantList.clear();
         for (const auto& entry : credList)
         {
@@ -484,7 +484,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureNewLogin"), USES_RESOURCE(L"AzureUserEntry_NewLogin")));
         _WriteStringWithNewline(_formatResWithColoredUserInputOptions(USES_RESOURCE(L"AzureRemoveStored"), USES_RESOURCE(L"AzureUserEntry_RemoveStored")));
 
-        int selectedTenant{ -1 };
+        auto selectedTenant{ -1 };
         do
         {
             auto maybeTenantSelection = _ReadUserInput(InputMode::Line);
@@ -584,7 +584,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto expiresIn = std::stoi(deviceCodeResponse.at(L"expires_in").as_string());
 
         // Wait for user authentication and obtain the access/refresh tokens
-        json::value authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
+        auto authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
         _accessToken = authenticatedResponse.at(L"access_token").as_string();
         _refreshToken = authenticatedResponse.at(L"refresh_token").as_string();
 
@@ -615,13 +615,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void AzureConnection::_RunTenantChoiceState()
     {
         auto numTenants = gsl::narrow<int>(_tenantList.size());
-        for (int i = 0; i < numTenants; i++)
+        for (auto i = 0; i < numTenants; i++)
         {
             _WriteStringWithNewline(_formatTenant(i, til::at(_tenantList, i)));
         }
         _WriteStringWithNewline(RS_(L"AzureEnterTenant"));
 
-        int selectedTenant{ -1 };
+        auto selectedTenant{ -1 };
         do
         {
             auto maybeTenantSelection = _ReadUserInput(InputMode::Line);

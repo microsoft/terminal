@@ -33,8 +33,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* pForcePaint) noexcept override;
+        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept override;
+        [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, size_t targetRow, size_t viewportLeft) noexcept override;
@@ -376,6 +377,7 @@ namespace Microsoft::Console::Render
 
         struct FontMetrics
         {
+            wil::com_ptr<IDWriteFontCollection> fontCollection;
             wil::unique_process_heap_string fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
@@ -553,6 +555,8 @@ namespace Microsoft::Console::Render
             // * Members cannot straddle 16 byte boundaries
             //   This means a structure like {u32; u32; u32; u32x2} would require
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
+            // * bool will probably not work the way you want it to,
+            //   because HLSL uses 32-bit bools and C++ doesn't.
             alignas(sizeof(f32x4)) f32x4 viewport;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
@@ -615,7 +619,8 @@ namespace Microsoft::Console::Render
 
         // AtlasEngine.api.cpp
         void _resolveAntialiasingMode() noexcept;
-        void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
+        void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
+        void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
         void _setShaderResources() const;

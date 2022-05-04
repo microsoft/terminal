@@ -9,6 +9,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="..\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="console.cpp" />
     <ClCompile Include="globals.cpp" />
@@ -85,4 +86,5 @@
   </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>

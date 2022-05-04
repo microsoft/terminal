@@ -19,12 +19,7 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumRadioButtonTemplate"
-                          x:DataType="local:EnumEntry">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
-            </DataTemplate>
-
-            <DataTemplate x:Key="EnumComboBoxItemTemplate"
+            <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
@@ -41,7 +36,7 @@
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <!--  Grouping: Text  -->
             <TextBlock x:Uid="Profile_TextHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Color Scheme  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
@@ -118,7 +113,7 @@
                 <StackPanel>
                     <ComboBox x:Name="FontWeightComboBox"
                               x:Uid="Profile_FontWeightComboBox"
-                              ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
@@ -170,18 +165,18 @@
         <!--  Grouping: Cursor  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Profile_CursorHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Cursor Shape  -->
             <local:SettingContainer x:Uid="Profile_CursorShape"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
+                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Cursor Height  -->
@@ -210,7 +205,7 @@
         <!--  Grouping: Background  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Profile_BackgroundHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Background Image  -->
             <local:SettingContainer x:Name="BackgroundImageContainer"
@@ -221,20 +216,22 @@
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
+                    <TextBox x:Uid="Profile_BackgroundImageBox"
+                             IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                             IsSpellCheckEnabled="False"
+                             Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                     <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_BackgroundImageBox"
-                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
-                                 IsSpellCheckEnabled="False"
-                                 Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                         <Button x:Uid="Profile_BackgroundImageBrowse"
+                                Margin="0,10,10,0"
                                 Click="BackgroundImage_Click"
                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
+                        <CheckBox x:Name="UseDesktopImageCheckBox"
+                                  x:Uid="Profile_UseDesktopImage"
+                                  Margin="0,5,0,0"
+                                  IsChecked="{x:Bind Appearance.UseDesktopBGImage, Mode=TwoWay}" />
                     </StackPanel>
-                    <CheckBox x:Name="UseDesktopImageCheckBox"
-                              x:Uid="Profile_UseDesktopImage"
-                              IsChecked="{x:Bind Appearance.UseDesktopBGImage, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
 
@@ -243,12 +240,12 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageStretchMode}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageStretchMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Background Image Alignment  -->
@@ -292,7 +289,7 @@
                             <x:Int32>17</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE744;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -312,7 +309,7 @@
                             <x:Int32>16</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE745;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -332,7 +329,7 @@
                             <x:Int32>18</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA5F;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -354,7 +351,7 @@
                             <x:Int32>1</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE746;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -369,7 +366,7 @@
                             <x:Int32>0</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xF16E;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -384,7 +381,7 @@
                             <x:Int32>2</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA61;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -401,7 +398,7 @@
                             <x:Int32>33</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE744;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -416,7 +413,7 @@
                             <x:Int32>32</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE745;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -431,7 +428,7 @@
                             <x:Int32>34</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe Fluent Icons"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA5F;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -464,18 +461,18 @@
         <!--  Grouping: Text Formatting  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Appearance_TextFormattingHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Intense is bold, bright  -->
             <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}" />
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
         </StackPanel>
 

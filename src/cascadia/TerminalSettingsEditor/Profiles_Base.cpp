@@ -37,6 +37,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
+
+        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [state, this](auto /*s*/, auto /*e*/) {
+            // This event fires every time the layout changes, but it is always the last one to fire
+            // in any layout change chain. That gives us great flexibility in finding the right point
+            // at which to initialize our renderer (and our terminal).
+            // Any earlier than the last layout update and we may not know the terminal's starting size.
+
+            // Only let this succeed once.
+            _layoutUpdatedRevoker.revoke();
+
+            if (state.FocusDeleteButton())
+            {
+                DeleteButton().Focus(FocusState::Programmatic);
+                state.FocusDeleteButton(false);
+                ProfilesBase_ScrollView().ChangeView(nullptr, ProfilesBase_ScrollView().ScrollableHeight(), nullptr);
+            }
+        });
     }
 
     void Profiles_Base::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
@@ -44,22 +61,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModelChangedRevoker.revoke();
     }
 
-    void Profiles_Base::Appearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    void Profiles_Base::Appearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _Profile.CurrentPage(ProfileSubPage::Appearance);
     }
 
-    void Profiles_Base::Advanced_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    void Profiles_Base::Advanced_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _Profile.CurrentPage(ProfileSubPage::Advanced);
     }
 
-    void Profiles_Base::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void Profiles_Base::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         winrt::get_self<ProfileViewModel>(_Profile)->DeleteProfile();
     }
 
-    fire_and_forget Profiles_Base::Commandline_Click(IInspectable const&, RoutedEventArgs const&)
+    fire_and_forget Profiles_Base::Commandline_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -89,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Profiles_Base::Icon_Click(IInspectable const&, RoutedEventArgs const&)
+    fire_and_forget Profiles_Base::Icon_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -101,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Profiles_Base::StartingDirectory_Click(IInspectable const&, RoutedEventArgs const&)
+    fire_and_forget Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
         const auto parentHwnd{ reinterpret_cast<HWND>(winrt::get_self<ProfileViewModel>(_Profile)->WindowRoot().GetHostingWindow()) };

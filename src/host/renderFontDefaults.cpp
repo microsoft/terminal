@@ -23,7 +23,7 @@ try
 {
     // GH#3123: Propagate font length changes up through Settings and propsheet
     wchar_t faceName[LF_FACESIZE]{ 0 };
-    NTSTATUS status = TrueTypeFontList::s_SearchByCodePage(codePage, faceName, ARRAYSIZE(faceName));
+    auto status = TrueTypeFontList::s_SearchByCodePage(codePage, faceName, ARRAYSIZE(faceName));
     outFaceName.assign(faceName);
     return HRESULT_FROM_NT(status);
 }

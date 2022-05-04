@@ -29,7 +29,7 @@ GdiEngine::GdiEngine() :
     _fInvalidRectUsed(false),
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
-    _lastFontType(FontType::Default),
+    _lastFontType(FontType::Undefined),
     _currentLineTransform(IDENTITY_XFORM),
     _currentLineRendition(LineRendition::SingleWidth),
     _fPaintStarted(false),
@@ -122,10 +122,10 @@ GdiEngine::~GdiEngine()
 [[nodiscard]] HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept
 {
     // First attempt to get the DC and create an appropriate DC
-    HDC const hdcRealWindow = GetDC(hwnd);
+    const auto hdcRealWindow = GetDC(hwnd);
     RETURN_HR_IF_NULL(E_FAIL, hdcRealWindow);
 
-    HDC const hdcNewMemoryContext = CreateCompatibleDC(hdcRealWindow);
+    const auto hdcNewMemoryContext = CreateCompatibleDC(hdcRealWindow);
     RETURN_HR_IF_NULL(E_FAIL, hdcNewMemoryContext);
 
     // We need the advanced graphics mode in order to set a transform.
@@ -141,15 +141,6 @@ GdiEngine::~GdiEngine()
     // Store new window handle and memory context
     _hwndTargetWindow = hwnd;
     _hdcMemoryContext = hdcNewMemoryContext;
-
-    // If we have a font, apply it to the context.
-    if (nullptr != _hfont)
-    {
-        LOG_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
-    }
-
-    // Record the fact that the selected font is the default.
-    _lastFontType = FontType::Default;
 
     if (nullptr != hdcRealWindow)
     {
@@ -184,7 +175,7 @@ GdiEngine::~GdiEngine()
     // Otherwise, we'll get an "Error: The operation has completed successfully." and there will be another screenshot on the internet making fun of Windows.
     // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591(v=vs.85).aspx
     SetLastError(0);
-    LONG const lResult = SetWindowLongW(hWnd, nIndex, dwNewLong);
+    const auto lResult = SetWindowLongW(hWnd, nIndex, dwNewLong);
     if (0 == lResult)
     {
         RETURN_LAST_ERROR_IF(0 != GetLastError());
@@ -310,7 +301,9 @@ GdiEngine::~GdiEngine()
 
     // If the font type has changed, select an appropriate font variant or soft font.
     const auto usingItalicFont = textAttributes.IsItalic();
-    const auto fontType = usingSoftFont ? FontType::Soft : usingItalicFont ? FontType::Italic : FontType::Default;
+    const auto fontType = usingSoftFont   ? FontType::Soft :
+                          usingItalicFont ? FontType::Italic :
+                                            FontType::Default;
     if (fontType != _lastFontType)
     {
         switch (fontType)
@@ -327,6 +320,7 @@ GdiEngine::~GdiEngine()
             break;
         }
         _lastFontType = fontType;
+        _fontHasWesternScript = FontHasWesternScript(_hdcMemoryContext);
     }
 
     return S_OK;
@@ -347,9 +341,6 @@ GdiEngine::~GdiEngine()
 
     // Select into DC
     RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
-
-    // Record the fact that the selected font is the default.
-    _lastFontType = FontType::Default;
 
     // Save off the font metrics for various other calculations
     RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics)));
@@ -456,7 +447,9 @@ GdiEngine::~GdiEngine()
                                                 const SIZE cellSize,
                                                 const size_t centeringHint) noexcept
 {
-    // If the soft font is currently selected, replace it with the default font.
+    // If we previously called SelectFont(_hdcMemoryContext, _softFont), it will
+    // still hold a reference to the _softFont object we're planning to overwrite.
+    // --> First revert back to the standard _hfont, lest we have dangling pointers.
     if (_lastFontType == FontType::Soft)
     {
         RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
@@ -546,7 +539,7 @@ GdiEngine::~GdiEngine()
     RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
 
     // Get a special engine size because TT fonts can't specify X or we'll get weird scaling under some circumstances.
-    COORD coordFontRequested = FontDesired.GetEngineSize();
+    auto coordFontRequested = FontDesired.GetEngineSize();
 
     // First, check to see if we're asking for the default raster font.
     if (FontDesired.IsDefaultRasterFont())
@@ -646,7 +639,7 @@ GdiEngine::~GdiEngine()
         ABC abc;
         if (0 != GetCharABCWidthsW(hdcTemp.get(), '0', '0', &abc))
         {
-            int const abcTotal = abc.abcA + abc.abcB + abc.abcC;
+            const int abcTotal = abc.abcA + abc.abcB + abc.abcC;
 
             // No negatives or zeros or we'll have bad character-to-pixel math later.
             if (abcTotal > 0)
@@ -659,7 +652,7 @@ GdiEngine::~GdiEngine()
     // Now fill up the FontInfo we were passed with the full details of which font we actually chose
     {
         // Get the actual font face that we chose
-        const size_t faceNameLength{ gsl::narrow<size_t>(GetTextFaceW(hdcTemp.get(), 0, nullptr)) };
+        const auto faceNameLength{ gsl::narrow<size_t>(GetTextFaceW(hdcTemp.get(), 0, nullptr)) };
 
         std::wstring currentFaceName{};
         currentFaceName.resize(faceNameLength);

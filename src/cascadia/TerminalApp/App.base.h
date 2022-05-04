@@ -7,12 +7,12 @@ namespace winrt::TerminalApp::implementation
     {
         using IXamlType = ::winrt::Windows::UI::Xaml::Markup::IXamlType;
 
-        IXamlType GetXamlType(::winrt::Windows::UI::Xaml::Interop::TypeName const& type)
+        IXamlType GetXamlType(const ::winrt::Windows::UI::Xaml::Interop::TypeName& type)
         {
             return _appProvider.GetXamlType(type);
         }
 
-        IXamlType GetXamlType(::winrt::hstring const& fullName)
+        IXamlType GetXamlType(const ::winrt::hstring& fullName)
         {
             return _appProvider.GetXamlType(fullName);
         }

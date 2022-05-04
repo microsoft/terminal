@@ -31,8 +31,8 @@ void CommandNumberPopup::_handleNumber(COOKED_READ_DATA& cookedReadData, const w
 {
     if (_userInput.size() < COMMAND_NUMBER_LENGTH)
     {
-        size_t CharsToWrite = sizeof(wchar_t);
-        const TextAttribute realAttributes = cookedReadData.ScreenInfo().GetAttributes();
+        auto CharsToWrite = sizeof(wchar_t);
+        const auto realAttributes = cookedReadData.ScreenInfo().GetAttributes();
         cookedReadData.ScreenInfo().SetAttributes(_attributes);
         size_t NumSpaces;
         FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
@@ -61,9 +61,9 @@ void CommandNumberPopup::_handleBackspace(COOKED_READ_DATA& cookedReadData) noex
 {
     if (_userInput.size() > 0)
     {
-        size_t CharsToWrite = sizeof(WCHAR);
-        const wchar_t backspace = UNICODE_BACKSPACE;
-        const TextAttribute realAttributes = cookedReadData.ScreenInfo().GetAttributes();
+        auto CharsToWrite = sizeof(WCHAR);
+        const auto backspace = UNICODE_BACKSPACE;
+        const auto realAttributes = cookedReadData.ScreenInfo().GetAttributes();
         cookedReadData.ScreenInfo().SetAttributes(_attributes);
         size_t NumSpaces;
         FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
@@ -101,8 +101,8 @@ void CommandNumberPopup::_handleEscape(COOKED_READ_DATA& cookedReadData) noexcep
 // - cookedReadData - read data to operate on
 void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    const short commandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
-                                                            cookedReadData.History().GetNumberOfCommands() - 1));
+    const auto commandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
+                                                           cookedReadData.History().GetNumberOfCommands() - 1));
 
     CommandLine::Instance().EndAllPopups();
     SetCurrentCommandLine(cookedReadData, commandNumber);
@@ -115,9 +115,9 @@ void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcep
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]] NTSTATUS CommandNumberPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-    WCHAR wch = UNICODE_NULL;
-    bool popupKeys = false;
+    auto Status = STATUS_SUCCESS;
+    auto wch = UNICODE_NULL;
+    auto popupKeys = false;
     DWORD modifiers = 0;
 
     for (;;)

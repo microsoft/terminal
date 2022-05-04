@@ -14,5 +14,6 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> SelectionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> TextChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CursorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, String> NewOutput;
     }
 }

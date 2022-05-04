@@ -43,7 +43,7 @@ namespace Microsoft::Console::Render
                                                            const gsl::not_null<IRenderData*> pData,
                                                            const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -53,10 +53,21 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
+        [[nodiscard]] HRESULT SetWindowVisibility(const bool showOrHide) noexcept override;
+
     protected:
+        // I'm using a non-class enum here, so that the values
+        // are trivially convertible and comparable to bool.
+        enum class Tribool : uint8_t
+        {
+            False = 0,
+            True,
+            Invalid,
+        };
+
         const bool _fUseAsciiOnly;
         bool _needToDisableCursor;
-        bool _lastCursorIsVisible;
+        Tribool _lastCursorIsVisible;
         bool _nextCursorIsVisible;
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;

@@ -27,7 +27,7 @@ namespace Microsoft::Console::Render
         // This is where the data is stored
         const TextBuffer& buffer;
 
-        // This is where the top left of the stored buffer should be overlayed on the screen
+        // This is where the top left of the stored buffer should be overlaid on the screen
         // (relative to the current visible viewport)
         const COORD origin;
 

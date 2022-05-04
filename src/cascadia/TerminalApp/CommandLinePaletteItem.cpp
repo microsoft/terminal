@@ -18,7 +18,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    CommandLinePaletteItem::CommandLinePaletteItem(winrt::hstring const& commandLine) :
+    CommandLinePaletteItem::CommandLinePaletteItem(const winrt::hstring& commandLine) :
         _CommandLine(commandLine)
     {
         Name(commandLine);

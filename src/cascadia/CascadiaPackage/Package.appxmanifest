@@ -21,7 +21,7 @@
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>ms-resource:TerminalApp/ContextMenu/AppName</DisplayName>
+    <DisplayName>ms-resource:AppStoreName</DisplayName>
     <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -31,7 +31,95 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="EN-US" />
+    <Resource Language="EN-GB" />
+    <Resource Language="AF-ZA" />
+    <Resource Language="AM-ET" />
+    <Resource Language="AR-SA" />
+    <Resource Language="AS-IN" />
+    <Resource Language="AZ-LATN-AZ" />
+    <Resource Language="BG-BG" />
+    <Resource Language="BN-IN" />
+    <Resource Language="BS-LATN-BA" />
+    <Resource Language="CA-ES" />
+    <Resource Language="CA-ES-VALENCIA" />
+    <Resource Language="CS-CZ" />
+    <Resource Language="CY-GB" />
+    <Resource Language="DA-DK" />
+    <Resource Language="DE-DE" />
+    <Resource Language="EL-GR" />
+    <Resource Language="ES-ES" />
+    <Resource Language="ES-MX" />
+    <Resource Language="ET-EE" />
+    <Resource Language="EU-ES" />
+    <Resource Language="FA-IR" />
+    <Resource Language="FI-FI" />
+    <Resource Language="FIL-PH" />
+    <Resource Language="FR-CA" />
+    <Resource Language="FR-FR" />
+    <Resource Language="GA-IE" />
+    <Resource Language="GD-GB" />
+    <Resource Language="GL-ES" />
+    <Resource Language="GU-IN" />
+    <Resource Language="HE-IL" />
+    <Resource Language="HI-IN" />
+    <Resource Language="HR-HR" />
+    <Resource Language="HU-HU" />
+    <Resource Language="HY-AM" />
+    <Resource Language="ID-ID" />
+    <Resource Language="IS-IS" />
+    <Resource Language="IT-IT" />
+    <Resource Language="JA-JP" />
+    <Resource Language="KA-GE" />
+    <Resource Language="KK-KZ" />
+    <Resource Language="KM-KH" />
+    <Resource Language="KN-IN" />
+    <Resource Language="KO-KR" />
+    <Resource Language="KOK-IN" />
+    <Resource Language="LB-LU" />
+    <Resource Language="LO-LA" />
+    <Resource Language="LT-LT" />
+    <Resource Language="LV-LV" />
+    <Resource Language="MI-NZ" />
+    <Resource Language="MK-MK" />
+    <Resource Language="ML-IN" />
+    <Resource Language="MR-IN" />
+    <Resource Language="MS-MY" />
+    <Resource Language="MT-MT" />
+    <Resource Language="NB-NO" />
+    <Resource Language="NE-NP" />
+    <Resource Language="NL-NL" />
+    <Resource Language="NN-NO" />
+    <Resource Language="OR-IN" />
+    <Resource Language="PA-IN" />
+    <Resource Language="PL-PL" />
+    <Resource Language="PT-BR" />
+    <Resource Language="PT-PT" />
+    <Resource Language="QPS-PLOC" />
+    <Resource Language="QPS-PLOCA" />
+    <Resource Language="QPS-PLOCM" />
+    <Resource Language="QUZ-PE" />
+    <Resource Language="RO-RO" />
+    <Resource Language="RU-RU" />
+    <Resource Language="SK-SK" />
+    <Resource Language="SL-SI" />
+    <Resource Language="SQ-AL" />
+    <Resource Language="SR-CYRL-BA" />
+    <Resource Language="SR-CYRL-RS" />
+    <Resource Language="SR-LATN-RS" />
+    <Resource Language="SV-SE" />
+    <Resource Language="TA-IN" />
+    <Resource Language="TE-IN" />
+    <Resource Language="TH-TH" />
+    <Resource Language="TR-TR" />
+    <Resource Language="TT-RU" />
+    <Resource Language="UG-CN" />
+    <Resource Language="UK-UA" />
+    <Resource Language="UR-PK" />
+    <Resource Language="UZ-LATN-UZ" />
+    <Resource Language="VI-VN" />
+    <Resource Language="ZH-CN" />
+    <Resource Language="ZH-TW" />
   </Resources>
 
   <Applications>
@@ -39,8 +127,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="ms-resource:TerminalApp/ContextMenu/AppName"
-        Description="ms-resource:TerminalApp/ContextMenu/AppDescription"
+        DisplayName="ms-resource:AppName"
+        Description="ms-resource:AppDescription"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
         Square44x44Logo="Images\Square44x44Logo.png">
@@ -48,7 +136,7 @@
           Wide310x150Logo="Images\Wide310x150Logo.png"
           Square71x71Logo="Images\SmallTile.png"
           Square310x310Logo="Images\LargeTile.png"
-          ShortName="ms-resource:TerminalApp/ContextMenu/AppShortName">
+          ShortName="ms-resource:AppShortName">
           <uap:ShowNameOnTiles>
             <uap:ShowOn Tile="square150x150Logo"/>
             <uap:ShowOn Tile="wide310x150Logo"/>
@@ -72,7 +160,7 @@
           <uap5:StartupTask
             TaskId="StartTerminalOnLoginTask"
             Enabled="false"
-            DisplayName="ms-resource:TerminalApp/ContextMenu/AppName" />
+            DisplayName="ms-resource:AppName" />
         </uap5:Extension>
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.console.host"
@@ -147,4 +235,9 @@
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>
+
+  <mp:PhoneIdentity
+    PhoneProductId="3a855625-ba50-46d5-b806-cb4520089c64"
+    PhonePublisherId="95d94207-0c7c-47ed-82db-d75c81153c35" />
+
 </Package>

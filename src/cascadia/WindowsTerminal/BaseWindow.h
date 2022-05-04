@@ -101,7 +101,7 @@ public:
     [[nodiscard]] LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
     {
         _inDpiChange = true;
-        const HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
+        const auto hWndStatic = GetWindow(hWnd, GW_CHILD);
         if (hWndStatic != nullptr)
         {
             const UINT uDpi = HIWORD(wParam);

@@ -29,8 +29,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentDefaultProfile(const IInspectable& value);
         winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
 
-        bool ShowFirstWindowPreference() const noexcept;
-
         WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, State().Settings().GlobalSettings().FirstWindowPreference);

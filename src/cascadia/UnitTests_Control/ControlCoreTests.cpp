@@ -6,7 +6,7 @@
 #include "../TerminalControl/ControlCore.h"
 #include "MockControlSettings.h"
 #include "MockConnection.h"
-#include "../UnitTests_TerminalCore/TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -125,7 +125,7 @@ namespace ControlUnitTests
         VERIFY_IS_NOT_NULL(core);
 
         // A callback to make sure that we're raising TransparencyChanged events
-        double expectedOpacity = 0.5;
+        auto expectedOpacity = 0.5;
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
@@ -233,7 +233,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
                      L"(leaving the cursor afer 'Bar')");
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
@@ -272,7 +272,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
                      L"(leaving the cursor afer 'Bar')");
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
@@ -311,7 +311,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
                      L"(leaving the cursor afer 'Bar')");
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }

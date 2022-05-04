@@ -119,9 +119,7 @@ AddFaceNode(
     return pNew;
 }
 
-VOID
-    DestroyFaceNodes(
-        VOID)
+VOID DestroyFaceNodes(VOID)
 {
     PFACENODE pNext, pTmp;
 
@@ -187,7 +185,7 @@ void RecreateFontHandles(const HWND hWnd)
                 lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
                 if (SUCCEEDED(StringCchCopy(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), FontInfo[iCurrFont].FaceName)))
                 {
-                    HFONT hRescaledFont = CreateFontIndirect(&lf);
+                    auto hRescaledFont = CreateFontIndirect(&lf);
                     if (hRescaledFont != nullptr)
                     {
                         // Only replace the existing font if we've got a replacement. The worst that can happen is that
@@ -217,8 +215,8 @@ int AddFont(
     COORD SizeToShow, SizeActual, SizeWant, SizeOriginal;
     BYTE tmFamily;
     SIZE Size;
-    BOOL fCreatingBoldFont = FALSE;
-    LPTSTR ptszFace = pelf->elfLogFont.lfFaceName;
+    auto fCreatingBoldFont = FALSE;
+    auto ptszFace = pelf->elfLogFont.lfFaceName;
 
     /* get font info */
     SizeWant.X = (SHORT)pelf->elfLogFont.lfWidth;
@@ -435,16 +433,12 @@ CreateBoldFont:
     return FE_FONTOK; // and continue enumeration
 }
 
-VOID
-    InitializeFonts(
-        VOID)
+VOID InitializeFonts(VOID)
 {
     LOG_IF_FAILED(EnumerateFonts(EF_DEFFACE)); // Just the Default font
 }
 
-VOID
-    DestroyFonts(
-        VOID)
+VOID DestroyFonts(VOID)
 {
     ULONG FontIndex;
 
@@ -477,7 +471,7 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nF
     UINT i;
     LPCTSTR ptszFace = pelf->elfLogFont.lfFaceName;
     PFACENODE pFN;
-    PFONTENUMDATA pfed = (PFONTENUMDATA)lParam;
+    auto pfed = (PFONTENUMDATA)lParam;
 
     DBGFONTS(("  FontEnum \"%ls\" (%d,%d) weight 0x%lx(%d) %x -- %s\n",
               ptszFace,
@@ -624,7 +618,7 @@ int
     UINT i;
     LPCTSTR ptszFace = pelf->elfLogFont.lfFaceName;
     PFACENODE pFN;
-    PFONTENUMDATA pfed = (PFONTENUMDATA)lParam;
+    auto pfed = (PFONTENUMDATA)lParam;
 
     DBGFONTS(("  FontEnum \"%ls\" (%d,%d) weight 0x%lx(%d) %x -- %s\n",
               ptszFace,
@@ -786,7 +780,7 @@ BOOL DoFontEnum(
     __in_ecount_opt(nTTPoints) PSHORT pTTPoints,
     __in UINT nTTPoints)
 {
-    BOOL bDeleteDC = FALSE;
+    auto bDeleteDC = FALSE;
     FONTENUMDATA fed;
     LOGFONT LogFont;
 
@@ -836,7 +830,7 @@ BOOL DoFontEnum(
 VOID RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
 {
     DWORD i;
-    int nToRemove = 0;
+    auto nToRemove = 0;
 
     DBGFONTS(("RemoveFace %ls\n", ptszFace));
     //
@@ -846,7 +840,7 @@ VOID RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
     {
         if (0 == lstrcmp(FontInfo[i].FaceName, ptszFace))
         {
-            BOOL bDeleted = DeleteObject(FontInfo[i].hFont);
+            auto bDeleted = DeleteObject(FontInfo[i].hFont);
             DBGFONTS(("RemoveFace: hFont %p was %sdeleted\n",
                       FontInfo[i].hFont,
                       bDeleted ? "" : "NOT "));
@@ -871,9 +865,9 @@ VOID RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
 }
 
 // Given a desired SHORT size, search pTTPoints to determine if size is in the list.
-static bool IsSizePresentInList(__in const SHORT sSizeDesired, __in_ecount(nTTPoints) PSHORT pTTPoints, __in UINT nTTPoints)
+static bool IsSizePresentInList(const __in SHORT sSizeDesired, __in_ecount(nTTPoints) PSHORT pTTPoints, __in UINT nTTPoints)
 {
-    bool fSizePresent = false;
+    auto fSizePresent = false;
     for (UINT i = 0; i < nTTPoints; i++)
     {
         if (pTTPoints[i] == sSizeDesired)
@@ -887,7 +881,7 @@ static bool IsSizePresentInList(__in const SHORT sSizeDesired, __in_ecount(nTTPo
 
 // Given a face name, determine if the size provided is custom (i.e. not on the hardcoded list of sizes). Note that the
 // list of sizes we use varies depending on the codepage being used
-bool IsFontSizeCustom(__in PCWSTR pszFaceName, __in const SHORT sSize)
+bool IsFontSizeCustom(__in PCWSTR pszFaceName, const __in SHORT sSize)
 {
     bool fUsingCustomFontSize;
     if (g_fEastAsianSystem && !IsAvailableTTFontCP(pszFaceName, 0))
@@ -910,12 +904,12 @@ static bool IsCurrentFontSizeCustom()
 
 // Given a size, iterate through all TT fonts and load them in the provided size (only used for custom (non-hardcoded)
 // font sizes)
-void CreateSizeForAllTTFonts(__in const SHORT sSize)
+void CreateSizeForAllTTFonts(const __in SHORT sSize)
 {
-    HDC hDC = CreateCompatibleDC(nullptr);
+    auto hDC = CreateCompatibleDC(nullptr);
 
     // for each font face
-    for (PFACENODE pFN = gpFaceNames; pFN; pFN = pFN->pNext)
+    for (auto pFN = gpFaceNames; pFN; pFN = pFN->pNext)
     {
         if (pFN->dwFlag & EF_TTFONT)
         {

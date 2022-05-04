@@ -62,6 +62,19 @@ static std::wstring _normalizeIconPath(std::wstring_view path)
 // - <none>
 winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
+    if (!settings)
+    {
+        // By all accounts, this shouldn't be null. Seemingly however (GH
+        // #12360), it sometimes is. So just check this case here and log a
+        // message.
+        TraceLoggingWrite(g_hTerminalAppProvider,
+                          "Jumplist_UpdateJumplist_NullSettings",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        co_return;
+    }
+
     // make sure to capture the settings _before_ the co_await
     const auto strongSettings = settings;
 

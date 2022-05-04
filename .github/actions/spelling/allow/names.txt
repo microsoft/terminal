@@ -1,8 +1,10 @@
 Anup
 austdi
+arkthur
 Ballmer
 bhoj
 Bhojwani
+Bluloco
 carlos
 dhowett
 Diviness
@@ -22,6 +24,7 @@ Hernan
 Howett
 Illhardt
 iquilezles
+italo
 jantari
 jerrysh
 Kaiyu
@@ -35,7 +38,9 @@ leonmsft
 Lepilleur
 lhecker
 lukesampson
+Macbook
 Manandhar
+masserano
 mbadolato
 Mehrain
 menger
@@ -68,6 +73,7 @@ Somuah
 sonph
 sonpham
 stakx
+talo
 thereses
 Walisch
 WDX

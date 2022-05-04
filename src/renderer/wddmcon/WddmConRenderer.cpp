@@ -20,7 +20,7 @@
 
 using namespace Microsoft::Console::Render;
 
-WddmConEngine::WddmConEngine() :
+WddmConEngine::WddmConEngine() noexcept :
     RenderEngineBase(),
     _hWddmConCtx(INVALID_HANDLE_VALUE),
     _displayHeight(0),
@@ -63,10 +63,11 @@ void WddmConEngine::FreeResources(ULONG displayHeight)
 
 WddmConEngine::~WddmConEngine()
 {
+#pragma warning(suppress : 26447)
     FreeResources(_displayHeight);
 }
 
-[[nodiscard]] HRESULT WddmConEngine::Initialize() noexcept
+[[nodiscard]] HRESULT WddmConEngine::Initialize()
 {
     HRESULT hr;
     RECT DisplaySize;
@@ -84,16 +85,16 @@ WddmConEngine::~WddmConEngine()
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;
-                DisplaySize.bottom = (LONG)DisplaySizeIoctl.Height;
-                DisplaySize.right = (LONG)DisplaySizeIoctl.Width;
+                DisplaySize.bottom = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Height);
+                DisplaySize.right = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Width);
 
-                _displayState = (PCD_IO_ROW_INFORMATION*)calloc(DisplaySize.bottom, sizeof(PCD_IO_ROW_INFORMATION));
+                _displayState = static_cast<PCD_IO_ROW_INFORMATION*>(calloc(DisplaySize.bottom, sizeof(PCD_IO_ROW_INFORMATION)));
 
                 if (_displayState != nullptr)
                 {
                     for (LONG i = 0; i < DisplaySize.bottom; i++)
                     {
-                        _displayState[i] = (PCD_IO_ROW_INFORMATION)calloc(1, sizeof(CD_IO_ROW_INFORMATION));
+                        _displayState[i] = static_cast<PCD_IO_ROW_INFORMATION>(calloc(1, sizeof(CD_IO_ROW_INFORMATION)));
                         if (_displayState[i] == nullptr)
                         {
                             hr = E_OUTOFMEMORY;
@@ -101,9 +102,9 @@ WddmConEngine::~WddmConEngine()
                             break;
                         }
 
-                        _displayState[i]->Index = (SHORT)i;
-                        _displayState[i]->Old = (PCD_IO_CHARACTER)calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER));
-                        _displayState[i]->New = (PCD_IO_CHARACTER)calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER));
+                        _displayState[i]->Index = gsl::narrow_cast<SHORT>(i);
+                        _displayState[i]->Old = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
+                        _displayState[i]->New = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
 
                         if (_displayState[i]->Old == nullptr || _displayState[i]->New == nullptr)
                         {
@@ -144,22 +145,26 @@ WddmConEngine::~WddmConEngine()
     return hr;
 }
 
-bool WddmConEngine::IsInitialized()
+bool WddmConEngine::IsInitialized() noexcept
 {
     return _hWddmConCtx != INVALID_HANDLE_VALUE;
 }
 
 [[nodiscard]] HRESULT WddmConEngine::Enable() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
-    return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, TRUE);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
+    return WDDMConEnableDisplayAccess(_hWddmConCtx, TRUE);
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT WddmConEngine::Disable() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
-    return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, FALSE);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
+    return WDDMConEnableDisplayAccess(_hWddmConCtx, FALSE);
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
@@ -191,12 +196,6 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
 [[nodiscard]] HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
@@ -204,16 +203,20 @@ bool WddmConEngine::IsInitialized()
 }
 
 [[nodiscard]] HRESULT WddmConEngine::StartPaint() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConBeginUpdateDisplayBatch(_hWddmConCtx);
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT WddmConEngine::EndPaint() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConEndUpdateDisplayBatch(_hWddmConCtx);
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Used to perform longer running presentation steps outside the lock so the other threads can continue.
@@ -235,17 +238,14 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::PaintBackground() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
-
-    PCD_IO_CHARACTER OldChar;
-    PCD_IO_CHARACTER NewChar;
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
     for (LONG rowIndex = 0; rowIndex < _displayHeight; rowIndex++)
     {
         for (LONG colIndex = 0; colIndex < _displayWidth; colIndex++)
         {
-            OldChar = &_displayState[rowIndex]->Old[colIndex];
-            NewChar = &_displayState[rowIndex]->New[colIndex];
+            const auto OldChar = &_displayState[rowIndex]->Old[colIndex];
+            const auto NewChar = &_displayState[rowIndex]->New[colIndex];
 
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
@@ -258,22 +258,19 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
                                                      const COORD coord,
                                                      const bool /*trimLeft*/,
                                                      const bool /*lineWrapped*/) noexcept
 {
     try
     {
-        RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+        RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
-        PCD_IO_CHARACTER OldChar;
-        PCD_IO_CHARACTER NewChar;
-
-        for (size_t i = 0; i < clusters.size() && i < (size_t)_displayWidth; i++)
+        for (size_t i = 0; i < clusters.size() && i < gsl::narrow_cast<size_t>(_displayWidth); i++)
         {
-            OldChar = &_displayState[coord.Y]->Old[coord.X + i];
-            NewChar = &_displayState[coord.Y]->New[coord.X + i];
+            const auto OldChar = &_displayState[coord.Y]->Old[coord.X + i];
+            const auto NewChar = &_displayState[coord.Y]->New[coord.X + i];
 
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
@@ -290,7 +287,7 @@ bool WddmConEngine::IsInitialized()
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                           COLORREF const /*color*/,
                                                           size_t const /*cchLine*/,
-                                                          COORD const /*coordTarget*/) noexcept
+                                                          const COORD /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -309,7 +306,7 @@ bool WddmConEngine::IsInitialized()
                                                           const RenderSettings& /*renderSettings*/,
                                                           const gsl::not_null<IRenderData*> /*pData*/,
                                                           const bool /*usingSoftFont*/,
-                                                          bool const /*isSettingDefaultBrushes*/) noexcept
+                                                          const bool /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
@@ -321,7 +318,7 @@ bool WddmConEngine::IsInitialized()
     return GetProposedFont(fiFontInfoDesired, fiFontInfo, USER_DEFAULT_SCREEN_DPI);
 }
 
-[[nodiscard]] HRESULT WddmConEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -340,9 +337,10 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*fiFontInfoDesired*/,
                                                      FontInfo& fiFontInfo,
-                                                     int const /*iDpi*/) noexcept
+                                                     const int /*iDpi*/) noexcept
 {
     COORD coordSize = { 0 };
+#pragma warning(suppress : 26447)
     LOG_IF_FAILED(GetFontSize(&coordSize));
 
     fiFontInfo.SetFromEngine(fiFontInfo.GetFaceName(),
@@ -366,7 +364,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-RECT WddmConEngine::GetDisplaySize()
+RECT WddmConEngine::GetDisplaySize() noexcept
 {
     RECT r;
     r.top = 0;

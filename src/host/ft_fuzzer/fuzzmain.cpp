@@ -108,7 +108,7 @@ extern "C" __declspec(dllexport) HRESULT RunConhost()
     // but for now we want to drive it like conhost
     ConsoleArguments args({}, nullptr, nullptr);
 
-    HRESULT hr = args.ParseCommandline();
+    auto hr = args.ParseCommandline();
     if (SUCCEEDED(hr))
     {
         hr = StartNullConsole(&args);
@@ -133,7 +133,7 @@ extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data,
 
     const auto u16String{ til::u8u16(std::string_view{ reinterpret_cast<const char*>(data), size }) };
     SHORT scrollY{};
-    size_t sizeInBytes{ u16String.size() * 2 };
+    auto sizeInBytes{ u16String.size() * 2 };
     gci.LockConsole();
     auto u = wil::scope_exit([&]() { gci.UnlockConsole(); });
     (void)WriteCharsLegacy(gci.GetActiveOutputBuffer(),

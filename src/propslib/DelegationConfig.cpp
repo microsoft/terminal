@@ -230,7 +230,7 @@ try
     LOG_IF_FAILED(s_GetDefaultTerminalId(defTerm));
 
     // The default one is the 0th one because that's supposed to be the inbox conhost one.
-    DelegationPackage chosenPackage = packages.at(0);
+    auto chosenPackage = packages.at(0);
 
     // Search through and find a package that matches. If we failed to match because
     // it's torn across multiple or something not in the catalog, we'll offer the inbox conhost one.
@@ -272,7 +272,7 @@ CATCH_RETURN()
 
     auto hr = s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
 
-    bool defApp = false;
+    auto defApp = false;
     if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
     {
         if (FAILED(hr))
@@ -293,7 +293,7 @@ CATCH_RETURN()
 
     auto hr = s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
 
-    bool defApp = false;
+    auto defApp = false;
     if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
     {
         if (FAILED(hr))
@@ -319,12 +319,12 @@ CATCH_RETURN()
     RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey));
 
     DWORD bytesNeeded = 0;
-    NTSTATUS result = RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                          value,
-                                                          0,
-                                                          REG_SZ,
-                                                          nullptr,
-                                                          &bytesNeeded);
+    auto result = RegistrySerialization::s_QueryValue(startupKey.get(),
+                                                      value,
+                                                      0,
+                                                      REG_SZ,
+                                                      nullptr,
+                                                      &bytesNeeded);
 
     if (NTSTATUS_FROM_WIN32(ERROR_SUCCESS) != result)
     {

@@ -94,7 +94,7 @@ REM SET "SEPARATOR.CELL=╎"                & :: UTF-8
 IF DEFINED SHOW.UTF8 (SET "SEPARATOR.STUBHEAD_BOXHEAD=│") ELSE (SET "SEPARATOR.STUBHEAD_BOXHEAD=:")
 IF DEFINED SHOW.UTF8 (SET "SEPARATOR.STUBHEAD_STUB=─") ELSE (SET "SEPARATOR.STUBHEAD_STUB=-")
 IF DEFINED SHOW.UTF8 (SET "SEPARATOR.INTERSECT=┘") ELSE (SET "SEPARATOR.INTERSECT=+")
-:: You can also define control for formating
+:: You can also define control for formatting
 SET "SECTION=!CSI!1;4m"
 __TABLE:END__
 
@@ -1402,7 +1402,7 @@ SET @counter=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
 :: @exit  [ErrorLevel]
 ::
 ::   Used to exit and optionally sets an error code if provided.
-::   This is prefered for exiting a script over GOTO :EOF for consistency
+::   This is preferred for exiting a script over GOTO :EOF for consistency
 ::   and to pass Error Levels if necessary. This tidy's up a call
 ::   to EXIT /B [ErrorLevel] so the use feels the same as other macros.
 ::
@@ -1535,7 +1535,7 @@ ECHO.
 :: #
 :: #   This file echoes a bunch of color codes to the
 :: #   terminal to demonstrate what's available.  Each
-:: #   line is the color code of one forground color,
+:: #   line is the color code of one foreground color,
 :: #   out of 17 (default + 16 escapes), followed by a
 :: #   test use of that color on all nine background
 :: #   colors (default + 8 escapes).

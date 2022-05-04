@@ -485,7 +485,7 @@
           "type": "boolean",
           "default": false,
           "description": "This will override the profile's `elevate` setting."
-        },
+        }
       },
       "type": "object"
     },
@@ -861,7 +861,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "SetFullScreenAction": {
       "description": "Arguments for a setFullScreen action",
@@ -881,7 +881,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "SetMaximizedAction": {
       "description": "Arguments for a setMaximized action",
@@ -901,7 +901,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
@@ -1633,7 +1633,7 @@
           "$ref": "#/$defs/CopyFormat"
         },
         "trimBlockSelection": {
-          "default": false,
+          "default": true,
           "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
           "type": "boolean"
         },
@@ -1761,7 +1761,7 @@
         },
         "useAcrylicInTabRow": {
           "default": false,
-          "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
+          "description": "When set to true, the tab row will have an acrylic material background with 50% opacity.",
           "type": "boolean"
         },
         "actions": {
@@ -2051,6 +2051,10 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "experimental.connection.passthroughMode": {
+          "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -2224,7 +2228,7 @@
         },
         "useAcrylic": {
           "default": false,
-          "description": "When set to true, the window will have an acrylic background. When set to false, the window will have a plain, untextured background.",
+          "description": "When set to true, the window will have an acrylic material background. When set to false, the window will have a plain, untextured background.",
           "type": "boolean"
         }
       },

@@ -364,12 +364,12 @@
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>Show acrylic in tab row (requires relaunch)</value>
-    <comment>Header for a control to toggle whether acrylic shows in the tab row. Changing this setting requires the user to relaunch the app.</comment>
+    <value>Use acrylic material in the tab row (requires relaunch)</value>
+    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
     <value>When checked, the tab row will have the acrylic material.</value>
-    <comment>A description for what the "use acrylic in tab row" setting does. Presented near "Globals_AcrylicTabRow.Header".</comment>
+    <comment>A description for the "Globals_AcrylicTabRow.Header" setting does. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
@@ -463,17 +463,33 @@
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
+  <data name="Nav_Appearance.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Appearance</value>
+    <comment>Tooltip for the "appearance" menu item.</comment>
+  </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
     <comment>Header for the "color schemes" menu item. This navigates to a page that lets you see and modify schemes of colors that can be used by the terminal.</comment>
+  </data>
+  <data name="Nav_ColorSchemes.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Color schemes</value>
+    <comment>Tooltip for the "color schemes" menu item.</comment>
   </data>
   <data name="Nav_Interaction.Content" xml:space="preserve">
     <value>Interaction</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
+  <data name="Nav_Interaction.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Interaction</value>
+    <comment>Tooltip for the "interaction" menu item.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Startup</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
+  </data>
+  <data name="Nav_Launch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Startup</value>
+    <comment>Tooltip for the "startup" menu item.</comment>
   </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
@@ -483,21 +499,25 @@
     <value>Defaults</value>
     <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
   </data>
+  <data name="Nav_ProfileDefaults.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defaults</value>
+    <comment>Tooltip for the "profile defaults" menu item.</comment>
+  </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
+  </data>
+  <data name="Nav_Rendering.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Rendering</value>
+    <comment>Tooltip for the "rendering" menu item.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
-  <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
-    <value>Acrylic opacity</value>
-    <comment>Header for a control to determine the level of opacity for the acrylic rendering material. The user can choose to make the acrylic background of the app more or less opaque.</comment>
-  </data>
-  <data name="Profile_AcrylicOpacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the window.</value>
-    <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
+  <data name="Nav_Actions.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Actions</value>
+    <comment>Tooltip for the "actions" menu item.</comment>
   </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
@@ -508,7 +528,7 @@
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
   </data>
   <data name="Profile_Opacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the window.</value>
+    <value>Sets the opacity of the window.</value>
     <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
   </data>
   <data name="Profile_Advanced.Header" xml:space="preserve">
@@ -628,7 +648,7 @@
     <comment>Header for a control to choose the opacity of the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the background image.</value>
+    <value>Sets the opacity of the background image.</value>
     <comment>A description for what the "background image opacity" setting does. Presented near "Profile_BackgroundImageOpacity".</comment>
   </data>
   <data name="Profile_BackgroundImageStretchMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -936,16 +956,24 @@
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
-    <value>Unfocused Appearance</value>
+    <value>Unfocused appearance</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
+  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
+    <value>Add</value>
+    <comment>Button label that adds an unfocused appearance for this profile.</comment>
+  </data>
+  <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Button label that deletes the unfocused appearance for this profile.</comment>
+  </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
-    <value>Enable acrylic</value>
-    <comment>Header for a control to toggle the acrylic-like rendering of the background. The acrylic material creates a translucent texture.</comment>
+    <value>Enable acrylic material</value>
+    <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
     <value>Applies a translucent texture to the background of the window.</value>
-    <comment>A description for what the "enable acrylic" setting does. Presented near "Profile_UseAcrylic".</comment>
+    <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
   <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
     <value>Use desktop wallpaper</value>
@@ -1014,6 +1042,10 @@
   <data name="Profile_UseAtlasEngine.Header" xml:space="preserve">
     <value>Enable experimental text rendering engine</value>
     <comment>An option to enable an experimental text rendering engine</comment>
+  </data>
+  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
+    <value>Enable experimental virtual terminal passthrough</value>
+    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Audible</value>
@@ -1130,13 +1162,9 @@
     <value>Name</value>
     <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
   </data>
-  <data name="Profile_AcrylicHeader.Text" xml:space="preserve">
-    <value>Acrylic</value>
-    <comment>Header for a group of settings related to the acrylic texture rendering on the background of the app.</comment>
-  </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>Transparency</value>
-    <comment>Header for a group of settings related to transparency, including the acrylic texture rendering on the background of the app.</comment>
+    <comment>Header for a group of settings related to transparency, including the acrylic material background of the app.</comment>
   </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
@@ -1185,6 +1213,10 @@
   <data name="RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Cancel rename</value>
     <comment>Text label for a button that can be used to cancel a rename operation during the renaming process.</comment>
+  </data>
+  <data name="ColorSchemesDisclaimer.Text" xml:space="preserve">
+    <value>Schemes defined here can be applied to your profiles under the "Appearances" section of the profile settings pages.</value>
+    <comment>A disclaimer presented at the top of a page. "Appearances" should match Profile_Appearance.Header.</comment>
   </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
     <value>Settings defined here will apply to all profiles unless they are overridden by a profile's settings.</value>

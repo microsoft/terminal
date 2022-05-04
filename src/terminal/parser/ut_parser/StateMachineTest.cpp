@@ -149,7 +149,7 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
         return true;
     }
 
-    TEST_METHOD(TwoStateMachinesDoNotInterfereWithEachother);
+    TEST_METHOD(TwoStateMachinesDoNotInterfereWithEachOther);
 
     TEST_METHOD(PassThroughUnhandled);
     TEST_METHOD(RunStorageBeforeEscape);
@@ -159,7 +159,7 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(DcsDataStringsReceivedByHandler);
 };
 
-void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachother()
+void StateMachineTest::TwoStateMachinesDoNotInterfereWithEachOther()
 {
     auto firstEnginePtr{ std::make_unique<TestStateMachineEngine>() };
     // this dance is required because StateMachine presumes to take ownership of its engine.

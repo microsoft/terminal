@@ -20,16 +20,8 @@ namespace Microsoft::Console::Interactivity
     class IWindowMetrics
     {
     public:
-        virtual ~IWindowMetrics() = 0;
+        virtual ~IWindowMetrics() = default;
         virtual RECT GetMinClientRectInPixels() = 0;
         virtual RECT GetMaxClientRectInPixels() = 0;
-
-    protected:
-        IWindowMetrics() {}
-
-        IWindowMetrics(IWindowMetrics const&) = delete;
-        IWindowMetrics& operator=(IWindowMetrics const&) = delete;
     };
-
-    inline IWindowMetrics::~IWindowMetrics() {}
 }

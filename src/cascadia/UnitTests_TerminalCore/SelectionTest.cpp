@@ -10,7 +10,7 @@
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "../cascadia/UnitTests_TerminalCore/MockTermSettings.h"
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "consoletaeftemplates.hpp"
 
 using namespace WEX::Logging;
@@ -47,8 +47,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectUnit)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -60,8 +60,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectArea)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Used for two things:
             //    - click y-pos
@@ -81,7 +81,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -114,8 +114,8 @@ namespace TerminalCoreUnitTests
             // Behavior: clamp coord to viewport.
             auto ValidateSingleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
                 // NOTE: SetSelectionEnd(COORD) is called within SetSelectionAnchor(COORD)
                 term.SetSelectionAnchor(maxCoord);
@@ -127,8 +127,8 @@ namespace TerminalCoreUnitTests
             //           Then, do double click selection.
             auto ValidateDoubleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
                 term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Word);
                 ValidateSingleRowSelection(term, expected);
@@ -139,8 +139,8 @@ namespace TerminalCoreUnitTests
             //           Then, do triple click selection.
             auto ValidateTripleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
                 term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Line);
                 ValidateSingleRowSelection(term, expected);
@@ -172,14 +172,14 @@ namespace TerminalCoreUnitTests
             */
 
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 10, 10 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
-            const SHORT leftBoundary = viewport.Left();
-            const SHORT rightBoundary = viewport.RightInclusive();
-            const SHORT topBoundary = viewport.Top();
-            const SHORT bottomBoundary = viewport.BottomInclusive();
+            const auto leftBoundary = viewport.Left();
+            const auto rightBoundary = viewport.RightInclusive();
+            const auto topBoundary = viewport.Top();
+            const auto bottomBoundary = viewport.BottomInclusive();
 
             // Case 1: Simulate click past right (x,y) = (20,5)
             // should clamp to right boundary
@@ -214,12 +214,12 @@ namespace TerminalCoreUnitTests
             */
 
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 10, 10 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
             const SHORT leftBoundary = 0;
-            const SHORT rightBoundary = viewport.RightInclusive();
+            const auto rightBoundary = viewport.RightInclusive();
 
             // Simulate click at (x,y) = (5,5)
             term.SetSelectionAnchor({ 5, 5 });
@@ -300,8 +300,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectBoxArea)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Used for two things:
             //    - click y-pos
@@ -336,9 +336,9 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectAreaAfterScroll)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
+            DummyRenderer renderer{ &term };
             SHORT scrollbackLines = 5;
-            term.Create({ 100, 100 }, scrollbackLines, emptyRT);
+            term.Create({ 100, 100 }, scrollbackLines, renderer);
 
             // Used for two things:
             //    - click y-pos
@@ -358,7 +358,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -386,15 +386,15 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -409,15 +409,15 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Leading)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
@@ -432,19 +432,19 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Insert wide glyph at position (7,11)
-            term.SetCursorPosition(7, 11);
+            term.GetTextBuffer().GetCursor().SetPosition({ 7, 11 });
             term.Write(burrito);
 
             // Simulate ALT + click at (x,y) = (5,8)
@@ -487,8 +487,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClick_GeneralCase)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -496,7 +496,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -510,8 +510,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClick_Delimiter)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -531,8 +531,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClick_DelimiterClass)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -540,7 +540,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"C:\\Terminal>";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate click at (x,y) = (15,10)
@@ -559,8 +559,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClickDrag_Right)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -568,7 +568,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
@@ -588,8 +588,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClickDrag_Left)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -597,7 +597,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (21,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (21,10)
@@ -617,8 +617,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(TripleClick_GeneralCase)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -631,8 +631,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(TripleClickDrag_Horizontal)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -648,8 +648,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(TripleClickDrag_Vertical)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -676,8 +676,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(ShiftClick)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -685,7 +685,7 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Step 1: Create a selection on "doubleClickMe"
@@ -793,8 +793,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(Pivot)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Step 1: Create a selection
             {
