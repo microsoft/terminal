@@ -54,6 +54,12 @@
         }
       ]
     },
+    "BellSound": {
+      "default": "#",
+      "description": "Controls the sound the Terminal plays when the application emits a BEL character. If the path is invalid no sound will be played. This property also accepts an array of paths and will choose one randomly as the sound.",
+      "pattern": "",
+      "type": "string",
+    }, 
     "AppearanceConfig": {
       "properties": {
         "colorScheme": {
