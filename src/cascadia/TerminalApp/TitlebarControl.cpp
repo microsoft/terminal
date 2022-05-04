@@ -17,17 +17,17 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        // Register our event handlers on the MMC buttons.
-        MinMaxCloseControl().MinimizeClick({ this, &TitlebarControl::Minimize_Click });
-        MinMaxCloseControl().MaximizeClick({ this, &TitlebarControl::Maximize_Click });
-        MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
+        // // Register our event handlers on the MMC buttons.
+        // MinMaxCloseControl().MinimizeClick({ this, &TitlebarControl::Minimize_Click });
+        // MinMaxCloseControl().MaximizeClick({ this, &TitlebarControl::Maximize_Click });
+        // MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
     }
 
     double TitlebarControl::CaptionButtonWidth()
     {
         // Divide by three, since we know there are only three buttons. When
         // Windows 12 comes along and adds another, we can update this /s
-        static auto width{ MinMaxCloseControl().ActualWidth() / 3.0 };
+        static auto width{ CaptionButtonSpace().ActualWidth() / 3.0 };
         return width;
     }
 
@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
                                            const Windows::UI::Xaml::SizeChangedEventArgs& /*e*/)
     {
         const auto windowWidth = ActualWidth();
-        const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
+        const auto minMaxCloseWidth = CaptionButtonSpace().ActualWidth();
         const auto dragBarMinWidth = DragBar().MinWidth();
         const auto maxWidth = windowWidth - minMaxCloseWidth - dragBarMinWidth;
         // Only set our MaxWidth if it's greater than 0. Setting it to a
@@ -98,20 +98,62 @@ namespace winrt::TerminalApp::implementation
 
     void TitlebarControl::SetWindowVisualState(WindowVisualState visualState)
     {
-        MinMaxCloseControl().SetWindowVisualState(visualState);
+        // MinMaxCloseControl().SetWindowVisualState(visualState);
+
+        // Look up the heights we should use for the caption buttons from our
+        // XAML resources. "CaptionButtonHeightWindowed" and
+        // "CaptionButtonHeightMaximized" define the size we should use for the
+        // caption buttons height for the windowed and maximized states,
+        // respectively.
+        //
+        // use C++11 magic statics to make sure we only do this once.
+        static auto heights = [this]() {
+            const auto res = Resources();
+            const auto windowedHeightKey = winrt::box_value(L"CaptionButtonHeightWindowed");
+            const auto maximizedHeightKey = winrt::box_value(L"CaptionButtonHeightMaximized");
+
+            auto windowedHeight = 0.0;
+            auto maximizedHeight = 0.0;
+            if (res.HasKey(windowedHeightKey))
+            {
+                const auto valFromResources = res.Lookup(windowedHeightKey);
+                windowedHeight = winrt::unbox_value_or<double>(valFromResources, 0.0);
+            }
+            if (res.HasKey(maximizedHeightKey))
+            {
+                const auto valFromResources = res.Lookup(maximizedHeightKey);
+                maximizedHeight = winrt::unbox_value_or<double>(valFromResources, 0.0);
+            }
+            return std::tuple<double, double>{ windowedHeight, maximizedHeight };
+        }();
+        static const auto windowedHeight = std::get<0>(heights);
+        static const auto maximizedHeight = std::get<1>(heights);
+
+        switch (visualState)
+        {
+        case WindowVisualState::WindowVisualStateMaximized:
+            CaptionButtonSpace().Height(maximizedHeight);
+            break;
+
+        case WindowVisualState::WindowVisualStateNormal:
+        case WindowVisualState::WindowVisualStateIconified:
+        default:
+            CaptionButtonSpace().Height(windowedHeight);
+            break;
+        }
     }
 
     // GH#9443: HoverButton, PressButton, ClickButton and ReleaseButtons are all
     // used to manually interact with the buttons, in the same way that XAML
     // would normally send events.
 
-    void TitlebarControl::HoverButton(CaptionButton button)
+    void TitlebarControl::HoverButton(CaptionButton /*button*/)
     {
-        MinMaxCloseControl().HoverButton(button);
+        // MinMaxCloseControl().HoverButton(button);
     }
-    void TitlebarControl::PressButton(CaptionButton button)
+    void TitlebarControl::PressButton(CaptionButton /*button*/)
     {
-        MinMaxCloseControl().PressButton(button);
+        // MinMaxCloseControl().PressButton(button);
     }
     winrt::fire_and_forget TitlebarControl::ClickButton(CaptionButton button)
     {
@@ -120,7 +162,7 @@ namespace winrt::TerminalApp::implementation
         // the "Hovered" state when we minimize. This will leave the button
         // visibly hovered in the taskbar preview for our window.
         auto weakThis{ get_weak() };
-        co_await MinMaxCloseControl().Dispatcher();
+        co_await CaptionButtonSpace().Dispatcher();
         if (auto self{ weakThis.get() })
         {
             // Just handle this in the same way we would if the button were
@@ -141,7 +183,7 @@ namespace winrt::TerminalApp::implementation
     }
     void TitlebarControl::ReleaseButtons()
     {
-        MinMaxCloseControl().ReleaseButtons();
+        // MinMaxCloseControl().ReleaseButtons();
     }
 
 }

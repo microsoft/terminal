@@ -25,6 +25,26 @@
         accent color. (which is GH#1963)
     -->
 
+
+    <Grid.Resources>
+        <ResourceDictionary>
+            <!--
+                "CaptionButtonHeightWindowed" and
+                "CaptionButtonHeightMaximized" define the size we should use
+                for the caption buttons height for the windowed and maximized
+                states, respectively.
+                
+                32 was chosen for the Maximized height to match the height of
+                the TabRowControl. This way, when the window is maximized, the
+                tabs will be flush with the top of the window. See GH#2541 for
+                details.
+            -->
+            <x:Double x:Key="CaptionButtonHeightWindowed">40.0</x:Double>
+            <!--  32 + 1 to compensate for GH#10746  -->
+            <x:Double x:Key="CaptionButtonHeightMaximized">33.0</x:Double>
+        </ResourceDictionary>
+    </Grid.Resources>
+
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="*" />
@@ -39,9 +59,15 @@
             MinWidth="45.0"
             DoubleTapped="DragBar_DoubleTapped" />
 
-    <local:MinMaxCloseControl x:Name="MinMaxCloseControl"
+    <!--     <local:MinMaxCloseControl x:Name="MinMaxCloseControl"
                               Grid.Column="2"
-                              HorizontalAlignment="Right" />
+                              HorizontalAlignment="Right" />-->
+
+    <Border x:Name="CaptionButtonSpace"
+            Grid.Column="2"
+            Height="{StaticResource CaptionButtonHeightWindowed}"
+            MinWidth="138.0"
+            Background="Transparent" />
 
     <!--  This border needs to be added manually until GH#10320 is fixed  -->
     <Border Grid.Column="1"
