@@ -1012,6 +1012,10 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return 0;
     }
 
+    if (ps.rcPaint.left == ps.rcPaint.right && ps.rcPaint.top == ps.rcPaint.bottom)
+    {
+        return 0;
+    }
     // TODO! NOTE: This seemingly does nothing anymore.
 
     auto topBorderHeight = _GetTopBorderHeight();

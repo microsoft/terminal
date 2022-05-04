@@ -1336,8 +1336,8 @@ void AppHost::_updateTheme()
     int attribute = theme.Window().UseMica() ? /* DWMSBT_MAINWINDOW */ 2 : /*DWMSBT_NONE*/ 1;
     DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
 
-    COLORREF none = DWMWA_COLOR_NONE;
-    DwmSetWindowAttribute(_window->GetHandle(), DWMWA_CAPTION_COLOR, &none, sizeof(none));
+    // COLORREF none = DWMWA_COLOR_NONE;
+    // DwmSetWindowAttribute(_window->GetHandle(), DWMWA_CAPTION_COLOR, &none, sizeof(none));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
