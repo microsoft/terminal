@@ -20,12 +20,11 @@ using namespace Microsoft::Console::VirtualTerminal;
 PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
-    _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
+    _api{ ServiceLocator::LocateGlobals().getConsoleInformation() },
     _dwThreadId{ 0 },
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 PtySignalInputThread::~PtySignalInputThread()
@@ -199,7 +198,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - <none>
 void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
-    if (_pConApi->ResizeWindow(data.sx, data.sy))
+    if (_api.ResizeWindow(data.sx, data.sy))
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
@@ -214,7 +213,7 @@ void PtySignalInputThread::_DoClearBuffer()
 
 void PtySignalInputThread::_DoShowHide(const bool show)
 {
-    _pConApi->ShowWindow(show);
+    _api.ShowWindow(show);
 }
 
 // Method Description:
@@ -228,7 +227,16 @@ void PtySignalInputThread::_DoShowHide(const bool show)
 // - <none>
 void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 {
-    _pConApi->ReparentWindow(data.handle);
+    // This will initialize s_interactivityFactory for us. It will also
+    // conveniently return 0 when we're on OneCore.
+    //
+    // If the window hasn't been created yet, by some other call to
+    // LocatePseudoWindow, then this will also initialize the owner of the
+    // window.
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(data.handle)) })
+    {
+        LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, reinterpret_cast<HWND>(data.handle)));
+    }
 }
 
 // Method Description:

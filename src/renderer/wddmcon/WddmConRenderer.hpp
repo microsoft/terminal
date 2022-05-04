@@ -10,11 +10,11 @@ namespace Microsoft::Console::Render
     class WddmConEngine final : public RenderEngineBase
     {
     public:
-        WddmConEngine();
+        WddmConEngine() noexcept;
         ~WddmConEngine() override;
 
-        [[nodiscard]] HRESULT Initialize() noexcept;
-        bool IsInitialized();
+        [[nodiscard]] HRESULT Initialize();
+        bool IsInitialized() noexcept;
 
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX
@@ -22,7 +22,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Enable() noexcept override;
         [[nodiscard]] HRESULT Disable() noexcept;
 
-        RECT GetDisplaySize();
+        RECT GetDisplaySize() noexcept;
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;

@@ -57,11 +57,27 @@ enum class AbsolutePosition : Microsoft::Console::VirtualTerminal::VTInt
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-class TestGetSet final : public ConGetSet
+class TestGetSet final : public ITerminalApi
 {
 public:
     void PrintString(const std::wstring_view /*string*/) override
     {
+    }
+
+    void ReturnResponse(const std::wstring_view response) override
+    {
+        Log::Comment(L"ReturnResponse MOCK called...");
+
+        THROW_HR_IF(E_FAIL, !_returnResponseResult);
+
+        if (_retainResponse)
+        {
+            _response += response;
+        }
+        else
+        {
+            _response = response;
+        }
     }
 
     StateMachine& GetStateMachine() override
@@ -101,27 +117,6 @@ public:
         THROW_HR_IF(E_FAIL, !_setTextAttributesResult);
         VERIFY_ARE_EQUAL(_expectedAttribute, attrs);
         _textBuffer->SetCurrentAttributes(attrs);
-    }
-
-    void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override
-    {
-        Log::Comment(L"WriteInput MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_writeInputResult);
-
-        // move all the input events we were given into local storage so we can test against them
-        Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
-
-        if (_retainInput)
-        {
-            std::move(events.begin(), events.end(), std::back_inserter(_events));
-        }
-        else
-        {
-            _events.clear();
-            _events.swap(events);
-        }
-        eventsWritten = _events.size();
     }
 
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override
@@ -206,6 +201,26 @@ public:
         return _expectedOutputCP;
     }
 
+    void EnableXtermBracketedPasteMode(const bool /*enabled*/)
+    {
+        Log::Comment(L"EnableXtermBracketedPasteMode MOCK called...");
+    }
+
+    void CopyToClipboard(const std::wstring_view /*content*/)
+    {
+        Log::Comment(L"CopyToClipboard MOCK called...");
+    }
+
+    void SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+    {
+        Log::Comment(L"SetTaskbarProgress MOCK called...");
+    }
+
+    void SetWorkingDirectory(const std::wstring_view /*uri*/)
+    {
+        Log::Comment(L"SetWorkingDirectory MOCK called...");
+    }
+
     bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");
@@ -215,11 +230,6 @@ public:
     void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
     {
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
-    }
-
-    void ReparentWindow(const uint64_t /*handle*/)
-    {
-        Log::Comment(L"ReparentWindow MOCK called...");
     }
 
     void PrepData()
@@ -252,7 +262,7 @@ public:
 
         // APIs succeed by default
         _setTextAttributesResult = TRUE;
-        _writeInputResult = TRUE;
+        _returnResponseResult = TRUE;
 
         _textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
 
@@ -269,8 +279,8 @@ public:
         _textBuffer->SetCurrentAttributes(TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
         _expectedAttribute = _textBuffer->GetCurrentAttributes();
 
-        _events.clear();
-        _retainInput = false;
+        _response.clear();
+        _retainResponse = false;
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
@@ -323,28 +333,7 @@ public:
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
-        const auto cchResponse = wcslen(pwszExpectedResponse);
-        const auto eventCount = _events.size();
-
-        VERIFY_ARE_EQUAL(cchResponse * 2, eventCount, L"We should receive TWO input records for every character in the expected string. Key down and key up.");
-
-        for (size_t iInput = 0; iInput < eventCount; iInput++)
-        {
-            const auto wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
-
-            VERIFY_ARE_EQUAL(InputEventType::KeyEvent, _events[iInput]->EventType());
-
-            const auto keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
-
-            // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
-            VERIFY_ARE_EQUAL((bool)!(iInput % 2), keyEvent->IsKeyDown());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetActiveModifierKeys());
-            Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->GetCharData()));
-            VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
-            VERIFY_ARE_EQUAL(1u, keyEvent->GetRepeatCount());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualScanCode());
-        }
+        VERIFY_ARE_EQUAL(pwszExpectedResponse, _response);
     }
 
     void _SetMarginsHelper(til::inclusive_rect* rect, til::CoordType top, til::CoordType bottom)
@@ -366,15 +355,15 @@ public:
     static const WORD s_wDefaultAttribute = 0;
     static const WORD s_defaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
-    std::deque<std::unique_ptr<IInputEvent>> _events;
-    bool _retainInput{ false };
+    std::wstring _response;
+    bool _retainResponse{ false };
 
     auto EnableInputRetentionInScope()
     {
-        auto oldRetainValue{ _retainInput };
-        _retainInput = true;
+        auto oldRetainValue{ _retainResponse };
+        _retainResponse = true;
         return wil::scope_exit([oldRetainValue, this] {
-            _retainInput = oldRetainValue;
+            _retainResponse = oldRetainValue;
         });
     }
 
@@ -392,7 +381,7 @@ public:
     bool _isPty = false;
 
     bool _setTextAttributesResult = false;
-    bool _writeInputResult = false;
+    bool _returnResponseResult = false;
 
     bool _setScrollingRegionResult = false;
     bool _getLineFeedModeResult = false;
@@ -422,12 +411,11 @@ public:
         fSuccess = api.get() != nullptr;
         if (fSuccess)
         {
-            // give AdaptDispatch ownership of _testGetSet
-            _testGetSet = api.get(); // keep a copy for us but don't manage its lifetime anymore.
+            _testGetSet = std::move(api);
             _terminalInput = TerminalInput{ nullptr };
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
-            auto adapter = std::make_unique<AdaptDispatch>(std::move(api), renderer, renderSettings, _terminalInput);
+            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -1448,9 +1436,9 @@ public:
         auto pwszExpectedResponse = L"\x1b[?1;0c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->DeviceAttributes(), std::exception);
     }
@@ -1466,9 +1454,9 @@ public:
         auto pwszExpectedResponse = L"\x1b[>0;10;1c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->SecondaryDeviceAttributes(), std::exception);
     }
@@ -1484,9 +1472,9 @@ public:
         auto pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
     }
@@ -1509,9 +1497,9 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_FALSE(_pDispatch->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
 
-        Log::Comment(L"Test 4: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 4: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
         VERIFY_THROWS(_pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited), std::exception);
     }
 
@@ -2256,7 +2244,7 @@ public:
 
 private:
     TerminalInput _terminalInput{ nullptr };
-    TestGetSet* _testGetSet; // non-ownership pointer
+    std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;
 };

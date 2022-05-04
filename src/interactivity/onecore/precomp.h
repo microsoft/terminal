@@ -3,6 +3,8 @@
 
 #pragma once
 
+#ifdef __INSIDE_WINDOWS
+
 #define NOMINMAX
 
 #include <nt.h>
@@ -16,3 +18,9 @@
 
 #define _DDK_INCLUDED
 #include "../../host/precomp.h"
+
+#else
+
+#include "../../host/precomp.h"
+
+#endif

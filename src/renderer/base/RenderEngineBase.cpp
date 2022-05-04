@@ -7,12 +7,6 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
-RenderEngineBase::RenderEngineBase() :
-    _titleChanged(false),
-    _lastFrameTitle(L"")
-{
-}
-
 HRESULT RenderEngineBase::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
     if (proposedTitle != _lastFrameTitle)

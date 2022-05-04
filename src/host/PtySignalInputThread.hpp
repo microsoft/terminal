@@ -15,10 +15,7 @@ Author(s):
 --*/
 #pragma once
 
-namespace Microsoft::Console::VirtualTerminal
-{
-    class ConGetSet;
-}
+#include "outputStream.hpp"
 
 namespace Microsoft::Console
 {
@@ -76,7 +73,7 @@ namespace Microsoft::Console
         bool _consoleConnected;
         std::optional<ResizeWindowData> _earlyResize;
         std::optional<ShowHideData> _initialShowHide;
-        std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+        ConhostInternalGetSet _api;
 
     public:
         std::optional<SetParentData> _earlyReparent;
