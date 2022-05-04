@@ -122,46 +122,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _UpdateOverrideSystem();
 
+        // Apply automation properties as necessary
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
             if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
             {
-                // apply header text as name (automation property)
-                if (const auto& header{ Header() })
-                {
-                    if (const auto headerText{ header.try_as<hstring>() })
-                    {
-                        Automation::AutomationProperties::SetName(expander, *headerText);
-                    }
-                }
-
-                // apply help text as tooltip and full description (automation property)
-                if (const auto& helpText{ HelpText() }; !helpText.empty())
-                {
-                    Controls::ToolTipService::SetToolTip(expander, box_value(helpText));
-                    Automation::AutomationProperties::SetFullDescription(expander, helpText);
-                }
+                _ApplyNameAndFullDescription(child);
             }
         }
         else if (const auto& content{ Content() })
         {
             if (const auto& obj{ content.try_as<DependencyObject>() })
             {
-                // apply header text as name (automation property)
-                if (const auto& header{ Header() })
-                {
-                    if (const auto headerText{ header.try_as<hstring>() })
-                    {
-                        Automation::AutomationProperties::SetName(obj, *headerText);
-                    }
-                }
-
-                // apply help text as tooltip and full description (automation property)
-                if (const auto& helpText{ HelpText() }; !helpText.empty())
-                {
-                    Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
-                    Automation::AutomationProperties::SetFullDescription(obj, helpText);
-                }
+                _ApplyNameAndFullDescription(obj);
             }
         }
 
@@ -174,6 +147,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     textBlock.Visibility(Visibility::Collapsed);
                 }
             }
+        }
+    }
+
+    // Method Description:
+    // - Helper for applying the name and full description
+    //   automation properties to a dependency object
+    // Arguments:
+    // - d: the DependencyObject to apply the automation properties to
+    void SettingContainer::_ApplyNameAndFullDescription(const DependencyObject& d)
+    {
+        if (const auto& header{ Header() })
+        {
+            if (const auto headerText{ header.try_as<hstring>() })
+            {
+                Automation::AutomationProperties::SetName(d, *headerText);
+            }
+        }
+
+        // apply help text as tooltip and full description (automation property)
+        if (const auto& helpText{ HelpText() }; !helpText.empty())
+        {
+            Controls::ToolTipService::SetToolTip(d, box_value(helpText));
+            Automation::AutomationProperties::SetFullDescription(d, helpText);
         }
     }
 
