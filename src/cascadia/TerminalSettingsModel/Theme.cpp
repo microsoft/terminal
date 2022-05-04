@@ -87,6 +87,10 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
 {
     static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
 
+    // NOTE: Currently, the DWM titlebar is always drawn, underneath our XAML
+    // content. If the opacity is <1.0, the you'll be able to see it, including
+    // the original caption buttons, which we don't want.
+
     switch (ColorType())
     {
     case ThemeColorType::Accent:
@@ -103,16 +107,49 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
 
         const auto accentBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
         accentBrush.Color(accentColor);
+        if (forTitlebar)
+        {
+            accentBrush.Opacity(1.0);
+        }
+
         return accentBrush;
     }
     case ThemeColorType::Color:
     {
         const auto solidBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
-        solidBrush.Color(Color());
+        solidBrush.Color(forTitlebar? Color().with_alpha(255) : Color());
+
         return solidBrush;
     }
     case ThemeColorType::TerminalBackground:
     {
+        // If we're evaluating this color for the tab row, there are some rulse
+        // we have to follow, unfortunately. We can't allow a transparent
+        // background, so we have to make sure to fill that in with Opacity(1.0)
+        // manually.
+        //
+        // So for that case, just make a new brush with the relevant properties
+        // set.
+        if (forTitlebar)
+        {
+            if (auto acrylic = terminalBackground.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+            {
+                winrt::Windows::UI::Xaml::Media::AcrylicBrush newBrush{};
+                newBrush.TintColor(acrylic.TintColor());
+                // Allow acrylic opacity, but it's gotta be HostBackdrop acrylic.
+                newBrush.TintOpacity(acrylic.TintOpacity());
+                acrylic.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
+                return newBrush;
+            }
+            else if (auto solidColor = terminalBackground.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+            {
+                winrt::Windows::UI::Xaml::Media::SolidColorBrush newBrush{};
+                newBrush.Color(til::color{ solidColor.Color() }.with_alpha(255));
+                newBrush.Opacity(1.0);
+                return newBrush;
+            }
+        }
+
         return terminalBackground;
     }
     }
