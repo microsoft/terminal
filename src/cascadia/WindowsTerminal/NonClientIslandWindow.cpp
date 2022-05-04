@@ -129,6 +129,18 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
     }
 }
 
+// We make the frame as tall as the XAML titlebar.
+// We get rid of the XAML caption buttons. Replace them with a transparent hole in XAML that's exactly the size of the DWM caption btns.
+// We don't extend the drag rect there, cause we don't need to anymore.
+// When we set the tabRow bg, it can't be transparent, unless mica is enabled.
+//   - If the terminal has opacity, sorry, it's opaque now.
+//   - If we want arylic titlebar, then that's ookay, make sure it's hostBackdrop
+//     - that won't apply to the DWM caption buttons tho
+//   - if we get a non host-backdrop arylic terminalBG, MAKE IT HOSTBACKDROP
+// We'd have to set the DWM caption color to match the one from the theme cause the buttons would still be drawn by DWM on that color, not us
+// we'd lose our fukin rounded maximize button, cause ofc the DWM ones don't have that
+//
+
 // Function Description:
 // - The window procedure for the drag bar forwards clicks on its client area to
 //   its parent as non-client clicks.
@@ -146,7 +158,7 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
 //   input via XAML.
 LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
                                                         WPARAM const wparam,
-                                                        LPARAM const lparam) noexcept
+                                                        LPARAM lparam) noexcept
 {
     switch (message)
     {
@@ -179,8 +191,31 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
             auto parentWindow{ GetHandle() };
             return SendMessage(parentWindow, message, wparam, lparam);
         }
-        case HTMINBUTTON:
         case HTMAXBUTTON:
+        {
+            // TODO! Fake out the y coordinate here for the maximize button, so
+            // as to force DWM to think we've hovered on the singular visible
+            // pixel of the maximize button, rather than where we are, which is
+            // not over the caption button that DWM drew.
+            til::point original = til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+            til::rect windowRect = til::rect{ GetWindowRect() };
+            // auto xPos = 0xffff0000 & lparam;
+            auto yPos = windowRect.top + 8;
+            // lparam = (xPos | yPos);
+            lparam = MAKELONG(GET_X_LPARAM(lparam), yPos);
+            til::point converted = til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+            converted;
+            auto a = 0;
+            a++;
+            a;
+            // TODO! This didn't work at all. But _dragBarNcHitTest DOES
+            // successfully return the right thing. There must be some extra
+            // logic in the DWM side that's checking "Hey I see you said you're
+            // on the maximize button but the thing is, you're not"
+
+            // [[fallthrough]]
+        }
+        case HTMINBUTTON:
         case HTCLOSE:
             _titlebar.HoverButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
             break;
@@ -885,7 +920,8 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         margins.cyTopHeight = -frame.top;
     }
 
-    margins.cyTopHeight = 1;
+    // For debugging: Manually set the top fram height to 16 px. Snap layouts only works in that space, apparently.
+    margins.cyTopHeight = 16;
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
     // the failure here, don't crash. If DWM crashes for any reason, calling
@@ -958,64 +994,66 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return 0;
     }
 
-    const auto topBorderHeight = _GetTopBorderHeight();
+    // NOTE: This seemingly does nothing anymore.
 
-    if (ps.rcPaint.top < topBorderHeight)
-    {
-        auto rcTopBorder = ps.rcPaint;
-        rcTopBorder.bottom = topBorderHeight;
+    // auto topBorderHeight = _GetTopBorderHeight();
+    // topBorderHeight = 8;
+    // if (ps.rcPaint.top < topBorderHeight)
+    // {
+    //     auto rcTopBorder = ps.rcPaint;
+    //     rcTopBorder.bottom = topBorderHeight;
 
-        // To show the original top border, we have to paint on top of it with
-        // the alpha component set to 0. This page recommends to paint the area
-        // in black using the stock BLACK_BRUSH to do this:
-        // https://docs.microsoft.com/en-us/windows/win32/dwm/customframe#extending-the-client-frame
-        ::FillRect(hdc.get(), &rcTopBorder, GetStockBrush(BLACK_BRUSH));
-    }
+    //     // To show the original top border, we have to paint on top of it with
+    //     // the alpha component set to 0. This page recommends to paint the area
+    //     // in black using the stock BLACK_BRUSH to do this:
+    //     // https://docs.microsoft.com/en-us/windows/win32/dwm/customframe#extending-the-client-frame
+    //     ::FillRect(hdc.get(), &rcTopBorder, GetStockBrush(BLACK_BRUSH));
+    // }
 
-    if (ps.rcPaint.bottom > topBorderHeight)
-    {
-        auto rcRest = ps.rcPaint;
-        rcRest.top = topBorderHeight;
+    // if (ps.rcPaint.bottom > topBorderHeight)
+    // {
+    //     auto rcRest = ps.rcPaint;
+    //     rcRest.top = topBorderHeight;
 
-        const auto backgroundBrush = _titlebar.Background();
-        const auto backgroundSolidBrush = backgroundBrush.try_as<Media::SolidColorBrush>();
-        const auto backgroundAcrylicBrush = backgroundBrush.try_as<Media::AcrylicBrush>();
+    //     const auto backgroundBrush = _titlebar.Background();
+    //     const auto backgroundSolidBrush = backgroundBrush.try_as<Media::SolidColorBrush>();
+    //     const auto backgroundAcrylicBrush = backgroundBrush.try_as<Media::AcrylicBrush>();
 
-        til::color backgroundColor = Colors::Black();
-        if (backgroundSolidBrush)
-        {
-            backgroundColor = backgroundSolidBrush.Color();
-        }
-        else if (backgroundAcrylicBrush)
-        {
-            backgroundColor = backgroundAcrylicBrush.FallbackColor();
-        }
+    //     til::color backgroundColor = Colors::Black();
+    //     if (backgroundSolidBrush)
+    //     {
+    //         backgroundColor = backgroundSolidBrush.Color();
+    //     }
+    //     else if (backgroundAcrylicBrush)
+    //     {
+    //         backgroundColor = backgroundAcrylicBrush.FallbackColor();
+    //     }
 
-        if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
-        {
-            // Create brush for titlebar color.
-            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(backgroundColor));
-        }
+    //     if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
+    //     {
+    //         // Create brush for titlebar color.
+    //         _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(backgroundColor));
+    //     }
 
-        // To hide the original title bar, we have to paint on top of it with
-        // the alpha component set to 255. This is a hack to do it with GDI.
-        // See NonClientIslandWindow::_UpdateFrameMargins for more information.
-        HDC opaqueDc;
-        BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
-        auto buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
-        if (!buf || !opaqueDc)
-        {
-            // MSFT:34673647 - BeginBufferedPaint can fail, but it probably
-            // shouldn't bring the whole Terminal down with it. So don't
-            // throw_last_error here.
-            LOG_LAST_ERROR();
-            return 0;
-        }
+    //     // To hide the original title bar, we have to paint on top of it with
+    //     // the alpha component set to 255. This is a hack to do it with GDI.
+    //     // See NonClientIslandWindow::_UpdateFrameMargins for more information.
+    //     HDC opaqueDc;
+    //     BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
+    //     auto buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+    //     if (!buf || !opaqueDc)
+    //     {
+    //         // MSFT:34673647 - BeginBufferedPaint can fail, but it probably
+    //         // shouldn't bring the whole Terminal down with it. So don't
+    //         // throw_last_error here.
+    //         LOG_LAST_ERROR();
+    //         return 0;
+    //     }
 
-        ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
-        ::BufferedPaintSetAlpha(buf, nullptr, 255);
-        ::EndBufferedPaint(buf, TRUE);
-    }
+    //     ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
+    //     ::BufferedPaintSetAlpha(buf, nullptr, 255);
+    //     ::EndBufferedPaint(buf, TRUE);
+    // }
 
     return 0;
 }
