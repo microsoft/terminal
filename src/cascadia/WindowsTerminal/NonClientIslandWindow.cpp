@@ -506,8 +506,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -884,6 +884,8 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  so it should work fine.
         margins.cyTopHeight = -frame.top;
     }
+
+    margins.cyTopHeight = 1;
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
     // the failure here, don't crash. If DWM crashes for any reason, calling

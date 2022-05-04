@@ -4034,67 +4034,10 @@ namespace winrt::TerminalApp::implementation
             const auto tabRowBg = theme.TabRow().Background();
             const auto terminalBrush = [this]() -> Media::Brush { if(const auto& control{_GetActiveControl()}){ return control.BackgroundBrush(); } return nullptr; }();
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
+
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
+
             TitlebarBrush(themeBrush);
-            // switch (tabRowBg.ColorType())
-            // {
-            // case ThemeColorType::Accent:
-            // {
-            //     til::color accentColor;
-            //     if (const auto accentFromReg{ _getAccentColorForTitlebar() })
-            //     {
-            //         accentColor = accentFromReg.value();
-            //     }
-            //     else
-            //     {
-            //         // winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(_activated ?
-            //         //                                                                                  L"SystemAccentColorDark3" :
-            //         //                                                                                  L"SystemAccentColorDark2")),
-            //         accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(L"SystemAccentColor")),
-            //                                                                        backgroundSolidBrush.Color());
-            //     }
-
-            //     // // TODO! These colors are NOT right at all. But none of
-            //     // // `SystemAccentColor` is, so we gotta figure this out.
-            //     // auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(_activated ?
-            //     //                                                                                                     L"SystemAccentColorDark3" :
-            //     //                                                                                                     L"SystemAccentColorDark2")),
-            //     //                                                                     backgroundSolidBrush.Color());
-            //     const auto accentBrush = Media::SolidColorBrush();
-            //     accentBrush.Color(accentColor);
-            //     bgColor = accentColor;
-
-            //     TitlebarBrush(accentBrush);
-            //     break;
-            // }
-            // case ThemeColorType::Color:
-            // {
-            //     const til::color backgroundColor = tabRowBg.Color();
-            //     const auto solidBrush = Media::SolidColorBrush();
-            //     solidBrush.Color(backgroundColor);
-            //     bgColor = backgroundColor;
-            //     TitlebarBrush(solidBrush);
-            //     break;
-            // }
-            // case ThemeColorType::TerminalBackground:
-            // {
-            //     if (const auto termControl{ _GetActiveControl() })
-            //     {
-            //         const auto& brush{ termControl.BackgroundBrush() };
-            //         if (auto acrylic = brush.try_as<Media::AcrylicBrush>())
-            //         {
-            //             bgColor = acrylic.TintColor();
-            //         }
-            //         else if (auto solidColor = brush.try_as<Media::SolidColorBrush>())
-            //         {
-            //             bgColor = solidColor.Color();
-            //         }
-
-            //         TitlebarBrush(brush);
-            //     }
-            //     break;
-            // }
-            // }
         }
         else
         {
