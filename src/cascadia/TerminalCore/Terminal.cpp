@@ -3,8 +3,8 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "../../terminal/adapter/adaptDispatch.hpp"
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
-#include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
@@ -50,19 +50,6 @@ Terminal::Terminal() :
     _taskbarProgress{ 0 },
     _trimBlockSelection{ false }
 {
-    auto dispatch = std::make_unique<TerminalDispatch>(*this);
-    auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-
-    _stateMachine = std::make_unique<StateMachine>(std::move(engine));
-
-    // Until we have a true pass-through mode (GH#1173), the decision as to
-    // whether C1 controls are interpreted or not is made at the conhost level.
-    // If they are being filtered out, then we will simply never receive them.
-    // But if they are being accepted by conhost, there's a chance they may get
-    // passed through in some situations, so it's important that our state
-    // machine is always prepared to accept them.
-    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
-
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
         {
@@ -87,6 +74,18 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, Renderer& rende
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
+
+    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, *_terminalInput);
+    auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+    _stateMachine = std::make_unique<StateMachine>(std::move(engine));
+
+    // Until we have a true pass-through mode (GH#1173), the decision as to
+    // whether C1 controls are interpreted or not is made at the conhost level.
+    // If they are being filtered out, then we will simply never receive them.
+    // But if they are being accepted by conhost, there's a chance they may get
+    // passed through in some situations, so it's important that our state
+    // machine is always prepared to accept them.
+    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
 }
 
 // Method Description:
@@ -216,6 +215,28 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     _defaultCursorShape = cursorShape;
+}
+
+void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
+{
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().SetCursorStyle(cursorStyle);
+}
+
+void Terminal::EraseScrollback()
+{
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+}
+
+bool Terminal::IsXtermBracketedPasteModeEnabled() const
+{
+    return _bracketedPasteMode;
+}
+
+std::wstring_view Terminal::GetWorkingDirectory()
+{
+    return _workingDirectory;
 }
 
 // Method Description:
@@ -1269,15 +1290,6 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
 void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept
 {
     _pfnCursorPositionChanged.swap(pfn);
-}
-
-// Method Description:
-// - Allows setting a callback for when the background color is changed
-// Arguments:
-// - pfn: a function callback that takes a color
-void Terminal::SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept
-{
-    _pfnBackgroundColorChanged.swap(pfn);
 }
 
 // Method Description:

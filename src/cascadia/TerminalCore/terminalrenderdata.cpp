@@ -23,12 +23,12 @@ COORD Terminal::GetTextBufferEndPosition() const noexcept
     return endPosition;
 }
 
-const TextBuffer& Terminal::GetTextBuffer() noexcept
+const TextBuffer& Terminal::GetTextBuffer() const noexcept
 {
     return _activeBuffer();
 }
 
-const FontInfo& Terminal::GetFontInfo() noexcept
+const FontInfo& Terminal::GetFontInfo() const noexcept
 {
     return _fontInfo;
 }
