@@ -122,30 +122,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _UpdateOverrideSystem();
 
-        if (const auto& content{ Content() })
-        {
-            if (const auto& obj{ content.try_as<DependencyObject>() })
-            {
-                // apply header text as name (automation property)
-                if (const auto& header{ Header() })
-                {
-                    const auto headerText{ header.try_as<hstring>() };
-                    if (headerText && !headerText->empty())
-                    {
-                        Automation::AutomationProperties::SetName(obj, *headerText);
-                    }
-                }
-
-                // apply help text as tooltip and full description (automation property)
-                const auto& helpText{ HelpText() };
-                if (!helpText.empty())
-                {
-                    Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
-                    Automation::AutomationProperties::SetFullDescription(obj, helpText);
-                }
-            }
-        }
-
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
             if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
@@ -153,19 +129,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // apply header text as name (automation property)
                 if (const auto& header{ Header() })
                 {
-                    const auto headerText{ header.try_as<hstring>() };
-                    if (headerText && !headerText->empty())
+                    if (const auto headerText{ header.try_as<hstring>() })
                     {
                         Automation::AutomationProperties::SetName(expander, *headerText);
                     }
                 }
 
                 // apply help text as tooltip and full description (automation property)
-                const auto& helpText{ HelpText() };
-                if (!helpText.empty())
+                if (const auto& helpText{ HelpText() }; !helpText.empty())
                 {
                     Controls::ToolTipService::SetToolTip(expander, box_value(helpText));
                     Automation::AutomationProperties::SetFullDescription(expander, helpText);
+                }
+            }
+        }
+        else if (const auto& content{ Content() })
+        {
+            if (const auto& obj{ content.try_as<DependencyObject>() })
+            {
+                // apply header text as name (automation property)
+                if (const auto& header{ Header() })
+                {
+                    if (const auto headerText{ header.try_as<hstring>() })
+                    {
+                        Automation::AutomationProperties::SetName(obj, *headerText);
+                    }
+                }
+
+                // apply help text as tooltip and full description (automation property)
+                if (const auto& helpText{ HelpText() }; !helpText.empty())
+                {
+                    Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
+                    Automation::AutomationProperties::SetFullDescription(obj, helpText);
                 }
             }
         }
