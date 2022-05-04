@@ -170,159 +170,163 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
     }
     break;
 
-        // case WM_NCMOUSEMOVE:
-        //     // When we get this message, it's because the mouse moved when it was
-        //     // over somewhere we said was the non-client area.
-        //     //
-        //     // We'll use this to communicate state to the title bar control, so that
-        //     // it can update its visuals.
-        //     // - If we're over a button, hover it.
-        //     // - If we're over _anything else_, stop hovering the buttons.
-        //     switch (wparam)
-        //     {
-        //     case HTTOP:
-        //     case HTCAPTION:
-        //     {
-        //         _titlebar.ReleaseButtons();
+    case WM_NCMOUSEMOVE:
+        // When we get this message, it's because the mouse moved when it was
+        // over somewhere we said was the non-client area.
+        //
+        // We'll use this to communicate state to the title bar control, so that
+        // it can update its visuals.
+        // - If we're over a button, hover it.
+        // - If we're over _anything else_, stop hovering the buttons.
+        switch (wparam)
+        {
+        case HTTOP:
+        case HTCAPTION:
+        case HTMAXBUTTON:
+        case HTMINBUTTON:
+        case HTCLOSE:
+        default:
+        {
+            // _titlebar.ReleaseButtons();
 
-        //         // Pass caption-related nonclient messages to the parent window.
-        //         // Make sure to do this for the HTTOP, which is the top resize
-        //         // border, so we can resize the window on the top.
-        //         auto parentWindow{ GetHandle() };
-        //         return SendMessage(parentWindow, message, wparam, lparam);
-        //     }
-        //     case HTMAXBUTTON:
-        //     {
-        //         // TODO! Fake out the y coordinate here for the maximize button, so
-        //         // as to force DWM to think we've hovered on the singular visible
-        //         // pixel of the maximize button, rather than where we are, which is
-        //         // not over the caption button that DWM drew.
-        //         til::point original = til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
-        //         til::rect windowRect = til::rect{ GetWindowRect() };
-        //         // auto xPos = 0xffff0000 & lparam;
-        //         auto yPos = windowRect.top + 8;
-        //         // lparam = (xPos | yPos);
-        //         lparam = MAKELONG(GET_X_LPARAM(lparam), yPos);
-        //         til::point converted = til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
-        //         converted;
-        //         auto a = 0;
-        //         a++;
-        //         a;
-        //         // TODO! This didn't work at all. But _dragBarNcHitTest DOES
-        //         // successfully return the right thing. There must be some extra
-        //         // logic in the DWM side that's checking "Hey I see you said you're
-        //         // on the maximize button but the thing is, you're not"
+            // Pass caption-related nonclient messages to the parent window.
+            // Make sure to do this for the HTTOP, which is the top resize
+            // border, so we can resize the window on the top.
+            auto parentWindow{ GetHandle() };
+            return SendMessage(parentWindow, message, wparam, lparam);
+        }
+            // case HTMAXBUTTON:
+            // {
+            //     // TODO! Fake out the y coordinate here for the maximize button, so
+            //     // as to force DWM to think we've hovered on the singular visible
+            //     // pixel of the maximize button, rather than where we are, which is
+            //     // not over the caption button that DWM drew.
+            //     til::point original = til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+            //     til::rect windowRect = til::rect{ GetWindowRect() };
+            //     // auto xPos = 0xffff0000 & lparam;
+            //     auto yPos = windowRect.top + 8;
+            //     // lparam = (xPos | yPos);
+            //     lparam = MAKELONG(GET_X_LPARAM(lparam), yPos);
+            //     til::point converted = til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+            //     converted;
+            //     auto a = 0;
+            //     a++;
+            //     a;
+            //     // TODO! This didn't work at all. But _dragBarNcHitTest DOES
+            //     // successfully return the right thing. There must be some extra
+            //     // logic in the DWM side that's checking "Hey I see you said you're
+            //     // on the maximize button but the thing is, you're not"
 
-        //         // [[fallthrough]]
-        //     }
-        //     case HTMINBUTTON:
-        //     case HTCLOSE:
-        //         _titlebar.HoverButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
-        //         break;
-        //     default:
-        //         _titlebar.ReleaseButtons();
-        //     }
+            //     // [[fallthrough]]
+            // }
+            // case HTMINBUTTON:
+            // case HTCLOSE:
+            //     _titlebar.HoverButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            //     break;
+            // default:
+            //     _titlebar.ReleaseButtons();
+            // }
 
-        //     // If we haven't previously asked for mouse tracking, request mouse
-        //     // tracking. We need to do this so we can get the WM_NCMOUSELEAVE
-        //     // message when the mouse leave the titlebar. Otherwise, we won't always
-        //     // get that message (especially if the user moves the mouse _real
-        //     // fast_).
-        //     if (!_trackingMouse &&
-        //         (wparam == HTMINBUTTON || wparam == HTMAXBUTTON || wparam == HTCLOSE))
-        //     {
-        //         TRACKMOUSEEVENT ev{};
-        //         ev.cbSize = sizeof(TRACKMOUSEEVENT);
-        //         // TME_NONCLIENT is absolutely critical here. In my experimentation,
-        //         // we'd get WM_MOUSELEAVE messages after just a HOVER_DEFAULT
-        //         // timeout even though we're not requesting TME_HOVER, which kinda
-        //         // ruined the whole point of this.
-        //         ev.dwFlags = TME_LEAVE | TME_NONCLIENT;
-        //         ev.hwndTrack = _dragBarWindow.get();
-        //         ev.dwHoverTime = HOVER_DEFAULT; // we don't _really_ care about this.
-        //         LOG_IF_WIN32_BOOL_FALSE(TrackMouseEvent(&ev));
-        //         _trackingMouse = true;
-        //     }
-        //     break;
+            // // If we haven't previously asked for mouse tracking, request mouse
+            // // tracking. We need to do this so we can get the WM_NCMOUSELEAVE
+            // // message when the mouse leave the titlebar. Otherwise, we won't always
+            // // get that message (especially if the user moves the mouse _real
+            // // fast_).
+            // if (!_trackingMouse &&
+            //     (wparam == HTMINBUTTON || wparam == HTMAXBUTTON || wparam == HTCLOSE))
+            // {
+            //     TRACKMOUSEEVENT ev{};
+            //     ev.cbSize = sizeof(TRACKMOUSEEVENT);
+            //     // TME_NONCLIENT is absolutely critical here. In my experimentation,
+            //     // we'd get WM_MOUSELEAVE messages after just a HOVER_DEFAULT
+            //     // timeout even though we're not requesting TME_HOVER, which kinda
+            //     // ruined the whole point of this.
+            //     ev.dwFlags = TME_LEAVE | TME_NONCLIENT;
+            //     ev.hwndTrack = _dragBarWindow.get();
+            //     ev.dwHoverTime = HOVER_DEFAULT; // we don't _really_ care about this.
+            //     LOG_IF_WIN32_BOOL_FALSE(TrackMouseEvent(&ev));
+            //     _trackingMouse = true;
+            // }
+            // break;
+        }
+    // case WM_NCMOUSELEAVE:
+    // case WM_MOUSELEAVE:
+    //     // When the mouse leaves the drag rect, make sure to dismiss any hover.
+    //     _titlebar.ReleaseButtons();
+    //     _trackingMouse = false;
+    //     break;
 
-        // case WM_NCMOUSELEAVE:
-        // case WM_MOUSELEAVE:
-        //     // When the mouse leaves the drag rect, make sure to dismiss any hover.
-        //     _titlebar.ReleaseButtons();
-        //     _trackingMouse = false;
-        //     break;
+    // NB: *Shouldn't be forwarding these* when they're not over the caption
+    // because they can inadvertently take action using the system's default
+    // metrics instead of our own.
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONDBLCLK:
+        // Manual handling for mouse clicks in the drag bar. If it's in a
+        // caption button, then tell the titlebar to "press" the button, which
+        // should change its visual state.
+        //
+        // If it's not in a caption button, then just forward the message along
+        // to the root HWND. Make sure to do this for the HTTOP, which is the
+        // top resize border.
+        switch (wparam)
+        {
+        case HTTOP:
+        case HTCAPTION:
+        {
+            // Pass caption-related nonclient messages to the parent window.
+            auto parentWindow{ GetHandle() };
+            return SendMessage(parentWindow, message, wparam, lparam);
+        }
+            // // The buttons won't work as you'd expect; we need to handle those
+            // // ourselves.
+            // case HTMINBUTTON:
+            // case HTMAXBUTTON:
+            // case HTCLOSE:
+            //     _titlebar.PressButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            //     break;
+            // }
+            // return 0;
 
-        // // NB: *Shouldn't be forwarding these* when they're not over the caption
-        // // because they can inadvertently take action using the system's default
-        // // metrics instead of our own.
-        // case WM_NCLBUTTONDOWN:
-        // case WM_NCLBUTTONDBLCLK:
-        //     // Manual handling for mouse clicks in the drag bar. If it's in a
-        //     // caption button, then tell the titlebar to "press" the button, which
-        //     // should change its visual state.
-        //     //
-        //     // If it's not in a caption button, then just forward the message along
-        //     // to the root HWND. Make sure to do this for the HTTOP, which is the
-        //     // top resize border.
-        //     switch (wparam)
-        //     {
-        //     case HTTOP:
-        //     case HTCAPTION:
-        //     {
-        //         // Pass caption-related nonclient messages to the parent window.
-        //         auto parentWindow{ GetHandle() };
-        //         return SendMessage(parentWindow, message, wparam, lparam);
-        //     }
-        //     // The buttons won't work as you'd expect; we need to handle those
-        //     // ourselves.
-        //     case HTMINBUTTON:
-        //     case HTMAXBUTTON:
-        //     case HTCLOSE:
-        //         _titlebar.PressButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
-        //         break;
-        //     }
-        //     return 0;
+        case WM_NCLBUTTONUP:
+            // Manual handling for mouse RELEASES in the drag bar. If it's in a
+            // caption button, then manually handle what we'd expect for that button.
+            //
+            // If it's not in a caption button, then just forward the message along
+            // to the root HWND.
+            switch (wparam)
+            {
+            case HTTOP:
+            case HTCAPTION:
+            {
+                // Pass caption-related nonclient messages to the parent window.
+                // The buttons won't work as you'd expect; we need to handle those ourselves.
+                auto parentWindow{ GetHandle() };
+                return SendMessage(parentWindow, message, wparam, lparam);
+            }
+            break;
 
-        // case WM_NCLBUTTONUP:
-        //     // Manual handling for mouse RELEASES in the drag bar. If it's in a
-        //     // caption button, then manually handle what we'd expect for that button.
-        //     //
-        //     // If it's not in a caption button, then just forward the message along
-        //     // to the root HWND.
-        //     switch (wparam)
-        //     {
-        //     case HTTOP:
-        //     case HTCAPTION:
-        //     {
-        //         // Pass caption-related nonclient messages to the parent window.
-        //         // The buttons won't work as you'd expect; we need to handle those ourselves.
-        //         auto parentWindow{ GetHandle() };
-        //         return SendMessage(parentWindow, message, wparam, lparam);
-        //     }
-        //     break;
+                // // If we do find a button, then tell the titlebar to raise the same
+                // // event that would be raised if it were "tapped"
+                // case HTMINBUTTON:
+                // case HTMAXBUTTON:
+                // case HTCLOSE:
+                //     _titlebar.ReleaseButtons();
+                //     _titlebar.ClickButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+                //     break;
+            }
+            return 0;
+        }
 
-        //     // If we do find a button, then tell the titlebar to raise the same
-        //     // event that would be raised if it were "tapped"
-        //     case HTMINBUTTON:
-        //     case HTMAXBUTTON:
-        //     case HTCLOSE:
-        //         _titlebar.ReleaseButtons();
-        //         _titlebar.ClickButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
-        //         break;
-        //     }
-        //     return 0;
-
-        // // Make sure to pass along right-clicks in this region to our parent window
-        // // - we don't need to handle these.
-        // case WM_NCRBUTTONDOWN:
-        // case WM_NCRBUTTONDBLCLK:
-        // case WM_NCRBUTTONUP:
-        //     auto parentWindow{ GetHandle() };
-        //     return SendMessage(parentWindow, message, wparam, lparam);
+    // Make sure to pass along right-clicks in this region to our parent window
+    // - we don't need to handle these.
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONDBLCLK:
+    case WM_NCRBUTTONUP:
+        auto parentWindow{ GetHandle() };
+        return SendMessage(parentWindow, message, wparam, lparam);
     }
 
-    // return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
-    return SendMessage(GetHandle(), message, wparam, lparam);
+    return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
 }
 
 // Method Description:
