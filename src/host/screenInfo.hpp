@@ -191,7 +191,7 @@ public:
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
 
-    void MakeCursorVisible(const COORD CursorPosition, const bool updateBottom = true);
+    void MakeCursorVisible(const COORD CursorPosition);
 
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
@@ -265,6 +265,8 @@ private:
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
     bool _IsInVTMode() const;
+
+    ConhostInternalGetSet _api;
 
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 

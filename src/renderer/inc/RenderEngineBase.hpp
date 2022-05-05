@@ -24,16 +24,6 @@ namespace Microsoft::Console::Render
     class RenderEngineBase : public IRenderEngine
     {
     public:
-        ~RenderEngineBase() = 0;
-
-    protected:
-        RenderEngineBase();
-        RenderEngineBase(const RenderEngineBase&) = default;
-        RenderEngineBase(RenderEngineBase&&) = default;
-        RenderEngineBase& operator=(const RenderEngineBase&) = default;
-        RenderEngineBase& operator=(RenderEngineBase&&) = default;
-
-    public:
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
 
         [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;
@@ -60,9 +50,7 @@ namespace Microsoft::Console::Render
     protected:
         [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept = 0;
 
-        bool _titleChanged;
+        bool _titleChanged = false;
         std::wstring _lastFrameTitle;
     };
-
-    inline Microsoft::Console::Render::RenderEngineBase::~RenderEngineBase() {}
 }
