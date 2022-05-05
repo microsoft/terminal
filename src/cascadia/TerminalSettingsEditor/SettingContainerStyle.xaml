@@ -142,7 +142,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <muxc:Expander Margin="0,4,0,0"
+                    <muxc:Expander x:Name="Expander"
+                                   Margin="0,4,0,0"
                                    HorizontalAlignment="Stretch"
                                    HorizontalContentAlignment="Stretch"
                                    Content="{TemplateBinding Content}">

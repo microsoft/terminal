@@ -41,9 +41,13 @@ til::rect Terminal::GetViewport() const
 
 void Terminal::SetViewportPosition(const til::point position)
 {
-    const auto dimensions = _GetMutableViewport().Dimensions();
-    _mutableViewport = Viewport::FromDimensions(position.to_win32_coord(), dimensions);
-    Terminal::_NotifyScrollEvent();
+    // The viewport is fixed at 0,0 for the alt buffer, so this is a no-op.
+    if (!_inAltBuffer())
+    {
+        const auto dimensions = _GetMutableViewport().Dimensions();
+        _mutableViewport = Viewport::FromDimensions(position.to_win32_coord(), dimensions);
+        Terminal::_NotifyScrollEvent();
+    }
 }
 
 void Terminal::SetTextAttributes(const TextAttribute& attrs)
