@@ -10,6 +10,7 @@ Abstract:
 
 Author(s):
 - Charles Willis - October 2020
+- Heath Stewart - September 2021
 
 --*/
 
@@ -37,25 +38,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     public:
         struct VsSetupInstance
         {
+            VsSetupInstance(VsSetupInstance&& other) = default;
+            VsSetupInstance& operator=(VsSetupInstance&&) = default;
+
             std::wstring ResolvePath(std::wstring_view relativePath) const
             {
                 return VsSetupConfiguration::ResolvePath(inst.get(), relativePath);
-            }
-
-            std::wstring GetDevShellModulePath() const
-            {
-                // The path of Microsoft.VisualStudio.DevShell.dll changed in 16.3
-                if (VersionInRange(L"[16.3,"))
-                {
-                    return ResolvePath(L"Common7\\Tools\\Microsoft.VisualStudio.DevShell.dll");
-                }
-
-                return ResolvePath(L"Common7\\Tools\\vsdevshell\\Microsoft.VisualStudio.DevShell.dll");
-            }
-
-            std::wstring GetDevCmdScriptPath() const
-            {
-                return ResolvePath(L"Common7\\Tools\\VsDevCmd.bat");
             }
 
             bool VersionInRange(std::wstring_view range) const
@@ -65,7 +53,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
             std::wstring GetVersion() const
             {
-                return GetInstallationVersion(inst.get());
+                return VsSetupConfiguration::GetInstallationVersion(inst.get());
+            }
+
+            unsigned long long GetComparableInstallDate() const noexcept
+            {
+                return installDate;
+            }
+
+            unsigned long long GetComparableVersion() const noexcept
+            {
+                return version;
             }
 
             std::wstring GetInstallationPath() const
@@ -116,48 +114,52 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return profileNameSuffix;
             }
 
-        private:
-            friend class VsSetupConfiguration;
-
             VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
-                query(std::move(pQuery)),
-                inst(std::move(pInstance)),
-                profileNameSuffix(BuildProfileNameSuffix())
+                query(pQuery), // Copy and AddRef the query object.
+                inst(std::move(pInstance)), // Take ownership of the instance object.
+                profileNameSuffix(BuildProfileNameSuffix()),
+                installDate(GetInstallDate()),
+                version(GetInstallationVersion())
             {
             }
 
+        private:
             ComPtrSetupQuery query;
             ComPtrSetupInstance inst;
 
             std::wstring profileNameSuffix;
 
+            // Cache oft-accessed properties used in sorting.
+            unsigned long long installDate;
+            unsigned long long version;
+
             std::wstring BuildProfileNameSuffix() const
             {
-                ComPtrCatalogPropertyStore catalogProperties = GetCatalogPropertyStore();
+                auto catalogProperties = GetCatalogPropertyStore();
                 if (catalogProperties != nullptr)
                 {
                     std::wstring suffix;
 
-                    std::wstring productLine{ GetProductLineVersion(catalogProperties.get()) };
+                    auto productLine{ GetProductLineVersion(catalogProperties.get()) };
                     suffix.append(productLine);
 
-                    ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
+                    auto customProperties = GetCustomPropertyStore();
                     if (customProperties != nullptr)
                     {
-                        std::wstring nickname{ GetNickname(customProperties.get()) };
+                        auto nickname{ GetNickname(customProperties.get()) };
                         if (!nickname.empty())
                         {
                             suffix.append(L" (" + nickname + L")");
                         }
                         else
                         {
-                            ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
+                            auto instanceProperties = GetInstancePropertyStore();
                             suffix.append(GetChannelNameSuffixTag(instanceProperties.get()));
                         }
                     }
                     else
                     {
-                        ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
+                        auto instanceProperties = GetInstancePropertyStore();
                         suffix.append(GetChannelNameSuffixTag(instanceProperties.get()));
                     }
 
@@ -167,10 +169,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return GetVersion();
             }
 
+            unsigned long long GetInstallDate() const
+            {
+                return VsSetupConfiguration::GetInstallDate(inst.get());
+            }
+
+            unsigned long long GetInstallationVersion() const
+            {
+                const auto helper = wil::com_query<ISetupHelper>(query);
+
+                auto versionString{ GetVersion() };
+                unsigned long long version{ 0 };
+
+                THROW_IF_FAILED(helper->ParseVersion(versionString.data(), &version));
+                return version;
+            }
+
             static std::wstring GetChannelNameSuffixTag(ISetupPropertyStore* instanceProperties)
             {
                 std::wstring tag;
-                std::wstring channelName{ GetChannelName(instanceProperties) };
+                auto channelName{ GetChannelName(instanceProperties) };
 
                 if (channelName.empty())
                 {
@@ -192,7 +210,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
             static std::wstring GetChannelName(ISetupPropertyStore* instanceProperties)
             {
-                std::wstring channelId{ GetChannelId(instanceProperties) };
+                auto channelId{ GetChannelId(instanceProperties) };
                 if (channelId.empty())
                 {
                     return channelId;
@@ -201,7 +219,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 std::wstring channelName;
 
                 // channelId is in the format  <ProductName>.<MajorVersion>.<ChannelName>
-                size_t pos = channelId.rfind(L".");
+                auto pos = channelId.rfind(L".");
                 if (pos != std::wstring::npos)
                 {
                     channelName.append(channelId.substr(pos + 1));
@@ -229,6 +247,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         static std::wstring GetInstallationVersion(ISetupInstance* pInst);
         static std::wstring GetInstallationPath(ISetupInstance* pInst);
         static std::wstring GetInstanceId(ISetupInstance* pInst);
+        static unsigned long long GetInstallDate(ISetupInstance* pInst);
         static std::wstring GetStringProperty(ISetupPropertyStore* pProps, std::wstring_view name);
     };
 };

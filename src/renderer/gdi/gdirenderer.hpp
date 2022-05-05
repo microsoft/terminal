@@ -33,7 +33,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
@@ -48,11 +47,11 @@ namespace Microsoft::Console::Render
                                                    const size_t viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines,
                                                    const COLORREF color,
                                                    const size_t cchLine,
                                                    const COORD coordTarget) noexcept override;
@@ -61,6 +60,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
                                                    const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
@@ -76,7 +76,7 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
@@ -90,9 +90,11 @@ namespace Microsoft::Console::Render
                                                             const int nIndex,
                                                             const LONG dwNewLong) noexcept;
 
+        static bool FontHasWesternScript(HDC hdc);
+
         bool _fPaintStarted;
 
-        til::rectangle _invalidCharacters;
+        til::rect _invalidCharacters;
         PAINTSTRUCT _psInvalidData;
         HDC _hdcMemoryContext;
         bool _isTrueTypeFont;
@@ -137,13 +139,15 @@ namespace Microsoft::Console::Render
         COLORREF _lastFg;
         COLORREF _lastBg;
 
-        enum class FontType : size_t
+        enum class FontType : uint8_t
         {
+            Undefined,
             Default,
             Italic,
             Soft
         };
         FontType _lastFontType;
+        bool _fontHasWesternScript = false;
 
         XFORM _currentLineTransform;
         LineRendition _currentLineRendition;

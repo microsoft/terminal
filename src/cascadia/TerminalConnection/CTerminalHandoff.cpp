@@ -99,29 +99,57 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 //   from the registered handler event function.
 HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client)
 {
-    // Stash a local copy of _pfnHandoff before we stop listening.
-    auto localPfnHandoff = _pfnHandoff;
+    try
+    {
+        // Stash a local copy of _pfnHandoff before we stop listening.
+        auto localPfnHandoff = _pfnHandoff;
 
-    // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
-    // COM does not automatically clean that up for us. We must do it.
-    s_StopListening();
+        // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
+        // COM does not automatically clean that up for us. We must do it.
+        s_StopListening();
 
-    std::unique_lock lock{ _mtx };
+        std::unique_lock lock{ _mtx };
 
-    // Report an error if no one registered a handoff function before calling this.
-    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
+        // Report an error if no one registered a handoff function before calling this.
+        THROW_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
 
-    // Duplicate the handles from what we received.
-    // The contract with COM specifies that any HANDLEs we receive from the caller belong
-    // to the caller and will be freed when we leave the scope of this method.
-    // Making our own duplicate copy ensures they hang around in our lifetime.
-    RETURN_IF_FAILED(_duplicateHandle(in, in));
-    RETURN_IF_FAILED(_duplicateHandle(out, out));
-    RETURN_IF_FAILED(_duplicateHandle(signal, signal));
-    RETURN_IF_FAILED(_duplicateHandle(ref, ref));
-    RETURN_IF_FAILED(_duplicateHandle(server, server));
-    RETURN_IF_FAILED(_duplicateHandle(client, client));
+        // Duplicate the handles from what we received.
+        // The contract with COM specifies that any HANDLEs we receive from the caller belong
+        // to the caller and will be freed when we leave the scope of this method.
+        // Making our own duplicate copy ensures they hang around in our lifetime.
+        THROW_IF_FAILED(_duplicateHandle(in, in));
+        THROW_IF_FAILED(_duplicateHandle(out, out));
+        THROW_IF_FAILED(_duplicateHandle(signal, signal));
+        THROW_IF_FAILED(_duplicateHandle(ref, ref));
+        THROW_IF_FAILED(_duplicateHandle(server, server));
+        THROW_IF_FAILED(_duplicateHandle(client, client));
 
-    // Call registered handler from when we started listening.
-    return localPfnHandoff(in, out, signal, ref, server, client);
+        // Call registered handler from when we started listening.
+        THROW_IF_FAILED(localPfnHandoff(in, out, signal, ref, server, client));
+
+#pragma warning(suppress : 26477)
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ReceiveTerminalHandoff_Success",
+            TraceLoggingDescription("successfully received a terminal handoff"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        return S_OK;
+    }
+    catch (...)
+    {
+        const auto hr = wil::ResultFromCaughtException();
+
+#pragma warning(suppress : 26477)
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ReceiveTerminalHandoff_Failed",
+            TraceLoggingDescription("failed while receiving a terminal handoff"),
+            TraceLoggingHResult(hr),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        return hr;
+    }
 }

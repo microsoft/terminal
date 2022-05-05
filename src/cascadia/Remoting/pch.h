@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -50,3 +50,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hRemotingProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <cppwinrt_utils.h>

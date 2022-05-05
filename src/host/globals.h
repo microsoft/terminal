@@ -22,10 +22,7 @@ Revision History:
 #include "ConsoleArguments.hpp"
 #include "ApiRoutines.h"
 
-#include "../renderer/inc/IRenderData.hpp"
-#include "../renderer/inc/IRenderEngine.hpp"
-#include "../renderer/inc/IRenderer.hpp"
-#include "../renderer/inc/IFontDefaultList.hpp"
+#include "../renderer/base/Renderer.hpp"
 
 #include "../server/DeviceComm.h"
 #include "../server/ConDrvDeviceComm.h"
@@ -37,6 +34,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 class Globals
 {
 public:
+    Globals();
+
     UINT uiOEMCP = GetOEMCP();
     UINT uiWindowsCP = GetACP();
     HINSTANCE hInstance;
@@ -62,13 +61,13 @@ public:
 
     std::vector<wchar_t> WordDelimiters;
 
-    Microsoft::Console::Render::IRenderer* pRender;
+    Microsoft::Console::Render::Renderer* pRender;
 
     Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
 
-    ApiRoutines api;
+    IApiRoutines* api;
 
     bool handoffTarget = false;
 
@@ -83,4 +82,5 @@ public:
 
 private:
     CONSOLE_INFORMATION ciConsoleInformation;
+    ApiRoutines defaultApiRoutines;
 };

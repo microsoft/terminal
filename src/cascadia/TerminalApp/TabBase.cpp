@@ -90,7 +90,7 @@ namespace winrt::TerminalApp::implementation
         // Close
         Controls::MenuFlyoutItem closeTabMenuItem;
         Controls::FontIcon closeSymbol;
-        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        closeSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
         closeSymbol.Glyph(L"\xE711");
 
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -176,14 +176,14 @@ namespace winrt::TerminalApp::implementation
 
         if (_keyChord == keyChordText)
         {
-            return;
+            co_return;
         }
 
         _keyChord = keyChordText;
 
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -251,4 +251,5 @@ namespace winrt::TerminalApp::implementation
             }
         });
     }
+
 }

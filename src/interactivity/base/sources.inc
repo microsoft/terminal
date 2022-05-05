@@ -39,7 +39,6 @@ SOURCES = \
     ..\ApiDetector.cpp \
     ..\InteractivityFactory.cpp \
     ..\ServiceLocator.cpp \
-    ..\VtApiRedirection.cpp \
     ..\EventSynthesis.cpp \
     ..\RemoteConsoleControl.cpp \
     ..\HostSignalInputThread.cpp \

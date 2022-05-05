@@ -188,6 +188,10 @@
           ],
           "type": "string"
         },
+        "adjustIndistinguishableColors": {
+          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -277,6 +281,7 @@
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
+        "clearBuffer",
         "closeOtherTabs",
         "closePane",
         "closeTab",
@@ -285,6 +290,7 @@
         "commandPalette",
         "copy",
         "duplicateTab",
+        "exportBuffer",
         "find",
         "findMatch",
         "focusPane",
@@ -326,13 +332,18 @@
         "tabSearch",
         "toggleAlwaysOnTop",
         "toggleFocusMode",
+        "setFocusMode",
         "toggleFullscreen",
+        "setFullScreen",
+        "setMaximized",
         "togglePaneZoom",
         "toggleSplitOrientation",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
         "quit",
+        "adjustOpacity",
+        "restoreLastClosed",
         "unbound"
       ],
       "type": "string"
@@ -426,6 +437,14 @@
       ],
       "type": "string"
     },
+    "ClearBufferType": {
+      "enum": [
+        "all",
+        "screen",
+        "scrollback"
+      ],
+      "type": "string"
+    },
     "NewTerminalArgs": {
       "properties": {
         "commandline": {
@@ -455,12 +474,17 @@
         },
         "suppressApplicationTitle": {
           "type": "boolean",
-          "default": "false",
+          "default": false,
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
         },
         "colorScheme": {
           "description": "The name of a color scheme to use, instead of the one specified by the profile",
           "type": "string"
+        },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "This will override the profile's `elevate` setting."
         }
       },
       "type": "object"
@@ -502,7 +526,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "adjustFontSize"
+              "const": "adjustFontSize"
             },
             "delta": {
               "type": "integer",
@@ -526,7 +550,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "copy"
+              "const": "copy"
             },
             "singleLine": {
               "type": "boolean",
@@ -562,7 +586,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "newTab"
+              "const": "newTab"
             }
           }
         }
@@ -578,7 +602,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "switchToTab"
+              "const": "switchToTab"
             },
             "index": {
               "type": "integer",
@@ -602,7 +626,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "movePane"
+              "const": "movePane"
             },
             "index": {
               "type": "integer",
@@ -626,7 +650,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "moveFocus"
+              "const": "moveFocus"
             },
             "direction": {
               "$ref": "#/$defs/FocusDirection",
@@ -650,7 +674,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "swapPane"
+              "const": "swapPane"
             },
             "direction": {
               "$ref": "#/$defs/FocusDirection",
@@ -674,7 +698,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "resizePane"
+              "const": "resizePane"
             },
             "direction": {
               "$ref": "#/$defs/ResizeDirection",
@@ -698,7 +722,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "sendInput"
+              "const": "sendInput"
             },
             "input": {
               "type": "string",
@@ -725,7 +749,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "splitPane"
+              "const": "splitPane"
             },
             "split": {
               "$ref": "#/$defs/SplitDirection",
@@ -757,7 +781,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "openSettings"
+              "const": "openSettings"
             },
             "target": {
               "type": "string",
@@ -784,7 +808,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "setTabColor"
+              "const": "setTabColor"
             },
             "color": {
               "$ref": "#/$defs/Color",
@@ -805,7 +829,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "setColorScheme"
+              "const": "setColorScheme"
             },
             "colorScheme": {
               "type": "string",
@@ -819,6 +843,66 @@
         "colorScheme"
       ]
     },
+    "SetFocusModeAction": {
+      "description": "Arguments for a setFocusMode action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFocusMode"
+            },
+            "isFocusMode": {
+              "type": "boolean",
+              "description": "whether focus mode is enabled"
+            }
+          }
+        }
+      ]
+    },
+    "SetFullScreenAction": {
+      "description": "Arguments for a setFullScreen action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFullScreen"
+            },
+            "isFullScreen": {
+              "type": "boolean",
+              "description": "whether the window should be full screen"
+            }
+          }
+        }
+      ]
+    },
+    "SetMaximizedAction": {
+      "description": "Arguments for a setMaximized action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setMaximized"
+            },
+            "isMaximized": {
+              "type": "boolean",
+              "description": "whether the window should be maximized"
+            }
+          }
+        }
+      ]
+    },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
       "allOf": [
@@ -829,7 +913,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "wt"
+              "const": "wt"
             },
             "commandline": {
               "type": "string",
@@ -853,7 +937,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeOtherTabs"
+              "const": "closeOtherTabs"
             },
             "index": {
               "oneOf": [
@@ -881,7 +965,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeTabsAfter"
+              "const": "closeTabsAfter"
             },
             "index": {
               "oneOf": [
@@ -909,7 +993,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeTab"
+              "const": "closeTab"
             },
             "index": {
               "oneOf": [
@@ -937,7 +1021,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "scrollUp"
+              "const": "scrollUp"
             },
             "rowsToScroll": {
               "type": [
@@ -961,7 +1045,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "scrollDown"
+              "const": "scrollDown"
             },
             "rowsToScroll": {
               "type": [
@@ -985,7 +1069,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "moveTab"
+              "const": "moveTab"
             },
             "direction": {
               "$ref": "#/$defs/MoveTabDirection",
@@ -1008,7 +1092,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "multipleActions"
+              "const": "multipleActions"
             },
             "actions": {
               "$ref": "#/$defs/ShortcutAction",
@@ -1033,7 +1117,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "commandPalette"
+              "const": "commandPalette"
             },
             "launchMode": {
               "$ref": "#/$defs/CommandPaletteLaunchMode",
@@ -1054,7 +1138,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "findMatch"
+              "const": "findMatch"
             },
             "direction": {
               "$ref": "#/$defs/FindMatchDirection",
@@ -1081,7 +1165,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "newWindow"
+              "const": "newWindow"
             }
           }
         }
@@ -1097,7 +1181,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "prevTab"
+              "const": "prevTab"
             },
             "tabSwitcherMode": {
               "$ref": "#/$defs/SwitchToAdjacentTabArgs",
@@ -1118,7 +1202,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "nextTab"
+              "const": "nextTab"
             },
             "tabSwitcherMode": {
               "$ref": "#/$defs/SwitchToAdjacentTabArgs",
@@ -1139,7 +1223,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "renameTab"
+              "const": "renameTab"
             },
             "title": {
               "type": "string",
@@ -1160,7 +1244,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "renameWindow"
+              "const": "renameWindow"
             },
             "name": {
               "type": "string",
@@ -1181,12 +1265,55 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "focusPane"
+              "const": "focusPane"
             },
             "id": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "The ID of the pane to focus"
+            }
+          }
+        }
+      ]
+    },
+    "ClearBufferAction": {
+      "description": "Arguments corresponding to a clearBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "clearBuffer"
+            },
+            "clear": {
+              "$ref": "#/$defs/ClearBufferType",
+              "default": "all",
+              "description": "What to clear. Accepts one of `screen`, `scrollback` or `all` (for both)."
+            }
+          }
+        }
+      ]
+    },
+    "ExportBufferAction": {
+      "description": "Arguments corresponding to a exportBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "exportBuffer"
+            },
+            "path": {
               "type": "string",
               "default": "",
-              "description": "The ID of the pane to focus"
+              "description": "The path to export the text buffer to. If left blank, the Terminal will open a file picker to choose the path."
             }
           }
         }
@@ -1202,7 +1329,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "globalSummon"
+              "const": "globalSummon"
             },
             "desktop": {
               "type": "string",
@@ -1229,7 +1356,7 @@
               "description": "When provided, summon the window whose name or ID matches the given name value. If no such window exists, then create a new window with that name."
             },
             "dropdownDuration": {
-              "type": "number",
+              "type": "integer",
               "minimum": 0,
               "default": 0,
               "description": "When provided with a positive number, \"slide\" the window in from the top of the screen using an animation that lasts dropdownDuration milliseconds."
@@ -1253,7 +1380,35 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "quakeMode"
+              "const": "quakeMode"
+            }
+          }
+        }
+      ]
+    },
+    "AdjustOpacityAction": {
+      "description": "Changes the opacity of the active Terminal window. If `relative` is specified, then this action will increase/decrease relative to the current opacity.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "adjustOpacity"
+            },
+            "opacity": {
+              "type": "integer",
+              "minimum": -100,
+              "maximum": 100,
+              "default": 0,
+              "description": "How opaque the terminal should become or how much the opacity should be changed by, depending on the value of `relative`"
+            },
+            "relative": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, then adjust the current opacity by the given `opacity` parameter, additively. If false, set the opacity to exactly that value."
             }
           }
         }
@@ -1329,6 +1484,12 @@
               "$ref": "#/$defs/MoveTabAction"
             },
             {
+              "$ref": "#/$defs/MultipleActionsAction"
+            },
+            {
+              "$ref": "#/$defs/CommandPaletteAction"
+            },
+            {
               "$ref": "#/$defs/FindMatchAction"
             },
             {
@@ -1350,10 +1511,19 @@
               "$ref": "#/$defs/FocusPaneAction"
             },
             {
+              "$ref": "#/$defs/ExportBufferAction"
+            },
+            {
+              "$ref": "#/$defs/ClearBufferAction"
+            },
+            {
               "$ref": "#/$defs/GlobalSummonAction"
             },
             {
               "$ref": "#/$defs/QuakeModeAction"
+            },
+            {
+              "$ref": "#/$defs/AdjustOpacityAction"
             },
             {
               "type": "null"
@@ -1463,8 +1633,13 @@
           "$ref": "#/$defs/CopyFormat"
         },
         "trimBlockSelection": {
-          "default": false,
+          "default": true,
           "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
+          "type": "boolean"
+        },
+        "trimPaste": {
+          "default": true,
+          "description": "When enabled, the Terminal will automatically trim trailing whitespace characters when pasting text",
           "type": "boolean"
         },
         "experimental.detectURLs": {
@@ -1534,7 +1709,7 @@
         },
         "startOnUserLogin": {
           "default": false,
-          "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
+          "description": "When set to true, this enables the launch of Terminal at startup. Setting this to false will disable the startup task entry. If the Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
           "type": "boolean"
         },
         "firstWindowPreference": {
@@ -1570,23 +1745,23 @@
           "deprecated": true
         },
         "minimizeToNotificationArea": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the notification area through which the user can access their windows.",
           "type": "boolean"
         },
         "alwaysShowNotificationIcon": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
         "showAdminShield": {
-          "default": "true",
+          "default": true,
           "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
           "type": "boolean"
         },
         "useAcrylicInTabRow": {
-          "default": "false",
-          "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
+          "default": false,
+          "description": "When set to true, the tab row will have an acrylic material background with 50% opacity.",
           "type": "boolean"
         },
         "actions": {
@@ -1871,6 +2046,15 @@
           ],
           "type": "string"
         },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
+        },
+        "experimental.connection.passthroughMode": {
+          "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -1878,6 +2062,11 @@
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
+        },
+        "experimental.useAtlasEngine": {
+          "description": "Enable using the experimental new rendering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean",
+          "default": false
         },
         "fontFace": {
           "default": "Cascadia Mono",
@@ -1972,6 +2161,10 @@
             }
           ]
         },
+        "adjustIndistinguishableColors": {
+          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
+          "type": "boolean"
+        },
         "scrollbarState": {
           "default": "visible",
           "description": "Defines the visibility of the scrollbar.",
@@ -2035,7 +2228,7 @@
         },
         "useAcrylic": {
           "default": false,
-          "description": "When set to true, the window will have an acrylic background. When set to false, the window will have a plain, untextured background.",
+          "description": "When set to true, the window will have an acrylic material background. When set to false, the window will have a plain, untextured background.",
           "type": "boolean"
         }
       },

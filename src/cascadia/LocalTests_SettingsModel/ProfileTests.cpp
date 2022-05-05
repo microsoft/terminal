@@ -40,6 +40,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfilesOnArray);
         TEST_METHOD(DuplicateProfileTest);
         TEST_METHOD(TestGenGuidsForProfiles);
+        TEST_METHOD(TestCorrectOldDefaultShellPaths);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -272,19 +273,29 @@ namespace SettingsModelLocalTests
     void ProfileTests::DuplicateProfileTest()
     {
         static constexpr std::string_view userProfiles{ R"({
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "backgroundImage": "file:///some/path",
-                    "hidden": false,
-                }
-            ]
+            "profiles": {
+                "defaults": {
+                    "font": {
+                        "size": 123
+                    }
+                },
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "backgroundImage": "file:///some/path",
+                        "hidden": false,
+                    }
+                ]
+            }
         })" };
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(userProfiles);
         const auto profile = settings->AllProfiles().GetAt(0);
         const auto duplicatedProfile = settings->DuplicateProfile(profile);
+
+        // GH#11392: Ensure duplicated profiles properly inherit the base layer, even for nested objects.
+        VERIFY_ARE_EQUAL(123, duplicatedProfile.FontInfo().FontSize());
 
         duplicatedProfile.Guid(profile.Guid());
         duplicatedProfile.Name(profile.Name());
@@ -300,6 +311,17 @@ namespace SettingsModelLocalTests
         // the GUID generated for a dynamic profile (with a source) is different
         // than that of a profile without a source.
 
+        static constexpr std::string_view inboxSettings{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "source": "Terminal.App.UnitTest.0"
+                },
+                {
+                    "name" : "profile1"
+                }
+            ]
+        })" };
         static constexpr std::string_view userSettings{ R"({
             "profiles": [
                 {
@@ -312,9 +334,9 @@ namespace SettingsModelLocalTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, inboxSettings);
 
-        VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings->AllProfiles().GetAt(0).Name());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(0).HasGuid());
@@ -325,5 +347,72 @@ namespace SettingsModelLocalTests
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(1).Source().empty());
 
         VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(0).Guid(), settings->AllProfiles().GetAt(1).Guid());
+    }
+
+    void ProfileTests::TestCorrectOldDefaultShellPaths()
+    {
+        static constexpr std::string_view inboxProfiles{ R"({
+            "profiles": [
+                {
+                    "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                    "name": "Windows PowerShell",
+                    "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                },
+                {
+                    "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                    "name": "Command Prompt",
+                    "commandline": "%SystemRoot%\\System32\\cmd.exe",
+                }
+            ]
+        })" };
+        static constexpr std::string_view userProfiles{ R"({
+            "profiles": {
+                "defaults":
+                {
+                    "commandline": "pwsh.exe"
+                },
+                "list":
+                [
+                    {
+                        "name" : "powershell 1",
+                        "commandline": "powershell.exe",
+                        "guid" : "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+                    },
+                    {
+                        "name" : "powershell 2",
+                        "commandline": "powershell.exe",
+                        "guid" : "{61c54bbd-0000-5271-96e7-009a87ff44bf}"
+                    },
+                    {
+                        "name" : "cmd 1",
+                        "commandline": "cmd.exe",
+                        "guid" : "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"
+                    },
+                    {
+                        "name" : "cmd 2",
+                        "commandline": "cmd.exe",
+                        "guid" : "{0caa0dad-0000-5f56-a8ff-afceeeaa6101}"
+                    }
+                ]
+            }
+        })" };
+
+        implementation::SettingsLoader loader{ userProfiles, inboxProfiles };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto allProfiles = settings->AllProfiles();
+        VERIFY_ARE_EQUAL(4u, allProfiles.Size());
+        VERIFY_ARE_EQUAL(L"powershell 1", allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"powershell 2", allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"cmd 1", allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"cmd 2", allProfiles.GetAt(3).Name());
+
+        VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", allProfiles.GetAt(0).Commandline());
+        VERIFY_ARE_EQUAL(L"powershell.exe", allProfiles.GetAt(1).Commandline());
+        VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\cmd.exe", allProfiles.GetAt(2).Commandline());
+        VERIFY_ARE_EQUAL(L"cmd.exe", allProfiles.GetAt(3).Commandline());
     }
 }

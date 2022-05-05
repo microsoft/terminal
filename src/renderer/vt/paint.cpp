@@ -26,7 +26,7 @@ using namespace Microsoft::Console::Types;
     }
 
     // If there's nothing to do, quick return
-    bool somethingToDo = _invalidMap.any() ||
+    auto somethingToDo = _invalidMap.any() ||
                          _scrollDelta != til::point{ 0, 0 } ||
                          _cursorMoved ||
                          _titleChanged;
@@ -34,7 +34,7 @@ using namespace Microsoft::Console::Types;
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn,
                            _invalidMap,
-                           _lastViewport.ToInclusive(),
+                           til::rect{ _lastViewport.ToInclusive() },
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
@@ -125,7 +125,7 @@ using namespace Microsoft::Console::Types;
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
                                                 const COORD coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -142,7 +142,7 @@ using namespace Microsoft::Console::Types;
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
+[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
                                                      const COLORREF /*color*/,
                                                      const size_t /*cchLine*/,
                                                      const COORD /*coordTarget*/) noexcept
@@ -158,7 +158,7 @@ using namespace Microsoft::Console::Types;
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
-    _trace.TracePaintCursor(options.coordCursor);
+    _trace.TracePaintCursor(til::point{ options.coordCursor });
 
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
@@ -287,20 +287,21 @@ using namespace Microsoft::Console::Types;
     }
 
     // We use the legacy color calculations to generate an approximation of the
-    // colors in the 16-color table.
-    auto fgIndex = fg.GetLegacyIndex(0);
-    auto bgIndex = bg.GetLegacyIndex(0);
+    // colors in the Windows 16-color table, but we need to transpose those
+    // values to obtain an index in an ANSI-compatible order.
+    auto fgIndex = TextColor::TransposeLegacyIndex(fg.GetLegacyIndex(0));
+    auto bgIndex = TextColor::TransposeLegacyIndex(bg.GetLegacyIndex(0));
 
-    // If the bold attribute is set, and the foreground can be brightened, then do so.
-    const bool brighten = textAttributes.IsBold() && fg.CanBeBrightened();
+    // If the intense attribute is set, and the foreground can be brightened, then do so.
+    const auto brighten = textAttributes.IsIntense() && fg.CanBeBrightened();
     fgIndex |= (brighten ? FOREGROUND_INTENSITY : 0);
 
-    // To actually render bright colors, though, we need to use SGR bold.
-    const auto needBold = fgIndex > 7;
-    if (needBold != _lastTextAttributes.IsBold())
+    // To actually render bright colors, though, we need to use SGR intense.
+    const auto needIntense = fgIndex > 7;
+    if (needIntense != _lastTextAttributes.IsIntense())
     {
-        RETURN_IF_FAILED(_SetBold(needBold));
-        _lastTextAttributes.SetBold(needBold);
+        RETURN_IF_FAILED(_SetIntense(needIntense));
+        _lastTextAttributes.SetIntense(needIntense);
     }
 
     // After which we drop the high bits, since only colors 0 to 7 are supported.
@@ -337,7 +338,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
                                                       const COORD coord) noexcept
 {
     try
@@ -372,7 +373,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
                                                      const COORD coord,
                                                      const bool lineWrapped) noexcept
 {
@@ -389,9 +390,9 @@ using namespace Microsoft::Console::Types;
         _bufferLine.append(cluster.GetText());
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
     }
-    const size_t cchLine = _bufferLine.size();
+    const auto cchLine = _bufferLine.size();
 
-    bool foundNonspace = false;
+    auto foundNonspace = false;
     size_t lastNonSpace = 0;
     for (size_t i = 0; i < cchLine; i++)
     {
@@ -414,7 +415,7 @@ using namespace Microsoft::Console::Types;
     //      cch = 2, lastNonSpace = 1, foundNonSpace = true
     //      cch-lastNonSpace = 1 -> bad
     //      cch-lastNonSpace-(1) = 0 -> good
-    const size_t numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+    const auto numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase
@@ -432,17 +433,17 @@ using namespace Microsoft::Console::Types;
     // the inbox telnet client doesn't understand the Erase Character sequence,
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
-    const bool optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
-    const bool useEraseChar = (optimalToUseECH) &&
+    const auto optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
+    const auto useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
-    const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
+    const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
     // than when we emitted the line, we can't optimize out the spaces from it.
     // We'll still need to emit those spaces, so that the connected terminal
     // will have the same background color on those blank cells.
-    const bool bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _lastTextAttributes.GetBackground()) : true;
+    const auto bgMatched = _newBottomLineBG.has_value() ? (_newBottomLineBG.value() == _lastTextAttributes.GetBackground()) : true;
 
     // If we're not using erase char, but we did erase all at the start of the
     // frame, don't add spaces at the end.
@@ -456,16 +457,16 @@ using namespace Microsoft::Console::Types;
     // the lines _wrapped_. It doesn't care to manually break the lines, but if
     // we trimmed the spaces off here, we'd print all the "~"s one after another
     // on the same line.
-    const bool removeSpaces = !lineWrapped && (useEraseChar ||
+    const auto removeSpaces = !lineWrapped && (useEraseChar ||
                                                _clearedAllThisFrame ||
                                                (_newBottomLine && printingBottomLine && bgMatched));
-    const size_t cchActual = removeSpaces ?
-                                 (cchLine - numSpaces) :
-                                 cchLine;
+    const auto cchActual = removeSpaces ?
+                               (cchLine - numSpaces) :
+                               cchLine;
 
-    const size_t columnsActual = removeSpaces ?
-                                     (totalWidth - numSpaces) :
-                                     totalWidth;
+    const auto columnsActual = removeSpaces ?
+                                   (totalWidth - numSpaces) :
+                                   totalWidth;
 
     if (cchActual == 0)
     {
@@ -571,7 +572,7 @@ using namespace Microsoft::Console::Types;
         else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
             // TODO GH#5430 - Determine why and when we would do this.
-            std::wstring spaces = std::wstring(numSpaces, L' ');
+            auto spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
             _lastText.X += static_cast<short>(numSpaces);

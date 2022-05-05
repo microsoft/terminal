@@ -1,4 +1,4 @@
-﻿/*++
+/*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
@@ -133,7 +133,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 };
 
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
-// value type (unsinged int) and return type (FontWeight struct). JSON_ENUM_MAPPER
+// value type (unsigned int) and return type (FontWeight struct). JSON_ENUM_MAPPER
 // expects that the value type _is_ the return type.
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight> :
@@ -219,12 +219,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPrefe
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
 {
-    JSON_MAPPINGS(5) = {
+    JSON_MAPPINGS(8) = {
         pair_type{ "default", ValueType::DefaultMode },
         pair_type{ "maximized", ValueType::MaximizedMode },
         pair_type{ "fullscreen", ValueType::FullscreenMode },
+        pair_type{ "maximizedFullscreen", ValueType::MaximizedMode | ValueType::FullscreenMode },
         pair_type{ "focus", ValueType::FocusMode },
         pair_type{ "maximizedFocus", ValueType::MaximizedFocusMode },
+        pair_type{ "fullscreenFocus", ValueType::FullscreenMode | ValueType::FocusMode },
+        pair_type{ "maximizedFullscreenFocus", ValueType::MaximizedMode | ValueType::FullscreenMode | ValueType::FocusMode },
     };
 };
 
@@ -284,8 +287,8 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition FromJson(const Json::Value& json)
     {
         ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition ret;
-        std::string initialPosition{ json.asString() };
-        static constexpr char singleCharDelim = ',';
+        auto initialPosition{ json.asString() };
+        static constexpr auto singleCharDelim = ',';
         std::stringstream tokenStream(initialPosition);
         std::string token;
         uint8_t initialPosIndex = 0;
@@ -537,8 +540,9 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
 {
-    JSON_MAPPINGS(2) = {
+    JSON_MAPPINGS(3) = {
         pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
         pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
+        pair_type{ "setAsDefault", ValueType::SetAsDefault },
     };
 };

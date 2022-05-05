@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "../inc/cppwinrt_utils.h"
-
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     template<typename T>

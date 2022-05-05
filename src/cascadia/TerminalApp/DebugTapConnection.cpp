@@ -21,21 +21,35 @@ namespace winrt::Microsoft::TerminalApp::implementation
         }
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {}
         ~DebugInputTapConnection() = default;
-        void Start()
+        winrt::fire_and_forget Start()
         {
+            // GH#11282: It's possible that we're about to be started, _before_
+            // our paired connection is started. Both will get Start()'ed when
+            // their owning TermControl is finally laid out. However, if we're
+            // started first, then we'll immediately start printing to the other
+            // control as well, which might not have initialized yet. If we do
+            // that, we'll explode.
+            //
+            // Instead, wait here until the other connection is started too,
+            // before actually starting the connection to the client app. This
+            // will ensure both controls are initialized before the client app
+            // is.
+            co_await winrt::resume_background();
+            _pairedTap->_start.wait();
+
             _wrappedConnection.Start();
         }
-        void WriteInput(hstring const& data)
+        void WriteInput(const hstring& data)
         {
             _pairedTap->_PrintInput(data);
             _wrappedConnection.WriteInput(data);
         }
         void Resize(uint32_t rows, uint32_t columns) { _wrappedConnection.Resize(rows, columns); }
         void Close() { _wrappedConnection.Close(); }
-        winrt::event_token TerminalOutput(TerminalOutputHandler const& args) { return _wrappedConnection.TerminalOutput(args); };
-        void TerminalOutput(winrt::event_token const& token) noexcept { _wrappedConnection.TerminalOutput(token); };
-        winrt::event_token StateChanged(TypedEventHandler<ITerminalConnection, IInspectable> const& handler) { return _wrappedConnection.StateChanged(handler); };
-        void StateChanged(winrt::event_token const& token) noexcept { _wrappedConnection.StateChanged(token); };
+        winrt::event_token TerminalOutput(const TerminalOutputHandler& args) { return _wrappedConnection.TerminalOutput(args); };
+        void TerminalOutput(const winrt::event_token& token) noexcept { _wrappedConnection.TerminalOutput(token); };
+        winrt::event_token StateChanged(const TypedEventHandler<ITerminalConnection, IInspectable>& handler) { return _wrappedConnection.StateChanged(handler); };
+        void StateChanged(const winrt::event_token& token) noexcept { _wrappedConnection.StateChanged(token); };
         ConnectionState State() const noexcept { return _wrappedConnection.State(); }
 
     private:
@@ -59,9 +73,12 @@ namespace winrt::Microsoft::TerminalApp::implementation
     void DebugTapConnection::Start()
     {
         // presume the wrapped connection is started.
+
+        // This is explained in the comment for GH#11282 above.
+        _start.count_down();
     }
 
-    void DebugTapConnection::WriteInput(hstring const& data)
+    void DebugTapConnection::WriteInput(const hstring& data)
     {
         // If the user types into the tap side, forward it to the input side
         if (auto strongInput{ _inputSide.get() })

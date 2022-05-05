@@ -1,4 +1,4 @@
-﻿// <copyright file="TerminalContainer.cs" company="Microsoft Corporation">
+// <copyright file="TerminalContainer.cs" company="Microsoft Corporation">
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 // </copyright>

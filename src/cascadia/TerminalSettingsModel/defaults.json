@@ -11,7 +11,8 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
-    "trimBlockSelection": false,
+    "trimBlockSelection": true,
+    "trimPaste": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -24,7 +25,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "startOnUserLogin":  false,
+    "startOnUserLogin": false,
     "theme": "system",
     "snapToGridOnResize": true,
     "disableAnimations": false,
@@ -304,6 +305,7 @@
         { "command": "quakeMode", "keys":"win+sc(41)" },
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
+        { "command": "restoreLastClosed"},
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -391,6 +393,7 @@
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
         { "command": { "action": "clearBuffer", "clear": "all" } },
+        { "command": "exportBuffer" },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
@@ -450,6 +453,17 @@
                         }
                     ]
                 }
+            ]
+        },
+        {
+            // Set opacity...
+            "name": { "key": "SetOpacityParentCommandName" },
+            "commands": [
+                { "command": { "action": "adjustOpacity", "opacity": 0, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 25, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 50, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
         }
     ]

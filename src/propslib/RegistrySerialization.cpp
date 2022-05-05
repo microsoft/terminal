@@ -7,7 +7,7 @@
 
 #pragma hdrstop
 
-#define SET_FIELD_AND_SIZE(x) FIELD_OFFSET(Settings, x), RTL_FIELD_SIZE(Settings, x)
+#define SET_FIELD_AND_SIZE(x) UFIELD_OFFSET(Settings, x), RTL_FIELD_SIZE(Settings, x)
 
 #define NT_TESTNULL(var) (((var) == nullptr) ? STATUS_NO_MEMORY : STATUS_SUCCESS)
 
@@ -57,14 +57,19 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMa
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_TRIMZEROHEADINGS,              SET_FIELD_AND_SIZE(_fTrimLeadingZeros)           },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_ENABLE_COLOR_SELECTION,        SET_FIELD_AND_SIZE(_fEnableColorSelection)       },
     { _RegPropertyType::Coordinate,     CONSOLE_REGISTRY_WINDOWPOS,                     SET_FIELD_AND_SIZE(_dwWindowOrigin)              },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORCOLOR,                   SET_FIELD_AND_SIZE(_CursorColor)                 },
     { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORTYPE,                    SET_FIELD_AND_SIZE(_CursorType)                  },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,            SET_FIELD_AND_SIZE(_fInterceptCopyPaste)         },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_DEFAULTFOREGROUND,             SET_FIELD_AND_SIZE(_DefaultForeground)           },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_DEFAULTBACKGROUND,             SET_FIELD_AND_SIZE(_DefaultBackground)           },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_TERMINALSCROLLING,             SET_FIELD_AND_SIZE(_TerminalScrolling)           },
-    { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_USEDX,                         SET_FIELD_AND_SIZE(_fUseDx)                      },
+    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_USEDX,                         SET_FIELD_AND_SIZE(_fUseDx)                      },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_COPYCOLOR,                     SET_FIELD_AND_SIZE(_fCopyColor)                  }
+
+    // Special cases that are handled manually in Registry::LoadFromRegistry:
+    // - CONSOLE_REGISTRY_WINDOWPOS
+    // - CONSOLE_REGISTRY_CODEPAGE
+    // - CONSOLE_REGISTRY_COLORTABLE
+    // - CONSOLE_REGISTRY_DEFAULTFOREGROUND
+    // - CONSOLE_REGISTRY_DEFAULTBACKGROUND
+    // - CONSOLE_REGISTRY_CURSORCOLOR
 
 };
 const size_t RegistrySerialization::s_PropertyMappingsSize = ARRAYSIZE(s_PropertyMappings);
@@ -92,30 +97,30 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
 NTSTATUS RegistrySerialization::s_LoadRegDword(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
 {
     // find offset into destination structure for this numerical value
-    PBYTE const pbField = (PBYTE)pSettings + pPropMap->dwFieldOffset;
+    const auto pbField = (PBYTE)pSettings + pPropMap->dwFieldOffset;
 
     // attempt to load number into this field
     // If we're not successful, it's ok. Just don't fill it.
     DWORD dwValue;
-    NTSTATUS Status = s_QueryValue(hKey,
-                                   pPropMap->pwszValueName,
-                                   sizeof(dwValue),
-                                   ToWin32RegistryType(pPropMap->propertyType),
-                                   (PBYTE)& dwValue,
-                                   nullptr);
+    auto Status = s_QueryValue(hKey,
+                               pPropMap->pwszValueName,
+                               sizeof(dwValue),
+                               ToWin32RegistryType(pPropMap->propertyType),
+                               (PBYTE)& dwValue,
+                               nullptr);
     if (NT_SUCCESS(Status))
     {
         switch (pPropMap->propertyType)
         {
         case _RegPropertyType::Dword:
         {
-            DWORD* const pdField = (DWORD*)pbField;
+            const auto pdField = (DWORD*)pbField;
             *pdField = dwValue;
             break;
         }
         case _RegPropertyType::Word:
         {
-            WORD* const pwField = (WORD*)pbField;
+            const auto pwField = (WORD*)pbField;
             *pwField = (WORD)dwValue;
             break;
         }
@@ -131,7 +136,7 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(const HKEY hKey, const _RegProper
         }
         case _RegPropertyType::Coordinate:
         {
-            PCOORD pcoordField = (PCOORD)pbField;
+            auto pcoordField = (PCOORD)pbField;
             pcoordField->X = LOWORD(dwValue);
             pcoordField->Y = HIWORD(dwValue);
             break;
@@ -153,13 +158,13 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(const HKEY hKey, const _RegProper
 NTSTATUS RegistrySerialization::s_LoadRegString(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings)
 {
     // find offset into destination structure for this numerical value
-    PBYTE const pbField = (PBYTE)pSettings + pPropMap->dwFieldOffset;
+    const auto pbField = (PBYTE)pSettings + pPropMap->dwFieldOffset;
 
     // number of characters within the field
-    size_t const cchField = pPropMap->cbFieldSize / sizeof(WCHAR);
+    const auto cchField = pPropMap->cbFieldSize / sizeof(WCHAR);
 
-    PWCHAR pwchString = new(std::nothrow) WCHAR[cchField];
-    NTSTATUS Status = NT_TESTNULL(pwchString);
+    auto pwchString = new(std::nothrow) WCHAR[cchField];
+    auto Status = NT_TESTNULL(pwchString);
     if (NT_SUCCESS(Status))
     {
         Status = s_QueryValue(hKey,
@@ -251,7 +256,8 @@ NTSTATUS RegistrySerialization::s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR 
 [[nodiscard]]
 NTSTATUS RegistrySerialization::s_DeleteValue(const HKEY hKey, _In_ PCWSTR const pwszValueName)
 {
-    return NTSTATUS_FROM_WIN32(RegDeleteKeyValueW(hKey, nullptr, pwszValueName));
+    const auto result = RegDeleteKeyValueW(hKey, nullptr, pwszValueName);
+    return result == ERROR_FILE_NOT_FOUND ? S_OK : NTSTATUS_FROM_WIN32(result);
 }
 
 // Routine Description:
@@ -314,10 +320,10 @@ NTSTATUS RegistrySerialization::s_QueryValue(const HKEY hKey,
                                              _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
                                              _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength)
 {
-    DWORD cbData = cbValueLength;
+    auto cbData = cbValueLength;
 
     DWORD actualRegType = 0;
-    LONG const Result = RegQueryValueExW(hKey,
+    const auto Result = RegQueryValueExW(hKey,
                                          pwszValueName,
                                          nullptr,
                                          &actualRegType,
@@ -357,7 +363,7 @@ NTSTATUS RegistrySerialization::s_EnumValue(const HKEY hKey,
                                             _Out_writes_bytes_(cbDataLength) BYTE* const pbData)
 {
     DWORD cchValueName = cbValueLength / sizeof(WCHAR);
-    DWORD cbData = cbDataLength;
+    auto cbData = cbDataLength;
 
 #pragma prefast(suppress: 26015, "prefast doesn't realize that cbData == cbDataLength and cchValueName == cbValueLength/2")
     return NTSTATUS_FROM_WIN32(RegEnumValueW(hKey,
@@ -391,13 +397,13 @@ NTSTATUS RegistrySerialization::s_UpdateValue(const HKEY hConsoleKey,
                                               _In_reads_bytes_(cbDataLength) BYTE* pbData,
                                               const DWORD cbDataLength)
 {
-    NTSTATUS Status = STATUS_UNSUCCESSFUL; // This value won't be used, added to avoid compiler warnings.
-    BYTE* Data = new(std::nothrow) BYTE[cbDataLength];
+    auto Status = STATUS_UNSUCCESSFUL; // This value won't be used, added to avoid compiler warnings.
+    auto Data = new(std::nothrow) BYTE[cbDataLength];
     if (Data != nullptr)
     {
         // If this is not the main console key but the value is the same,
         // delete it. Otherwise, set it.
-        bool fDeleteKey = false;
+        auto fDeleteKey = false;
         if (hConsoleKey != hKey)
         {
             Status = s_QueryValue(hConsoleKey, pwszValueName, cbDataLength, dwType, Data, nullptr);

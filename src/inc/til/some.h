@@ -33,13 +33,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         using reverse_iterator = typename decltype(_array)::reverse_iterator;
         using const_reverse_iterator = typename decltype(_array)::const_reverse_iterator;
 
-        some() noexcept :
+        constexpr some() noexcept :
             _array{},
             _used{ 0 }
         {
         }
 
-        some(std::initializer_list<T> init)
+        constexpr some(std::initializer_list<T> init)
         {
             if (init.size() > N)
             {
@@ -60,13 +60,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        void fill(const T& _Value)
+        constexpr void fill(const T& _Value)
         {
             _array.fill(_Value);
             _used = N;
         }
 
-        void swap(some& _Other) noexcept(std::is_nothrow_swappable<T>::value)
+        constexpr void swap(some& _Other) noexcept(std::is_nothrow_swappable<T>::value)
         {
             _array.swap(_Other._array);
             std::swap(_used, _Other._used);
@@ -163,7 +163,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _array.data();
         }
 
-        void push_back(const T& val)
+        constexpr void push_back(const T& val)
         {
             if (_used >= N)
             {
@@ -175,7 +175,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ++_used;
         }
 
-        void push_back(T&& val)
+        constexpr void push_back(T&& val)
         {
             if (_used >= N)
             {
@@ -187,7 +187,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             ++_used;
         }
 
-        void pop_back()
+        constexpr void pop_back()
         {
             if (_used <= 0)
             {
@@ -199,12 +199,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             til::at(_array, _used) = 0;
         }
 
-        [[noreturn]] void _invalidArg() const
+        [[noreturn]] constexpr void _invalidArg() const
         {
             throw std::invalid_argument("invalid argument");
         }
 
-        [[noreturn]] void _outOfRange() const
+        [[noreturn]] constexpr void _outOfRange() const
         {
             throw std::out_of_range("invalid some<T, N> subscript");
         }

@@ -98,7 +98,7 @@ void VtIoTests::DtorTestJustEngine()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
@@ -136,16 +136,16 @@ void VtIoTests::DtorTestDeleteVtio()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
 
-        wil::unique_hfile hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        VtIo* vtio = new VtIo();
+        auto vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
                                                                   SetUpViewport());
@@ -185,7 +185,7 @@ void VtIoTests::DtorTestStackAlloc()
 
     Log::Comment(NoThrowString().Format(
         L"make some engines and let them fall out of scope"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Scope Exit Auto cleanup #%d", i));
@@ -227,7 +227,7 @@ void VtIoTests::DtorTestStackAllocMany()
 
     Log::Comment(NoThrowString().Format(
         L"Try an make a whole bunch all at once, and have them all fall out of scope at once."));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Multiple engines, one scope loop #%d", i));
@@ -267,12 +267,12 @@ public:
         return COORD{};
     }
 
-    const TextBuffer& GetTextBuffer() noexcept override
+    const TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
 
-    const FontInfo& GetFontInfo() noexcept override
+    const FontInfo& GetFontInfo() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -288,11 +288,6 @@ public:
 
     void UnlockConsole() noexcept override
     {
-    }
-
-    const TextAttribute GetDefaultBrushColors() noexcept override
-    {
-        return TextAttribute{};
     }
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& /*attr*/) const noexcept override
@@ -330,17 +325,7 @@ public:
         return 12ul;
     }
 
-    COLORREF GetCursorColor() const noexcept override
-    {
-        return COLORREF{};
-    }
-
     bool IsCursorDoubleWidth() const override
-    {
-        return false;
-    }
-
-    bool IsScreenReversed() const noexcept override
     {
         return false;
     }
@@ -418,12 +403,12 @@ void VtIoTests::RendererDtorAndThread()
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
         // Sleep for a hot sec to make sure the thread starts before we enable painting
         // If you don't, the thread might wait on the paint enabled event AFTER
@@ -444,12 +429,12 @@ void VtIoTests::RendererDtorAndThreadAndDx()
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();

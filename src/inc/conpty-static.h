@@ -11,23 +11,34 @@
 
 #include <consoleapi.h>
 
+#ifndef CONPTY_IMPEXP
+#define CONPTY_IMPEXP __declspec(dllimport)
+#endif
+
+#ifndef CONPTY_EXPORT
 #ifdef __cplusplus
-extern "C" {
+#define CONPTY_EXPORT extern "C" CONPTY_IMPEXP
+#else
+#define CONPTY_EXPORT extern CONPTY_IMPEXP
+#endif
 #endif
 
 #define PSEUDOCONSOLE_RESIZE_QUIRK (2u)
 #define PSEUDOCONSOLE_WIN32_INPUT_MODE (4u)
+#define PSEUDOCONSOLE_PASSTHROUGH_MODE (8u)
 
-HRESULT WINAPI ConptyCreatePseudoConsole(COORD size, HANDLE hInput, HANDLE hOutput, DWORD dwFlags, HPCON* phPC);
+CONPTY_EXPORT HRESULT WINAPI ConptyCreatePseudoConsole(COORD size, HANDLE hInput, HANDLE hOutput, DWORD dwFlags, HPCON* phPC);
 
-HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
+CONPTY_EXPORT HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(HANDLE hToken, COORD size, HANDLE hInput, HANDLE hOutput, DWORD dwFlags, HPCON* phPC);
 
-HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
+CONPTY_EXPORT HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
 
-VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
+CONPTY_EXPORT HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
 
-HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);
+CONPTY_EXPORT HRESULT WINAPI ConptyShowHidePseudoConsole(HPCON hPC, bool show);
 
-#ifdef __cplusplus
-}
-#endif
+CONPTY_EXPORT HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newParent);
+
+CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
+
+CONPTY_EXPORT HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);

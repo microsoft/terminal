@@ -5,7 +5,6 @@
 
 #include "Monarch.g.h"
 #include "Peasant.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 #include "WindowActivatedArgs.h"
 #include <atomic>
 
@@ -28,7 +27,7 @@ constexpr GUID Monarch_clsid
         0x7eb1,
         0x4f3e,
     {
-        0x85, 0xf5, 0x8b, 0xdd, 0x73, 0x86, 0xcc, 0xe3
+        0x85, 0xf5, 0x8b, 0xdd, 0x73, 0x86, 0xcc, 0xe4
     }
 };
 

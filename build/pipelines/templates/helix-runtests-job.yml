@@ -14,11 +14,12 @@ parameters:
   platform: ''
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
-  openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
-  closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
+  openHelixTargetQueues: 'windows.10.amd64.client21h1.open.xaml'
+  closedHelixTargetQueues: 'windows.10.amd64.client21h1.xaml'
 
 jobs:
 - job: ${{ parameters.name }}
+  displayName: Submit Helix ${{ parameters.platform }} ${{ parameters.configuration }}
   dependsOn: ${{ parameters.dependsOn }}
   condition: ${{ parameters.condition }}
   pool:

@@ -39,6 +39,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Creates a list of actions that can be run to recreate the state of this tab
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The list of actions.
+    std::vector<ActionAndArgs> SettingsTab::BuildStartupActions() const
+    {
+        ActionAndArgs action;
+        action.Action(ShortcutAction::OpenSettings);
+        OpenSettingsArgs args{ SettingsTarget::SettingsUI };
+        action.Args(args);
+
+        return std::vector{ std::move(action) };
+    }
+
+    // Method Description:
     // - Focus the settings UI
     // Arguments:
     // - focusState: The FocusState mode by which focus is to be obtained.
@@ -78,11 +94,10 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
-            auto fontFamily = winrt::WUX::Media::FontFamily(L"Segoe MDL2 Assets");
             auto glyph = L"\xE713"; // This is the Setting icon (looks like a gear)
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...

@@ -1,14 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-//
-// Declaration of the MainUserControl class.
-//
 
 #pragma once
 
-#include "winrt/Windows.UI.Xaml.h"
-#include "winrt/Windows.UI.Xaml.Markup.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
 #include "TitlebarControl.g.h"
 
 namespace winrt::TerminalApp::implementation
@@ -17,16 +11,22 @@ namespace winrt::TerminalApp::implementation
     {
         TitlebarControl(uint64_t handle);
 
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        winrt::fire_and_forget ClickButton(CaptionButton button);
+        void ReleaseButtons();
+        double CaptionButtonWidth();
+
         IInspectable Content();
         void Content(IInspectable content);
 
         void SetWindowVisualState(WindowVisualState visualState);
-        void Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
+        void Root_SizeChanged(const IInspectable& sender, const Windows::UI::Xaml::SizeChangedEventArgs& e);
 
-        void Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e);
+        void Minimize_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void Maximize_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void Close_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void DragBar_DoubleTapped(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs& e);
 
     private:
         void _OnMaximizeOrRestore(byte flag);
@@ -36,7 +36,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TitlebarControl : TitlebarControlT<TitlebarControl, implementation::TitlebarControl>
-    {
-    };
+    BASIC_FACTORY(TitlebarControl);
 }

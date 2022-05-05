@@ -11,6 +11,15 @@
 
 using namespace Microsoft::Console::Render;
 
+// This is an excerpt of GDI's FontHasWesternScript() as
+// used by InternalTextOut() which is part of ExtTextOutW().
+bool GdiEngine::FontHasWesternScript(HDC hdc)
+{
+    WORD glyphs[4];
+    return (GetGlyphIndicesW(hdc, L"dMr\"", 4, glyphs, GGI_MARK_NONEXISTING_GLYPHS) == 4) &&
+           (glyphs[0] != 0xFFFF && glyphs[1] != 0xFFFF && glyphs[2] != 0xFFFF && glyphs[3] != 0xFFFF);
+}
+
 // Routine Description:
 // - Prepares internal structures for a painting operation.
 // Arguments:
@@ -54,6 +63,8 @@ using namespace Microsoft::Console::Render;
     _debugContext = GetDC(_debugWindow);
 #endif
 
+    _lastFontType = FontType::Undefined;
+
     return S_OK;
 }
 
@@ -77,14 +88,14 @@ using namespace Microsoft::Console::Render;
         // We first need to apply the transform that was active at the time the cursor
         // was rendered otherwise we won't be clearing the right area of the display.
         // We don't need to do this if it was an identity transform though.
-        const bool identityTransform = cursorInvertTransform == IDENTITY_XFORM;
+        const auto identityTransform = cursorInvertTransform == IDENTITY_XFORM;
         if (!identityTransform)
         {
             LOG_HR_IF(E_FAIL, !SetWorldTransform(_hdcMemoryContext, &cursorInvertTransform));
             LOG_HR_IF(E_FAIL, !SetWorldTransform(_psInvalidData.hdc, &cursorInvertTransform));
         }
 
-        for (RECT r : cursorInvertRects)
+        for (auto r : cursorInvertRects)
         {
             // Clean both the in-memory and actual window context.
             LOG_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
@@ -103,7 +114,7 @@ using namespace Microsoft::Console::Render;
 
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
-    COORD const coordFontSize = _GetFontSize();
+    const auto coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     SIZE szGutter;
@@ -146,7 +157,7 @@ using namespace Microsoft::Console::Render;
     RECT rcClient;
     RETURN_HR_IF(E_FAIL, !(GetClientRect(hwnd, &rcClient)));
 
-    SIZE const szClient = _GetRectSize(&rcClient);
+    const auto szClient = _GetRectSize(&rcClient);
 
     // Only do work if the existing memory surface is a different size from the client area.
     // Return quickly if they're the same.
@@ -214,8 +225,8 @@ using namespace Microsoft::Console::Render;
 
     LOG_IF_FAILED(_FlushBufferLines());
 
-    POINT const pt = _GetInvalidRectPoint();
-    SIZE const sz = _GetInvalidRectSize();
+    const auto pt = _GetInvalidRectPoint();
+    const auto sz = _GetInvalidRectSize();
 
     LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
     WHEN_DBG(_DebugBltAll());
@@ -311,7 +322,7 @@ using namespace Microsoft::Console::Render;
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
                                                  const COORD coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept
@@ -331,7 +342,7 @@ using namespace Microsoft::Console::Render;
         auto& polyString = _polyStrings.emplace_back();
         polyString.reserve(cchLine);
 
-        COORD const coordFontSize = _GetFontSize();
+        const auto coordFontSize = _GetFontSize();
 
         auto& polyWidth = _polyWidths.emplace_back();
         polyWidth.reserve(cchLine);
@@ -362,7 +373,7 @@ using namespace Microsoft::Console::Render;
             // dispatch conversion into our codepage
 
             // Find out the bytes required
-            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, nullptr, 0, nullptr, nullptr);
+            const auto cbRequired = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, nullptr, 0, nullptr, nullptr);
 
             if (cbRequired != 0)
             {
@@ -370,20 +381,20 @@ using namespace Microsoft::Console::Render;
                 auto psConverted = std::make_unique<char[]>(cbRequired);
 
                 // Attempt conversion to current codepage
-                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
+                const auto cbConverted = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
 
                 // If successful...
                 if (cbConverted != 0)
                 {
                     // Now we have to convert back to Unicode but using the system ANSI codepage. Find buffer size first.
-                    int const cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, nullptr, 0);
+                    const auto cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, nullptr, 0);
 
                     if (cchRequired != 0)
                     {
                         std::pmr::wstring polyConvert(cchRequired, UNICODE_NULL, &_pool);
 
                         // Then do the actual conversion.
-                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, polyConvert.data(), cchRequired);
+                        const auto cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, polyConvert.data(), cchRequired);
 
                         if (cchConverted != 0)
                         {
@@ -438,17 +449,49 @@ using namespace Microsoft::Console::Render;
 // - S_OK or E_FAIL if GDI failed.
 [[nodiscard]] HRESULT GdiEngine::_FlushBufferLines() noexcept
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (_cPolyText > 0)
     {
         for (size_t i = 0; i != _cPolyText; ++i)
         {
             const auto& t = _pPolyText[i];
-            if (!ExtTextOutW(_hdcMemoryContext, t.x, t.y, t.uiFlags, &t.rcl, t.lpstr, t.n, t.pdx))
+
+            // The following if/else replicates the essentials of how ExtTextOutW() without ETO_IGNORELANGUAGE works.
+            // See InternalTextOut().
+            //
+            // Unlike the original, we don't check for `GetTextCharacterExtra(hdc) != 0`,
+            // because we don't ever call SetTextCharacterExtra() anyways.
+            //
+            // GH#12294:
+            // Additionally we set ss.fOverrideDirection to TRUE, because we need to present RTL
+            // text in logical order in order to be compatible with applications like `vim -H`.
+            if (_fontHasWesternScript && ScriptIsComplex(t.lpstr, t.n, SIC_COMPLEX) == S_FALSE)
             {
-                hr = E_FAIL;
-                break;
+                if (!ExtTextOutW(_hdcMemoryContext, t.x, t.y, t.uiFlags | ETO_IGNORELANGUAGE, &t.rcl, t.lpstr, t.n, t.pdx))
+                {
+                    hr = E_FAIL;
+                    break;
+                }
+            }
+            else
+            {
+                SCRIPT_STATE ss{};
+                ss.fOverrideDirection = TRUE;
+
+                SCRIPT_STRING_ANALYSIS ssa;
+                hr = ScriptStringAnalyse(_hdcMemoryContext, t.lpstr, t.n, 0, -1, SSA_GLYPHS | SSA_FALLBACK, 0, nullptr, &ss, t.pdx, nullptr, nullptr, &ssa);
+                if (FAILED(hr))
+                {
+                    break;
+                }
+
+                hr = ScriptStringOut(ssa, t.x, t.y, t.uiFlags, &t.rcl, 0, 0, FALSE);
+                std::ignore = ScriptStringFree(&ssa);
+                if (FAILED(hr))
+                {
+                    break;
+                }
             }
         }
 
@@ -472,7 +515,7 @@ using namespace Microsoft::Console::Render;
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -499,7 +542,7 @@ using namespace Microsoft::Console::Render;
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
     };
 
-    if (lines & GridLines::Left)
+    if (lines.test(GridLines::Left))
     {
         auto x = ptTarget.x;
         for (size_t i = 0; i < cchLine; i++, x += fontWidth)
@@ -508,7 +551,7 @@ using namespace Microsoft::Console::Render;
         }
     }
 
-    if (lines & GridLines::Right)
+    if (lines.test(GridLines::Right))
     {
         // NOTE: We have to subtract the stroke width from the cell width
         // to ensure the x coordinate remains inside the clipping rectangle.
@@ -519,13 +562,13 @@ using namespace Microsoft::Console::Render;
         }
     }
 
-    if (lines & GridLines::Top)
+    if (lines.test(GridLines::Top))
     {
         const auto y = ptTarget.y;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
-    if (lines & GridLines::Bottom)
+    if (lines.test(GridLines::Bottom))
     {
         // NOTE: We have to subtract the stroke width from the cell height
         // to ensure the y coordinate remains inside the clipping rectangle.
@@ -533,19 +576,19 @@ using namespace Microsoft::Console::Render;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline))
+    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline))
     {
         const auto y = ptTarget.y + _lineMetrics.underlineOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.underlineWidth));
 
-        if (lines & GridLines::DoubleUnderline)
+        if (lines.test(GridLines::DoubleUnderline))
         {
             const auto y2 = ptTarget.y + _lineMetrics.underlineOffset2;
             RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y2, widthOfAllCells, _lineMetrics.underlineWidth));
         }
     }
 
-    if (lines & GridLines::Strikethrough)
+    if (lines.test(GridLines::Strikethrough))
     {
         const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
@@ -569,7 +612,7 @@ using namespace Microsoft::Console::Render;
     }
     LOG_IF_FAILED(_FlushBufferLines());
 
-    COORD const coordFontSize = _GetFontSize();
+    const auto coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     // First set up a block cursor the size of the font.
@@ -588,7 +631,7 @@ using namespace Microsoft::Console::Render;
     // Make a set of RECTs to paint.
     cursorInvertRects.clear();
 
-    RECT rcInvert = rcBoundaries;
+    auto rcInvert = rcBoundaries;
     // depending on the cursorType, add rects to that set
     switch (options.cursorType)
     {
@@ -596,7 +639,7 @@ using namespace Microsoft::Console::Render;
     {
         // Now adjust the cursor height
         // enforce min/max cursor height
-        ULONG ulHeight = options.ulCursorHeightPercent;
+        auto ulHeight = options.ulCursorHeightPercent;
         ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
         ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
@@ -675,8 +718,8 @@ using namespace Microsoft::Console::Render;
     // Either invert all the RECTs, or paint them.
     if (options.fUseColor)
     {
-        HBRUSH hCursorBrush = CreateSolidBrush(options.cursorColor);
-        for (RECT r : cursorInvertRects)
+        auto hCursorBrush = CreateSolidBrush(options.cursorColor);
+        for (auto r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, &r, hCursorBrush)));
         }
@@ -690,7 +733,7 @@ using namespace Microsoft::Console::Render;
         // inverted rects to hide the cursor in the ScrollFrame method.
         cursorInvertTransform = _currentLineTransform;
 
-        for (RECT r : cursorInvertRects)
+        for (auto r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
         }

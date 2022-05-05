@@ -20,10 +20,10 @@ Author(s):
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class WindowMetrics sealed : public IWindowMetrics
+    class WindowMetrics : public IWindowMetrics
     {
     public:
-        RECT GetMinClientRectInPixels();
-        RECT GetMaxClientRectInPixels();
+        RECT GetMinClientRectInPixels() override;
+        RECT GetMaxClientRectInPixels() override;
     };
 }

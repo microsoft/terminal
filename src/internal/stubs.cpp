@@ -37,3 +37,12 @@ void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noex
     isEnabled = true;
     return S_OK;
 }
+
+[[nodiscard]] HRESULT DefaultApp::CheckShouldTerminalBeDefault(bool& isEnabled) noexcept
+{
+    // False since setting Terminal as the default app is an OS feature and probably
+    // should not be done in the open source conhost. We can always decide to turn it
+    // on in the future though.
+    isEnabled = false;
+    return S_OK;
+}

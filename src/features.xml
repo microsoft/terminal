@@ -11,13 +11,6 @@
     </feature>
 
     <feature>
-        <name>Feature_EditableActionsPage</name>
-        <description>The Actions page in the settings UI should allow users to edit actions.</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
-    </feature>
-
-    <feature>
         <name>Feature_EditableUnfocusedAppearance</name>
         <description>The unfocused appearance section in profiles in the SUI that allows users to create and edit unfocused appearances.</description>
         <stage>AlwaysEnabled</stage>
@@ -65,27 +58,52 @@
     </feature>
 
     <feature>
-        <name>Feature_NotificationIcon</name>
-        <description>Controls whether the Notification Icon and related settings (aka. MinimizeToNotificationArea and AlwaysShowNotificationIcon) are enabled</description>
+        <name>Feature_AtlasEngine</name>
+        <description>If enabled, AtlasEngine and the experimental.useAtlasEngine setting are compiled into the project</description>
         <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>Release</brandingToken>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
     </feature>
 
     <feature>
-        <name>Feature_ShowProfileDefaultsInSettings</name>
-        <description>Whether to show the "defaults" page in the Terminal settings UI</description>
-        <id>10430</id>
+        <name>Feature_NearbyFontLoading</name>
+        <description>Controls whether fonts in the same directory as the binary are used during rendering. Disabled for conhost so that it doesn't iterate the entire system32 directory.</description>
         <stage>AlwaysEnabled</stage>
-        <!-- This feature will not ship to Stable until it is complete. -->
-        <alwaysDisabledReleaseTokens />
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
     </feature>
 
     <feature>
-        <name>Feature_PersistedWindowLayout</name>
-        <description>Whether to allow the user to enable persisted window layout saving and loading</description>
-        <id>766</id>
+        <name>Feature_AdjustIndistinguishableText</name>
+        <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+    
+    <feature>
+        <name>Feature_VtPassthroughMode</name>
+        <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
+        <stage>AlwaysDisabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_IsolatedMonarchMode</name>
+        <description>Enables a test flag for MSFT:38540483. When enabled, if we ever create a null Monarch, we'll stealthily try to fall back to an in-proc monarch instance.</description>
         <stage>AlwaysEnabled</stage>
-        <!-- This feature will not ship to Stable until it is complete. -->
-        <alwaysDisabledReleaseTokens />
+        <!-- Did it this way instead of "release tokens" to ensure it will go into Windows Inbox -->
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysDisabledBrandingTokens>
     </feature>
 </featureStaging>

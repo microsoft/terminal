@@ -1,7 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
-// TitlebarControl.xaml.cpp
 // Implementation of the TitlebarControl class
 //
 
@@ -22,6 +21,14 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().MinimizeClick({ this, &TitlebarControl::Minimize_Click });
         MinMaxCloseControl().MaximizeClick({ this, &TitlebarControl::Maximize_Click });
         MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
+    }
+
+    double TitlebarControl::CaptionButtonWidth()
+    {
+        // Divide by three, since we know there are only three buttons. When
+        // Windows 12 comes along and adds another, we can update this /s
+        static auto width{ MinMaxCloseControl().ActualWidth() / 3.0 };
+        return width;
     }
 
     IInspectable TitlebarControl::Content()
@@ -53,7 +60,7 @@ namespace winrt::TerminalApp::implementation
     {
         POINT point1 = {};
         ::GetCursorPos(&point1);
-        const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+        const auto lParam = MAKELPARAM(point1.x, point1.y);
         WINDOWPLACEMENT placement = { sizeof(placement) };
         ::GetWindowPlacement(_window, &placement);
         if (placement.showCmd == SW_SHOWNORMAL)
@@ -66,17 +73,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TitlebarControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    void TitlebarControl::Maximize_Click(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
     {
         _OnMaximizeOrRestore(HTMAXBUTTON);
     }
 
-    void TitlebarControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& /*e*/)
+    void TitlebarControl::DragBar_DoubleTapped(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs& /*e*/)
     {
         _OnMaximizeOrRestore(HTCAPTION);
     }
 
-    void TitlebarControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    void TitlebarControl::Minimize_Click(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
     {
         if (_window)
         {
@@ -84,7 +91,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TitlebarControl::Close_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    void TitlebarControl::Close_Click(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
     {
         ::PostMessage(_window, WM_SYSCOMMAND, SC_CLOSE, 0);
     }
@@ -93,4 +100,48 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().SetWindowVisualState(visualState);
     }
+
+    // GH#9443: HoverButton, PressButton, ClickButton and ReleaseButtons are all
+    // used to manually interact with the buttons, in the same way that XAML
+    // would normally send events.
+
+    void TitlebarControl::HoverButton(CaptionButton button)
+    {
+        MinMaxCloseControl().HoverButton(button);
+    }
+    void TitlebarControl::PressButton(CaptionButton button)
+    {
+        MinMaxCloseControl().PressButton(button);
+    }
+    winrt::fire_and_forget TitlebarControl::ClickButton(CaptionButton button)
+    {
+        // GH#8587: Handle this on the _next_ pass of the UI thread. If we
+        // handle this immediately, then we'll accidentally leave the button in
+        // the "Hovered" state when we minimize. This will leave the button
+        // visibly hovered in the taskbar preview for our window.
+        auto weakThis{ get_weak() };
+        co_await MinMaxCloseControl().Dispatcher();
+        if (auto self{ weakThis.get() })
+        {
+            // Just handle this in the same way we would if the button were
+            // clicked normally.
+            switch (button)
+            {
+            case CaptionButton::Minimize:
+                Minimize_Click(nullptr, nullptr);
+                break;
+            case CaptionButton::Maximize:
+                Maximize_Click(nullptr, nullptr);
+                break;
+            case CaptionButton::Close:
+                Close_Click(nullptr, nullptr);
+                break;
+            }
+        }
+    }
+    void TitlebarControl::ReleaseButtons()
+    {
+        MinMaxCloseControl().ReleaseButtons();
+    }
+
 }

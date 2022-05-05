@@ -57,6 +57,6 @@ namespace Microsoft::Terminal
     protected:
         void _TranslatePointToScreen(LPPOINT clientPoint) const override;
         void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
-        const COORD _getScreenFontSize() const override;
+        const COORD _getScreenFontSize() const noexcept override;
     };
 }

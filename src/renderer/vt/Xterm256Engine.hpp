@@ -18,6 +18,8 @@ Author(s):
 
 #include "XtermEngine.hpp"
 
+class VtApiRoutines;
+
 namespace Microsoft::Console::Render
 {
     class Xterm256Engine : public XtermEngine
@@ -29,11 +31,14 @@ namespace Microsoft::Console::Render
         virtual ~Xterm256Engine() override = default;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
                                                    const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() noexcept override;
+
+        friend class ::VtApiRoutines;
 
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept;

@@ -41,7 +41,7 @@ HostSignalInputThread::~HostSignalInputThread()
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI HostSignalInputThread::StaticThreadProc(LPVOID lpParameter)
 {
-    HostSignalInputThread* const pInstance = static_cast<HostSignalInputThread*>(lpParameter);
+    const auto pInstance = static_cast<HostSignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
@@ -159,11 +159,10 @@ bool HostSignalInputThread::_GetData(gsl::span<gsl::byte> buffer)
     //       we want to gracefully close in.
     if (FALSE == ReadFile(_hFile.get(), buffer.data(), gsl::narrow_cast<DWORD>(buffer.size()), &bytesRead, nullptr))
     {
-        DWORD lastError = GetLastError();
+        auto lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();
-            return false;
         }
 
         THROW_WIN32(lastError);
@@ -172,7 +171,6 @@ bool HostSignalInputThread::_GetData(gsl::span<gsl::byte> buffer)
     if (bytesRead != buffer.size())
     {
         _Shutdown();
-        return false;
     }
 
     return true;

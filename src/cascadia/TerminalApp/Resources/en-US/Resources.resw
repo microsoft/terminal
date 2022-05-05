@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -405,10 +405,16 @@
   <data name="NewWindowRun.Text" xml:space="preserve">
     <value>Shift+Click to open a new window</value>
   </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl+Click to open as administrator</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
     <value>Close</value>
   </data>
   <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -418,6 +424,9 @@
     <value>Minimize</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Minimize</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
     <value>Minimize</value>
   </data>
   <data name="AboutDialog.Title" xml:space="preserve">
@@ -679,18 +688,6 @@
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
-  <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
-    <value>Open in Windows Terminal (Dev)</value>
-    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
-  </data>
-  <data name="ShellExtension_OpenInTerminalMenuItem_Preview" xml:space="preserve">
-    <value>Open in Windows Terminal Preview</value>
-    <comment>{Locked="Windows"} This is a menu item that will be displayed in the Windows File Explorer that launches the Preview version of Windows Terminal</comment>
-  </data>
-  <data name="ShellExtension_OpenInTerminalMenuItem" xml:space="preserve">
-    <value>Open in Windows Terminal</value>
-    <comment>{Locked="Windows"} This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal</comment>
-  </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Open a new tab in given starting directory</value>
   </data>
@@ -718,10 +715,21 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Termination behavior can be configured in advanced profile settings.</value>
   </data>
+  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
+    <value>Windows Terminal can be set as the default terminal application in your settings.</value>
+  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Don't show again</value>
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>This Terminal window is running as Admin</value>
+  </data>
+  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
+    <value>Open Settings</value>
+    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>Suggestions found: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
   </data>
 </root>

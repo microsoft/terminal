@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -254,7 +254,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto result = winrt::make_self<Command>();
 
-        bool nested = false;
+        auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
 
         // For iterable commands, we'll make another pass at parsing them once
@@ -456,7 +456,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value inJson{ input };
         Json::StreamWriterBuilder builder;
         builder.settings_["indentation"] = "";
-        std::string out{ Json::writeString(builder, inJson) };
+        auto out{ Json::writeString(builder, inJson) };
         if (out.size() >= 2)
         {
             // trim off the leading/trailing '"'s

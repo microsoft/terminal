@@ -18,13 +18,14 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Int64> Y;
     };
 
+    [flags]
     enum LaunchMode
     {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
-        FocusMode,
-        MaximizedFocusMode,
+        DefaultMode = 0,
+        MaximizedMode = 1,
+        FullscreenMode = 2,
+        FocusMode = 4,
+        MaximizedFocusMode = 5
     };
 
     enum WindowingMode
@@ -63,6 +64,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
         INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
+        INHERITABLE_SETTING(Boolean, TrimPaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
@@ -70,6 +72,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
         INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
+        INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, StartOnUserLogin);

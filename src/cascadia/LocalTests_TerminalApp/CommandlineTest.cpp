@@ -199,7 +199,7 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"testPass", testPass), L"Get a commandline to test");
 
         AppCommandlineArgs appArgs{};
-        std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
+        auto& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
         auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
@@ -232,7 +232,7 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"testPass", testPass), L"Get a commandline to test");
 
         AppCommandlineArgs appArgs{};
-        std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
+        auto& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
         auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
@@ -266,7 +266,7 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"testPass", testPass), L"Get a commandline to test");
 
         AppCommandlineArgs appArgs{};
-        std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
+        auto& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
         auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
@@ -439,7 +439,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `nt` instead of `new-tab`");
-        const wchar_t* subcommand = useShortForm ? L"nt" : L"new-tab";
+        auto subcommand = useShortForm ? L"nt" : L"new-tab";
 
         {
             AppCommandlineArgs appArgs{};
@@ -697,7 +697,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `sp` instead of `split-pane`");
-        const wchar_t* subcommand = useShortForm ? L"sp" : L"split-pane";
+        auto subcommand = useShortForm ? L"sp" : L"split-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -880,8 +880,8 @@ namespace TerminalAppLocalTests
 
         INIT_TEST_PROPERTY(bool, useShortFormNewTab, L"If true, use `nt` instead of `new-tab`");
         INIT_TEST_PROPERTY(bool, useShortFormSplitPane, L"If true, use `sp` instead of `split-pane`");
-        const wchar_t* ntSubcommand = useShortFormNewTab ? L"nt" : L"new-tab";
-        const wchar_t* spSubcommand = useShortFormSplitPane ? L"sp" : L"split-pane";
+        auto ntSubcommand = useShortFormNewTab ? L"nt" : L"new-tab";
+        auto spSubcommand = useShortFormSplitPane ? L"sp" : L"split-pane";
 
         AppCommandlineArgs appArgs{};
         std::vector<const wchar_t*> rawCommands{ L"wt.exe", ntSubcommand, L";", spSubcommand };
@@ -1009,7 +1009,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `ft` instead of `focus-tab`");
-        const wchar_t* subcommand = useShortForm ? L"ft" : L"focus-tab";
+        auto subcommand = useShortForm ? L"ft" : L"focus-tab";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1031,9 +1031,11 @@ namespace TerminalAppLocalTests
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
-            auto actionAndArgs = appArgs._startupActions.at(1);
+            const auto actionAndArgs = appArgs._startupActions.at(1);
             VERIFY_ARE_EQUAL(ShortcutAction::NextTab, actionAndArgs.Action());
-            VERIFY_IS_NULL(actionAndArgs.Args());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            const auto myArgs = actionAndArgs.Args().as<NextTabArgs>();
+            VERIFY_ARE_EQUAL(TabSwitcherMode::Disabled, myArgs.SwitcherMode().Value());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1047,7 +1049,9 @@ namespace TerminalAppLocalTests
 
             auto actionAndArgs = appArgs._startupActions.at(1);
             VERIFY_ARE_EQUAL(ShortcutAction::PrevTab, actionAndArgs.Action());
-            VERIFY_IS_NULL(actionAndArgs.Args());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            const auto myArgs = actionAndArgs.Args().as<PrevTabArgs>();
+            VERIFY_ARE_EQUAL(TabSwitcherMode::Disabled, myArgs.SwitcherMode().Value());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1097,7 +1101,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `mf` instead of `move-focus`");
-        const wchar_t* subcommand = useShortForm ? L"mf" : L"move-focus";
+        auto subcommand = useShortForm ? L"mf" : L"move-focus";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1210,7 +1214,7 @@ namespace TerminalAppLocalTests
 
     void CommandlineTest::ParseSwapPaneArgs()
     {
-        const wchar_t* subcommand = L"swap-pane";
+        auto subcommand = L"swap-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1328,7 +1332,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `fp` instead of `focus-pane`");
-        const wchar_t* subcommand = useShortForm ? L"fp" : L"focus-pane";
+        auto subcommand = useShortForm ? L"fp" : L"focus-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1761,7 +1765,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `sp` instead of `split-pane`");
-        const wchar_t* subcommand = useShortForm ? L"sp" : L"split-pane";
+        auto subcommand = useShortForm ? L"sp" : L"split-pane";
 
         {
             AppCommandlineArgs appArgs{};

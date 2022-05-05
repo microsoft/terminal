@@ -75,6 +75,22 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleRestoreLastClosed(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (_previouslyClosedPanesAndTabs.size() > 0)
+        {
+            const auto restoreActions = _previouslyClosedPanesAndTabs.back();
+            for (const auto& action : restoreActions)
+            {
+                _actionDispatch->DoAction(action);
+            }
+            _previouslyClosedPanesAndTabs.pop_back();
+
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
@@ -183,10 +199,9 @@ namespace winrt::TerminalApp::implementation
             }
 
             _SplitPane(realArgs.SplitDirection(),
-                       realArgs.SplitMode(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       realArgs.TerminalArgs());
+                       _MakePane(realArgs.TerminalArgs(), realArgs.SplitMode() == SplitType::Duplicate));
             args.Handled(true);
         }
     }
@@ -434,11 +449,41 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSetFocusMode(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFocusModeArgs>())
+        {
+            SetFocusMode(realArgs.IsFocusMode());
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const ActionEventArgs& args)
     {
         ToggleFullscreen();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetFullScreen(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFullScreenArgs>())
+        {
+            SetFullscreen(realArgs.IsFullScreen());
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleSetMaximized(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetMaximizedArgs>())
+        {
+            RequestSetMaximized(realArgs.IsMaximized());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,
@@ -470,28 +515,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    // Start by getting the current settings of the control
-                    auto controlSettings = control.Settings().as<TerminalSettings>();
-                    auto parentSettings = controlSettings;
-                    // Those are the _runtime_ settings however. What we
-                    // need to do is:
-                    //
-                    //   1. Blow away any colors set in the runtime settings.
-                    //   2. Apply the color scheme to the parent settings.
-                    //
-                    // 1 is important to make sure that the effects of
-                    // something like `colortool` are cleared when setting
-                    // the scheme.
-                    if (controlSettings.GetParent() != nullptr)
-                    {
-                        parentSettings = controlSettings.GetParent();
-                    }
-
-                    // ApplyColorScheme(nullptr) will clear the old color scheme.
-                    controlSettings.ApplyColorScheme(nullptr);
-                    parentSettings.ApplyColorScheme(scheme);
-
-                    control.UpdateSettings();
+                    control.ColorScheme(scheme.ToCoreScheme());
                 });
                 args.Handled(res);
             }
@@ -574,7 +598,7 @@ namespace winrt::TerminalApp::implementation
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(
                 TerminalPage::ConvertExecuteCommandlineToActions(realArgs)));
 
-            if (_startupActions.Size() != 0)
+            if (actions.Size() != 0)
             {
                 actionArgs.Handled(true);
                 ProcessStartupActions(actions, false);
@@ -703,7 +727,6 @@ namespace winrt::TerminalApp::implementation
     //   This might cause a UAC prompt. The elevation is performed on a
     //   background thread, as to not block the UI thread.
     // Arguments:
-    // - elevate: If true, launch the new Terminal elevated using `runas`
     // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
     //   that should be spawned. The Profile should be filled in with the GUID
     //   of the profile we want to launch.
@@ -711,8 +734,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget TerminalPage::_OpenNewWindow(const bool elevate,
-                                                 const NewTerminalArgs newTerminalArgs)
+    fire_and_forget TerminalPage::_OpenNewWindow(const NewTerminalArgs newTerminalArgs)
     {
         // Hop to the BG thread
         co_await winrt::resume_background();
@@ -739,9 +761,8 @@ namespace winrt::TerminalApp::implementation
         SHELLEXECUTEINFOW seInfo{ 0 };
         seInfo.cbSize = sizeof(seInfo);
         seInfo.fMask = SEE_MASK_NOASYNC;
-        // `runas` will cause the shell to launch this child process elevated.
         // `open` will just run the executable normally.
-        seInfo.lpVerb = elevate ? L"runas" : L"open";
+        seInfo.lpVerb = L"open";
         seInfo.lpFile = exePath.c_str();
         seInfo.lpParameters = cmdline.c_str();
         seInfo.nShow = SW_SHOWNORMAL;
@@ -775,7 +796,7 @@ namespace winrt::TerminalApp::implementation
 
         // Manually fill in the evaluated profile.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-        _OpenNewWindow(false, newTerminalArgs);
+        _OpenNewWindow(newTerminalArgs);
         actionArgs.Handled(true);
     }
 
@@ -834,25 +855,61 @@ namespace winrt::TerminalApp::implementation
         if (WindowRenamer() == nullptr)
         {
             // We need to use FindName to lazy-load this object
-            if (MUX::Controls::TeachingTip tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            if (auto tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
             {
                 tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
             }
         }
 
         _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
-        WindowRenamer().IsOpen(true);
 
-        // PAIN: We can't immediately focus the textbox in the TeachingTip. It's
-        // not technically focusable until it is opened. However, it doesn't
-        // provide an event to tell us when it is opened. That's tracked in
-        // microsoft/microsoft-ui-xaml#1607. So for now, the user _needs_ to
-        // click on the text box manually.
+        // BODGY: GH#12021
+        //
+        // TeachingTip doesn't provide an Opened event.
+        // (microsoft/microsoft-ui-xaml#1607). But we want to focus the renamer
+        // text box when it's opened. We can't do that immediately, the TextBox
+        // technically isn't in the visual tree yet. We have to wait for it to
+        // get added some time after we call IsOpen. How do we do that reliably?
+        // Usually, for this kind of thing, we'd just use a one-off
+        // LayoutUpdated event, as a notification that the TextBox was added to
+        // the tree. HOWEVER:
+        //   * The _first_ time this is fired, when the box is _first_ opened,
+        //     tossing focus doesn't work on the first LayoutUpdated. It does
+        //     work on the second LayoutUpdated. Okay, so we'll wait for two
+        //     LayoutUpdated events, and focus on the second.
+        //   * On subsequent opens: We only ever get a single LayoutUpdated.
+        //     Period. But, you can successfully focus it on that LayoutUpdated.
+        //
+        // So, we'll keep track of how many LayoutUpdated's we've _ever_ gotten.
+        // If we've had at least 2, then we can focus the text box.
         //
         // We're also not using a ContentDialog for this, because in Xaml
         // Islands a text box in a ContentDialog won't receive _any_ keypresses.
         // Fun!
         // WindowRenamerTextBox().Focus(FocusState::Programmatic);
+        _renamerLayoutUpdatedRevoker.revoke();
+        _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakThis.get() })
+            {
+                auto& count{ self->_renamerLayoutCount };
+
+                // Don't just always increment this, we don't want to deal with overflow situations
+                if (count < 2)
+                {
+                    count++;
+                }
+
+                if (count >= 2)
+                {
+                    self->_renamerLayoutUpdatedRevoker.revoke();
+                    self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
+                }
+            }
+        });
+        // Make sure to mark that enter was not pressed in the renamer quite
+        // yet. More details in TerminalPage::_WindowRenamerKeyDown.
+        _renamerPressedEnter = false;
+        WindowRenamer().IsOpen(true);
 
         args.Handled(true);
     }
@@ -900,6 +957,30 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleExportBuffer(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            if (args)
+            {
+                if (const auto& realArgs = args.ActionArgs().try_as<ExportBufferArgs>())
+                {
+                    _ExportTab(*activeTab, realArgs.Path());
+                    args.Handled(true);
+                    return;
+                }
+            }
+
+            // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
+            _ExportTab(*activeTab, L"");
+            if (args)
+            {
+                args.Handled(true);
+            }
+        }
+    }
+
     void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
@@ -928,6 +1009,21 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleAdjustOpacity(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
+                });
+                args.Handled(res);
             }
         }
     }

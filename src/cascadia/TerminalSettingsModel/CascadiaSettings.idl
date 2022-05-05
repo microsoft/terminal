@@ -18,6 +18,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         static String ApplicationDisplayName { get; };
         static String ApplicationVersion { get; };
+
+        static void ExportFile(String path, String content);
         
         CascadiaSettings(String userJSON, String inboxJSON);
 
@@ -47,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
 
         static Boolean IsDefaultTerminalAvailable { get; };
+        static Boolean IsDefaultTerminalSet { get; };
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
     }

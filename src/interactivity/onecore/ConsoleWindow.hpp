@@ -20,43 +20,42 @@ Author(s):
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class ConsoleWindow sealed : public Microsoft::Console::Types::IConsoleWindow
+    class ConsoleWindow : public Microsoft::Console::Types::IConsoleWindow
     {
     public:
         // Inherited via IConsoleWindow
-        BOOL EnableBothScrollBars();
-        int UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition);
+        BOOL EnableBothScrollBars() noexcept override;
+        int UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition) noexcept override;
 
-        bool IsInFullscreen() const;
-        void SetIsFullscreen(bool const fFullscreenEnabled);
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        bool IsInFullscreen() const noexcept override;
+        void SetIsFullscreen(const bool fFullscreenEnabled) noexcept override;
+        void ChangeViewport(const SMALL_RECT NewWindow) override;
 
-        void CaptureMouse();
-        BOOL ReleaseMouse();
+        void CaptureMouse() noexcept override;
+        BOOL ReleaseMouse() noexcept override;
 
-        HWND GetWindowHandle() const;
+        HWND GetWindowHandle() const noexcept override;
 
-        void SetOwner();
+        void SetOwner() noexcept override;
 
-        BOOL GetCursorPosition(LPPOINT lpPoint);
-        BOOL GetClientRectangle(LPRECT lpRect);
-        int MapPoints(LPPOINT lpPoints, UINT cPoints);
-        BOOL ConvertScreenToClient(LPPOINT lpPoint);
+        BOOL GetCursorPosition(LPPOINT lpPoint) noexcept override;
+        BOOL GetClientRectangle(LPRECT lpRect) noexcept override;
+        int MapPoints(LPPOINT lpPoints, UINT cPoints) noexcept override;
+        BOOL ConvertScreenToClient(LPPOINT lpPoint) noexcept override;
 
-        BOOL SendNotifyBeep() const;
+        BOOL SendNotifyBeep() const noexcept override;
 
-        BOOL PostUpdateScrollBars() const;
-        BOOL PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const;
-        BOOL PostUpdateWindowSize() const;
+        BOOL PostUpdateScrollBars() const noexcept override;
+        BOOL PostUpdateWindowSize() const noexcept override;
 
-        void UpdateWindowSize(COORD const coordSizeInChars);
-        void UpdateWindowText();
+        void UpdateWindowSize(const COORD coordSizeInChars) noexcept override;
+        void UpdateWindowText() noexcept override;
 
-        void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange);
-        void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange);
+        void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) noexcept override;
+        void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) noexcept override;
 
-        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
-        [[nodiscard]] HRESULT UiaSetTextAreaFocus();
-        RECT GetWindowRect() const noexcept;
+        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id) noexcept override;
+        [[nodiscard]] HRESULT UiaSetTextAreaFocus() noexcept override;
+        RECT GetWindowRect() const noexcept override;
     };
 }

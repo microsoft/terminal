@@ -58,7 +58,7 @@ namespace SettingsModelLocalTests
         const auto commands1Json = VerifyParseSucceeded(commands1String);
         const auto commands2Json = VerifyParseSucceeded(commands2String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -92,7 +92,7 @@ namespace SettingsModelLocalTests
         const auto commands2Json = VerifyParseSucceeded(commands2String);
         const auto commands3Json = VerifyParseSucceeded(commands3String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -154,7 +154,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -272,7 +272,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(3u, warnings.size());
@@ -298,7 +298,7 @@ namespace SettingsModelLocalTests
         const std::string commands0String{ R"([ { "name": { "key": "DuplicateTabCommandKey"}, "command": "copy" } ])" };
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -340,7 +340,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -410,7 +410,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -473,7 +473,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());

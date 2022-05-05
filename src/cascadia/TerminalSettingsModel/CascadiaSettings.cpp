@@ -5,8 +5,15 @@
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
 
+#include "DefaultTerminal.h"
+#include "FileUtils.h"
+
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
+#include <WtExeUtils.h>
+
+#include <shellapi.h>
+#include <shlwapi.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -15,14 +22,23 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
+// Creating a child of a profile requires us to copy certain
+// required attributes. This method handles those attributes.
+//
+// NOTE however that it doesn't call _FinalizeInheritance() for you! Don't forget that!
+//
+// At the time of writing only one caller needs to call _FinalizeInheritance(),
+// which is why this unsafety wasn't further abstracted away.
 winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
+    // If you add more fields here, make sure to do the same in
+    // SettingsLoader::_addUserProfileParent().
     auto profile = winrt::make_self<Profile>();
     profile->Origin(OriginTag::User);
     profile->Name(parent->Name());
     profile->Guid(parent->Guid());
     profile->Hidden(parent->Hidden());
-    profile->InsertParent(parent);
+    profile->AddLeastImportantParent(parent);
     return profile;
 }
 
@@ -205,6 +221,18 @@ Model::Profile CascadiaSettings::CreateNewProfile()
     return *newProfile;
 }
 
+template<typename T>
+static bool isProfilesDefaultsOrigin(const T& profile)
+{
+    return profile && profile.Origin() != winrt::Microsoft::Terminal::Settings::Model::OriginTag::ProfilesDefaults;
+}
+
+template<typename T>
+static bool isProfilesDefaultsOriginSub(const T& sub)
+{
+    return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
+}
+
 // Method Description:
 // - Duplicate a new profile based off another profile's settings
 // - This differs from Profile::Copy because it also copies over settings
@@ -236,14 +264,6 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
 
     const auto duplicated = _createNewProfile(newName);
 
-    static constexpr auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
-        return profile && profile.Origin() != OriginTag::ProfilesDefaults;
-    };
-
-    static constexpr auto isProfilesDefaultsOriginSub = [](const auto& sub) -> bool {
-        return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
-    };
-
 #define NEEDS_DUPLICATION(settingName) source.Has##settingName() || isProfilesDefaultsOrigin(source.settingName##OverrideSource())
 #define NEEDS_DUPLICATION_SUB(source, settingName) source.Has##settingName() || isProfilesDefaultsOriginSub(source.settingName##OverrideSource())
 
@@ -262,51 +282,43 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     // If the source is hidden and the Settings UI creates a
     // copy of it we don't want the copy to be hidden as well.
     // --> Don't do DUPLICATE_SETTING_MACRO(Hidden);
-    DUPLICATE_SETTING_MACRO(Icon);
-    DUPLICATE_SETTING_MACRO(CloseOnExit);
-    DUPLICATE_SETTING_MACRO(TabTitle);
+
+#define DUPLICATE_PROFILE_SETTINGS(type, name, jsonKey, ...) \
+    DUPLICATE_SETTING_MACRO(name);
+
+    MTSM_PROFILE_SETTINGS(DUPLICATE_PROFILE_SETTINGS)
+#undef DUPLICATE_PROFILE_SETTINGS
+
+    // These two aren't in MTSM_PROFILE_SETTINGS because they're special
     DUPLICATE_SETTING_MACRO(TabColor);
-    DUPLICATE_SETTING_MACRO(SuppressApplicationTitle);
-    DUPLICATE_SETTING_MACRO(UseAcrylic);
-    DUPLICATE_SETTING_MACRO(ScrollState);
     DUPLICATE_SETTING_MACRO(Padding);
-    DUPLICATE_SETTING_MACRO(Commandline);
-    DUPLICATE_SETTING_MACRO(StartingDirectory);
-    DUPLICATE_SETTING_MACRO(AntialiasingMode);
-    DUPLICATE_SETTING_MACRO(ForceFullRepaintRendering);
-    DUPLICATE_SETTING_MACRO(SoftwareRendering);
-    DUPLICATE_SETTING_MACRO(HistorySize);
-    DUPLICATE_SETTING_MACRO(SnapOnInput);
-    DUPLICATE_SETTING_MACRO(AltGrAliasing);
-    DUPLICATE_SETTING_MACRO(BellStyle);
 
     {
         const auto font = source.FontInfo();
         const auto target = duplicated->FontInfo();
-        DUPLICATE_SETTING_MACRO_SUB(font, target, FontFace);
-        DUPLICATE_SETTING_MACRO_SUB(font, target, FontSize);
-        DUPLICATE_SETTING_MACRO_SUB(font, target, FontWeight);
-        DUPLICATE_SETTING_MACRO_SUB(font, target, FontFeatures);
-        DUPLICATE_SETTING_MACRO_SUB(font, target, FontAxes);
+
+#define DUPLICATE_FONT_SETTINGS(type, name, jsonKey, ...) \
+    DUPLICATE_SETTING_MACRO_SUB(font, target, name);
+
+        MTSM_FONT_SETTINGS(DUPLICATE_FONT_SETTINGS)
+#undef DUPLICATE_FONT_SETTINGS
     }
 
     {
         const auto appearance = source.DefaultAppearance();
         const auto target = duplicated->DefaultAppearance();
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, ColorSchemeName);
+
+#define DUPLICATE_APPEARANCE_SETTINGS(type, name, jsonKey, ...) \
+    DUPLICATE_SETTING_MACRO_SUB(appearance, target, name);
+
+        MTSM_APPEARANCE_SETTINGS(DUPLICATE_APPEARANCE_SETTINGS)
+#undef DUPLICATE_APPEARANCE_SETTINGS
+
+        // These aren't in MTSM_APPEARANCE_SETTINGS because they're special
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Foreground);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Background);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, SelectionBackground);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorColor);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, PixelShaderPath);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, IntenseTextStyle);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImagePath);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageOpacity);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageStretchMode);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageAlignment);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, RetroTerminalEffect);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorShape);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorHeight);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
     }
 
@@ -323,12 +335,18 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
         winrt::com_ptr<AppearanceConfig> defaultAppearance;
         defaultAppearance.copy_from(winrt::get_self<AppearanceConfig>(duplicated->DefaultAppearance()));
-        unfocusedAppearance->InsertParent(defaultAppearance);
+        unfocusedAppearance->AddLeastImportantParent(defaultAppearance);
 
         duplicated->UnfocusedAppearance(*unfocusedAppearance);
     }
 
-    if (source.HasConnectionType())
+    // GH#12120: Check if the connection type isn't just the default value. If
+    // it is, then we should copy it. The only case this applies right now is
+    // for the Azure Cloud Shell, which is the only thing that has a non-{}
+    // guid. The user's version of this profile won't have connectionType set,
+    // because it inherits the setting from the parent. If we fail to copy it
+    // here, they won't actually get a Azure shell profile.
+    if (source.ConnectionType() != winrt::guid{})
     {
         duplicated->ConnectionType(source.ConnectionType());
     }
@@ -368,6 +386,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
     LOG_IF_FAILED(CoCreateGuid(&guid));
 
     auto profile = CreateChild(_baseLayerProfile);
+    profile->_FinalizeInheritance();
     profile->Guid(guid);
     profile->Name(winrt::hstring{ name });
     return profile;
@@ -404,7 +423,7 @@ void CascadiaSettings::_validateSettings()
 void CascadiaSettings::_validateAllSchemesExist()
 {
     const auto colorSchemes = _globals->ColorSchemes();
-    bool foundInvalidScheme = false;
+    auto foundInvalidScheme = false;
 
     for (const auto& profile : _allProfiles)
     {
@@ -438,8 +457,8 @@ void CascadiaSettings::_validateAllSchemesExist()
 //   we find any invalid icon images.
 void CascadiaSettings::_validateMediaResources()
 {
-    bool invalidBackground{ false };
-    bool invalidIcon{ false };
+    auto invalidBackground{ false };
+    auto invalidIcon{ false };
 
     for (auto profile : _allProfiles)
     {
@@ -526,9 +545,12 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
 {
     if (newTerminalArgs)
     {
-        if (auto profile = GetProfileByName(newTerminalArgs.Profile()))
+        if (const auto name = newTerminalArgs.Profile(); !name.empty())
         {
-            return profile;
+            if (auto profile = GetProfileByName(name))
+            {
+                return profile;
+            }
         }
 
         if (const auto index = newTerminalArgs.ProfileIndex())
@@ -545,26 +567,228 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
                 return nullptr;
             }
         }
+
+        if (const auto commandLine = newTerminalArgs.Commandline(); !commandLine.empty())
+        {
+            if (auto profile = _getProfileForCommandLine(commandLine))
+            {
+                return profile;
+            }
+        }
     }
 
-    if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
+    // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
+    // what we do is dependent on whether there was a commandline.
+    // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
+    // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
+    //   launch in the user's actual default profile.
+    // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
+    // TODO GH#10952: Detect the profile based on the commandline (add matching support)
+    return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
+               FindProfile(GlobalSettings().DefaultProfile()) :
+               ProfileDefaults();
+}
+
+// The method does some crude command line matching for our console hand-off support.
+// If you have hand-off enabled and start PowerShell from the start menu we might be called with
+//   "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+// This function then checks all known user profiles for one that's compatible with the commandLine.
+// In this case we might have a profile with the command line
+//   "C:\Program Files\PowerShell\7\pwsh.exe"
+// This function will then match this profile return it.
+//
+// If no matching profile could be found a nullptr will be returned.
+Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring& commandLine) const
+{
+    // We're going to cache all the command lines we got, as
+    // NormalizeCommandLine is a relatively heavy operation.
+    std::call_once(_commandLinesCacheOnce, [this]() {
+        _commandLinesCache.reserve(_allProfiles.Size());
+
+        for (const auto& profile : _allProfiles)
+        {
+            if (profile.ConnectionType() != winrt::guid{})
+            {
+                continue;
+            }
+
+            const auto cmd = profile.Commandline();
+            if (cmd.empty())
+            {
+                continue;
+            }
+
+            try
+            {
+                _commandLinesCache.emplace_back(NormalizeCommandLine(cmd.c_str()), profile);
+            }
+            CATCH_LOG()
+        }
+
+        // We're trying to find the command line with the longest common prefix below.
+        // Given the commandLine "foo.exe -bar -baz" and these two user profiles:
+        // * "foo.exe"
+        // * "foo.exe -bar"
+        // we want to choose the second one. By sorting the _commandLinesCache in a descending order
+        // by command line length, we can return from this function the moment we found a matching
+        // profile as there cannot possibly be any other profile anymore with a longer command line.
+        std::stable_sort(_commandLinesCache.begin(), _commandLinesCache.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.first.size() > rhs.first.size();
+        });
+    });
+
+    try
     {
-        // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
-        // what we do is dependent on whether there was a commandline.
-        // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
-        // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
-        //   launch in the user's actual default profile.
-        // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
-        // TODO GH#10952: Detect the profile based on the commandline (add matching support)
-        return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-                   FindProfile(GlobalSettings().DefaultProfile()) :
-                   ProfileDefaults();
+        const auto needle = NormalizeCommandLine(commandLine.c_str());
+
+        // til::starts_with(string, prefix) will always return false if prefix.size() > string.size().
+        // --> Using binary search we can safely skip all items in _commandLinesCache where .first.size() > needle.size().
+        const auto end = _commandLinesCache.end();
+        auto it = std::lower_bound(_commandLinesCache.begin(), end, needle, [&](const auto& lhs, const auto& rhs) {
+            return lhs.first.size() > rhs.size();
+        });
+
+        // `it` is now at a position where it->first.size() <= needle.size().
+        // Hopefully we'll now find a command line with matching prefix.
+        for (; it != end; ++it)
+        {
+            const auto& prefix = it->first;
+            const auto length = gsl::narrow<int>(prefix.size());
+            if (CompareStringOrdinal(needle.data(), length, prefix.data(), length, TRUE) == CSTR_EQUAL)
+            {
+                return it->second;
+            }
+        }
     }
-    else
+    catch (...)
     {
-        // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
-        return FindProfile(GlobalSettings().DefaultProfile());
+        LOG_CAUGHT_EXCEPTION();
     }
+
+    return nullptr;
+}
+
+// Given a commandLine like the following:
+// * "C:\WINDOWS\System32\cmd.exe"
+// * "pwsh -WorkingDirectory ~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+//
+// This function returns:
+// * "C:\Windows\System32\cmd.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+//
+// The resulting strings are then used for comparisons in _getProfileForCommandLine().
+// For instance a resulting string of
+//   "C:\Program Files\PowerShell\7\pwsh.exe"
+// is considered a compatible profile with
+//   "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+// as it shares the same (normalized) prefix.
+std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
+{
+    // Turn "%SystemRoot%\System32\cmd.exe" into "C:\WINDOWS\System32\cmd.exe".
+    // We do this early, as environment variables might occur anywhere in the commandLine.
+    std::wstring normalized;
+    THROW_IF_FAILED(wil::ExpandEnvironmentStringsW(commandLine, normalized));
+
+    // One of the most important things this function does is to strip quotes.
+    // That way the commandLine "foo.exe -bar" and "\"foo.exe\" \"-bar\"" appear identical.
+    // We'll abuse CommandLineToArgvW for that as it's close to what CreateProcessW uses.
+    auto argc = 0;
+    wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
+    THROW_LAST_ERROR_IF(!argc);
+
+    // The index of the first argument in argv for our executable in argv[0].
+    // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
+    auto startOfArguments = 1;
+
+    // The given commandLine should start with an executable name or path.
+    // For instance given the following argv arrays:
+    // * {"C:\WINDOWS\System32\cmd.exe"}
+    // * {"pwsh", "-WorkingDirectory", "~"}
+    // * {"C:\Program", "Files\PowerShell\7\pwsh.exe"}
+    //               ^^^^
+    //   Notice how there used to be a space in the path, which was split by ExpandEnvironmentStringsW().
+    //   CreateProcessW() supports such atrocities, so we got to do the same.
+    // * {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"}
+    //
+    // This loop tries to resolve relative paths, as well as executable names in %PATH%
+    // into absolute paths and normalizes them. The results for the above would be:
+    // * "C:\Windows\System32\cmd.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    for (;;)
+    {
+        // CreateProcessW uses RtlGetExePath to get the lpPath for SearchPathW.
+        // The difference between the behavior of SearchPathW if lpPath is nullptr and what RtlGetExePath returns
+        // seems to be mostly whether SafeProcessSearchMode is respected and the support for relative paths.
+        // Windows Terminal makes the use of relative paths rather impractical which is why we simply dropped the call to RtlGetExePath.
+        const auto status = wil::SearchPathW(nullptr, argv[0], L".exe", normalized);
+
+        if (status == S_OK)
+        {
+            const auto attributes = GetFileAttributesW(normalized.c_str());
+
+            if (attributes != INVALID_FILE_ATTRIBUTES && WI_IsFlagClear(attributes, FILE_ATTRIBUTE_DIRECTORY))
+            {
+                std::filesystem::path path{ std::move(normalized) };
+
+                // canonical() will resolve symlinks, etc. for us.
+                {
+                    std::error_code ec;
+                    auto canonicalPath = std::filesystem::canonical(path, ec);
+                    if (!ec)
+                    {
+                        path = std::move(canonicalPath);
+                    }
+                }
+
+                // std::filesystem::path has no way to extract the internal path.
+                // So about that.... I own you, computer. Give me that path.
+                normalized = std::move(const_cast<std::wstring&>(path.native()));
+                break;
+            }
+        }
+        // All other error types aren't handled at the moment.
+        else if (status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        {
+            break;
+        }
+        // If the file path couldn't be found by SearchPathW this could be the result of us being given a commandLine
+        // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"},
+        // or we were erroneously given a directory to execute (e.g. someone ran `wt .`).
+        // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
+        // Of course we can only do that if we have at least 2 remaining arguments in argv.
+        if ((argc - startOfArguments) < 2)
+        {
+            break;
+        }
+
+        // As described in the comment right above, we concatenate arguments in an attempt to resolve a valid path.
+        // The code below turns argv from {"C:\foo", "bar\baz.exe", "-arg"} into {"C:\foo bar\baz.exe", "-arg"}.
+        // The code abuses the fact that CommandLineToArgvW allocates all arguments back-to-back on the heap separated by '\0'.
+        argv[startOfArguments][-1] = L' ';
+        ++startOfArguments;
+    }
+
+    // We've (hopefully) finished resolving the path to the executable.
+    // We're now going to append all remaining arguments to the resulting string.
+    // If argv is {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"},
+    // then we'll get "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+    if (startOfArguments < argc)
+    {
+        // normalized contains a canonical form of argv[0] at this point.
+        // -1 allows us to include the \0 between argv[0] and argv[1] in the call to append().
+        const auto beg = argv[startOfArguments] - 1;
+        const auto lastArg = argv[argc - 1];
+        const auto end = lastArg + wcslen(lastArg);
+        normalized.append(beg, end);
+    }
+
+    return normalized;
 }
 
 // Method Description:
@@ -658,7 +882,7 @@ void CascadiaSettings::_validateKeybindings() const
 //   we find any command with an invalid color scheme.
 void CascadiaSettings::_validateColorSchemesInCommands() const
 {
-    bool foundInvalidScheme{ false };
+    auto foundInvalidScheme{ false };
     for (const auto& nameAndCmd : _globals->ActionMap().NameMap())
     {
         if (_hasInvalidColorScheme(nameAndCmd.Value()))
@@ -676,7 +900,7 @@ void CascadiaSettings::_validateColorSchemesInCommands() const
 
 bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) const
 {
-    bool invalid{ false };
+    auto invalid{ false };
     if (command.HasNestedCommands())
     {
         for (const auto& nested : command.NestedCommands())
@@ -833,6 +1057,11 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
 // - True if OS supports default terminal. False otherwise.
 bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
 {
+    if (!IsPackaged())
+    {
+        return false;
+    }
+
     OSVERSIONINFOEXW osver{};
     osver.dwOSVersionInfoSize = sizeof(osver);
     osver.dwBuildNumber = 22000;
@@ -843,37 +1072,32 @@ bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
     return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
 }
 
+bool CascadiaSettings::IsDefaultTerminalSet() noexcept
+{
+    return DefaultTerminal::HasCurrent();
+}
+
 // Method Description:
 // - Returns an iterable collection of all available terminals.
 // Arguments:
 // - <none>
 // Return Value:
 // - an iterable collection of all available terminals that could be the default.
-IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() const noexcept
+IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() noexcept
 {
-    const auto available = DefaultTerminal::Available();
-    std::vector<Model::DefaultTerminal> terminals{ available.Size(), nullptr };
-    available.GetMany(0, terminals);
-    return winrt::single_threaded_observable_vector(std::move(terminals));
+    _refreshDefaultTerminals();
+    return _defaultTerminals;
 }
 
 // Method Description:
 // - Returns the currently selected default terminal application.
-// - DANGER! This will be null unless you've called
-//   CascadiaSettings::RefreshDefaultTerminals. At the time of this comment (May
-
-//   2021), only the Launch page in the settings UI calls that method, so this
-//   value is unset unless you've navigated to that page.
 // Arguments:
 // - <none>
 // Return Value:
 // - the selected default terminal application
 Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noexcept
 {
-    if (!_currentDefaultTerminal)
-    {
-        _currentDefaultTerminal = DefaultTerminal::Current();
-    }
+    _refreshDefaultTerminals();
     return _currentDefaultTerminal;
 }
 
@@ -886,4 +1110,29 @@ Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noex
 void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& terminal)
 {
     _currentDefaultTerminal = terminal;
+}
+
+// This function is implicitly called by DefaultTerminals/CurrentDefaultTerminal().
+// It reloads the selection of available, installed terminals and caches them.
+// WinUI requires us that the `SelectedItem` of a collection is member of the list given to `ItemsSource`.
+// It's thus important that _currentDefaultTerminal is a member of _defaultTerminals.
+// Right now this is implicitly the case thanks to DefaultTerminal::Available(),
+// but in the future it might be worthwhile to change the code to use list indices instead.
+void CascadiaSettings::_refreshDefaultTerminals()
+{
+    if (!_defaultTerminals)
+    {
+        auto [defaultTerminals, defaultTerminal] = DefaultTerminal::Available();
+        _defaultTerminals = winrt::single_threaded_observable_vector(std::move(defaultTerminals));
+        _currentDefaultTerminal = std::move(defaultTerminal);
+    }
+}
+
+void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
+{
+    try
+    {
+        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
+    }
+    CATCH_LOG();
 }

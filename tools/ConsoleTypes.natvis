@@ -85,7 +85,7 @@
         <DisplayString>{{X: {_x,d}, Y: {_y,d}}}</DisplayString>
     </Type>
 
-    <Type Name="til::rectangle">
+    <Type Name="til::rect">
         <DisplayString>{{L: {_topLeft._x}, T: {_topLeft._y}, R: {_bottomRight._x} B: {_bottomRight._y}   [W: {_bottomRight._x - _topLeft._x} x H: {_bottomRight._y - _topLeft._y} -> A: {(_bottomRight._x - _topLeft._x) * (_bottomRight._y - _topLeft._y)}]}}</DisplayString>
     </Type>
 

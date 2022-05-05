@@ -134,7 +134,7 @@ void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) con
     screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.top, scaleFactor);
 }
 
-const COORD TermControlUiaTextRange::_getScreenFontSize() const
+const COORD TermControlUiaTextRange::_getScreenFontSize() const noexcept
 {
     // Do NOT get the font info from IRenderData. It is a dummy font info.
     // Instead, the font info is saved in the TermControl. So we have to

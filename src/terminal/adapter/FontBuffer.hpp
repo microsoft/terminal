@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool FinalizeSixelData();
 
         gsl::span<const uint16_t> GetBitPattern() const noexcept;
-        til::size GetCellSize() const;
+        til::size GetCellSize() const noexcept;
         size_t GetTextCenteringHint() const noexcept;
         VTID GetDesignation() const noexcept;
 
@@ -54,8 +54,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         DispatchTypes::DrcsCellMatrix _cellMatrix;
         DispatchTypes::DrcsCellMatrix _pendingCellMatrix;
-        size_t _cellHeight;
-        size_t _pendingCellHeight;
+        VTInt _cellHeight;
+        VTInt _pendingCellHeight;
         bool _sizeDeclaredAsMatrix;
         size_t _declaredWidth;
         size_t _declaredHeight;

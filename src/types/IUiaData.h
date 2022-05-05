@@ -33,6 +33,7 @@ namespace Microsoft::Console::Types
         IUiaData& operator=(IUiaData&&) = default;
 
     public:
+        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
         virtual const bool IsSelectionActive() const = 0;
         virtual const bool IsBlockSelection() const = 0;
         virtual void ClearSelection() = 0;

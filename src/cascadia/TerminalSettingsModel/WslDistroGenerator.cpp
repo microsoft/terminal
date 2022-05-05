@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include "DynamicProfileUtils.h"
 
+static constexpr std::wstring_view WslHomeDirectory{ L"~" };
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
 
 // The WSL entries are structured as such:
@@ -22,6 +23,18 @@ static constexpr wchar_t RegKeyDistroName[] = L"DistributionName";
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+static bool isWslDashDashCdAvailableForLinuxPaths() noexcept
+{
+    OSVERSIONINFOEXW osver{};
+    osver.dwOSVersionInfoSize = sizeof(osver);
+    osver.dwBuildNumber = 19041;
+
+    DWORDLONG dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+}
 
 // Legacy GUIDs:
 //   - Debian       58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530
@@ -37,9 +50,20 @@ std::wstring_view WslDistroGenerator::GetNamespace() const noexcept
 static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
 {
     const auto WSLDistro{ CreateDynamicProfile(distName) };
-    WSLDistro->Commandline(winrt::hstring{ L"wsl.exe -d " + distName });
+    // GH#11096 - make sure the WSL path starts explicitly with
+    // C:\Windows\System32. Don't want someone path hijacking wsl.exe.
+    std::wstring command{};
+    THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(command));
+    WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
     WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
-    WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
+    if (isWslDashDashCdAvailableForLinuxPaths())
+    {
+        WSLDistro->StartingDirectory(winrt::hstring{ WslHomeDirectory });
+    }
+    else
+    {
+        WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
+    }
     WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
     return WSLDistro;
 }
@@ -107,7 +131,7 @@ static void legacyGenerate(std::vector<winrt::com_ptr<implementation::Profile>>&
     // If _fdopen is successful, do not call _close on the file descriptor.
     // Calling fclose on the returned FILE * also closes the file descriptor."
     // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fdopen-wfdopen?view=vs-2019
-    FILE* stdioPipeHandle = _wfdopen(_open_osfhandle((intptr_t)wil::detach_from_smart_pointer(readPipe), _O_WTEXT | _O_RDONLY), L"r");
+    auto stdioPipeHandle = _wfdopen(_open_osfhandle((intptr_t)wil::detach_from_smart_pointer(readPipe), _O_WTEXT | _O_RDONLY), L"r");
     auto closeFile = wil::scope_exit([&]() { fclose(stdioPipeHandle); });
 
     std::wfstream pipe{ stdioPipeHandle };
@@ -130,7 +154,7 @@ static void legacyGenerate(std::vector<winrt::com_ptr<implementation::Profile>>&
                 continue;
             }
 
-            const size_t firstChar = distName.find_first_of(L"( ");
+            const auto firstChar = distName.find_first_of(L"( ");
             // Some localizations don't have a space between the name and "(Default)"
             // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
             if (firstChar < distName.size())
@@ -257,7 +281,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
     }
     for (const auto& guid : guidStrings)
     {
-        wil::unique_hkey distroKey{ openDistroKey(wslRootKey, guid) };
+        auto distroKey{ openDistroKey(wslRootKey, guid) };
         if (!distroKey)
         {
             continue;
@@ -265,14 +289,12 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 
         std::wstring buffer;
         auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, 256>(buffer, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
-            auto length = static_cast<DWORD>(valueLength);
+            auto length = gsl::narrow<DWORD>(valueLength * sizeof(wchar_t));
             const auto status = RegQueryValueExW(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(value), &length);
-            // length will receive the number of bytes - convert to a number of
-            // wchar_t's. AdaptFixedSizeToAllocatedResult will resize buffer to
-            // valueLengthNeededWithNull
-            *valueLengthNeededWithNull = (length / sizeof(wchar_t));
-            // If you add one for another trailing null, then there'll actually
-            // be _two_ trailing nulls in the buffer.
+            // length will receive the number of bytes including trailing null byte. Convert to a number of wchar_t's.
+            // AdaptFixedSizeToAllocatedResult will then resize buffer to valueLengthNeededWithNull.
+            // We're rounding up to prevent infinite loops if the data isn't a REG_SZ and length isn't divisible by 2.
+            *valueLengthNeededWithNull = (length + sizeof(wchar_t) - 1) / sizeof(wchar_t);
             return status == ERROR_MORE_DATA ? S_OK : HRESULT_FROM_WIN32(status);
         });
 
@@ -297,7 +319,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 // - A list of WSL profiles.
 void WslDistroGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
-    wil::unique_hkey wslRootKey{ openWslRegKey() };
+    auto wslRootKey{ openWslRegKey() };
     if (wslRootKey)
     {
         std::vector<std::wstring> guidStrings{};

@@ -22,7 +22,7 @@ jobs:
   steps:
   - template: build-console-steps.yml
     parameters:
-      additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
+      additionalBuildArguments: '${{ parameters.additionalBuildArguments }}'
 
 - template: helix-runtests-job.yml
   parameters:
@@ -52,3 +52,4 @@ jobs:
     - ProcessTestResults
     pgoArtifact: 'PGO'
     platform: ${{ parameters.platform }}
+    configuration: ${{ parameters.configuration }}

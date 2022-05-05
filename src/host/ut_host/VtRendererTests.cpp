@@ -86,11 +86,33 @@ class Microsoft::Console::Render::VtRendererTest
     void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
-    bool WriteCallback(const char* const pch, size_t const cch);
+    bool WriteCallback(const char* const pch, const size_t cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
 
-    void VerifyExpectedInputsDrained();
+    void VerifyFirstPaint(VtEngine& engine)
+    {
+        // Verify the first BeginPaint emits a clear and go home
+        qExpectedInput.push_back("\x1b[2J");
+        // Verify the first EndPaint sets the cursor state
+        qExpectedInput.push_back("\x1b[?25l");
+        VERIFY_IS_TRUE(engine._firstPaint);
+        TestPaint(engine, [&]() {
+            VERIFY_IS_FALSE(engine._firstPaint);
+        });
+    }
+
+    void VerifyExpectedInputsDrained()
+    {
+        if (!qExpectedInput.empty())
+        {
+            for (const auto& exp : qExpectedInput)
+            {
+                Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: %hs", exp.c_str()));
+            }
+            VERIFY_FAIL(L"there should be no remaining un-drained expected input");
+        }
+    }
 };
 
 Viewport VtRendererTest::SetUpViewport()
@@ -103,26 +125,14 @@ Viewport VtRendererTest::SetUpViewport()
     return Viewport::FromInclusive(view);
 }
 
-void VtRendererTest::VerifyExpectedInputsDrained()
+bool VtRendererTest::WriteCallback(const char* const pch, const size_t cch)
 {
-    if (!qExpectedInput.empty())
-    {
-        for (const auto& exp : qExpectedInput)
-        {
-            Log::Error(NoThrowString().Format(L"EXPECTED INPUT NEVER RECEIVED: %hs", exp.c_str()));
-        }
-        VERIFY_FAIL(L"there should be no remaining un-drained expected input");
-    }
-}
-
-bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
-{
-    std::string actualString = std::string(pch, cch);
+    auto actualString = std::string(pch, cch);
     VERIFY_IS_GREATER_THAN(qExpectedInput.size(),
                            static_cast<size_t>(0),
                            NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), qExpectedInput.size()));
 
-    std::string first = qExpectedInput.front();
+    auto first = qExpectedInput.front();
     qExpectedInput.pop_front();
 
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
@@ -150,8 +160,8 @@ void VtRendererTest::TestPaint(VtEngine& engine, std::function<void()> pfn)
 
 void VtRendererTest::VtSequenceHelperTests()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
 
     engine->SetTestCallback(pfn);
@@ -207,19 +217,14 @@ void VtRendererTest::VtSequenceHelperTests()
 
 void VtRendererTest::Xterm256TestInvalidate()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    const Viewport view = SetUpViewport();
+    const auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
@@ -234,7 +239,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
@@ -249,7 +254,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
 
@@ -275,7 +280,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -291,7 +296,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -316,7 +321,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -346,7 +351,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -386,7 +391,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         // 0000
         // 0000
         // 1111
-        const til::rectangle expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
+        const til::rect expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
         VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -395,20 +400,16 @@ void VtRendererTest::Xterm256TestInvalidate()
 
 void VtRendererTest::Xterm256TestColors()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+    RenderSettings renderSettings;
     RenderData renderData;
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"));
@@ -419,6 +420,7 @@ void VtRendererTest::Xterm256TestColors()
     qExpectedInput.push_back("\x1b[38;2;1;2;3m");
     qExpectedInput.push_back("\x1b[48;2;5;6;7m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x00030201, 0x00070605 },
+                                                  renderSettings,
                                                   &renderData,
                                                   false,
                                                   false));
@@ -428,6 +430,7 @@ void VtRendererTest::Xterm256TestColors()
             L"----Change only the BG----"));
         qExpectedInput.push_back("\x1b[48;2;7;8;9m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x00030201, 0x00090807 },
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -436,6 +439,7 @@ void VtRendererTest::Xterm256TestColors()
             L"----Change only the FG----"));
         qExpectedInput.push_back("\x1b[38;2;10;11;12m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x000c0b0a, 0x00090807 },
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -446,6 +450,7 @@ void VtRendererTest::Xterm256TestColors()
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x000c0b0a, 0x00090807 },
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -461,6 +466,7 @@ void VtRendererTest::Xterm256TestColors()
 
     qExpectedInput.push_back("\x1b[m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
+                                                  renderSettings,
                                                   &renderData,
                                                   false,
                                                   false));
@@ -470,18 +476,20 @@ void VtRendererTest::Xterm256TestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetIndexedBackground(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -491,6 +499,7 @@ void VtRendererTest::Xterm256TestColors()
         textAttributes.SetBackground(RGB(19, 161, 14));
         qExpectedInput.push_back("\x1b[48;2;19;161;14m"); // Background RGB(19,161,14)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -500,6 +509,7 @@ void VtRendererTest::Xterm256TestColors()
         textAttributes.SetForeground(RGB(193, 156, 0));
         qExpectedInput.push_back("\x1b[38;2;193;156;0m"); // Foreground RGB(193,156,0)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -509,24 +519,27 @@ void VtRendererTest::Xterm256TestColors()
         textAttributes.SetDefaultBackground();
         qExpectedInput.push_back("\x1b[49m"); // Background default
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG to a 256-color index----"));
-        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground256(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[38;5;7m"); // Foreground DARK_WHITE (256-Color Index)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to a 256-color index----"));
-        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground256(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[48;5;1m"); // Background DARK_RED (256-Color Index)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -536,6 +549,7 @@ void VtRendererTest::Xterm256TestColors()
         textAttributes.SetDefaultForeground();
         qExpectedInput.push_back("\x1b[39m"); // Background default
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -545,6 +559,7 @@ void VtRendererTest::Xterm256TestColors()
         textAttributes = {};
         qExpectedInput.push_back("\x1b[m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -555,6 +570,7 @@ void VtRendererTest::Xterm256TestColors()
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -564,19 +580,14 @@ void VtRendererTest::Xterm256TestColors()
 
 void VtRendererTest::Xterm256TestCursor()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."));
@@ -644,7 +655,7 @@ void VtRendererTest::Xterm256TestCursor()
         qExpectedInput.push_back("\x1b[1C");
         qExpectedInput.push_back("asdfghjkl");
 
-        const wchar_t* const line = L"asdfghjkl";
+        const auto line = L"asdfghjkl";
         const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
         std::vector<Cluster> clusters;
@@ -745,19 +756,14 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
         offSequences.push_back("\x1b[29m");
     }
 
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"));
@@ -799,10 +805,11 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     std::stringstream renditionSequence;
     renditionSequence << "\x1b[" << renditionAttribute << "m";
 
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+    RenderSettings renderSettings;
     RenderData renderData;
 
     Log::Comment(L"Make sure rendition attributes are retained when colors are reset");
@@ -810,13 +817,13 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     Log::Comment(L"----Start With All Attributes Reset----");
     TextAttribute textAttributes = {};
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     switch (renditionAttribute)
     {
-    case GraphicsOptions::BoldBright:
-        Log::Comment(L"----Set Bold Attribute----");
-        textAttributes.SetBold(true);
+    case GraphicsOptions::Intense:
+        Log::Comment(L"----Set Intense Attribute----");
+        textAttributes.SetIntense(true);
         break;
     case GraphicsOptions::RGBColorOrFaint:
         Log::Comment(L"----Set Faint Attribute----");
@@ -856,48 +863,43 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
         break;
     }
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Set Green Foreground----");
-    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedForeground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[32m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Foreground and Retain Rendition----");
     textAttributes.SetDefaultForeground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Set Green Background----");
-    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedBackground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[42m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Background and Retain Rendition----");
     textAttributes.SetDefaultBackground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     VerifyExpectedInputsDrained();
 }
 
 void VtRendererTest::XtermTestInvalidate()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
@@ -912,7 +914,7 @@ void VtRendererTest::XtermTestInvalidate()
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
@@ -927,7 +929,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
@@ -952,7 +954,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -968,7 +970,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -993,7 +995,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -1023,7 +1025,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -1063,7 +1065,7 @@ void VtRendererTest::XtermTestInvalidate()
         // 0000
         // 0000
         // 1111
-        const til::rectangle expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
+        const til::rect expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
         VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -1072,20 +1074,16 @@ void VtRendererTest::XtermTestInvalidate()
 
 void VtRendererTest::XtermTestColors()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+    RenderSettings renderSettings;
     RenderData renderData;
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"));
@@ -1095,6 +1093,7 @@ void VtRendererTest::XtermTestColors()
 
     qExpectedInput.push_back("\x1b[m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
+                                                  renderSettings,
                                                   &renderData,
                                                   false,
                                                   false));
@@ -1104,18 +1103,20 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetIndexedBackground(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -1125,6 +1126,7 @@ void VtRendererTest::XtermTestColors()
         textAttributes.SetBackground(RGB(19, 161, 14));
         qExpectedInput.push_back("\x1b[42m"); // Background DARK_GREEN
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -1134,6 +1136,7 @@ void VtRendererTest::XtermTestColors()
         textAttributes.SetForeground(RGB(193, 156, 0));
         qExpectedInput.push_back("\x1b[33m"); // Foreground DARK_YELLOW
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -1144,24 +1147,27 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back("\x1b[m"); // Both foreground and background default
         qExpectedInput.push_back("\x1b[33m"); // Reapply foreground DARK_YELLOW
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG to a 256-color index----"));
-        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground256(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to a 256-color index----"));
-        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground256(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -1172,6 +1178,7 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back("\x1b[m"); // Both foreground and background default
         qExpectedInput.push_back("\x1b[41m"); // Reapply background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -1181,6 +1188,7 @@ void VtRendererTest::XtermTestColors()
         textAttributes = {};
         qExpectedInput.push_back("\x1b[m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -1191,6 +1199,7 @@ void VtRendererTest::XtermTestColors()
             L"Make sure that color setting persists across EndPaint/StartPaint"));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
+                                                      renderSettings,
                                                       &renderData,
                                                       false,
                                                       false));
@@ -1200,19 +1209,14 @@ void VtRendererTest::XtermTestColors()
 
 void VtRendererTest::XtermTestCursor()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."));
@@ -1280,7 +1284,7 @@ void VtRendererTest::XtermTestCursor()
         qExpectedInput.push_back("\x1b[1C");
         qExpectedInput.push_back("asdfghjkl");
 
-        const wchar_t* const line = L"asdfghjkl";
+        const auto line = L"asdfghjkl";
         const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
         std::vector<Cluster> clusters;
@@ -1319,10 +1323,11 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
     std::stringstream renditionSequence;
     renditionSequence << "\x1b[" << renditionAttribute << "m";
 
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
+    RenderSettings renderSettings;
     RenderData renderData;
 
     Log::Comment(L"Make sure rendition attributes are retained when colors are reset");
@@ -1330,13 +1335,13 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
     Log::Comment(L"----Start With All Attributes Reset----");
     TextAttribute textAttributes = {};
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     switch (renditionAttribute)
     {
-    case GraphicsOptions::BoldBright:
-        Log::Comment(L"----Set Bold Attribute----");
-        textAttributes.SetBold(true);
+    case GraphicsOptions::Intense:
+        Log::Comment(L"----Set Intense Attribute----");
+        textAttributes.SetIntense(true);
         break;
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
@@ -1348,48 +1353,43 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
         break;
     }
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Set Green Foreground----");
-    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedForeground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[32m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Foreground and Retain Rendition----");
     textAttributes.SetDefaultForeground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Set Green Background----");
-    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedBackground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[42m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Background and Retain Rendition----");
     textAttributes.SetDefaultBackground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
 
     VerifyExpectedInputsDrained();
 }
 
 void VtRendererTest::TestWrapping()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
+    VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
@@ -1407,8 +1407,8 @@ void VtRendererTest::TestWrapping()
         qExpectedInput.push_back("\r\n");
         qExpectedInput.push_back("zxcvbnm,.");
 
-        const wchar_t* const line1 = L"asdfghjkl";
-        const wchar_t* const line2 = L"zxcvbnm,.";
+        const auto line1 = L"asdfghjkl";
+        const auto line2 = L"zxcvbnm,.";
         const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
         std::vector<Cluster> clusters1;
@@ -1429,14 +1429,16 @@ void VtRendererTest::TestWrapping()
 
 void VtRendererTest::TestResize()
 {
-    Viewport view = SetUpViewport();
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto view = SetUpViewport();
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // Verify the first paint emits a clear and go home
+    // Verify the first BeginPaint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
+    // Verify the first EndPaint sets the cursor state
+    qExpectedInput.push_back("\x1b[?25l");
     VERIFY_IS_TRUE(engine->_firstPaint);
     VERIFY_IS_TRUE(engine->_suppressResizeRepaint);
 
@@ -1466,26 +1468,11 @@ void VtRendererTest::TestResize()
 
 void VtRendererTest::TestCursorVisibility()
 {
-    Viewport view = SetUpViewport();
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto view = SetUpViewport();
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
-
-    // Verify the first paint emits a clear
-    qExpectedInput.push_back("\x1b[2J");
-    VERIFY_IS_TRUE(engine->_firstPaint);
-    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
-    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
-    TestPaint(*engine, [&]() {
-        // During StartPaint, we'll mark the cursor as off. make sure that happens.
-        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
-        VERIFY_IS_FALSE(engine->_firstPaint);
-    });
-
-    // The cursor wasn't painted in the last frame.
-    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
-    VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
 
     COORD origin{ 0, 0 };
 
@@ -1497,8 +1484,8 @@ void VtRendererTest::TestCursorVisibility()
     // Frame 1: Paint the cursor at the home position. At the end of the frame,
     // the cursor should be on. Because we're moving the cursor with CUP, we
     // need to disable the cursor during this frame.
+    qExpectedInput.push_back("\x1b[2J");
     TestPaint(*engine, [&]() {
-        VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1509,10 +1496,13 @@ void VtRendererTest::TestCursorVisibility()
         VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
         VERIFY_IS_TRUE(engine->_needToDisableCursor);
 
+        // GH#12401:
+        // The other tests verify that the cursor is explicitly hidden on the
+        // first frame (VerifyFirstPaint). This test on the other hand does
+        // the opposite by calling PaintCursor() during the first paint cycle.
         qExpectedInput.push_back("\x1b[?25h");
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1520,7 +1510,6 @@ void VtRendererTest::TestCursorVisibility()
     // frame, the cursor should be on, the same as before. We aren't moving the
     // cursor during this frame, so _needToDisableCursor will stay false.
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1531,7 +1520,6 @@ void VtRendererTest::TestCursorVisibility()
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1539,7 +1527,6 @@ void VtRendererTest::TestCursorVisibility()
     // should be on, the same as before. Because we're moving the cursor with
     // CUP, we need to disable the cursor during this frame.
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1550,7 +1537,6 @@ void VtRendererTest::TestCursorVisibility()
 
         VERIFY_SUCCEEDED(engine->PaintCursor(options));
 
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
         VERIFY_IS_TRUE(engine->_needToDisableCursor);
 
@@ -1560,7 +1546,6 @@ void VtRendererTest::TestCursorVisibility()
         qExpectedInput.push_back("\x1b[?25h");
     });
 
-    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
     VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
@@ -1568,14 +1553,12 @@ void VtRendererTest::TestCursorVisibility()
     // should be off.
     Log::Comment(NoThrowString().Format(L"Painting without calling PaintCursor will hide the cursor"));
     TestPaint(*engine, [&]() {
-        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
         VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
         VERIFY_IS_FALSE(engine->_needToDisableCursor);
 
         qExpectedInput.push_back("\x1b[?25l");
     });
 
-    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
     VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
     VERIFY_IS_FALSE(engine->_needToDisableCursor);
 }
@@ -1591,8 +1574,8 @@ void VtRendererTest::FormattedString()
     static const auto format = FMT_COMPILE("\x1b[{}m");
     const auto value = 12;
 
-    Viewport view = SetUpViewport();
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto view = SetUpViewport();
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
