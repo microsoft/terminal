@@ -47,7 +47,7 @@ namespace Microsoft::Console::Render
                                                    const size_t viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;

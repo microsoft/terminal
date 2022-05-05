@@ -180,7 +180,7 @@ void EndDlgPage(const HWND hDlg, const BOOL fSaveNow)
 #define TOOLTIP_MAXLENGTH (256)
 void CreateAndAssociateToolTipToControl(const UINT dlgItem, const HWND hDlg, const UINT idsToolTip)
 {
-    HWND hwndTooltip = CreateWindowEx(0 /*dwExtStyle*/,
+    auto hwndTooltip = CreateWindowEx(0 /*dwExtStyle*/,
                                       TOOLTIPS_CLASS,
                                       nullptr /*lpWindowName*/,
                                       TTS_ALWAYSTIP,
@@ -393,15 +393,15 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
 // - This routine allocates a buffer that must be freed.
 PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
 {
-    bool fUnexpand = true;
-    bool fSubstitute = true;
+    auto fUnexpand = true;
+    auto fSubstitute = true;
 
     LPWSTR Tmp = nullptr;
 
     size_t cbConsoleTitle;
     size_t cbSystemRoot;
 
-    LPWSTR pwszSysRoot = new (std::nothrow) wchar_t[MAX_PATH];
+    auto pwszSysRoot = new (std::nothrow) wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
         if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
@@ -409,8 +409,8 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
                 SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
-                int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
-                int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
+                const auto cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
+                const auto cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
                 cbConsoleTitle += sizeof(WCHAR); // account for nullptr terminator
 
                 if (fUnexpand &&

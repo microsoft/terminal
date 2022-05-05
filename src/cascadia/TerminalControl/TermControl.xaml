@@ -56,6 +56,7 @@
 
         <x:Double x:Key="ScrollBarSize">16</x:Double>
         <CornerRadius x:Key="ScrollBarCornerRadius">0</CornerRadius>
+        <CornerRadius x:Key="ScrollBarThumbCornerRadius">3</CornerRadius>
 
         <Style x:Key="ForkedScrollbarTemplate"
                TargetType="ScrollBar">
@@ -351,11 +352,9 @@
                                 <ControlTemplate x:Key="VerticalThumbTemplate"
                                                  TargetType="Thumb">
                                     <Rectangle x:Name="ThumbVisual"
-                                               contract7NotPresent:RadiusX="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
-                                               contract7NotPresent:RadiusY="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
-                                               contract7Present:RadiusX="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
-                                               contract7Present:RadiusY="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
                                                Fill="{TemplateBinding Background}"
+                                               RadiusX="{Binding Source={ThemeResource ScrollBarThumbCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
+                                               RadiusY="{Binding Source={ThemeResource ScrollBarThumbCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
                                                Stroke="{TemplateBinding BorderBrush}"
                                                StrokeThickness="{ThemeResource ScrollBarThumbStrokeThickness}">
                                         <VisualStateManager.VisualStateGroups>

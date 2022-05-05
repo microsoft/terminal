@@ -70,4 +70,5 @@
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(bool, UseAtlasEngine, false)                                                                                                                       \
+    X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)

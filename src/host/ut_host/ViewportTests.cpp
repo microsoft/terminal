@@ -490,7 +490,7 @@ class ViewportTests
 
     TEST_METHOD(IncrementInBounds)
     {
-        bool success = false;
+        auto success = false;
 
         SMALL_RECT edges;
         edges.Left = 10;
@@ -535,7 +535,7 @@ class ViewportTests
 
     TEST_METHOD(IncrementInBoundsCircular)
     {
-        bool success = false;
+        auto success = false;
 
         SMALL_RECT edges;
         edges.Left = 10;
@@ -580,7 +580,7 @@ class ViewportTests
 
     TEST_METHOD(DecrementInBounds)
     {
-        bool success = false;
+        auto success = false;
 
         SMALL_RECT edges;
         edges.Left = 10;
@@ -625,7 +625,7 @@ class ViewportTests
 
     TEST_METHOD(DecrementInBoundsCircular)
     {
-        bool success = false;
+        auto success = false;
 
         SMALL_RECT edges;
         edges.Left = 10;
@@ -710,7 +710,7 @@ class ViewportTests
             Log::Comment(String().Format(L"Add To Position: (%d, %d)  Amount to add: %d", coordPos.Y, coordPos.X, sAddAmount));
 
             // Movement result is expected to be true, unless there's an error.
-            bool fExpectedResult = true;
+            auto fExpectedResult = true;
 
             // if we've calculated past the final row, then the function will reset to the original position and the output will be false.
             if (coordFinal.Y >= sRowWidth)
@@ -719,7 +719,7 @@ class ViewportTests
                 fExpectedResult = false;
             }
 
-            bool const fActualResult = v.MoveInBounds(sAddAmount, coordPos);
+            const bool fActualResult = v.MoveInBounds(sAddAmount, coordPos);
 
             VERIFY_ARE_EQUAL(fExpectedResult, fActualResult);
             VERIFY_ARE_EQUAL(coordPos.X, coordFinal.X);

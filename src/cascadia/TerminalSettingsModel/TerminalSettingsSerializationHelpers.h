@@ -287,8 +287,8 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition FromJson(const Json::Value& json)
     {
         ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition ret;
-        std::string initialPosition{ json.asString() };
-        static constexpr char singleCharDelim = ',';
+        auto initialPosition{ json.asString() };
+        static constexpr auto singleCharDelim = ',';
         std::stringstream tokenStream(initialPosition);
         std::string token;
         uint8_t initialPosIndex = 0;

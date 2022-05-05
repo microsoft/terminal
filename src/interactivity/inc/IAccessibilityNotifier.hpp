@@ -27,7 +27,7 @@ namespace Microsoft::Console::Interactivity
             CaretVisible
         };
 
-        virtual ~IAccessibilityNotifier() = 0;
+        virtual ~IAccessibilityNotifier() = default;
 
         virtual void NotifyConsoleCaretEvent(_In_ RECT rectangle) = 0;
         virtual void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position) = 0;
@@ -37,13 +37,5 @@ namespace Microsoft::Console::Interactivity
         virtual void NotifyConsoleLayoutEvent() = 0;
         virtual void NotifyConsoleStartApplicationEvent(_In_ DWORD processId) = 0;
         virtual void NotifyConsoleEndApplicationEvent(_In_ DWORD processId) = 0;
-
-    protected:
-        IAccessibilityNotifier() {}
-
-        IAccessibilityNotifier(IAccessibilityNotifier const&) = delete;
-        IAccessibilityNotifier& operator=(IAccessibilityNotifier const&) = delete;
     };
-
-    inline IAccessibilityNotifier::~IAccessibilityNotifier() {}
 }

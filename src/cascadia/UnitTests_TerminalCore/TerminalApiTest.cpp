@@ -95,7 +95,7 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
         nullptr,
         0,
         [](LPVOID data) -> DWORD {
-            const Baton& baton = *reinterpret_cast<Baton*>(data);
+            const auto& baton = *reinterpret_cast<Baton*>(data);
             Log::Comment(L"Writing data.");
             baton.pTerm->PrintString(baton.text);
             Log::Comment(L"Setting event.");

@@ -372,8 +372,8 @@ void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableInde
 // - <none>
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    CursorType finalCursorType = CursorType::Legacy;
-    bool shouldBlink = false;
+    auto finalCursorType = CursorType::Legacy;
+    auto shouldBlink = false;
 
     switch (cursorStyle)
     {
@@ -576,7 +576,7 @@ void Terminal::PushGraphicsRendition(const VTParameters options)
 // - <none>
 void Terminal::PopGraphicsRendition()
 {
-    const TextAttribute current = _activeBuffer().GetCurrentAttributes();
+    const auto current = _activeBuffer().GetCurrentAttributes();
     _activeBuffer().SetCurrentAttributes(_sgrStack.Pop(current));
 }
 
@@ -689,4 +689,18 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos);
+}
+
+// Method Description:
+// - Reacts to a client asking us to show or hide the window.
+// Arguments:
+// - showOrHide - True for show. False for hide.
+// Return Value:
+// - <none>
+void Terminal::ShowWindow(bool showOrHide)
+{
+    if (_pfnShowWindowChanged)
+    {
+        _pfnShowWindowChanged(showOrHide);
+    }
 }

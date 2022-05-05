@@ -37,15 +37,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return value ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
     }
 
-    winrt::Windows::UI::Color Converters::LightenColor(winrt::Windows::UI::Color color)
-    {
-        color.A = 128; // halfway transparent
-        return color;
-    }
-
     double Converters::MaxValueFromPaddingString(winrt::hstring paddingString)
     {
-        const wchar_t singleCharDelim = L',';
+        const auto singleCharDelim = L',';
         std::wstringstream tokenStream(paddingString.c_str());
         std::wstring token;
         double maxVal = 0;

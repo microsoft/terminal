@@ -69,11 +69,17 @@ public:
     bool SoftReset() override; // DECSTR
     bool HardReset() override; // RIS
 
+    // DTTERM_WindowManipulation
+    bool WindowManipulation(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::WindowManipulationType /*function*/,
+                            const ::Microsoft::Console::VirtualTerminal::VTParameter /*parameter1*/,
+                            const ::Microsoft::Console::VirtualTerminal::VTParameter /*parameter2*/) override;
+
     bool EnableVT200MouseMode(const bool enabled) override; // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool enabled) override; // ?1005
     bool EnableSGRExtendedMouseMode(const bool enabled) override; // ?1006
     bool EnableButtonEventMouseMode(const bool enabled) override; // ?1002
     bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
+    bool EnableFocusEventMode(const bool enabled) override; // ?1004
     bool EnableAlternateScroll(const bool enabled) override; // ?1007
     bool EnableXtermBracketedPasteMode(const bool enabled) override; // ?2004
 

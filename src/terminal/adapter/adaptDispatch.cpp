@@ -1025,7 +1025,24 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
     // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return !(_pConApi->IsConsolePty() && _pConApi->IsVtInputEnabled());
+
+    // GH#12799 - If the app requested that we disable focus events, DON'T pass
+    // that through. ConPTY would _always_ like to know about focus events.
+
+    return !_pConApi->IsConsolePty() ||
+           !_pConApi->IsVtInputEnabled() ||
+           (!enable && mode == TerminalInput::Mode::FocusEvent);
+
+    // Another way of writing the above statement is:
+    //
+    // const bool inConpty = _pConApi->IsConsolePty();
+    // const bool shouldPassthrough = inConpty && _pConApi->IsVtInputEnabled();
+    // const bool disabledFocusEvents = inConpty && (!enable && mode == TerminalInput::Mode::FocusEvent);
+    // return !shouldPassthrough || disabledFocusEvents;
+    //
+    // It's like a "filter" left to right. Due to the early return via
+    // !IsConsolePty, once you're at the !enable part, IsConsolePty can only be
+    // true anymore.
 }
 
 // Routine Description:
@@ -1037,7 +1054,7 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
-    bool success = false;
+    auto success = false;
     switch (param)
     {
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
@@ -1083,6 +1100,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         break;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
+        break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        success = EnableFocusEventMode(enable);
         break;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
@@ -2092,7 +2112,6 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
-
 //Arguments:
 // - enabled - true to enable, false to disable.
 // Return value:
@@ -2100,6 +2119,21 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
     return _SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
+}
+
+// Method Description:
+// - Enables/disables focus event mode. A client may enable this if they want to
+//   receive focus events.
+// - ConPTY always enables this mode and never disables it. Internally, we'll
+//   always set this mode, but conpty will never request this to be disabled by
+//   the hosting terminal.
+// Arguments:
+// - enabled - true to enable, false to disable.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
+{
+    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
 }
 
 //Routine Description:
@@ -2134,8 +2168,8 @@ bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexce
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    CursorType actualType = CursorType::Legacy;
-    bool fEnableBlinking = false;
+    auto actualType = CursorType::Legacy;
+    auto fEnableBlinking = false;
 
     switch (cursorStyle)
     {
@@ -2279,6 +2313,12 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     //  MSFT:13271146 - QueryScreenSize
     switch (function)
     {
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _pConApi->ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _pConApi->ShowWindow(false);
+        return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
         _pConApi->GetTextBuffer().TriggerRedrawAll();
         return true;

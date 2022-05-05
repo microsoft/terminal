@@ -59,7 +59,7 @@ class SearchTests
 
     void DoFoundChecks(Search& s, COORD& coordStartExpected, SHORT lineDelta)
     {
-        COORD coordEndExpected = coordStartExpected;
+        auto coordEndExpected = coordStartExpected;
         coordEndExpected.X += 1;
 
         VERIFY_IS_TRUE(s.FindNext());

@@ -44,8 +44,8 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                             const BOOL fKeepCursorVisible,
                                             _Inout_opt_ PSHORT psScrollY)
 {
-    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
+    const auto inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.X < 0)
     {
         if (coordCursor.Y > 0)
@@ -88,17 +88,17 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
     auto viewport = screenInfo.GetViewport();
-    SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    COORD currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    auto srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    const auto fMarginsSet = srMargins.Bottom > srMargins.Top;
+    auto currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
     const int iCurrentCursorY = currentCursor.Y;
 
-    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
-    const bool cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
-    const bool fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
-    bool fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);
+    const auto fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    const auto cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
+    const auto fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
+    auto fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);
 
-    const bool fScrollUpWithoutMargins = (!fMarginsSet) && cursorAboveViewport;
+    const auto fScrollUpWithoutMargins = (!fMarginsSet) && cursorAboveViewport;
     // if we're in VT mode, AND MARGINS AREN'T SET and a Reverse Line Feed took the cursor up past the top of the viewport,
     //   VT style scroll the contents of the screen.
     // This can happen in applications like `less`, that don't set margins, because they're going to
@@ -110,7 +110,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         srMargins.Bottom = screenInfo.GetViewport().BottomInclusive();
     }
 
-    const bool scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
+    const auto scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
     if (scrollDownAtTop)
     {
         // We're trying to scroll down, and the top margin is at the top of the viewport.
@@ -244,7 +244,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         coordCursor.Y = viewport.BottomInclusive();
     }
 
-    NTSTATUS Status = STATUS_SUCCESS;
+    auto Status = STATUS_SUCCESS;
 
     if (coordCursor.Y >= bufferSize.Y)
     {
@@ -262,8 +262,8 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         coordCursor.Y += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
     }
 
-    const bool cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
-    const bool cursorMovedPastVirtualViewport = coordCursor.Y > screenInfo.GetVirtualViewport().BottomInclusive();
+    const auto cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
+    const auto cursorMovedPastVirtualViewport = coordCursor.Y > screenInfo.GetVirtualViewport().BottomInclusive();
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
@@ -331,26 +331,26 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                         const DWORD dwFlags,
                                         _Inout_opt_ PSHORT const psScrollY)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TextBuffer& textBuffer = screenInfo.GetTextBuffer();
-    Cursor& cursor = textBuffer.GetCursor();
-    COORD CursorPosition = cursor.GetPosition();
-    NTSTATUS Status = STATUS_SUCCESS;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto CursorPosition = cursor.GetPosition();
+    auto Status = STATUS_SUCCESS;
     SHORT XPosition;
     size_t TempNumSpaces = 0;
-    const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
-    const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    const auto fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
+    const auto fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
     // cursor to be turned off if they want that.
 
-    const TextAttribute Attributes = screenInfo.GetAttributes();
-    const size_t BufferSize = *pcb;
+    const auto Attributes = screenInfo.GetAttributes();
+    const auto BufferSize = *pcb;
     *pcb = 0;
 
-    const wchar_t* lpString = pwchRealUnicode;
+    auto lpString = pwchRealUnicode;
 
-    COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    auto coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
     // In VT mode, the width at which we wrap is determined by the line rendition attribute.
     if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
@@ -365,7 +365,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         // correct for delayed EOL
         if (cursor.IsDelayedEOLWrap() && fWrapAtEOL)
         {
-            const COORD coordDelayedAt = cursor.GetDelayedAtPosition();
+            const auto coordDelayedAt = cursor.GetDelayedAtPosition();
             cursor.ResetDelayEOLWrap();
             // Only act on a delayed EOL if we didn't move the cursor to a different position from where the EOL was marked.
             if (coordDelayedAt.X == CursorPosition.X && coordDelayedAt.Y == CursorPosition.Y)
@@ -387,15 +387,15 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         // As an optimization, collect characters in buffer and print out all at once.
         XPosition = cursor.GetPosition().X;
         size_t i = 0;
-        wchar_t* LocalBufPtr = LocalBuffer;
+        auto LocalBufPtr = LocalBuffer;
         while (*pcb < BufferSize && i < LOCAL_BUFFER_SIZE && XPosition < coordScreenBufferSize.X)
         {
 #pragma prefast(suppress : 26019, "Buffer is taken in multiples of 2. Validation is ok.")
-            const wchar_t Char = *lpString;
+            const auto Char = *lpString;
             // WCL-NOTE: We believe RealUnicodeChar to be identical to Char, because we believe pwchRealUnicode
             // WCL-NOTE: to be identical to lpString. They are incremented in lockstep, never separately, and lpString
             // WCL-NOTE: is initialized from pwchRealUnicode.
-            const wchar_t RealUnicodeChar = *pwchRealUnicode;
+            const auto RealUnicodeChar = *pwchRealUnicode;
             if (IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
                 // WCL-NOTE: This operates on a single code unit instead of a whole codepoint. It will mis-measure surrogate pairs.
@@ -769,7 +769,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // See GH:12735, MSFT:31748387
             if (screenInfo.HasAccessibilityEventing())
             {
-                if (IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow())
+                if (auto pConsoleWindow = ServiceLocator::LocateConsoleWindow())
                 {
                     LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
                 }
@@ -778,7 +778,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         }
         case UNICODE_TAB:
         {
-            const size_t TabSize = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X));
+            const auto TabSize = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X));
             CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
 
             // move cursor forward to next tab stop.  fill space with blanks.
@@ -851,15 +851,15 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         }
         default:
         {
-            const wchar_t Char = *lpString;
+            const auto Char = *lpString;
             if (Char >= UNICODE_SPACE &&
                 IsGlyphFullWidth(Char) &&
                 XPosition >= (coordScreenBufferSize.X - 1) &&
                 fWrapAtEOL)
             {
-                const COORD TargetPoint = cursor.GetPosition();
-                ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
-                const CharRow& charRow = Row.GetCharRow();
+                const auto TargetPoint = cursor.GetPosition();
+                auto& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
+                const auto& charRow = Row.GetCharRow();
 
                 try
                 {
@@ -960,9 +960,9 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                 psScrollY);
     }
 
-    NTSTATUS Status = STATUS_SUCCESS;
+    auto Status = STATUS_SUCCESS;
 
-    size_t const BufferSize = *pcb;
+    const auto BufferSize = *pcb;
     *pcb = 0;
 
     {
@@ -978,8 +978,8 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 // This is the only mode used by DoWriteConsole.
                 FAIL_FAST_IF(!(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE)));
 
-                StateMachine& machine = screenInfo.GetStateMachine();
-                size_t const cch = BufferSize / sizeof(WCHAR);
+                auto& machine = screenInfo.GetStateMachine();
+                const auto cch = BufferSize / sizeof(WCHAR);
 
                 machine.ProcessString({ pwchRealUnicode, cch });
                 *pcb += BufferSize;
@@ -1016,7 +1016,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                       bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         try
@@ -1090,7 +1090,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         size_t cbTextBufferLength;
         RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
 
-        NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
+        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
 
         // Convert back from bytes to characters for the resulting string length written.
         read = cbTextBufferLength / sizeof(wchar_t);
@@ -1168,7 +1168,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // because we previously checked that buffer.size() fits into an int, +2 won't cause an overflow of size_t
             wstr.resize(buffer.size() + 2);
 
-            wchar_t* wcPtr{ wstr.data() };
+            auto wcPtr{ wstr.data() };
             auto mbPtr{ buffer.data() };
             size_t dbcsLength{};
             if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && gsl::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })

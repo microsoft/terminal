@@ -57,5 +57,6 @@ namespace Microsoft.Terminal.Control
         Boolean ForceFullRepaintRendering { get; };
         Boolean SoftwareRendering { get; };
         Boolean ShowMarks { get; };
+        Boolean UseBackgroundImageForWindow { get; };
     };
 }

@@ -86,8 +86,8 @@ void RenderTracing::TraceString(const std::string_view& instr) const
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
-        const std::string _seq = toPrintableString(instr);
-        const char* const seq = _seq.c_str();
+        const auto _seq = toPrintableString(instr);
+        const auto seq = _seq.c_str();
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceString",
                           TraceLoggingUtf8String(seq),

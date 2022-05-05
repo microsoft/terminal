@@ -440,7 +440,7 @@ CodepointWidth CodepointWidthDetector::_lookupGlyphWidthWithCache(const std::wst
     try
     {
         // Use our generated table to try to lookup the width based on the Unicode standard.
-        const CodepointWidth width = _lookupGlyphWidth(glyph);
+        const auto width = _lookupGlyphWidth(glyph);
 
         // If it's ambiguous, then ask the font if we can.
         if (width == CodepointWidth::Ambiguous)
@@ -508,7 +508,7 @@ unsigned int CodepointWidthDetector::_extractCodepoint(const std::wstring_view g
     {
         const unsigned int mask = 0x3FF;
         // leading bits, shifted over to make space for trailing bits
-        unsigned int codepoint = (glyph.at(0) & mask) << 10;
+        auto codepoint = (glyph.at(0) & mask) << 10;
         // trailing bits
         codepoint |= (glyph.at(1) & mask);
         // 0x10000 is subtracted from the codepoint to encode a surrogate pair, add it back

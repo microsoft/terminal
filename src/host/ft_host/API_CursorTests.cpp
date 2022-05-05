@@ -48,7 +48,7 @@ void CursorTests::TestGetSetConsoleCursorInfo()
 
     // Get initial state of the cursor
     CONSOLE_CURSOR_INFO cciInitial = { 0 };
-    BOOL bResult = GetConsoleCursorInfo(Common::_hConsole, &cciInitial);
+    auto bResult = GetConsoleCursorInfo(Common::_hConsole, &cciInitial);
     VERIFY_WIN32_BOOL_SUCCEEDED(bResult, L"Retrieve initial cursor state.");
 
     // Fill a structure with the value under test
@@ -57,7 +57,7 @@ void CursorTests::TestGetSetConsoleCursorInfo()
     cciTest.dwSize = dwSize;
 
     // If the cursor size is out of range, we expect a failure on set
-    BOOL fExpectedResult = TRUE;
+    auto fExpectedResult = TRUE;
     if (cciTest.dwSize < 1 || cciTest.dwSize > 100)
     {
         fExpectedResult = FALSE;
@@ -93,7 +93,7 @@ void TestSetConsoleCursorPositionImpl(WORD wCursorX, WORD wCursorY, BOOL bExpect
     // Get initial position data
     CONSOLE_SCREEN_BUFFER_INFOEX sbiInitial = { 0 };
     sbiInitial.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    BOOL bResult = GetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiInitial);
+    auto bResult = GetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiInitial);
     VERIFY_WIN32_BOOL_SUCCEEDED(bResult, L"Get the initial buffer data.");
 
     // Attempt to set cursor into valid area
@@ -117,7 +117,7 @@ void TestSetConsoleCursorPositionImpl(WORD wCursorX, WORD wCursorY, BOOL bExpect
     }
 
     // Verify the viewport.
-    bool fViewportMoveExpected = false;
+    auto fViewportMoveExpected = false;
 
     // If we expected the cursor to be set successfully, the viewport might have moved.
     if (bExpectedResult)
@@ -148,7 +148,7 @@ void CursorTests::TestSetConsoleCursorPosition()
     // Get initial buffer value for boundaries
     CONSOLE_SCREEN_BUFFER_INFOEX sbiInitial = { 0 };
     sbiInitial.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    BOOL bResult = GetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiInitial);
+    auto bResult = GetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiInitial);
     VERIFY_WIN32_BOOL_SUCCEEDED(bResult, L"Retrieve the initial buffer information to calculate the boundaries for testing.");
 
     // Try several cases

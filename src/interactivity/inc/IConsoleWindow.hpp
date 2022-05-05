@@ -23,7 +23,7 @@ namespace Microsoft::Console::Types
     class IConsoleWindow
     {
     public:
-        virtual ~IConsoleWindow() = 0;
+        virtual ~IConsoleWindow() = default;
 
         virtual BOOL EnableBothScrollBars() = 0;
         virtual int UpdateScrollBar(_In_ bool isVertical,
@@ -69,6 +69,4 @@ namespace Microsoft::Console::Types
         [[nodiscard]] virtual HRESULT UiaSetTextAreaFocus() = 0;
         virtual RECT GetWindowRect() const noexcept = 0;
     };
-
-    inline IConsoleWindow::~IConsoleWindow() {}
 }

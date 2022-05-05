@@ -26,6 +26,7 @@ Author(s):
     X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                   \
     X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                   \
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                   \
+    X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                             \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
