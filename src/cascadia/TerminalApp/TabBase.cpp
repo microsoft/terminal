@@ -176,14 +176,14 @@ namespace winrt::TerminalApp::implementation
 
         if (_keyChord == keyChordText)
         {
-            return;
+            co_return;
         }
 
         _keyChord = keyChordText;
 
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {

@@ -22,7 +22,6 @@ Revision History:
 #include "conapi.h"
 #include "settings.hpp"
 #include "outputStream.hpp"
-#include "ScreenBufferRenderTarget.hpp"
 
 #include "../buffer/out/OutputCellRect.hpp"
 #include "../buffer/out/TextAttribute.hpp"
@@ -192,13 +191,11 @@ public:
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
 
-    void MakeCursorVisible(const COORD CursorPosition, const bool updateBottom = true);
+    void MakeCursorVisible(const COORD CursorPosition);
 
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
-    bool AreMarginsSet() const noexcept;
-    bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
@@ -217,15 +214,11 @@ public:
     void SetDefaultAttributes(const TextAttribute& attributes,
                               const TextAttribute& popupAttributes);
 
-    [[nodiscard]] HRESULT VtEraseAll();
     [[nodiscard]] HRESULT ClearBuffer();
 
     void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
 
     void UpdateBottom();
-    void MoveToBottom();
-
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
     FontInfo& GetCurrentFont() noexcept;
     const FontInfo& GetCurrentFont() const noexcept;
@@ -273,6 +266,8 @@ private:
     bool _IsInPtyMode() const;
     bool _IsInVTMode() const;
 
+    ConhostInternalGetSet _api;
+
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 
     Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
@@ -298,9 +293,11 @@ private:
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     short _virtualBottom;
 
-    ScreenBufferRenderTarget _renderTarget;
-
     bool _ignoreLegacyEquivalentVTAttributes;
+
+    std::optional<til::size> _deferredPtyResize{ std::nullopt };
+
+    static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

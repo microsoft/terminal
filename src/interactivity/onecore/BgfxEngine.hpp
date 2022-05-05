@@ -29,8 +29,7 @@ namespace Microsoft::Console::Render
     class BgfxEngine final : public RenderEngineBase
     {
     public:
-        BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight);
-        ~BgfxEngine() override = default;
+        BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight) noexcept;
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -39,7 +38,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
@@ -53,7 +51,7 @@ namespace Microsoft::Console::Render
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, COLORREF const color, const size_t cchLine, const COORD coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
@@ -62,12 +60,12 @@ namespace Microsoft::Console::Render
                                                    const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
                                                    const bool usingSoftFont,
-                                                   bool const isSettingDefaultBrushes) noexcept override;
+                                                   const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
-        [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
+        [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
-        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
+        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const int iDpi) noexcept override;
 
         [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
@@ -77,11 +75,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
-        ULONG_PTR _sharedViewBase;
+        std::byte* _sharedViewBase;
         SIZE_T _runLength;
 
-        LONG _displayHeight;
-        LONG _displayWidth;
+        SIZE_T _displayHeight;
+        SIZE_T _displayWidth;
         til::rect _dirtyArea;
 
         COORD _fontSize;

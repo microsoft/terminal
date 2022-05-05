@@ -28,6 +28,7 @@
                     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
                          x:Load="False"
+                         CornerRadius="0"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
@@ -42,6 +43,7 @@
             <mux:InfoBar x:Name="CloseOnExitInfoBar"
                          x:Uid="CloseOnExitInfoBar"
                          x:Load="False"
+                         CornerRadius="0"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
@@ -56,6 +58,7 @@
                          x:Uid="SetAsDefaultInfoBar"
                          x:Load="False"
                          CloseButtonClick="_SetAsDefaultDismissHandler"
+                         CornerRadius="0"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
@@ -70,12 +73,33 @@
         <Grid x:Name="TabContent"
               Grid.Row="2"
               HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch" />
+              VerticalAlignment="Stretch">
+            <Grid.Background>
+                <ImageBrush />
+            </Grid.Background>
+        </Grid>
+
+        <!--
+            GH#12775 et. al: After switching to ControlsV2, it seems that
+            delay-loading a dialog causes the ContentDialog to be assigned a
+            Height equal to it's content size. If we DON'T assign the
+            ContentDialog a Row, I believe it's assigned Row 0 by default. So,
+            when the dialog gets opened, the dialog seemingly causes a giant
+            hole to appear in the body of the app.
+            
+            Assigning all the dialogs to Row 2 (where the rest of the content
+            is) makes the "hole" appear in the same space as the rest of the
+            TabContent, fixing the issue.
+            
+            Note that the actual content in a content dialog gets parented to
+            the PopupRoot, so it actually always appeared in the correct place, it's
+            just this weird hole that appeared in Row 0.
+        -->
 
         <ContentDialog x:Name="AboutDialog"
                        x:Uid="AboutDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Close">
             <StackPanel Orientation="Vertical">
                 <TextBlock IsTextSelectionEnabled="True">
@@ -96,26 +120,26 @@
 
         <ContentDialog x:Name="QuitDialog"
                        x:Uid="QuitDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseAllDialog"
                        x:Uid="CloseAllDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Close" />
 
         <ContentDialog x:Name="MultiLinePasteDialog"
                        x:Uid="MultiLinePasteDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <StackPanel>
                 <TextBlock x:Uid="MultiLineWarningText"
@@ -134,14 +158,14 @@
 
         <ContentDialog x:Name="LargePasteDialog"
                        x:Uid="LargePasteDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="ControlNoticeDialog"
                        x:Uid="ControlNoticeDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
                        TextWrapping="WrapWholeWords">
@@ -151,8 +175,8 @@
 
         <ContentDialog x:Name="CouldNotOpenUriDialog"
                        x:Uid="CouldNotOpenUriDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       CloseButtonClick="_DialogCloseClick"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
                        TextWrapping="WrapWholeWords">
@@ -193,6 +217,7 @@
                          IsLightDismissEnabled="True">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"
+                         KeyDown="_WindowRenamerKeyDown"
                          KeyUp="_WindowRenamerKeyUp"
                          Text="{x:Bind WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>

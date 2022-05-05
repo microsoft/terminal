@@ -22,7 +22,7 @@ std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
 std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
-std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
+void (*ServiceLocator::s_oneCoreTeardownFunction)() = nullptr;
 
 Globals ServiceLocator::s_globals;
 
@@ -32,6 +32,12 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 #pragma endregion
 
 #pragma region Public Methods
+
+void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
+{
+    FAIL_FAST_IF(nullptr != s_oneCoreTeardownFunction);
+    s_oneCoreTeardownFunction = pfn;
+}
 
 [[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
@@ -66,7 +72,12 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
     delete s_globals.pRender;
-    s_inputServices.reset(nullptr);
+
+    if (s_oneCoreTeardownFunction)
+    {
+        s_oneCoreTeardownFunction();
+    }
+
     s_consoleWindow.reset(nullptr);
 
     ExitProcess(hr);
@@ -76,7 +87,7 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 [[nodiscard]] NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleInputThread)
     {
@@ -144,7 +155,7 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 [[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleWindow)
     {
@@ -173,7 +184,7 @@ IConsoleWindow* ServiceLocator::LocateConsoleWindow()
 
 IConsoleControl* ServiceLocator::LocateConsoleControl()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_consoleControl)
     {
@@ -200,7 +211,7 @@ IConsoleInputThread* ServiceLocator::LocateConsoleInputThread()
 
 IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_highDpiApi)
     {
@@ -222,7 +233,7 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 
 IWindowMetrics* ServiceLocator::LocateWindowMetrics()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_windowMetrics)
     {
@@ -249,7 +260,7 @@ IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
 
 ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_systemConfigurationProvider)
     {
@@ -269,42 +280,42 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
     return s_systemConfigurationProvider.get();
 }
 
-IInputServices* ServiceLocator::LocateInputServices()
-{
-    NTSTATUS status = STATUS_SUCCESS;
-
-    if (!s_inputServices)
-    {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            status = s_interactivityFactory->CreateInputServices(s_inputServices);
-        }
-    }
-
-    LOG_IF_NTSTATUS_FAILED(status);
-
-    return s_inputServices.get();
-}
-
 Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
 }
 
 // Method Description:
+// - Installs a callback method to receive notifications when the pseudo console
+//   window is shown or hidden by an attached client application (so we can
+//   translate it and forward it to the attached terminal, in case it would like
+//   to react accordingly.)
+// Arguments:
+// - func - Callback function that takes True as Show and False as Hide.
+// Return Value:
+// - <none>
+void ServiceLocator::SetPseudoWindowCallback(std::function<void(bool)> func)
+{
+    // Force the whole window to be put together first.
+    // We don't really need the handle, we just want to leverage the setup steps.
+    (void)LocatePseudoWindow();
+
+    if (s_interactivityFactory)
+    {
+        s_interactivityFactory->SetPseudoWindowCallback(func);
+    }
+}
+
+// Method Description:
 // - Retrieves the pseudo console window, or attempts to instantiate one.
 // Arguments:
-// - <none>
+// - owner: (defaults to 0 `HWND_DESKTOP`) the HWND that should be the initial
+//   owner of the pseudo window.
 // Return Value:
 // - a reference to the pseudoconsole window.
-HWND ServiceLocator::LocatePseudoWindow()
+HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
     {
         if (s_interactivityFactory.get() == nullptr)
@@ -315,9 +326,10 @@ HWND ServiceLocator::LocatePseudoWindow()
         if (NT_SUCCESS(status))
         {
             HWND hwnd;
-            status = s_interactivityFactory->CreatePseudoWindow(hwnd);
+            status = s_interactivityFactory->CreatePseudoWindow(hwnd, owner);
             s_pseudoWindow.reset(hwnd);
         }
+
         s_pseudoWindowInitialized = true;
     }
     LOG_IF_NTSTATUS_FAILED(status);
@@ -326,13 +338,11 @@ HWND ServiceLocator::LocatePseudoWindow()
 
 #pragma endregion
 
-#pragma endregion
-
 #pragma region Private Methods
 
 [[nodiscard]] NTSTATUS ServiceLocator::LoadInteractivityFactory()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_interactivityFactory.get() == nullptr)
     {

@@ -41,11 +41,12 @@
     X(bool, FocusFollowMouse, false)                                                                              \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr) \
-    X(bool, TrimBlockSelection, false)                                                                            \
+    X(bool, TrimBlockSelection, true)                                                                             \
     X(bool, SuppressApplicationTitle)                                                                             \
     X(bool, ForceVTInput, false)                                                                                  \
     X(winrt::hstring, StartingTitle)                                                                              \
-    X(bool, DetectURLs, true)
+    X(bool, DetectURLs, true)                                                                                     \
+    X(bool, VtPassthrough, false)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
@@ -67,4 +68,5 @@
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
+    X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, UseAtlasEngine, false)

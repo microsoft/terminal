@@ -33,7 +33,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
@@ -48,7 +47,7 @@ namespace Microsoft::Console::Render
                                                    const size_t viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -90,6 +89,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] static HRESULT s_SetWindowLongWHelper(const HWND hWnd,
                                                             const int nIndex,
                                                             const LONG dwNewLong) noexcept;
+
+        static bool FontHasWesternScript(HDC hdc);
 
         bool _fPaintStarted;
 
@@ -138,13 +139,15 @@ namespace Microsoft::Console::Render
         COLORREF _lastFg;
         COLORREF _lastBg;
 
-        enum class FontType : size_t
+        enum class FontType : uint8_t
         {
+            Undefined,
             Default,
             Italic,
             Soft
         };
         FontType _lastFontType;
+        bool _fontHasWesternScript = false;
 
         XFORM _currentLineTransform;
         LineRendition _currentLineRendition;

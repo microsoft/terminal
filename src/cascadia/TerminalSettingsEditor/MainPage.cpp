@@ -234,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
+    void MainPage::SettingsNav_Loaded(const IInspectable&, const RoutedEventArgs&)
     {
         if (SettingsNav().SelectedItem() == nullptr)
         {
@@ -255,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - args - additional event info from invoking the NavViewItem
     // Return Value:
     // - <none>
-    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
+    void MainPage::SettingsNav_ItemInvoked(const MUX::Controls::NavigationView&, const MUX::Controls::NavigationViewItemInvokedEventArgs& args)
     {
         if (const auto clickedItemContainer = args.InvokedItemContainer())
         {
@@ -410,11 +410,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - NOTE: this does not update the selected item.
     // Arguments:
     // - profile - the profile object we are getting a view of
-    void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage)
+    void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton)
     {
         auto state{ winrt::make<ProfilePageNavigationState>(profile,
                                                             _settingsClone.GlobalSettings().ColorSchemes(),
                                                             *this) };
+        state.FocusDeleteButton(focusDeleteButton);
 
         _PreNavigateHelper();
 
@@ -443,19 +444,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
+    void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
     {
-        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto window = CoreWindow::GetForCurrentThread();
         const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
         const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+        const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
         _OpenJsonHandlers(nullptr, target);
     }
 
-    void MainPage::OpenJsonKeyDown(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args)
+    void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
     {
         if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
         {
@@ -464,17 +465,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::SaveButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.WriteSettingsToDisk();
     }
 
-    void MainPage::ResetButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         UpdateSettings(_settingsSource);
     }
 
-    void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args)
+    void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)
     {
         if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
@@ -592,7 +593,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // navigate to the profile next to this one
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
-        _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>(), BreadcrumbSubPage::None);
+        _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>(), BreadcrumbSubPage::None, true);
     }
 
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept

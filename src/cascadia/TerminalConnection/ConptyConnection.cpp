@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                              nullptr,
                                                              nullptr));
 
-        std::wstring cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
+        auto cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
         Utils::EnvironmentVariableMapW environment;
         auto zeroEnvMap = wil::scope_exit([&]() noexcept {
@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
-            std::wstring wsGuid{ Utils::GuidToString(_guid) };
+            auto wsGuid{ Utils::GuidToString(_guid) };
             wsGuid.pop_back();
 
             const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         RETURN_IF_FAILED(Utils::EnvironmentMapToEnvironmentStringsW(environment, newEnvVars));
 
-        LPWCH lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
+        auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
 
         // If we have a startingTitle, create a mutable character buffer to add
         // it to the STARTUPINFO.
@@ -164,7 +164,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         auto [newCommandLine, newStartingDirectory] = Utils::MangleStartingDirectoryForWSL(cmdline, _startingDirectory);
-        const wchar_t* const startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
+        const auto startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
 
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
@@ -225,10 +225,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     Windows::Foundation::Collections::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
                                                                                 const winrt::hstring& startingDirectory,
                                                                                 const winrt::hstring& startingTitle,
-                                                                                Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                                const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
-                                                                                winrt::guid const& guid)
+                                                                                const winrt::guid& guid)
     {
         Windows::Foundation::Collections::ValueSet vs{};
 
@@ -266,6 +266,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
             _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
+            if constexpr (Feature_VtPassthroughMode::IsEnabled())
+            {
+                _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
+            }
         }
 
         if (_guid == guid{})
@@ -295,7 +299,25 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE, &_inPipe, &_outPipe, &_hPC));
+            DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE;
+
+            if constexpr (Feature_VtPassthroughMode::IsEnabled())
+            {
+                if (_passthroughMode)
+                {
+                    WI_SetFlag(flags, PSEUDOCONSOLE_PASSTHROUGH_MODE);
+                }
+            }
+
+            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, flags, &_inPipe, &_outPipe, &_hPC));
+
+            // GH#12515: The conpty assumes it's hidden at the start. If we're visible, let it know now.
+            THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
+            if (_initialParentHwnd != 0)
+            {
+                THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
+            }
+
             THROW_IF_FAILED(_LaunchAttachedClient());
         }
         // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
@@ -313,6 +335,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
+            THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
         }
 
         _startTime = std::chrono::high_resolution_clock::now();
@@ -324,7 +347,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             nullptr,
             0,
             [](LPVOID lpParameter) noexcept {
-                ConptyConnection* const pInstance = static_cast<ConptyConnection*>(lpParameter);
+                const auto pInstance = static_cast<ConptyConnection*>(lpParameter);
                 if (pInstance)
                 {
                     return pInstance->_OutputThread();
@@ -341,7 +364,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _clientExitWait.reset(CreateThreadpoolWait(
             [](PTP_CALLBACK_INSTANCE /*callbackInstance*/, PVOID context, PTP_WAIT /*wait*/, TP_WAIT_RESULT /*waitResult*/) noexcept {
-                ConptyConnection* const pInstance = static_cast<ConptyConnection*>(context);
+                const auto pInstance = static_cast<ConptyConnection*>(context);
                 if (pInstance)
                 {
                     pInstance->_ClientTerminated();
@@ -429,7 +452,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-    void ConptyConnection::WriteInput(hstring const& data)
+    void ConptyConnection::WriteInput(const hstring& data)
     {
         if (!_isConnected())
         {
@@ -438,7 +461,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // convert from UTF-16LE to UTF-8 as ConPty expects UTF-8
         // TODO GH#3378 reconcile and unify UTF-8 converters
-        std::string str = winrt::to_string(data);
+        auto str = winrt::to_string(data);
         LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
     }
 
@@ -465,6 +488,35 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_isConnected())
         {
             THROW_IF_FAILED(ConptyClearPseudoConsole(_hPC.get()));
+        }
+    }
+
+    void ConptyConnection::ShowHide(const bool show)
+    {
+        // If we haven't connected yet, then stash for when we do connect.
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), show));
+        }
+        else
+        {
+            _initialVisibility = show;
+        }
+    }
+
+    void ConptyConnection::ReparentWindow(const uint64_t newParent)
+    {
+        // If we haven't started connecting at all, stash this HWND to use once we have started.
+        if (!_isStateAtOrBeyond(ConnectionState::Connecting))
+        {
+            _initialParentHwnd = newParent;
+        }
+        // Otherwise, just inform the conpty of the new owner window handle.
+        // This shouldn't be hittable until GH#5000 / GH#1256, when it's
+        // possible to reparent terminals to different windows.
+        else if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(newParent)));
         }
     }
 
@@ -558,7 +610,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
             }
 
-            const HRESULT result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
+            const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
             if (FAILED(result))
             {
                 if (_isStateAtOrBeyond(ConnectionState::Closing))
@@ -603,8 +655,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     static winrt::event<NewConnectionHandler> _newConnectionHandlers;
 
-    winrt::event_token ConptyConnection::NewConnection(NewConnectionHandler const& handler) { return _newConnectionHandlers.add(handler); };
-    void ConptyConnection::NewConnection(winrt::event_token const& token) { _newConnectionHandlers.remove(token); };
+    winrt::event_token ConptyConnection::NewConnection(const NewConnectionHandler& handler) { return _newConnectionHandlers.add(handler); };
+    void ConptyConnection::NewConnection(const winrt::event_token& token) { _newConnectionHandlers.remove(token); };
 
     HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
     try

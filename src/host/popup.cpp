@@ -34,8 +34,8 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
 {
     _attributes = screenInfo.GetPopupAttributes();
 
-    const COORD size = _CalculateSize(screenInfo, proposedSize);
-    const COORD origin = _CalculateOrigin(screenInfo, size);
+    const auto size = _CalculateSize(screenInfo, proposedSize);
+    const auto origin = _CalculateOrigin(screenInfo, size);
 
     _region.Left = origin.X;
     _region.Top = origin.Y;
@@ -53,7 +53,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     // copy the data into the backup buffer
     _oldContents = std::move(screenInfo.ReadRect(Viewport::FromInclusive(TargetRect)));
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto countWas = gci.PopupCount.fetch_add(1ui16);
     if (0 == countWas)
     {
@@ -67,7 +67,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
 // - NOTE: Modifies global popup count (and adjusts cursor visibility as appropriate.)
 Popup::~Popup()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto countWas = gci.PopupCount.fetch_sub(1i16);
     if (1 == countWas)
     {
@@ -142,7 +142,7 @@ void Popup::_DrawBorder()
 // - id - Resource ID for string to display to user
 void Popup::_DrawPrompt(const UINT id)
 {
-    std::wstring text = _LoadString(id);
+    auto text = _LoadString(id);
 
     // Draw empty popup.
     COORD WriteCoord;
@@ -169,10 +169,10 @@ void Popup::_DrawPrompt(const UINT id)
     }
 
     size_t used;
-    LOG_IF_FAILED(ServiceLocator::LocateGlobals().api.WriteConsoleOutputCharacterWImpl(_screenInfo,
-                                                                                       text,
-                                                                                       WriteCoord,
-                                                                                       used));
+    LOG_IF_FAILED(ServiceLocator::LocateGlobals().api->WriteConsoleOutputCharacterWImpl(_screenInfo,
+                                                                                        text,
+                                                                                        WriteCoord,
+                                                                                        used));
 }
 
 // Routine Description:
@@ -203,11 +203,11 @@ void Popup::End()
 COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD proposedSize)
 {
     // determine popup dimensions
-    COORD size = proposedSize;
+    auto size = proposedSize;
     size.X += 2; // add borders
     size.Y += 2; // add borders
 
-    const COORD viewportSize = screenInfo.GetViewport().Dimensions();
+    const auto viewportSize = screenInfo.GetViewport().Dimensions();
 
     size.X = std::min(size.X, viewportSize.X);
     size.Y = std::min(size.Y, viewportSize.Y);
@@ -302,13 +302,13 @@ void Popup::SetUserInputFunction(UserInputFunction function) noexcept
                                                     DWORD& modifiers,
                                                     wchar_t& wch) noexcept
 {
-    InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
-    NTSTATUS Status = GetChar(pInputBuffer,
-                              &wch,
-                              true,
-                              nullptr,
-                              &popupKey,
-                              &modifiers);
+    const auto pInputBuffer = cookedReadData.GetInputBuffer();
+    auto Status = GetChar(pInputBuffer,
+                          &wch,
+                          true,
+                          nullptr,
+                          &popupKey,
+                          &modifiers);
     if (!NT_SUCCESS(Status) && Status != CONSOLE_STATUS_WAIT)
     {
         cookedReadData.BytesRead() = 0;

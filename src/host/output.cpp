@@ -23,7 +23,7 @@ using namespace Microsoft::Console::Interactivity;
 // registry defaults, and then calls CreateScreenBuffer.
 [[nodiscard]] NTSTATUS DoCreateScreenBuffer()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     FontInfo fiFont(gci.GetFaceName(),
                     gsl::narrow_cast<unsigned char>(gci.GetFontFamily()),
@@ -38,13 +38,13 @@ using namespace Microsoft::Console::Interactivity;
 
     gci.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
-                                                         fiFont,
-                                                         gci.GetScreenBufferSize(),
-                                                         TextAttribute{},
-                                                         TextAttribute{ gci.GetPopupFillAttribute() },
-                                                         gci.GetCursorSize(),
-                                                         &gci.ScreenBuffers);
+    auto Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
+                                                     fiFont,
+                                                     gci.GetScreenBufferSize(),
+                                                     TextAttribute{},
+                                                     TextAttribute{ gci.GetPopupFillAttribute() },
+                                                     gci.GetCursorSize(),
+                                                     &gci.ScreenBuffers);
 
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
@@ -249,7 +249,7 @@ std::string ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
 
 void ScreenBufferSizeChange(const COORD coordNewSize)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
@@ -273,20 +273,20 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
 {
     if (screenInfo.IsActiveScreenBuffer())
     {
-        IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         if (pNotifier != nullptr)
         {
             pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().X - source.Left(), target.Origin().Y - source.RightInclusive());
         }
     }
 
-    // Get the render target and send it commands.
+    // Get the text buffer and send it commands.
     // It will figure out whether or not we're active and where the messages need to go.
-    auto& render = screenInfo.GetRenderTarget();
+    auto& textBuffer = screenInfo.GetTextBuffer();
     // Redraw anything in the target area
-    render.TriggerRedraw(target);
+    textBuffer.TriggerRedraw(target);
     // Also redraw anything that was filled.
-    render.TriggerRedraw(fill);
+    textBuffer.TriggerRedraw(fill);
 }
 
 // Routine Description:
@@ -298,8 +298,8 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
 bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 {
     // Rotate the circular buffer around and wipe out the previous final line.
-    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    bool fSuccess = screenInfo.GetTextBuffer().IncrementCircularBuffer(inVtMode);
+    const auto inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    auto fSuccess = screenInfo.GetTextBuffer().IncrementCircularBuffer(inVtMode);
     if (fSuccess)
     {
         // Trigger a graphical update if we're active.
@@ -308,7 +308,7 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
             COORD coordDelta = { 0 };
             coordDelta.Y = -1;
 
-            IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+            auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
             if (pNotifier)
             {
                 // Notify accessibility that a scroll has occurred.
@@ -463,8 +463,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.pCurrentScreenBuffer = &screenInfo;
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetActiveOutputBuffer(screenInfo);
 
     // initialize cursor GH#4102 - Typically, the cursor is set to on by the
     // cursor blinker. Unfortunately, in conpty mode, there is no cursor
@@ -499,7 +499,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 

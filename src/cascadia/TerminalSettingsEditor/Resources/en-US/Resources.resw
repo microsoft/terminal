@@ -528,7 +528,7 @@
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
   </data>
   <data name="Profile_Opacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the window.</value>
+    <value>Sets the opacity of the window.</value>
     <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
   </data>
   <data name="Profile_Advanced.Header" xml:space="preserve">
@@ -648,7 +648,7 @@
     <comment>Header for a control to choose the opacity of the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the background image.</value>
+    <value>Sets the opacity of the background image.</value>
     <comment>A description for what the "background image opacity" setting does. Presented near "Profile_BackgroundImageOpacity".</comment>
   </data>
   <data name="Profile_BackgroundImageStretchMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1043,6 +1043,10 @@
     <value>Enable experimental text rendering engine</value>
     <comment>An option to enable an experimental text rendering engine</comment>
   </data>
+  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
+    <value>Enable experimental virtual terminal passthrough</value>
+    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
+  </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Audible</value>
     <comment>An option to choose from for the "bell style" setting. When selected, an audible cue is used to notify the user.</comment>
@@ -1209,6 +1213,10 @@
   <data name="RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Cancel rename</value>
     <comment>Text label for a button that can be used to cancel a rename operation during the renaming process.</comment>
+  </data>
+  <data name="ColorSchemesDisclaimer.Text" xml:space="preserve">
+    <value>Schemes defined here can be applied to your profiles under the "Appearances" section of the profile settings pages.</value>
+    <comment>A disclaimer presented at the top of a page. "Appearances" should match Profile_Appearance.Header.</comment>
   </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
     <value>Settings defined here will apply to all profiles unless they are overridden by a profile's settings.</value>

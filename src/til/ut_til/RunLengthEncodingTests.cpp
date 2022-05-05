@@ -141,7 +141,7 @@ class RunLengthEncodingTests
         }
 
         rle_container to;
-        value_type value = from.front();
+        auto value = from.front();
         size_type length = 0;
 
         for (auto v : from)
@@ -352,7 +352,7 @@ class RunLengthEncodingTests
             }
         };
 
-        int idx = 0;
+        auto idx = 0;
 
         for (const auto& test_case : test_cases)
         {
@@ -407,7 +407,7 @@ class RunLengthEncodingTests
             }
         };
 
-        int idx = 0;
+        auto idx = 0;
 
         for (const auto& test_case : test_cases)
         {
@@ -456,7 +456,7 @@ class RunLengthEncodingTests
     TEST_METHOD(Comparison)
     {
         rle_vector rle1{ { { 1, 1 }, { 3, 2 }, { 2, 1 } } };
-        rle_vector rle2{ rle1 };
+        auto rle2{ rle1 };
 
         VERIFY_IS_TRUE(rle1 == rle2);
         VERIFY_IS_FALSE(rle1 != rle2);

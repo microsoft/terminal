@@ -7,6 +7,7 @@
 #include <shader_ps.h>
 #include <shader_vs.h>
 
+#include "../base/FontCache.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
 // #### NOTE ####
@@ -468,7 +469,7 @@ try
             _api.bufferLineColumn.pop_back();
         }
 
-        u16 column = x;
+        auto column = x;
         for (const auto& cluster : clusters)
         {
             for (const auto& ch : cluster.GetText())
@@ -565,7 +566,9 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, const gsl::not_null<IRenderData*> /*pData*/, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
 try
 {
-    const auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
+    auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
+    fg |= 0xff000000;
+    bg |= _api.backgroundOpaqueMixin;
 
     if (!isSettingDefaultBrushes)
     {
@@ -587,7 +590,7 @@ try
             WI_ClearAllFlags(flags, CellFlags::UnderlineDotted | CellFlags::UnderlineDouble);
         }
 
-        const u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
+        const u32x2 newColors{ gsl::narrow_cast<u32>(fg), gsl::narrow_cast<u32>(bg) };
         const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense(), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
@@ -601,7 +604,7 @@ try
     }
     else if (textAttributes.BackgroundIsDefault() && bg != _r.backgroundColor)
     {
-        _r.backgroundColor = bg | _api.backgroundOpaqueMixin;
+        _r.backgroundColor = bg;
         WI_SetFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
     }
 
@@ -690,7 +693,7 @@ void AtlasEngine::_createResources()
             D3D_FEATURE_LEVEL_10_1,
         };
 
-        HRESULT hr = S_OK;
+        auto hr = S_OK;
         for (const auto& [driverType, additionalFlags] : driverTypes)
         {
             hr = D3D11CreateDevice(
@@ -788,8 +791,6 @@ void AtlasEngine::_createSwapChain()
 
         if (_api.hwnd)
         {
-            desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
             if (FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put())))
             {
                 // Platform Update for Windows 7:
@@ -1023,7 +1024,7 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
-                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.get(), nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
+                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.get(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
                 textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
                 textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
@@ -1193,7 +1194,7 @@ void AtlasEngine::_flushBufferLine()
     {
         if (_sr.systemFontFallback)
         {
-            float scale = 1.0f;
+            auto scale = 1.0f;
             u32 mappedLength = 0;
 
             if (textFormatAxis)

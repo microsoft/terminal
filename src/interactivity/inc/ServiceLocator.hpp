@@ -30,6 +30,8 @@ namespace Microsoft::Console::Interactivity
     class ServiceLocator final
     {
     public:
+        static void SetOneCoreTeardownFunction(void (*pfn)()) noexcept;
+
         [[noreturn]] static void RundownAndExit(const HRESULT hr);
 
         // N.B.: Location methods without corresponding creation methods
@@ -78,22 +80,16 @@ namespace Microsoft::Console::Interactivity
             return static_cast<T*>(LocateHighDpiApi());
         }
 
-        static IInputServices* LocateInputServices();
-        template<typename T>
-        static T* LocateInputServices()
-        {
-            return static_cast<T*>(LocateInputServices());
-        }
-
         static ISystemConfigurationProvider* LocateSystemConfigurationProvider();
 
         static Globals& LocateGlobals();
 
-        static HWND LocatePseudoWindow();
+        static void SetPseudoWindowCallback(std::function<void(bool)> func);
+        static HWND LocatePseudoWindow(const HWND owner = nullptr /*HWND_DESKTOP = 0*/);
 
     protected:
-        ServiceLocator(ServiceLocator const&) = delete;
-        ServiceLocator& operator=(ServiceLocator const&) = delete;
+        ServiceLocator(const ServiceLocator&) = delete;
+        ServiceLocator& operator=(const ServiceLocator&) = delete;
 
     private:
         [[nodiscard]] static NTSTATUS LoadInteractivityFactory();
@@ -110,7 +106,9 @@ namespace Microsoft::Console::Interactivity
         static std::unique_ptr<IWindowMetrics> s_windowMetrics;
         static std::unique_ptr<IHighDpiApi> s_highDpiApi;
         static std::unique_ptr<ISystemConfigurationProvider> s_systemConfigurationProvider;
-        static std::unique_ptr<IInputServices> s_inputServices;
+
+        // See the big block comment in RundownAndExit for more info.
+        static void (*s_oneCoreTeardownFunction)();
 
         static Globals s_globals;
         static bool s_pseudoWindowInitialized;

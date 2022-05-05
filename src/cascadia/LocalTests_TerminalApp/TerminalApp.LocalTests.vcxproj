@@ -21,7 +21,13 @@
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
 
+  <PropertyGroup Label="NuGet Dependencies">
+    <!-- TerminalCppWinrt is intentionally not set -->
+    <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
+  </PropertyGroup>
+
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
 
   <ItemDefinitionGroup>
@@ -87,6 +93,7 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <PropertyGroup>
     <!-- From Microsoft.UI.Xaml.targets -->
@@ -97,6 +104,5 @@
 
 <!-- We actually can just straight up reference MUX here, it's fine -->
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
 
 </Project>

@@ -63,6 +63,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
         Boolean AtlasEngineAvailable { get; };
+        Boolean VtPassthroughAvailable { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -94,5 +95,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAtlasEngine);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, VtPassthrough);
     }
 }

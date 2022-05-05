@@ -19,12 +19,7 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumRadioButtonTemplate"
-                          x:DataType="local:EnumEntry">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
-            </DataTemplate>
-
-            <DataTemplate x:Key="EnumComboBoxItemTemplate"
+            <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
@@ -118,7 +113,7 @@
                 <StackPanel>
                     <ComboBox x:Name="FontWeightComboBox"
                               x:Uid="Profile_FontWeightComboBox"
-                              ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
@@ -176,12 +171,12 @@
             <local:SettingContainer x:Uid="Profile_CursorShape"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
+                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Cursor Height  -->
@@ -245,12 +240,12 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageStretchMode}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageStretchMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Background Image Alignment  -->
@@ -472,12 +467,12 @@
             <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}" />
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
         </StackPanel>
 

@@ -96,8 +96,8 @@ namespace Microsoft::Console::Interactivity::Win32
 
     protected:
         // prevent accidental generation of copies
-        Window(Window const&) = delete;
-        void operator=(Window const&) = delete;
+        Window(const Window&) = delete;
+        void operator=(const Window&) = delete;
 
     private:
         Window();

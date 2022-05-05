@@ -41,7 +41,7 @@ namespace Microsoft::Console::Render
         size_t GetColorAliasIndex(const ColorAlias alias) const noexcept;
         std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept;
         std::pair<COLORREF, COLORREF> GetAttributeColorsWithAlpha(const TextAttribute& attr) const noexcept;
-        void ToggleBlinkRendition(class IRenderTarget& renderTarget) noexcept;
+        void ToggleBlinkRendition(class Renderer& renderer) noexcept;
 
     private:
         til::enumset<Mode> _renderMode{ Mode::BlinkAllowed, Mode::IntenseIsBright };

@@ -28,7 +28,7 @@ namespace
     class [[nodiscard]] SRWLockGuard
     {
     public:
-        explicit SRWLockGuard(SRWLOCK & lock) noexcept :
+        explicit SRWLockGuard(SRWLOCK& lock) noexcept :
             _lock(&lock)
         {
             AcquireSRWLockExclusive(_lock);
@@ -42,7 +42,7 @@ namespace
         SRWLockGuard(const SRWLockGuard&) = delete;
         SRWLockGuard& operator=(const SRWLockGuard&) = delete;
 
-        SRWLockGuard(SRWLockGuard &&) = delete;
+        SRWLockGuard(SRWLockGuard&&) = delete;
         SRWLockGuard& operator=(SRWLockGuard&&) = delete;
 
     private:
@@ -77,7 +77,7 @@ namespace
         GuardedWaitContext(const GuardedWaitContext&) = delete;
         GuardedWaitContext& operator=(const GuardedWaitContext&) = delete;
 
-        GuardedWaitContext(GuardedWaitContext &&) = delete;
+        GuardedWaitContext(GuardedWaitContext&&) = delete;
         GuardedWaitContext& operator=(GuardedWaitContext&&) = delete;
     };
 

@@ -19,9 +19,11 @@
     <TargetName>SettingsModel.LocalTests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+    <!-- TerminalCppWinrt is not set intentionally -->
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
 
   <!-- ========================= Headers ======================== -->
@@ -94,6 +96,7 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <PropertyGroup>
     <!-- From Microsoft.UI.Xaml.targets -->
@@ -102,7 +105,7 @@
     <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
   </PropertyGroup>
 
-<!-- We actually can just straight up reference MUX here, it's fine -->
+  <!-- We actually can just straight up reference MUX here, it's fine -->
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
 
 </Project>

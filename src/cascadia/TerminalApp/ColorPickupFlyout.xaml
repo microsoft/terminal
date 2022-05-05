@@ -5,6 +5,8 @@
         xmlns:local="using:TerminalApp"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+        Placement="Bottom"
+        ShouldConstrainToRootBounds="False"
         mc:Ignorable="d">
     <Flyout.FlyoutPresenterStyle>
         <Style TargetType="FlyoutPresenter">
@@ -23,164 +25,105 @@
                                        MaximumRowsOrColumns="4"
                                        Orientation="Horizontal">
                     <VariableSizedWrapGrid.Resources>
-                        <Style TargetType="Rectangle">
-                            <Setter Property="Width" Value="30" />
-                            <Setter Property="Height" Value="30" />
-                        </Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Padding" Value="-1" />
+                        <Style x:Name="ColorPickerColorButtonStyle"
+                               BasedOn="{StaticResource ColorButtonStyle}"
+                               TargetType="Button">
                             <Setter Property="Margin" Value="2" />
-                            <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-                            <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}" />
                         </Style>
+                        <Style BasedOn="{StaticResource ColorPickerColorButtonStyle}"
+                               TargetType="Button" />
                     </VariableSizedWrapGrid.Resources>
+
                     <Button x:Uid="CrimsonColorButton"
                             AutomationProperties.Name="Crimson"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="Crimson" />
-                        </Button.Content>
-                    </Button>
+                            Background="Crimson"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="SteelBlueColorButton"
                             AutomationProperties.Name="SteelBlue"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="SteelBlue" />
-                        </Button.Content>
-                    </Button>
+                            Background="SteelBlue"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="MediumSeaGreenColorButton"
                             AutomationProperties.Name="MediumSeaGreen"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="MediumSeaGreen" />
-                        </Button.Content>
-                    </Button>
+                            Background="MediumSeaGreen"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="DarkOrangeColorButton"
                             AutomationProperties.Name="DarkOrange"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="DarkOrange" />
-                        </Button.Content>
-                    </Button>
+                            Background="DarkOrange"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="MediumVioletRedColorButton"
                             AutomationProperties.Name="MediumVioletRed"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="MediumVioletRed" />
-                        </Button.Content>
-                    </Button>
+                            Background="MediumVioletRed"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="DodgerBlueColorButton"
                             AutomationProperties.Name="DodgerBlue"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="DodgerBlue" />
-                        </Button.Content>
-                    </Button>
+                            Background="DodgerBlue"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="LimeGreenColorButton"
                             AutomationProperties.Name="LimeGreen"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="LimeGreen" />
-                        </Button.Content>
-                    </Button>
+                            Background="LimeGreen"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="YellowColorButton"
                             AutomationProperties.Name="Yellow"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="Yellow" />
-                        </Button.Content>
-                    </Button>
+                            Background="Yellow"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="BlueVioletColorButton"
                             AutomationProperties.Name="BlueViolet"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="BlueViolet" />
-                        </Button.Content>
-                    </Button>
+                            Background="BlueViolet"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="SlateBlueColorButton"
                             AutomationProperties.Name="SlateBlue"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="SlateBlue" />
-                        </Button.Content>
-                    </Button>
+                            Background="SlateBlue"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="LimeColorButton"
                             AutomationProperties.Name="Lime"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="Lime" />
-                        </Button.Content>
-                    </Button>
+                            Background="Lime"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="TanColorButton"
                             AutomationProperties.Name="Tan"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="Tan" />
-                        </Button.Content>
-                    </Button>
+                            Background="Tan"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="MagentaColorButton"
                             AutomationProperties.Name="Magenta"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="Magenta" />
-                        </Button.Content>
-                    </Button>
+                            Background="Magenta"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="CyanColorButton"
                             AutomationProperties.Name="Cyan"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="Cyan" />
-                        </Button.Content>
-                    </Button>
+                            Background="Cyan"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="SkyBlueColorButton"
                             AutomationProperties.Name="SkyBlue"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="SkyBlue" />
-                        </Button.Content>
-                    </Button>
+                            Background="SkyBlue"
+                            Click="ColorButton_Click" />
                     <Button x:Uid="DarkGrayColorButton"
                             AutomationProperties.Name="DarkGray"
-                            Click="ColorButton_Click">
-                        <Button.Content>
-                            <Rectangle Fill="DarkGray" />
-                        </Button.Content>
-                    </Button>
+                            Background="DarkGray"
+                            Click="ColorButton_Click" />
                 </VariableSizedWrapGrid>
             </Grid>
-            <Grid Margin="0,12,0,0"
-                  Padding="-2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+            <StackPanel Margin="0,12,0,0"
+                        Orientation="Horizontal"
+                        Spacing="8">
                 <Button x:Name="ClearColorButton"
                         x:Uid="TabColorClearButton"
                         Grid.Column="0"
-                        Margin="2"
                         HorizontalAlignment="Stretch"
                         Click="ClearColorButton_Click"
                         Content="Reset" />
                 <ToggleButton x:Name="CustomColorButton"
                               x:Uid="TabColorCustomButton"
                               Grid.Column="1"
-                              Margin="2"
                               HorizontalAlignment="Stretch"
                               Click="ShowColorPickerButton_Click"
                               Content="Custom"
                               IsChecked="False" />
-            </Grid>
+            </StackPanel>
         </StackPanel>
-        <Grid x:Name="customColorPanel"
-              Margin="16,0,0,0"
-              Visibility="Collapsed">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <StackPanel x:Name="customColorPanel"
+                    Margin="16,0,0,0"
+                    Spacing="12"
+                    Visibility="Collapsed">
             <muxc:ColorPicker x:Name="customColorPicker"
                               Grid.Row="0"
-                              Margin="0,0,0,12"
                               ColorChanged="ColorPicker_ColorChanged"
                               FontSize="10"
                               IsAlphaEnabled="False"
@@ -198,6 +141,6 @@
                     Click="CustomColorButton_Click"
                     Content="OK"
                     Style="{ThemeResource AccentButtonStyle}" />
-        </Grid>
+        </StackPanel>
     </StackPanel>
 </Flyout>

@@ -55,7 +55,7 @@ int TestGetchar(HANDLE hIn, HANDLE /*hOut*/)
         return HRESULT_FROM_WIN32(GetLastError());
     }
 
-    DWORD const dwEnableVirtualTerminalInput = 0x200; // Until the new wincon.h is published
+    const auto dwEnableVirtualTerminalInput = 0x200; // Until the new wincon.h is published
     if (!SetConsoleMode(hIn, dwInputModes | dwEnableVirtualTerminalInput))
     {
         return HRESULT_FROM_WIN32(GetLastError());

@@ -124,13 +124,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename... Args>
         static constexpr UnderlyingType to_underlying(Args... positions) noexcept
         {
-            return ((UnderlyingType{ 1 } << static_cast<UnderlyingType>(positions)) | ...);
-        }
-
-        template<>
-        static constexpr UnderlyingType to_underlying() noexcept
-        {
-            return 0;
+            if constexpr (sizeof...(positions) == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return ((UnderlyingType{ 1 } << static_cast<UnderlyingType>(positions)) | ...);
+            }
         }
 
         UnderlyingType _data{};

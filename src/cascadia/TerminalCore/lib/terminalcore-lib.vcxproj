@@ -12,12 +12,17 @@
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
   </PropertyGroup>
 
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
+
   <!-- Imported WinRT generated files must go up here to get excluded from Audit correctly. -->
   <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
     <CAExcludePath>"$(SolutionDir)\src\cascadia\TerminalCore\Generated Files\winrt";$(SolutionDir)src\cascadia\TerminalCore;$(CAExcludePath)</CAExcludePath>
   </PropertyGroup>
 
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxitems -->
@@ -33,6 +38,9 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj">
       <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\adapter\lib\adapter.vcxproj">
+      <Project>{dcf55140-ef6a-4736-a403-957e4f7430bb}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj">
       <Project>{3ae13314-1939-4dfa-9c14-38ca0834050c}</Project>
@@ -65,4 +73,7 @@
 
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>

@@ -12,7 +12,7 @@ Author(s):
     Mike Griese (migrie) January-2020
 --*/
 
-#include "../../buffer/out/textBuffer.hpp"
+#include "../buffer/out/textBuffer.hpp"
 
 namespace TerminalCoreUnitTests
 {

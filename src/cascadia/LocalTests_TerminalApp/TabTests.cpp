@@ -9,7 +9,7 @@
 #include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/TerminalTab.h"
 #include "../TerminalApp/CommandPalette.h"
-#include "../CppWinrtTailored.h"
+#include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -1052,7 +1052,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(4u, page->_tabs.Size());
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
 
@@ -1062,7 +1062,7 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
         });
 
@@ -1088,7 +1088,7 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
 
@@ -1109,7 +1109,7 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
         });
 
@@ -1121,7 +1121,7 @@ namespace TerminalAppLocalTests
             page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(2u, focusedIndex, L"Verify the third tab is the focused one");
         });
 
@@ -1133,7 +1133,7 @@ namespace TerminalAppLocalTests
             page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
     }
@@ -1244,7 +1244,7 @@ namespace TerminalAppLocalTests
             page->WindowName(args.ProposedName());
         });
 
-        bool windowNameChanged = false;
+        auto windowNameChanged = false;
         page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
             if (args.PropertyName() == L"WindowNameForDisplay")
             {
@@ -1274,7 +1274,7 @@ namespace TerminalAppLocalTests
             page->RenameFailed();
         });
 
-        bool windowNameChanged = false;
+        auto windowNameChanged = false;
 
         page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
             if (args.PropertyName() == L"WindowNameForDisplay")

@@ -82,9 +82,9 @@ namespace SettingsModelLocalTests
         expectedArgv.reserve(expectedArgc * 65);
         input.reserve(expectedArgc * 67);
 
-        for (int i = 0; i < expectedArgc; ++i)
+        for (auto i = 0; i < expectedArgc; ++i)
         {
-            const bool useQuotes = static_cast<bool>(rng(2));
+            const auto useQuotes = static_cast<bool>(rng(2));
             // We need to ensure there is at least one character
             const auto count = static_cast<size_t>(rng(64) + 1);
             const auto ch = static_cast<wchar_t>(rng('z' - 'a' + 1) + 'a');
@@ -795,11 +795,11 @@ namespace SettingsModelLocalTests
         const auto terminalSettings4 = createTerminalSettings(activeProfiles.GetAt(4), colorSchemes);
         const auto terminalSettings5 = createTerminalSettings(activeProfiles.GetAt(5), colorSchemes);
 
-        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
+        VERIFY_ARE_EQUAL(til::color(0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1->CursorColor()); // default
-        VERIFY_ARE_EQUAL(RGB(0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
-        VERIFY_ARE_EQUAL(RGB(0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
-        VERIFY_ARE_EQUAL(RGB(0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
+        VERIFY_ARE_EQUAL(til::color(0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
+        VERIFY_ARE_EQUAL(til::color(0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
+        VERIFY_ARE_EQUAL(til::color(0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5->CursorColor()); // default
     }
 

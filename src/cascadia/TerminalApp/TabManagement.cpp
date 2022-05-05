@@ -81,8 +81,8 @@ namespace winrt::TerminalApp::implementation
         // case above with the _maybeElevate call.
         _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
 
-        const uint32_t tabCount = _tabs.Size();
-        const bool usedManualProfile = (newTerminalArgs != nullptr) &&
+        const auto tabCount = _tabs.Size();
+        const auto usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||
                                         newTerminalArgs.Profile().empty());
 
@@ -152,6 +152,9 @@ namespace winrt::TerminalApp::implementation
                 // SetTaskbarProgress event here, to get tell the hosting
                 // application to re-query this value from us.
                 page->_SetTaskbarProgressHandlers(*page, nullptr);
+
+                auto profile = tab->GetFocusedProfile();
+                page->_UpdateBackground(profile);
             }
         });
 
@@ -287,7 +290,7 @@ namespace winrt::TerminalApp::implementation
         // Never show the tab row when we're fullscreen. Otherwise:
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
-        const bool isVisible = (!_isFullscreen && !_isInFocusMode) &&
+        const auto isVisible = (!_isFullscreen && !_isInFocusMode) &&
                                (_settings.GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
                                 _settings.GlobalSettings().AlwaysShowTabs());
@@ -449,7 +452,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (tab.ReadOnly())
         {
-            ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+            auto warningResult = co_await _ShowCloseReadOnlyDialog();
 
             // If the user didn't explicitly click on close tab - leave
             if (warningResult != ContentDialogResult::Primary)
@@ -574,7 +577,7 @@ namespace winrt::TerminalApp::implementation
         const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
         if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
-            uint32_t tabCount = _tabs.Size();
+            auto tabCount = _tabs.Size();
             // Wraparound math. By adding tabCount and then calculating
             // modulo tabCount, we clamp the values to the range [0,
             // tabCount) while still supporting moving leftward from 0 to
@@ -598,7 +601,7 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the desired tab. Returns false if the provided tabIndex
     //   is greater than the number of tabs we have.
     // - During startup, we'll immediately set the selected tab as focused.
-    // - After startup, we'll dispatch an async method to set the the selected
+    // - After startup, we'll dispatch an async method to set the selected
     //   item of the TabView, which will then also trigger a
     //   TabView::SelectionChanged, handled in
     //   TerminalPage::_OnTabSelectionChanged
@@ -716,7 +719,7 @@ namespace winrt::TerminalApp::implementation
         //          sometimes set focus to an incorrect tab after removing some tabs
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(_tabView.Dispatcher());
+        co_await wil::resume_foreground(_tabView.Dispatcher());
 
         if (auto page{ weakThis.get() })
         {
@@ -743,7 +746,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (pane->ContainsReadOnly())
                 {
-                    ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+                    auto warningResult = co_await _ShowCloseReadOnlyDialog();
 
                     // If the user didn't explicitly click on close tab - leave
                     if (warningResult != ContentDialogResult::Primary)
@@ -905,8 +908,23 @@ namespace winrt::TerminalApp::implementation
             {
                 _TitleChangedHandlers(*this, tab.Title());
             }
+
+            auto tab_impl = _GetTerminalTabImpl(tab);
+            if (tab_impl)
+            {
+                auto profile = tab_impl->GetFocusedProfile();
+                _UpdateBackground(profile);
+            }
         }
         CATCH_LOG();
+    }
+
+    void TerminalPage::_UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile)
+    {
+        if (profile && _settings.GlobalSettings().UseBackgroundImageForWindow())
+        {
+            _SetBackgroundImage(profile.DefaultAppearance());
+        }
     }
 
     // Method Description:
@@ -937,7 +955,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTabIndices()
     {
-        const uint32_t size = _tabs.Size();
+        const auto size = _tabs.Size();
         for (uint32_t i = 0; i < size; ++i)
         {
             auto tab{ _tabs.GetAt(i) };

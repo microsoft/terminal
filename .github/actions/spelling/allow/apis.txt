@@ -72,6 +72,7 @@ IFACEMETHOD
 IFile
 IInheritable
 IMap
+IMonarch
 IObject
 iosfwd
 IPackage
@@ -94,11 +95,12 @@ lround
 Lsa
 lsass
 LSHIFT
+memchr
 memicmp
 MENUCOMMAND
 MENUDATA
-MENUINFO
 MENUITEMINFOW
+MENUINFO
 MOUSELEAVE
 mov
 mptt
@@ -143,6 +145,7 @@ REGCLS
 RETURNCMD
 rfind
 roundf
+ROOTOWNER
 RSHIFT
 SACL
 schandle
@@ -151,6 +154,7 @@ serializer
 SETVERSION
 SHELLEXECUTEINFOW
 shobjidl
+SHOWHIDE
 SHOWMINIMIZED
 SHOWTIP
 SINGLEUSE

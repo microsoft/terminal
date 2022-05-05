@@ -46,6 +46,11 @@ namespace RemotingUnitTests
         std::function<HRESULT(HWND, BOOL*)> pfnIsWindowOnCurrentVirtualDesktop;
     };
 
+#define DIE                                                                \
+    {                                                                      \
+        throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); \
+    };
+
     // This is a silly helper struct.
     // It will always throw an hresult_error of "RPC server is unavailable" on any of its methods.
     // The monarch uses this particular error code to check for a dead peasant vs another exception.
@@ -57,28 +62,29 @@ namespace RemotingUnitTests
     // class can be used to replace a peasant inside a Monarch, to emulate that
     // peasant process dying. Any time the monarch tries to do something to this
     // peasant, it'll throw an exception.
+
     struct DeadPeasant : implements<DeadPeasant, winrt::Microsoft::Terminal::Remoting::IPeasant>
     {
         DeadPeasant() = default;
-        void AssignID(uint64_t /*id*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        uint64_t GetID() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        winrt::hstring WindowName() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        winrt::hstring ActiveTabTitle() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        void ActiveTabTitle(const winrt::hstring& /*value*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        uint64_t GetPID() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
-        void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
-        void RequestIdentifyWindows() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        void DisplayWindowId() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        Remoting::CommandlineArgs InitialArgs() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
-        Remoting::WindowActivatedArgs GetLastActivatedArgs() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
-        void RequestRename(const Remoting::RenameRequestArgs& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
-        void Summon(const Remoting::SummonWindowBehavior& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        void RequestShowNotificationIcon() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        void RequestHideNotificationIcon() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        winrt::hstring GetWindowLayout() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        void RequestQuitAll() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
-        void Quit() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        void AssignID(uint64_t /*id*/) DIE;
+        uint64_t GetID() DIE;
+        winrt::hstring WindowName() DIE;
+        winrt::hstring ActiveTabTitle() DIE;
+        void ActiveTabTitle(const winrt::hstring& /*value*/) DIE;
+        uint64_t GetPID() DIE;
+        bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) DIE;
+        void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) DIE;
+        void RequestIdentifyWindows() DIE;
+        void DisplayWindowId() DIE;
+        Remoting::CommandlineArgs InitialArgs() DIE;
+        Remoting::WindowActivatedArgs GetLastActivatedArgs() DIE;
+        void RequestRename(const Remoting::RenameRequestArgs& /*args*/) DIE;
+        void Summon(const Remoting::SummonWindowBehavior& /*args*/) DIE;
+        void RequestShowNotificationIcon() DIE;
+        void RequestHideNotificationIcon() DIE;
+        winrt::hstring GetWindowLayout() DIE;
+        void RequestQuitAll() DIE;
+        void Quit() DIE;
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
         TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
@@ -90,6 +96,31 @@ namespace RemotingUnitTests
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs);
+    };
+
+    // Same idea.
+    struct DeadMonarch : implements<DeadMonarch, winrt::Microsoft::Terminal::Remoting::IMonarch>
+    {
+        DeadMonarch() = default;
+        uint64_t GetPID() DIE;
+        uint64_t AddPeasant(Remoting::IPeasant /*peasant*/) DIE;
+        uint64_t GetNumberOfPeasants() DIE;
+        Remoting::ProposeCommandlineResult ProposeCommandline(Remoting::CommandlineArgs /*args*/) DIE;
+        void HandleActivatePeasant(Remoting::WindowActivatedArgs /*args*/) DIE;
+        void SummonWindow(Remoting::SummonWindowSelectionArgs /*args*/) DIE;
+        void SignalClose(uint64_t /*peasantId*/) DIE;
+
+        void SummonAllWindows() DIE;
+        bool DoesQuakeWindowExist() DIE;
+        winrt::Windows::Foundation::Collections::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
+        winrt::Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
+
+        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, Remoting::QuitAllRequestedArgs);
     };
 
     class RemotingTests
@@ -144,6 +175,8 @@ namespace RemotingUnitTests
         TEST_METHOD(TestSummonMostRecentIsQuake);
 
         TEST_METHOD(TestSummonAfterWindowClose);
+
+        TEST_METHOD(TestProposeCommandlineWithDeadMonarch);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1494,8 +1527,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1573,8 +1606,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1635,8 +1668,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1703,8 +1736,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1800,9 +1833,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1849,7 +1882,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -1896,7 +1929,7 @@ namespace RemotingUnitTests
 
         auto secondCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"secondCallback: Checking if window is on desktop 2");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = false;
@@ -1933,7 +1966,7 @@ namespace RemotingUnitTests
 
         auto thirdCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"thirdCallback: Checking if window is on desktop 2. (windows 2 and 3 are)");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID)
             {
                 *result = false;
@@ -1963,7 +1996,7 @@ namespace RemotingUnitTests
 
         auto fourthCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"fourthCallback: Checking if window is on desktop 1. (window 1 is)");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID)
             {
                 *result = true;
@@ -1993,7 +2026,7 @@ namespace RemotingUnitTests
 
         auto fifthCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"fifthCallback: Checking if window is on desktop 3. (none are)");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant2PID || hwnd == peasant3PID)
             {
                 *result = false;
@@ -2051,9 +2084,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2100,7 +2133,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -2192,9 +2225,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2241,7 +2274,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -2308,8 +2341,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2320,8 +2353,8 @@ namespace RemotingUnitTests
             VERIFY_IS_TRUE(p2ExpectedToBeSummoned);
         });
 
-        bool p1ExpectedCommandline = false;
-        bool p2ExpectedCommandline = false;
+        auto p1ExpectedCommandline = false;
+        auto p2ExpectedCommandline = false;
         p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& /*cmdlineArgs*/) {
             Log::Comment(L"Commandline dispatched to p1");
             VERIFY_IS_TRUE(p1ExpectedCommandline);
@@ -2435,9 +2468,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2484,7 +2517,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -2520,6 +2553,50 @@ namespace RemotingUnitTests
         args.OnCurrentDesktop(true);
         m0->SummonWindow(args);
         VERIFY_IS_TRUE(args.FoundMatch());
+    }
+
+    void RemotingTests::TestProposeCommandlineWithDeadMonarch()
+    {
+        Log::Comment(L"MSFT:32279047 - It's possible for a window to start "
+                     L"right as the monarch is exiting. In that case, "
+                     L"WindowManager relies on getting a "
+                     L"RPC_E_SERVER_UNAVAILABLE when the process dies. ");
+
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        constexpr auto monarch0PID = 12345u;
+
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+
+        {
+            Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" } };
+            const auto result = m0->ProposeCommandline(args);
+            auto shouldCreateWindow = result.ShouldCreateWindow();
+            VERIFY_IS_TRUE(shouldCreateWindow);
+        }
+
+        auto m1 = make_self<DeadMonarch>();
+        {
+            Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" } };
+
+            try
+            {
+                const auto result = m1->ProposeCommandline(args);
+                VERIFY_IS_FALSE(true, L"This should have thrown");
+            }
+            catch (const winrt::hresult_error& e)
+            {
+                // these two errors are Win32 errors, convert them to HRESULTS so we can actually compare here.
+                constexpr auto RPC_SERVER_UNAVAILABLE_HR = HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
+                constexpr auto RPC_CALL_FAILED_HR = HRESULT_FROM_WIN32(RPC_S_CALL_FAILED);
+
+                // This is the same check in WindowManager::_proposeToMonarch.
+                VERIFY_IS_TRUE(e.code() == RPC_SERVER_UNAVAILABLE_HR || e.code() == RPC_CALL_FAILED_HR);
+            }
+            // just don't catch other types of exceptions. They'll take out
+            // TAEF, which will count as a failure.
+        }
     }
 
 }

@@ -55,7 +55,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
 {
     IslandWindow::MakeWindow();
 
-    static ATOM dragBarWindowClass{ []() {
+    static auto dragBarWindowClass{ []() {
         WNDCLASSEX wcEx{};
         wcEx.cbSize = sizeof(wcEx);
         wcEx.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -89,7 +89,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
 
 LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
 {
-    RECT rcParent = GetWindowRect();
+    auto rcParent = GetWindowRect();
     // The size of the buttons doesn't change over the life of the application.
     const auto buttonWidthInDips{ _titlebar.CaptionButtonWidth() };
 
@@ -495,7 +495,7 @@ void NonClientIslandWindow::_UpdateMaximizedState()
 }
 
 // Method Description:
-// - Called when the the windows goes from restored to maximized or from
+// - Called when the windows goes from restored to maximized or from
 //   maximized to restored. Updates the maximize button's icon and the frame
 //   margins.
 void NonClientIslandWindow::_OnMaximizeChange() noexcept
@@ -506,8 +506,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -539,7 +539,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
     // buttons, which will make them clickable. It's perhaps not the right fix,
     // but it works.
     // _GetTopBorderHeight() returns 0 when we're maximized.
-    const short topBorderHeight = ::base::saturated_cast<short>((originalTopHeight == 0) ? -1 : originalTopHeight);
+    const auto topBorderHeight = ::base::saturated_cast<short>((originalTopHeight == 0) ? -1 : originalTopHeight);
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
@@ -588,7 +588,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return 0;
     }
 
-    NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+    auto params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
 
     // Store the original top before the default window proc applies the
     // default frame.
@@ -629,7 +629,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // still mouse-over the taskbar to reveal it.
     // GH#5209 - make sure to use MONITOR_DEFAULTTONEAREST, so that this will
     // still find the right monitor even when we're restoring from minimized.
-    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
+    auto hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     if (hMon && (_isMaximized || _fullscreen))
     {
         MONITORINFO monInfo{ 0 };
@@ -639,7 +639,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // First, check if we have an auto-hide taskbar at all:
         APPBARDATA autohide{ 0 };
         autohide.cbSize = sizeof(autohide);
-        UINT state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
+        auto state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
         if (WI_IsFlagSet(state, ABS_AUTOHIDE))
         {
             // This helper can be used to determine if there's a auto-hide
@@ -649,14 +649,14 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
                 data.cbSize = sizeof(data);
                 data.uEdge = edge;
                 data.rc = monInfo.rcMonitor;
-                HWND hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
+                auto hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
                 return hTaskbar != nullptr;
             };
 
-            const bool onTop = hasAutohideTaskbar(ABE_TOP);
-            const bool onBottom = hasAutohideTaskbar(ABE_BOTTOM);
-            const bool onLeft = hasAutohideTaskbar(ABE_LEFT);
-            const bool onRight = hasAutohideTaskbar(ABE_RIGHT);
+            const auto onTop = hasAutohideTaskbar(ABE_TOP);
+            const auto onBottom = hasAutohideTaskbar(ABE_BOTTOM);
+            const auto onLeft = hasAutohideTaskbar(ABE_LEFT);
+            const auto onRight = hasAutohideTaskbar(ABE_RIGHT);
 
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
@@ -770,7 +770,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // with that message at the time it was sent to handle the message
         // correctly.
         const auto screenPtLparam{ GetMessagePos() };
-        const LRESULT hitTest{ SendMessage(GetHandle(), WM_NCHITTEST, 0, screenPtLparam) };
+        const auto hitTest{ SendMessage(GetHandle(), WM_NCHITTEST, 0, screenPtLparam) };
         if (hitTest == HTTOP)
         {
             // We have to set the vertical resize cursor manually on
@@ -960,7 +960,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
     if (ps.rcPaint.top < topBorderHeight)
     {
-        RECT rcTopBorder = ps.rcPaint;
+        auto rcTopBorder = ps.rcPaint;
         rcTopBorder.bottom = topBorderHeight;
 
         // To show the original top border, we have to paint on top of it with
@@ -972,7 +972,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
     if (ps.rcPaint.bottom > topBorderHeight)
     {
-        RECT rcRest = ps.rcPaint;
+        auto rcRest = ps.rcPaint;
         rcRest.top = topBorderHeight;
 
         const auto backgroundBrush = _titlebar.Background();
@@ -1000,7 +1000,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         // See NonClientIslandWindow::_UpdateFrameMargins for more information.
         HDC opaqueDc;
         BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
-        HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+        auto buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
         if (!buf || !opaqueDc)
         {
             // MSFT:34673647 - BeginBufferedPaint can fail, but it probably

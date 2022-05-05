@@ -9,6 +9,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="ConPtyTests.cpp" />
     <ClCompile Include="precomp.cpp">
@@ -31,6 +32,7 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>$(OutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>

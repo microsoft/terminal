@@ -11,7 +11,7 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
-    "trimBlockSelection": false,
+    "trimBlockSelection": true,
     "trimPaste": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
@@ -465,6 +465,6 @@
                 { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
                 { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
-        },
+        }
     ]
 }

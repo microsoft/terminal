@@ -31,10 +31,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
-        void WriteInput(hstring const& data);
+        void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;
         void ClearBuffer();
+
+        void ShowHide(const bool show);
+
+        void ReparentWindow(const uint64_t newParent);
 
         winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
@@ -42,16 +46,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static void StartInboundListener();
         static void StopInboundListener();
 
-        static winrt::event_token NewConnection(NewConnectionHandler const& handler);
-        static void NewConnection(winrt::event_token const& token);
+        static winrt::event_token NewConnection(const NewConnectionHandler& handler);
+        static void NewConnection(const winrt::event_token& token);
 
         static Windows::Foundation::Collections::ValueSet CreateSettings(const winrt::hstring& cmdline,
                                                                          const winrt::hstring& startingDirectory,
                                                                          const winrt::hstring& startingTitle,
-                                                                         Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                         const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                          uint32_t rows,
                                                                          uint32_t columns,
-                                                                         winrt::guid const& guid);
+                                                                         const winrt::guid& guid);
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
@@ -65,9 +69,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
+        uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};
         hstring _startingTitle{};
+        bool _initialVisibility{ false };
         Windows::Foundation::Collections::ValueSet _environment{ nullptr };
         guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
@@ -85,6 +91,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         til::u8state _u8State{};
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
+        bool _passthroughMode{};
 
         DWORD _OutputThread();
     };

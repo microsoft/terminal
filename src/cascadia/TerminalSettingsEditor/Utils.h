@@ -87,7 +87,7 @@ public:                                                                  \
     {                                                                    \
         return winrt::unbox_value<type>(GetValue(_##name##Property));    \
     }                                                                    \
-    void name(type const& value)                                         \
+    void name(const type& value)                                         \
     {                                                                    \
         SetValue(_##name##Property, winrt::box_value(value));            \
     }                                                                    \
@@ -97,7 +97,7 @@ private:                                                                 \
 
 namespace winrt::Microsoft::Terminal::Settings
 {
-    winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);
+    winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
 }
 
@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings
 // may not have popups in them. Rather than define the same exact body for all
 // their ViewChanging events, the HasScrollViewer struct will just do it for
 // you!
-inline void DismissAllPopups(winrt::Windows::UI::Xaml::XamlRoot const& xamlRoot)
+inline void DismissAllPopups(const winrt::Windows::UI::Xaml::XamlRoot& xamlRoot)
 {
     const auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
     for (const auto& p : popups)
@@ -123,7 +123,7 @@ template<typename T>
 struct HasScrollViewer
 {
     // When the ScrollViewer scrolls, dismiss any popups we might have.
-    void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender,
+    void ViewChanging(const winrt::Windows::Foundation::IInspectable& sender,
                       const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
     {
         // Inside this struct, we can't get at the XamlRoot() that our subclass

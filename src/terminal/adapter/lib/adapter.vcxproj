@@ -9,6 +9,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="..\adaptDispatch.cpp" />
     <ClCompile Include="..\FontBuffer.cpp" />
@@ -27,7 +28,7 @@
     <ClInclude Include="..\DispatchTypes.hpp" />
     <ClInclude Include="..\FontBuffer.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
-    <ClInclude Include="..\conGetSet.hpp" />
+    <ClInclude Include="..\ITerminalApi.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\terminalOutput.hpp" />
@@ -46,4 +47,5 @@
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>
