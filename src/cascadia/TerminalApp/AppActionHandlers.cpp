@@ -189,12 +189,15 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            if (const auto index = newTerminalArgs.ProfileIndex())
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
             {
-                if (index >= _settings->ActiveProfiles().Size())
+                if (const auto index = realArgs.TerminalArgs().ProfileIndex())
                 {
-                    args.Handled(false);
-                    return;
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
                 }
             }
 
@@ -314,12 +317,15 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            if (const auto index = newTerminalArgs.ProfileIndex())
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
             {
-                if (index >= _settings->ActiveProfiles().Size())
+                if (const auto index = newTerminalArgs.ProfileIndex())
                 {
-                    args.Handled(false);
-                    return;
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
                 }
             }
 
