@@ -136,6 +136,9 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
             {
                 winrt::Windows::UI::Xaml::Media::AcrylicBrush newBrush{};
                 newBrush.TintColor(acrylic.TintColor());
+                newBrush.FallbackColor(acrylic.FallbackColor());
+                newBrush.TintLuminosityOpacity(acrylic.TintLuminosityOpacity());
+                newBrush.Opacity(acrylic.Opacity());
                 // Allow acrylic opacity, but it's gotta be HostBackdrop acrylic.
                 newBrush.TintOpacity(acrylic.TintOpacity());
                 acrylic.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);

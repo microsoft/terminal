@@ -4060,7 +4060,10 @@ namespace winrt::TerminalApp::implementation
             TitlebarBrush(backgroundSolidBrush);
         }
 
-        _tabRow.Background(TitlebarBrush());
+        if (!_settings.GlobalSettings().ShowTabsInTitlebar())
+        {
+            _tabRow.Background(TitlebarBrush());
+        }
 
         // Update the new tab button to have better contrast with the new color.
         // In theory, it would be convenient to also change these for the
