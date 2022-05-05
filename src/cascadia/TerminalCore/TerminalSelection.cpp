@@ -329,6 +329,14 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 }
 
+void Terminal::SelectAll()
+{
+    const auto bufferSize{ _activeBuffer().GetSize() };
+    _selection->start = bufferSize.Origin();
+    _selection->end = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
+    _selection->pivot = _selection->end;
+}
+
 void Terminal::_MoveByChar(SelectionDirection direction, COORD& pos)
 {
     switch (direction)

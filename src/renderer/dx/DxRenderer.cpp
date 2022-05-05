@@ -1064,8 +1064,8 @@ HANDLE DxEngine::GetSwapChainHandle() noexcept
 void DxEngine::_InvalidateRectangle(const til::rect& rc)
 {
     const auto size = _invalidMap.size();
-    const auto topLeft = til::point{ 0, std::min(size.height, rc.top) };
-    const auto bottomRight = til::point{ size.width, std::min(size.height, rc.bottom) };
+    const auto topLeft = til::point{ 0, std::clamp(rc.top, 0, size.height) };
+    const auto bottomRight = til::point{ size.width, std::clamp(rc.bottom, 0, size.height) };
     _invalidMap.set(til::rect{ topLeft, bottomRight });
 }
 
