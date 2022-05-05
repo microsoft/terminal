@@ -550,6 +550,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             solidColor.Color(bg);
         }
+
+        BackgroundBrush(RootGrid().Background());
+
+        // Don't use the normal BackgroundBrush() Observable Property setter
+        // here. The one from the macro will automatically ignore changes where
+        // the value doesn't _actually_ change. In our case, most of the time
+        // when changing the colors of the background, the _Brush_ itself
+        // doesn't change, we simply change the Color() of the brush. This
+        // results in the event not getting bubbled up.
+        //
+        // Firing it manually makes sure it does.
+        _BackgroundBrush = RootGrid().Background();
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
     }
 
     // Method Description:
