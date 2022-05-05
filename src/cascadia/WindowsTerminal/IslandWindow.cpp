@@ -160,7 +160,7 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     }
 
     // GH#11561: DO NOT call ShowWindow here. The AppHost will call ShowWindow
-    // once the app has completed it's initialization.
+    // once the app has completed its initialization.
 
     UpdateWindow(_window.get());
 
