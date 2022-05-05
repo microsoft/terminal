@@ -1300,8 +1300,6 @@ namespace TerminalAppLocalTests
     {
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
 
-        // DebugBreak();
-
         auto page = _commonSetup();
         VERIFY_IS_NOT_NULL(page);
 

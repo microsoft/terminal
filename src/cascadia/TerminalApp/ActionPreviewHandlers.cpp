@@ -145,15 +145,11 @@ namespace winrt::TerminalApp::implementation
         switch (args.Action())
         {
         case ShortcutAction::SetColorScheme:
-        {
             _PreviewColorScheme(args.Args().try_as<SetColorSchemeArgs>());
             break;
-        }
         case ShortcutAction::AdjustOpacity:
-        {
             _PreviewAdjustOpacity(args.Args().try_as<AdjustOpacityArgs>());
             break;
-        }
         }
 
         // GH#9818 Other ideas for actions that could be preview-able:
@@ -191,29 +187,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            switch (args.ActionAndArgs().Action())
-            {
-            case ShortcutAction::SetColorScheme:
-            {
-                _PreviewColorScheme(args.ActionAndArgs().Args().try_as<SetColorSchemeArgs>());
-                break;
-            }
-            case ShortcutAction::AdjustOpacity:
-            {
-                _PreviewAdjustOpacity(args.ActionAndArgs().Args().try_as<AdjustOpacityArgs>());
-                break;
-            }
-            }
-
-            // GH#9818 Other ideas for actions that could be preview-able:
-            // * Set Font size
-            // * Set acrylic true/false/opacity?
-            // * SetPixelShaderPath?
-            // * SetWindowTheme (light/dark/system/<some theme from #3327>)?
-
-            // Stash this action, so we know what to do when we're done
-            // previewing.
-            _lastPreviewedAction = args.ActionAndArgs();
+            _PreviewAction(args.ActionAndArgs());
         }
     }
 }
