@@ -481,6 +481,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size96 = 1
     };
 
+    enum class ReportFormat : VTInt
+    {
+        TerminalStateReport = 1,
+        ColorTableReport = 2
+    };
+
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 

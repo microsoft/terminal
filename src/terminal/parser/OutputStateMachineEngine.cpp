@@ -663,6 +663,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(6),
                                           parameters.at(7));
         break;
+    case DcsActionCodes::DECRSTS_RestoreTerminalState:
+        handler = _dispatch->RestoreTerminalState(parameters.at(0));
+        break;
     case DcsActionCodes::DECRQSS_RequestSetting:
         handler = _dispatch->RequestSetting();
         break;

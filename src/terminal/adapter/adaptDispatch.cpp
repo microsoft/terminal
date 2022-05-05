@@ -2553,6 +2553,18 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
 }
 
 // Method Description:
+// - DECRSTS - Restores the terminal state from a stream of data previously
+//   saved with a DECRQTSR query.
+// Arguments:
+// - format - the format of the state report being restored.
+// Return Value:
+// - a function to receive the data or nullptr if the format is unsupported.
+ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchTypes::ReportFormat /*format*/)
+{
+    return nullptr;
+}
+
+// Method Description:
 // - DECRQSS - Requests the state of a VT setting. The value being queried is
 //   identified by the intermediate and final characters of its control
 //   sequence, which are passed to the string handler.
