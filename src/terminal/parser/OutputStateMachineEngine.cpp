@@ -267,19 +267,19 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC1);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
-        _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
+        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineBottom:
-        _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
+        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
         break;
     case EscActionCodes::DECSWL_SingleWidthLine:
-        _dispatch->SetLineRendition(LineRendition::SingleWidth);
+        success = _dispatch->SetLineRendition(LineRendition::SingleWidth);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSWL);
         break;
     case EscActionCodes::DECDWL_DoubleWidthLine:
-        _dispatch->SetLineRendition(LineRendition::DoubleWidth);
+        success = _dispatch->SetLineRendition(LineRendition::DoubleWidth);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDWL);
         break;
     case EscActionCodes::DECALN_ScreenAlignmentPattern:

@@ -118,9 +118,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTabColorChanged = std::bind(&ControlCore::_terminalTabColorChanged, this, std::placeholders::_1);
         _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
 
-        auto pfnBackgroundColorChanged = std::bind(&ControlCore::_terminalBackgroundColorChanged, this, std::placeholders::_1);
-        _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
-
         auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
@@ -149,6 +146,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Now create the renderer and initialize the render thread.
             const auto& renderSettings = _terminal->GetRenderSettings();
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
+
+            _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
 
             _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
                 if (auto strongThis{ weakThis.get() })
@@ -1176,21 +1175,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Called for the Terminal's BackgroundColorChanged callback. This will
-    //   re-raise a new winrt TypedEvent that can be listened to.
-    // - The listeners to this event will re-query the control for the current
-    //   value of BackgroundColor().
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ControlCore::_terminalBackgroundColorChanged(const COLORREF /*color*/)
-    {
-        // Raise a BackgroundColorChanged event
-        _BackgroundColorChangedHandlers(*this, nullptr);
-    }
-
-    // Method Description:
     // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   Additionally fires a ScrollPositionChanged event for anyone who's
@@ -1382,6 +1366,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _SwapChainChangedHandlers(*this, nullptr);
     }
 
+    void ControlCore::_rendererBackgroundColorChanged()
+    {
+        _BackgroundColorChangedHandlers(*this, nullptr);
+    }
+
     void ControlCore::BlinkAttributeTick()
     {
         auto lock = _terminal->LockForWriting();
@@ -1547,7 +1536,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
         {
-            _terminal->EraseInDisplay(::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType::Scrollback);
+            _terminal->EraseScrollback();
         }
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
@@ -1706,8 +1695,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
-        _renderer->TriggerRedrawAll();
-        _BackgroundColorChangedHandlers(*this, nullptr);
+        _renderer->TriggerRedrawAll(true);
     }
 
     bool ControlCore::HasUnfocusedAppearance() const

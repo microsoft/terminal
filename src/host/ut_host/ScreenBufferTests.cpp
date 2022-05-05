@@ -2707,8 +2707,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     stateMachine.ProcessString(L"\x1b[2D");
     stateMachine.ProcessString(L"\x1b[P");
 
-    COORD expectedCursor{ 1, 1 }; // We're expecting y=1, because the 2J above
-        // should have moved the viewport down a line.
+    COORD expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };

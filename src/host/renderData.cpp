@@ -44,7 +44,7 @@ COORD RenderData::GetTextBufferEndPosition() const noexcept
 //   the appropriate windowing.
 // Return Value:
 // - Text buffer with cell information for display
-const TextBuffer& RenderData::GetTextBuffer() noexcept
+const TextBuffer& RenderData::GetTextBuffer() const noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer();
@@ -54,7 +54,7 @@ const TextBuffer& RenderData::GetTextBuffer() noexcept
 // - Describes which font should be used for presenting text
 // Return Value:
 // - Font description structure
-const FontInfo& RenderData::GetFontInfo() noexcept
+const FontInfo& RenderData::GetFontInfo() const noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetCurrentFont();

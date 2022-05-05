@@ -559,6 +559,13 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
             {
                 return profile;
             }
+            else
+            {
+                // GH#11114 - Return NOTHING if they asked for a profile index
+                // outside the range of available profiles.
+                // Really, the caller should check this beforehand
+                return nullptr;
+            }
         }
 
         if (const auto commandLine = newTerminalArgs.Commandline(); !commandLine.empty())

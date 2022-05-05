@@ -4,7 +4,6 @@
 #include <precomp.h>
 
 #include "adaptDispatch.hpp"
-#include "conGetSet.hpp"
 #include "../../types/inc/utils.hpp"
 
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
@@ -75,7 +74,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 // - True.
 bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
-    auto attr = _pConApi->GetTextBuffer().GetCurrentAttributes();
+    auto attr = _api.GetTextBuffer().GetCurrentAttributes();
 
     // Run through the graphics options and apply them
     for (size_t i = 0; i < options.size(); i++)
@@ -255,7 +254,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
             break;
         }
     }
-    _pConApi->SetTextAttributes(attr);
+    _api.SetTextAttributes(attr);
 
     return true;
 }
@@ -270,7 +269,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 {
-    const auto currentAttributes = _pConApi->GetTextBuffer().GetCurrentAttributes();
+    const auto currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
     _sgrStack.Push(currentAttributes, options);
     return true;
 }
@@ -284,7 +283,7 @@ bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::PopGraphicsRendition()
 {
-    const auto currentAttributes = _pConApi->GetTextBuffer().GetCurrentAttributes();
-    _pConApi->SetTextAttributes(_sgrStack.Pop(currentAttributes));
+    const auto currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
+    _api.SetTextAttributes(_sgrStack.Pop(currentAttributes));
     return true;
 }
