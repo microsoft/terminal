@@ -141,7 +141,7 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
                 newBrush.Opacity(acrylic.Opacity());
                 // Allow acrylic opacity, but it's gotta be HostBackdrop acrylic.
                 newBrush.TintOpacity(acrylic.TintOpacity());
-                acrylic.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
+                newBrush.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
                 return newBrush;
             }
             else if (auto solidColor = terminalBackground.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
