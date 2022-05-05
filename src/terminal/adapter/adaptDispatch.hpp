@@ -198,6 +198,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const VTInt width);
 
+        StringHandler _RestoreColorTable();
+
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
 
