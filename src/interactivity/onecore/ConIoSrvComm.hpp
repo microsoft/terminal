@@ -19,7 +19,7 @@ Author(s):
 #include "ConIoSrv.h"
 
 #include "BgfxEngine.hpp"
-#include "../../renderer/wddmcon/wddmconrenderer.hpp"
+#include "../../renderer/wddmcon/WddmConRenderer.hpp"
 
 #pragma hdrstop
 
@@ -28,7 +28,7 @@ namespace Microsoft::Console::Interactivity::OneCore
     class ConIoSrvComm final
     {
     public:
-        ConIoSrvComm();
+        ConIoSrvComm() noexcept;
         ~ConIoSrvComm();
 
         static ConIoSrvComm* GetConIoSrvComm();
@@ -38,25 +38,27 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         [[nodiscard]] NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
         [[nodiscard]] NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
-        [[nodiscard]] NTSTATUS RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
+        [[nodiscard]] NTSTATUS RequestSetCursor(_In_ const CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
         [[nodiscard]] NTSTATUS RequestUpdateDisplay(_In_ SHORT RowIndex) const;
 
-        [[nodiscard]] USHORT GetDisplayMode() const;
+        [[nodiscard]] USHORT GetDisplayMode() const noexcept;
 
-        PVOID GetSharedViewBase() const;
+        PVOID GetSharedViewBase() const noexcept;
 
         VOID CleanupForHeadless(const NTSTATUS status);
 
         [[nodiscard]] NTSTATUS InitializeBgfx();
         [[nodiscard]] NTSTATUS InitializeWddmCon();
 
-        Microsoft::Console::Render::WddmConEngine* pWddmConEngine;
+        std::unique_ptr<Render::WddmConEngine> pWddmConEngine;
 
     private:
         [[nodiscard]] NTSTATUS EnsureConnection();
         [[nodiscard]] NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const;
 
-        VOID HandleFocusEvent(PCIS_EVENT const FocusEvent);
+        VOID HandleFocusEvent(const CIS_EVENT* const FocusEvent);
+
+        std::unique_ptr<Render::BgfxEngine> _bgfxEngine;
 
         HANDLE _inputPipeThreadHandle;
 

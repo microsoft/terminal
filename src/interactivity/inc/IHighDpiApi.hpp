@@ -22,14 +22,6 @@ namespace Microsoft::Console::Interactivity
         virtual BOOL SetProcessDpiAwarenessContext() = 0;
         [[nodiscard]] virtual HRESULT SetProcessPerMonitorDpiAwareness() = 0;
 
-        virtual ~IHighDpiApi() = 0;
-
-    protected:
-        IHighDpiApi() {}
-
-        IHighDpiApi(const IHighDpiApi&) = delete;
-        IHighDpiApi& operator=(const IHighDpiApi&) = delete;
+        virtual ~IHighDpiApi() = default;
     };
-
-    inline IHighDpiApi::~IHighDpiApi() {}
 }

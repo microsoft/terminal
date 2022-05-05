@@ -20,11 +20,11 @@ namespace Microsoft::Console::Interactivity
     class IConsoleInputThread
     {
     public:
-        virtual ~IConsoleInputThread() = 0;
+        virtual ~IConsoleInputThread() = default;
         virtual HANDLE Start() = 0;
 
-        HANDLE GetHandle() { return _hThread; }
-        DWORD GetThreadId() { return _dwThreadId; }
+        HANDLE GetHandle() noexcept { return _hThread; }
+        DWORD GetThreadId() noexcept { return _dwThreadId; }
 
     protected:
         // Prevent accidental copies.
@@ -32,7 +32,7 @@ namespace Microsoft::Console::Interactivity
         IConsoleInputThread& operator=(const IConsoleInputThread&) = delete;
 
         // .ctor
-        IConsoleInputThread() :
+        IConsoleInputThread() noexcept :
             _hThread(nullptr),
             _dwThreadId(gsl::narrow_cast<DWORD>(-1)) {}
 
@@ -40,6 +40,4 @@ namespace Microsoft::Console::Interactivity
         HANDLE _hThread;
         DWORD _dwThreadId;
     };
-
-    inline IConsoleInputThread::~IConsoleInputThread() {}
 }

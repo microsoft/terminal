@@ -1064,6 +1064,7 @@ ico
 IComponent
 ICONERROR
 Iconified
+iconify
 Iconify
 ICONINFORMATION
 IConsole
@@ -2748,8 +2749,8 @@ windowsapp
 windowsdeveloper
 windowsinternalstring
 WINDOWSIZE
-windowsx
 windowsterminal
+windowsx
 WINDOWTEXT
 windowtheme
 WINDOWTITLE
@@ -2887,12 +2888,12 @@ XTest
 XTPOPSGR
 XTPUSHSGR
 xtr
+XTWINOPS
 xunit
 xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
-XTWINOPS
 Xzn
 yact
 YAML

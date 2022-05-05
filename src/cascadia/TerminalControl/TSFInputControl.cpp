@@ -37,8 +37,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // InputPane is manually shown inside of TermControl.
         _editContext.InputPaneDisplayPolicy(CoreTextInputPaneDisplayPolicy::Manual);
 
-        // set the input scope to Text because this control is for any text.
-        _editContext.InputScope(CoreTextInputScope::Text);
+        // Set the input scope to AlphanumericHalfWidth in order to facilitate those CJK input methods to open in English mode by default.
+        // AlphanumericHalfWidth scope doesn't prevent input method from switching to composition mode, it accepts any character too.
+        // Besides, Text scope turns on typing intelligence, but that doesn't work in this project.
+        _editContext.InputScope(CoreTextInputScope::AlphanumericHalfWidth);
 
         _textRequestedRevoker = _editContext.TextRequested(winrt::auto_revoke, { this, &TSFInputControl::_textRequestedHandler });
 

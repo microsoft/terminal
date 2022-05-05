@@ -44,7 +44,7 @@
     <ClInclude Include="..\adaptDispatch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\conGetSet.hpp">
+    <ClInclude Include="..\ITerminalApi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\precomp.h">

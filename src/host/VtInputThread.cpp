@@ -8,7 +8,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "input.h"
 #include "../terminal/parser/InputStateMachineEngine.hpp"
-#include "outputStream.hpp" // For ConhostInternalGetSet
 #include "../terminal/adapter/InteractDispatch.hpp"
 #include "../types/inc/convert.hpp"
 #include "server.h"
@@ -36,11 +35,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    auto pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
-
-    auto dispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
+    auto dispatch = std::make_unique<InteractDispatch>();
 
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
 
