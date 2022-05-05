@@ -38,6 +38,7 @@ hostnames
 hyperlink
 hyperlinking
 hyperlinks
+iconify
 img
 inlined
 It'd
