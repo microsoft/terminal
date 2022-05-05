@@ -26,8 +26,8 @@ public:
 #pragma region BaseData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     COORD GetTextBufferEndPosition() const noexcept override;
-    const TextBuffer& GetTextBuffer() noexcept override;
-    const FontInfo& GetFontInfo() noexcept override;
+    const TextBuffer& GetTextBuffer() const noexcept override;
+    const FontInfo& GetFontInfo() const noexcept override;
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
 

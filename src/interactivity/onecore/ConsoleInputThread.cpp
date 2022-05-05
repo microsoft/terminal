@@ -18,24 +18,23 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
-    Globals& globals = ServiceLocator::LocateGlobals();
-    ConIoSrvComm* const Server = ConIoSrvComm::GetConIoSrvComm();
+    auto& globals = ServiceLocator::LocateGlobals();
+    const auto Server = ConIoSrvComm::GetConIoSrvComm();
 
-    NTSTATUS Status = Server->Connect();
+    auto Status = Server->Connect();
 
     if (NT_SUCCESS(Status))
     {
-        USHORT DisplayMode = Server->GetDisplayMode();
+        const auto DisplayMode = Server->GetDisplayMode();
 
         if (DisplayMode != CIS_DISPLAY_MODE_NONE)
         {
             // Create and set the console window.
-            ConsoleWindow* const wnd = new (std::nothrow) ConsoleWindow();
-            Status = NT_TESTNULL(wnd);
+            static ConsoleWindow wnd;
 
             if (NT_SUCCESS(Status))
             {
-                LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(wnd));
+                LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(&wnd));
 
                 // The console's renderer should be created before we get here.
                 FAIL_FAST_IF_NULL(globals.pRender);
@@ -45,9 +44,10 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                 case CIS_DISPLAY_MODE_BGFX:
                     Status = Server->InitializeBgfx();
                     break;
-
                 case CIS_DISPLAY_MODE_DIRECTX:
                     Status = Server->InitializeWddmCon();
+                    break;
+                default:
                     break;
                 }
 
@@ -106,17 +106,16 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 
 // Routine Description:
 // - Starts the OneCore-specific console input thread.
-HANDLE ConsoleInputThread::Start()
+HANDLE ConsoleInputThread::Start() noexcept
 {
-    HANDLE hThread = nullptr;
-    DWORD dwThreadId = (DWORD)-1;
+    auto dwThreadId = gsl::narrow_cast<DWORD>(-1);
 
-    hThread = CreateThread(nullptr,
-                           0,
-                           ConsoleInputThreadProcOneCore,
-                           nullptr,
-                           0,
-                           &dwThreadId);
+    const auto hThread = CreateThread(nullptr,
+                                      0,
+                                      ConsoleInputThreadProcOneCore,
+                                      nullptr,
+                                      0,
+                                      &dwThreadId);
     if (hThread)
     {
         _hThread = hThread;

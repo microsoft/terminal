@@ -29,8 +29,7 @@ namespace Microsoft::Console::Render
     class BgfxEngine final : public RenderEngineBase
     {
     public:
-        BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight);
-        ~BgfxEngine() override = default;
+        BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight) noexcept;
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -76,11 +75,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
-        ULONG_PTR _sharedViewBase;
+        std::byte* _sharedViewBase;
         SIZE_T _runLength;
 
-        LONG _displayHeight;
-        LONG _displayWidth;
+        SIZE_T _displayHeight;
+        SIZE_T _displayWidth;
         til::rect _dirtyArea;
 
         COORD _fontSize;

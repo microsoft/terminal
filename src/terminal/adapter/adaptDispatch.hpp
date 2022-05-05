@@ -15,7 +15,7 @@ Author(s):
 #pragma once
 
 #include "termDispatch.hpp"
-#include "conGetSet.hpp"
+#include "ITerminalApi.hpp"
 #include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
 #include "../input/terminalInput.hpp"
@@ -29,7 +29,7 @@ namespace Microsoft::Console::VirtualTerminal
         using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
     public:
-        AdaptDispatch(std::unique_ptr<ConGetSet> pConApi, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
+        AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput);
 
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
@@ -109,11 +109,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
         bool EnableFocusEventMode(const bool enabled) override; // ?1004
         bool EnableAlternateScroll(const bool enabled) override; // ?1007
-        bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override; // ?2004
+        bool EnableXtermBracketedPasteMode(const bool enabled) override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
-        bool SetClipboard(const std::wstring_view content) noexcept override; // OSCSetClipboard
+        bool SetClipboard(const std::wstring_view content) override; // OSCSetClipboard
 
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCColorTable
@@ -127,7 +127,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
 
-        bool DoConEmuAction(const std::wstring_view string) noexcept override;
+        bool DoConEmuAction(const std::wstring_view string) override;
 
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
@@ -184,7 +184,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _OperatingStatus() const;
         void _CursorPositionReport();
 
-        void _WriteResponse(const std::wstring_view reply) const;
         bool _GetParserMode(const StateMachine::Mode mode) const;
         void _SetParserMode(const StateMachine::Mode mode, const bool enable);
         bool _SetInputMode(const TerminalInput::Mode mode, const bool enable);
@@ -202,7 +201,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
-        std::unique_ptr<ConGetSet> _pConApi;
+        ITerminalApi& _api;
         Renderer& _renderer;
         RenderSettings& _renderSettings;
         TerminalInput& _terminalInput;

@@ -10,7 +10,6 @@
 #pragma warning(disable : 26455)
 
 #include "InteractDispatch.hpp"
-#include "conGetSet.hpp"
 #include "../../host/conddkrefs.h"
 #include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
@@ -21,11 +20,9 @@ using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-// takes ownership of pConApi
-InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
-    _pConApi(std::move(pConApi))
+InteractDispatch::InteractDispatch() :
+    _api{ ServiceLocator::LocateGlobals().getConsoleInformation() }
 {
-    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 // Method Description:
@@ -40,8 +37,8 @@ InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
 // - True.
 bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
-    size_t written = 0;
-    _pConApi->WriteInput(inputEvents, written);
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveInputBuffer()->Write(inputEvents);
     return true;
 }
 
@@ -71,7 +68,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
     {
-        const auto codepage = _pConApi->GetConsoleOutputCP();
+        const auto codepage = _api.GetConsoleOutputCP();
         std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
         for (const auto& wch : string)
@@ -110,18 +107,18 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::DeIconifyWindow:
-        _pConApi->ShowWindow(true);
+        _api.ShowWindow(true);
         return true;
     case DispatchTypes::WindowManipulationType::IconifyWindow:
-        _pConApi->ShowWindow(false);
+        _api.ShowWindow(false);
         return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _pConApi->GetTextBuffer().TriggerRedrawAll();
+        _api.GetTextBuffer().TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
-        // the ConGetSet interface, that specifically handles a conpty resize.
-        if (_pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
+        // ConhostInternalGetSet, that specifically handles a conpty resize.
+        if (_api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
         {
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
@@ -143,7 +140,7 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
     // First retrieve some information about the buffer
-    const auto viewport = _pConApi->GetViewport();
+    const auto viewport = _api.GetViewport();
 
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
@@ -158,7 +155,7 @@ bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(coordCursorShort));
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    auto& cursor = _api.GetTextBuffer().GetCursor();
     cursor.SetPosition(coordCursorShort);
     cursor.SetHasMoved(true);
     return true;
@@ -172,7 +169,7 @@ bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 // - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
 bool InteractDispatch::IsVtInputEnabled() const
 {
-    return _pConApi->IsVtInputEnabled();
+    return _api.IsVtInputEnabled();
 }
 
 // Method Description:
