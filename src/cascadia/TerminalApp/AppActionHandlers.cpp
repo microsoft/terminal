@@ -189,6 +189,18 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = realArgs.TerminalArgs().ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
             _SplitPane(realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
@@ -305,6 +317,18 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = newTerminalArgs.ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
             LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
