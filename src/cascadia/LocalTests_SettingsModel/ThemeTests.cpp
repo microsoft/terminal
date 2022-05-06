@@ -39,10 +39,10 @@ namespace SettingsModelLocalTests
         TEST_METHOD(ParseSimpleTheme);
         TEST_METHOD(ParseThemeWithNullThemeColor);
 
-        // static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
-        // {
-        //     return Core::Color{ r, g, b, 255 };
-        // }
+        static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
+        {
+            return Core::Color{ r, g, b, 255 };
+        }
     };
 
     void ThemeTests::ParseSimpleTheme()
@@ -64,25 +64,11 @@ namespace SettingsModelLocalTests
         const auto schemeObject = VerifyParseSucceeded(orangeTheme);
         auto theme = Theme::FromJson(schemeObject);
         VERIFY_ARE_EQUAL(L"orange", theme->Name());
-        // VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 255), til::color{ scheme->Foreground() });
-        // VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 255), til::color{ scheme->Background() });
-        // VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 255), til::color{ scheme->SelectionBackground() });
-        // VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), til::color{ scheme->CursorColor() });
 
-        // std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
-        // const auto campbellSpan = gsl::make_span(expectedCampbellTable);
-        // Utils::InitializeColorTable(campbellSpan);
-
-        // for (size_t i = 0; i < expectedCampbellTable.size(); i++)
-        // {
-        //     const til::color expected{ expectedCampbellTable.at(i) };
-        //     const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
-        //     VERIFY_ARE_EQUAL(expected, actual);
-        // }
-
-        // Log::Comment(L"Roundtrip Test for Color Scheme");
-        // auto outJson{ scheme->ToJson() };
-        // VERIFY_ARE_EQUAL(schemeObject, outJson);
+        VERIFY_IS_NOT_NULL(theme->TabRow());
+        VERIFY_IS_NOT_NULL(theme->TabRow().Background());
+        VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
+        VERIFY_ARE_EQUAL(rgb(0xff, 0x88, 0x00), theme->TabRow().Background().Color());
     }
 
     // void ColorSchemeTests::LayerColorSchemesOnArray()
@@ -199,29 +185,28 @@ namespace SettingsModelLocalTests
                         "useMica": true
                     }
                 },
+                {
+                    "name": "backgroundNull",
+                    "tabRow":
+                    {
+                        "background": null
+                    },
+                    "window":
+                    {
+                        "applicationTheme": "light",
+                        "useMica": true
+                    }
+                },
+                {
+                    "name": "backgroundOmittedEntirely",
+                    "window":
+                    {
+                        "applicationTheme": "light",
+                        "useMica": true
+                    }
+                }
             ]
         })json" };
-
-        // {
-        //     "name": "backgroundNull",
-        //     "tabRow":
-        //     {
-        //         "background": null
-        //     },
-        //     "window":
-        //     {
-        //         "applicationTheme": "light",
-        //         "useMica": true
-        //     }
-        // },
-        // {
-        //     "name": "backgroundOmittedEntirely",
-        //     "window":
-        //     {
-        //         "applicationTheme": "light",
-        //         "useMica": true
-        //     }
-        // }
 
         try
         {
@@ -231,14 +216,19 @@ namespace SettingsModelLocalTests
             {
                 const auto& backgroundEmpty{ themes.Lookup(L"backgroundEmpty") };
                 VERIFY_ARE_EQUAL(L"backgroundEmpty", backgroundEmpty.Name());
+                VERIFY_IS_NOT_NULL(backgroundEmpty.TabRow());
+                VERIFY_IS_NULL(backgroundEmpty.TabRow().Background());
             }
             {
                 const auto& backgroundNull{ themes.Lookup(L"backgroundNull") };
                 VERIFY_ARE_EQUAL(L"backgroundNull", backgroundNull.Name());
+                VERIFY_IS_NOT_NULL(backgroundNull.TabRow());
+                VERIFY_IS_NULL(backgroundNull.TabRow().Background());
             }
             {
                 const auto& backgroundOmittedEntirely{ themes.Lookup(L"backgroundOmittedEntirely") };
                 VERIFY_ARE_EQUAL(L"backgroundOmittedEntirely", backgroundOmittedEntirely.Name());
+                VERIFY_IS_NULL(backgroundOmittedEntirely.TabRow());
             }
         }
         catch (const SettingsException& ex)
