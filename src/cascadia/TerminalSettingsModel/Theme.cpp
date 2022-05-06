@@ -65,6 +65,8 @@ static DWORD readDwmSubValue(const wil::unique_hkey& dwmRootKey, const wchar_t* 
 
 static til::color _getAccentColorForTitlebar()
 {
+    // The color used for the "Use Accent color in the title bar" in DWM is
+    // stored in HKCU\Software\Microsoft\Windows\DWM\AccentColor.
     return til::color{ static_cast<COLORREF>(readDwmSubValue(openDwmRegKey(), RegKeyAccentColor)) };
 }
 
@@ -117,7 +119,7 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
     case ThemeColorType::Color:
     {
         const auto solidBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
-        solidBrush.Color(forTitlebar? Color().with_alpha(255) : Color());
+        solidBrush.Color(forTitlebar ? Color().with_alpha(255) : Color());
 
         return solidBrush;
     }
@@ -138,9 +140,19 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
                 newBrush.TintColor(acrylic.TintColor());
                 newBrush.FallbackColor(acrylic.FallbackColor());
                 newBrush.TintLuminosityOpacity(acrylic.TintLuminosityOpacity());
-                newBrush.Opacity(acrylic.Opacity());
+
                 // Allow acrylic opacity, but it's gotta be HostBackdrop acrylic.
-                newBrush.TintOpacity(acrylic.TintOpacity());
+                //
+                // For now, just always use 50% opacity for this. If we do ever
+                // figure out how to get rid of our titlebar under the XAML tab
+                // row (GH#10509), we can always get rid of the HostBackdrop
+                // thing, and all this copying, and just return the
+                // terminalBackground brush directly.
+                //
+                // Because we're wholesale copying the brush, we won't be able
+                // to adjust it's opacity with the mouse wheel. This seems like
+                // an acceptable tradeoff for now.
+                newBrush.TintOpacity(.5);
                 newBrush.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
                 return newBrush;
             }
@@ -148,7 +160,6 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
             {
                 winrt::Windows::UI::Xaml::Media::SolidColorBrush newBrush{};
                 newBrush.Color(til::color{ solidColor.Color() }.with_alpha(255));
-                newBrush.Opacity(1.0);
                 return newBrush;
             }
         }
