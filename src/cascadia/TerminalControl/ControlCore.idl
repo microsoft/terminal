@@ -65,6 +65,7 @@ namespace Microsoft.Terminal.Control
                            Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void SendInput(String text);
         void PasteText(String text);
+        void SelectAll();
         void ClearBuffer(ClearBufferType clearType);
 
         void SetHoveredCell(Microsoft.Terminal.Core.Point terminalPosition);
