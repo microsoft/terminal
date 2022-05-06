@@ -171,7 +171,12 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
 }
 
 #define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...) \
-    result->name(JsonUtils::GetValueForKey<type>(json, jsonKey));
+    {                                                      \
+        std::optional<type> _val;                          \
+        _val = JsonUtils::GetValueForKey<std::optional<type>>(json, jsonKey);   \
+        if (_val)                                          \
+            result->name(*_val);                            \
+    }
 
 #define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, val.name());
