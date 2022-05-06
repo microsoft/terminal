@@ -4023,6 +4023,7 @@ namespace winrt::TerminalApp::implementation
 
         til::color bgColor = backgroundSolidBrush.Color();
 
+        bool setBG = false;
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const til::color backgroundColor = backgroundSolidBrush.Color();
@@ -4034,27 +4035,35 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
             bgColor = backgroundColor;
-        }
-        else if (theme.TabRow() && theme.TabRow().Background())
-        {
-            const auto tabRowBg = theme.TabRow().Background();
-            const auto terminalBrush = [this]() -> Media::Brush {
-                if (const auto& control{ _GetActiveControl() })
-                {
-                    return control.BackgroundBrush();
-                }
-                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                {
-                    return settingsTab.Content().try_as<Controls::Page>().Background();
-                }
-                return nullptr;
-            }();
 
-            const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
-            bgColor = ThemeColor::ColorFromBrush(themeBrush);
-            TitlebarBrush(themeBrush);
+            setBG = true;
         }
-        else
+        else if (theme.TabRow())
+        {
+            if (const auto tabRowBg{ _activated ? theme.TabRow().Background() :
+                                                  theme.TabRow().UnfocusedBackground() })
+            {
+                const auto terminalBrush = [this]() -> Media::Brush {
+                    if (const auto& control{ _GetActiveControl() })
+                    {
+                        return control.BackgroundBrush();
+                    }
+                    else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                    {
+                        return settingsTab.Content().try_as<Controls::Page>().Background();
+                    }
+                    return nullptr;
+                }();
+
+                const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
+                bgColor = ThemeColor::ColorFromBrush(themeBrush);
+                TitlebarBrush(themeBrush);
+
+                setBG = true;
+            }
+        }
+
+        if (!setBG)
         {
             // Nothing was set in the theme - fall back to our original `TabViewBackground` color.
             TitlebarBrush(backgroundSolidBrush);
