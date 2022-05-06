@@ -300,7 +300,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ProfileViewModel::VtPassthroughAvailable() const noexcept
     {
-        return Feature_VtPassthroughMode::IsEnabled();
+        return Feature_VtPassthroughMode::IsEnabled() && Feature_VtPassthroughModeSettingInUI::IsEnabled();
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()
