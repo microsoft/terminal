@@ -419,9 +419,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _PreNavigateHelper();
 
-        // Add an event handler for when the user wants to delete a profile.
-        profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
-
         _SetupProfileEventHandling(state);
 
         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
@@ -566,6 +563,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         });
+
+        // Add an event handler for when the user wants to delete a profile.
+        profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
+
         return profileNavItem;
     }
 
