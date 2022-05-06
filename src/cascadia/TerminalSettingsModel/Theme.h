@@ -90,6 +90,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void LayerJson(const Json::Value& json);
         Json::Value ToJson() const;
 
+        winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
+
         WINRT_PROPERTY(winrt::hstring, Name);
 
         MTSM_THEME_SETTINGS(THEME_SETTINGS_INITIALIZE)

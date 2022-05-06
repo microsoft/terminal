@@ -49,5 +49,8 @@ namespace Microsoft.Terminal.Settings.Model
         // tabRow.* Namespace
         TabRowTheme TabRow { get; };
 
+        // A helper for retreiving the RequestedTheme out of the window property
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+
     }
 }
