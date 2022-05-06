@@ -170,12 +170,12 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
     return nullptr;
 }
 
-#define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...) \
-    {                                                      \
-        std::optional<type> _val;                          \
-        _val = JsonUtils::GetValueForKey<std::optional<type>>(json, jsonKey);   \
-        if (_val)                                          \
-            result->name(*_val);                            \
+#define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...)                    \
+    {                                                                         \
+        std::optional<type> _val;                                             \
+        _val = JsonUtils::GetValueForKey<std::optional<type>>(json, jsonKey); \
+        if (_val)                                                             \
+            result->name(*_val);                                              \
     }
 
 #define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
@@ -187,6 +187,8 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
     {                                                                                          \
         nameSpace::name FromJson(const Json::Value& json)                                      \
         {                                                                                      \
+            if (json == Json::Value::null)                                                     \
+                return nullptr;                                                                \
             auto result = winrt::make_self<nameSpace::implementation::name>();                 \
             macro(THEME_SETTINGS_FROM_JSON);                                                   \
             return *result;                                                                    \
@@ -284,7 +286,13 @@ void Theme::LayerJson(const Json::Value& json)
     // This will use each of the ConversionTrait's from above to quickly parse the sub-objects
 
 #define THEME_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    {                                                                         \
+        std::optional<type> _val;                                             \
+        _val = JsonUtils::GetValueForKey<std::optional<type>>(json, jsonKey); \
+        if (_val)                                                             \
+            _##name = *_val;                                              \
+        else _##name=nullptr; \
+    }
 
     MTSM_THEME_SETTINGS(THEME_SETTINGS_LAYER_JSON)
 #undef THEME_SETTINGS_LAYER_JSON
@@ -316,4 +324,15 @@ Json::Value Theme::ToJson() const
 winrt::hstring Theme::ToString()
 {
     return Name();
+}
+// Method Description:
+// - A helper for retreiving the RequestedTheme out of the window property.
+//   There's a bunch of places throughout the app that all ask for the
+//   RequestedTheme, this saves some hassle. If there wasn't a `window` defined
+//   for this theme, this'll quickly just return `system`, to use the OS theme.
+// Return Value:
+// - the set applicationTheme for this Theme, otherwise the system theme.
+winrt::Windows::UI::Xaml::ElementTheme Theme::RequestedTheme() const noexcept
+{
+    return _Window ? _Window.RequestedTheme() : winrt::Windows::UI::Xaml::ElementTheme::Default;
 }

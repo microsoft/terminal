@@ -3442,7 +3442,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
     {
         auto theme{ _settings.GlobalSettings().CurrentTheme() };
-        auto requestedTheme{ theme.Window().RequestedTheme() };
+        auto requestedTheme{ theme.RequestedTheme() };
         while (element)
         {
             element.RequestedTheme(requestedTheme);
@@ -3957,7 +3957,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto theme = _settings.GlobalSettings().CurrentTheme();
-        auto requestedTheme{ theme.Window().RequestedTheme() };
+        auto requestedTheme{ theme.RequestedTheme() };
 
         const auto res = Application::Current().Resources();
 

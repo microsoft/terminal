@@ -37,6 +37,9 @@ namespace SettingsModelLocalTests
         END_TEST_CLASS()
 
         TEST_METHOD(ParseSimpleTheme);
+        TEST_METHOD(ParseEmptyTheme);
+        TEST_METHOD(ParseNoWindowTheme);
+        TEST_METHOD(ParseNullWindowTheme);
         TEST_METHOD(ParseThemeWithNullThemeColor);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
@@ -69,10 +72,82 @@ namespace SettingsModelLocalTests
         VERIFY_IS_NOT_NULL(theme->TabRow().Background());
         VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
         VERIFY_ARE_EQUAL(rgb(0xff, 0x88, 0x00), theme->TabRow().Background().Color());
+
+        VERIFY_IS_NOT_NULL(theme->Window());
+        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Light, theme->Window().RequestedTheme());
+        VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
+    }
+
+    void ThemeTests::ParseEmptyTheme()
+    {
+        Log::Comment(L"This theme doesn't have any elements defined.");
+        static constexpr std::string_view emptyTheme{ R"({
+            "name": "empty"
+        })" };
+
+        const auto schemeObject = VerifyParseSucceeded(emptyTheme);
+        auto theme = Theme::FromJson(schemeObject);
+        VERIFY_ARE_EQUAL(L"empty", theme->Name());
+        VERIFY_IS_NULL(theme->TabRow());
+        VERIFY_IS_NULL(theme->Window());
+        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Default, theme->RequestedTheme());
+    }
+
+    void ThemeTests::ParseNoWindowTheme()
+    {
+        Log::Comment(L"This theme doesn't have a window defined.");
+        static constexpr std::string_view emptyTheme{ R"({
+            "name": "noWindow",
+            "tabRow":
+            {
+                "background": "#FF112233",
+                "unfocusedBackground": "#FF884400"
+            },
+        })" };
+
+        const auto schemeObject = VerifyParseSucceeded(emptyTheme);
+        auto theme = Theme::FromJson(schemeObject);
+        VERIFY_ARE_EQUAL(L"noWindow", theme->Name());
+
+        VERIFY_IS_NOT_NULL(theme->TabRow());
+        VERIFY_IS_NOT_NULL(theme->TabRow().Background());
+        VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
+        VERIFY_ARE_EQUAL(rgb(0x11, 0x22, 0x33), theme->TabRow().Background().Color());
+
+        VERIFY_IS_NULL(theme->Window());
+        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Default, theme->RequestedTheme());
+    }
+
+    void ThemeTests::ParseNullWindowTheme()
+    {
+        Log::Comment(L"This theme doesn't have a window defined.");
+        static constexpr std::string_view emptyTheme{ R"({
+            "name": "nullWindow",
+            "tabRow":
+            {
+                "background": "#FF112233",
+                "unfocusedBackground": "#FF884400"
+            },
+            "window": null
+        })" };
+
+        const auto schemeObject = VerifyParseSucceeded(emptyTheme);
+        auto theme = Theme::FromJson(schemeObject);
+        VERIFY_ARE_EQUAL(L"nullWindow", theme->Name());
+
+        VERIFY_IS_NOT_NULL(theme->TabRow());
+        VERIFY_IS_NOT_NULL(theme->TabRow().Background());
+        VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
+        VERIFY_ARE_EQUAL(rgb(0x11, 0x22, 0x33), theme->TabRow().Background().Color());
+
+        VERIFY_IS_NULL(theme->Window());
+        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Default, theme->RequestedTheme());
     }
 
     void ThemeTests::ParseThemeWithNullThemeColor()
     {
+        Log::Comment(L"These themes are all missing a tabRow background. Make sure we don't somehow default-construct one for them");
+
         static constexpr std::string_view settingsString{ R"json({
             "themes": [
                 {
