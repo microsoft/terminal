@@ -239,11 +239,13 @@ public:
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
-    void UpdateSelection(SelectionDirection direction, SelectionExpansion mode);
+    void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, std::optional<bool> moveSelectionEnd = std::nullopt);
     void SelectAll();
+    bool IsInMarkMode() const;
+    void EnterMarkMode();
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
-    static UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey);
+    UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -313,6 +315,7 @@ private:
     bool _blockSelection;
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
+    bool _markMode;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;
