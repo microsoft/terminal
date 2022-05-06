@@ -55,8 +55,8 @@
       ]
     },
     "BellSound": {
-      "default": "#",
-      "description": "Controls the sound the Terminal plays when the application emits a BEL character. If the path is invalid no sound will be played. This property also accepts an array of sounds and the Terminal will pick one at random.",
+      "default": "",
+      "description": "Sets the file location of the sound played when the application emits a BEL character. If the path is invalid no sound will be played. This property also accepts an array of sounds and the terminal will pick one at random.",
       "pattern": "",
       "type": "string",
     }, 
