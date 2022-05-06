@@ -158,6 +158,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
+        void _validateThemeExists();
 
         // user settings
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();

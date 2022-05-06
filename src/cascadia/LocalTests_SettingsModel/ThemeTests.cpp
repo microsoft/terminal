@@ -41,6 +41,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(ParseNoWindowTheme);
         TEST_METHOD(ParseNullWindowTheme);
         TEST_METHOD(ParseThemeWithNullThemeColor);
+        TEST_METHOD(InvalidCurrentTheme);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -206,6 +207,60 @@ namespace SettingsModelLocalTests
                 VERIFY_ARE_EQUAL(L"backgroundOmittedEntirely", backgroundOmittedEntirely.Name());
                 VERIFY_IS_NULL(backgroundOmittedEntirely.TabRow());
             }
+        }
+        catch (const SettingsException& ex)
+        {
+            auto loadError = ex.Error();
+            loadError;
+            DebugBreak();
+            throw ex;
+        }
+        catch (const SettingsTypedDeserializationException& e)
+        {
+            auto deserializationErrorMessage = til::u8u16(e.what());
+            Log::Comment(NoThrowString().Format(deserializationErrorMessage.c_str()));
+            DebugBreak();
+            throw e;
+        }
+    }
+
+    void ThemeTests::InvalidCurrentTheme()
+    {
+        Log::Comment(L"Make sure specifying an invalid theme falls back to a sensible default.");
+
+        static constexpr std::string_view settingsString{ R"json({
+            "theme": "foo",
+            "themes": [
+                {
+                    "name": "bar",
+                    "tabRow": {},
+                    "window":
+                    {
+                        "applicationTheme": "light",
+                        "useMica": true
+                    }
+                }
+            ]
+        })json" };
+
+        try
+        {
+            const auto settings{ winrt::make_self<CascadiaSettings>(settingsString, DefaultJson) };
+
+            VERIFY_ARE_EQUAL(1u, settings->Warnings().Size());
+            VERIFY_ARE_EQUAL(Settings::Model::SettingsLoadWarnings::UnknownTheme, settings->Warnings().GetAt(0));
+
+            const auto& themes{ settings->GlobalSettings().Themes() };
+            {
+                const auto& bar{ themes.Lookup(L"bar") };
+                VERIFY_ARE_EQUAL(L"bar", bar.Name());
+                VERIFY_IS_NOT_NULL(bar.TabRow());
+                VERIFY_IS_NULL(bar.TabRow().Background());
+            }
+
+            const auto currentTheme{ settings->GlobalSettings().CurrentTheme() };
+            VERIFY_IS_NOT_NULL(currentTheme);
+            VERIFY_ARE_EQUAL(L"system", currentTheme.Name());
         }
         catch (const SettingsException& ex)
         {
