@@ -60,14 +60,16 @@
       "pattern": "",
       "oneOf": [
       {
-        "type": "string",
-        "type": "null"
+        "type": [
+          "string",
+          "null"
+        ]
       },
       {
         "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "items": {
+          "type": "string"
+        }
         }
       ]
     }, 
