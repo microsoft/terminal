@@ -994,6 +994,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
+    void ControlCore::SelectAll()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->SelectAll();
+        _renderer->TriggerSelection();
+    }
+
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection.

@@ -1840,6 +1840,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.RequestPasteTextFromClipboard();
     }
 
+    void TermControl::SelectAll()
+    {
+        _core.SelectAll();
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())
