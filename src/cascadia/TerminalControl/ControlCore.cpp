@@ -392,15 +392,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            // check for "select all"
-            if (modifiers.IsCtrlPressed() && vkey == 'A')
-            {
-                auto lock = _terminal->LockForWriting();
-                _terminal->SelectAll();
-                _renderer->TriggerSelection();
-                return true;
-            }
-
             // try to update the selection
             if (const auto updateSlnParams{ ::Terminal::ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
             {
@@ -1001,6 +992,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                        winrt::to_hstring(rtfData),
                                                                        formats));
         return true;
+    }
+
+    void ControlCore::SelectAll()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->SelectAll();
+        _renderer->TriggerSelection();
     }
 
     // Method Description:
