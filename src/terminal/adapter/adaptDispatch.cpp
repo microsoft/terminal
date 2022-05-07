@@ -2280,9 +2280,40 @@ bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 // - bgIndex: The color table index to be used for the background.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem /*item*/, const VTInt /*fgIndex*/, const VTInt /*bgIndex*/)
+bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex)
 {
-    return false;
+    ColorAlias targetFgAlias;
+    ColorAlias targetBgAlias;
+    switch (item)
+    {
+    case DispatchTypes::ColorItem::NormalText:
+        targetFgAlias = ColorAlias::DefaultForeground;
+        targetBgAlias = ColorAlias::DefaultBackground;
+        break;
+    case DispatchTypes::ColorItem::WindowFrame:
+        targetFgAlias = ColorAlias::FrameForeground;
+        targetBgAlias = ColorAlias::FrameBackground;
+        break;
+    default:
+        return false;
+    }
+
+    if (fgIndex < TextColor::TABLE_SIZE)
+    {
+        _renderSettings.SetColorAliasIndex(targetFgAlias, fgIndex);
+    }
+    if (bgIndex < TextColor::TABLE_SIZE)
+    {
+        _renderSettings.SetColorAliasIndex(targetBgAlias, bgIndex);
+    }
+
+    // No need to force a redraw in pty mode.
+    const auto inPtyMode = _api.IsConsolePty();
+    if (!inPtyMode)
+    {
+        _renderer.TriggerRedrawAll(true);
+    }
+    return !inPtyMode;
 }
 
 //Routine Description:

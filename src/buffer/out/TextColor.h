@@ -49,6 +49,8 @@ enum class ColorAlias : size_t
 {
     DefaultForeground,
     DefaultBackground,
+    FrameForeground,
+    FrameBackground,
     ENUM_COUNT // must be the last element in the enum class
 };
 
