@@ -2271,6 +2271,20 @@ bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
     return SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 }
 
+// Method Description:
+// DECAC - Assigns the foreground and background color indexes that should be
+//   used for a given aspect of the user interface.
+// Arguments:
+// - item: The aspect of the interface that will have its colors altered.
+// - fgIndex: The color table index to be used for the foreground.
+// - bgIndex: The color table index to be used for the background.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem /*item*/, const VTInt /*fgIndex*/, const VTInt /*bgIndex*/)
+{
+    return false;
+}
+
 //Routine Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying
