@@ -102,6 +102,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
         WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
         WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
+        WINRT_CALLBACK(FindRequested, winrt::delegate<>);
         WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 

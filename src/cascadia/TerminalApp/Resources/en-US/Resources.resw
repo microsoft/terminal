@@ -709,6 +709,9 @@
   <data name="ExportSuccess" xml:space="preserve">
     <value>Successfully exported terminal content</value>
   </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Find</value>
+  </data>
   <data name="PlainText" xml:space="preserve">
     <value>Plain Text</value>
   </data>

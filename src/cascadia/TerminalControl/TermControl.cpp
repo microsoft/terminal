@@ -198,6 +198,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // Find if search box text edit currently is in focus
+    // Return Value:
+    // - true, if search box text edit is in focus
+    bool TermControl::SearchBoxEditInFocus() const
+    {
+        if (!_searchBox)
+        {
+            return false;
+        }
+
+        return _searchBox->TextBox().FocusState() == FocusState::Keyboard;
+    }
+
+    // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
     // Arguments:
