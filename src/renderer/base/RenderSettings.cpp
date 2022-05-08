@@ -20,10 +20,14 @@ RenderSettings::RenderSettings() noexcept
 
     SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_FOREGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_BACKGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
 
     SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_WHITE);
     SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DARK_BLACK);
+    SetColorAliasIndex(ColorAlias::FrameForeground, TextColor::FRAME_FOREGROUND);
+    SetColorAliasIndex(ColorAlias::FrameBackground, TextColor::FRAME_BACKGROUND);
 }
 
 // Routine Description:

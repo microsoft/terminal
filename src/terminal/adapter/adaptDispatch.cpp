@@ -2241,9 +2241,13 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
     const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
     const auto backgroundChanged = (tableIndex == backgroundIndex);
 
+    // Similarly for the frame color, the tab may need to be repainted.
+    const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+    const auto frameChanged = (tableIndex == frameIndex);
+
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
-    _renderer.TriggerRedrawAll(backgroundChanged);
+    _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
     return true;
 }
 
@@ -2311,7 +2315,9 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     const auto inPtyMode = _api.IsConsolePty();
     if (!inPtyMode)
     {
-        _renderer.TriggerRedrawAll(true);
+        const auto backgroundChanged = item == DispatchTypes::ColorItem::NormalText;
+        const auto frameChanged = item == DispatchTypes::ColorItem::WindowFrame;
+        _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
     }
     return !inPtyMode;
 }
