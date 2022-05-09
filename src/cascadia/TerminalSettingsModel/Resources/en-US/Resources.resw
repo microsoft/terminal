@@ -522,4 +522,7 @@
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
     <value>Restore the last closed pane or tab</value>
   </data>
+  <data name="SelectAllCommandKey" xml:space="preserve">
+    <value>Select all text</value>
+  </data>
 </root>

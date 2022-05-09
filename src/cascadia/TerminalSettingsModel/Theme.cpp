@@ -125,7 +125,7 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
     }
     case ThemeColorType::TerminalBackground:
     {
-        // If we're evaluating this color for the tab row, there are some rulse
+        // If we're evaluating this color for the tab row, there are some rules
         // we have to follow, unfortunately. We can't allow a transparent
         // background, so we have to make sure to fill that in with Opacity(1.0)
         // manually.
@@ -285,13 +285,14 @@ void Theme::LayerJson(const Json::Value& json)
 
     // This will use each of the ConversionTrait's from above to quickly parse the sub-objects
 
-#define THEME_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+#define THEME_SETTINGS_LAYER_JSON(type, name, jsonKey, ...)                   \
     {                                                                         \
         std::optional<type> _val;                                             \
         _val = JsonUtils::GetValueForKey<std::optional<type>>(json, jsonKey); \
         if (_val)                                                             \
-            _##name = *_val;                                              \
-        else _##name=nullptr; \
+            _##name = *_val;                                                  \
+        else                                                                  \
+            _##name = nullptr;                                                \
     }
 
     MTSM_THEME_SETTINGS(THEME_SETTINGS_LAYER_JSON)
@@ -326,7 +327,7 @@ winrt::hstring Theme::ToString()
     return Name();
 }
 // Method Description:
-// - A helper for retreiving the RequestedTheme out of the window property.
+// - A helper for retrieving the RequestedTheme out of the window property.
 //   There's a bunch of places throughout the app that all ask for the
 //   RequestedTheme, this saves some hassle. If there wasn't a `window` defined
 //   for this theme, this'll quickly just return `system`, to use the OS theme.
