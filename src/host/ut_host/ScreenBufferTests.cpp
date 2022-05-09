@@ -230,6 +230,7 @@ class ScreenBufferTests
     TEST_METHOD(UpdateVirtualBottomWithSetConsoleCursorPosition);
     TEST_METHOD(UpdateVirtualBottomAfterInternalSetViewportSize);
     TEST_METHOD(UpdateVirtualBottomAfterResizeWithReflow);
+    TEST_METHOD(DontShrinkVirtualBottomDuringResizeWithReflowAtTop);
     TEST_METHOD(DontChangeVirtualBottomWithOffscreenLinefeed);
     TEST_METHOD(DontChangeVirtualBottomAfterResizeWindow);
     TEST_METHOD(DontChangeVirtualBottomWithMakeCursorVisible);
@@ -6290,6 +6291,35 @@ void ScreenBufferTests::UpdateVirtualBottomAfterResizeWithReflow()
     Log::Comment(L"Confirm that the virtual viewport includes the last non-space row");
     const auto lastNonSpaceRow = si.GetTextBuffer().GetLastNonSpaceCharacter().Y;
     VERIFY_IS_GREATER_THAN_OR_EQUAL(si._virtualBottom, lastNonSpaceRow);
+}
+
+void ScreenBufferTests::DontShrinkVirtualBottomDuringResizeWithReflowAtTop()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Make sure the viewport is at the top of the buffer");
+    const auto bufferTop = COORD{ 0, 0 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, bufferTop, true));
+    VERIFY_ARE_EQUAL(bufferTop, si.GetViewport().Origin());
+
+    Log::Comment(L"Make sure the virtual bottom is at the bottom of the viewport");
+    VERIFY_ARE_EQUAL(si.GetViewport().BottomInclusive(), si._virtualBottom);
+
+    Log::Comment(L"Make sure the cursor is at the top of the buffer");
+    stateMachine.ProcessString(L"\033[H");
+    VERIFY_ARE_EQUAL(bufferTop, cursor.GetPosition());
+
+    Log::Comment(L"Shrink the viewport width by a half");
+    auto bufferSize = si.GetTextBuffer().GetSize().Dimensions();
+    bufferSize.X /= 2;
+    VERIFY_NT_SUCCESS(si.ResizeWithReflow(bufferSize));
+
+    Log::Comment(L"Confirm that the virtual bottom is still at the bottom of the viewport");
+    VERIFY_ARE_EQUAL(si.GetViewport().BottomInclusive(), si._virtualBottom);
 }
 
 void ScreenBufferTests::DontChangeVirtualBottomWithOffscreenLinefeed()

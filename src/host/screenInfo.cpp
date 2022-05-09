@@ -1465,10 +1465,13 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     if (SUCCEEDED(hr))
     {
         // Make sure the new virtual bottom is far enough down to include both
-        // the cursor row and the last non-space row.
+        // the cursor row and the last non-space row. It also shouldn't be less
+        // than the height of the viewport, otherwise the top of the virtual
+        // viewport would end up negative.
         const auto cursorRow = newTextBuffer->GetCursor().GetPosition().Y;
         const auto lastNonSpaceRow = newTextBuffer->GetLastNonSpaceCharacter().Y;
-        _virtualBottom = std::max({ cursorRow, lastNonSpaceRow });
+        const auto viewportBottom = gsl::narrow_cast<short>(_viewport.Height() - 1);
+        _virtualBottom = std::max({ cursorRow, lastNonSpaceRow, viewportBottom });
 
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
         const auto sCursorHeightInViewportAfter = cursorRow - _viewport.Top();
