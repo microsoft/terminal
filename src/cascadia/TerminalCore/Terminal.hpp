@@ -242,7 +242,7 @@ public:
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, std::optional<bool> moveSelectionEnd = std::nullopt);
     void SelectAll();
     bool IsInMarkMode() const;
-    void EnterMarkMode();
+    void ToggleMarkMode();
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;

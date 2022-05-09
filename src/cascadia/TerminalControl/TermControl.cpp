@@ -1845,6 +1845,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.SelectAll();
     }
 
+    void TermControl::ToggleMarkMode()
+    {
+        _core.ToggleMarkMode();
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())

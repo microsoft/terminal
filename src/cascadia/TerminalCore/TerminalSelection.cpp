@@ -240,15 +240,24 @@ bool Terminal::IsInMarkMode() const
     return _markMode;
 }
 
-void Terminal::EnterMarkMode()
+void Terminal::ToggleMarkMode()
 {
-    SetCursorOn(false);
-    const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    _selection = SelectionAnchors{};
-    _selection->start = cursorPos;
-    _selection->end = cursorPos;
-    _selection->pivot = cursorPos;
-    _markMode = true;
+    if (_markMode)
+    {
+        // Exit Mark Mode
+        ClearSelection();
+    }
+    else
+    {
+        // Enter Mark Mode
+        SetCursorOn(false);
+        const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        _selection = SelectionAnchors{};
+        _selection->start = cursorPos;
+        _selection->end = cursorPos;
+        _selection->pivot = cursorPos;
+        _markMode = true;
+    }
 }
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const

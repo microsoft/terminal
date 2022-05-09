@@ -387,56 +387,47 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
         // modify on key up, then there's chance that we'll immediately dismiss
         // a selection created by an action bound to a keydown.
-        if (!KeyEvent::IsModifierKey(vkey) &&
+        if (HasSelection() &&
+            !KeyEvent::IsModifierKey(vkey) &&
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            // TODO CARLOS: should we make this ctrl+shift+m instead?
-            if (modifiers.IsCtrlPressed() && vkey == 'M')
+            if (modifiers.IsCtrlPressed() && vkey == 'A')
             {
-                _terminal->EnterMarkMode();
+                auto lock = _terminal->LockForWriting();
+                _terminal->SelectAll();
                 _renderer->TriggerSelection();
                 return true;
             }
-            else if (HasSelection())
+            else if (vkey == VK_RETURN)
             {
-                if (modifiers.IsCtrlPressed() && vkey == 'A')
-                {
-                    auto lock = _terminal->LockForWriting();
-                    _terminal->SelectAll();
-                    _renderer->TriggerSelection();
-                    return true;
-                }
-                else if (vkey == VK_RETURN)
-                {
-                    CopySelectionToClipboard(false, nullptr);
-                    return;
-                }
+                CopySelectionToClipboard(false, nullptr);
+                return true;
+            }
 
-                // try to update the selection
-                if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
-                {
-                    auto lock = _terminal->LockForWriting();
-                    const std::optional<bool> markModeOverride = _terminal->IsInMarkMode() ? modifiers.IsShiftPressed() : std::optional<bool>{};
-                    _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, markModeOverride);
-                    _renderer->TriggerSelection();
-                    return true;
-                }
+            // try to update the selection
+            if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                auto lock = _terminal->LockForWriting();
+                const std::optional<bool> markModeOverride = _terminal->IsInMarkMode() ? modifiers.IsShiftPressed() : std::optional<bool>{};
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, markModeOverride);
+                _renderer->TriggerSelection();
+                return true;
+            }
 
-                // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
-                if (!modifiers.IsWinPressed())
-                {
-                    _terminal->ClearSelection();
-                    _renderer->TriggerSelection();
-                }
+            // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
+            if (!modifiers.IsWinPressed())
+            {
+                _terminal->ClearSelection();
+                _renderer->TriggerSelection();
+            }
 
-                // When there is a selection active, escape should clear it and NOT flow through
-                // to the terminal. With any other keypress, it should clear the selection AND
-                // flow through to the terminal.
-                if (vkey == VK_ESCAPE)
-                {
-                    return true;
-                }
+            // When there is a selection active, escape should clear it and NOT flow through
+            // to the terminal. With any other keypress, it should clear the selection AND
+            // flow through to the terminal.
+            if (vkey == VK_ESCAPE)
+            {
+                return true;
             }
         }
 
@@ -1021,6 +1012,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
+        _renderer->TriggerSelection();
+    }
+
+    void ControlCore::ToggleMarkMode()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->ToggleMarkMode();
         _renderer->TriggerSelection();
     }
 

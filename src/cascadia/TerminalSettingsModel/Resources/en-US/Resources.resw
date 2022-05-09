@@ -525,4 +525,7 @@
   <data name="SelectAllCommandKey" xml:space="preserve">
     <value>Select all text</value>
   </data>
+  <data name="MarkModeCommandKey" xml:space="preserve">
+    <value>Toggle Mark Mode</value>
+  </data>
 </root>
