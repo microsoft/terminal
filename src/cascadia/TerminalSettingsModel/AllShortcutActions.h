@@ -88,7 +88,8 @@
     ON_ALL_ACTIONS(MultipleActions)        \
     ON_ALL_ACTIONS(Quit)                   \
     ON_ALL_ACTIONS(AdjustOpacity)          \
-    ON_ALL_ACTIONS(RestoreLastClosed)
+    ON_ALL_ACTIONS(RestoreLastClosed)      \
+    ON_ALL_ACTIONS(SelectAll)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \

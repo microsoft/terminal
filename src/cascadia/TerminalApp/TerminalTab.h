@@ -175,7 +175,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateProgressState();
 
         void _DuplicateTab();
-        std::optional<til::color> _evaluateThemeColor();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

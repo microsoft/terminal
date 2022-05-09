@@ -37,6 +37,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromAccent() noexcept;
         static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromTerminalBackground() noexcept;
 
+        static til::color ColorFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush);
+
+        winrt::Windows::UI::Xaml::Media::Brush Evaluate(const winrt::Windows::UI::Xaml::ResourceDictionary& res,
+                                                        const winrt::Windows::UI::Xaml::Media::Brush& terminalBackground,
+                                                        const bool forTitlebar);
+
         WINRT_PROPERTY(til::color, Color);
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ThemeColorType, ColorType);
     };
@@ -81,6 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<Theme> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
         Json::Value ToJson() const;
+
+        winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
 
         WINRT_PROPERTY(winrt::hstring, Name);
 

@@ -20,6 +20,11 @@ namespace Microsoft.Terminal.Settings.Model
 
         Microsoft.Terminal.Core.Color Color { get; };
         ThemeColorType ColorType;
+
+        static Microsoft.Terminal.Core.Color ColorFromBrush(Windows.UI.Xaml.Media.Brush brush);
+        Windows.UI.Xaml.Media.Brush Evaluate(Windows.UI.Xaml.ResourceDictionary res,
+                                             Windows.UI.Xaml.Media.Brush terminalBackground,
+                                             Boolean forTitlebar);
     }
 
     runtimeclass WindowTheme {
@@ -49,6 +54,9 @@ namespace Microsoft.Terminal.Settings.Model
 
         // tab.* Namespace
         TabTheme Tab { get; };
+
+        // A helper for retrieving the RequestedTheme out of the window property
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
 
     }
 }

@@ -343,14 +343,19 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // We must attempt to compensate for ending on a leading byte. We can't split a full-width character across lines.
     // As such, if the last item is a leading byte, back the end up by one.
-    FAIL_FAST_IF(lineEnd <= lineBegin); // We should have at least 1 space we can back up.
-
     // Get the last cell in the run and if it's a leading byte, move the end position back one so we don't
     // try to insert it.
     const auto lastCell = lineEnd - 1;
     if (lastCell->DbcsAttr().IsLeading())
     {
         lineEnd--;
+    }
+
+    // GH#12730 - if the lineVec would now be empty, just return early. Failing
+    // to do so will later cause a crash trying to construct an empty view.
+    if (lineEnd <= lineBegin)
+    {
+        return lineEnd;
     }
 
     // Copy out the substring into a vector.

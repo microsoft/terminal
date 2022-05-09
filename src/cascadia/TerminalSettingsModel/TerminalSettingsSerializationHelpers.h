@@ -552,6 +552,10 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 {
     winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromJson(const Json::Value& json)
     {
+        if (json == Json::Value::null)
+        {
+            return nullptr;
+        }
         const auto string{ Detail::GetStringView(json) };
         if (string == "accent")
         {
@@ -569,6 +573,10 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
     bool CanConvert(const Json::Value& json)
     {
+        if (json == Json::Value::null)
+        {
+            return true;
+        }
         if (!json.isString())
         {
             return false;
@@ -583,6 +591,11 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
     Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
     {
+        if (val == nullptr)
+        {
+            return Json::Value::null;
+        }
+
         switch (val.ColorType())
         {
         case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::Accent:

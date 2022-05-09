@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- adaptDispatch.hpp
+- InteractDispatch.hpp
 
 Abstract:
 - This serves as the Windows Console API-specific implementation of the
@@ -16,14 +16,14 @@ Author(s):
 
 #include "DispatchTypes.hpp"
 #include "IInteractDispatch.hpp"
-#include "conGetSet.hpp"
+#include "../../host/outputStream.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
     class InteractDispatch : public IInteractDispatch
     {
     public:
-        InteractDispatch(std::unique_ptr<ConGetSet> pConApi);
+        InteractDispatch();
 
         bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
         bool WriteCtrlKey(const KeyEvent& event) override;
@@ -38,6 +38,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool FocusChanged(const bool focused) const override;
 
     private:
-        std::unique_ptr<ConGetSet> _pConApi;
+        ConhostInternalGetSet _api;
     };
 }

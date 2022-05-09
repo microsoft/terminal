@@ -140,7 +140,7 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
+COORD Search::s_GetInitialAnchor(const IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
     const auto textBufferEndPosition = uiaData.GetTextBufferEndPosition();

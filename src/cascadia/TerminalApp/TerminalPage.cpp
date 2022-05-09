@@ -623,7 +623,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_CompleteInitialization()
+    winrt::fire_and_forget TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
 
@@ -643,10 +643,55 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
             _LastTabClosedHandlers(*this, nullptr);
+            co_return;
         }
         else
         {
-            _InitializedHandlers(*this, nullptr);
+            // GH#11561: When we start up, our window is initially just a frame
+            // with a transparent content area. We're gonna do all this startup
+            // init on the UI thread, so the UI won't actually paint till it's
+            // all done. This results in a few frames where the frame is
+            // visible, before the page paints for the first time, before any
+            // tabs appears, etc.
+            //
+            // To mitigate this, we're gonna wait for the UI thread to finish
+            // everything it's gotta do for the initial init, and _then_ fire
+            // our Initialized event. By waiting for everything else to finish
+            // (CoreDispatcherPriority::Low), we let all the tabs and panes
+            // actually get created. In the window layer, we're gonna cloak the
+            // window till this event is fired, so we don't actually see this
+            // frame until we're actually all ready to go.
+            //
+            // This will result in the window seemingly not loading as fast, but
+            // it will actually take exactly the same amount of time before it's
+            // usable.
+            //
+            // We also experimented with drawing a solid BG color before the
+            // initialization is finished. However, there are still a few frames
+            // after the frame is displayed before the XAML content first draws,
+            // so that didn't actually resolve any issues.
+
+            auto weak{ get_weak() };
+
+            // Switch to the BG thread -
+            co_await winrt::resume_background();
+
+            if (auto self{ weak.get() })
+            {
+                // Then enqueue the rest of this function for after the UI thread settles.
+                co_await wil::resume_foreground(self->Dispatcher(), CoreDispatcherPriority::Low);
+            }
+            else
+            {
+                // We don't exist anymore? Well, we probably don't need to fire
+                // off an Initialized event then...
+                co_return;
+            }
+
+            if (auto self{ weak.get() })
+            {
+                self->_InitializedHandlers(*self, nullptr);
+            }
         }
     }
 
@@ -3308,6 +3353,12 @@ namespace winrt::TerminalApp::implementation
     // - Displays a info popup guiding the user into setting their default terminal.
     void TerminalPage::ShowSetAsDefaultInfoBar() const
     {
+        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::TerminalApp::App>() == nullptr)
+        {
+            // Just ignore this in the tests (where the Application::Current()
+            // is not a TerminalApp::App)
+            return;
+        }
         if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
         {
             return;
@@ -3436,7 +3487,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
     {
         auto theme{ _settings.GlobalSettings().CurrentTheme() };
-        auto requestedTheme{ theme.Window().RequestedTheme() };
+        auto requestedTheme{ theme.RequestedTheme() };
         while (element)
         {
             element.RequestedTheme(requestedTheme);
@@ -3951,7 +4002,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto theme = _settings.GlobalSettings().CurrentTheme();
-        auto requestedTheme{ theme.Window().RequestedTheme() };
+        auto requestedTheme{ theme.RequestedTheme() };
 
         // TODO! move me somewhere else
         {
@@ -4044,51 +4095,21 @@ namespace winrt::TerminalApp::implementation
         else if (theme.TabRow() && theme.TabRow().Background())
         {
             const auto tabRowBg = theme.TabRow().Background();
-            switch (tabRowBg.ColorType())
-            {
-            case ThemeColorType::Accent:
-            {
-                // TODO! These colors are NOT right at all. But none of
-                // `SystemAccentColor` is, so we gotta figure this out.
-                auto accentColor = winrt::unbox_value_or<winrt::Windows::UI::Color>(res.Lookup(winrt::box_value(_activated ?
-                                                                                                                    L"SystemAccentColorDark3" :
-                                                                                                                    L"SystemAccentColorDark2")),
-                                                                                    backgroundSolidBrush.Color());
-                const auto accentBrush = Media::SolidColorBrush();
-                accentBrush.Color(accentColor);
-                bgColor = accentColor;
-
-                TitlebarBrush(accentBrush);
-                break;
-            }
-            case ThemeColorType::Color:
-            {
-                const til::color backgroundColor = tabRowBg.Color();
-                const auto solidBrush = Media::SolidColorBrush();
-                solidBrush.Color(backgroundColor);
-                bgColor = backgroundColor;
-                TitlebarBrush(solidBrush);
-                break;
-            }
-            case ThemeColorType::TerminalBackground:
-            {
-                if (const auto termControl{ _GetActiveControl() })
+            const auto terminalBrush = [this]() -> Media::Brush {
+                if (const auto& control{ _GetActiveControl() })
                 {
-                    const auto& brush{ termControl.BackgroundBrush() };
-                    if (auto acrylic = brush.try_as<Media::AcrylicBrush>())
-                    {
-                        bgColor = acrylic.TintColor();
-                    }
-                    else if (auto solidColor = brush.try_as<Media::SolidColorBrush>())
-                    {
-                        bgColor = solidColor.Color();
-                    }
-
-                    TitlebarBrush(brush);
+                    return control.BackgroundBrush();
                 }
-                break;
-            }
-            }
+                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                {
+                    return settingsTab.Content().try_as<Controls::Page>().Background();
+                }
+                return nullptr;
+            }();
+
+            const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
+            bgColor = ThemeColor::ColorFromBrush(themeBrush);
+            TitlebarBrush(themeBrush);
         }
         else
         {
@@ -4096,7 +4117,10 @@ namespace winrt::TerminalApp::implementation
             TitlebarBrush(backgroundSolidBrush);
         }
 
-        _tabRow.Background(TitlebarBrush());
+        if (!_settings.GlobalSettings().ShowTabsInTitlebar())
+        {
+            _tabRow.Background(TitlebarBrush());
+        }
 
         // Update the new tab button to have better contrast with the new color.
         // In theory, it would be convenient to also change these for the

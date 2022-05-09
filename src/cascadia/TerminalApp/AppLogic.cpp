@@ -51,6 +51,7 @@ static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"InvalidSplitSize"),
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
+    USES_RESOURCE(L"UnknownTheme"),
 };
 static const std::array settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -368,7 +369,7 @@ namespace winrt::TerminalApp::implementation
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
             auto theme{ _settings.GlobalSettings().CurrentTheme() };
-            auto requestedTheme{ theme.Window().RequestedTheme() };
+            auto requestedTheme{ theme.RequestedTheme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
             {
@@ -744,7 +745,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings.GlobalSettings().CurrentTheme().Window().RequestedTheme();
+        return _settings.GlobalSettings().CurrentTheme().RequestedTheme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -965,7 +966,7 @@ namespace winrt::TerminalApp::implementation
 
     void AppLogic::_RefreshThemeRoutine()
     {
-        _ApplyTheme(_settings.GlobalSettings().CurrentTheme().Window().RequestedTheme());
+        _ApplyTheme(_settings.GlobalSettings().CurrentTheme().RequestedTheme());
     }
 
     // Function Description:

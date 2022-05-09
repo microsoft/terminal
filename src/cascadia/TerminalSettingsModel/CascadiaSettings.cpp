@@ -408,6 +408,7 @@ void CascadiaSettings::_validateSettings()
     _validateMediaResources();
     _validateKeybindings();
     _validateColorSchemesInCommands();
+    _validateThemeExists();
 }
 
 // Method Description:
@@ -558,6 +559,13 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
             if (auto profile = GetProfileByIndex(gsl::narrow<uint32_t>(index.Value())))
             {
                 return profile;
+            }
+            else
+            {
+                // GH#11114 - Return NOTHING if they asked for a profile index
+                // outside the range of available profiles.
+                // Really, the caller should check this beforehand
+                return nullptr;
             }
         }
 
@@ -1128,4 +1136,15 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
         WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
     }
     CATCH_LOG();
+}
+
+void CascadiaSettings::_validateThemeExists()
+{
+    if (!_globals->Themes().HasKey(_globals->Theme()))
+    {
+        _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+
+        // safely fall back to system as the theme.
+        _globals->Theme(L"system");
+    }
 }

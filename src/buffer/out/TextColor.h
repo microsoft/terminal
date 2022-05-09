@@ -101,8 +101,15 @@ public:
     {
     }
 
-    friend constexpr bool operator==(const TextColor& a, const TextColor& b) noexcept;
-    friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
+    bool operator==(const TextColor& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextColor)) == 0;
+    }
+
+    bool operator!=(const TextColor& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextColor)) != 0;
+    }
 
     bool CanBeBrightened() const noexcept;
     bool IsLegacy() const noexcept;
@@ -150,19 +157,6 @@ private:
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
-
-bool constexpr operator==(const TextColor& a, const TextColor& b) noexcept
-{
-    return a._meta == b._meta &&
-           a._red == b._red &&
-           a._green == b._green &&
-           a._blue == b._blue;
-}
-
-bool constexpr operator!=(const TextColor& a, const TextColor& b) noexcept
-{
-    return !(a == b);
-}
 
 #ifdef UNIT_TESTING
 

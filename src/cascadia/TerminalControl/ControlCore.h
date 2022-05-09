@@ -80,6 +80,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        void SelectAll();
 
         void GotFocus();
         void LostFocus();
@@ -265,7 +266,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalWarningBell();
         void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalTabColorChanged(const std::optional<til::color> color);
-        void _terminalBackgroundColorChanged(const COLORREF color);
         void _terminalScrollPositionChanged(const int viewTop,
                                             const int viewHeight,
                                             const int bufferSize);
@@ -277,6 +277,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
         void _renderEngineSwapChainChanged();
+        void _rendererBackgroundColorChanged();
 #pragma endregion
 
         void _raiseReadOnlyWarning();

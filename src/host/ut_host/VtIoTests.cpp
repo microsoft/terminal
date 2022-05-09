@@ -267,12 +267,12 @@ public:
         return COORD{};
     }
 
-    const TextBuffer& GetTextBuffer() noexcept override
+    const TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
 
-    const FontInfo& GetFontInfo() noexcept override
+    const FontInfo& GetFontInfo() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }

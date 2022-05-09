@@ -112,7 +112,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, LaunchMode& launchMode)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -154,19 +154,13 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
-    auto launchMode = LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
-        _pfnCreateCallback(_window.get(), rc, launchMode);
+        _pfnCreateCallback(_window.get(), rc);
     }
 
-    auto nCmdShow = SW_SHOW;
-    if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
-    {
-        nCmdShow = SW_MAXIMIZE;
-    }
-
-    ShowWindow(_window.get(), nCmdShow);
+    // GH#11561: DO NOT call ShowWindow here. The AppHost will call ShowWindow
+    // once the app has completed its initialization.
 
     UpdateWindow(_window.get());
 

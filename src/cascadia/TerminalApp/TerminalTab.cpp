@@ -1358,45 +1358,6 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    std::optional<til::color> TerminalTab::_evaluateThemeColor()
-    {
-        if (_themeColor == nullptr)
-        {
-            return std::nullopt;
-        }
-
-        switch (_themeColor.ColorType())
-        {
-        case ThemeColorType::Accent:
-        {
-            const auto res = Application::Current().Resources();
-            static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
-            return til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
-        }
-        case ThemeColorType::Color:
-        {
-            return _themeColor.Color();
-        }
-        case ThemeColorType::TerminalBackground:
-        {
-            if (const auto termControl{ GetActiveTerminalControl() })
-            {
-                const auto& brush{ termControl.BackgroundBrush() };
-                if (auto acrylic = brush.try_as<Media::AcrylicBrush>())
-                {
-                    return acrylic.TintColor();
-                }
-                else if (auto solidColor = brush.try_as<Media::SolidColorBrush>())
-                {
-                    return solidColor.Color();
-                }
-            }
-            return std::nullopt;
-        }
-        }
-        return std::nullopt;
-    }
-
     // Method Description:
     // - This function dispatches a function to the UI thread to recalculate
     //   what this tab's current background color should be. If a color is set,
@@ -1422,11 +1383,16 @@ namespace winrt::TerminalApp::implementation
             {
                 tab->_ApplyTabColor(currentColor.value());
             }
+            else if (tab->_themeColor == nullptr)
+            {
+                tab->_ClearTabBackgroundColor();
+            }
             else
             {
-                if (const auto themeColor{ tab->_evaluateThemeColor() })
+                const auto terminalBrush = [tab]() -> Media::Brush { if (const auto& control{ tab->GetActiveTerminalControl() }){ return control.BackgroundBrush(); } return nullptr; }();
+                if (const auto themeBrush{ tab->_themeColor.Evaluate(Application::Current().Resources(), terminalBrush, false) })
                 {
-                    tab->_ApplyTabColor(themeColor.value());
+                    tab->_ApplyTabColor(til::color{ ThemeColor::ColorFromBrush(themeBrush) });
                 }
                 else
                 {

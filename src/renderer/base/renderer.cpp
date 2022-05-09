@@ -298,10 +298,10 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 // - Called when something that changes the output state has occurred and the entire frame is now potentially invalid.
 // - NOTE: Use sparingly. Try to reduce the refresh region where possible. Only use when a global state change has occurred.
 // Arguments:
-// - <none>
+// - backgroundChanged - Set to true if the background color has changed.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedrawAll()
+void Renderer::TriggerRedrawAll(const bool backgroundChanged)
 {
     FOREACH_ENGINE(pEngine)
     {
@@ -309,6 +309,11 @@ void Renderer::TriggerRedrawAll()
     }
 
     NotifyPaintFrame();
+
+    if (backgroundChanged && _pfnBackgroundColorChanged)
+    {
+        _pfnBackgroundColorChanged();
+    }
 }
 
 // Method Description:
@@ -390,12 +395,13 @@ bool Renderer::_CheckViewportAndScroll()
     const auto srOldViewport = _viewport.ToInclusive();
     const auto srNewViewport = _pData->GetViewport().ToInclusive();
 
-    if (srOldViewport == srNewViewport)
+    if (!_forceUpdateViewport && srOldViewport == srNewViewport)
     {
         return false;
     }
 
     _viewport = Viewport::FromInclusive(srNewViewport);
+    _forceUpdateViewport = false;
 
     COORD coordDelta;
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
@@ -1329,6 +1335,17 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
     }
 
     THROW_HR_MSG(E_UNEXPECTED, "engines array is full");
+}
+
+// Method Description:
+// - Registers a callback for when the background color is changed
+// Arguments:
+// - pfn: the callback
+// Return Value:
+// - <none>
+void Renderer::SetBackgroundColorChangedCallback(std::function<void()> pfn)
+{
+    _pfnBackgroundColorChanged = std::move(pfn);
 }
 
 // Method Description:

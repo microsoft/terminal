@@ -148,7 +148,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
         TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
-        TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(Initialized, IInspectable, IInspectable);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
@@ -393,7 +393,7 @@ namespace winrt::TerminalApp::implementation
 
         void _StartInboundListener();
 
-        void _CompleteInitialization();
+        winrt::fire_and_forget _CompleteInitialization();
 
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 
@@ -412,12 +412,13 @@ namespace winrt::TerminalApp::implementation
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
+        void _PreviewAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& args);
         void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
         void _EndPreview();
         void _RunRestorePreviews();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
         void _PreviewAdjustOpacity(const Microsoft::Terminal::Settings::Model::AdjustOpacityArgs& args);
-        winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs _lastPreviewedAction{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 
         HRESULT _OnNewConnection(const winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection& connection);

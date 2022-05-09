@@ -214,7 +214,9 @@ HRESULT HwndTerminal::Initialize()
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
     auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
     auto* const localPointerToThread = renderThread.get();
-    const auto& renderSettings = _terminal->GetRenderSettings();
+    auto& renderSettings = _terminal->GetRenderSettings();
+    renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
+    renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
     _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
     RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
@@ -237,11 +239,7 @@ HRESULT HwndTerminal::Initialize()
 
     _renderEngine = std::move(dxEngine);
 
-    _terminal->SetBackgroundCallback([](auto) {});
-
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
-    _terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
-    _terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
@@ -788,15 +786,17 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
-        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
-        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, theme.DefaultBackground);
+        auto& renderSettings = publicTerminal->_terminal->GetRenderSettings();
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, theme.DefaultBackground);
+
         publicTerminal->_renderEngine->SetSelectionBackground(theme.DefaultSelectionBackground, theme.SelectionBackgroundAlpha);
 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            [[gsl::suppress(bounds .3)]] publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
+            [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
     }
 
