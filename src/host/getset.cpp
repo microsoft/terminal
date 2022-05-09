@@ -603,9 +603,30 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         }
         const auto newBufferSize = context.GetBufferSize().Dimensions();
 
+        bool changedOneTableEntry = false;
         for (size_t i = 0; i < std::size(data.ColorTable); i++)
         {
-            gci.SetLegacyColorTableEntry(i, data.ColorTable[i]);
+            // Check if we actually changed a palette color
+            const auto& newColor{ data.ColorTable[i] };
+            changedOneTableEntry = changedOneTableEntry || (newColor != gci.GetColorTableEntry(i));
+
+            // Set the new value.
+            gci.SetLegacyColorTableEntry(i, newColor);
+        }
+
+        // GH#399: Trigger a redraw, so that updated colors are repainted, but
+        // only do this if we're not in conpty mode. ConPTY will update the
+        // colors of the palette elsewhere (after TODO GH#10639)
+        //
+        // Only do this if we actually changed the value of the palette though -
+        // this API gets called all the time to change all sorts of things, but
+        // not necessarily the palette.
+        if (changedOneTableEntry && !gci.IsInVtIoMode())
+        {
+            if (auto* pRender{ ServiceLocator::LocateGlobals().pRender })
+            {
+                pRender->TriggerRedrawAll();
+            }
         }
 
         context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
