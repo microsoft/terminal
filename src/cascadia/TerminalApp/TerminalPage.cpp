@@ -1086,7 +1086,22 @@ namespace winrt::TerminalApp::implementation
 
             connection.Initialize(valueSet);
         }
+        else if (connectionType == TerminalConnection::PipeConnection::ConnectionType())
+        {
+            connection = TerminalConnection::PipeConnection();
+            StringMap envMap{};
 
+            auto newWorkingDirectory{ settings.StartingDirectory() };
+            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                                 newWorkingDirectory,
+                                                                                 settings.StartingTitle(),
+                                                                                 envMap.GetView(),
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 winrt::guid());
+
+            connection.Initialize(valueSet);
+        }
         else
         {
             // profile is guaranteed to exist here

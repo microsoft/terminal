@@ -32,6 +32,9 @@
     <ClInclude Include="EchoConnection.h">
       <DependentUpon>EchoConnection.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PipeConnection.h">
+      <DependentUpon>PipeConnection.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CTerminalHandoff.cpp" />
@@ -51,6 +54,9 @@
     <ClCompile Include="ConptyConnection.cpp">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="PipeConnection.cpp">
+      <DependentUpon>PipeConnection.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -59,6 +65,7 @@
     <Midl Include="ConptyConnection.idl" />
     <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" />
+    <Midl Include="PipeConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw">
