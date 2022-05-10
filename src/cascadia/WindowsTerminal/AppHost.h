@@ -32,6 +32,7 @@ private:
     bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
     RECT _proposedRect{};
+    bool _initialized{ false };
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();

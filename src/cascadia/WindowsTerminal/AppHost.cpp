@@ -1416,7 +1416,10 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
 void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                  const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
 {
-    _window->ShowWindowChanged(args.ShowOrHide());
+    if (_initialized)
+    {
+        _window->ShowWindowChanged(args.ShowOrHide());
+    }
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1593,4 +1596,5 @@ void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspecta
     }
 
     ShowWindow(_window->GetHandle(), nCmdShow);
+    _initialized = true;
 }
