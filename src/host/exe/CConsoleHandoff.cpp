@@ -78,3 +78,15 @@ try
     return S_OK;
 }
 CATCH_RETURN();
+
+// Routine Description:
+// - TODO!
+HRESULT CConsoleHandoff::HandoffToTerminal(CLSID targetTerminal)
+try
+{
+    // Now perform the handoff.
+    RETURN_IF_FAILED(PrepareForManualHandoff(targetTerminal));
+
+    return S_OK;
+}
+CATCH_RETURN();

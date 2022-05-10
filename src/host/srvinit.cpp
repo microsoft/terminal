@@ -67,6 +67,15 @@ try
     auto isEnabled = false;
     if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled)) && isEnabled)
     {
+        // TODO!
+        // If we don't find a handoffConsoleClsid in the registry, then do the DefTerm by Default check.
+        //
+        // Manually check if we can get an instance of the Windows Terminal's
+        // CConsoleHandoff class, and ALSO check if that class is an instance of
+        // IDefaultTerminalMarker. If it is, then we know it's new enough to be
+        // trusted as the _default_ default terminal.
+        //
+        // If it's not, then fine, just continue using conhost.
         IID delegationClsid;
         if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
         {
@@ -386,6 +395,34 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 }
 
 // Routine Description:
+// - TODO!
+[[nodiscard]] HRESULT PrepareForManualHandoff(CLSID targetTerminal)
+{
+    // Create a telemetry instance here - this singleton is responsible for
+    // setting up the g_hConhostV2EventTraceProvider, which is otherwise not
+    // initialized in the defterm handoff at this point.
+    (void)Telemetry::Instance();
+
+#if !TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_ReceiveManualHandoff_Disabled",
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+#else // TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
+
+    auto& g = ServiceLocator::LocateGlobals();
+    g.handoffTerminalClsid = targetTerminal;
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_PreparedForManualTerminalHandoff",
+                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    return S_OK;
+#endif
+}
+
+// Routine Description:
 // - Accepts a console server session from another console server
 //   most commonly from the operating system in-box console to
 //   a more-up-to-date and out-of-band delivered one.
@@ -427,14 +464,26 @@ try
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
-    IID delegationClsid;
-    if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
+    // - TODO!
+    if (!g.handoffTerminalClsid)
     {
-        g.handoffConsoleClsid = delegationClsid;
+        IID delegationClsid;
+        if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
+        {
+            g.handoffConsoleClsid = delegationClsid;
+        }
+        if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
+        {
+            g.handoffTerminalClsid = delegationClsid;
+        }
     }
-    if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
+    else
     {
-        g.handoffTerminalClsid = delegationClsid;
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_ReceiveHandoff_DefTermByDefault",
+                          TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     if (!g.handoffTerminalClsid)

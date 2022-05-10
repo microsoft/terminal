@@ -34,4 +34,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
                                               HANDLE hostProcessHandle,
                                               PCONSOLE_API_MSG connectMessage);
 
+[[nodiscard]] HRESULT PrepareForManualHandoff(CLSID targetTerminal);
+
 void ConsoleCheckDebug();
