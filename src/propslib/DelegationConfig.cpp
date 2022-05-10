@@ -408,3 +408,44 @@ try
     }
 }
 CATCH_RETURN()
+
+[[nodiscard]] HRESULT DelegationConfig::s_CanDoDefaultTerminalByDefault(bool& canDoManualHandoff,
+                                                                        DelegationPackage& packageToHandoffTo) noexcept
+try
+{
+    canDoManualHandoff = false;
+
+    std::vector<DelegationPackage> packages;
+    DelegationPackage currentDefault{ 0 };
+    RETURN_IF_FAILED(s_GetAvailablePackages(packages, currentDefault));
+    if (packages.size() == 1)
+    {
+        // We only have the conhost "package". No sense in looking for the Terminal.
+        return S_FALSE;
+    }
+    else if (packageToHandoffTo.console.clsid != CLSID{ 0 } &&
+             packageToHandoffTo.terminal.clsid != CLSID{ 0 })
+    {
+        // The default terminal is actually set to something. Don't attempt to manuallt resolve {0} to the Windows Terminal.
+        return S_FALSE;
+    }
+
+    // Search through and find a package that matches. If we failed to match because
+    // it's torn across multiple or something not in the catalog, we'll offer the inbox conhost one.
+
+    // TODO! if one of these is the Terminal, CoCreateInstance it, look to see if it's a IDefaultTerminalMarker, and if it is, return that instead of packageToHandoffTo.
+    for (auto& pkg : packages)
+    {
+        if (pkg.console.clsid == defCon &&
+            pkg.terminal.clsid == defTerm)
+        {
+            chosenPackage = pkg;
+            break;
+        }
+    }
+
+    defPackage = chosenPackage;
+
+    return S_OK;
+}
+CATCH_RETURN()

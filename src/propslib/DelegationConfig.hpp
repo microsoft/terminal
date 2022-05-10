@@ -88,6 +88,9 @@ public:
     [[nodiscard]] static HRESULT s_GetDefaultConsoleId(IID& iid) noexcept;
     [[nodiscard]] static HRESULT s_GetDefaultTerminalId(IID& iid) noexcept;
 
+    [[nodiscard]] static HRESULT s_CanDoDefaultTerminalByDefault(bool& canDoManualHandoff,
+                                                                 DelegationPackage& packageToHandoffTo) noexcept;
+
 private:
     [[nodiscard]] static HRESULT s_GetAvailableConsoles(std::vector<DelegationConsole>& consoles) noexcept;
     [[nodiscard]] static HRESULT s_GetAvailableTerminals(std::vector<DelegationTerminal>& terminals) noexcept;
