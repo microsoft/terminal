@@ -335,7 +335,7 @@ using namespace Microsoft::Console::Interactivity;
                                        owner,
                                        nullptr,
                                        nullptr,
-                                       nullptr);
+                                       this);
 
                 if (hwnd == nullptr)
                 {
