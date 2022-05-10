@@ -250,7 +250,8 @@ void Terminal::ToggleMarkMode()
     else
     {
         // Enter Mark Mode
-        SetCursorOn(false);
+        // NOTE: directly set cursor state. We already should have locked before calling this function.
+        _activeBuffer().GetCursor().SetIsOn(false);
         const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
         _selection = SelectionAnchors{};
         _selection->start = cursorPos;

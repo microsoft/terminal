@@ -1045,7 +1045,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleMarkMode(const IInspectable& /*sender*/,
-                                        const ActionEventArgs& args)
+                                       const ActionEventArgs& args)
     {
         if (const auto& control{ _GetActiveControl() })
         {
