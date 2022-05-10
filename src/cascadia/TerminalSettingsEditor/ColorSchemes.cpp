@@ -112,10 +112,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentBrightColorTable.Append(entry);
             }
         }
-        _CurrentForegroundColor = winrt::make<ColorTableEntry>(ForegroundColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
-        _CurrentBackgroundColor = winrt::make<ColorTableEntry>(BackgroundColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
-        _CurrentCursorColor = winrt::make<ColorTableEntry>(CursorColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
-        _CurrentSelectionBackgroundColor = winrt::make<ColorTableEntry>(SelectionBackgroundColorTag, Windows::UI::Color{ 0, 0, 0, 0 });
 
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
         const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
@@ -127,6 +123,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto scheme = *it;
             ColorSchemeComboBox().SelectedItem(scheme);
+        }
+        else
+        {
+            ColorScheme(_AllColorSchemes.GetAt(0));
         }
 
         // populate color table grid
@@ -197,6 +197,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         IsRenaming(false);
     }
 
+    void ColorSchemes::ColorSchemeSelectionChanged2(const IInspectable& /*sender*/,
+                                                   const SelectionChangedEventArgs& args)
+    {
+        //  Update the color scheme this page is modifying
+        const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
+        ColorScheme(*colorScheme);
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"ColorScheme" });
+        //_UpdateColorTable(colorScheme);
+
+        //_State.LastSelectedScheme(colorScheme.Name());
+
+        //// Set the text disclaimer for the text box
+        //hstring disclaimer{};
+        //const std::wstring schemeName{ colorScheme.Name() };
+        //if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
+        //{
+        //    // load disclaimer for in-box profiles
+        //    disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
+        //}
+        //DeleteButtonDisclaimer().Text(disclaimer);
+
+        //// Update the state of the page
+        //_PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
+        //IsRenaming(false);
+    }
+
     // Function Description:
     // - Updates the list of all color schemes available to choose from.
     // Arguments:
@@ -249,23 +275,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (stringTag == ForegroundColorTag)
                     {
-                        CurrentColorScheme().Foreground(newColor);
-                        _CurrentForegroundColor.Color(newColor);
+                        ColorScheme().CurrentForegroundColor().Color(newColor);
                     }
                     else if (stringTag == BackgroundColorTag)
                     {
-                        CurrentColorScheme().Background(newColor);
-                        _CurrentBackgroundColor.Color(newColor);
+                        ColorScheme().CurrentBackgroundColor().Color(newColor);
                     }
                     else if (stringTag == CursorColorTag)
                     {
-                        CurrentColorScheme().CursorColor(newColor);
-                        _CurrentCursorColor.Color(newColor);
+                        ColorScheme().CurrentCursorColor().Color(newColor);
                     }
                     else if (stringTag == SelectionBackgroundColorTag)
                     {
-                        CurrentColorScheme().SelectionBackground(newColor);
-                        _CurrentSelectionBackgroundColor.Color(newColor);
+                        ColorScheme().CurrentSelectionBackgroundColor().Color(newColor);
                     }
                 }
             }
@@ -431,23 +453,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentBrightColorTable.GetAt(i - ColorTableDivider).Color(currentColor);
             }
         }
-        _CurrentForegroundColor.Color(til::color{ colorScheme.Foreground() });
-        _CurrentBackgroundColor.Color(til::color{ colorScheme.Background() });
-        _CurrentCursorColor.Color(til::color{ colorScheme.CursorColor() });
-        _CurrentSelectionBackgroundColor.Color(til::color{ colorScheme.SelectionBackground() });
-    }
-
-    ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
-    {
-        Name(TableColorNames[index]);
-        Tag(winrt::box_value<uint8_t>(index));
-        Color(color);
-    }
-
-    ColorTableEntry::ColorTableEntry(std::wstring_view tag, Windows::UI::Color color)
-    {
-        Name(LocalizedNameForEnumName(L"ColorScheme_", tag, L"Text"));
-        Tag(winrt::box_value(tag));
-        Color(color);
     }
 }

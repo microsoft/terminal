@@ -78,15 +78,20 @@
         <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
+
+            <TextBlock x:Uid="ColorSchemesDisclaimer"
+                       Margin="{StaticResource StandardIndentMargin}"
+                       Style="{StaticResource DisclaimerStyle}" />
+
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <local:SettingContainer x:Uid="ColorScheme_Select">
                     <ComboBox x:Name="ColorSchemeComboBox2"
-                                  ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                                  ItemsSource="{x:Bind AllColorSchemes, Mode=OneWay}"
                                   SelectedIndex="0"
-                                  SelectionChanged="ColorSchemeSelectionChanged"
+                              SelectionChanged="ColorSchemeSelectionChanged2"
                                   Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="model:ColorScheme">
+                            <DataTemplate x:DataType="local:ColorSchemeViewModel">
                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -115,10 +120,6 @@
                 </local:SettingContainer>
             </StackPanel>
 
-            <TextBlock x:Uid="ColorSchemesDisclaimer"
-                       Margin="{StaticResource StandardIndentMargin}"
-                       Style="{StaticResource DisclaimerStyle}" />
-
             <!--  Select Color and Add New Button  -->
             <StackPanel Margin="0,5,0,0"
                         Orientation="Horizontal">
@@ -127,12 +128,12 @@
                             Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsRenaming), Mode=OneWay}">
                     <!--  Select a color scheme  -->
                     <ComboBox x:Name="ColorSchemeComboBox"
-                              ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                              SelectedIndex="0"
-                              SelectionChanged="ColorSchemeSelectionChanged"
-                              Style="{StaticResource ComboBoxSettingStyle}">
+                                  ItemsSource="{x:Bind AllColorSchemes, Mode=OneWay}"
+                                  SelectedIndex="0"
+                              SelectionChanged="ColorSchemeSelectionChanged2"
+                                  Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="model:ColorScheme">
+                            <DataTemplate x:DataType="local:ColorSchemeViewModel">
                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -257,7 +258,7 @@
                         <ContentControl x:Name="ForegroundButton"
                                         Grid.Row="0"
                                         Grid.Column="1"
-                                        Content="{x:Bind CurrentForegroundColor, Mode=TwoWay}"
+                                        Content="{x:Bind ColorScheme.CurrentForegroundColor, Mode=TwoWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
@@ -269,7 +270,7 @@
                         <ContentControl x:Name="BackgroundButton"
                                         Grid.Row="1"
                                         Grid.Column="1"
-                                        Content="{x:Bind CurrentBackgroundColor, Mode=TwoWay}"
+                                        Content="{x:Bind ColorScheme.CurrentBackgroundColor, Mode=TwoWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
@@ -281,7 +282,7 @@
                         <ContentControl x:Name="CursorColorButton"
                                         Grid.Row="2"
                                         Grid.Column="1"
-                                        Content="{x:Bind CurrentCursorColor, Mode=TwoWay}"
+                                        Content="{x:Bind ColorScheme.CurrentCursorColor, Mode=TwoWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
@@ -293,7 +294,7 @@
                         <ContentControl x:Name="SelectionBackgroundButton"
                                         Grid.Row="3"
                                         Grid.Column="1"
-                                        Content="{x:Bind CurrentSelectionBackgroundColor, Mode=TwoWay}"
+                                        Content="{x:Bind ColorScheme.CurrentSelectionBackgroundColor, Mode=TwoWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
                     </Grid>

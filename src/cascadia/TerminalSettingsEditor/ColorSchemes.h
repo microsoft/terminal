@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
         WINRT_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel>, AllColorSchemes, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, nullptr);
     };
 
     struct ColorSchemes : public HasScrollViewer<ColorSchemes>, ColorSchemesT<ColorSchemes>
@@ -29,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         void ColorSchemeSelectionChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args);
+        void ColorSchemeSelectionChanged2(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args);
         void ColorPickerChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args);
         void AddNew_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
@@ -46,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
         WINRT_PROPERTY(Editor::ColorSchemeViewModel, ColorScheme, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel>, AllColorSchemes, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(bool, IsRenaming, _PropertyChangedHandlers, nullptr);
@@ -59,18 +60,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
         void _UpdateColorSchemeList();
         void _RenameCurrentScheme(hstring newName);
-    };
-
-    struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>
-    {
-    public:
-        ColorTableEntry(uint8_t index, Windows::UI::Color color);
-        ColorTableEntry(std::wstring_view tag, Windows::UI::Color color);
-
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(IInspectable, Tag, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
     };
 }
 

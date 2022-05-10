@@ -9,6 +9,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme);
 
+        String Name;
+
         // Terminal Colors
         Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable;
         Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable;
@@ -18,5 +20,12 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorTableEntry CurrentBackgroundColor;
         ColorTableEntry CurrentCursorColor;
         ColorTableEntry CurrentSelectionBackgroundColor;
+    }
+
+    [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name { get; };
+        IInspectable Tag;
+        Windows.UI.Color Color;
     }
 }

@@ -10,7 +10,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
         String LastSelectedScheme;
-        Windows.Foundation.Collections.IVector<ColorSchemeViewModel> AllColorSchemes;
+        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes;
     };
 
     [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -34,12 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorTableEntry CurrentSelectionBackgroundColor;
 
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
-    }
-
-    [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        String Name { get; };
-        IInspectable Tag;
-        Windows.UI.Color Color;
+        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
     }
 }

@@ -18,10 +18,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
     static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
 
-    ColorSchemeViewModel::ColorSchemeViewModel(Model::ColorScheme scheme) :
+    static const std::array<hstring, 16> TableColorNames = {
+        RS_(L"ColorScheme_Black/Header"),
+        RS_(L"ColorScheme_Red/Header"),
+        RS_(L"ColorScheme_Green/Header"),
+        RS_(L"ColorScheme_Yellow/Header"),
+        RS_(L"ColorScheme_Blue/Header"),
+        RS_(L"ColorScheme_Purple/Header"),
+        RS_(L"ColorScheme_Cyan/Header"),
+        RS_(L"ColorScheme_White/Header"),
+        RS_(L"ColorScheme_BrightBlack/Header"),
+        RS_(L"ColorScheme_BrightRed/Header"),
+        RS_(L"ColorScheme_BrightGreen/Header"),
+        RS_(L"ColorScheme_BrightYellow/Header"),
+        RS_(L"ColorScheme_BrightBlue/Header"),
+        RS_(L"ColorScheme_BrightPurple/Header"),
+        RS_(L"ColorScheme_BrightCyan/Header"),
+        RS_(L"ColorScheme_BrightWhite/Header")
+    };
+
+    ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme) :
+        _scheme{ scheme },
         _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
         _CurrentBrightColorTable { single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
+        _Name = scheme.Name();
+
         for (uint8_t i = 0; i < ColorTableSize; ++i)
         {
             til::color currentColor{ scheme.Table()[i] };
@@ -40,5 +62,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentBackgroundColor = winrt::make<ColorTableEntry>(BackgroundColorTag, til::color(scheme.Background()));
         _CurrentCursorColor = winrt::make<ColorTableEntry>(CursorColorTag, til::color(scheme.CursorColor()));
         _CurrentSelectionBackgroundColor = winrt::make<ColorTableEntry>(SelectionBackgroundColorTag, til::color(scheme.SelectionBackground()));
+
+        _CurrentForegroundColor.PropertyChanged([this](const IInspectable& /*sender*/, const PropertyChangedEventArgs& /*args*/) {
+            // FINISH THIS EVENT HANDLER SEE IF IT WORKS
+            // NEED TO ACTUALLY UPDATE THE SCHEME
+        });
+    }
+
+    ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
+    {
+        Name(TableColorNames[index]);
+        Tag(winrt::box_value<uint8_t>(index));
+        Color(color);
+    }
+
+    ColorTableEntry::ColorTableEntry(std::wstring_view tag, Windows::UI::Color color)
+    {
+        Name(LocalizedNameForEnumName(L"ColorScheme_", tag, L"Text"));
+        Tag(winrt::box_value(tag));
+        Color(color);
+    }
+
+    Windows::UI::Color ColorTableEntry::Color()
+    {
+        return _color;
+    }
+
+    void ColorTableEntry::Color(Windows::UI::Color newColor)
+    {
+        _color = newColor;
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Color" });
     }
 }

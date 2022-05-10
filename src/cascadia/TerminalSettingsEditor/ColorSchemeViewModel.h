@@ -13,9 +13,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemeViewModel : ColorSchemeViewModelT<ColorSchemeViewModel>, ViewModelHelper<ColorSchemeViewModel>
     {
     public:
-        ColorSchemeViewModel(Model::ColorScheme scheme);
+        ColorSchemeViewModel(const Model::ColorScheme scheme);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
+        WINRT_PROPERTY(winrt::hstring, Name);
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentNonBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentBrightColorTable, nullptr);
@@ -24,6 +26,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentBackgroundColor, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentCursorColor, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentSelectionBackgroundColor, _PropertyChangedHandlers, nullptr);
+
+    private:
+        Model::ColorScheme _scheme;
+    };
+
+    struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>
+    {
+    public:
+        ColorTableEntry(uint8_t index, Windows::UI::Color color);
+        ColorTableEntry(std::wstring_view tag, Windows::UI::Color color);
+
+        Windows::UI::Color Color();
+        void Color(Windows::UI::Color newColor);
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(IInspectable, Tag, _PropertyChangedHandlers);
+
+    private:
+        Windows::UI::Color _color;
     };
 };
 

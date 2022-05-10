@@ -448,9 +448,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> MainPage::_MakeColorSchemeVMsHelper(const Model::CascadiaSettings& settings)
+    Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> MainPage::_MakeColorSchemeVMsHelper(const Model::CascadiaSettings& settings)
     {
-        Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> AllColorSchemes{ single_threaded_observable_vector<Editor::ColorSchemeViewModel>() };
+        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> AllColorSchemes{ single_threaded_observable_vector<Editor::ColorSchemeViewModel>() };
         const auto& colorSchemeMap{ settings.GlobalSettings().ColorSchemes() };
         for (const auto& pair : colorSchemeMap)
         {

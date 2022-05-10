@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
-        Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> _AllColorSchemes;
+        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> _AllColorSchemes;
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
 
@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton = false);
 
-        Windows::Foundation::Collections::IVector<Editor::ColorSchemeViewModel> _MakeColorSchemeVMsHelper(const Model::CascadiaSettings& settings);
+        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> _MakeColorSchemeVMsHelper(const Model::CascadiaSettings& settings);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
 
