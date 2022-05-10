@@ -147,7 +147,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
         TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
-        TYPED_EVENT(Initialized, IInspectable, IInspectable);
+        TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
@@ -390,7 +390,7 @@ namespace winrt::TerminalApp::implementation
 
         void _StartInboundListener();
 
-        winrt::fire_and_forget _CompleteInitialization();
+        void _CompleteInitialization();
 
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 
