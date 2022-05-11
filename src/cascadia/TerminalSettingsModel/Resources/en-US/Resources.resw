@@ -527,5 +527,6 @@
   </data>
   <data name="MarkModeCommandKey" xml:space="preserve">
     <value>Toggle Mark Mode</value>
+    <comment>A command that will toggle "Mark Mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
   </data>
 </root>

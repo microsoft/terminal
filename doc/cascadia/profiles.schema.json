@@ -346,7 +346,6 @@
         "sendInput",
         "setColorScheme",
         "setTabColor",
-        "selectAll",
         "splitPane",
         "switchToTab",
         "tabSearch",
