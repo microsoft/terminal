@@ -9,7 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      Background="{ThemeResource SolidBackgroundFillColorTertiary}"
+      Background="{ThemeResource SettingsPageBackground}"
       mc:Ignorable="d">
 
     <Page.Resources>
