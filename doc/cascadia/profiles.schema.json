@@ -350,6 +350,7 @@
         "tabSearch",
         "toggleAlwaysOnTop",
         "toggleFocusMode",
+        "selectAll",
         "setFocusMode",
         "toggleFullscreen",
         "setFullScreen",
