@@ -158,10 +158,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Grid::SetColumn(label, 0);
 
             // regular color
-            setupColorControl(_CurrentNonBrightColorTable.GetAt(row), row, 1);
+            setupColorControl(ColorScheme().CurrentNonBrightColorTable().GetAt(row), row, 1);
 
             // bright color
-            setupColorControl(_CurrentBrightColorTable.GetAt(row), row, 2);
+            setupColorControl(ColorScheme().CurrentBrightColorTable().GetAt(row), row, 2);
         }
     }
 
@@ -261,14 +261,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto index{ tag.try_as<uint8_t>() })
                 {
-                    CurrentColorScheme().SetColorTableEntry(*index, newColor);
                     if (index < ColorTableDivider)
                     {
-                        _CurrentNonBrightColorTable.GetAt(*index).Color(newColor);
+                        ColorScheme().CurrentNonBrightColorTable().GetAt(*index).Color(newColor);
                     }
                     else
                     {
-                        _CurrentBrightColorTable.GetAt(*index - ColorTableDivider).Color(newColor);
+                        ColorScheme().CurrentBrightColorTable().GetAt(*index - ColorTableDivider).Color(newColor);
                     }
                 }
                 else if (const auto stringTag{ tag.try_as<hstring>() })

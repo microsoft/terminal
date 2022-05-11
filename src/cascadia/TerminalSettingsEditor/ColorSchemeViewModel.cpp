@@ -44,10 +44,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _Name = scheme.Name();
 
+        const auto colorEntryChangedHandler = [&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+            if (const auto entry{ sender.try_as<ColorTableEntry>() })
+            {
+                if (args.PropertyName() == L"Color")
+                {
+                    const til::color newColor{ entry->Color() };
+                    if (const auto& tag{ entry->Tag() })
+                    {
+                        if (const auto index{ tag.try_as<uint8_t>() })
+                        {
+                            _scheme.SetColorTableEntry(*index, newColor);
+                        }
+                        else if (const auto stringTag{ tag.try_as<hstring>() })
+                        {
+                            if (stringTag == ForegroundColorTag)
+                            {
+                                _scheme.Foreground(newColor);
+                            }
+                            else if (stringTag == BackgroundColorTag)
+                            {
+                                _scheme.Background(newColor);
+                            }
+                            else if (stringTag == CursorColorTag)
+                            {
+                                _scheme.CursorColor(newColor);
+                            }
+                            else if (stringTag == SelectionBackgroundColorTag)
+                            {
+                                _scheme.SelectionBackground(newColor);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
         for (uint8_t i = 0; i < ColorTableSize; ++i)
         {
             til::color currentColor{ scheme.Table()[i] };
             const auto& entry{ winrt::make<ColorTableEntry>(i, currentColor) };
+            entry.PropertyChanged(colorEntryChangedHandler);
             if (i < ColorTableDivider)
             {
                 _CurrentNonBrightColorTable.Append(entry);
@@ -63,10 +100,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentCursorColor = winrt::make<ColorTableEntry>(CursorColorTag, til::color(scheme.CursorColor()));
         _CurrentSelectionBackgroundColor = winrt::make<ColorTableEntry>(SelectionBackgroundColorTag, til::color(scheme.SelectionBackground()));
 
-        _CurrentForegroundColor.PropertyChanged([this](const IInspectable& /*sender*/, const PropertyChangedEventArgs& /*args*/) {
-            // FINISH THIS EVENT HANDLER SEE IF IT WORKS
-            // NEED TO ACTUALLY UPDATE THE SCHEME
-        });
+        _CurrentForegroundColor.PropertyChanged(colorEntryChangedHandler);
+        _CurrentBackgroundColor.PropertyChanged(colorEntryChangedHandler);
+        _CurrentCursorColor.PropertyChanged(colorEntryChangedHandler);
+        _CurrentSelectionBackgroundColor.PropertyChanged(colorEntryChangedHandler);
     }
 
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
