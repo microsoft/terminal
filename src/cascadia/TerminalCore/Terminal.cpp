@@ -125,21 +125,16 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     if (settings.TabColor() == nullptr)
     {
-        _tabColor = std::nullopt;
+        _renderSettings.SetColorTableEntry(TextColor::FRAME_BACKGROUND, INVALID_COLOR);
     }
     else
     {
-        _tabColor = settings.TabColor().Value();
+        _renderSettings.SetColorTableEntry(TextColor::FRAME_BACKGROUND, til::color{ settings.TabColor().Value() });
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
         _startingTabColor = settings.StartingTabColor().Value();
-    }
-
-    if (_pfnTabColorChanged)
-    {
-        _pfnTabColorChanged(GetTabColor());
     }
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
@@ -1272,11 +1267,6 @@ void Terminal::SetTitleChangedCallback(std::function<void(std::wstring_view)> pf
     _pfnTitleChanged.swap(pfn);
 }
 
-void Terminal::SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept
-{
-    _pfnTabColorChanged.swap(pfn);
-}
-
 void Terminal::SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnCopyToClipboard.swap(pfn);
@@ -1357,10 +1347,18 @@ void Terminal::ClearPatternTree() noexcept
 
 // Method Description:
 // - Returns the tab color
-// If the starting color exits, it's value is preferred
+// If the starting color exists, its value is preferred
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
-    return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
+    if (_startingTabColor.has_value())
+    {
+        return _startingTabColor;
+    }
+    else
+    {
+        const auto tabColor = _renderSettings.GetColorAlias(ColorAlias::FrameBackground);
+        return tabColor == INVALID_COLOR ? std::nullopt : std::optional<til::color>{ tabColor };
+    }
 }
 
 // Method Description:

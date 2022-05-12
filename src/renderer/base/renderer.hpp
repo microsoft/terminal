@@ -52,7 +52,7 @@ namespace Microsoft::Console::Render
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const COORD* const pcoord);
         void TriggerRedrawCursor(const COORD* const pcoord);
-        void TriggerRedrawAll(const bool backgroundChanged = false);
+        void TriggerRedrawAll(const bool backgroundChanged = false, const bool frameChanged = false);
         void TriggerTeardown() noexcept;
 
         void TriggerSelection();
@@ -85,6 +85,7 @@ namespace Microsoft::Console::Render
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
 
         void SetBackgroundColorChangedCallback(std::function<void()> pfn);
+        void SetFrameColorChangedCallback(std::function<void()> pfn);
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
@@ -123,6 +124,7 @@ namespace Microsoft::Console::Render
         std::vector<Cluster> _clusterBuffer;
         std::vector<SMALL_RECT> _previousSelection;
         std::function<void()> _pfnBackgroundColorChanged;
+        std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
         bool _forceUpdateViewport = true;

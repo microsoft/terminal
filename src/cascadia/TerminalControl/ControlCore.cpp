@@ -93,9 +93,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTitleChanged = std::bind(&ControlCore::_terminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
-        auto pfnTabColorChanged = std::bind(&ControlCore::_terminalTabColorChanged, this, std::placeholders::_1);
-        _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
-
         auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
@@ -126,6 +123,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
+            _renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });
 
             _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
                 if (auto strongThis{ weakThis.get() })
@@ -647,6 +645,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
 
+        // Trigger a redraw to repaint the window background and tab colors.
+        _renderer->TriggerRedrawAll(true, true);
+
         _updateAntiAliasingMode();
 
         if (sizeChanged)
@@ -1145,21 +1146,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Called for the Terminal's TabColorChanged callback. This will re-raise
-    //   a new winrt TypedEvent that can be listened to.
-    // - The listeners to this event will re-query the control for the current
-    //   value of TabColor().
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ControlCore::_terminalTabColorChanged(const std::optional<til::color> /*color*/)
-    {
-        // Raise a TabColorChanged event
-        _TabColorChangedHandlers(*this, nullptr);
-    }
-
-    // Method Description:
     // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   Additionally fires a ScrollPositionChanged event for anyone who's
@@ -1354,6 +1340,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_rendererBackgroundColorChanged()
     {
         _BackgroundColorChangedHandlers(*this, nullptr);
+    }
+
+    void ControlCore::_rendererTabColorChanged()
+    {
+        _TabColorChangedHandlers(*this, nullptr);
     }
 
     void ControlCore::BlinkAttributeTick()

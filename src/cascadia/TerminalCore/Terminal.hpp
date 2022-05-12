@@ -196,7 +196,6 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
-    void SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept;
     void SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
@@ -267,7 +266,6 @@ private:
 
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void()> _pfnCursorPositionChanged;
-    std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
 
@@ -277,7 +275,6 @@ private:
 
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
-    std::optional<til::color> _tabColor;
     std::optional<til::color> _startingTabColor;
 
     CursorType _defaultCursorShape;

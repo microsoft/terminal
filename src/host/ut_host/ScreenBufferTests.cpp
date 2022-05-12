@@ -171,6 +171,8 @@ class ScreenBufferTests
 
     TEST_METHOD(SetDefaultBackgroundColor);
 
+    TEST_METHOD(AssignColorAliases);
+
     TEST_METHOD(DeleteCharsNearEndOfLine);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleFirstCase);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleSecondCase);
@@ -3003,6 +3005,42 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);
+}
+
+void ScreenBufferTests::AssignColorAliases()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& stateMachine = gci.GetActiveOutputBuffer().GetStateMachine();
+    auto& renderSettings = gci.GetRenderSettings();
+
+    const auto defaultFg = renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
+    const auto defaultBg = renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+    const auto frameFg = renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground);
+    const auto frameBg = renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+
+    auto resetAliases = wil::scope_exit([&] {
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, defaultFg);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, defaultBg);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, frameFg);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, frameBg);
+    });
+
+    Log::Comment(L"Test invalid item color assignment");
+    stateMachine.ProcessString(L"\033[0;12;34,|");
+    VERIFY_ARE_EQUAL(defaultFg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+    VERIFY_ARE_EQUAL(defaultBg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+    VERIFY_ARE_EQUAL(frameFg, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
+    VERIFY_ARE_EQUAL(frameBg, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
+
+    Log::Comment(L"Test normal text color assignment");
+    stateMachine.ProcessString(L"\033[1;23;45,|");
+    VERIFY_ARE_EQUAL(23u, renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+    VERIFY_ARE_EQUAL(45u, renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+
+    Log::Comment(L"Test window frame color assignment");
+    stateMachine.ProcessString(L"\033[2;34;56,|");
+    VERIFY_ARE_EQUAL(34u, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
+    VERIFY_ARE_EQUAL(56u, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
 }
 
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
