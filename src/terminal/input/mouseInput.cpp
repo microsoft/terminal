@@ -23,7 +23,7 @@ static constexpr std::wstring_view ApplicationDownSequence{ L"\x1bOB" };
 // Parameters:
 // - button - the message to decode.
 // Return value:
-// - true iff button is a button message to translate
+// - true if button is a button message to translate
 static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 {
     switch (button)
@@ -50,7 +50,7 @@ static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 // Parameters:
 // - buttonCode - the message to decode.
 // Return value:
-// - true iff buttonCode is a hover enent to translate
+// - true if buttonCode is a hover event to translate
 static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 {
     return buttonCode == WM_MOUSEMOVE;
@@ -61,7 +61,7 @@ static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 // Parameters:
 // - buttonCode - the message to decode.
 // Return value:
-// - true iff buttonCode is a wheel event to translate
+// - true if buttonCode is a wheel event to translate
 static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
 {
     return buttonCode == WM_MOUSEWHEEL || buttonCode == WM_MOUSEHWHEEL;
@@ -73,7 +73,7 @@ static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
 // Parameters:
 // - button - the message to decode.
 // Return value:
-// - true iff button is a button down event
+// - true if button is a button down event
 static constexpr bool _isButtonDown(const unsigned int button) noexcept
 {
     switch (button)
@@ -505,7 +505,7 @@ std::wstring TerminalInput::_GenerateUtf8Sequence(const til::point position,
 // Parameters:
 // - position - The windows coordinates (top,left = 0,0) of the mouse event
 // - button - the message to decode. WM_MOUSEMOVE is used for mouse hovers with no buttons pressed.
-// - isDown - true iff a mouse button was pressed.
+// - isDown - true if a mouse button was pressed.
 // - isHover - true if the sequence is generated in response to a mouse hover
 // - modifierKeyState - the modifier keys pressed with this button
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
@@ -538,7 +538,7 @@ std::wstring TerminalInput::_GenerateSGRSequence(const til::point position,
 // - button: The mouse event code of the input event
 // - delta: The scroll wheel delta of the input event
 // Return value:
-// True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
+// True if the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
 bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
     const auto inAltBuffer{ _mouseInputState.inAlternateBuffer };
@@ -552,7 +552,7 @@ bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const s
 // Parameters:
 // - delta: The scroll wheel delta of the input event
 // Return value:
-// True iff the input sequence was sent successfully.
+// True if the input sequence was sent successfully.
 bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
 {
     if (delta > 0)
