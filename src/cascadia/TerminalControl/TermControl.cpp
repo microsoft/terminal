@@ -426,7 +426,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (imageSource == nullptr ||
             imageSource.UriSource() == nullptr ||
-            imageSource.UriSource().RawUri() != imageUri.RawUri())
+            !imageSource.UriSource().Equals(imageUri))
         {
             // Note that BitmapImage handles the image load asynchronously,
             // which is especially important since the image
