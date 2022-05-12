@@ -299,10 +299,10 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 // - NOTE: Use sparingly. Try to reduce the refresh region where possible. Only use when a global state change has occurred.
 // Arguments:
 // - backgroundChanged - Set to true if the background color has changed.
-// - tabChanged - Set to true if the tab color has changed.
+// - frameChanged - Set to true if the frame colors have changed.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool tabChanged)
+void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool frameChanged)
 {
     FOREACH_ENGINE(pEngine)
     {
@@ -316,9 +316,9 @@ void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool tabChan
         _pfnBackgroundColorChanged();
     }
 
-    if (tabChanged && _pfnTabColorChanged)
+    if (frameChanged && _pfnFrameColorChanged)
     {
-        _pfnTabColorChanged();
+        _pfnFrameColorChanged();
     }
 }
 
@@ -1355,14 +1355,14 @@ void Renderer::SetBackgroundColorChangedCallback(std::function<void()> pfn)
 }
 
 // Method Description:
-// - Registers a callback for when the tab color is changed
+// - Registers a callback for when the frame colors have changed
 // Arguments:
 // - pfn: the callback
 // Return Value:
 // - <none>
-void Renderer::SetTabColorChangedCallback(std::function<void()> pfn)
+void Renderer::SetFrameColorChangedCallback(std::function<void()> pfn)
 {
-    _pfnTabColorChanged = std::move(pfn);
+    _pfnFrameColorChanged = std::move(pfn);
 }
 
 // Method Description:

@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
-            _renderer->SetTabColorChangedCallback([this]() { _rendererTabColorChanged(); });
+            _renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });
 
             _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
                 if (auto strongThis{ weakThis.get() })
