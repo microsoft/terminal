@@ -1453,6 +1453,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     // Save cursor's relative height versus the viewport
     const auto sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().Y - _viewport.Top();
+    // Also save the distance to the virtual bottom so it can be restored after the resize
+    const auto cursorDistanceFromBottom = _virtualBottom - _textBuffer->GetCursor().GetPosition().Y;
 
     // skip any drawing updates that might occur until we swap _textBuffer with the new buffer or we exit early.
     newTextBuffer->GetCursor().StartDeferDrawing();
@@ -1464,14 +1466,20 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (SUCCEEDED(hr))
     {
-        // Make sure the new virtual bottom is far enough down to include both
-        // the cursor row and the last non-space row. It also shouldn't be less
-        // than the height of the viewport, otherwise the top of the virtual
-        // viewport would end up negative.
+        // Since the reflow doesn't preserve the virtual bottom, we try and
+        // estimate where it ought to be by making it the same distance from
+        // the cursor row as it was before the resize. However, we also need
+        // to make sure it is far enough down to include the last non-space
+        // row, and it shouldn't be less than the height of the viewport,
+        // otherwise the top of the virtual viewport would end up negative.
         const auto cursorRow = newTextBuffer->GetCursor().GetPosition().Y;
         const auto lastNonSpaceRow = newTextBuffer->GetLastNonSpaceCharacter().Y;
+        const auto estimatedBottom = gsl::narrow_cast<short>(cursorRow + cursorDistanceFromBottom);
         const auto viewportBottom = gsl::narrow_cast<short>(_viewport.Height() - 1);
-        _virtualBottom = std::max({ cursorRow, lastNonSpaceRow, viewportBottom });
+        _virtualBottom = std::max({ lastNonSpaceRow, estimatedBottom, viewportBottom });
+
+        // We can't let it extend past the bottom of the buffer either.
+        _virtualBottom = std::min(_virtualBottom, newTextBuffer->GetSize().BottomInclusive());
 
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
         const auto sCursorHeightInViewportAfter = cursorRow - _viewport.Top();

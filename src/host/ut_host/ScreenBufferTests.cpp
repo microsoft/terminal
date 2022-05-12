@@ -6329,6 +6329,18 @@ void ScreenBufferTests::UpdateVirtualBottomAfterResizeWithReflow()
     Log::Comment(L"Confirm that the virtual viewport includes the last non-space row");
     const auto lastNonSpaceRow = si.GetTextBuffer().GetLastNonSpaceCharacter().Y;
     VERIFY_IS_GREATER_THAN_OR_EQUAL(si._virtualBottom, lastNonSpaceRow);
+
+    Log::Comment(L"Clear the screen and note the cursor distance to the virtual bottom");
+    stateMachine.ProcessString(L"\033[H\033[2J");
+    const auto cursorDistanceFromBottom = si._virtualBottom - si.GetTextBuffer().GetCursor().GetPosition().Y;
+    VERIFY_ARE_EQUAL(si.GetViewport().Height() - 1, cursorDistanceFromBottom);
+
+    Log::Comment(L"Stretch the viewport back to full width");
+    bufferSize.X *= 2;
+    VERIFY_NT_SUCCESS(si.ResizeWithReflow(bufferSize));
+
+    Log::Comment(L"Confirm cursor distance to the virtual bottom is unchanged");
+    VERIFY_ARE_EQUAL(cursorDistanceFromBottom, si._virtualBottom - si.GetTextBuffer().GetCursor().GetPosition().Y);
 }
 
 void ScreenBufferTests::DontShrinkVirtualBottomDuringResizeWithReflowAtTop()
