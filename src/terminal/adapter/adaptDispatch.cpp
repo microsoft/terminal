@@ -2286,26 +2286,18 @@ bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex)
 {
-    auto targetColors = std::pair<ColorAlias, ColorAlias>{};
     switch (item)
     {
     case DispatchTypes::ColorItem::NormalText:
-        targetColors = { ColorAlias::DefaultForeground, ColorAlias::DefaultBackground };
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
         break;
     case DispatchTypes::ColorItem::WindowFrame:
-        targetColors = { ColorAlias::FrameForeground, ColorAlias::FrameBackground };
+        _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
+        _renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, bgIndex);
         break;
     default:
         return false;
-    }
-
-    if (fgIndex < TextColor::TABLE_SIZE)
-    {
-        _renderSettings.SetColorAliasIndex(targetColors.first, fgIndex);
-    }
-    if (bgIndex < TextColor::TABLE_SIZE)
-    {
-        _renderSettings.SetColorAliasIndex(targetColors.second, bgIndex);
     }
 
     // No need to force a redraw in pty mode.

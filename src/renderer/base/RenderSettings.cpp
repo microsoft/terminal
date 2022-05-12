@@ -153,7 +153,10 @@ COLORREF RenderSettings::GetColorAlias(const ColorAlias alias) const
 // - tableIndex - The new position of the alias in the color table.
 void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
 {
-    gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    if (tableIndex < TextColor::TABLE_SIZE)
+    {
+        gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    }
 }
 
 // Routine Description:
