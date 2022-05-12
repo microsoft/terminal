@@ -2596,7 +2596,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
     {
-        if (newAppearance.BackgroundImagePath().empty())
+        const auto path = newAppearance.ExpandedBackgroundImagePath();
+        if (path.empty())
         {
             _tabContent.Background(nullptr);
             return;
@@ -2605,7 +2606,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Uri imageUri{ nullptr };
         try
         {
-            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImagePath() };
+            imageUri = Windows::Foundation::Uri{ path };
         }
         catch (...)
         {
@@ -2622,7 +2623,7 @@ namespace winrt::TerminalApp::implementation
 
         if (imageSource == nullptr ||
             imageSource.UriSource() == nullptr ||
-            imageSource.UriSource().RawUri() != imageUri.RawUri())
+            !imageSource.UriSource().Equals(imageUri))
         {
             Media::ImageBrush b{};
             // Note that BitmapImage handles the image load asynchronously,
