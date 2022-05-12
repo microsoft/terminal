@@ -55,6 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         TerminalSettings() = default;
 
+        static Model::TerminalSettings CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
+
         static Model::TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
                                                                      const Model::Profile& profile,
                                                                      const Control::IKeyBindings& keybindings);
@@ -159,6 +161,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         gsl::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
+
+        static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
         void _ApplyProfileSettings(const Model::Profile& profile);
 
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;

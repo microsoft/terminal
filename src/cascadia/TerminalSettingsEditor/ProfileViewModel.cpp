@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
-        return Model::TerminalSettings::CreateWithProfile(_appSettings, _profile, nullptr).DefaultSettings();
+        return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 
     // Method Description:
