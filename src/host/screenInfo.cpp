@@ -1478,6 +1478,9 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         const auto viewportBottom = gsl::narrow_cast<short>(_viewport.Height() - 1);
         _virtualBottom = std::max({ lastNonSpaceRow, estimatedBottom, viewportBottom });
 
+        // We can't let it extend past the bottom of the buffer either.
+        _virtualBottom = std::min(_virtualBottom, newTextBuffer->GetSize().BottomInclusive());
+
         // Adjust the viewport so the cursor doesn't wildly fly off up or down.
         const auto sCursorHeightInViewportAfter = cursorRow - _viewport.Top();
         COORD coordCursorHeightDiff = { 0 };
