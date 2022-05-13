@@ -1395,7 +1395,10 @@ try
                 til::rect scrollArea{ _invalidMap.size() * _fontRenderData->GlyphCell() };
 
                 // Reduce the size of the rectangle by the scroll.
-                scrollArea -= til::size{} - scrollPixels;
+                scrollArea.left = std::clamp(scrollArea.left + scrollPixels.x, scrollArea.left, scrollArea.right);
+                scrollArea.top = std::clamp(scrollArea.top + scrollPixels.y, scrollArea.top, scrollArea.bottom);
+                scrollArea.right = std::clamp(scrollArea.right + scrollPixels.x, scrollArea.left, scrollArea.right);
+                scrollArea.bottom = std::clamp(scrollArea.bottom + scrollPixels.y, scrollArea.top, scrollArea.bottom);
 
                 // Assign the area to the present storage
                 _presentScroll = scrollArea.to_win32_rect();
