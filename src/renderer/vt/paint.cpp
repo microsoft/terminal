@@ -348,17 +348,17 @@ using namespace Microsoft::Console::Types;
         _bufferLine.clear();
         _bufferLine.reserve(clusters.size());
 
-        short totalWidth = 0;
+        size_t totalWidth = 0;
         for (const auto& cluster : clusters)
         {
             _bufferLine.append(cluster.GetText());
-            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
+            totalWidth += cluster.GetColumns();
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
 
         // Update our internal tracker of the cursor's position
-        _lastText.X += totalWidth;
+        _lastText.X += gsl::narrow<short>(totalWidth);
 
         return S_OK;
     }
@@ -384,38 +384,29 @@ using namespace Microsoft::Console::Types;
 
     _bufferLine.clear();
     _bufferLine.reserve(clusters.size());
-    short totalWidth = 0;
+    size_t totalWidth = 0;
     for (const auto& cluster : clusters)
     {
         _bufferLine.append(cluster.GetText());
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
+        totalWidth += cluster.GetColumns();
     }
     const auto cchLine = _bufferLine.size();
 
-    auto foundNonspace = false;
-    size_t lastNonSpace = 0;
-    for (size_t i = 0; i < cchLine; i++)
-    {
-        if (_bufferLine.at(i) != L'\x20')
-        {
-            lastNonSpace = i;
-            foundNonspace = true;
-        }
-    }
+    const auto spaceIndex = _bufferLine.find_last_not_of(L' ');
+    const auto foundNonspace = spaceIndex != decltype(_bufferLine)::npos;
+    const auto nonSpaceLength = foundNonspace ? spaceIndex + 1 : 0;
+
     // Examples:
     // - "  ":
-    //      cch = 2, lastNonSpace = 0, foundNonSpace = false
-    //      cch-lastNonSpace = 2 -> good
-    //      cch-lastNonSpace-(0) = 2 -> good
+    //      cch = 2, spaceIndex = 0, foundNonSpace = false
+    //      cch-nonSpaceLength = 2
     // - "A "
-    //      cch = 2, lastNonSpace = 0, foundNonSpace = true
-    //      cch-lastNonSpace = 2 -> bad
-    //      cch-lastNonSpace-(1) = 1 -> good
+    //      cch = 2, spaceIndex = 0, foundNonSpace = true
+    //      cch-nonSpaceLength = 1
     // - "AA"
-    //      cch = 2, lastNonSpace = 1, foundNonSpace = true
-    //      cch-lastNonSpace = 1 -> bad
-    //      cch-lastNonSpace-(1) = 0 -> good
-    const auto numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+    //      cch = 2, spaceIndex = 1, foundNonSpace = true
+    //      cch-nonSpaceLength = 0
+    const auto numSpaces = cchLine - nonSpaceLength;
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase
@@ -460,9 +451,7 @@ using namespace Microsoft::Console::Types;
     const auto removeSpaces = !lineWrapped && (useEraseChar ||
                                                _clearedAllThisFrame ||
                                                (_newBottomLine && printingBottomLine && bgMatched));
-    const auto cchActual = removeSpaces ?
-                               (cchLine - numSpaces) :
-                               cchLine;
+    const auto cchActual = removeSpaces ? nonSpaceLength : cchLine;
 
     const auto columnsActual = removeSpaces ?
                                    (totalWidth - numSpaces) :
