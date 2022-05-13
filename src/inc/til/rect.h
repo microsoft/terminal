@@ -508,7 +508,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             // Imagine a terminal of 120x30 "cells" with each cell being
-            // 5x10 pixels large. The terminal is thus be 600x300 pixels.
+            // 5x10 pixels large. The terminal is therefore 600x300 pixels.
             // Given a rectangle in pixel coordinates, what's the rectangle in cell coordinates?
             // Clearly this requires us to floor() top/left and ceil() bottom/right to cover all pixels.
             // And thus:
