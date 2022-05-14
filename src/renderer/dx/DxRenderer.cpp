@@ -53,7 +53,7 @@ namespace
 {
     bool operator==(const D2D1::Matrix3x2F& lhs, const D2D1::Matrix3x2F& rhs) noexcept
     {
-        return ::memcmp(lhs.m, rhs.m, sizeof(lhs.m)) == 0;
+        return ::memcmp(&lhs.m[0][0], &rhs.m[0][0], sizeof(lhs.m)) == 0;
     };
 }
 
@@ -2325,7 +2325,7 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
                                                      const size_t viewportLeft) noexcept
 {
     auto lineTransform = D2D1::Matrix3x2F{ 0, 0, 0, 0, 0, 0 };
-    auto fontSize = _fontRenderData->GlyphCell();
+    const auto fontSize = _fontRenderData->GlyphCell();
     // The X delta is to account for the horizontal viewport offset.
     lineTransform.dx = viewportLeft ? -1.0f * viewportLeft * fontSize.width : 0.0f;
     switch (lineRendition)
