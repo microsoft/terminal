@@ -180,9 +180,9 @@ void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
     }
     else
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        SMALL_RECT OldRegion = _caInfo.rcViewCaWindow;
+        auto OldRegion = _caInfo.rcViewCaWindow;
         OldRegion.Left += _caInfo.coordConView.X;
         OldRegion.Right += _caInfo.coordConView.X;
         OldRegion.Top += _caInfo.coordConView.Y;
@@ -191,7 +191,7 @@ void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
 
         _caInfo.coordConView = pos;
 
-        SMALL_RECT NewRegion = _caInfo.rcViewCaWindow;
+        auto NewRegion = _caInfo.rcViewCaWindow;
         NewRegion.Left += _caInfo.coordConView.X;
         NewRegion.Right += _caInfo.coordConView.X;
         NewRegion.Top += _caInfo.coordConView.Y;
@@ -202,8 +202,8 @@ void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
 
 void ConversionAreaInfo::Paint() const noexcept
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& ScreenInfo = gci.GetActiveOutputBuffer();
     const auto viewport = ScreenInfo.GetViewport();
 
     SMALL_RECT WriteRegion;

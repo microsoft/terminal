@@ -39,7 +39,7 @@ enum class CursorX
     XCENTER
 };
 
-enum class CursorDirection : size_t
+enum class CursorDirection : Microsoft::Console::VirtualTerminal::VTInt
 {
     UP = 0,
     DOWN = 1,
@@ -49,7 +49,7 @@ enum class CursorDirection : size_t
     PREVLINE = 5
 };
 
-enum class AbsolutePosition : size_t
+enum class AbsolutePosition : Microsoft::Console::VirtualTerminal::VTInt
 {
     CursorHorizontal = 0,
     VerticalLine = 1,
@@ -57,11 +57,27 @@ enum class AbsolutePosition : size_t
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-class TestGetSet final : public ConGetSet
+class TestGetSet final : public ITerminalApi
 {
 public:
     void PrintString(const std::wstring_view /*string*/) override
     {
+    }
+
+    void ReturnResponse(const std::wstring_view response) override
+    {
+        Log::Comment(L"ReturnResponse MOCK called...");
+
+        THROW_HR_IF(E_FAIL, !_returnResponseResult);
+
+        if (_retainResponse)
+        {
+            _response += response;
+        }
+        else
+        {
+            _response = response;
+        }
     }
 
     StateMachine& GetStateMachine() override
@@ -103,28 +119,7 @@ public:
         _textBuffer->SetCurrentAttributes(attrs);
     }
 
-    void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override
-    {
-        Log::Comment(L"WriteInput MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_writeInputResult);
-
-        // move all the input events we were given into local storage so we can test against them
-        Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
-
-        if (_retainInput)
-        {
-            std::move(events.begin(), events.end(), std::back_inserter(_events));
-        }
-        else
-        {
-            _events.clear();
-            _events.swap(events);
-        }
-        eventsWritten = _events.size();
-    }
-
-    void SetScrollingRegion(const SMALL_RECT& scrollMargins) override
+    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override
     {
         Log::Comment(L"SetScrollingRegion MOCK called...");
 
@@ -181,6 +176,12 @@ public:
         return CursorType::Legacy;
     }
 
+    void ShowWindow(bool showOrHide) override
+    {
+        Log::Comment(L"ShowWindow MOCK called...");
+        VERIFY_ARE_EQUAL(_expectedShowWindow, showOrHide);
+    }
+
     bool ResizeWindow(const size_t /*width*/, const size_t /*height*/) override
     {
         Log::Comment(L"ResizeWindow MOCK called...");
@@ -200,6 +201,26 @@ public:
         return _expectedOutputCP;
     }
 
+    void EnableXtermBracketedPasteMode(const bool /*enabled*/)
+    {
+        Log::Comment(L"EnableXtermBracketedPasteMode MOCK called...");
+    }
+
+    void CopyToClipboard(const std::wstring_view /*content*/)
+    {
+        Log::Comment(L"CopyToClipboard MOCK called...");
+    }
+
+    void SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+    {
+        Log::Comment(L"SetTaskbarProgress MOCK called...");
+    }
+
+    void SetWorkingDirectory(const std::wstring_view /*uri*/)
+    {
+        Log::Comment(L"SetWorkingDirectory MOCK called...");
+    }
+
     bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");
@@ -209,11 +230,6 @@ public:
     void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
     {
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
-    }
-
-    void ReparentWindow(const uint64_t /*handle*/)
-    {
-        Log::Comment(L"ReparentWindow MOCK called...");
     }
 
     void PrepData()
@@ -246,7 +262,7 @@ public:
 
         // APIs succeed by default
         _setTextAttributesResult = TRUE;
-        _writeInputResult = TRUE;
+        _returnResponseResult = TRUE;
 
         _textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
 
@@ -263,16 +279,16 @@ public:
         _textBuffer->SetCurrentAttributes(TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
         _expectedAttribute = _textBuffer->GetCurrentAttributes();
 
-        _events.clear();
-        _retainInput = false;
+        _response.clear();
+        _retainResponse = false;
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
     {
         Log::Comment(L"Adjusting cursor within viewport... Expected will match actual when done.");
 
-        COORD cursorPos = {};
-        const COORD bufferSize = _textBuffer->GetSize().Dimensions();
+        til::point cursorPos;
+        const auto bufferSize = _textBuffer->GetSize().Dimensions();
 
         switch (xact)
         {
@@ -306,42 +322,21 @@ public:
             break;
         }
 
-        _textBuffer->GetCursor().SetPosition(cursorPos);
+        _textBuffer->GetCursor().SetPosition(til::unwrap_coord(cursorPos));
         _expectedCursorPos = cursorPos;
     }
 
     void ValidateExpectedCursorPos()
     {
-        VERIFY_ARE_EQUAL(_expectedCursorPos, _textBuffer->GetCursor().GetPosition());
+        VERIFY_ARE_EQUAL(_expectedCursorPos, til::point{ _textBuffer->GetCursor().GetPosition() });
     }
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
-        size_t const cchResponse = wcslen(pwszExpectedResponse);
-        size_t const eventCount = _events.size();
-
-        VERIFY_ARE_EQUAL(cchResponse * 2, eventCount, L"We should receive TWO input records for every character in the expected string. Key down and key up.");
-
-        for (size_t iInput = 0; iInput < eventCount; iInput++)
-        {
-            wchar_t const wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
-
-            VERIFY_ARE_EQUAL(InputEventType::KeyEvent, _events[iInput]->EventType());
-
-            const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
-
-            // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
-            VERIFY_ARE_EQUAL((bool)!(iInput % 2), keyEvent->IsKeyDown());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetActiveModifierKeys());
-            Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->GetCharData()));
-            VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
-            VERIFY_ARE_EQUAL(1u, keyEvent->GetRepeatCount());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualScanCode());
-        }
+        VERIFY_ARE_EQUAL(pwszExpectedResponse, _response);
     }
 
-    void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
+    void _SetMarginsHelper(til::inclusive_rect* rect, til::CoordType top, til::CoordType bottom)
     {
         rect->Top = top;
         rect->Bottom = bottom;
@@ -360,33 +355,33 @@ public:
     static const WORD s_wDefaultAttribute = 0;
     static const WORD s_defaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
-    std::deque<std::unique_ptr<IInputEvent>> _events;
-    bool _retainInput{ false };
+    std::wstring _response;
+    bool _retainResponse{ false };
 
     auto EnableInputRetentionInScope()
     {
-        auto oldRetainValue{ _retainInput };
-        _retainInput = true;
+        auto oldRetainValue{ _retainResponse };
+        _retainResponse = true;
         return wil::scope_exit([oldRetainValue, this] {
-            _retainInput = oldRetainValue;
+            _retainResponse = oldRetainValue;
         });
     }
 
     StateMachine* _stateMachine;
     DummyRenderer _renderer;
     std::unique_ptr<TextBuffer> _textBuffer;
-    SMALL_RECT _viewport = { 0, 0, 0, 0 };
-    SMALL_RECT _expectedScrollRegion = { 0, 0, 0, 0 };
-    SMALL_RECT _activeScrollRegion = { 0, 0, 0, 0 };
+    til::inclusive_rect _viewport = { 0, 0, 0, 0 };
+    til::inclusive_rect _expectedScrollRegion = { 0, 0, 0, 0 };
+    til::inclusive_rect _activeScrollRegion = { 0, 0, 0, 0 };
 
-    COORD _expectedCursorPos = { 0, 0 };
+    til::point _expectedCursorPos;
 
     TextAttribute _expectedAttribute = {};
     unsigned int _expectedOutputCP = 0;
     bool _isPty = false;
 
     bool _setTextAttributesResult = false;
-    bool _writeInputResult = false;
+    bool _returnResponseResult = false;
 
     bool _setScrollingRegionResult = false;
     bool _getLineFeedModeResult = false;
@@ -397,6 +392,7 @@ public:
     std::wstring_view _expectedWindowTitle{};
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
+    bool _expectedShowWindow = false;
 
 private:
     HANDLE _hCon;
@@ -409,18 +405,17 @@ public:
 
     TEST_METHOD_SETUP(SetupMethods)
     {
-        bool fSuccess = true;
+        auto fSuccess = true;
 
         auto api = std::make_unique<TestGetSet>();
         fSuccess = api.get() != nullptr;
         if (fSuccess)
         {
-            // give AdaptDispatch ownership of _testGetSet
-            _testGetSet = api.get(); // keep a copy for us but don't manage its lifetime anymore.
+            _testGetSet = std::move(api);
             _terminalInput = TerminalInput{ nullptr };
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
-            auto adapter = std::make_unique<AdaptDispatch>(std::move(api), renderer, renderSettings, _terminalInput);
+            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -451,7 +446,7 @@ public:
         Log::Comment(L"Starting test...");
 
         // Used to switch between the various function options.
-        typedef bool (AdaptDispatch::*CursorMoveFunc)(size_t);
+        typedef bool (AdaptDispatch::*CursorMoveFunc)(VTInt);
         CursorMoveFunc moveFunc = nullptr;
 
         // Modify variables based on directionality of this test
@@ -504,7 +499,7 @@ public:
 
         Log::Comment(L"Test 1b: Cursor moves to left of line with next/prev line command when cursor can't move higher/lower.");
 
-        bool fDoTest1b = false;
+        auto fDoTest1b = false;
 
         switch (direction)
         {
@@ -601,8 +596,8 @@ public:
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        short sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) / 2;
-        short sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) / 2;
+        auto sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) / 2;
+        auto sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) / 2;
 
         // The X coordinate is unaffected by the viewport.
         _testGetSet->_expectedCursorPos.X = sCol - 1;
@@ -643,11 +638,11 @@ public:
         Log::Comment(L"Starting test...");
 
         //// Used to switch between the various function options.
-        typedef bool (AdaptDispatch::*CursorMoveFunc)(size_t);
+        typedef bool (AdaptDispatch::*CursorMoveFunc)(VTInt);
         CursorMoveFunc moveFunc = nullptr;
-        SHORT sRangeEnd = 0;
-        SHORT sRangeStart = 0;
-        SHORT* psCursorExpected = nullptr;
+        auto sRangeEnd = 0;
+        auto sRangeStart = 0;
+        til::CoordType* psCursorExpected = nullptr;
 
         // Modify variables based on directionality of this test
         AbsolutePosition direction;
@@ -683,7 +678,7 @@ public:
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        short sVal = (sRangeEnd - sRangeStart) / 2;
+        auto sVal = (sRangeEnd - sRangeStart) / 2;
 
         *psCursorExpected = sRangeStart + (sVal - 1);
 
@@ -714,7 +709,7 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        COORD coordExpected = { 0 };
+        til::point coordExpected;
 
         Log::Comment(L"Test 1: Restore with no saved data should move to top-left corner, the null/default position.");
 
@@ -1378,7 +1373,7 @@ public:
             _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
             // start with the cursor position in the buffer.
-            COORD coordCursorExpected = _testGetSet->_textBuffer->GetCursor().GetPosition();
+            til::point coordCursorExpected{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
             coordCursorExpected.Y -= _testGetSet->_viewport.Top;
@@ -1438,12 +1433,12 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
-        PCWSTR pwszExpectedResponse = L"\x1b[?1;0c";
+        auto pwszExpectedResponse = L"\x1b[?1;0c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->DeviceAttributes(), std::exception);
     }
@@ -1456,12 +1451,12 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->SecondaryDeviceAttributes());
 
-        PCWSTR pwszExpectedResponse = L"\x1b[>0;10;1c";
+        auto pwszExpectedResponse = L"\x1b[>0;10;1c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->SecondaryDeviceAttributes(), std::exception);
     }
@@ -1474,12 +1469,12 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->TertiaryDeviceAttributes());
 
-        PCWSTR pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
+        auto pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
     }
@@ -1502,9 +1497,9 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_FALSE(_pDispatch->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
 
-        Log::Comment(L"Test 4: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 4: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
         VERIFY_THROWS(_pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited), std::exception);
     }
 
@@ -1695,11 +1690,11 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        SMALL_RECT srTestMargins = { 0 };
+        til::inclusive_rect srTestMargins;
         _testGetSet->_textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
         _testGetSet->_viewport.Right = 8;
         _testGetSet->_viewport.Bottom = 8;
-        SHORT sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
+        auto sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
@@ -1731,7 +1726,7 @@ public:
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
@@ -1772,7 +1767,7 @@ public:
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds has no effect.");
 
@@ -1780,7 +1775,7 @@ public:
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds has no effect.");
 
@@ -1788,7 +1783,7 @@ public:
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(SMALL_RECT{}, _testGetSet->_activeScrollRegion);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
     }
 
     TEST_METHOD(LineFeedTest)
@@ -2249,7 +2244,7 @@ public:
 
 private:
     TerminalInput _terminalInput{ nullptr };
-    TestGetSet* _testGetSet; // non-ownership pointer
+    std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;
 };

@@ -27,6 +27,7 @@ namespace TerminalCoreUnitTests
 {
     class ConptyRoundtripTests;
 };
+class ScreenBufferTests;
 #endif
 
 namespace Microsoft::Console::VirtualTerminal
@@ -85,6 +86,7 @@ namespace Microsoft::Console::Render
         void SetTerminalCursorTextPosition(const COORD coordCursor) noexcept;
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
         [[nodiscard]] HRESULT RequestWin32Input() noexcept;
+        [[nodiscard]] virtual HRESULT SetWindowVisibility(const bool showOrHide) noexcept = 0;
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer) noexcept;
 
     protected:
@@ -199,6 +201,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
         [[nodiscard]] HRESULT _SwitchScreenBuffer(const bool useAltBuffer) noexcept;
 
+        [[nodiscard]] HRESULT _RequestFocusEventMode() noexcept;
+
         [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
         [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;
@@ -208,11 +212,11 @@ namespace Microsoft::Console::Render
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop
         std::wstring _bufferLine;
-        [[nodiscard]] HRESULT _PaintUtf8BufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
                                                    const COORD coord,
                                                    const bool lineWrapped) noexcept;
 
-        [[nodiscard]] HRESULT _PaintAsciiBufferLine(gsl::span<const Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
                                                     const COORD coord) noexcept;
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
@@ -227,6 +231,7 @@ namespace Microsoft::Console::Render
 
         friend class VtRendererTest;
         friend class ConptyOutputTests;
+        friend class ScreenBufferTests;
         friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
 

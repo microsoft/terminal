@@ -67,9 +67,9 @@ HSL ColorHelper::RgbToHsl(const winrt::Windows::UI::Color& color)
 
     // three decimal places after the comma ought
     // to be enough for everybody - Bill Gates, 1981
-    float finalH = std::roundf(h * 60);
-    float finalS = std::roundf(s * 1000) / 1000;
-    float finalL = std::roundf(l * 1000) / 1000;
+    auto finalH = std::roundf(h * 60);
+    auto finalS = std::roundf(s * 1000) / 1000;
+    auto finalL = std::roundf(l * 1000) / 1000;
 
     return HSL{ finalH, finalS, finalL };
 }
@@ -264,6 +264,6 @@ float ColorHelper::GetLuminance(const winrt::Windows::UI::Color& color)
     {
         B = std::pow(((BsRGB + 0.055f) / 1.055f), 2.4f);
     }
-    float luminance = (0.2126f * R) + (0.7152f * G) + (0.0722f * B);
+    auto luminance = (0.2126f * R) + (0.7152f * G) + (0.0722f * B);
     return std::roundf(luminance * 10000) / 10000.f;
 }

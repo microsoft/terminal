@@ -55,7 +55,7 @@ HRESULT PrintMonitorInfo(LPCWSTR pwszLabel, HMONITOR hmon)
     mi.cbSize = sizeof(mi);
     RETURN_IF_WIN32_BOOL_FALSE(GetMonitorInfoW(hmon, &mi));
 
-    bool const IsPrimary = mi.dwFlags & MONITORINFOF_PRIMARY;
+    const bool IsPrimary = mi.dwFlags & MONITORINFOF_PRIMARY;
 
     wcout << pwszLabel << endl;
     wcout << "- Monitor Name: " << mi.szDevice << endl;

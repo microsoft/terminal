@@ -84,8 +84,6 @@ public:
         PCWSTR pwszValueName;
         DWORD dwFieldOffset;
         size_t cbFieldSize;
-
-        _RegPropertyMap& operator=(const _RegPropertyMap&) { return *this; }
     } RegPropertyMap;
 
     static const RegPropertyMap s_PropertyMappings[];

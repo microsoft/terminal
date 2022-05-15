@@ -6,20 +6,20 @@ namespace WEX
     namespace TestExecution
     {
         template<>
-        class VerifyOutputTraits<SMALL_RECT>
+        class VerifyOutputTraits<til::inclusive_rect>
         {
         public:
-            static WEX::Common::NoThrowString ToString(const SMALL_RECT& sr)
+            static WEX::Common::NoThrowString ToString(const til::inclusive_rect& sr)
             {
                 return WEX::Common::NoThrowString().Format(L"(L:%d, R:%d, T:%d, B:%d)", sr.Left, sr.Right, sr.Top, sr.Bottom);
             }
         };
 
         template<>
-        class VerifyCompareTraits<SMALL_RECT, SMALL_RECT>
+        class VerifyCompareTraits<til::inclusive_rect, til::inclusive_rect>
         {
         public:
-            static bool AreEqual(const SMALL_RECT& expected, const SMALL_RECT& actual)
+            static bool AreEqual(const til::inclusive_rect& expected, const til::inclusive_rect& actual)
             {
                 return expected.Left == actual.Left &&
                        expected.Right == actual.Right &&
@@ -27,55 +27,54 @@ namespace WEX
                        expected.Bottom == actual.Bottom;
             }
 
-            static bool AreSame(const SMALL_RECT& expected, const SMALL_RECT& actual)
+            static bool AreSame(const til::inclusive_rect& expected, const til::inclusive_rect& actual)
             {
                 return &expected == &actual;
             }
 
-            static bool IsLessThan(const SMALL_RECT& /*expectedLess*/, const SMALL_RECT& /*expectedGreater*/)
+            static bool IsLessThan(const til::inclusive_rect& /*expectedLess*/, const til::inclusive_rect& /*expectedGreater*/)
             {
-                VERIFY_FAIL(L"Less than is invalid for SMALL_RECT comparisons.");
+                VERIFY_FAIL(L"Less than is invalid for til::inclusive_rect comparisons.");
                 return false;
             }
 
-            static bool IsGreaterThan(const SMALL_RECT& /*expectedGreater*/, const SMALL_RECT& /*expectedLess*/)
+            static bool IsGreaterThan(const til::inclusive_rect& /*expectedGreater*/, const til::inclusive_rect& /*expectedLess*/)
             {
-                VERIFY_FAIL(L"Greater than is invalid for SMALL_RECT comparisons.");
+                VERIFY_FAIL(L"Greater than is invalid for til::inclusive_rect comparisons.");
                 return false;
             }
 
-            static bool IsNull(const SMALL_RECT& object)
+            static bool IsNull(const til::inclusive_rect& object)
             {
                 return object.Left == 0 && object.Right == 0 && object.Top == 0 && object.Bottom == 0;
             }
         };
 
         template<>
-        class VerifyOutputTraits<COORD>
+        class VerifyOutputTraits<til::point>
         {
         public:
-            static WEX::Common::NoThrowString ToString(const COORD& coord)
+            static WEX::Common::NoThrowString ToString(const til::point coord)
             {
                 return WEX::Common::NoThrowString().Format(L"(X:%d, Y:%d)", coord.X, coord.Y);
             }
         };
 
         template<>
-        class VerifyCompareTraits<COORD, COORD>
+        class VerifyCompareTraits<til::point, til::point>
         {
         public:
-            static bool AreEqual(const COORD& expected, const COORD& actual)
+            static bool AreEqual(expected, const til::point actual)
             {
-                return expected.X == actual.X &&
-                       expected.Y == actual.Y;
+                return expected == actual;
             }
 
-            static bool AreSame(const COORD& expected, const COORD& actual)
+            static bool AreSame(const til::point expected, const til::point actual)
             {
                 return &expected == &actual;
             }
 
-            static bool IsLessThan(const COORD& expectedLess, const COORD& expectedGreater)
+            static bool IsLessThan(const til::point expectedLess, const til::point expectedGreater)
             {
                 // less is on a line above greater (Y values less than)
                 return (expectedLess.Y < expectedGreater.Y) ||
@@ -83,7 +82,7 @@ namespace WEX
                        ((expectedLess.Y == expectedGreater.Y) && (expectedLess.X < expectedGreater.X));
             }
 
-            static bool IsGreaterThan(const COORD& expectedGreater, const COORD& expectedLess)
+            static bool IsGreaterThan(const til::point expectedGreater, const til::point expectedLess)
             {
                 // greater is on a line below less (Y value greater than)
                 return (expectedGreater.Y > expectedLess.Y) ||
@@ -91,7 +90,7 @@ namespace WEX
                        ((expectedGreater.Y == expectedLess.Y) && (expectedGreater.X > expectedLess.X));
             }
 
-            static bool IsNull(const COORD& object)
+            static bool IsNull(const til::point object)
             {
                 return object.X == 0 && object.Y == 0;
             }
@@ -151,10 +150,10 @@ namespace WEX
                                                            sbiex.bFullscreenSupported ? L"True" : L"False",
                                                            sbiex.wAttributes,
                                                            sbiex.wPopupAttributes,
-                                                           VerifyOutputTraits<COORD>::ToString(sbiex.dwCursorPosition).ToCStrWithFallbackTo(L"Fail"),
-                                                           VerifyOutputTraits<COORD>::ToString(sbiex.dwSize).ToCStrWithFallbackTo(L"Fail"),
-                                                           VerifyOutputTraits<COORD>::ToString(sbiex.dwMaximumWindowSize).ToCStrWithFallbackTo(L"Fail"),
-                                                           VerifyOutputTraits<SMALL_RECT>::ToString(sbiex.srWindow).ToCStrWithFallbackTo(L"Fail"),
+                                                           VerifyOutputTraits<til::point>::ToString(sbiex.dwCursorPosition).ToCStrWithFallbackTo(L"Fail"),
+                                                           VerifyOutputTraits<til::point>::ToString(sbiex.dwSize).ToCStrWithFallbackTo(L"Fail"),
+                                                           VerifyOutputTraits<til::point>::ToString(sbiex.dwMaximumWindowSize).ToCStrWithFallbackTo(L"Fail"),
+                                                           VerifyOutputTraits<til::inclusive_rect>::ToString(sbiex.srWindow).ToCStrWithFallbackTo(L"Fail"),
                                                            sbiex.ColorTable[0],
                                                            sbiex.ColorTable[1],
                                                            sbiex.ColorTable[2],
@@ -183,10 +182,10 @@ namespace WEX
                 return expected.bFullscreenSupported == actual.bFullscreenSupported &&
                        expected.wAttributes == actual.wAttributes &&
                        expected.wPopupAttributes == actual.wPopupAttributes &&
-                       VerifyCompareTraits<COORD>::AreEqual(expected.dwCursorPosition, actual.dwCursorPosition) &&
-                       VerifyCompareTraits<COORD>::AreEqual(expected.dwSize, actual.dwSize) &&
-                       VerifyCompareTraits<COORD>::AreEqual(expected.dwMaximumWindowSize, actual.dwMaximumWindowSize) &&
-                       VerifyCompareTraits<SMALL_RECT>::AreEqual(expected.srWindow, actual.srWindow) &&
+                       VerifyCompareTraits<til::point>::AreEqual(expected.dwCursorPosition, actual.dwCursorPosition) &&
+                       VerifyCompareTraits<til::point>::AreEqual(expected.dwSize, actual.dwSize) &&
+                       VerifyCompareTraits<til::point>::AreEqual(expected.dwMaximumWindowSize, actual.dwMaximumWindowSize) &&
+                       VerifyCompareTraits<til::inclusive_rect>::AreEqual(expected.srWindow, actual.srWindow) &&
                        expected.ColorTable[0] == actual.ColorTable[0] &&
                        expected.ColorTable[1] == actual.ColorTable[1] &&
                        expected.ColorTable[2] == actual.ColorTable[2] &&
@@ -229,10 +228,10 @@ namespace WEX
                 return object.bFullscreenSupported == 0 &&
                        object.wAttributes == 0 &&
                        object.wPopupAttributes == 0 &&
-                       VerifyCompareTraits<COORD>::IsNull(object.dwCursorPosition) &&
-                       VerifyCompareTraits<COORD>::IsNull(object.dwSize) &&
-                       VerifyCompareTraits<COORD>::IsNull(object.dwMaximumWindowSize) &&
-                       VerifyCompareTraits<SMALL_RECT>::IsNull(object.srWindow) &&
+                       VerifyCompareTraits<til::point>::IsNull(object.dwCursorPosition) &&
+                       VerifyCompareTraits<til::point>::IsNull(object.dwSize) &&
+                       VerifyCompareTraits<til::point>::IsNull(object.dwMaximumWindowSize) &&
+                       VerifyCompareTraits<til::inclusive_rect>::IsNull(object.srWindow) &&
                        object.ColorTable[0] == 0x0 &&
                        object.ColorTable[1] == 0x0 &&
                        object.ColorTable[2] == 0x0 &&

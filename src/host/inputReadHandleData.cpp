@@ -60,7 +60,7 @@ void INPUT_READ_HANDLE_DATA::IncrementReadCount()
 
 void INPUT_READ_HANDLE_DATA::DecrementReadCount()
 {
-    const size_t prevCount = _readCount.fetch_sub(1);
+    const auto prevCount = _readCount.fetch_sub(1);
     FAIL_FAST_IF(prevCount == 0); // we just underflowed, that's a programming error.
 }
 

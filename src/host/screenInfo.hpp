@@ -191,7 +191,7 @@ public:
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
 
-    void MakeCursorVisible(const COORD CursorPosition, const bool updateBottom = true);
+    void MakeCursorVisible(const COORD CursorPosition);
 
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
@@ -266,6 +266,8 @@ private:
     bool _IsInPtyMode() const;
     bool _IsInVTMode() const;
 
+    ConhostInternalGetSet _api;
+
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 
     Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
@@ -292,6 +294,10 @@ private:
     short _virtualBottom;
 
     bool _ignoreLegacyEquivalentVTAttributes;
+
+    std::optional<til::size> _deferredPtyResize{ std::nullopt };
+
+    static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

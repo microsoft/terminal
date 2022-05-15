@@ -58,6 +58,8 @@ namespace Microsoft::Console::VirtualTerminal
         ArrowLeft = VTID("D"),
         Home = VTID("H"),
         End = VTID("F"),
+        FocusIn = VTID("I"),
+        FocusOut = VTID("O"),
         MouseDown = VTID("<M"),
         MouseUp = VTID("<m"),
         Generic = VTID("~"), // Used for a whole bunch of possible keys

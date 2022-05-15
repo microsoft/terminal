@@ -15,8 +15,8 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::VirtualTerminal;
 using Microsoft::Console::Interactivity::ServiceLocator;
-using Microsoft::Console::VirtualTerminal::StateMachine;
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
     _io{ io }
@@ -31,9 +31,9 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 {
-    size_t dwNumBytes = string.size() * sizeof(wchar_t);
+    auto dwNumBytes = string.size() * sizeof(wchar_t);
 
-    Cursor& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    auto& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     if (!cursor.IsOn())
     {
         cursor.SetIsOn(true);
@@ -54,6 +54,36 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
     cursor.EndDeferDrawing();
 
     THROW_IF_NTSTATUS_FAILED(ntstatus);
+}
+
+// - Sends a string response to the input stream of the console.
+// - Used by various commands where the program attached would like a reply to one of the commands issued.
+// - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
+// Arguments:
+// - response - The response string to transmit back to the input stream
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
+{
+    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+
+    // generate a paired key down and key up event for every
+    // character to be sent into the console's input buffer
+    for (const auto& wch : response)
+    {
+        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
+        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
+
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        keyEvent.SetKeyDown(false);
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+    }
+
+    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
+    // to make sure that "response" input is spooled directly into the application.
+    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
+    // could collide with each other.
+    _io.GetActiveInputBuffer()->Write(inEvents);
 }
 
 // Routine Description:
@@ -116,19 +146,6 @@ void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 }
 
 // Routine Description:
-// - Writes events to the input buffer already formed into IInputEvents
-// Arguments:
-// - events - the input events to be copied into the head of the input
-//            buffer for the underlying attached process
-// - eventsWritten - on output, the number of events written
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
-{
-    eventsWritten = _io.GetActiveInputBuffer()->Write(events);
-}
-
-// Routine Description:
 // - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
 //     to the beginning of the next row when it reaches the end of the current row.
 // Arguments:
@@ -152,12 +169,12 @@ void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 //     left and right margins in the future.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetScrollingRegion(const SMALL_RECT& scrollMargins)
+void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scrollMargins)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.Top = scrollMargins.Top;
-    srScrollMargins.Bottom = scrollMargins.Bottom;
+    srScrollMargins.Top = gsl::narrow<short>(scrollMargins.Top);
+    srScrollMargins.Bottom = gsl::narrow<short>(scrollMargins.Bottom);
     screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
 }
 
@@ -259,6 +276,19 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 }
 
 // Routine Description:
+// - Shows or hides the active window when asked.
+// Arguments:
+// - showOrHide - True for show, False for hide. Matching WM_SHOWWINDOW lParam.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ShowWindow(bool showOrHide)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    ::ShowWindow(hwnd, showOrHide ? SW_NORMAL : SW_MINIMIZE);
+}
+
+// Routine Description:
 // - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - codepage - the new output codepage of the console.
@@ -278,6 +308,51 @@ void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
 unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 {
     return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+}
+
+// Routine Description:
+// - Sets the XTerm bracketed paste mode. This controls whether pasted content is
+//     bracketed with control sequences to differentiate it from typed text.
+// Arguments:
+// - enable - set to true to enable bracketing, false to disable.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::EnableXtermBracketedPasteMode(const bool /*enabled*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Copies the given content to the clipboard.
+// Arguments:
+// - content - the text to be copied.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::CopyToClipboard(const std::wstring_view /*content*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Updates the taskbar progress indicator.
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Set the active working directory. Not used in conhost.
+// Arguments:
+// - content - the text to be copied.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
+{
 }
 
 // Routine Description:
@@ -304,8 +379,8 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
-    const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
-    const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    const auto oldViewport = screenInfo.GetVirtualViewport();
+    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
     // Always resize the width of the console
     csbiex.dwSize.X = sColumns;
     // Only set the screen buffer's height if it's currently less than
@@ -313,6 +388,16 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     if (sRows > csbiex.dwSize.Y)
     {
         csbiex.dwSize.Y = sRows;
+    }
+
+    // If the cursor row is now past the bottom of the viewport, we'll have to
+    // move the viewport down to bring it back into view. However, we don't want
+    // to do this in pty mode, because the conpty resize operation is dependent
+    // on the viewport *not* being adjusted.
+    const short cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
+    if (cursorOverflow > 0 && !IsConsolePty())
+    {
+        newViewport = Viewport::Offset(newViewport, { 0, cursorOverflow });
     }
 
     // SetWindowInfo expect inclusive rects
@@ -367,19 +452,5 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
             gsl::narrow_cast<short>(changedRect.top),
             gsl::narrow_cast<short>(changedRect.right - 1),
             gsl::narrow_cast<short>(changedRect.bottom - 1));
-    }
-}
-
-void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
-{
-    // This will initialize s_interactivityFactory for us. It will also
-    // conveniently return 0 when we're on OneCore.
-    //
-    // If the window hasn't been created yet, by some other call to
-    // LocatePseudoWindow, then this will also initialize the owner of the
-    // window.
-    if (const auto psuedoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
-    {
-        LOG_LAST_ERROR_IF_NULL(::SetParent(psuedoHwnd, reinterpret_cast<HWND>(handle)));
     }
 }

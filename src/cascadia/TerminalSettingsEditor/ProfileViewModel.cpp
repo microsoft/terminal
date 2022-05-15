@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
-        return Model::TerminalSettings::CreateWithProfile(_appSettings, _profile, nullptr).DefaultSettings();
+        return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 
     // Method Description:
@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         UINT32 localizedNameIndex;
 
         // use our current locale to find the localized name
-        BOOL exists{ FALSE };
+        auto exists{ FALSE };
         HRESULT hr;
         wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
         if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
@@ -300,7 +300,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ProfileViewModel::VtPassthroughAvailable() const noexcept
     {
-        return Feature_VtPassthroughMode::IsEnabled();
+        return Feature_VtPassthroughMode::IsEnabled() && Feature_VtPassthroughModeSettingInUI::IsEnabled();
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()

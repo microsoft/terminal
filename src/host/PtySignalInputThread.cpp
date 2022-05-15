@@ -20,12 +20,11 @@ using namespace Microsoft::Console::VirtualTerminal;
 PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
-    _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
+    _api{ ServiceLocator::LocateGlobals().getConsoleInformation() },
     _dwThreadId{ 0 },
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 PtySignalInputThread::~PtySignalInputThread()
@@ -45,7 +44,7 @@ PtySignalInputThread::~PtySignalInputThread()
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 {
-    PtySignalInputThread* const pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
+    const auto pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
@@ -71,6 +70,10 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoResizeWindow(*_earlyResize);
     }
+    if (_initialShowHide)
+    {
+        _DoShowHide(_initialShowHide->show);
+    }
 
     // If we were given a owner HWND, then manually start the pseudo window now.
     if (_earlyReparent)
@@ -91,6 +94,33 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         switch (signalId)
         {
+        case PtySignal::ShowHideWindow:
+        {
+            ShowHideData msg = { 0 };
+            _GetData(&msg, sizeof(msg));
+
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // If the client app hasn't yet connected, stash our initial
+            // visibility for when we do. We default to not being visible - if a
+            // terminal wants the ConPTY windows to start "visible", then they
+            // should send a ShowHidePseudoConsole(..., true) to tell us to
+            // initially be visible.
+            //
+            // Notably, if they don't, then a ShowWindow(SW_HIDE) on the ConPTY
+            // HWND will initially do _nothing_, because the OS will think that
+            // the window is already hidden.
+            if (!_consoleConnected)
+            {
+                _initialShowHide = msg;
+            }
+            else
+            {
+                _DoShowHide(msg.show);
+            }
+            break;
+        }
         case PtySignal::ClearBuffer:
         {
             LockConsole();
@@ -168,7 +198,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - <none>
 void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
-    if (_pConApi->ResizeWindow(data.sx, data.sy))
+    if (_api.ResizeWindow(data.sx, data.sy))
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
@@ -179,6 +209,11 @@ void PtySignalInputThread::_DoClearBuffer()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
+}
+
+void PtySignalInputThread::_DoShowHide(const bool show)
+{
+    _api.ShowWindow(show);
 }
 
 // Method Description:
@@ -192,7 +227,16 @@ void PtySignalInputThread::_DoClearBuffer()
 // - <none>
 void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 {
-    _pConApi->ReparentWindow(data.handle);
+    // This will initialize s_interactivityFactory for us. It will also
+    // conveniently return 0 when we're on OneCore.
+    //
+    // If the window hasn't been created yet, by some other call to
+    // LocatePseudoWindow, then this will also initialize the owner of the
+    // window.
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(data.handle)) })
+    {
+        LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, reinterpret_cast<HWND>(data.handle)));
+    }
 }
 
 // Method Description:
@@ -213,7 +257,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     //       we want to gracefully close in.
     if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
     {
-        DWORD lastError = GetLastError();
+        auto lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();

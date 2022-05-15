@@ -384,6 +384,7 @@
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
+        { "command": "selectAll", "keys": "ctrl+shift+a" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },
@@ -465,6 +466,6 @@
                 { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
                 { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
-        },
+        }
     ]
 }

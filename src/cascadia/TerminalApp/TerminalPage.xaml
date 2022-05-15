@@ -28,6 +28,7 @@
                     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
                          x:Load="False"
+                         CornerRadius="0"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
@@ -42,6 +43,7 @@
             <mux:InfoBar x:Name="CloseOnExitInfoBar"
                          x:Uid="CloseOnExitInfoBar"
                          x:Load="False"
+                         CornerRadius="0"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
@@ -56,6 +58,7 @@
                          x:Uid="SetAsDefaultInfoBar"
                          x:Load="False"
                          CloseButtonClick="_SetAsDefaultDismissHandler"
+                         CornerRadius="0"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
@@ -70,7 +73,11 @@
         <Grid x:Name="TabContent"
               Grid.Row="2"
               HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch" />
+              VerticalAlignment="Stretch">
+            <Grid.Background>
+                <ImageBrush />
+            </Grid.Background>
+        </Grid>
 
         <!--
             GH#12775 et. al: After switching to ControlsV2, it seems that

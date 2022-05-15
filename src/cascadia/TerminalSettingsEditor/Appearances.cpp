@@ -145,7 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
     bool Appearances::UsingMonospaceFont() const noexcept
     {
-        bool result{ false };
+        auto result{ false };
         const auto currentFont{ Appearance().FontFace() };
         for (const auto& font : ProfileViewModel::MonospaceFontList())
         {
@@ -198,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return fallbackFont;
     }
 
-    void Appearances::FontFace_SelectionChanged(IInspectable const& /*sender*/, SelectionChangedEventArgs const& e)
+    void Appearances::FontFace_SelectionChanged(const IInspectable& /*sender*/, const SelectionChangedEventArgs& e)
     {
         // NOTE: We need to hook up a selection changed event handler here instead of directly binding to the appearance view model.
         //       A two way binding to the view model causes an infinite loop because both combo boxes keep fighting over which one's right.
@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Appearance().FontFace(newFontFace.LocalizedName());
     }
 
-    void Appearances::_ViewModelChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& /*args*/)
+    void Appearances::_ViewModelChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
     {
         const auto& obj{ d.as<Editor::Appearances>() };
         get_self<Appearances>(obj)->_UpdateWithNewViewModel();
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Appearances::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
+    fire_and_forget Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -313,7 +313,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void Appearances::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    void Appearances::BIAlignment_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
         if (const auto& button{ sender.try_as<Primitives::ToggleButton>() })
         {

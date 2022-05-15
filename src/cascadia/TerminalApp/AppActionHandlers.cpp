@@ -189,6 +189,18 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = realArgs.TerminalArgs().ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
             _SplitPane(realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
@@ -305,6 +317,18 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = newTerminalArgs.ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
             LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
@@ -837,7 +861,7 @@ namespace winrt::TerminalApp::implementation
         if (WindowRenamer() == nullptr)
         {
             // We need to use FindName to lazy-load this object
-            if (MUX::Controls::TeachingTip tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            if (auto tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
             {
                 tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
             }
@@ -1007,6 +1031,16 @@ namespace winrt::TerminalApp::implementation
                 });
                 args.Handled(res);
             }
+        }
+    }
+
+    void TerminalPage::_HandleSelectAll(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.SelectAll();
+            args.Handled(true);
         }
     }
 }

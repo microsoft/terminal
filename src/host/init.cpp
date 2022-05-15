@@ -35,7 +35,7 @@ void InitSideBySide()
     actctx.lpResourceName = MAKEINTRESOURCE(IDR_SYSTEM_MANIFEST);
     actctx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
 
-    HANDLE const hActCtx = CreateActCtxW(&actctx);
+    const auto hActCtx = CreateActCtxW(&actctx);
 
     // The error value is INVALID_HANDLE_VALUE.
     // ACTCTX_FLAG_SET_PROCESS_DEFAULT has nothing to return upon success, so it returns nullptr.
@@ -43,7 +43,7 @@ void InitSideBySide()
     // is referenced in the PEB, and lasts till process shutdown.
     if (hActCtx == INVALID_HANDLE_VALUE)
     {
-        auto const error = GetLastError();
+        const auto error = GetLastError();
 
         // OpenConsole ships with a single manifest at ID 1, while conhost ships with 2 at ID 1
         // and IDR_SYSTEM_MANIFEST. If we call CreateActCtxW() with IDR_SYSTEM_MANIFEST inside

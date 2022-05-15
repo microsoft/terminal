@@ -111,8 +111,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
         // Set up an xterm-256 renderer for conpty
-        wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        Viewport initialViewport = currentBuffer.GetViewport();
+        auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto initialViewport = currentBuffer.GetViewport();
 
         auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
                                                                initialViewport);
@@ -225,8 +225,10 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleAltBufferTest);
     TEST_METHOD(AltBufferToAltBufferTest);
 
+    TEST_METHOD(AltBufferResizeCrash);
+
 private:
-    bool _writeCallback(const char* const pch, size_t const cch);
+    bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
     void _resizeConpty(const unsigned short sx, const unsigned short sy);
     void _clearConpty();
@@ -236,7 +238,7 @@ private:
     std::deque<std::string> expectedOutput;
 
     std::unique_ptr<CommonState> m_state;
-    std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+    std::unique_ptr<Microsoft::Console::VirtualTerminal::ITerminalApi> _pConApi;
 
     // Tests can set these variables how they link to configure the behavior of the test harness.
     bool _checkConptyOutput{ true }; // If true, the test class will check that the output from conpty was expected
@@ -248,9 +250,9 @@ private:
     ApiRoutines _apiRoutines;
 };
 
-bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cch)
+bool ConptyRoundtripTests::_writeCallback(const char* const pch, const size_t cch)
 {
-    std::string actualString = std::string(pch, cch);
+    auto actualString = std::string(pch, cch);
 
     if (_checkConptyOutput)
     {
@@ -258,7 +260,7 @@ bool ConptyRoundtripTests::_writeCallback(const char* const pch, size_t const cc
                                static_cast<size_t>(0),
                                NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", TestUtils::ReplaceEscapes(actualString).c_str(), expectedOutput.size()));
 
-        std::string first = expectedOutput.front();
+        auto first = expectedOutput.front();
         expectedOutput.pop_front();
 
         Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", TestUtils::ReplaceEscapes(first).c_str()));
@@ -576,7 +578,7 @@ void ConptyRoundtripTests::TestExactWrappingWithoutSpaces()
     {
         // This is a handy way of just printing the printable characters that
         // _aren't_ the space character.
-        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        const auto wch = static_cast<wchar_t>(33 + (i % 94));
         hostSm.ProcessCharacter(wch);
     }
 
@@ -637,7 +639,7 @@ void ConptyRoundtripTests::TestExactWrappingWithSpaces()
     {
         // This is a handy way of just printing the printable characters that
         // _aren't_ the space character.
-        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        const auto wch = static_cast<wchar_t>(33 + (i % 94));
         hostSm.ProcessCharacter(wch);
     }
 
@@ -852,11 +854,11 @@ void ConptyRoundtripTests::TestResizeHeight()
         //   characters, but then we'll want to look for more blank rows at the
         //   bottom. The characters in the initial viewport won't have moved.
 
-        const short originalViewHeight = ::base::saturated_cast<short>(resizeDy < 0 ?
-                                                                           initialHostView.Height() + resizeDy :
-                                                                           initialHostView.Height());
+        const auto originalViewHeight = ::base::saturated_cast<short>(resizeDy < 0 ?
+                                                                          initialHostView.Height() + resizeDy :
+                                                                          initialHostView.Height());
         const auto rowsWithText = std::min(originalViewHeight - 1, printedRows);
-        const bool scrolled = printedRows > initialHostView.Height();
+        const auto scrolled = printedRows > initialHostView.Height();
         // The last row of the viewport should be empty
         // The second last row will have '0'+50
         // The third last row will have '0'+49
@@ -1050,7 +1052,7 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
     }
 
     // Verify below the new viewport (the old viewport) has been cleared out
-    for (short y = termSecondView.BottomInclusive(); y < termFirstView.BottomInclusive(); y++)
+    for (auto y = termSecondView.BottomInclusive(); y < termFirstView.BottomInclusive(); y++)
     {
         TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
     }
@@ -1464,8 +1466,8 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
 
     auto verifyBuffer = [](const TextBuffer& tb, const til::rect& viewport) {
         const auto wrappedRow = gsl::narrow<short>(viewport.bottom - 2);
-        const short start = viewport.narrow_top<short>();
-        for (short i = start; i < wrappedRow; i++)
+        const auto start = viewport.narrow_top<short>();
+        for (auto i = start; i < wrappedRow; i++)
         {
             Log::Comment(NoThrowString().Format(L"Checking row %d", i));
             TestUtils::VerifyExpectedString(tb, i == start + 13 ? L"Y" : L"X", { 0, i });
@@ -1528,7 +1530,7 @@ void ConptyRoundtripTests::ScrollWithMargins()
     // For all lines but the last one, write out a few of a letter.
     for (auto i = 0; i < rowsToWrite; ++i)
     {
-        const wchar_t wch = static_cast<wchar_t>(L'A' + i);
+        const auto wch = static_cast<wchar_t>(L'A' + i);
         hostSm.ProcessCharacter(wch);
         hostSm.ProcessCharacter(wch);
         hostSm.ProcessCharacter(wch);
@@ -1793,8 +1795,8 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
         TEST_METHOD_PROPERTY(L"Data:useLongSpaces", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:printTextAfterSpaces", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int PaintEveryNewline = 0;
-    constexpr int PaintAfterAllNewlines = 1;
+    constexpr auto PaintEveryNewline = 0;
+    constexpr auto PaintAfterAllNewlines = 1;
 
     INIT_TEST_PROPERTY(int, paintEachNewline, L"Any of: manually PaintFrame after each newline is emitted, once at the end of all newlines, or not at all");
     INIT_TEST_PROPERTY(bool, cursorOnNextLine, L"Either leave the cursor on the first line, or place it on the second line of the buffer");
@@ -1849,7 +1851,7 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
         // We _would_ expect the Terminal's cursor to be on { 8, 0 }, but this
         // is currently broken due to #381/#4676. So we'll use the viewport
         // provided to find the actual Y position of the cursor.
-        const short viewTop = viewport.origin().narrow_y<short>();
+        const auto viewTop = viewport.origin().narrow_y<short>();
         const short cursorRow = viewTop + (cursorOnNextLine ? 1 : 0);
         const short cursorCol = (cursorOnNextLine ? 5 :
                                                     (10 + (useLongSpaces ? 5 : 0) + (printTextAfterSpaces ? 5 : 0)));
@@ -2050,7 +2052,7 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     // Use DECALN to fill the buffer with 'E's.
     hostSm.ProcessString(L"\x1b#8");
 
-    const short originalBottom = si.GetViewport().BottomInclusive();
+    const auto originalBottom = si.GetViewport().BottomInclusive();
     // Print 3 lines into the bottom of the buffer:
     // AAAAAAAAAA
     // BBBBBBBBBB
@@ -2071,7 +2073,7 @@ void ConptyRoundtripTests::MarginsWithStatusLine()
     // After printing the 'C' line, the cursor is on the bottom line of the viewport.
     // Emit a newline here to get a new line at the bottom of the viewport.
     hostSm.ProcessString(L"\n");
-    const short newBottom = si.GetViewport().BottomInclusive();
+    const auto newBottom = si.GetViewport().BottomInclusive();
 
     {
         // Emulate calling ScrollConsoleScreenBuffer to scroll the B and C lines
@@ -2156,7 +2158,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpace()
     Log::Comment(L"========== Checking the host buffer state ==========");
     verifyBuffer(hostTb);
 
-    std::string firstLine = std::string(firstTextLength, 'A');
+    auto firstLine = std::string(firstTextLength, 'A');
     firstLine += "  ";
     std::string secondLine{ " B" };
 
@@ -2216,7 +2218,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     const auto spacesLength = 3;
     const auto secondTextLength = 1;
 
-    std::string firstLine = std::string(firstTextLength, 'A');
+    auto firstLine = std::string(firstTextLength, 'A');
     firstLine += "  ";
     std::string secondLine{ " B" };
 
@@ -2318,13 +2320,13 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:cursorMovementMode", L"{0, 1, 2, 3, 4, 5, 6}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int MoveCursorWithCUP = 0;
-    constexpr int MoveCursorWithCR_LF = 1;
-    constexpr int MoveCursorWithLF_CR = 2;
-    constexpr int MoveCursorWithVPR_CR = 3;
-    constexpr int MoveCursorWithCUB_LF = 4;
-    constexpr int MoveCursorWithCUD_CR = 5;
-    constexpr int MoveCursorWithNothing = 6;
+    constexpr auto MoveCursorWithCUP = 0;
+    constexpr auto MoveCursorWithCR_LF = 1;
+    constexpr auto MoveCursorWithLF_CR = 2;
+    constexpr auto MoveCursorWithVPR_CR = 3;
+    constexpr auto MoveCursorWithCUB_LF = 4;
+    constexpr auto MoveCursorWithCUD_CR = 5;
+    constexpr auto MoveCursorWithNothing = 6;
     INIT_TEST_PROPERTY(int, cursorMovementMode, L"Controls how we move the cursor, either with CUP, newline/carriage-return, or some other VT sequence");
 
     Log::Comment(L"This is a test for GH#5291. WSL vim uses spaces to clear the"
@@ -2342,7 +2344,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
 
     // Any of the cursor movements that use a LF will actually hard break the
     // line - everything else will leave it marked as wrapped.
-    const bool expectHardBreak = (cursorMovementMode == MoveCursorWithLF_CR) ||
+    const auto expectHardBreak = (cursorMovementMode == MoveCursorWithLF_CR) ||
                                  (cursorMovementMode == MoveCursorWithCR_LF) ||
                                  (cursorMovementMode == MoveCursorWithCUB_LF);
 
@@ -2666,9 +2668,9 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:clearBufferMethod", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
-    constexpr int ClearLikeCls = 0;
-    constexpr int ClearLikeClearHost = 1;
-    constexpr int ClearWithVT = 2;
+    constexpr auto ClearLikeCls = 0;
+    constexpr auto ClearLikeClearHost = 1;
+    constexpr auto ClearWithVT = 2;
     INIT_TEST_PROPERTY(int, clearBufferMethod, L"Controls whether we clear the buffer like cmd or like powershell");
 
     Log::Comment(L"This test checks the shims for cmd.exe and powershell.exe. "
@@ -2915,7 +2917,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
 
     // Print three lines with "# #", where the first "# " are in
     // default-on-green.
-    for (int i = 0; i < 3; i++)
+    for (auto i = 0; i < 3; i++)
     {
         sm.ProcessString(L"\x1b[42m");
         sm.ProcessString(L"# ");
@@ -2950,7 +2952,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
 
             VERIFY_IS_FALSE(tb.GetRowByOffset(row).WasWrapForced());
 
-            const bool hasChar = row < 3;
+            const auto hasChar = row < 3;
             const auto actualDefaultAttrs = isTerminal ? TextAttribute() : defaultAttrs;
 
             if (hasChar)
@@ -3124,7 +3126,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
 void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view string, DWORD flags = 0)
 {
-    size_t dwNumBytes = string.size() * sizeof(wchar_t);
+    auto dwNumBytes = string.size() * sizeof(wchar_t);
     VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(screenInfo,
                                              string.data(),
                                              string.data(),
@@ -3156,11 +3158,11 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     // timings for the frame affect the results. In this test we'll be printing
     // a bunch of paired lines. These values control when the PaintFrame calls
     // will occur:
-    constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
-    constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
+    constexpr auto PaintAfterBothLines = 1; // Paint after each pair of lines is output
+    constexpr auto PaintEveryLine = 2; // Paint after each and every line is output.
 
-    constexpr int PrintWithPrintString = 0;
-    constexpr int PrintWithWriteCharsLegacy = 1;
+    constexpr auto PrintWithPrintString = 0;
+    constexpr auto PrintWithWriteCharsLegacy = 1;
 
     INIT_TEST_PROPERTY(int, writingMethod, L"Controls using either ProcessString or WriteCharsLegacy to write to the buffer");
     INIT_TEST_PROPERTY(int, circledRows, L"Controls the number of lines we output.");
@@ -3201,7 +3203,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     _checkConptyOutput = false;
     _logConpty = true;
 
-    const size_t width = static_cast<size_t>(TerminalViewWidth);
+    const auto width = static_cast<size_t>(TerminalViewWidth);
 
     const auto charsInFirstLine = width;
     const auto numCharsFirstColor = 30;
@@ -3336,11 +3338,11 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     // timings for the frame affect the results. In this test we'll be printing
     // a bunch of paired lines. These values control when the PaintFrame calls
     // will occur:
-    constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
-    constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
+    constexpr auto PaintAfterBothLines = 1; // Paint after each pair of lines is output
+    constexpr auto PaintEveryLine = 2; // Paint after each and every line is output.
 
-    constexpr int PrintWithPrintString = 0;
-    constexpr int PrintWithWriteCharsLegacy = 1;
+    constexpr auto PrintWithPrintString = 0;
+    constexpr auto PrintWithWriteCharsLegacy = 1;
 
     INIT_TEST_PROPERTY(int, writingMethod, L"Controls using either ProcessString or WriteCharsLegacy to write to the buffer");
     INIT_TEST_PROPERTY(int, circledRows, L"Controls the number of lines we output.");
@@ -3359,7 +3361,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     _checkConptyOutput = false;
     _logConpty = true;
 
-    const size_t width = static_cast<size_t>(TerminalViewWidth);
+    const auto width = static_cast<size_t>(TerminalViewWidth);
 
     const auto charsInFirstLine = width;
     const auto numCharsFirstColor = 30;
@@ -3716,7 +3718,7 @@ void ConptyRoundtripTests::ClearBufferSignal()
     sm.ProcessString(L"\x1b[?25h");
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool before) {
-        const short width = viewport.narrow_width<short>();
+        const auto width = viewport.narrow_width<short>();
         const short numCharsOnSecondLine = 50 - (width - 51);
         auto iter1 = tb.GetCellDataAt({ 0, 0 });
         if (before)
@@ -3810,7 +3812,7 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     };
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const Frame frame) {
-        const short width = viewport.narrow_width<short>();
+        const auto width = viewport.narrow_width<short>();
         auto iter0 = tb.GetCellDataAt({ 0, 0 });
         auto iter1 = tb.GetCellDataAt({ 0, 1 });
         switch (frame)
@@ -3864,6 +3866,8 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
     gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -3962,7 +3966,7 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
     };
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const Frame frame) {
-        const short width = viewport.narrow_width<short>();
+        const auto width = viewport.narrow_width<short>();
         auto iter0 = tb.GetCellDataAt({ 0, 0 });
         auto iter1 = tb.GetCellDataAt({ 0, 1 });
         switch (frame)
@@ -4023,6 +4027,8 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
     gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
     sm.ProcessString(L"\x1b[?1049h");
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -4068,4 +4074,51 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
     Log::Comment(L"========== Checking the terminal buffer state (StillInAltBuffer) ==========");
     verifyBuffer(*termAltTb, til::rect{ term->_GetMutableViewport().ToInclusive() }, Frame::StillInAltBuffer);
+}
+
+void ConptyRoundtripTests::AltBufferResizeCrash()
+{
+    Log::Comment(L"During the review for GH#12719, it was noticed that this "
+                 L"particular combination of resizing could crash the terminal."
+                 L" This test makes sure we don't.");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    // Don't leave ourselves in the alt buffer - that'll pollute other tests.
+    auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
+
+    // Note: we really don't care about the output in this test. We could, but
+    // mostly we care to ensure we don't crash. If we make it through this test,
+    // then it's a success.
+
+    Log::Comment(L"========== Resize to 132x24 ==========");
+    sm.ProcessString(L"\x1b[8;24;132t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Move cursor to (99,11) ==========");
+    sm.ProcessString(L"\x1b[12;100H");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Switch to the alt buffer ==========");
+    sm.ProcessString(L"\x1b[?1049h");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Resize to 80x10 ==========");
+    sm.ProcessString(L"\x1b[8;10;80t");
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
 }
