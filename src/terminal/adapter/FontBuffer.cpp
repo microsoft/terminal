@@ -478,7 +478,7 @@ std::tuple<size_t, size_t, size_t> FontBuffer::_calculateDimensions() const
     }
 }
 
-void FontBuffer::_packAndCenterBitPatterns()
+void FontBuffer::_packAndCenterBitPatterns() noexcept
 {
     // If this is a text font, we'll clip the bits up to the text width and
     // center them within the full cell width. For a full cell font we'll just
