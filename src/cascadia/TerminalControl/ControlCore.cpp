@@ -399,11 +399,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderer->TriggerSelection();
                 return true;
             }
-            else if (vkey == VK_RETURN)
-            {
-                CopySelectionToClipboard(false, nullptr);
-                return true;
-            }
 
             // try to update the selection
             if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
