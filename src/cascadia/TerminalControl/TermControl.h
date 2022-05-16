@@ -90,6 +90,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SearchMatch(const bool goForward);
 
+        bool SearchBoxEditInFocus() const;
+
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
