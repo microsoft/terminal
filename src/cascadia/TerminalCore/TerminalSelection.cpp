@@ -318,7 +318,11 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, std::optional<bool> moveSelectionEnd)
 {
     // 1. Figure out which endpoint to update
-    // One of the endpoints is the pivot, signifying that the other endpoint is the one we want to move.
+    // moveSelectionEnd has 3 possible values...
+    // - nullopt: we're just modifying an existing selection with the keyboard. So if you created a selection with a mouse, and now you're just using shift+arrows to update it. Codeflow requires you to pivot around the "start" if you cross the endpoints.
+    //             if this is the case, one of the endpoints is the pivot, signifying that the other endpoint is the one we want to move.
+    // - true: only moving the "end" as if you're creating a selection in a text editor. "start" is anchored to the cursor, and "end" is moved; thus creating a selection.
+    // - false: moving both "start" and "end" together. This is when you're just moving the cursor in a text editor.
     const auto movingEnd{ (_markMode && moveSelectionEnd.has_value()) ? *moveSelectionEnd : _selection->start == _selection->pivot };
     auto targetPos{ movingEnd ? _selection->end : _selection->start };
 

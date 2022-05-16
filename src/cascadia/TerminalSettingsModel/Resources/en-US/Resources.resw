@@ -526,7 +526,7 @@
     <value>Select all text</value>
   </data>
   <data name="MarkModeCommandKey" xml:space="preserve">
-    <value>Toggle Mark Mode</value>
-    <comment>A command that will toggle "Mark Mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
+    <value>Toggle mark mode</value>
+    <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
   </data>
 </root>
