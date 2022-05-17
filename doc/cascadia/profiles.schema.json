@@ -1708,6 +1708,11 @@
           "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
           "type": "boolean"
         },
+        "experimental.useBackgroundImageForWindow": {
+          "default": false,
+          "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
+          "type": "boolean"
+        },
         "initialCols": {
           "default": 120,
           "description": "The number of columns displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
