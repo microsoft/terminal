@@ -7,6 +7,23 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+// Ensure the "safety" of til::rect::as_win32_rect
+static_assert(
+    sizeof(til::rect) == sizeof(RECT) &&
+    alignof(til::rect) == alignof(RECT) &&
+    offsetof(til::rect, left) == offsetof(RECT, left) &&
+    offsetof(til::rect, top) == offsetof(RECT, top) &&
+    offsetof(til::rect, right) == offsetof(RECT, right) &&
+    offsetof(til::rect, bottom) == offsetof(RECT, bottom));
+// Ensure the "safety" of til::rect::as_win32_points
+static_assert(
+    sizeof(til::rect) == 2 * sizeof(POINT) &&
+    alignof(til::rect) == alignof(POINT) &&
+    offsetof(til::rect, left) == offsetof(POINT, x) &&
+    offsetof(til::rect, top) == offsetof(POINT, y) &&
+    offsetof(til::rect, right) == offsetof(POINT, x) + sizeof(POINT) &&
+    offsetof(til::rect, bottom) == offsetof(POINT, y) + sizeof(POINT));
+
 class RectangleTests
 {
     TEST_CLASS(RectangleTests);
@@ -510,162 +527,6 @@ class RectangleTests
         const til::rect expected{ 10 - 3, 20 - 7, 30 - 3, 40 - 7 };
         start -= pt;
         VERIFY_ARE_EQUAL(expected, start);
-    }
-
-    TEST_METHOD(AdditionSize)
-    {
-        const til::rect start{ 10, 20, 30, 40 };
-
-        Log::Comment(L"Add size to bottom and right");
-        {
-            const til::size scale{ 3, 7 };
-            const til::rect expected{ 10, 20, 33, 47 };
-            const auto actual = start + scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Add size to top and left");
-        {
-            const til::size scale{ -3, -7 };
-            const til::rect expected{ 7, 13, 30, 40 };
-            const auto actual = start + scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Add size to bottom and left");
-        {
-            const til::size scale{ -3, 7 };
-            const til::rect expected{ 7, 20, 30, 47 };
-            const auto actual = start + scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Add size to top and right");
-        {
-            const til::size scale{ 3, -7 };
-            const til::rect expected{ 10, 13, 33, 40 };
-            const auto actual = start + scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-    }
-
-    TEST_METHOD(AdditionSizeInplace)
-    {
-        const til::rect start{ 10, 20, 30, 40 };
-
-        Log::Comment(L"Add size to bottom and right");
-        {
-            auto actual = start;
-            const til::size scale{ 3, 7 };
-            const til::rect expected{ 10, 20, 33, 47 };
-            actual += scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Add size to top and left");
-        {
-            auto actual = start;
-            const til::size scale{ -3, -7 };
-            const til::rect expected{ 7, 13, 30, 40 };
-            actual += scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Add size to bottom and left");
-        {
-            auto actual = start;
-            const til::size scale{ -3, 7 };
-            const til::rect expected{ 7, 20, 30, 47 };
-            actual += scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Add size to top and right");
-        {
-            auto actual = start;
-            const til::size scale{ 3, -7 };
-            const til::rect expected{ 10, 13, 33, 40 };
-            actual += scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-    }
-
-    TEST_METHOD(SubtractionSize)
-    {
-        const til::rect start{ 10, 20, 30, 40 };
-
-        Log::Comment(L"Subtract size from bottom and right");
-        {
-            const til::size scale{ 3, 7 };
-            const til::rect expected{ 10, 20, 27, 33 };
-            const auto actual = start - scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Subtract size from top and left");
-        {
-            const til::size scale{ -3, -7 };
-            const til::rect expected{ 13, 27, 30, 40 };
-            const auto actual = start - scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Subtract size from bottom and left");
-        {
-            const til::size scale{ -3, 7 };
-            const til::rect expected{ 13, 20, 30, 33 };
-            const auto actual = start - scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Subtract size from top and right");
-        {
-            const til::size scale{ 3, -6 };
-            const til::rect expected{ 10, 26, 27, 40 };
-            const auto actual = start - scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-    }
-
-    TEST_METHOD(SubtractionSizeInplace)
-    {
-        const til::rect start{ 10, 20, 30, 40 };
-
-        Log::Comment(L"Subtract size from bottom and right");
-        {
-            auto actual = start;
-            const til::size scale{ 3, 7 };
-            const til::rect expected{ 10, 20, 27, 33 };
-            actual -= scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Subtract size from top and left");
-        {
-            auto actual = start;
-            const til::size scale{ -3, -7 };
-            const til::rect expected{ 13, 27, 30, 40 };
-            actual -= scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Subtract size from bottom and left");
-        {
-            auto actual = start;
-            const til::size scale{ -3, 7 };
-            const til::rect expected{ 13, 20, 30, 33 };
-            actual -= scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
-
-        Log::Comment(L"Subtract size from top and right");
-        {
-            auto actual = start;
-            const til::size scale{ 3, -6 };
-            const til::rect expected{ 10, 26, 27, 40 };
-            actual -= scale;
-            VERIFY_ARE_EQUAL(expected, actual);
-        }
     }
 
     TEST_METHOD(ScaleUpSize)
