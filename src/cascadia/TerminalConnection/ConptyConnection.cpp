@@ -317,10 +317,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // GH#12515: The conpty assumes it's hidden at the start. If we're visible, let it know now.
-            // if (_initialVisibility)
-            // {
-            //     THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
-            // }
+            if (_initialVisibility)
+            {
+                THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
+            }
             // THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
 
             THROW_IF_FAILED(_LaunchAttachedClient());

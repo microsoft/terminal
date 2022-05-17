@@ -74,12 +74,19 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoShowHide(_initialShowHide->show);
     }
+}
 
-    // If we were given a owner HWND, then manually start the pseudo window now.
-    if (_earlyReparent)
-    {
-        _DoSetWindowParent(*_earlyReparent);
-    }
+// Method Description:
+// - Create our pseudowindow. We're doing this here, instead of in
+//   ConnectConsole, because the window is created in
+//   ConsoleInputThreadProcWin32, before ConnectConsole is first called. Doing
+//   this here ensures that the window is first created with the initial owner
+//   set up (if so specified).
+// - Refer to GH#13066 for details.
+void PtySignalInputThread::CreatePseudoWindow()
+{
+    HWND owner = _earlyReparent.has_value() ? reinterpret_cast<HWND>((*_earlyReparent).handle) : HWND_DESKTOP;
+    ServiceLocator::LocatePseudoWindow(owner);
 }
 
 // Method Description:

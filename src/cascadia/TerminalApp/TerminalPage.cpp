@@ -2430,11 +2430,11 @@ namespace winrt::TerminalApp::implementation
         // TermControl will copy the settings out of the settings passed to it.
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
 
-        // // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
-        // if (_visible)
-        // {
-        //     term.WindowVisibilityChanged(_visible);
-        // }
+        // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
+        if (_visible)
+        {
+            term.WindowVisibilityChanged(_visible);
+        }
 
         if (_hostingHwnd.has_value())
         {
