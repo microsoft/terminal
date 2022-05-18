@@ -313,7 +313,7 @@ bool VtIo::IsUsingVt() const
 }
 
 // Method Description:
-// - Create our pseudowindow. This is exclusively called by
+// - Create our pseudo window. This is exclusively called by
 //   ConsoleInputThreadProcWin32 on the console input thread.
 //    * It needs to be called on that thread, before any other calls to
 //      LocatePseudoWindow, to make sure that the input thread is the HWND's

@@ -79,7 +79,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 }
 
 // Method Description:
-// - Create our pseudowindow. We're doing this here, instead of in
+// - Create our pseudo window. We're doing this here, instead of in
 //   ConnectConsole, because the window is created in
 //   ConsoleInputThreadProcWin32, before ConnectConsole is first called. Doing
 //   this here ensures that the window is first created with the initial owner
