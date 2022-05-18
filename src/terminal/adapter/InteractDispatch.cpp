@@ -204,11 +204,13 @@ bool InteractDispatch::FocusChanged(const bool focused) const
             {
                 // They want focus, we found a pseudo hwnd.
 
-                // Note: ::GetParent(pseudoHwnd) will return 0. GetAncestor works though.
-                // GA_PARENT and GA_ROOT seemingly return the same thing for
-                // Terminal. We're going with GA_ROOT since it seems
-                // semantically more correct here.
-                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOT) })
+                // // Note: ::GetParent(pseudoHwnd) will return 0. GetAncestor works though.
+                // // GA_PARENT and GA_ROOT seemingly return the same thing for
+                // // Terminal. We're going with GA_ROOT since it seems
+                // // semantically more correct here.
+                //
+                // TODO! I think this needs to be ROOTOWNER now.
+                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOTOWNER) })
                 {
                     // We have an owner from a previous call to ReparentWindow
 

@@ -94,6 +94,8 @@ void PtySignalInputThread::CreatePseudoWindow()
     if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(owner) })
     {
         // LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, owner));
+
+        // TODO! This needs to be SetWindowLongPtr
     }
 }
 
