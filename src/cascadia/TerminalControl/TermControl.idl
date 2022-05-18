@@ -62,6 +62,7 @@ namespace Microsoft.Terminal.Control
         void ScrollViewport(Int32 viewTop);
 
         void CreateSearchBoxControl();
+        Boolean SearchBoxEditInFocus();
 
         void SearchMatch(Boolean goForward);
 
