@@ -1196,8 +1196,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalShowWindowChanged(bool showOrHide)
     {
-        auto showWindow = winrt::make_self<implementation::ShowWindowArgs>(showOrHide);
-        _ShowWindowChangedHandlers(*this, *showWindow);
+        if (_initializedTerminal)
+        {
+            auto showWindow = winrt::make_self<implementation::ShowWindowArgs>(showOrHide);
+            _ShowWindowChangedHandlers(*this, *showWindow);
+        }
     }
 
     bool ControlCore::HasSelection() const
@@ -1703,10 +1706,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::WindowVisibilityChanged(const bool showOrHide)
     {
-        // show is true, hide is false
-        if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+        if (_initializedTerminal)
         {
-            conpty.ShowHide(showOrHide);
+            // show is true, hide is false
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ShowHide(showOrHide);
+            }
         }
     }
 
