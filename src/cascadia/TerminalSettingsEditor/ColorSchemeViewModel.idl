@@ -15,6 +15,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable;
         Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable;
 
+        ColorTableEntry ColorEntryAt(UInt8 Index);
+
         // System Colors
         ColorTableEntry CurrentForegroundColor;
         ColorTableEntry CurrentBackgroundColor;

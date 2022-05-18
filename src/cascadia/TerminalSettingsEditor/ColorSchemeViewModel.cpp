@@ -106,6 +106,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentSelectionBackgroundColor.PropertyChanged(colorEntryChangedHandler);
     }
 
+    Editor::ColorTableEntry ColorSchemeViewModel::ColorEntryAt(uint8_t index)
+    {
+        if (index < ColorTableDivider)
+        {
+            return _CurrentNonBrightColorTable.GetAt(index);
+        }
+        else
+        {
+            return _CurrentBrightColorTable.GetAt(index - ColorTableDivider);
+        }
+    }
+
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
     {
         Name(TableColorNames[index]);

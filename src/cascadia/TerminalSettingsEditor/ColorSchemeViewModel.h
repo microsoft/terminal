@@ -15,6 +15,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ColorSchemeViewModel(const Model::ColorScheme scheme);
 
+        Editor::ColorTableEntry ColorEntryAt(uint8_t index);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         WINRT_PROPERTY(winrt::hstring, Name);

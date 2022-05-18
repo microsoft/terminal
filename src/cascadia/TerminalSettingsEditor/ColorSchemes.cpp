@@ -95,24 +95,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _AllColorSchemes = _State.AllColorSchemes();
         _UpdateColorSchemeList();
 
-        // Initialize our color table view model with 16 dummy colors
-        // so that on a ColorScheme selection change, we can loop through
-        // each ColorTableEntry and just change its color. Performing a
-        // clear and 16 appends doesn't seem to update the color pickers
-        // very accurately.
-        for (uint8_t i = 0; i < TableColorNames.size(); ++i)
-        {
-            const auto& entry{ winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 }) };
-            if (i < ColorTableDivider)
-            {
-                _CurrentNonBrightColorTable.Append(entry);
-            }
-            else
-            {
-                _CurrentBrightColorTable.Append(entry);
-            }
-        }
-
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
         const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
         const auto it = std::find_if(begin(_ColorSchemeList),
@@ -133,13 +115,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorLabelStyle{ Resources().Lookup(winrt::box_value(L"ColorLabelStyle")).as<Windows::UI::Xaml::Style>() };
         const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"ColorControlStyle")).as<Windows::UI::Xaml::Style>() };
         const auto colorTableEntryTemplate{ Resources().Lookup(winrt::box_value(L"ColorTableEntryTemplate")).as<DataTemplate>() };
-        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }](const auto&& colorRef, const uint32_t& row, const uint32_t& col) {
+        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }, this](const uint32_t& row, const uint32_t& col) {
             ContentControl colorControl{};
             colorControl.ContentTemplate(colorTableEntryTemplate);
             colorControl.Style(colorControlStyle);
 
             Data::Binding binding{};
-            binding.Source(colorRef);
+            const auto bindingIndex = col == 1 ? row : row + ColorTableDivider;
+            binding.Source(this->ColorScheme().ColorEntryAt(gsl::narrow_cast<uint8_t>(bindingIndex)));
+
             binding.Mode(Data::BindingMode::TwoWay);
             colorControl.SetBinding(ContentControl::ContentProperty(), binding);
 
@@ -158,10 +142,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Grid::SetColumn(label, 0);
 
             // regular color
-            setupColorControl(ColorScheme().CurrentNonBrightColorTable().GetAt(row), row, 1);
+            setupColorControl(row, 1);
 
             // bright color
-            setupColorControl(ColorScheme().CurrentBrightColorTable().GetAt(row), row, 2);
+            setupColorControl(row, 2);
         }
     }
 
