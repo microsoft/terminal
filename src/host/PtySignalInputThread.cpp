@@ -74,6 +74,10 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoShowHide(_initialShowHide->show);
     }
+    // if (_earlyReparent)
+    // {
+    //     _DoSetWindowParent(*_earlyReparent);
+    // }
 }
 
 // Method Description:
@@ -86,7 +90,11 @@ void PtySignalInputThread::ConnectConsole() noexcept
 void PtySignalInputThread::CreatePseudoWindow()
 {
     HWND owner = _earlyReparent.has_value() ? reinterpret_cast<HWND>((*_earlyReparent).handle) : HWND_DESKTOP;
-    ServiceLocator::LocatePseudoWindow(owner);
+
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(owner) })
+    {
+        // LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, owner));
+    }
 }
 
 // Method Description:

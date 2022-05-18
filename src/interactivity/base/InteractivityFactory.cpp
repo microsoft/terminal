@@ -320,7 +320,7 @@ using namespace Microsoft::Console::Interactivity;
                 // as far as the difference between parent/child and owner/owned
                 // windows). Evan K said we should do it this way, and he
                 // definitely knows.
-                const auto windowStyle = WS_OVERLAPPEDWINDOW;
+                const auto windowStyle = WS_OVERLAPPEDWINDOW | WS_POPUP;
                 const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
 
                 // Attempt to create window.
