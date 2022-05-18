@@ -321,7 +321,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
             }
-            // THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
 
             THROW_IF_FAILED(_LaunchAttachedClient());
         }
