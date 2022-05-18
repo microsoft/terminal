@@ -314,16 +314,14 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
 // Arguments:
 // - direction: the direction to move the selection endpoint in
 // - mode: the type of movement to be performed (i.e. move by word)
-// - (optional) moveSelectionEnd: used by mark mode. Can be used to explicitly move a specific endpoint. If true, move the "end" endpoint. Otherwise, move the start endpoint.
-void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, std::optional<bool> moveSelectionEnd)
+// - mods: the key modifiers pressed when performing this update
+void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods)
 {
     // 1. Figure out which endpoint to update
-    // moveSelectionEnd has 3 possible values...
-    // - nullopt: we're just modifying an existing selection with the keyboard. So if you created a selection with a mouse, and now you're just using shift+arrows to update it. Codeflow requires you to pivot around the "start" if you cross the endpoints.
-    //             if this is the case, one of the endpoints is the pivot, signifying that the other endpoint is the one we want to move.
-    // - true: only moving the "end" as if you're creating a selection in a text editor. "start" is anchored to the cursor, and "end" is moved; thus creating a selection.
-    // - false: moving both "start" and "end" together. This is when you're just moving the cursor in a text editor.
-    const auto movingEnd{ (_markMode && moveSelectionEnd.has_value()) ? *moveSelectionEnd : _selection->start == _selection->pivot };
+    // If we're in mark mode, shift dictates whether you are moving the end or not.
+    // Otherwise, we're updating an existing selection, so one of the endpoints is the pivot,
+    //   signifying that the other endpoint is the one we want to move.
+    const auto movingEnd{ _markMode ? mods.IsShiftPressed() : _selection->start == _selection->pivot };
     auto targetPos{ movingEnd ? _selection->end : _selection->start };
 
     // 2. Perform the movement
@@ -351,7 +349,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         // - moveSelectionEnd  --> just move end (i.e. shift + arrow keys)
         // - !moveSelectionEnd --> move all three (i.e. just use arrow keys)
         _selection->end = targetPos;
-        if (!*moveSelectionEnd)
+        if (!movingEnd)
         {
             _selection->start = targetPos;
             _selection->pivot = targetPos;

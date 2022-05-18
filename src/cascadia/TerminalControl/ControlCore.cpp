@@ -404,8 +404,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
             {
                 auto lock = _terminal->LockForWriting();
-                const std::optional<bool> markModeOverride = _terminal->IsInMarkMode() ? modifiers.IsShiftPressed() : std::optional<bool>{};
-                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, markModeOverride);
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
                 _renderer->TriggerSelection();
                 return true;
             }

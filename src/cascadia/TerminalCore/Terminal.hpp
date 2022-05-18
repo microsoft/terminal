@@ -239,7 +239,7 @@ public:
     void SetSelectionAnchor(const COORD position);
     void SetSelectionEnd(const COORD position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
-    void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, std::optional<bool> moveSelectionEnd = std::nullopt);
+    void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
     bool IsInMarkMode() const;
     void ToggleMarkMode();
