@@ -199,11 +199,19 @@ bool InteractDispatch::FocusChanged(const bool focused) const
             {
                 // They want focus, we found a pseudo hwnd.
 
-                // Note: ::GetParent(pseudoHwnd) will return 0. GetAncestor works though.
-                // GA_PARENT and GA_ROOT seemingly return the same thing for
-                // Terminal. We're going with GA_ROOT since it seems
-                // semantically more correct here.
-                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOT) })
+                // BODGY
+                //
+                // This needs to be GA_ROOTOWNER here. Not GA_ROOT, GA_PARENT,
+                // or GetParent. The ConPTY hwnd is an owned, top-level, popup,
+                // non-parented window. It does not have a parent set. It does
+                // have an owner set. It is not a WS_CHILD window. This
+                // combination of things allows us to find the owning window
+                // with GA_ROOTOWNER. GA_ROOT will get us ourselves, and
+                // GA_PARENT will return the desktop HWND.
+                //
+                // See GH#13066
+
+                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOTOWNER) })
                 {
                     // We have an owner from a previous call to ReparentWindow
 

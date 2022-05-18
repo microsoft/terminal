@@ -74,6 +74,8 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoShowHide(_initialShowHide->show);
     }
+
+    // We should have successfully used the _earlyReparent message in CreatePseudoWindow.
 }
 
 // Method Description:
@@ -234,15 +236,28 @@ void PtySignalInputThread::_DoShowHide(const bool show)
 // - <none>
 void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 {
+    const auto owner{ reinterpret_cast<HWND>(data.handle) };
     // This will initialize s_interactivityFactory for us. It will also
     // conveniently return 0 when we're on OneCore.
     //
     // If the window hasn't been created yet, by some other call to
     // LocatePseudoWindow, then this will also initialize the owner of the
     // window.
-    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(data.handle)) })
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(owner) })
     {
-        LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, reinterpret_cast<HWND>(data.handle)));
+        // DO NOT USE SetParent HERE!
+        //
+        // Calling SetParent on a window that is WS_VISIBLE will cause the OS to
+        // hide the window, make it a _child_ window, then call SW_SHOW on the
+        // window to re-show it. SW_SHOW, however, will cause the OS to also set
+        // that window as the _foreground_ window, which would result in the
+        // pty's hwnd stealing the foreground away from the owning terminal
+        // window. That's bad.
+        //
+        // SetWindowLongPtr seems to do the job of changing who the window owner
+        // is, without all the other side effects of reparenting the window.
+        // See #13066
+        ::SetWindowLongPtr(pseudoHwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
     }
 }
 
