@@ -93,6 +93,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const size_t targetRow,
+                                                   const size_t viewportLeft) noexcept override;
+
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
                                               const COORD coord,
@@ -166,6 +171,9 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
+
+        LineRendition _currentLineRendition;
+        D2D1::Matrix3x2F _currentLineTransform;
 
         uint16_t _hyperlinkHoveredId;
 

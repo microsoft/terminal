@@ -49,6 +49,14 @@ D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
     { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
 
+namespace
+{
+    bool operator==(const D2D1::Matrix3x2F& lhs, const D2D1::Matrix3x2F& rhs) noexcept
+    {
+        return ::memcmp(&lhs.m[0][0], &rhs.m[0][0], sizeof(lhs.m)) == 0;
+    };
+}
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -77,6 +85,8 @@ DxEngine::DxEngine() :
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
+    _currentLineRendition{ LineRendition::SingleWidth },
+    _currentLineTransform{ D2D1::Matrix3x2F::Identity() },
     _haveDeviceResources{ false },
     _swapChainHandle{ INVALID_HANDLE_VALUE },
     _swapChainDesc{ 0 },
@@ -2281,5 +2291,81 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 [[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
 {
     _drawingContext->cursorInfo = info.cursorInfo;
+    return S_OK;
+}
+
+// Routine Description
+// - Resets the world transform to the identity matrix.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if successful. S_FALSE if already reset. E_FAIL if there was an error.
+[[nodiscard]] HRESULT DxEngine::ResetLineTransform() noexcept
+{
+    // Return early if the current transform is already the identity matrix.
+    RETURN_HR_IF(S_FALSE, _currentLineTransform.IsIdentity());
+    // Reset the active transform to the identity matrix.
+    _drawingContext->renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    // Reset the clipping offsets.
+    _drawingContext->topClipOffset = 0;
+    _drawingContext->bottomClipOffset = 0;
+    // Reset the current state.
+    _currentLineTransform = D2D1::Matrix3x2F::Identity();
+    _currentLineRendition = LineRendition::SingleWidth;
+    return S_OK;
+}
+
+// Routine Description
+// - Applies an appropriate transform for the given line rendition and viewport offset.
+// Arguments:
+// - lineRendition - The line rendition specifying the scaling of the line.
+// - targetRow - The row on which the line is expected to be rendered.
+// - viewportLeft - The left offset of the current viewport.
+// Return Value:
+// - S_OK if successful. S_FALSE if already set. E_FAIL if there was an error.
+[[nodiscard]] HRESULT DxEngine::PrepareLineTransform(const LineRendition lineRendition,
+                                                     const size_t targetRow,
+                                                     const size_t viewportLeft) noexcept
+{
+    auto lineTransform = D2D1::Matrix3x2F{ 0, 0, 0, 0, 0, 0 };
+    const auto fontSize = _fontRenderData->GlyphCell();
+    // The X delta is to account for the horizontal viewport offset.
+    lineTransform.dx = viewportLeft ? -1.0f * viewportLeft * fontSize.width : 0.0f;
+    switch (lineRendition)
+    {
+    case LineRendition::SingleWidth:
+        lineTransform.m11 = 1; // single width
+        lineTransform.m22 = 1; // single height
+        break;
+    case LineRendition::DoubleWidth:
+        lineTransform.m11 = 2; // double width
+        lineTransform.m22 = 1; // single height
+        break;
+    case LineRendition::DoubleHeightTop:
+        lineTransform.m11 = 2; // double width
+        lineTransform.m22 = 2; // double height
+        // The Y delta is to negate the offset caused by the scaled height.
+        lineTransform.dy = -1.0f * targetRow * fontSize.height;
+        break;
+    case LineRendition::DoubleHeightBottom:
+        lineTransform.m11 = 2; // double width
+        lineTransform.m22 = 2; // double height
+        // The Y delta is to negate the offset caused by the scaled height.
+        // An extra row is added because we need the bottom half of the line.
+        lineTransform.dy = -1.0f * (targetRow + 1) * fontSize.height;
+        break;
+    }
+    // Return early if the new matrix is the same as the current transform.
+    RETURN_HR_IF(S_FALSE, _currentLineRendition == lineRendition && _currentLineTransform == lineTransform);
+    // Set the active transform with the new matrix.
+    _drawingContext->renderTarget->SetTransform(lineTransform);
+    // If the line rendition is double height, we need to adjust the top or bottom
+    // of the clipping rect to clip half the height of the rendered characters.
+    const auto halfHeight = _drawingContext->cellSize.height / 2;
+    _drawingContext->topClipOffset = lineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
+    _drawingContext->bottomClipOffset = lineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
+    // Save the current state.
+    _currentLineTransform = lineTransform;
+    _currentLineRendition = lineRendition;
     return S_OK;
 }
