@@ -340,6 +340,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
             THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
+
+            if (_initialVisibility)
+            {
+                THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
+            }
         }
 
         _startTime = std::chrono::high_resolution_clock::now();
