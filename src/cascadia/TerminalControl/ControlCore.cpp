@@ -392,7 +392,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            if (modifiers.IsCtrlPressed() && vkey == 'A')
+            if (_terminal->IsInMarkMode() && modifiers.IsCtrlPressed() && vkey == 'A')
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
