@@ -81,6 +81,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
+        void ToggleMarkMode();
+        bool IsInMarkMode() const;
 
         void GotFocus();
         void LostFocus();

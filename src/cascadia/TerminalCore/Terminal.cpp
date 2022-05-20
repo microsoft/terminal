@@ -45,6 +45,7 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _altGrAliasing{ true },
     _blockSelection{ false },
+    _markMode{ false },
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
@@ -1318,7 +1319,7 @@ void Terminal::SetCursorOn(const bool isOn)
 bool Terminal::IsCursorBlinkingAllowed() const noexcept
 {
     const auto& cursor = _activeBuffer().GetCursor();
-    return cursor.IsBlinkingAllowed();
+    return !_markMode && cursor.IsBlinkingAllowed();
 }
 
 // Method Description:

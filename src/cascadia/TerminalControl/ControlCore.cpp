@@ -390,11 +390,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            // try to update the selection
-            if (const auto updateSlnParams{ ::Terminal::ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            if (_terminal->IsInMarkMode() && modifiers.IsCtrlPressed() && vkey == 'A')
             {
                 auto lock = _terminal->LockForWriting();
-                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second);
+                _terminal->SelectAll();
+                _renderer->TriggerSelection();
+                return true;
+            }
+
+            // try to update the selection
+            if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
                 _renderer->TriggerSelection();
                 return true;
             }
@@ -1000,6 +1008,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
         _renderer->TriggerSelection();
+    }
+
+    void ControlCore::ToggleMarkMode()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->ToggleMarkMode();
+        _renderer->TriggerSelection();
+    }
+
+    bool ControlCore::IsInMarkMode() const
+    {
+        return _terminal->IsInMarkMode();
     }
 
     // Method Description:

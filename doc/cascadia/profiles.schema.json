@@ -318,6 +318,7 @@
         "moveFocus",
         "movePane",
         "swapPane",
+        "markMode",
         "moveTab",
         "multipleActions",
         "newTab",

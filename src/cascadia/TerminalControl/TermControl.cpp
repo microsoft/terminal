@@ -1137,7 +1137,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _core.CursorOn(true);
+            _core.CursorOn(!_core.IsInMarkMode());
             _cursorTimer->Start();
         }
 
@@ -1608,7 +1608,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_cursorTimer)
         {
             // When the terminal focuses, show the cursor immediately
-            _core.CursorOn(true);
+            _core.CursorOn(!_core.IsInMarkMode());
             _cursorTimer->Start();
         }
 
@@ -1857,6 +1857,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::SelectAll()
     {
         _core.SelectAll();
+    }
+
+    void TermControl::ToggleMarkMode()
+    {
+        _core.ToggleMarkMode();
     }
 
     void TermControl::Close()
