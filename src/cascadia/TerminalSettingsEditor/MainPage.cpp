@@ -455,6 +455,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto& pair : colorSchemeMap)
         {
             const auto viewModel = Editor::ColorSchemeViewModel(pair.Value());
+            viewModel.DeleteColorScheme({ this, &MainPage::_DeleteColorScheme });
             AllColorSchemes.Append(viewModel);
         }
         return AllColorSchemes;
@@ -610,6 +611,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>(), BreadcrumbSubPage::None, true);
+    }
+
+    void MainPage::_DeleteColorScheme(const IInspectable /*sender*/, const Editor::DeleteColorSchemeEventArgs& args)
+    {
+        const auto name{ args.SchemeName() };
+
+        // Delete scheme from settings model
+        _settingsClone.GlobalSettings().RemoveColorScheme(name);
+
+        // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
+        _settingsClone.UpdateColorSchemeReferences(name, L"Campbell");
     }
 
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept

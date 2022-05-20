@@ -23,17 +23,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         ColorSchemeViewModel ColorScheme { get; };
 
-        // Terminal Colors
-        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable { get; };
-        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable { get; };
-
-        // System Colors
-        ColorTableEntry CurrentForegroundColor;
-        ColorTableEntry CurrentBackgroundColor;
-        ColorTableEntry CurrentCursorColor;
-        ColorTableEntry CurrentSelectionBackgroundColor;
-
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
     }
 }

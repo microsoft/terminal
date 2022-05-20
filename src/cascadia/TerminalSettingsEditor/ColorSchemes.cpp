@@ -66,10 +66,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"Tango Light"
     };
 
-    ColorSchemes::ColorSchemes() :
-        _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
-        _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
-        _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
+    ColorSchemes::ColorSchemes()
     {
         InitializeComponent();
 
@@ -93,60 +90,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _State = e.Parameter().as<Editor::ColorSchemesPageNavigationState>();
         _AllColorSchemes = _State.AllColorSchemes();
-        _UpdateColorSchemeList();
-
+        ColorScheme(_AllColorSchemes.GetAt(0));
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
-        const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
-        const auto it = std::find_if(begin(_ColorSchemeList),
-                                     end(_ColorSchemeList),
-                                     [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
+        //const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
+        //const auto it = std::find_if(begin(_ColorSchemeList),
+        //                             end(_ColorSchemeList),
+        //                             [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
 
-        if (it != end(_ColorSchemeList))
-        {
-            auto scheme = *it;
-            ColorSchemeComboBox().SelectedItem(scheme);
-        }
-        else
-        {
-            ColorScheme(_AllColorSchemes.GetAt(0));
-        }
-
-        // populate color table grid
-        const auto colorLabelStyle{ Resources().Lookup(winrt::box_value(L"ColorLabelStyle")).as<Windows::UI::Xaml::Style>() };
-        const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"ColorControlStyle")).as<Windows::UI::Xaml::Style>() };
-        const auto colorTableEntryTemplate{ Resources().Lookup(winrt::box_value(L"ColorTableEntryTemplate")).as<DataTemplate>() };
-        auto setupColorControl = [colorTableEntryTemplate, colorControlStyle, colorTableGrid{ ColorTableGrid() }, this](const uint32_t& row, const uint32_t& col) {
-            ContentControl colorControl{};
-            colorControl.ContentTemplate(colorTableEntryTemplate);
-            colorControl.Style(colorControlStyle);
-
-            Data::Binding binding{};
-            const auto bindingIndex = col == 1 ? row : row + ColorTableDivider;
-            binding.Source(this->ColorScheme().ColorEntryAt(gsl::narrow_cast<uint8_t>(bindingIndex)));
-
-            binding.Mode(Data::BindingMode::TwoWay);
-            colorControl.SetBinding(ContentControl::ContentProperty(), binding);
-
-            colorTableGrid.Children().Append(colorControl);
-            Grid::SetRow(colorControl, row);
-            Grid::SetColumn(colorControl, col);
-        };
-        for (uint32_t row = 0; row < ColorTableGrid().RowDefinitions().Size(); ++row)
-        {
-            // color label
-            TextBlock label{};
-            label.Text(TableColorNames[row]);
-            label.Style(colorLabelStyle);
-            ColorTableGrid().Children().Append(label);
-            Grid::SetRow(label, row);
-            Grid::SetColumn(label, 0);
-
-            // regular color
-            setupColorControl(row, 1);
-
-            // bright color
-            setupColorControl(row, 2);
-        }
+        //if (it != end(_ColorSchemeList))
+        //{
+        //    auto scheme = *it;
+        //    ColorSchemeComboBox().SelectedItem(scheme);
+        //}
+        //else
+        //{
+        //    ColorScheme(_AllColorSchemes.GetAt(0));
+        //}
     }
 
     // Function Description:
@@ -160,15 +119,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                    const SelectionChangedEventArgs& args)
     {
         //  Update the color scheme this page is modifying
-        const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
-        CurrentColorScheme(colorScheme);
-        _UpdateColorTable(colorScheme);
+        const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
+        ColorScheme(*colorScheme);
 
-        _State.LastSelectedScheme(colorScheme.Name());
+        //_State.LastSelectedScheme(colorScheme.Name());
 
         // Set the text disclaimer for the text box
         hstring disclaimer{};
-        const std::wstring schemeName{ colorScheme.Name() };
+        const std::wstring schemeName{ colorScheme->Name() };
         if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
         {
             // load disclaimer for in-box profiles
@@ -179,49 +137,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Update the state of the page
         _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
         IsRenaming(false);
-    }
-
-    void ColorSchemes::ColorSchemeSelectionChanged2(const IInspectable& /*sender*/,
-                                                   const SelectionChangedEventArgs& args)
-    {
-        //  Update the color scheme this page is modifying
-        const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
-        ColorScheme(*colorScheme);
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"ColorScheme" });
-        //_UpdateColorTable(colorScheme);
-
-        //_State.LastSelectedScheme(colorScheme.Name());
-
-        //// Set the text disclaimer for the text box
-        //hstring disclaimer{};
-        //const std::wstring schemeName{ colorScheme.Name() };
-        //if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
-        //{
-        //    // load disclaimer for in-box profiles
-        //    disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
-        //}
-        //DeleteButtonDisclaimer().Text(disclaimer);
-
-        //// Update the state of the page
-        //_PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
-        //IsRenaming(false);
-    }
-
-    // Function Description:
-    // - Updates the list of all color schemes available to choose from.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void ColorSchemes::_UpdateColorSchemeList()
-    {
-        // Surprisingly, though this is called every time we navigate to the page,
-        // the list does not keep growing on each navigation.
-        const auto& colorSchemeMap{ _State.Settings().GlobalSettings().ColorSchemes() };
-        for (const auto& pair : colorSchemeMap)
-        {
-            _ColorSchemeList.Append(pair.Value());
-        }
     }
 
     // Function Description:
@@ -279,7 +194,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ColorSchemes::CanDeleteCurrentScheme() const
     {
-        if (const auto& scheme{ CurrentColorScheme() })
+        if (const auto& scheme{ ColorScheme() })
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
             const std::wstring myName{ scheme.Name() };
@@ -290,14 +205,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        const auto schemeName{ CurrentColorScheme().Name() };
-        _State.Settings().GlobalSettings().RemoveColorScheme(schemeName);
-
-        // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
-        _State.Settings().UpdateColorSchemeReferences(schemeName, L"Campbell");
+        ColorScheme().DeleteScheme();
 
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
-        if (static_cast<uint32_t>(removedSchemeIndex) < _ColorSchemeList.Size() - 1)
+        if (static_cast<uint32_t>(removedSchemeIndex) < _AllColorSchemes.Size() - 1)
         {
             // select same index
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex + 1);
@@ -307,7 +218,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // select last color scheme (avoid out of bounds error)
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
         }
-        _ColorSchemeList.RemoveAt(removedSchemeIndex);
+        _AllColorSchemes.RemoveAt(removedSchemeIndex);
 
         DeleteButton().Flyout().Hide();
 
@@ -335,7 +246,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State.Settings().GlobalSettings().AddColorScheme(scheme);
 
         // Update current page
-        _ColorSchemeList.Append(scheme);
+        //_ColorSchemeList.Append(scheme);
         ColorSchemeComboBox().SelectedItem(scheme);
     }
 
@@ -347,7 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::Rename_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        NameBox().Text(CurrentColorScheme().Name());
+        NameBox().Text(ColorScheme().Name());
         IsRenaming(true);
         NameBox().Focus(FocusState::Programmatic);
         NameBox().SelectAll();
@@ -385,7 +296,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
         // check if different name is already in use
-        const auto oldName{ CurrentColorScheme().Name() };
+        const auto oldName{ ColorScheme().Name() };
         if (newName != oldName && _State.Settings().GlobalSettings().ColorSchemes().HasKey(newName))
         {
             // open the error tip
@@ -399,42 +310,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // update the settings model
-        CurrentColorScheme().Name(newName);
+        ColorScheme().Name(newName);
         _State.Settings().GlobalSettings().RemoveColorScheme(oldName);
         _State.Settings().GlobalSettings().AddColorScheme(CurrentColorScheme());
         _State.Settings().UpdateColorSchemeReferences(oldName, newName);
 
         // update the UI
         RenameErrorTip().IsOpen(false);
-        CurrentColorScheme().Name(newName);
+        ColorScheme().Name(newName);
         IsRenaming(false);
 
         // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
         // We need to manually force the ComboBox to refresh itself.
         const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ColorSchemeList().Size());
+        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % _AllColorSchemes.Size());
         ColorSchemeComboBox().SelectedIndex(selectedIndex);
-    }
-
-    // Function Description:
-    // - Updates the currently modifiable color table based on the given current color scheme.
-    // Arguments:
-    // - colorScheme: the color scheme to retrieve the color table from
-    // Return Value:
-    // - <none>
-    void ColorSchemes::_UpdateColorTable(const Model::ColorScheme& colorScheme)
-    {
-        for (uint8_t i = 0; i < TableColorNames.size(); ++i)
-        {
-            til::color currentColor{ colorScheme.Table()[i] };
-            if (i < ColorTableDivider)
-            {
-                _CurrentNonBrightColorTable.GetAt(i).Color(currentColor);
-            }
-            else
-            {
-                _CurrentBrightColorTable.GetAt(i - ColorTableDivider).Color(currentColor);
-            }
-        }
     }
 }

@@ -5,6 +5,11 @@ import "ColorSchemes.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass DeleteColorSchemeEventArgs
+    {
+        String SchemeName { get; };
+    }
+
     runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme);
@@ -15,13 +20,16 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable;
         Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable;
 
-        ColorTableEntry ColorEntryAt(UInt8 Index);
+        ColorTableEntry ColorEntryAt(UInt32 Index);
 
         // System Colors
         ColorTableEntry CurrentForegroundColor;
         ColorTableEntry CurrentBackgroundColor;
         ColorTableEntry CurrentCursorColor;
         ColorTableEntry CurrentSelectionBackgroundColor;
+
+        void DeleteScheme();
+        event Windows.Foundation.TypedEventHandler<ColorSchemeViewModel, DeleteColorSchemeEventArgs> DeleteColorScheme;
     }
 
     [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged

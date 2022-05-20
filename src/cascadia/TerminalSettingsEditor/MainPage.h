@@ -56,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
         winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
+        void _DeleteColorScheme(const Windows::Foundation::IInspectable sender, const Editor::DeleteColorSchemeEventArgs& args);
         void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState state);

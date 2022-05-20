@@ -106,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentSelectionBackgroundColor.PropertyChanged(colorEntryChangedHandler);
     }
 
-    Editor::ColorTableEntry ColorSchemeViewModel::ColorEntryAt(uint8_t index)
+    Editor::ColorTableEntry ColorSchemeViewModel::ColorEntryAt(uint32_t index)
     {
         if (index < ColorTableDivider)
         {
@@ -116,6 +116,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return _CurrentBrightColorTable.GetAt(index - ColorTableDivider);
         }
+    }
+
+    void ColorSchemeViewModel::DeleteScheme()
+    {
+        auto deleteSchemeArgs{ winrt::make_self<DeleteColorSchemeEventArgs>(Name()) };
+        _DeleteColorSchemeHandlers(*this, *deleteSchemeArgs);
     }
 
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
