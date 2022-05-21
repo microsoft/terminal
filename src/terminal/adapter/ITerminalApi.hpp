@@ -71,7 +71,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress) = 0;
         virtual void SetWorkingDirectory(const std::wstring_view uri) = 0;
 
-        virtual bool ResizeWindow(const size_t width, const size_t height) = 0;
+        virtual bool ResizeWindow(const til::CoordType width, const til::CoordType height) = 0;
         virtual bool IsConsolePty() const = 0;
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;

@@ -101,7 +101,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
         const auto fontSize = ScreenInfo.GetScreenFontSize();
         cursor.SetHasMoved(false);
 
-        RECT rc;
+        til::rect rc;
         rc.left = (position.X - viewport.Left()) * fontSize.X;
         rc.top = (position.Y - viewport.Top()) * fontSize.Y;
         rc.right = rc.left + fontSize.X;

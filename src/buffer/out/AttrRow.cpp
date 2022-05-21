@@ -11,8 +11,8 @@
 // - attr - the default text attribute
 // Return Value:
 // - constructed object
-ATTR_ROW::ATTR_ROW(const uint16_t width, const TextAttribute attr) :
-    _data(width, attr) {}
+ATTR_ROW::ATTR_ROW(const til::CoordType width, const TextAttribute attr) :
+    _data(gsl::narrow<uint16_t>(width), attr) {}
 
 // Routine Description:
 // - Sets all properties of the ATTR_ROW to default values
@@ -32,9 +32,9 @@ void ATTR_ROW::Reset(const TextAttribute attr)
 // - newWidth - The new width of the row.
 // Return Value:
 // - <none>, throws exceptions on failures.
-void ATTR_ROW::Resize(const uint16_t newWidth)
+void ATTR_ROW::Resize(const til::CoordType newWidth)
 {
-    _data.resize_trailing_extent(newWidth);
+    _data.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
 }
 
 // Routine Description:
@@ -45,9 +45,9 @@ void ATTR_ROW::Resize(const uint16_t newWidth)
 // - the text attribute at column
 // Note:
 // - will throw on error
-TextAttribute ATTR_ROW::GetAttrByColumn(const uint16_t column) const
+TextAttribute ATTR_ROW::GetAttrByColumn(const til::CoordType column) const
 {
-    return _data.at(column);
+    return _data.at(gsl::narrow<uint16_t>(column));
 }
 
 // Routine Description:
@@ -74,7 +74,7 @@ std::vector<uint16_t> ATTR_ROW::GetHyperlinks() const
 // - attr - Attribute (color) to fill remaining characters with
 // Return Value:
 // - <none>
-bool ATTR_ROW::SetAttrToEnd(const uint16_t beginIndex, const TextAttribute attr)
+bool ATTR_ROW::SetAttrToEnd(const til::CoordType beginIndex, const TextAttribute attr)
 {
     _data.replace(gsl::narrow<uint16_t>(beginIndex), _data.size(), attr);
     return true;
@@ -103,9 +103,9 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 // - newAttr: The attribute to merge into this row.
 // Return Value:
 // - <none>
-void ATTR_ROW::Replace(const uint16_t beginIndex, const uint16_t endIndex, const TextAttribute& newAttr)
+void ATTR_ROW::Replace(const til::CoordType beginIndex, const til::CoordType endIndex, const TextAttribute& newAttr)
 {
-    _data.replace(beginIndex, endIndex, newAttr);
+    _data.replace(gsl::narrow<uint16_t>(beginIndex), gsl::narrow<uint16_t>(endIndex), newAttr);
 }
 
 ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept

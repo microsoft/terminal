@@ -65,7 +65,7 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<SMALL_RECT>& selection)
+    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -75,10 +75,10 @@ class ClipboardTests
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
         selection.clear();
-        selection.emplace_back(SMALL_RECT{ 0, 0, 8, 0 });
-        selection.emplace_back(SMALL_RECT{ 0, 1, 14, 1 });
-        selection.emplace_back(SMALL_RECT{ 0, 2, 14, 2 });
-        selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
+        selection.emplace_back(til::inclusive_rect{ 0, 0, 8, 0 });
+        selection.emplace_back(til::inclusive_rect{ 0, 1, 14, 1 });
+        selection.emplace_back(til::inclusive_rect{ 0, 2, 14, 2 });
+        selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
 
         const auto& buffer = screenInfo.GetTextBuffer();
         return buffer.GetText(true, fLineSelection, selection).text;
@@ -91,13 +91,13 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<SMALL_RECT> selection;
+        std::vector<til::inclusive_rect> selection;
         const auto text = SetupRetrieveFromBuffers(false, selection);
 
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((short)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
+        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
         auto tempPtr = text[0].data();
@@ -124,7 +124,7 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<SMALL_RECT> selection;
+        std::vector<til::inclusive_rect> selection;
         const auto text = SetupRetrieveFromBuffers(true, selection);
 
         // row 2, no wrap
@@ -205,7 +205,7 @@ class ClipboardTests
                 keyEvent.reset(static_cast<KeyEvent* const>(events.front().release()));
                 events.pop_front();
 
-                const short keyScanError = -1;
+                const til::CoordType keyScanError = -1;
                 const auto keyState = VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
                 const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));

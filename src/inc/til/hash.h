@@ -126,40 +126,41 @@ namespace til
         }
     };
 
-    template<typename T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>>
-    constexpr size_t hash(const T v) noexcept
+    template<typename T>
+    constexpr size_t hash(const T& v) noexcept
     {
-        // This runs murmurhash3's finalizer (fmix32/fmix64) on a single integer.
-        // It's fast, public domain and produces good results.
-        //
-        // Using til::as_unsigned here allows the compiler to drop the first
-        // `>> 33` mix for all Ts which are >= 32 bits.
-        // The existence of sign extension shouldn't change hash quality.
-        size_t h = til::as_unsigned(v);
-        if constexpr (sizeof(size_t) == 4)
+        if constexpr (sizeof(T) <= sizeof(size_t) && (std::is_integral_v<T> || std::is_enum_v<T>))
         {
-            h ^= h >> 16;
-            h *= UINT32_C(0x85ebca6b);
-            h ^= h >> 13;
-            h *= UINT32_C(0xc2b2ae35);
-            h ^= h >> 16;
+            // This runs murmurhash3's finalizer (fmix32/fmix64) on a single integer.
+            // It's fast, public domain and produces good results.
+            //
+            // Using til::as_unsigned here allows the compiler to drop the first
+            // `>> 33` mix for all Ts which are >= 32 bits.
+            // The existence of sign extension shouldn't change hash quality.
+            size_t h = til::as_unsigned(v);
+            if constexpr (sizeof(size_t) == 4)
+            {
+                h ^= h >> 16;
+                h *= UINT32_C(0x85ebca6b);
+                h ^= h >> 13;
+                h *= UINT32_C(0xc2b2ae35);
+                h ^= h >> 16;
+            }
+            else
+            {
+                h ^= h >> 33;
+                h *= UINT64_C(0xff51afd7ed558ccd);
+                h ^= h >> 33;
+                h *= UINT64_C(0xc4ceb9fe1a85ec53);
+                h ^= h >> 33;
+            }
+            return h;
         }
         else
         {
-            h ^= h >> 33;
-            h *= UINT64_C(0xff51afd7ed558ccd);
-            h ^= h >> 33;
-            h *= UINT64_C(0xc4ceb9fe1a85ec53);
-            h ^= h >> 33;
+            hasher h;
+            h.write(v);
+            return h.finalize();
         }
-        return h;
-    }
-
-    template<typename T, typename = std::enable_if_t<!(std::is_integral_v<T> || std::is_enum_v<T>)>>
-    constexpr size_t hash(const T& v) noexcept
-    {
-        hasher h;
-        h.write(v);
-        return h.finalize();
     }
 }

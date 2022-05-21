@@ -1066,8 +1066,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  L".",
                                                                                  L"Azure",
                                                                                  nullptr,
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 settings.InitialRows(),
+                                                                                 settings.InitialCols(),
                                                                                  winrt::guid());
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
@@ -1117,8 +1117,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  newWorkingDirectory,
                                                                                  settings.StartingTitle(),
                                                                                  envMap.GetView(),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 settings.InitialRows(),
+                                                                                 settings.InitialCols(),
                                                                                  winrt::guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));

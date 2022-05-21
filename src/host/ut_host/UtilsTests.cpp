@@ -49,43 +49,43 @@ class UtilsTests
         return true;
     }
 
-    SHORT RandomShort()
+    til::CoordType RandomShort()
     {
-        SHORT s;
+        til::CoordType s;
 
         do
         {
-            s = (SHORT)rand() % SHORT_MAX;
-        } while (s == 0i16);
+            s = (til::CoordType)rand() % SHORT_MAX;
+        } while (s == 0);
 
         return s;
     }
 
-    void FillBothCoordsSameRandom(COORD* pcoordA, COORD* pcoordB)
+    void FillBothCoordsSameRandom(til::point* pcoordA, til::point* pcoordB)
     {
         pcoordA->X = pcoordB->X = RandomShort();
         pcoordA->Y = pcoordB->Y = RandomShort();
     }
 
-    void LogCoordinates(const COORD coordA, const COORD coordB)
+    void LogCoordinates(const til::point coordA, const til::point coordB)
     {
         Log::Comment(String().Format(L"Coordinates - A: (%d, %d) B: (%d, %d)", coordA.X, coordA.Y, coordB.X, coordB.Y));
     }
 
-    void SubtractRandom(short& psValue)
+    void SubtractRandom(til::CoordType& psValue)
     {
         const auto sRand = RandomShort();
-        psValue -= gsl::narrow<SHORT>(std::max(sRand % psValue, 1));
+        psValue -= std::max(sRand % psValue, 1);
     }
 
     TEST_METHOD(TestCompareCoords)
     {
         auto result = 5; // not 1, 0, or -1
-        COORD coordA;
-        COORD coordB;
+        til::point coordA;
+        til::point coordB;
 
         // Set the buffer size to be able to accommodate large values.
-        COORD coordMaxBuffer;
+        til::size coordMaxBuffer;
         coordMaxBuffer.X = SHORT_MAX;
         coordMaxBuffer.Y = SHORT_MAX;
 

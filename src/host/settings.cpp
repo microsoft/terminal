@@ -558,44 +558,44 @@ void Settings::SetReserved(const WORD wReserved)
     _wReserved = wReserved;
 }
 
-COORD Settings::GetScreenBufferSize() const
+til::size Settings::GetScreenBufferSize() const
 {
-    return _dwScreenBufferSize;
+    return til::wrap_coord_size(_dwScreenBufferSize);
 }
-void Settings::SetScreenBufferSize(const COORD dwScreenBufferSize)
+void Settings::SetScreenBufferSize(const til::size dwScreenBufferSize)
 {
-    _dwScreenBufferSize = dwScreenBufferSize;
+    _dwScreenBufferSize = til::unwrap_coord_size(dwScreenBufferSize);
 }
 
-COORD Settings::GetWindowSize() const
+til::size Settings::GetWindowSize() const
 {
-    return _dwWindowSize;
+    return til::wrap_coord_size(_dwWindowSize);
 }
-void Settings::SetWindowSize(const COORD dwWindowSize)
+void Settings::SetWindowSize(const til::size dwWindowSize)
 {
-    _dwWindowSize = dwWindowSize;
+    _dwWindowSize = til::unwrap_coord_size(dwWindowSize);
 }
 
 bool Settings::IsWindowSizePixelsValid() const
 {
     return _fUseWindowSizePixels;
 }
-COORD Settings::GetWindowSizePixels() const
+til::size Settings::GetWindowSizePixels() const
 {
-    return _dwWindowSizePixels;
+    return til::wrap_coord_size(_dwWindowSizePixels);
 }
-void Settings::SetWindowSizePixels(const COORD dwWindowSizePixels)
+void Settings::SetWindowSizePixels(const til::size dwWindowSizePixels)
 {
-    _dwWindowSizePixels = dwWindowSizePixels;
+    _dwWindowSizePixels = til::unwrap_coord_size(dwWindowSizePixels);
 }
 
-COORD Settings::GetWindowOrigin() const
+til::size Settings::GetWindowOrigin() const
 {
-    return _dwWindowOrigin;
+    return til::wrap_coord_size(_dwWindowOrigin);
 }
-void Settings::SetWindowOrigin(const COORD dwWindowOrigin)
+void Settings::SetWindowOrigin(const til::size dwWindowOrigin)
 {
-    _dwWindowOrigin = dwWindowOrigin;
+    _dwWindowOrigin = til::unwrap_coord_size(dwWindowOrigin);
 }
 
 DWORD Settings::GetFont() const
@@ -607,13 +607,13 @@ void Settings::SetFont(const DWORD nFont)
     _nFont = nFont;
 }
 
-COORD Settings::GetFontSize() const
+til::size Settings::GetFontSize() const
 {
-    return _dwFontSize;
+    return til::wrap_coord_size(_dwFontSize);
 }
-void Settings::SetFontSize(const COORD dwFontSize)
+void Settings::SetFontSize(const til::size dwFontSize)
 {
-    _dwFontSize = dwFontSize;
+    _dwFontSize = til::unwrap_coord_size(dwFontSize);
 }
 
 UINT Settings::GetFontFamily() const

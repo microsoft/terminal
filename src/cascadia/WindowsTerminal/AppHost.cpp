@@ -534,21 +534,21 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
+void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, LaunchMode& launchMode)
 {
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
     auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
     const auto centerOnLaunch = _logic.CenterOnLaunch();
-    proposedRect.left = static_cast<long>(initialPos.X);
-    proposedRect.top = static_cast<long>(initialPos.Y);
+    proposedRect.left = gsl::narrow<til::CoordType>(initialPos.X);
+    proposedRect.top = gsl::narrow<til::CoordType>(initialPos.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
 
     // Find nearest monitor.
-    auto hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    auto hmon = MonitorFromRect(proposedRect.as_win32_rect(), MONITOR_DEFAULTTONEAREST);
 
     // Get nearest monitor information
     MONITORINFO monitorInfo;
@@ -605,13 +605,13 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
                           Utils::ClampToShortMax(adjustedHeight, 1) };
 
     // Find nearest monitor for the position that we've actually settled on
-    auto hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    auto hMonNearest = MonitorFromRect(proposedRect.as_win32_rect(), MONITOR_DEFAULTTONEAREST);
     MONITORINFO nearestMonitorInfo;
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
     // Get monitor dimensions:
     GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
-    const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+    const til::size desktopDimensions{ nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left,
+                                       nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top };
 
     // GH#10583 - Adjust the position of the rectangle to account for the size
     // of the invisible borders on the left/right. We DON'T want to adjust this
@@ -627,11 +627,11 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
         // space reserved for the resize handles. So retrieve that size here.
         const auto availableSpace = desktopDimensions + nonClientSize;
 
-        origin = til::point{
-            ::base::ClampSub(nearestMonitorInfo.rcWork.left, (nonClientSize.width / 2)),
+        origin = {
+            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
             (nearestMonitorInfo.rcWork.top)
         };
-        dimensions = til::size{
+        dimensions = {
             availableSpace.width,
             availableSpace.height / 2
         };
@@ -640,7 +640,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     else if (centerOnLaunch)
     {
         // Move our proposed location into the center of that specific monitor.
-        origin = til::point{
+        origin = {
             (nearestMonitorInfo.rcWork.left + ((desktopDimensions.width / 2) - (dimensions.width / 2))),
             (nearestMonitorInfo.rcWork.top + ((desktopDimensions.height / 2) - (dimensions.height / 2)))
         };

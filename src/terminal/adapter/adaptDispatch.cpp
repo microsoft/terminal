@@ -24,7 +24,6 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettin
     _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _termOutput()
 {
-    _scrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
 // Routine Description:
@@ -198,8 +197,8 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
-    int row = cursorPosition.Y;
-    int col = cursorPosition.X;
+    auto row = cursorPosition.Y;
+    auto col = cursorPosition.X;
 
     // But if the row is absolute, it will be relative to the top of the
     // viewport, or the top margin, depending on the origin mode.
@@ -218,8 +217,8 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // Adjust the base position by the given offsets and clamp the results.
     // The row is constrained within the viewport's vertical boundaries,
     // while the column is constrained by the buffer width.
-    row = std::clamp<int>(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
-    col = std::clamp<int>(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
+    row = std::clamp(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
+    col = std::clamp(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
 
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
@@ -245,8 +244,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     }
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
-    cursor.SetPosition(textBuffer.ClampPositionWithinLine(newPos));
+    cursor.SetPosition(textBuffer.ClampPositionWithinLine({ col, row }));
     _ApplyCursorMovementFlags(cursor);
 
     return true;
@@ -345,7 +343,7 @@ bool AdaptDispatch::CursorSaveState()
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    cursorPosition.Y -= gsl::narrow_cast<short>(viewport.top);
+    cursorPosition.Y -= viewport.top;
 
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
@@ -438,11 +436,11 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
         // For now we're assuming the scrollRect is always the full width of the
         // buffer, but this will likely need to be extended to support scrolling
         // of arbitrary widths at some point in the future.
-        const auto top = gsl::narrow_cast<short>(delta > 0 ? scrollRect.top : (scrollRect.top + absoluteDelta));
-        const auto height = gsl::narrow_cast<short>(scrollRect.height() - absoluteDelta);
-        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+        const auto top = delta > 0 ? scrollRect.top : scrollRect.top + absoluteDelta;
+        const auto height = scrollRect.height() - absoluteDelta;
+        const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
         textBuffer.ScrollRows(top, height, actualDelta);
-        textBuffer.TriggerRedraw(Viewport::FromInclusive(scrollRect.to_small_rect()));
+        textBuffer.TriggerRedraw(Viewport::FromExclusive(scrollRect));
     }
 
     // Rows revealed by the scroll are filled with standard erase attributes.
@@ -470,11 +468,11 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
     if (absoluteDelta < scrollRect.width())
     {
-        const auto left = gsl::narrow_cast<short>(delta > 0 ? scrollRect.left : (scrollRect.left + absoluteDelta));
-        const auto top = gsl::narrow_cast<short>(scrollRect.top);
-        const auto width = gsl::narrow_cast<short>(scrollRect.width() - absoluteDelta);
-        const auto height = gsl::narrow_cast<short>(scrollRect.height());
-        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+        const auto left = delta > 0 ? scrollRect.left : (scrollRect.left + absoluteDelta);
+        const auto top = scrollRect.top;
+        const auto width = scrollRect.width() - absoluteDelta;
+        const auto height = scrollRect.height();
+        const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
 
         const auto source = Viewport::FromDimensions({ left, top }, width, height);
         const auto target = Viewport::Offset(source, { actualDelta, 0 });
@@ -555,10 +553,10 @@ void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect,
     {
         const auto fillWidth = gsl::narrow_cast<size_t>(fillRect.right - fillRect.left);
         const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillWidth };
-        const auto col = gsl::narrow_cast<short>(fillRect.left);
-        for (auto row = gsl::narrow_cast<short>(fillRect.top); row < fillRect.bottom; row++)
+        const auto col = fillRect.left;
+        for (auto row = fillRect.top; row < fillRect.bottom; row++)
         {
-            textBuffer.WriteLine(fillData, COORD{ col, row }, false);
+            textBuffer.WriteLine(fillData, { col, row }, false);
         }
         _api.NotifyAccessibilityChange(fillRect);
     }
@@ -1298,13 +1296,11 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
     // having only a bottom param is legal      ([;3r   -> 0,3   -> 1,3  -> 1,3,true)
     // having neither uses the defaults         ([;r [r -> 0,0   -> 0,0  -> 0,0,false)
     // an illegal combo (eg, 3;2r) is ignored
-    SHORT actualTop = 0;
-    SHORT actualBottom = 0;
-    THROW_IF_FAILED(SizeTToShort(topMargin, &actualTop));
-    THROW_IF_FAILED(SizeTToShort(bottomMargin, &actualBottom));
+    til::CoordType actualTop = topMargin;
+    til::CoordType actualBottom = bottomMargin;
 
     const auto viewport = _api.GetViewport();
-    const auto screenHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
+    const auto screenHeight = viewport.bottom - viewport.top;
     // The default top margin is line 1
     if (actualTop == 0)
     {
@@ -1435,8 +1431,7 @@ bool AdaptDispatch::ReverseLineFeed()
     else if (cursorPosition.Y > viewport.top)
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
-        const COORD newCursorPosition{ cursorPosition.X, cursorPosition.Y - 1 };
-        cursor.SetPosition(textBuffer.ClampPositionWithinLine(newCursorPosition));
+        cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.X, cursorPosition.Y - 1 }));
         _ApplyCursorMovementFlags(cursor);
     }
     return true;
@@ -1940,8 +1935,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 void AdaptDispatch::_EraseScrollback()
 {
     const auto viewport = _api.GetViewport();
-    const auto top = gsl::narrow_cast<short>(viewport.top);
-    const auto height = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
+    const auto top = viewport.top;
+    const auto height = viewport.bottom - viewport.top;
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
     auto& cursor = textBuffer.GetCursor();
@@ -1975,7 +1970,7 @@ void AdaptDispatch::_EraseScrollback()
 void AdaptDispatch::_EraseAll()
 {
     const auto viewport = _api.GetViewport();
-    const auto viewportHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
+    const auto viewportHeight = viewport.bottom - viewport.top;
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize();
 
@@ -1988,7 +1983,7 @@ void AdaptDispatch::_EraseAll()
     // Calculate new viewport position. Typically we want to move one line below
     // the last non-space row, but if the last non-space character is the very
     // start of the buffer, then we shouldn't move down at all.
-    const til::point lastChar{ textBuffer.GetLastNonSpaceCharacter() };
+    const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
     auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.Y + 1;
     const auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
@@ -2546,7 +2541,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
             const auto bitPattern = _fontBuffer->GetBitPattern();
             const auto cellSize = _fontBuffer->GetCellSize();
             const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _renderer.UpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
+            _renderer.UpdateSoftFont(bitPattern, cellSize, centeringHint);
         }
         return true;
     };

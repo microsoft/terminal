@@ -116,7 +116,7 @@ TextBuffer& ConhostInternalGetSet::GetTextBuffer()
 // - the exclusive coordinates of the viewport.
 til::rect ConhostInternalGetSet::GetViewport() const
 {
-    return til::rect{ _io.GetActiveOutputBuffer().GetVirtualViewport().ToInclusive() };
+    return _io.GetActiveOutputBuffer().GetVirtualViewport().ToExclusive();
 }
 
 // Routine Description:
@@ -128,8 +128,8 @@ til::rect ConhostInternalGetSet::GetViewport() const
 void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 {
     auto& info = _io.GetActiveOutputBuffer();
-    const auto dimensions = til::size{ info.GetViewport().Dimensions() };
-    const auto windowRect = til::rect{ position, dimensions }.to_small_rect();
+    const auto dimensions = info.GetViewport().Dimensions();
+    const auto windowRect = til::rect{ position, dimensions }.to_inclusive_rect();
     THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
 }
 
@@ -173,8 +173,8 @@ void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scroll
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.Top = gsl::narrow<short>(scrollMargins.Top);
-    srScrollMargins.Bottom = gsl::narrow<short>(scrollMargins.Bottom);
+    srScrollMargins.Top = scrollMargins.Top;
+    srScrollMargins.Bottom = scrollMargins.Bottom;
     screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
 }
 
@@ -362,15 +362,13 @@ void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
 // - height: The new height of the window, in rows
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height)
+bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const til::CoordType sRows)
 {
-    SHORT sColumns = 0;
-    SHORT sRows = 0;
-
-    THROW_IF_FAILED(SizeTToShort(width, &sColumns));
-    THROW_IF_FAILED(SizeTToShort(height, &sRows));
-    // We should do nothing if 0 is passed in for a size.
-    RETURN_BOOL_IF_FALSE(width > 0 && height > 0);
+    // Ensure we can safely use gsl::narrow_cast<short>(...).
+    if (sColumns <= 0 || sRows <= 0 || sColumns > SHRT_MAX || sRows > SHRT_MAX)
+    {
+        return false;
+    }
 
     auto api = ServiceLocator::LocateGlobals().api;
     auto& screenInfo = _io.GetActiveOutputBuffer();
@@ -382,19 +380,19 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     const auto oldViewport = screenInfo.GetVirtualViewport();
     auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
     // Always resize the width of the console
-    csbiex.dwSize.X = sColumns;
+    csbiex.dwSize.X = gsl::narrow_cast<short>(sColumns);
     // Only set the screen buffer's height if it's currently less than
     //  what we're requesting.
     if (sRows > csbiex.dwSize.Y)
     {
-        csbiex.dwSize.Y = sRows;
+        csbiex.dwSize.Y = gsl::narrow_cast<short>(sRows);
     }
 
     // If the cursor row is now past the bottom of the viewport, we'll have to
     // move the viewport down to bring it back into view. However, we don't want
     // to do this in pty mode, because the conpty resize operation is dependent
     // on the viewport *not* being adjusted.
-    const short cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
+    const auto cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
     if (cursorOverflow > 0 && !IsConsolePty())
     {
         newViewport = Viewport::Offset(newViewport, { 0, cursorOverflow });
@@ -405,7 +403,7 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
 
     // SetConsoleScreenBufferInfoEx however expects exclusive rects
     const auto sre = newViewport.ToExclusive();
-    csbiex.srWindow = sre;
+    csbiex.srWindow = til::unwrap_exclusive_small_rect(sre);
 
     THROW_IF_FAILED(api->SetConsoleScreenBufferInfoExImpl(screenInfo, csbiex));
     THROW_IF_FAILED(api->SetConsoleWindowInfoImpl(screenInfo, true, sri));
@@ -448,9 +446,9 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
     if (screenInfo.HasAccessibilityEventing())
     {
         screenInfo.NotifyAccessibilityEventing(
-            gsl::narrow_cast<short>(changedRect.left),
-            gsl::narrow_cast<short>(changedRect.top),
-            gsl::narrow_cast<short>(changedRect.right - 1),
-            gsl::narrow_cast<short>(changedRect.bottom - 1));
+            changedRect.left,
+            changedRect.top,
+            changedRect.right - 1,
+            changedRect.bottom - 1);
     }
 }

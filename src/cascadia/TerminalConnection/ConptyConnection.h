@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void Start();
         void WriteInput(const hstring& data);
-        void Resize(uint32_t rows, uint32_t columns);
+        void Resize(til::CoordType rows, til::CoordType columns);
         void Close() noexcept;
         void ClearBuffer();
 
@@ -53,8 +53,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const winrt::hstring& startingDirectory,
                                                                          const winrt::hstring& startingTitle,
                                                                          const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
-                                                                         uint32_t rows,
-                                                                         uint32_t columns,
+                                                                         til::CoordType rows,
+                                                                         til::CoordType columns,
                                                                          const winrt::guid& guid);
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
@@ -67,8 +67,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;
 
-        uint32_t _initialRows{};
-        uint32_t _initialCols{};
+        til::CoordType _initialRows{};
+        til::CoordType _initialCols{};
         uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};

@@ -174,18 +174,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(y);
         }
 
-#ifdef _WINCONTYPES_
-        explicit constexpr point(const COORD other) noexcept :
-            x{ other.X }, y{ other.Y }
-        {
-        }
-
-        constexpr COORD to_win32_coord() const
-        {
-            return { narrow_x<short>(), narrow_y<short>() };
-        }
-#endif
-
 #ifdef _WINDEF_
         explicit constexpr point(const POINT other) noexcept :
             x{ other.x }, y{ other.y }

@@ -499,7 +499,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo,
                                                               a->Element,
                                                               fill,
-                                                              a->WriteCoord,
+                                                              til::wrap_coord(a->WriteCoord),
                                                               amountWritten);
         break;
     }
@@ -511,7 +511,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                a->Element,
                                                                fill,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                amountWritten,
                                                                m->GetProcessHandle()->GetShimPolicy().IsPowershellExe());
         break;
@@ -521,7 +521,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                static_cast<char>(a->Element),
                                                                fill,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                amountWritten);
         break;
     }
@@ -692,7 +692,7 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, a->Size);
+    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, til::wrap_coord_size(a->Size));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG* const m,
@@ -707,7 +707,7 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, a->CursorPosition);
+    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, til::wrap_coord(a->CursorPosition));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG* const m,
@@ -722,7 +722,9 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, a->Size);
+    auto size = til::wrap_coord_size(a->Size);
+    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, size);
+    a->Size = til::unwrap_coord_size(size);
     return S_OK;
 }
 
@@ -743,9 +745,9 @@
         // GH#3126 if the client application is cmd.exe, then we might need to
         // enable a compatibility shim.
         return m->_pApiRoutines->ScrollConsoleScreenBufferWImpl(*pObj,
-                                                                a->ScrollRectangle,
-                                                                a->DestinationOrigin,
-                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
+                                                                til::wrap_small_rect(a->ScrollRectangle),
+                                                                til::wrap_coord(a->DestinationOrigin),
+                                                                a->Clip ? std::optional{ til::wrap_small_rect(a->ClipRectangle) } : std::nullopt,
                                                                 a->Fill.Char.UnicodeChar,
                                                                 a->Fill.Attributes,
                                                                 m->GetProcessHandle()->GetShimPolicy().IsCmdExe());
@@ -753,9 +755,9 @@
     else
     {
         return m->_pApiRoutines->ScrollConsoleScreenBufferAImpl(*pObj,
-                                                                a->ScrollRectangle,
-                                                                a->DestinationOrigin,
-                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
+                                                                til::wrap_small_rect(a->ScrollRectangle),
+                                                                til::wrap_coord(a->DestinationOrigin),
+                                                                a->Clip ? std::optional{ til::wrap_small_rect(a->ClipRectangle) } : std::nullopt,
                                                                 a->Fill.Char.AsciiChar,
                                                                 a->Fill.Attributes);
     }
@@ -791,7 +793,7 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, a->Window);
+    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, til::wrap_small_rect(a->Window));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m,
@@ -833,20 +835,20 @@
     case CONSOLE_ATTRIBUTE:
     {
         const gsl::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
         const gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_ASCII:
     {
         const gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     default:
@@ -906,9 +908,9 @@
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
 
     // Backup originalRegion and set the written area to a 0 size rectangle in case of failures.
-    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     auto writtenRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = writtenRegion.ToInclusive();
+    a->CharRegion = til::unwrap_small_rect(writtenRegion.ToInclusive());
 
     // Get input parameter buffer
     PVOID pvBuffer;
@@ -939,7 +941,7 @@
     }
 
     // Update the written region if we were successful
-    a->CharRegion = writtenRegion.ToInclusive();
+    a->CharRegion = til::unwrap_small_rect(writtenRegion.ToInclusive());
 
     return S_OK;
 }
@@ -991,7 +993,7 @@
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                 text,
-                                                                a->WriteCoord,
+                                                                til::wrap_coord(a->WriteCoord),
                                                                 used);
 
         break;
@@ -1003,7 +1005,7 @@
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                 text,
-                                                                a->WriteCoord,
+                                                                til::wrap_coord(a->WriteCoord),
                                                                 used);
 
         break;
@@ -1014,7 +1016,7 @@
 
         hr = m->_pApiRoutines->WriteConsoleOutputAttributeImpl(*pScreenInfo,
                                                                text,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                used);
 
         break;
@@ -1039,9 +1041,9 @@
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
 
     // Backup data region passed and set it to a zero size region in case we exit early for failures.
-    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     const auto zeroRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = zeroRegion.ToInclusive();
+    a->CharRegion = til::unwrap_small_rect(zeroRegion.ToInclusive());
 
     PVOID pvBuffer;
     ULONG cbBuffer;
@@ -1077,7 +1079,7 @@
                                                                   finalRegion));
     }
 
-    a->CharRegion = finalRegion.ToInclusive();
+    a->CharRegion = til::unwrap_small_rect(finalRegion.ToInclusive());
 
     // We have to reply back with the entire buffer length. The client side in kernelbase will trim out
     // the correct region of the buffer for return to the original caller.
@@ -1188,7 +1190,10 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, a->FontSize);
+    auto size = til::wrap_coord_size(a->FontSize);
+    const auto hr = m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, size);
+    a->FontSize = til::unwrap_coord_size(size);
+    return hr;
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m,
@@ -1229,7 +1234,10 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, a->ScreenBufferDimensions);
+    auto size = til::wrap_coord_size(a->ScreenBufferDimensions);
+    const auto hr = m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, size);
+    a->ScreenBufferDimensions = til::unwrap_coord_size(size);
+    return hr;
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m,

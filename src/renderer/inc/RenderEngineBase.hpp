@@ -31,7 +31,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
 
         [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                             const SIZE cellSize,
+                                             const til::size cellSize,
                                              const size_t centeringHint) noexcept override;
 
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
