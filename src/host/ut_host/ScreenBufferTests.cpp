@@ -132,6 +132,7 @@ class ScreenBufferTests
     TEST_METHOD(VtNewlineOutsideMargins);
 
     TEST_METHOD(VtSetColorTable);
+    TEST_METHOD(VtRestoreColorTableReport);
 
     TEST_METHOD(ResizeTraditionalDoesNotDoubleFreeAttrRows);
 
@@ -1736,6 +1737,237 @@ void ScreenBufferTests::VtSetColorTable()
         L"invalid: need to specify a color space"));
     stateMachine.ProcessString(L"\x1b]4;5;1/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
+}
+
+void ScreenBufferTests::VtRestoreColorTableReport()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // Set everything to white to start with.
+    for (auto i = 0; i < 16; i++)
+    {
+        gci.SetColorTableEntry(i, RGB(255, 255, 255));
+    }
+
+    // The test cases below are copied from the VT340 default color table, but
+    // note that our HLS conversion algorithm doesn't exactly match the VT340,
+    // so some of the component values may be off by 1%.
+
+    Log::Comment(L"HLS color definitions");
+
+    // HLS(0°,0%,0%) -> RGB(0,0,0)
+    stateMachine.ProcessString(L"\033P2$p0;1;0;0;0\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 0, 0), gci.GetColorTableEntry(0));
+
+    // HLS(0°,49%,59%) -> RGB(51,51,199)
+    stateMachine.ProcessString(L"\033P2$p1;1;0;49;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(51, 51, 199), gci.GetColorTableEntry(1));
+
+    // HLS(120°,46%,71%) -> RGB(201,34,34)
+    stateMachine.ProcessString(L"\033P2$p2;1;120;46;71\033\\");
+    VERIFY_ARE_EQUAL(RGB(201, 34, 34), gci.GetColorTableEntry(2));
+
+    // HLS(240°,49%,59%) -> RGB(51,199,51)
+    stateMachine.ProcessString(L"\033P2$p3;1;240;49;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(51, 199, 51), gci.GetColorTableEntry(3));
+
+    // HLS(60°,49%,59%) -> RGB(199,51,199)
+    stateMachine.ProcessString(L"\033P2$p4;1;60;49;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(199, 51, 199), gci.GetColorTableEntry(4));
+
+    // HLS(300°,49%,59%) -> RGB(51,199,199)
+    stateMachine.ProcessString(L"\033P2$p5;1;300;49;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(51, 199, 199), gci.GetColorTableEntry(5));
+
+    // HLS(180°,49%,59%) -> RGB(199,199,51)
+    stateMachine.ProcessString(L"\033P2$p6;1;180;49;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(199, 199, 51), gci.GetColorTableEntry(6));
+
+    // HLS(0°,46%,0%) -> RGB(117,117,117)
+    stateMachine.ProcessString(L"\033P2$p7;1;0;46;0\033\\");
+    VERIFY_ARE_EQUAL(RGB(117, 117, 117), gci.GetColorTableEntry(7));
+
+    // HLS(0°,26%,0%) -> RGB(66,66,66)
+    stateMachine.ProcessString(L"\033P2$p8;1;0;26;0\033\\");
+    VERIFY_ARE_EQUAL(RGB(66, 66, 66), gci.GetColorTableEntry(8));
+
+    // HLS(0°,46%,28%) -> RGB(84,84,150)
+    stateMachine.ProcessString(L"\033P2$p9;1;0;46;28\033\\");
+    VERIFY_ARE_EQUAL(RGB(84, 84, 150), gci.GetColorTableEntry(9));
+
+    // HLS(120°,42%,38%) -> RGB(148,66,66)
+    stateMachine.ProcessString(L"\033P2$p10;1;120;42;38\033\\");
+    VERIFY_ARE_EQUAL(RGB(148, 66, 66), gci.GetColorTableEntry(10));
+
+    // HLS(240°,46%,28%) -> RGB(84,150,84)
+    stateMachine.ProcessString(L"\033P2$p11;1;240;46;28\033\\");
+    VERIFY_ARE_EQUAL(RGB(84, 150, 84), gci.GetColorTableEntry(11));
+
+    // HLS(60°,46%,28%) -> RGB(150,84,150)
+    stateMachine.ProcessString(L"\033P2$p12;1;60;46;28\033\\");
+    VERIFY_ARE_EQUAL(RGB(150, 84, 150), gci.GetColorTableEntry(12));
+
+    // HLS(300°,46%,28%) -> RGB(84,150,150)
+    stateMachine.ProcessString(L"\033P2$p13;1;300;46;28\033\\");
+    VERIFY_ARE_EQUAL(RGB(84, 150, 150), gci.GetColorTableEntry(13));
+
+    // HLS(180°,46%,28%) -> RGB(150,150,84)
+    stateMachine.ProcessString(L"\033P2$p14;1;180;46;28\033\\");
+    VERIFY_ARE_EQUAL(RGB(150, 150, 84), gci.GetColorTableEntry(14));
+
+    // HLS(0°,79%,0%) -> RGB(201,201,201)
+    stateMachine.ProcessString(L"\033P2$p15;1;0;79;0\033\\");
+    VERIFY_ARE_EQUAL(RGB(201, 201, 201), gci.GetColorTableEntry(15));
+
+    // Reset everything to white again.
+    for (auto i = 0; i < 16; i++)
+    {
+        gci.SetColorTableEntry(i, RGB(255, 255, 255));
+    }
+
+    Log::Comment(L"RGB color definitions");
+
+    // RGB(0%,0%,0%) -> RGB(0,0,0)
+    stateMachine.ProcessString(L"\033P2$p0;2;0;0;0\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 0, 0), gci.GetColorTableEntry(0));
+
+    // RGB(20%,20%,78%) -> RGB(51,51,199)
+    stateMachine.ProcessString(L"\033P2$p1;2;20;20;78\033\\");
+    VERIFY_ARE_EQUAL(RGB(51, 51, 199), gci.GetColorTableEntry(1));
+
+    // RGB(79%,13%,13%) -> RGB(201,33,33)
+    stateMachine.ProcessString(L"\033P2$p2;2;79;13;13\033\\");
+    VERIFY_ARE_EQUAL(RGB(201, 33, 33), gci.GetColorTableEntry(2));
+
+    // RGB(20%,78%,20%) -> RGB(51,199,51)
+    stateMachine.ProcessString(L"\033P2$p3;2;20;78;20\033\\");
+    VERIFY_ARE_EQUAL(RGB(51, 199, 51), gci.GetColorTableEntry(3));
+
+    // RGB(78%,20%,78%) -> RGB(199,51,199)
+    stateMachine.ProcessString(L"\033P2$p4;2;78;20;78\033\\");
+    VERIFY_ARE_EQUAL(RGB(199, 51, 199), gci.GetColorTableEntry(4));
+
+    // RGB(20%,78%,78%) -> RGB(51,199,199)
+    stateMachine.ProcessString(L"\033P2$p5;2;20;78;78\033\\");
+    VERIFY_ARE_EQUAL(RGB(51, 199, 199), gci.GetColorTableEntry(5));
+
+    // RGB(78%,78%,20%) -> RGB(199,199,51)
+    stateMachine.ProcessString(L"\033P2$p6;2;78;78;20\033\\");
+    VERIFY_ARE_EQUAL(RGB(199, 199, 51), gci.GetColorTableEntry(6));
+
+    // RGB(46%,46%,46%) -> RGB(117,117,117)
+    stateMachine.ProcessString(L"\033P2$p7;2;46;46;46\033\\");
+    VERIFY_ARE_EQUAL(RGB(117, 117, 117), gci.GetColorTableEntry(7));
+
+    // RGB(26%,26%,26%) -> RGB(66,66,66)
+    stateMachine.ProcessString(L"\033P2$p8;2;26;26;26\033\\");
+    VERIFY_ARE_EQUAL(RGB(66, 66, 66), gci.GetColorTableEntry(8));
+
+    // RGB(33%,33%,59%) -> RGB(84,84,150)
+    stateMachine.ProcessString(L"\033P2$p9;2;33;33;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(84, 84, 150), gci.GetColorTableEntry(9));
+
+    // RGB(58%,26%,26%) -> RGB(148,66,66)
+    stateMachine.ProcessString(L"\033P2$p10;2;58;26;26\033\\");
+    VERIFY_ARE_EQUAL(RGB(148, 66, 66), gci.GetColorTableEntry(10));
+
+    // RGB(33%,59%,33%) -> RGB(84,150,84)
+    stateMachine.ProcessString(L"\033P2$p11;2;33;59;33\033\\");
+    VERIFY_ARE_EQUAL(RGB(84, 150, 84), gci.GetColorTableEntry(11));
+
+    // RGB(59%,33%,59%) -> RGB(150,84,150)
+    stateMachine.ProcessString(L"\033P2$p12;2;59;33;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(150, 84, 150), gci.GetColorTableEntry(12));
+
+    // RGB(33%,59%,59%) -> RGB(84,150,150)
+    stateMachine.ProcessString(L"\033P2$p13;2;33;59;59\033\\");
+    VERIFY_ARE_EQUAL(RGB(84, 150, 150), gci.GetColorTableEntry(13));
+
+    // RGB(59%,59%,33%) -> RGB(150,150,84)
+    stateMachine.ProcessString(L"\033P2$p14;2;59;59;33\033\\");
+    VERIFY_ARE_EQUAL(RGB(150, 150, 84), gci.GetColorTableEntry(14));
+
+    // RGB(79%,79%,79%) -> RGB(201,201,201)
+    stateMachine.ProcessString(L"\033P2$p15;2;79;79;79\033\\");
+    VERIFY_ARE_EQUAL(RGB(201, 201, 201), gci.GetColorTableEntry(15));
+
+    // Reset everything to white again.
+    for (auto i = 0; i < 16; i++)
+    {
+        gci.SetColorTableEntry(i, RGB(255, 255, 255));
+    }
+
+    Log::Comment(L"Multiple color definitions");
+
+    // Setting colors 0, 2, and 4 to red, green, and blue (HLS).
+    stateMachine.ProcessString(L"\033P2$p0;1;120;50;100/2;1;240;50;100/4;1;360;50;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(255, 0, 0), gci.GetColorTableEntry(0));
+    VERIFY_ARE_EQUAL(RGB(0, 255, 0), gci.GetColorTableEntry(2));
+    VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(4));
+
+    // Setting colors 1, 3, and 5 to red, green, and blue (RGB).
+    stateMachine.ProcessString(L"\033P2$p1;2;100;0;0/3;2;0;100;0/5;2;0;0;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(255, 0, 0), gci.GetColorTableEntry(1));
+    VERIFY_ARE_EQUAL(RGB(0, 255, 0), gci.GetColorTableEntry(3));
+    VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(5));
+
+    // The interpretation of omitted and out of range parameter values is based
+    // on the VT240 and VT340 sixel implementations. It is assumed that color
+    // parsing is handled in the same way for other operations.
+
+    Log::Comment(L"Omitted parameter values");
+
+    // Omitted hue interpreted as 0° (blue)
+    stateMachine.ProcessString(L"\033P2$p6;1;;50;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(6));
+
+    // Omitted luminosity interpreted as 0% (black)
+    stateMachine.ProcessString(L"\033P2$p7;1;120;;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 0, 0), gci.GetColorTableEntry(7));
+
+    // Omitted saturation interpreted as 0% (gray)
+    stateMachine.ProcessString(L"\033P2$p8;1;120;50\033\\");
+    VERIFY_ARE_EQUAL(RGB(128, 128, 128), gci.GetColorTableEntry(8));
+
+    // Omitted red component interpreted as 0%
+    stateMachine.ProcessString(L"\033P2$p6;2;;50;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 128, 255), gci.GetColorTableEntry(6));
+
+    // Omitted green component interpreted as 0%
+    stateMachine.ProcessString(L"\033P2$p7;2;50;;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(128, 0, 255), gci.GetColorTableEntry(7));
+
+    // Omitted blue component interpreted as 0%
+    stateMachine.ProcessString(L"\033P2$p8;2;50;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(128, 255, 0), gci.GetColorTableEntry(8));
+
+    Log::Comment(L"Out of range parameter values");
+
+    // Hue wraps at 360°, so 480° interpreted as 120° (red)
+    stateMachine.ProcessString(L"\033P2$p9;1;480;50;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(255, 0, 0), gci.GetColorTableEntry(9));
+
+    // Luminosity is clamped at 100%, so 150% interpreted as 100%
+    stateMachine.ProcessString(L"\033P2$p10;1;240;150;100\033\\");
+    VERIFY_ARE_EQUAL(RGB(255, 255, 255), gci.GetColorTableEntry(10));
+
+    // Saturation is clamped at 100%, so 120% interpreted as 100%
+    stateMachine.ProcessString(L"\033P2$p11;1;0;50;120\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(11));
+
+    // Red component is clamped at 100%, so 150% interpreted as 100%
+    stateMachine.ProcessString(L"\033P2$p12;2;150;0;0\033\\");
+    VERIFY_ARE_EQUAL(RGB(255, 0, 0), gci.GetColorTableEntry(12));
+
+    // Green component is clamped at 100%, so 150% interpreted as 100%
+    stateMachine.ProcessString(L"\033P2$p13;2;0;150;0\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 255, 0), gci.GetColorTableEntry(13));
+
+    // Blue component is clamped at 100%, so 150% interpreted as 100%
+    stateMachine.ProcessString(L"\033P2$p14;2;0;0;150\033\\");
+    VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(14));
 }
 
 void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
