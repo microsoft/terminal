@@ -117,6 +117,12 @@ AppHost::AppHost() noexcept :
     {
         _BecomeMonarch(nullptr, nullptr);
     }
+
+    _showHideWindowThrottler.emplace(std::move(std::chrono::milliseconds(200)),
+                                     std::move([this](const bool show) -> winrt::fire_and_forget {
+                                         co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
+                                         _window->ShowWindowChanged(show);
+                                     }));
 }
 
 AppHost::~AppHost()
@@ -128,6 +134,8 @@ AppHost::~AppHost()
     // sure to revoke these first, so we won't get any more callbacks, then null
     // out the window, then close the app.
     _revokers = {};
+
+    _showHideWindowThrottler.reset();
 
     _window = nullptr;
     _app.Close();
@@ -1397,7 +1405,8 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
 void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                  const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
 {
-    _window->ShowWindowChanged(args.ShowOrHide());
+    _showHideWindowThrottler.value()(args.ShowOrHide());
+    // _window->ShowWindowChanged(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

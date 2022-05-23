@@ -33,6 +33,7 @@ private:
     bool _useNonClientArea{ false };
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
+    std::optional<til::throttled_func_trailing<bool>> _showHideWindowThrottler;
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
 
