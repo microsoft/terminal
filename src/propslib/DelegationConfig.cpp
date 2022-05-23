@@ -433,18 +433,25 @@ try
     // Search through and find a package that matches. If we failed to match because
     // it's torn across multiple or something not in the catalog, we'll offer the inbox conhost one.
 
-    // TODO! if one of these is the Terminal, CoCreateInstance it, look to see if it's a IDefaultTerminalMarker, and if it is, return that instead of packageToHandoffTo.
+    // If one of these is the Terminal, CoCreateInstance it, look to see if it's
+    // a IDefaultTerminalMarker, and if it is, return that instead of
+    // packageToHandoffTo.
     for (auto& pkg : packages)
     {
         if (pkg.console.clsid == defCon &&
             pkg.terminal.clsid == defTerm)
         {
-            chosenPackage = pkg;
-            break;
+            ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
+            ::Microsoft::WRL::ComPtr<IDefaultTerminalMarker> marker;
+            RETURN_IF_FAILED(CoCreateInstance(pkg.console.clsid, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+            RETURN_IF_FAILED(handoff->QueryInterface(&marker));
+
+            // Here, we know the Terminal is prepared to be a defterm-by-default handler. So go ahead and return this
+            packageToHandoffTo = pkg;
+            canDoManualHandoff = true;
+            return S_OK;
         }
     }
-
-    defPackage = chosenPackage;
 
     return S_OK;
 }
