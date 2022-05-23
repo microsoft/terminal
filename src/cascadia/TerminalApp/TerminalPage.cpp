@@ -218,6 +218,24 @@ namespace winrt::TerminalApp::implementation
 
             // Inform the host that our titlebar content has changed.
             _SetTitleBarContentHandlers(*this, _tabRow);
+
+            // GH#13143 Manually set the tab row's background to transparent here.
+            //
+            // We're doing it this way because ThemeResources are tricky. We
+            // default in XAML to using the appropriate ThemeResource background
+            // color for our TabRow. When tabs in the titlebar are _disabled_,
+            // this will ensure that the tab row has the correct theme-dependent
+            // value. When tabs in the titlebar are _enabled_ (the default),
+            // we'll switch the BG to Transparent, to let the Titlebar Control's
+            // background be used as the BG for the tab row.
+            //
+            // We can't do it the other way around (default to Transparent, only
+            // switch to a color when disabling tabs in the titlebar), because
+            // looking up the correct ThemeResource from and App dictionary is a
+            // capital-H Hard problem.
+            const auto transparent = Media::SolidColorBrush();
+            transparent.Color(Windows::UI::Colors::Transparent());
+            _tabRow.Background(transparent);
         }
 
         // Hookup our event handlers to the ShortcutActionDispatch
