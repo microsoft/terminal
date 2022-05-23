@@ -20,13 +20,13 @@
                     <ResourceDictionary.ThemeDictionaries>
 
                         <!--
-                            These two values are
-                            "SolidBackgroundFillColorTertiary". We can't just put
-                            those here though as StaticResources, because XAML will
-                            evaluate their values when the App is first loaded, and
-                            we'll always use the value from the OS theme, regarless
-                            of the requested theme. Kinda the same thing we've had
-                            to do with TabViewBackground in the past.
+                            These two values are "SolidBackgroundFillColorTertiary".
+                            We can't just put those here though as
+                            StaticResources, because XAML will evaluate their
+                            values when the App is first loaded, and we'll
+                            always use the value from the OS theme, regardless
+                            of the requested theme. Kinda the same thing we've
+                            had to do with TabViewBackground in the past.
                         -->
 
                         <ResourceDictionary x:Key="Dark">
