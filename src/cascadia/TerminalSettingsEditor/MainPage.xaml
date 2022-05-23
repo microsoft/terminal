@@ -56,8 +56,6 @@
             <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
             <Thickness x:Key="NavigationViewMinimalContentGridBorderThickness">0</Thickness>
 
-
-
         </ResourceDictionary>
     </Page.Resources>
 
