@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 #include "NotificationIcon.h"
-#include <til/throttled_func.h>
+#include <ThrottledFunc.h>
 
 class AppHost
 {
@@ -33,6 +33,7 @@ private:
     bool _useNonClientArea{ false };
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
+    std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
 
