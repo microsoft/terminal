@@ -235,13 +235,40 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
-Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey)
+bool Terminal::IsInMarkMode() const
 {
-    if (mods.IsShiftPressed() && !mods.IsAltPressed())
+    return _markMode;
+}
+
+void Terminal::ToggleMarkMode()
+{
+    if (_markMode)
+    {
+        // Exit Mark Mode
+        ClearSelection();
+    }
+    else
+    {
+        // Enter Mark Mode
+        // NOTE: directly set cursor state. We already should have locked before calling this function.
+        _activeBuffer().GetCursor().SetIsOn(false);
+        const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        _selection = SelectionAnchors{};
+        _selection->start = cursorPos;
+        _selection->end = cursorPos;
+        _selection->pivot = cursorPos;
+        _markMode = true;
+    }
+}
+
+Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
+{
+    if ((_markMode || mods.IsShiftPressed()) && !mods.IsAltPressed())
     {
         if (mods.IsCtrlPressed())
         {
             // Ctrl + Shift + _
+            // (Mark Mode) Ctrl + _
             switch (vkey)
             {
             case VK_LEFT:
@@ -257,6 +284,7 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
         else
         {
             // Shift + _
+            // (Mark Mode) Just the vkeys
             switch (vkey)
             {
             case VK_HOME:
@@ -281,11 +309,19 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
     return std::nullopt;
 }
 
-void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode)
+// Method Description:
+// - updates the selection endpoints based on a direction and expansion mode. Primarily used for keyboard selection.
+// Arguments:
+// - direction: the direction to move the selection endpoint in
+// - mode: the type of movement to be performed (i.e. move by word)
+// - mods: the key modifiers pressed when performing this update
+void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods)
 {
     // 1. Figure out which endpoint to update
-    // One of the endpoints is the pivot, signifying that the other endpoint is the one we want to move.
-    const auto movingEnd{ _selection->start == _selection->pivot };
+    // If we're in mark mode, shift dictates whether you are moving the end or not.
+    // Otherwise, we're updating an existing selection, so one of the endpoints is the pivot,
+    //   signifying that the other endpoint is the one we want to move.
+    const auto movingEnd{ _markMode ? mods.IsShiftPressed() : _selection->start == _selection->pivot };
     auto targetPos{ movingEnd ? _selection->end : _selection->start };
 
     // 2. Perform the movement
@@ -307,8 +343,23 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
 
     // 3. Actually modify the selection
     // NOTE: targetStart doesn't matter here
-    auto targetStart = false;
-    std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
+    if (_markMode)
+    {
+        // [Mark Mode]
+        // - moveSelectionEnd  --> just move end (i.e. shift + arrow keys)
+        // - !moveSelectionEnd --> move all three (i.e. just use arrow keys)
+        _selection->end = targetPos;
+        if (!movingEnd)
+        {
+            _selection->start = targetPos;
+            _selection->pivot = targetPos;
+        }
+    }
+    else
+    {
+        auto targetStart = false;
+        std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
+    }
 
     // 4. Scroll (if necessary)
     if (const auto viewport = _GetVisibleViewport(); !viewport.IsInBounds(targetPos))
@@ -473,6 +524,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
 void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
+    _markMode = false;
 }
 
 // Method Description:

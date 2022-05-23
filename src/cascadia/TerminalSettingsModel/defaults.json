@@ -385,6 +385,7 @@
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
         { "command": "selectAll", "keys": "ctrl+shift+a" },
+        { "command": "markMode", "keys": "ctrl+shift+m" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

@@ -20,10 +20,14 @@ RenderSettings::RenderSettings() noexcept
 
     SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_FOREGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_BACKGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
 
     SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_WHITE);
     SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DARK_BLACK);
+    SetColorAliasIndex(ColorAlias::FrameForeground, TextColor::FRAME_FOREGROUND);
+    SetColorAliasIndex(ColorAlias::FrameBackground, TextColor::FRAME_BACKGROUND);
 }
 
 // Routine Description:
@@ -149,7 +153,10 @@ COLORREF RenderSettings::GetColorAlias(const ColorAlias alias) const
 // - tableIndex - The new position of the alias in the color table.
 void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
 {
-    gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    if (tableIndex < TextColor::TABLE_SIZE)
+    {
+        gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    }
 }
 
 // Routine Description:

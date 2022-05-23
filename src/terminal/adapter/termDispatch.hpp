@@ -78,6 +78,7 @@ public:
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground
     bool SetDefaultBackground(const DWORD /*color*/) override { return false; } // OSCDefaultBackground
+    bool AssignColor(const DispatchTypes::ColorItem /*item*/, const VTInt /*fgIndex*/, const VTInt /*bgIndex*/) override { return false; } // DECAC
 
     bool EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // ED
     bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // EL

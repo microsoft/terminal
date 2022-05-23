@@ -209,6 +209,16 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->FindRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_Find();
+            }
+        });
+
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
 

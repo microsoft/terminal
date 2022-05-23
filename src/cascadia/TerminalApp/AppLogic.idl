@@ -122,7 +122,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ChangeMaximizeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;

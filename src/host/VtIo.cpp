@@ -300,16 +300,32 @@ bool VtIo::IsUsingVt() const
 
     if (_pPtySignalInputThread)
     {
-        // IMPORTANT! Start the pseudo window on this thread. This thread has a
-        // message pump. If you DON'T, then a DPI change in the owning hwnd will
-        // cause us to get a dpi change as well, which we'll never deque and
-        // handle, effectively HANGING THE OWNER HWND.
+        // Let the signal thread know that the console is connected.
         //
-        // Let the signal thread know that the console is connected
+        // By this point, the pseudo window should have already been created, by
+        // ConsoleInputThreadProcWin32. That thread has a message pump, which is
+        // needed to ensure that DPI change messages to the owning terminal
+        // window don't end up hanging because the pty didn't also process it.
         _pPtySignalInputThread->ConnectConsole();
     }
 
     return S_OK;
+}
+
+// Method Description:
+// - Create our pseudo window. This is exclusively called by
+//   ConsoleInputThreadProcWin32 on the console input thread.
+//    * It needs to be called on that thread, before any other calls to
+//      LocatePseudoWindow, to make sure that the input thread is the HWND's
+//      message thread.
+//    * It needs to be plumbed through the signal thread, because the signal
+//      thread knows if someone should be marked as the window's owner. It's
+//      VERY IMPORTANT that any initial owners are set up when the window is
+//      first created.
+// - Refer to GH#13066 for details.
+void VtIo::CreatePseudoWindow()
+{
+    _pPtySignalInputThread->CreatePseudoWindow();
 }
 
 // Method Description:

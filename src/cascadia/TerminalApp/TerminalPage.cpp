@@ -218,6 +218,24 @@ namespace winrt::TerminalApp::implementation
 
             // Inform the host that our titlebar content has changed.
             _SetTitleBarContentHandlers(*this, _tabRow);
+
+            // GH#13143 Manually set the tab row's background to transparent here.
+            //
+            // We're doing it this way because ThemeResources are tricky. We
+            // default in XAML to using the appropriate ThemeResource background
+            // color for our TabRow. When tabs in the titlebar are _disabled_,
+            // this will ensure that the tab row has the correct theme-dependent
+            // value. When tabs in the titlebar are _enabled_ (the default),
+            // we'll switch the BG to Transparent, to let the Titlebar Control's
+            // background be used as the BG for the tab row.
+            //
+            // We can't do it the other way around (default to Transparent, only
+            // switch to a color when disabling tabs in the titlebar), because
+            // looking up the correct ThemeResource from and App dictionary is a
+            // capital-H Hard problem.
+            const auto transparent = Media::SolidColorBrush();
+            transparent.Color(Windows::UI::Colors::Transparent());
+            _tabRow.Background(transparent);
         }
 
         // Hookup our event handlers to the ShortcutActionDispatch
@@ -659,7 +677,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_CompleteInitialization()
+    void TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
 
@@ -679,55 +697,10 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
             _LastTabClosedHandlers(*this, nullptr);
-            co_return;
         }
         else
         {
-            // GH#11561: When we start up, our window is initially just a frame
-            // with a transparent content area. We're gonna do all this startup
-            // init on the UI thread, so the UI won't actually paint till it's
-            // all done. This results in a few frames where the frame is
-            // visible, before the page paints for the first time, before any
-            // tabs appears, etc.
-            //
-            // To mitigate this, we're gonna wait for the UI thread to finish
-            // everything it's gotta do for the initial init, and _then_ fire
-            // our Initialized event. By waiting for everything else to finish
-            // (CoreDispatcherPriority::Low), we let all the tabs and panes
-            // actually get created. In the window layer, we're gonna cloak the
-            // window till this event is fired, so we don't actually see this
-            // frame until we're actually all ready to go.
-            //
-            // This will result in the window seemingly not loading as fast, but
-            // it will actually take exactly the same amount of time before it's
-            // usable.
-            //
-            // We also experimented with drawing a solid BG color before the
-            // initialization is finished. However, there are still a few frames
-            // after the frame is displayed before the XAML content first draws,
-            // so that didn't actually resolve any issues.
-
-            auto weak{ get_weak() };
-
-            // Switch to the BG thread -
-            co_await winrt::resume_background();
-
-            if (auto self{ weak.get() })
-            {
-                // Then enqueue the rest of this function for after the UI thread settles.
-                co_await wil::resume_foreground(self->Dispatcher(), CoreDispatcherPriority::Low);
-            }
-            else
-            {
-                // We don't exist anymore? Well, we probably don't need to fire
-                // off an Initialized event then...
-                co_return;
-            }
-
-            if (auto self{ weak.get() })
-            {
-                self->_InitializedHandlers(*self, nullptr);
-            }
+            _InitializedHandlers(*this, nullptr);
         }
     }
 
@@ -2476,7 +2449,10 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
 
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
-        term.WindowVisibilityChanged(_visible);
+        if (_visible)
+        {
+            term.WindowVisibilityChanged(_visible);
+        }
 
         if (_hostingHwnd.has_value())
         {
@@ -2596,7 +2572,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
     {
-        if (newAppearance.BackgroundImagePath().empty())
+        const auto path = newAppearance.ExpandedBackgroundImagePath();
+        if (path.empty())
         {
             _tabContent.Background(nullptr);
             return;
@@ -2605,7 +2582,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Uri imageUri{ nullptr };
         try
         {
-            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImagePath() };
+            imageUri = Windows::Foundation::Uri{ path };
         }
         catch (...)
         {
@@ -2622,7 +2599,7 @@ namespace winrt::TerminalApp::implementation
 
         if (imageSource == nullptr ||
             imageSource.UriSource() == nullptr ||
-            imageSource.UriSource().RawUri() != imageUri.RawUri())
+            !imageSource.UriSource().Equals(imageUri))
         {
             Media::ImageBrush b{};
             // Note that BitmapImage handles the image load asynchronously,
