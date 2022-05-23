@@ -118,6 +118,12 @@ AppHost::AppHost() noexcept :
         _BecomeMonarch(nullptr, nullptr);
     }
 
+    // Create a throttled function for updating the window state, to match the
+    // one requested by the pty. A 200ms delay was chosen because it's the
+    // typical animation timeout in Windows. This does result in a delay between
+    // the PTY requesting a change to the window state and the Terminal
+    // realizing it, but should mitigate issues where the Terminal and PTY get
+    // de-sync'd.
     _showHideWindowThrottler.emplace(std::move(std::chrono::milliseconds(200)),
                                      std::move([this](const bool show) -> winrt::fire_and_forget {
                                          co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
@@ -1405,8 +1411,11 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
 void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                  const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
 {
+    // GH#13147: Enqueue a throttled update to our window state. Throttling
+    // should prevent scenarios where the Terminal window state and PTY window
+    // state get de-sync'd, and cause the window to minimize/restore constantly
+    // in a loop.
     _showHideWindowThrottler.value()(args.ShowOrHide());
-    // _window->ShowWindowChanged(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
