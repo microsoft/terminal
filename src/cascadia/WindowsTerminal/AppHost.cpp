@@ -124,11 +124,12 @@ AppHost::AppHost() noexcept :
     // the PTY requesting a change to the window state and the Terminal
     // realizing it, but should mitigate issues where the Terminal and PTY get
     // de-sync'd.
-    _showHideWindowThrottler.emplace(std::move(std::chrono::milliseconds(200)),
-                                     std::move([this](const bool show) -> winrt::fire_and_forget {
-                                         co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
-                                         _window->ShowWindowChanged(show);
-                                     }));
+    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+        winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+        std::chrono::milliseconds(200),
+        [this](const bool show) {
+            _window->ShowWindowChanged(show);
+        });
 }
 
 AppHost::~AppHost()
@@ -1415,7 +1416,10 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // should prevent scenarios where the Terminal window state and PTY window
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
-    _showHideWindowThrottler.value()(args.ShowOrHide());
+    if (_showHideWindowThrottler)
+    {
+        _showHideWindowThrottler->Run(args.ShowOrHide());
+    }
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
