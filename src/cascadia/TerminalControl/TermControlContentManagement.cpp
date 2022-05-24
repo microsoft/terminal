@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         try
         {
             // This might fail to even ask the content for it's PID.
-            wil::unique_handle hContent{ OpenProcess(PROCESS_ALL_ACCESS,
+            wil::unique_handle hContent{ OpenProcess(SYNCHRONIZE,
                                                      FALSE,
                                                      static_cast<DWORD>(contentPid)) };
 

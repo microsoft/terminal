@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _controlPadding = til::rect{ til::math::rounding, padding };
     }
-    void InteractivityAutomationPeer::ParentProvider(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider)
+    void InteractivityAutomationPeer::ParentProvider(const Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple& parentProvider)
     {
         _parentProvider = parentProvider;
     }
@@ -186,7 +186,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::_CreateXamlUiaTextRange(UIA::ITextRangeProvider* returnVal) const
     {
-        const auto parentProvider = _parentProvider;
+        if (!_parentProvider)
+        {
+            return nullptr;
+        }
+
         const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, _parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     };

@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SetControlBounds(const Windows::Foundation::Rect bounds);
         void SetControlPadding(const Core::Padding padding);
-        void ParentProvider(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider);
+        void ParentProvider(const Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple& parentProvider);
 
 #pragma region IUiaEventDispatcher
         void SignalSelectionChanged() override;

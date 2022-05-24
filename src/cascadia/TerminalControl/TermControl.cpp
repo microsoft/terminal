@@ -687,7 +687,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return _core.ConnectionState();
         }
         CATCH_LOG();
-        return TerminalConnection::ConnectionState::Closed;
+        return TerminalConnection::ConnectionState::Failed;
     }
 
     winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable /*args*/)
