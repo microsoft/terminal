@@ -37,14 +37,14 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    static constexpr winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
     {
         Core::OptionalColor result;
         result.Color = c;
         result.HasValue = true;
         return result;
     }
-    static constexpr winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
     {
         Core::OptionalColor result;
         if (c.has_value())

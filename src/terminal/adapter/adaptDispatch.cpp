@@ -2480,7 +2480,7 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 // - string: contains the parameters that define which action we do
 // Return Value:
 // - false in conhost, true for the SetMark action, otherwise false.
-bool AdaptDispatch::DoITerm2Action(const std::wstring_view string) noexcept
+bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 {
     // This is not implemented in conhost.
     if (_api.IsConsolePty())
