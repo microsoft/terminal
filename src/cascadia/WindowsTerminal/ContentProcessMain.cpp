@@ -40,7 +40,7 @@ struct ContentProcessFactory : implements<ContentProcessFactory, IClassFactory>
         if (!g_weak)
         {
             // Instantiate the ContentProcess here
-            winrt::Microsoft::Terminal::Control::ContentProcess strong{};
+            winrt::Microsoft::Terminal::Control::ContentProcess strong{ _guid };
 
             // Now, create a weak ref to that ContentProcess object.
             winrt::weak_ref<winrt::Microsoft::Terminal::Control::ContentProcess> weak{ strong };
@@ -138,7 +138,7 @@ void TryRunAsContentProcess()
     HANDLE eventHandle{ INVALID_HANDLE_VALUE };
     if (checkIfContentProcess(contentProcessGuid, eventHandle))
     {
-        g_canExitThread = wil::unique_event{ CreateEvent(nullptr, true, false, L"ContentProcessReady") };
+        g_canExitThread = wil::unique_event{ CreateEvent(nullptr, true, false, nullptr) };
 
         doContentProcessThing(contentProcessGuid, eventHandle);
 

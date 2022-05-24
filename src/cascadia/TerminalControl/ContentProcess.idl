@@ -7,7 +7,7 @@ namespace Microsoft.Terminal.Control
 {
     runtimeclass ContentProcess {
 
-        ContentProcess();
+        ContentProcess(Guid g);
 
         Boolean Initialize(IControlSettings settings,
                            IControlAppearance unfocusedAppearance,
@@ -18,5 +18,8 @@ namespace Microsoft.Terminal.Control
         UInt64 GetPID();
 
         UInt64 RequestSwapChainHandle(UInt64 pid);
+
+        Guid Guid { get; };
+
     };
 }

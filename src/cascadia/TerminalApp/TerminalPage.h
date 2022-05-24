@@ -239,7 +239,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
-        void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+        winrt::fire_and_forget _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -444,6 +444,17 @@ namespace winrt::TerminalApp::implementation
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+
+        Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> _CreateNewContentProcess(winrt::Microsoft::Terminal::Settings::Model::Profile profile,
+                                                                                                                           winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings);
+        winrt::Microsoft::Terminal::Control::ContentProcess _AttachToContentProcess(const winrt::guid contentGuid);
+        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const winrt::guid& contentGuid);
+        winrt::Windows::Foundation::IAsyncOperation<std::shared_ptr<Pane>> _AsyncMakePane(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                                                                                          const bool duplicate);
+        void _evaluateSettings(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                               const bool duplicate,
+                               winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,
+                               winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

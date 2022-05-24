@@ -7,8 +7,9 @@
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    ContentProcess::ContentProcess() :
-        _ourPID{ GetCurrentProcessId() } {}
+    ContentProcess::ContentProcess(winrt::guid g) :
+        _ourPID{ GetCurrentProcessId() },
+        _guid{ g } {}
 
     bool ContentProcess::Initialize(Control::IControlSettings settings,
                                     Control::IControlAppearance unfocusedAppearance,
@@ -111,4 +112,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return reinterpret_cast<uint64_t>(theirHandle);
     }
 
+    winrt::guid ContentProcess::Guid()
+    {
+        return _guid;
+    }
 }

@@ -973,7 +973,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout().ShowAt(_newTabButton);
     }
 
-    void TerminalPage::_OpenNewTerminalViaDropdown(const NewTerminalArgs newTerminalArgs)
+    winrt::fire_and_forget TerminalPage::_OpenNewTerminalViaDropdown(const NewTerminalArgs newTerminalArgs)
     {
         // if alt is pressed, open a pane
         const auto window = CoreWindow::GetForCurrentThread();
@@ -1027,13 +1027,13 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            const auto newPane = _MakePane(newTerminalArgs);
+            const auto newPane = co_await _AsyncMakePane(newTerminalArgs, false);
             // If the newTerminalArgs caused us to open an elevated window
             // instead of creating a pane, it may have returned nullptr. Just do
             // nothing then.
             if (!newPane)
             {
-                return;
+                co_return;
             }
             if (altPressed && !debugTap)
             {
@@ -2441,12 +2441,125 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
+    {
+        auto guidStr{ ::Microsoft::Console::Utils::GuidToString(g) };
+
+        // Create an event that the content process will use to signal it is
+        // ready to go. We won't need the event after this function, so the
+        // unique_event will clean up our handle when we leave this scope. The
+        // ContentProcess is responsible for cleaning up its own handle.
+        wil::unique_event ev{ CreateEvent(nullptr, true, false, nullptr /*L"contentProcessStarted"*/) };
+        // Make sure to mark this handle as inheritable! Even with
+        // bInheritHandles=true, this is only inherited when it's explicitly
+        // allowed to be.
+        SetHandleInformation(ev.get(), HANDLE_FLAG_INHERIT, 1);
+
+        // god bless, fmt::format will format a HANDLE like `0xa80`
+        std::wstring commandline{
+            fmt::format(L"WindowsTerminal.exe --content {} --signal {}", guidStr, ev.get())
+        };
+
+        STARTUPINFO siOne{ 0 };
+        siOne.cb = sizeof(STARTUPINFOW);
+        wil::unique_process_information piOne;
+        auto succeeded = CreateProcessW(
+            nullptr,
+            commandline.data(),
+            nullptr, // lpProcessAttributes
+            nullptr, // lpThreadAttributes
+            true, // bInheritHandles
+            CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
+            nullptr, // lpEnvironment
+            nullptr, // startingDirectory
+            &siOne, // lpStartupInfo
+            &piOne // lpProcessInformation
+        );
+        THROW_IF_WIN32_BOOL_FALSE(succeeded);
+
+        // Wait for the child process to signal that they're ready.
+        WaitForSingleObject(ev.get(), INFINITE);
+
+        return std::move(piOne);
+    }
+
+    Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_CreateNewContentProcess(Profile profile,
+                                                                                                TerminalSettingsCreateResult settings)
+    {
+        co_await winrt::resume_background();
+        winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
+        // Spawn a wt.exe, with the guid on the commandline
+        auto piContentProcess{ _createHostClassProcess(contentGuid) };
+        // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
+        // * If we're creating a new OOP control, _createHostClassProcess will
+        //   spawn the process that will actually host the ContentProcess
+        //   object.
+        // * If we're attaching, then that process already exists.
+        ContentProcess content{ nullptr };
+        try
+        {
+            content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+        }
+        catch (winrt::hresult_error hr)
+        {
+            co_return nullptr;
+        }
+
+        if (content == nullptr)
+        {
+            co_return nullptr;
+        }
+
+        TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings.DefaultSettings()) };
+
+        // Init the content proc with the focused/unfocused pair
+        if (!content.Initialize(settings.DefaultSettings(), settings.UnfocusedSettings(), connectInfo))
+        {
+            co_return nullptr;
+        }
+
+        co_return content;
+    }
+
+    ContentProcess TerminalPage::_AttachToContentProcess(const winrt::guid contentGuid)
+    {
+        ContentProcess content{ nullptr };
+        try
+        {
+            content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+        }
+        catch (winrt::hresult_error hr)
+        {
+        }
+        return content;
+    }
+
     TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Do any initialization that needs to apply to _every_ TermControl we
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
+
+        // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
+        if (_visible)
+        {
+            term.WindowVisibilityChanged(_visible);
+        }
+
+        if (_hostingHwnd.has_value())
+        {
+            term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
+        }
+        return term;
+    }
+
+    TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const winrt::guid& contentGuid)
+    {
+        // Do any initialization that needs to apply to _every_ TermControl we
+        // create here.
+        // TermControl will copy the settings out of the settings passed to it.
+        TermControl term{ contentGuid, settings.DefaultSettings(), settings.UnfocusedSettings(), nullptr };
 
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
         if (_visible)
@@ -2483,32 +2596,7 @@ namespace winrt::TerminalApp::implementation
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
-
-        if (duplicate)
-        {
-            const auto focusedTab{ _GetFocusedTabImpl() };
-            if (focusedTab)
-            {
-                profile = focusedTab->GetFocusedProfile();
-                if (profile)
-                {
-                    // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
-                    profile = GetClosestProfileForDuplicationOfProfile(profile);
-                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
-                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
-                    const auto validWorkingDirectory = !workingDirectory.empty();
-                    if (validWorkingDirectory)
-                    {
-                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
-                    }
-                }
-            }
-        }
-        if (!profile)
-        {
-            profile = _settings.GetProfileForArgs(newTerminalArgs);
-            controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-        }
+        _evaluateSettings(newTerminalArgs, duplicate, controlSettings, profile);
 
         // Try to handle auto-elevation
         if (_maybeElevate(newTerminalArgs, controlSettings, profile))
@@ -2561,6 +2649,76 @@ namespace winrt::TerminalApp::implementation
         }
 
         return resultPane;
+    }
+
+    void TerminalPage::_evaluateSettings(const NewTerminalArgs& newTerminalArgs,
+                                         const bool duplicate,
+                                         TerminalSettingsCreateResult& controlSettings,
+                                         Profile& profile)
+    {
+        if (duplicate)
+        {
+            const auto focusedTab{ _GetFocusedTabImpl() };
+            if (focusedTab)
+            {
+                profile = focusedTab->GetFocusedProfile();
+                if (profile)
+                {
+                    // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+                    profile = GetClosestProfileForDuplicationOfProfile(profile);
+                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                    }
+                }
+            }
+        }
+        if (!profile)
+        {
+            profile = _settings.GetProfileForArgs(newTerminalArgs);
+            controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+        }
+    }
+    winrt::Windows::Foundation::IAsyncOperation<std::shared_ptr<Pane>> TerminalPage::_AsyncMakePane(const NewTerminalArgs& newTerminalArgs,
+                                                                                                    const bool duplicate)
+    {
+        auto weakThis{ get_weak() };
+
+        TerminalSettingsCreateResult controlSettings{ nullptr };
+        Profile profile{ nullptr };
+        _evaluateSettings(newTerminalArgs, duplicate, controlSettings, profile);
+
+        // TODO! auto elevation
+
+        // TODO! handle "existing connections"
+        //  - [ ] DefTerm
+        //  - [ ] DebugTap
+
+        // TODO! original code had this method take an existingContentProc param. figure this out later.
+        ContentProcess existingContentProc{ nullptr };
+        // _CreateNewContentProcess will take us to a BG thread, if we started in the FG
+        auto content = existingContentProc ? existingContentProc : _CreateNewContentProcess(profile, controlSettings).get();
+        if (!content)
+        {
+            co_return;
+        }
+
+        co_await wil::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // Create the XAML control that will be attached to the content process.
+            // We're not passing in a connection, because the contentGuid will be used instead
+            const auto control = _InitControl(controlSettings, content.Guid());
+            _RegisterTerminalEvents(control);
+
+            auto resultPane = std::make_shared<Pane>(profile, control);
+            co_return resultPane;
+        }
+
+        co_return nullptr;
     }
 
     // Method Description:
