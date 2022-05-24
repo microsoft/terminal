@@ -340,9 +340,9 @@ til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcep
         return lut;
     }();
 
-    const auto red = gsl::at(scale100To255, std::min(r, 100));
-    const auto green = gsl::at(scale100To255, std::min(g, 100));
-    const auto blue = gsl::at(scale100To255, std::min(b, 100));
+    const auto red = til::at(scale100To255, std::min<unsigned>(r, 100u));
+    const auto green = til::at(scale100To255, std::min<unsigned>(g, 100u));
+    const auto blue = til::at(scale100To255, std::min<unsigned>(b, 100u));
     return { red, green, blue };
 }
 
