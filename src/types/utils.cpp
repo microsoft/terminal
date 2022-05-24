@@ -329,11 +329,20 @@ catch (...)
 til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcept
 {
     // The color class is expecting components in the range 0 to 255,
-    // so we need to scale our percentage values by 255/100.
-    constexpr auto scale = 255.f / 100.f;
-    const auto red = gsl::narrow_cast<uint8_t>(std::min(r, 100) * scale + 0.5f);
-    const auto green = gsl::narrow_cast<uint8_t>(std::min(g, 100) * scale + 0.5f);
-    const auto blue = gsl::narrow_cast<uint8_t>(std::min(b, 100) * scale + 0.5f);
+    // so we need to scale our percentage values by 255/100. We can
+    // optimise this conversion with a pre-created lookup table.
+    static constexpr auto scale100To255 = [] {
+        std::array<uint8_t, 101> lut{};
+        for (size_t i = 0; i < std::size(lut); i++)
+        {
+            lut.at(i) = gsl::narrow_cast<uint8_t>((i * 255 + 50) / 100);
+        }
+        return lut;
+    }();
+
+    const auto red = gsl::at(scale100To255, std::min(r, 100));
+    const auto green = gsl::at(scale100To255, std::min(g, 100));
+    const auto blue = gsl::at(scale100To255, std::min(b, 100));
     return { red, green, blue };
 }
 
