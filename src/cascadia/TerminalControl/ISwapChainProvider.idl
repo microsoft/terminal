@@ -1,0 +1,8 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+interface ISwapChainProvider : IUnknown
+{
+    HRESULT GetSwapChainHandle([out, system_handle(sh_composition)] HANDLE* swapChainHandle);
+};
+

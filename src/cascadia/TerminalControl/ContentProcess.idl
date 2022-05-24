@@ -3,10 +3,16 @@
 
 import "ControlInteractivity.idl";
 
+// interface ISwapChainProvider : IUnknown
+// {
+//     HRESULT GetSwapChainHandle([out, system_handle(sh_composition)] HANDLE* swapChainHandle);
+// };
+
+
 namespace Microsoft.Terminal.Control
 {
-    runtimeclass ContentProcess {
-
+    runtimeclass ContentProcess
+    {
         ContentProcess();
 
         Boolean Initialize(IControlSettings settings,
@@ -18,5 +24,7 @@ namespace Microsoft.Terminal.Control
         UInt64 GetPID();
 
         UInt64 RequestSwapChainHandle(UInt64 pid);
+
+        // HRESULT GetSwapChainHandle([out, system_handle(sh_composition)] HANDLE * swapChainHandle);
     };
 }

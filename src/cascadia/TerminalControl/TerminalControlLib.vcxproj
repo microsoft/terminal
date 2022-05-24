@@ -121,6 +121,7 @@
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="ContentProcess.idl" />
+    <Midl Include="ISwapChainProvider.idl" />
     <Midl Include="ControlCore.idl" />
     <Midl Include="ControlInteractivity.idl" />
     <Midl Include="ICoreState.idl" />

@@ -111,4 +111,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return reinterpret_cast<uint64_t>(theirHandle);
     }
 
+    STDMETHODIMP ContentProcess::GetSwapChainHandle(HANDLE* swapChainHandle)
+    {
+        *swapChainHandle = reinterpret_cast<HANDLE>(_interactivity.Core().SwapChainHandle());
+        return S_OK;
+    }
+
 }
