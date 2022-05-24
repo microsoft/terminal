@@ -97,6 +97,16 @@
     </feature>
 
     <feature>
+        <name>Feature_VtPassthroughModeSettingInUI</name>
+        <description>Enables the setting gated by Feature_VtPassthroughMode to appear in the UI</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+	    <!-- Unlike Feature_VtPassthroughMode, this is not enabled in Preview -->
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_IsolatedMonarchMode</name>
         <description>Enables a test flag for MSFT:38540483. When enabled, if we ever create a null Monarch, we'll stealthily try to fall back to an in-proc monarch instance.</description>
         <stage>AlwaysEnabled</stage>

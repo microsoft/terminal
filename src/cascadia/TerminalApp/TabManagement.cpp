@@ -66,6 +66,12 @@ namespace winrt::TerminalApp::implementation
     try
     {
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+        // GH#11114: GetProfileForArgs can return null if the index is higher
+        // than the number of available profiles.
+        if (!profile)
+        {
+            return S_FALSE;
+        }
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
         // Try to handle auto-elevation
@@ -200,6 +206,16 @@ namespace winrt::TerminalApp::implementation
                 // Passing null args to the ExportBuffer handler will default it
                 // to prompting for the path
                 page->_HandleExportBuffer(nullptr, nullptr);
+            }
+        });
+
+        newTabImpl->FindRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_Find();
             }
         });
 

@@ -174,9 +174,15 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
-    _api.cellCount.x = gsl::narrow_cast<u16>(srNewViewport.Right - srNewViewport.Left + 1);
-    _api.cellCount.y = gsl::narrow_cast<u16>(srNewViewport.Bottom - srNewViewport.Top + 1);
-    WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
+    const u16x2 cellCount{
+        gsl::narrow_cast<u16>(srNewViewport.Right - srNewViewport.Left + 1),
+        gsl::narrow_cast<u16>(srNewViewport.Bottom - srNewViewport.Top + 1),
+    };
+    if (_api.cellCount != cellCount)
+    {
+        _api.cellCount = cellCount;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
+    }
     return S_OK;
 }
 

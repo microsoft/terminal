@@ -228,6 +228,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // Find if search box text edit currently is in focus
+    // Return Value:
+    // - true, if search box text edit is in focus
+    bool TermControl::SearchBoxEditInFocus() const
+    {
+        if (!_searchBox)
+        {
+            return false;
+        }
+
+        return _searchBox->TextBox().FocusState() == FocusState::Keyboard;
+    }
+
+    // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
     // Arguments:
@@ -456,7 +470,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (imageSource == nullptr ||
             imageSource.UriSource() == nullptr ||
-            imageSource.UriSource().RawUri() != imageUri.RawUri())
+            !imageSource.UriSource().Equals(imageUri))
         {
             // Note that BitmapImage handles the image load asynchronously,
             // which is especially important since the image
@@ -1186,7 +1200,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _core.CursorOn(true);
+            _core.CursorOn(!_core.IsInMarkMode());
             _cursorTimer->Start();
         }
 
@@ -1657,7 +1671,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_cursorTimer)
         {
             // When the terminal focuses, show the cursor immediately
-            _core.CursorOn(true);
+            _core.CursorOn(!_core.IsInMarkMode());
             _cursorTimer->Start();
         }
 
@@ -1905,6 +1919,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::PasteTextFromClipboard()
     {
         _interactivity.RequestPasteTextFromClipboard();
+    }
+
+    void TermControl::SelectAll()
+    {
+        _core.SelectAll();
+    }
+
+    void TermControl::ToggleMarkMode()
+    {
+        _core.ToggleMarkMode();
     }
 
     void TermControl::Close()

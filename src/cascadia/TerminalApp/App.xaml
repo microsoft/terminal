@@ -153,8 +153,6 @@
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
-
-
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">

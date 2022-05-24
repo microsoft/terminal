@@ -218,6 +218,24 @@ namespace winrt::TerminalApp::implementation
 
             // Inform the host that our titlebar content has changed.
             _SetTitleBarContentHandlers(*this, _tabRow);
+
+            // GH#13143 Manually set the tab row's background to transparent here.
+            //
+            // We're doing it this way because ThemeResources are tricky. We
+            // default in XAML to using the appropriate ThemeResource background
+            // color for our TabRow. When tabs in the titlebar are _disabled_,
+            // this will ensure that the tab row has the correct theme-dependent
+            // value. When tabs in the titlebar are _enabled_ (the default),
+            // we'll switch the BG to Transparent, to let the Titlebar Control's
+            // background be used as the BG for the tab row.
+            //
+            // We can't do it the other way around (default to Transparent, only
+            // switch to a color when disabling tabs in the titlebar), because
+            // looking up the correct ThemeResource from and App dictionary is a
+            // capital-H Hard problem.
+            const auto transparent = Media::SolidColorBrush();
+            transparent.Color(Windows::UI::Colors::Transparent());
+            _tabRow.Background(transparent);
         }
 
         // Hookup our event handlers to the ShortcutActionDispatch
@@ -2431,7 +2449,10 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
 
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
-        term.WindowVisibilityChanged(_visible);
+        if (_visible)
+        {
+            term.WindowVisibilityChanged(_visible);
+        }
 
         if (_hostingHwnd.has_value())
         {
@@ -2551,7 +2572,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
     {
-        if (newAppearance.BackgroundImagePath().empty())
+        const auto path = newAppearance.ExpandedBackgroundImagePath();
+        if (path.empty())
         {
             _tabContent.Background(nullptr);
             return;
@@ -2560,7 +2582,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Uri imageUri{ nullptr };
         try
         {
-            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImagePath() };
+            imageUri = Windows::Foundation::Uri{ path };
         }
         catch (...)
         {
@@ -2577,7 +2599,7 @@ namespace winrt::TerminalApp::implementation
 
         if (imageSource == nullptr ||
             imageSource.UriSource() == nullptr ||
-            imageSource.UriSource().RawUri() != imageUri.RawUri())
+            !imageSource.UriSource().Equals(imageUri))
         {
             Media::ImageBrush b{};
             // Note that BitmapImage handles the image load asynchronously,
@@ -3380,6 +3402,12 @@ namespace winrt::TerminalApp::implementation
     // - Displays a info popup guiding the user into setting their default terminal.
     void TerminalPage::ShowSetAsDefaultInfoBar() const
     {
+        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::TerminalApp::App>() == nullptr)
+        {
+            // Just ignore this in the tests (where the Application::Current()
+            // is not a TerminalApp::App)
+            return;
+        }
         if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
         {
             return;
