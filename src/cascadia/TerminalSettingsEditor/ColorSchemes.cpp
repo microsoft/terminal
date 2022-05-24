@@ -89,8 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ColorSchemesPageNavigationState>();
-        _AllColorSchemes = _State.AllColorSchemes();
-        ColorScheme(_AllColorSchemes.GetAt(0));
+        _ViewModel = _State.ViewModel();
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
         //const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
         //const auto it = std::find_if(begin(_ColorSchemeList),
@@ -120,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         //  Update the color scheme this page is modifying
         const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
-        ColorScheme(*colorScheme);
+        _ViewModel.RequestSetCurrentScheme(*colorScheme);
 
         //_State.LastSelectedScheme(colorScheme.Name());
 
@@ -162,30 +161,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (index < ColorTableDivider)
                     {
-                        ColorScheme().CurrentNonBrightColorTable().GetAt(*index).Color(newColor);
+                        _ViewModel.CurrentScheme().CurrentNonBrightColorTable().GetAt(*index).Color(newColor);
                     }
                     else
                     {
-                        ColorScheme().CurrentBrightColorTable().GetAt(*index - ColorTableDivider).Color(newColor);
+                        _ViewModel.CurrentScheme().CurrentBrightColorTable().GetAt(*index - ColorTableDivider).Color(newColor);
                     }
                 }
                 else if (const auto stringTag{ tag.try_as<hstring>() })
                 {
                     if (stringTag == ForegroundColorTag)
                     {
-                        ColorScheme().CurrentForegroundColor().Color(newColor);
+                        _ViewModel.CurrentScheme().CurrentForegroundColor().Color(newColor);
                     }
                     else if (stringTag == BackgroundColorTag)
                     {
-                        ColorScheme().CurrentBackgroundColor().Color(newColor);
+                        _ViewModel.CurrentScheme().CurrentBackgroundColor().Color(newColor);
                     }
                     else if (stringTag == CursorColorTag)
                     {
-                        ColorScheme().CurrentCursorColor().Color(newColor);
+                        _ViewModel.CurrentScheme().CurrentCursorColor().Color(newColor);
                     }
                     else if (stringTag == SelectionBackgroundColorTag)
                     {
-                        ColorScheme().CurrentSelectionBackgroundColor().Color(newColor);
+                        _ViewModel.CurrentScheme().CurrentSelectionBackgroundColor().Color(newColor);
                     }
                 }
             }
@@ -194,7 +193,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ColorSchemes::CanDeleteCurrentScheme() const
     {
-        if (const auto& scheme{ ColorScheme() })
+        if (const auto& scheme{ _ViewModel.CurrentScheme() })
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
             const std::wstring myName{ scheme.Name() };
@@ -205,10 +204,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        ColorScheme().DeleteScheme();
+        _ViewModel.CurrentScheme().DeleteScheme();
 
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
-        if (static_cast<uint32_t>(removedSchemeIndex) < _AllColorSchemes.Size() - 1)
+        if (static_cast<uint32_t>(removedSchemeIndex) < ViewModel().AllColorSchemes().Size() - 1)
         {
             // select same index
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex + 1);
@@ -218,7 +217,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // select last color scheme (avoid out of bounds error)
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
         }
-        _AllColorSchemes.RemoveAt(removedSchemeIndex);
+        ViewModel().AllColorSchemes().RemoveAt(removedSchemeIndex);
 
         DeleteButton().Flyout().Hide();
 
@@ -258,7 +257,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::Rename_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        NameBox().Text(ColorScheme().Name());
+        NameBox().Text(_ViewModel.CurrentScheme().Name());
         IsRenaming(true);
         NameBox().Focus(FocusState::Programmatic);
         NameBox().SelectAll();
@@ -296,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
         // check if different name is already in use
-        const auto oldName{ ColorScheme().Name() };
+        const auto oldName{ _ViewModel.CurrentScheme().Name() };
         if (newName != oldName && _State.Settings().GlobalSettings().ColorSchemes().HasKey(newName))
         {
             // open the error tip
@@ -310,20 +309,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // update the settings model
-        ColorScheme().Name(newName);
+        _ViewModel.CurrentScheme().Name(newName);
         _State.Settings().GlobalSettings().RemoveColorScheme(oldName);
         _State.Settings().GlobalSettings().AddColorScheme(CurrentColorScheme());
         _State.Settings().UpdateColorSchemeReferences(oldName, newName);
 
         // update the UI
         RenameErrorTip().IsOpen(false);
-        ColorScheme().Name(newName);
+        _ViewModel.CurrentScheme().Name(newName);
         IsRenaming(false);
 
         // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
         // We need to manually force the ComboBox to refresh itself.
         const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % _AllColorSchemes.Size());
+        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
         ColorSchemeComboBox().SelectedIndex(selectedIndex);
     }
 }

@@ -7,6 +7,7 @@
 #include "ColorSchemes.g.h"
 #include "ColorSchemesPageNavigationState.g.h"
 #include "ColorSchemeViewModel.h"
+#include "ColorSchemesPageViewModel.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -14,12 +15,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
     {
     public:
-        ColorSchemesPageNavigationState(const Model::CascadiaSettings& settings) :
-            _Settings{ settings } {}
+        ColorSchemesPageNavigationState(const Editor::ColorSchemesPageViewModel& viewModel) :
+            _ViewModel{ viewModel } {}
 
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
         WINRT_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, nullptr);
+        WINRT_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, nullptr);
     };
 
     struct ColorSchemes : public HasScrollViewer<ColorSchemes>, ColorSchemesT<ColorSchemes>
@@ -42,8 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
         WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemeViewModel, ColorScheme, _PropertyChangedHandlers, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(bool, IsRenaming, _PropertyChangedHandlers, nullptr);
