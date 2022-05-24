@@ -2510,7 +2510,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 }
 
 // Method Description:
-// - Performs a iTerm2 action
+// - Performs a FinalTerm action
 // - Ascribes to the ITermDispatch interface
 // - Currently, the actions we support are:
 //   * `OSC133;A`: mark a line as a prompt line
