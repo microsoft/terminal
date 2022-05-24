@@ -2509,6 +2509,36 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     return false;
 }
 
+// TODO!
+bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action{ parts[0] };
+
+    if (action == L"A")
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.AddMark(mark);
+        return true;
+    }
+    return false;
+}
+
 // Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is

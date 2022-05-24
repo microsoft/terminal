@@ -186,6 +186,7 @@ namespace Microsoft::Console::VirtualTerminal
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112,
+            FinalTermAction = 133,
             ITerm2Action = 1337,
         };
 
