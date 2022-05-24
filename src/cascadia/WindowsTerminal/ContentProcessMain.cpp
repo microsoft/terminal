@@ -21,8 +21,8 @@ using namespace winrt::Windows::Foundation::Numerics;
 // also want to track when the last outstanding reference to this object is
 // removed. If we're keeping a strong ref, then the ref count will always be > 1
 
-winrt::weak_ref<winrt::Microsoft::Terminal::Control::ContentProcess> g_weak{ nullptr };
-wil::unique_event g_canExitThread;
+static winrt::weak_ref<winrt::Microsoft::Terminal::Control::ContentProcess> g_weak{ nullptr };
+static wil::unique_event g_canExitThread;
 
 struct ContentProcessFactory : implements<ContentProcessFactory, IClassFactory>
 {
@@ -61,7 +61,7 @@ struct ContentProcessFactory : implements<ContentProcessFactory, IClassFactory>
             //
             // Instead, set the event here, once there's already a reference
             // outside of just the weak one we keep. Experimentation showed this
-            // waw always hit when creating the ContentProcess at least once.
+            // was always hit when creating the ContentProcess at least once.
             g_canExitThread.SetEvent();
             return strong.as(iid, result);
         }

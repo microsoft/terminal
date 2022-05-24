@@ -94,13 +94,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                break;
             }
             }
         }
         catch (...)
         {
             // Theoretically, if window[1] dies when we're trying to get
-            // it's PID we'll get here. We can probably just exit here.
+            // its PID we'll get here. We can probably just exit here.
 
             TraceLoggingWrite(g_hTerminalControlProvider,
                               "TermControl_ExceptionInWaitThread",

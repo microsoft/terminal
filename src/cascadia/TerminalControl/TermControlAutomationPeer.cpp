@@ -274,7 +274,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // that use the TermControl that don't package up all the resources in a
         // way that they can be accessed, this will fall back to just "terminal"
         // (notably, the scratch solution doesn't package these resources)
-        return ScopedResourceLoader(L"Microsoft.Terminal.Control/Resources").GetResourceMap() ?
+        //
+        // Stash this in a static variable in the off chance that this is called
+        // in a hot path by some a11y tool. There's absolutely no chance it's
+        // gonna change, so this is safe enough.
+        static auto resMap{ ScopedResourceLoader(L"Microsoft.Terminal.Control/Resources").GetResourceMap() };
+        return resMap ?
                    RS_(L"TerminalControl_ControlType") :
                    L"terminal";
     }
