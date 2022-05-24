@@ -2241,9 +2241,13 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
     const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
     const auto backgroundChanged = (tableIndex == backgroundIndex);
 
+    // Similarly for the frame color, the tab may need to be repainted.
+    const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+    const auto frameChanged = (tableIndex == frameIndex);
+
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
-    _renderer.TriggerRedrawAll(backgroundChanged);
+    _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
     return true;
 }
 
@@ -2269,6 +2273,42 @@ bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
     return SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
+}
+
+// Method Description:
+// DECAC - Assigns the foreground and background color indexes that should be
+//   used for a given aspect of the user interface.
+// Arguments:
+// - item: The aspect of the interface that will have its colors altered.
+// - fgIndex: The color table index to be used for the foreground.
+// - bgIndex: The color table index to be used for the background.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex)
+{
+    switch (item)
+    {
+    case DispatchTypes::ColorItem::NormalText:
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
+        break;
+    case DispatchTypes::ColorItem::WindowFrame:
+        _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
+        _renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, bgIndex);
+        break;
+    default:
+        return false;
+    }
+
+    // No need to force a redraw in pty mode.
+    const auto inPtyMode = _api.IsConsolePty();
+    if (!inPtyMode)
+    {
+        const auto backgroundChanged = item == DispatchTypes::ColorItem::NormalText;
+        const auto frameChanged = item == DispatchTypes::ColorItem::WindowFrame;
+        _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
+    }
+    return !inPtyMode;
 }
 
 //Routine Description:

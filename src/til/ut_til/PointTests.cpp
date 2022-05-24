@@ -9,6 +9,13 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+// Ensure the "safety" of til::point::as_win32_point
+static_assert(
+    sizeof(til::point) == sizeof(POINT) &&
+    alignof(til::point) == alignof(POINT) &&
+    offsetof(til::point, x) == offsetof(POINT, x) &&
+    offsetof(til::point, y) == offsetof(POINT, y));
+
 class PointTests
 {
     TEST_CLASS(PointTests);

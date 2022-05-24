@@ -171,6 +171,8 @@ class ScreenBufferTests
 
     TEST_METHOD(SetDefaultBackgroundColor);
 
+    TEST_METHOD(AssignColorAliases);
+
     TEST_METHOD(DeleteCharsNearEndOfLine);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleFirstCase);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleSecondCase);
@@ -230,6 +232,7 @@ class ScreenBufferTests
     TEST_METHOD(UpdateVirtualBottomWithSetConsoleCursorPosition);
     TEST_METHOD(UpdateVirtualBottomAfterInternalSetViewportSize);
     TEST_METHOD(UpdateVirtualBottomAfterResizeWithReflow);
+    TEST_METHOD(DontShrinkVirtualBottomDuringResizeWithReflowAtTop);
     TEST_METHOD(DontChangeVirtualBottomWithOffscreenLinefeed);
     TEST_METHOD(DontChangeVirtualBottomAfterResizeWindow);
     TEST_METHOD(DontChangeVirtualBottomWithMakeCursorVisible);
@@ -3002,6 +3005,42 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);
+}
+
+void ScreenBufferTests::AssignColorAliases()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& stateMachine = gci.GetActiveOutputBuffer().GetStateMachine();
+    auto& renderSettings = gci.GetRenderSettings();
+
+    const auto defaultFg = renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
+    const auto defaultBg = renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+    const auto frameFg = renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground);
+    const auto frameBg = renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+
+    auto resetAliases = wil::scope_exit([&] {
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, defaultFg);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, defaultBg);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, frameFg);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, frameBg);
+    });
+
+    Log::Comment(L"Test invalid item color assignment");
+    stateMachine.ProcessString(L"\033[0;12;34,|");
+    VERIFY_ARE_EQUAL(defaultFg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+    VERIFY_ARE_EQUAL(defaultBg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+    VERIFY_ARE_EQUAL(frameFg, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
+    VERIFY_ARE_EQUAL(frameBg, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
+
+    Log::Comment(L"Test normal text color assignment");
+    stateMachine.ProcessString(L"\033[1;23;45,|");
+    VERIFY_ARE_EQUAL(23u, renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+    VERIFY_ARE_EQUAL(45u, renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+
+    Log::Comment(L"Test window frame color assignment");
+    stateMachine.ProcessString(L"\033[2;34;56,|");
+    VERIFY_ARE_EQUAL(34u, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
+    VERIFY_ARE_EQUAL(56u, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
 }
 
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
@@ -6290,6 +6329,47 @@ void ScreenBufferTests::UpdateVirtualBottomAfterResizeWithReflow()
     Log::Comment(L"Confirm that the virtual viewport includes the last non-space row");
     const auto lastNonSpaceRow = si.GetTextBuffer().GetLastNonSpaceCharacter().Y;
     VERIFY_IS_GREATER_THAN_OR_EQUAL(si._virtualBottom, lastNonSpaceRow);
+
+    Log::Comment(L"Clear the screen and note the cursor distance to the virtual bottom");
+    stateMachine.ProcessString(L"\033[H\033[2J");
+    const auto cursorDistanceFromBottom = si._virtualBottom - si.GetTextBuffer().GetCursor().GetPosition().Y;
+    VERIFY_ARE_EQUAL(si.GetViewport().Height() - 1, cursorDistanceFromBottom);
+
+    Log::Comment(L"Stretch the viewport back to full width");
+    bufferSize.X *= 2;
+    VERIFY_NT_SUCCESS(si.ResizeWithReflow(bufferSize));
+
+    Log::Comment(L"Confirm cursor distance to the virtual bottom is unchanged");
+    VERIFY_ARE_EQUAL(cursorDistanceFromBottom, si._virtualBottom - si.GetTextBuffer().GetCursor().GetPosition().Y);
+}
+
+void ScreenBufferTests::DontShrinkVirtualBottomDuringResizeWithReflowAtTop()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Make sure the viewport is at the top of the buffer");
+    const auto bufferTop = COORD{ 0, 0 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, bufferTop, true));
+    VERIFY_ARE_EQUAL(bufferTop, si.GetViewport().Origin());
+
+    Log::Comment(L"Make sure the virtual bottom is at the bottom of the viewport");
+    VERIFY_ARE_EQUAL(si.GetViewport().BottomInclusive(), si._virtualBottom);
+
+    Log::Comment(L"Make sure the cursor is at the top of the buffer");
+    stateMachine.ProcessString(L"\033[H");
+    VERIFY_ARE_EQUAL(bufferTop, cursor.GetPosition());
+
+    Log::Comment(L"Shrink the viewport width by a half");
+    auto bufferSize = si.GetTextBuffer().GetSize().Dimensions();
+    bufferSize.X /= 2;
+    VERIFY_NT_SUCCESS(si.ResizeWithReflow(bufferSize));
+
+    Log::Comment(L"Confirm that the virtual bottom is still at the bottom of the viewport");
+    VERIFY_ARE_EQUAL(si.GetViewport().BottomInclusive(), si._virtualBottom);
 }
 
 void ScreenBufferTests::DontChangeVirtualBottomWithOffscreenLinefeed()

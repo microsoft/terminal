@@ -47,6 +47,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
+
+        explicit constexpr operator bool() const noexcept
+        {
+            return (left >= 0) & (top >= 0) &
+                   (right >= left) & (bottom >= top);
+        }
     };
 
     constexpr inclusive_rect wrap_small_rect(const SMALL_RECT& rect) noexcept
@@ -416,22 +422,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 const rect l{ left, intersect.top, intersect.left, intersect.bottom };
                 const rect r{ intersect.right, intersect.top, right, intersect.bottom };
 
-                if (!t.empty())
+                if (t)
                 {
                     result.push_back(t);
                 }
 
-                if (!b.empty())
+                if (b)
                 {
                     result.push_back(b);
                 }
 
-                if (!l.empty())
+                if (l)
                 {
                     result.push_back(l);
                 }
 
-                if (!r.empty())
+                if (r)
                 {
                     result.push_back(r);
                 }
@@ -477,210 +483,43 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #pragma endregion
 
 #pragma region RECTANGLE VS SIZE
-        // ADD will grow the total area of the rect. The sign is the direction to grow.
-        constexpr rect operator+(const size size) const
-        {
-            // Fetch the pieces of the rect.
-            auto l = left;
-            auto r = right;
-            auto t = top;
-            auto b = bottom;
-
-            // Fetch the scale factors we're using.
-            const auto width = size.width;
-            const auto height = size.height;
-
-            // Since this is the add operation versus a size, the result
-            // should grow the total rect area.
-            // The sign determines which edge of the rect moves.
-            // We use the magnitude as how far to move.
-            if (width > 0)
-            {
-                // Adding the positive makes the rect "grow"
-                // because right stretches outward (to the right).
-                //
-                // Example with adding width 3...
-                // |-- x = origin
-                // V
-                // x---------|    x------------|
-                // |         |    |            |
-                // |         |    |            |
-                // |---------|    |------------|
-                // BEFORE         AFTER
-                r = details::extract(::base::CheckAdd(r, width));
-            }
-            else
-            {
-                // Adding the negative makes the rect "grow"
-                // because left stretches outward (to the left).
-                //
-                // Example with adding width -3...
-                // |-- x = origin
-                // V
-                // x---------|    |--x---------|
-                // |         |    |            |
-                // |         |    |            |
-                // |---------|    |------------|
-                // BEFORE             AFTER
-                l = details::extract(::base::CheckAdd(l, width));
-            }
-
-            if (height > 0)
-            {
-                // Adding the positive makes the rect "grow"
-                // because bottom stretches outward (to the down).
-                //
-                // Example with adding height 2...
-                // |-- x = origin
-                // V
-                // x---------|    x---------|
-                // |         |    |         |
-                // |         |    |         |
-                // |---------|    |         |
-                //                |         |
-                //                |---------|
-                // BEFORE         AFTER
-                b = details::extract(::base::CheckAdd(b, height));
-            }
-            else
-            {
-                // Adding the negative makes the rect "grow"
-                // because top stretches outward (to the up).
-                //
-                // Example with adding height -2...
-                // |-- x = origin
-                // |
-                // |              |---------|
-                // V              |         |
-                // x---------|    x         |
-                // |         |    |         |
-                // |         |    |         |
-                // |---------|    |---------|
-                // BEFORE         AFTER
-                t = details::extract(::base::CheckAdd(t, height));
-            }
-
-            return rect{ point{ l, t }, point{ r, b } };
-        }
-
-        constexpr rect& operator+=(const size size)
-        {
-            *this = *this + size;
-            return *this;
-        }
-
-        // SUB will shrink the total area of the rect. The sign is the direction to shrink.
-        constexpr rect operator-(const size size) const
-        {
-            // Fetch the pieces of the rect.
-            auto l = left;
-            auto r = right;
-            auto t = top;
-            auto b = bottom;
-
-            // Fetch the scale factors we're using.
-            const auto width = size.width;
-            const auto height = size.height;
-
-            // Since this is the subtract operation versus a size, the result
-            // should shrink the total rect area.
-            // The sign determines which edge of the rect moves.
-            // We use the magnitude as how far to move.
-            if (width > 0)
-            {
-                // Subtracting the positive makes the rect "shrink"
-                // because right pulls inward (to the left).
-                //
-                // Example with subtracting width 3...
-                // |-- x = origin
-                // V
-                // x---------|    x------|
-                // |         |    |      |
-                // |         |    |      |
-                // |---------|    |------|
-                // BEFORE         AFTER
-                r = details::extract(::base::CheckSub(r, width));
-            }
-            else
-            {
-                // Subtracting the negative makes the rect "shrink"
-                // because left pulls inward (to the right).
-                //
-                // Example with subtracting width -3...
-                // |-- x = origin
-                // V
-                // x---------|    x  |------|
-                // |         |       |      |
-                // |         |       |      |
-                // |---------|       |------|
-                // BEFORE         AFTER
-                l = details::extract(::base::CheckSub(l, width));
-            }
-
-            if (height > 0)
-            {
-                // Subtracting the positive makes the rect "shrink"
-                // because bottom pulls inward (to the up).
-                //
-                // Example with subtracting height 2...
-                // |-- x = origin
-                // V
-                // x---------|    x---------|
-                // |         |    |---------|
-                // |         |
-                // |---------|
-                // BEFORE         AFTER
-                b = details::extract(::base::CheckSub(b, height));
-            }
-            else
-            {
-                // Subtracting the positive makes the rect "shrink"
-                // because top pulls inward (to the down).
-                //
-                // Example with subtracting height -2...
-                // |-- x = origin
-                // V
-                // x---------|    x
-                // |         |
-                // |         |    |---------|
-                // |---------|    |---------|
-                // BEFORE         AFTER
-                t = details::extract(::base::CheckSub(t, height));
-            }
-
-            return rect{ point{ l, t }, point{ r, b } };
-        }
-
-        constexpr rect& operator-=(const size size)
-        {
-            *this = *this - size;
-            return *this;
-        }
 
         // scale_up will scale the entire rect up by the size factor
-        // This includes moving the origin.
         constexpr rect scale_up(const size size) const
         {
-            const auto topLeft = point{ left, top } * size;
-            const auto bottomRight = point{ right, bottom } * size;
-            return rect{ topLeft, bottomRight };
+            return rect{
+                details::extract(::base::CheckMul(left, size.width)),
+                details::extract(::base::CheckMul(top, size.height)),
+                details::extract(::base::CheckMul(right, size.width)),
+                details::extract(::base::CheckMul(bottom, size.height)),
+            };
         }
 
-        // scale_down will scale the entire rect down by the size factor,
-        // but rounds the bottom-right corner out.
-        // This includes moving the origin.
+        // scale_down will scale the entire rect down by the size factor.
+        // The top/left corner is rounded down (floor) and
+        // the bottom/right corner is rounded up (ceil).
         constexpr rect scale_down(const size size) const
         {
-            auto topLeft = point{ left, top };
-            auto bottomRight = point{ right, bottom };
-            topLeft = topLeft / size;
+            // The integer ceil division `((a - 1) / b) + 1` only works for numbers >0.
+            // Support for negative numbers wasn't deemed useful at this point.
+            if ((left < 0) | (top < 0) | (right < 0) | (bottom < 0) | (size.width <= 0) | (size.height <= 0))
+            {
+                throw std::invalid_argument{ "invalid til::rect::scale_down" };
+            }
 
-            // Move bottom right point into a size
-            // Use size specialization of divide_ceil to round up against the size given.
-            // Add leading addition to point to convert it back into a point.
-            bottomRight = point{} + til::size{ right, bottom }.divide_ceil(size);
-
-            return rect{ topLeft, bottomRight };
+            // Imagine a terminal of 120x30 "cells" with each cell being
+            // 5x10 pixels large. The terminal is therefore 600x300 pixels.
+            // Given a rectangle in pixel coordinates, what's the rectangle in cell coordinates?
+            // Clearly this requires us to floor() top/left and ceil() bottom/right to cover all pixels.
+            // And thus:
+            //   {17, 24, 31, 38}.scale_down({5, 10}) == {3, 2, 7, 4}
+            //   {3, 2, 7, 4}.scale_up({5, 10}) == {15, 20, 35, 40}
+            return rect{
+                left / size.width,
+                top / size.height,
+                right != 0 ? (right - 1) / size.width + 1 : 0,
+                bottom != 0 ? (bottom - 1) / size.height + 1 : 0,
+            };
         }
 
 #pragma endregion
@@ -738,7 +577,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr size size() const noexcept
         {
-            return til::size{ width(), height() };
+            return { width(), height() };
         }
 
         constexpr bool empty() const noexcept
@@ -841,6 +680,32 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return { left, top, right, bottom };
         }
+
+        // til::rect and RECT have the exact same layout at the time of writing,
+        // so this function lets you unsafely "view" this rect as a RECT
+        // if you need to pass it to a Win32 function.
+        //
+        // Use as_win32_rect() as sparingly as possible because it'll be a pain to hack
+        // it out of this code base once til::rect and RECT aren't the same anymore.
+        // Prefer casting to RECT and back to til::rect instead if possible.
+        RECT* as_win32_rect() noexcept
+        {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+            return std::launder(reinterpret_cast<RECT*>(this));
+        }
+
+        // til::rect and POINT[2] have the exact same layout at the time of writing,
+        // so this function lets you unsafely "view" this rect as a POINT[2] array
+        // if you need to pass it to a Win32 function.
+        //
+        // Use as_win32_points() as sparingly as possible because it'll be a pain to hack
+        // it out of this code base once til::rect and POINT[2] aren't the same anymore.
+        // Prefer casting to POINT and back to til::rect instead if possible.
+        POINT* as_win32_points() noexcept
+        {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+            return std::launder(reinterpret_cast<POINT*>(this));
+        }
 #endif
 
 #ifdef DCOMMON_H_INCLUDED
@@ -902,11 +767,60 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return wil::str_printf<std::wstring>(L"(L:%d, T:%d, R:%d, B:%d) [W:%d, H:%d]", left, top, right, bottom, width(), height());
         }
     };
+
+    constexpr rect wrap_exclusive_small_rect(const SMALL_RECT& rect) noexcept
+    {
+        return { rect.Left, rect.Top, rect.Right, rect.Bottom };
+    }
+
+    constexpr SMALL_RECT unwrap_exclusive_small_rect(const rect& rect)
+    {
+        return {
+            gsl::narrow<short>(rect.left),
+            gsl::narrow<short>(rect.top),
+            gsl::narrow<short>(rect.right),
+            gsl::narrow<short>(rect.bottom),
+        };
+    }
 }
 
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution
 {
+    template<>
+    class VerifyOutputTraits<til::inclusive_rect>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const til::inclusive_rect& rect)
+        {
+            return WEX::Common::NoThrowString().Format(L"(L:%d, T:%d, R:%d, B:%d) [W:%d, H:%d]", rect.left, rect.top, rect.right, rect.bottom, rect.right - rect.left, rect.bottom - rect.top);
+        }
+    };
+
+    template<>
+    class VerifyCompareTraits<til::inclusive_rect, til::inclusive_rect>
+    {
+    public:
+        static bool AreEqual(const til::inclusive_rect& expected, const til::inclusive_rect& actual) noexcept
+        {
+            return expected == actual;
+        }
+
+        static bool AreSame(const til::inclusive_rect& expected, const til::inclusive_rect& actual) noexcept
+        {
+            return &expected == &actual;
+        }
+
+        static bool IsLessThan(const til::inclusive_rect& expectedLess, const til::inclusive_rect& expectedGreater) = delete;
+
+        static bool IsGreaterThan(const til::inclusive_rect& expectedGreater, const til::inclusive_rect& expectedLess) = delete;
+
+        static bool IsNull(const til::inclusive_rect& object) noexcept
+        {
+            return object == til::inclusive_rect{};
+        }
+    };
+
     template<>
     class VerifyOutputTraits<til::rect>
     {

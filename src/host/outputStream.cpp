@@ -285,7 +285,7 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-    ::ShowWindow(hwnd, showOrHide ? SW_NORMAL : SW_MINIMIZE);
+    ::ShowWindow(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
 }
 
 // Routine Description:

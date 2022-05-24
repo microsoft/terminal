@@ -49,6 +49,8 @@ enum class ColorAlias : size_t
 {
     DefaultForeground,
     DefaultBackground,
+    FrameForeground,
+    FrameBackground,
     ENUM_COUNT // must be the last element in the enum class
 };
 
@@ -72,10 +74,13 @@ public:
     static constexpr BYTE BRIGHT_CYAN = 14;
     static constexpr BYTE BRIGHT_WHITE = 15;
 
-    static constexpr size_t DEFAULT_FOREGROUND = 256;
-    static constexpr size_t DEFAULT_BACKGROUND = 257;
-    static constexpr size_t CURSOR_COLOR = 258;
-    static constexpr size_t TABLE_SIZE = 259;
+    // Entries 256 to 260 are reserved for XTerm compatibility.
+    static constexpr size_t DEFAULT_FOREGROUND = 261;
+    static constexpr size_t DEFAULT_BACKGROUND = 262;
+    static constexpr size_t FRAME_FOREGROUND = 263;
+    static constexpr size_t FRAME_BACKGROUND = 264;
+    static constexpr size_t CURSOR_COLOR = 265;
+    static constexpr size_t TABLE_SIZE = 266;
 
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },
@@ -101,8 +106,15 @@ public:
     {
     }
 
-    friend constexpr bool operator==(const TextColor& a, const TextColor& b) noexcept;
-    friend constexpr bool operator!=(const TextColor& a, const TextColor& b) noexcept;
+    bool operator==(const TextColor& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextColor)) == 0;
+    }
+
+    bool operator!=(const TextColor& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextColor)) != 0;
+    }
 
     bool CanBeBrightened() const noexcept;
     bool IsLegacy() const noexcept;
@@ -150,19 +162,6 @@ private:
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
-
-bool constexpr operator==(const TextColor& a, const TextColor& b) noexcept
-{
-    return a._meta == b._meta &&
-           a._red == b._red &&
-           a._green == b._green &&
-           a._blue == b._blue;
-}
-
-bool constexpr operator!=(const TextColor& a, const TextColor& b) noexcept
-{
-    return !(a == b);
-}
 
 #ifdef UNIT_TESTING
 

@@ -239,6 +239,12 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
+    enum class ColorItem : VTInt
+    {
+        NormalText = 1,
+        WindowFrame = 2,
+    };
+
     enum class EraseType : VTInt
     {
         ToEnd = 0,

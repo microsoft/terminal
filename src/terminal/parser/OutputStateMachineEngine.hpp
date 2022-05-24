@@ -142,6 +142,7 @@ namespace Microsoft::Console::VirtualTerminal
             XT_PushSgr = VTID("#{"),
             XT_PopSgr = VTID("#}"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECAC_AssignColor = VTID(",|")
         };
 
         enum DcsActionCodes : uint64_t

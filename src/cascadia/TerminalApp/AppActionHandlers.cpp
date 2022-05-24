@@ -1162,4 +1162,24 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
+    void TerminalPage::_HandleSelectAll(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.SelectAll();
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleMarkMode(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.ToggleMarkMode();
+            args.Handled(true);
+        }
+    }
 }

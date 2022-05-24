@@ -119,6 +119,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const DWORD color) override; // OSCColorTable
         bool SetDefaultForeground(const DWORD color) override; // OSCDefaultForeground
         bool SetDefaultBackground(const DWORD color) override; // OSCDefaultBackground
+        bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) override; // DECAC
 
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                 const VTParameter parameter1,
