@@ -484,7 +484,7 @@ void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
     // window. There seem to be many issues with this so far, and the quickest
     // route to mitigate them seems to be limiting the interaction here to
     // allowing ConPTY to minimize the terminal only. This will still allow
-    // bodgy scripts to hide the Terminal via GetConsoleWindow(), but should
+    // applications to hide the Terminal via GetConsoleWindow(), but should
     // broadly prevent any other impact of this feature.
     //
     // Should we need to restore this functionality in the future, we should
