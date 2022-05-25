@@ -235,7 +235,8 @@ namespace winrt::TerminalApp::implementation
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane);
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile,
+                                                                                                          Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -448,13 +449,17 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> _CreateNewContentProcess(winrt::Microsoft::Terminal::Settings::Model::Profile profile,
                                                                                                                            winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings);
         winrt::Microsoft::Terminal::Control::ContentProcess _AttachToContentProcess(const winrt::guid contentGuid);
-        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const winrt::guid& contentGuid);
-        winrt::Windows::Foundation::IAsyncOperation<std::shared_ptr<Pane>> _AsyncMakePane(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
-                                                                                          const bool duplicate);
+        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
+                                                                      const winrt::guid& contentGuid);
+        winrt::Microsoft::Terminal::Control::ContentProcess _InBackgroundMakeContent(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                                                                                     const bool duplicate);
         void _evaluateSettings(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
                                const bool duplicate,
                                winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,
                                winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+
+        winrt::Microsoft::Terminal::TerminalConnection::ConnectionInformation _CreateConnectionInfoFromSettings(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
+                                                                                                                const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

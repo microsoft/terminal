@@ -1027,23 +1027,52 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            const auto newPane = co_await _AsyncMakePane(newTerminalArgs, false);
-            // If the newTerminalArgs caused us to open an elevated window
-            // instead of creating a pane, it may have returned nullptr. Just do
-            // nothing then.
-            if (!newPane)
+            auto weakThis = get_weak();
+
+            co_await winrt::resume_background();
+            // auto content{ _InBackgroundMakeContent(newTerminalArgs, false) };
+
+            TerminalSettingsCreateResult controlSettings{ nullptr };
+            Profile profile{ nullptr };
+            _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
+            auto content{ _CreateNewContentProcess(profile, controlSettings).get() };
+            if (!content)
             {
                 co_return;
             }
-            if (altPressed && !debugTap)
+            co_await resume_foreground(Dispatcher());
+
+            if (auto page{ weakThis.get() })
             {
-                this->_SplitPane(SplitDirection::Automatic,
-                                 0.5f,
-                                 newPane);
-            }
-            else
-            {
-                _CreateNewTabFromPane(newPane);
+                auto makePaneFromContent = [this](auto content, auto controlSettings, auto profile) -> std::shared_ptr<Pane> {
+                    // Create the XAML control that will be attached to the content process.
+                    // We're not passing in a connection, because the contentGuid will be used instead
+                    const auto control = _InitControl(controlSettings, content.Guid());
+                    _RegisterTerminalEvents(control);
+
+                    auto resultPane = std::make_shared<Pane>(profile, control);
+                    return resultPane;
+                };
+                const auto newPane = makePaneFromContent(content, controlSettings, profile);
+
+                // If the newTerminalArgs caused us to open an elevated window
+                // instead of creating a pane, it may have returned nullptr. Just do
+                // nothing then.
+                if (!newPane)
+                {
+                    co_return;
+                }
+
+                if (altPressed && !debugTap)
+                {
+                    this->_SplitPane(SplitDirection::Automatic,
+                                     0.5f,
+                                     newPane);
+                }
+                else
+                {
+                    _CreateNewTabFromPane(newPane);
+                }
             }
         }
     }
@@ -1158,6 +1187,98 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         return connection;
+    }
+
+    // TODO!: Merge this with _CreateConnectionFromSettings. We should be able
+    // to use this with ConnectionInformation::CreateConnection to just do the
+    // thing.
+    TerminalConnection::ConnectionInformation TerminalPage::_CreateConnectionInfoFromSettings(const Profile& profile,
+                                                                                              const TerminalSettings& settings)
+    {
+        // TODO! My WIP branch had this, but the current code doesn't. I don't think this is an issue? We can probably yank this.
+        //if (!profile)
+        //{
+        //    // Use the default profile if we didn't get one as an argument.
+        //    profile = _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
+        //}
+
+        auto connectionType = profile.ConnectionType();
+        winrt::guid sessionGuid{};
+        Windows::Foundation::Collections::ValueSet connectionSettings{ nullptr };
+        winrt::hstring className;
+
+        if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
+            TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        {
+            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
+            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
+
+            className = winrt::name_of<TerminalConnection::ConptyConnection>();
+            connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+                                                                                      L".",
+                                                                                      L"Azure",
+                                                                                      nullptr,
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                      winrt::guid());
+
+            if constexpr (Feature_VtPassthroughMode::IsEnabled())
+            {
+                connectionSettings.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            }
+        }
+
+        else
+        {
+            // profile is guaranteed to exist here
+            auto guidWString = Utils::GuidToString(profile.Guid());
+
+            StringMap envMap{};
+            envMap.Insert(L"WT_PROFILE_ID", guidWString);
+            envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
+
+            // Update the path to be relative to whatever our CWD is.
+            //
+            // Refer to the examples in
+            // https://en.cppreference.com/w/cpp/filesystem/path/append
+            //
+            // We need to do this here, to ensure we tell the ConptyConnection
+            // the correct starting path. If we're being invoked from another
+            // terminal instance (e.g. wt -w 0 -d .), then we have switched our
+            // CWD to the provided path. We should treat the StartingDirectory
+            // as relative to the current CWD.
+            //
+            // The connection must be informed of the current CWD on
+            // construction, because the connection might not spawn the child
+            // process until later, on another thread, after we've already
+            // restored the CWD to it's original value.
+            auto newWorkingDirectory{ settings.StartingDirectory() };
+            if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
+                                                       !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
+            { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
+                auto cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
+                std::filesystem::path cwd{ cwdString };
+                cwd /= settings.StartingDirectory().c_str();
+                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
+            }
+
+            className = winrt::name_of<TerminalConnection::ConptyConnection>();
+            connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                                      newWorkingDirectory,
+                                                                                      settings.StartingTitle(),
+                                                                                      envMap.GetView(),
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                      winrt::guid());
+
+            connectionSettings.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+
+            // TODO!
+            // sessionGuid = conhostConn.Guid();
+        }
+
+        return TerminalConnection::ConnectionInformation(className, connectionSettings);
     }
 
     // Method Description:
@@ -2490,6 +2611,9 @@ namespace winrt::TerminalApp::implementation
         winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
         // Spawn a wt.exe, with the guid on the commandline
         auto piContentProcess{ _createHostClassProcess(contentGuid) };
+
+        // DebugBreak();
+
         // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
         // * If we're creating a new OOP control, _createHostClassProcess will
         //   spawn the process that will actually host the ContentProcess
@@ -2682,11 +2806,10 @@ namespace winrt::TerminalApp::implementation
             controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
         }
     }
-    winrt::Windows::Foundation::IAsyncOperation<std::shared_ptr<Pane>> TerminalPage::_AsyncMakePane(const NewTerminalArgs& newTerminalArgs,
-                                                                                                    const bool duplicate)
-    {
-        auto weakThis{ get_weak() };
 
+    ContentProcess TerminalPage::_InBackgroundMakeContent(const NewTerminalArgs& newTerminalArgs,
+                                                                   const bool duplicate)
+    {
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
         _evaluateSettings(newTerminalArgs, duplicate, controlSettings, profile);
@@ -2701,24 +2824,20 @@ namespace winrt::TerminalApp::implementation
         ContentProcess existingContentProc{ nullptr };
         // _CreateNewContentProcess will take us to a BG thread, if we started in the FG
         auto content = existingContentProc ? existingContentProc : _CreateNewContentProcess(profile, controlSettings).get();
-        if (!content)
-        {
-            co_return;
-        }
 
-        co_await wil::resume_foreground(Dispatcher());
-        if (auto page{ weakThis.get() })
-        {
-            // Create the XAML control that will be attached to the content process.
-            // We're not passing in a connection, because the contentGuid will be used instead
-            const auto control = _InitControl(controlSettings, content.Guid());
-            _RegisterTerminalEvents(control);
+        return content;
+        // if (!content)
+        // {
+        //     return nullptr;
+        // }
 
-            auto resultPane = std::make_shared<Pane>(profile, control);
-            co_return resultPane;
-        }
+        // // Create the XAML control that will be attached to the content process.
+        // // We're not passing in a connection, because the contentGuid will be used instead
+        // const auto control = _InitControl(controlSettings, content.Guid());
+        // _RegisterTerminalEvents(control);
 
-        co_return nullptr;
+        // auto resultPane = std::make_shared<Pane>(profile, control);
+        // return resultPane;
     }
 
     // Method Description:
