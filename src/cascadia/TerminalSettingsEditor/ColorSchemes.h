@@ -38,7 +38,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void RenameCancel_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void NameBox_PreviewKeyDown(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 
-        bool CanDeleteCurrentScheme() const;
         void DeleteConfirmation_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         WINRT_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);

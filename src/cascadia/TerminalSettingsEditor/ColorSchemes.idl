@@ -19,7 +19,6 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemes();
         ColorSchemesPageNavigationState State { get; };
 
-        Boolean CanDeleteCurrentScheme { get; };
         Boolean IsRenaming { get; };
 
         ColorSchemesPageViewModel ViewModel { get; };

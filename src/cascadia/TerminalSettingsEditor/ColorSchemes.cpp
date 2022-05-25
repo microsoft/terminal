@@ -133,8 +133,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         DeleteButtonDisclaimer().Text(disclaimer);
 
-        // Update the state of the page
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
         IsRenaming(false);
     }
 
@@ -191,20 +189,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool ColorSchemes::CanDeleteCurrentScheme() const
-    {
-        if (const auto& scheme{ _ViewModel.CurrentScheme() })
-        {
-            // Only allow this color scheme to be deleted if it's not provided in-box
-            const std::wstring myName{ scheme.Name() };
-            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), myName) == std::end(InBoxSchemes);
-        }
-        return false;
-    }
-
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.CurrentScheme().DeleteScheme();
+        _ViewModel.RequestDeleteCurrentScheme();
 
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
         if (static_cast<uint32_t>(removedSchemeIndex) < ViewModel().AllColorSchemes().Size() - 1)
@@ -294,35 +281,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
-        // check if different name is already in use
-        const auto oldName{ _ViewModel.CurrentScheme().Name() };
-        if (newName != oldName && _State.Settings().GlobalSettings().ColorSchemes().HasKey(newName))
+        if (_ViewModel.RequestRenameCurrentScheme(newName))
         {
-            // open the error tip
+            // update the UI
+            RenameErrorTip().IsOpen(false);
+            IsRenaming(false);
+
+            // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
+            // We need to manually force the ComboBox to refresh itself.
+            const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
+            ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
+            ColorSchemeComboBox().SelectedIndex(selectedIndex);
+        }
+        else
+        {
             RenameErrorTip().Target(NameBox());
             RenameErrorTip().IsOpen(true);
 
             // focus the name box
             NameBox().Focus(FocusState::Programmatic);
             NameBox().SelectAll();
-            return;
         }
-
-        // update the settings model
-        _ViewModel.CurrentScheme().Name(newName);
-        _State.Settings().GlobalSettings().RemoveColorScheme(oldName);
-        _State.Settings().GlobalSettings().AddColorScheme(CurrentColorScheme());
-        _State.Settings().UpdateColorSchemeReferences(oldName, newName);
-
-        // update the UI
-        RenameErrorTip().IsOpen(false);
-        _ViewModel.CurrentScheme().Name(newName);
-        IsRenaming(false);
-
-        // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
-        // We need to manually force the ComboBox to refresh itself.
-        const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
-        ColorSchemeComboBox().SelectedIndex(selectedIndex);
     }
 }

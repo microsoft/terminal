@@ -56,7 +56,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
         winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
-        void _DeleteColorScheme(const Windows::Foundation::IInspectable sender, const Editor::DeleteColorSchemeEventArgs& args);
         void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState state);
@@ -64,8 +63,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _PreNavigateHelper();
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton = false);
-
-        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> _MakeColorSchemeVMsHelper(const Model::CascadiaSettings& settings);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
 

@@ -17,6 +17,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemesPageViewModel(const Model::CascadiaSettings& settings);
 
         void RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme);
+        bool RequestRenameCurrentScheme(winrt::hstring newName);
+        void RequestDeleteCurrentScheme();
+
+        bool CanDeleteCurrentScheme() const;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -27,7 +31,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::CascadiaSettings _settings;
 
         void _MakeColorSchemeVMsHelper();
-        void _DeleteColorScheme(const IInspectable /*sender*/, const Editor::DeleteColorSchemeEventArgs& args);
     };
 };
 

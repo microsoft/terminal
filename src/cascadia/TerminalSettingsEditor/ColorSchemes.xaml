@@ -107,7 +107,7 @@
                     <Button x:Name="RenameButton"
                             x:Uid="Rename"
                             Click="Rename_Click"
-                            IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
                             Style="{StaticResource SmallButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -363,7 +363,7 @@
             <!--  Delete Button  -->
             <StackPanel Style="{StaticResource PivotStackStyle}">
                 <Button x:Name="DeleteButton"
-                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource DeleteButtonStyle}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">

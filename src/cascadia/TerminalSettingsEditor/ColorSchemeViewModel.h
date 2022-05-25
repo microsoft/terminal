@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "DeleteColorSchemeEventArgs.g.h"
 #include "ColorSchemeViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -16,13 +15,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ColorSchemeViewModel(const Model::ColorScheme scheme);
 
+        winrt::hstring Name();
+        void Name(winrt::hstring newName);
+
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
 
-        void DeleteScheme();
-
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-
-        WINRT_PROPERTY(winrt::hstring, Name);
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentNonBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentBrightColorTable, nullptr);
@@ -32,9 +30,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentCursorColor, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentSelectionBackgroundColor, _PropertyChangedHandlers, nullptr);
 
-        TYPED_EVENT(DeleteColorScheme, Editor::ColorSchemeViewModel, Editor::DeleteColorSchemeEventArgs);
-
     private:
+        winrt::hstring _Name;
         Model::ColorScheme _scheme;
     };
 
@@ -53,19 +50,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::UI::Color _color;
-    };
-
-    struct DeleteColorSchemeEventArgs :
-        public DeleteColorSchemeEventArgsT<DeleteColorSchemeEventArgs>
-    {
-    public:
-        DeleteColorSchemeEventArgs(winrt::hstring schemeName) :
-            _SchemeName(schemeName) {}
-
-        winrt::hstring SchemeName() const noexcept { return _SchemeName; }
-
-    private:
-        winrt::hstring _SchemeName;
     };
 };
 
