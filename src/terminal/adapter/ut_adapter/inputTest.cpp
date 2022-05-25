@@ -540,7 +540,7 @@ void InputTest::TerminalInputNullKeyTests()
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
-    BYTE vkey = '2';
+    BYTE vkey = LOBYTE(VkKeyScanW(0));
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
     INPUT_RECORD irTest = { 0 };

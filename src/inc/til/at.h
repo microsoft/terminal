@@ -34,24 +34,24 @@ namespace til
     // gsl::at will do the check again. As will .at(). And using [] will have a warning in audit.
     // This template is explicitly disabled if T is of type gsl::span, as it would interfere with
     // the overload below.
-    template<class T, std::enable_if_t<!details::is_span<T>::value, int> = 0>
-    constexpr auto at(T& cont, const size_t i) -> decltype(cont[cont.size()])
+    template<typename T, typename I>
+    constexpr auto at(T&& cont, const I i) noexcept -> decltype(auto)
     {
-#pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
-#pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
-#pragma warning(suppress : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
-        return cont[i];
-    }
-
 #ifdef GSL_SPAN_H
-    // This is an overload of til::at for span that access its backing buffer directly (UNCHECKED)
-    template<typename ElementType, size_t Extent>
-    constexpr auto at(gsl::span<ElementType, Extent> span, const std::ptrdiff_t i) -> decltype(span[span.size()])
-    {
+        if constexpr (details::is_span<T>::value)
+        {
 #pragma warning(suppress : 26481) // Suppress bounds.1 check for doing pointer arithmetic
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
-        return span.data()[i];
-    }
+            return cont.data()[i];
+        }
+        else
 #endif
+        {
+#pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
+#pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
+#pragma warning(suppress : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
+            return cont[i];
+        }
+    }
 }

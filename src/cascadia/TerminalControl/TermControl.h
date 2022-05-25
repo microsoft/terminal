@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void SelectAll();
+        void ToggleMarkMode();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
@@ -89,6 +90,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CreateSearchBoxControl();
 
         void SearchMatch(const bool goForward);
+
+        bool SearchBoxEditInFocus() const;
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 

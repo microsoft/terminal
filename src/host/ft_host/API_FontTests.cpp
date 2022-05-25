@@ -263,9 +263,9 @@ void FontTests::TestSetFontAdjustsWindow()
     szConsolas.cy = rc.bottom - rc.top;
     Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szConsolas.cx, szConsolas.cy));
 
-    Log::Comment(L"Adjust console window to Lucida Console 12.");
+    Log::Comment(L"Adjust console window to Lucida Console 8.");
     wcscpy_s(cfiex.FaceName, L"Lucida Console");
-    cfiex.dwFontSize.Y = 12;
+    cfiex.dwFontSize.Y = 8;
 
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
     Sleep(250);

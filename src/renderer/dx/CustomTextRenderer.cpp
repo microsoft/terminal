@@ -344,6 +344,7 @@ try
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
     Microsoft::WRL::ComPtr<ID2D1Image> originalTarget;
     Microsoft::WRL::ComPtr<ID2D1CommandList> commandList;
+    D2D1::Matrix3x2F originalTransform;
     if (!fInvert)
     {
         // Make sure to make the cursor opaque
@@ -407,6 +408,9 @@ try
             RETURN_IF_FAILED(d2dContext->CreateCommandList(&commandList));
             d2dContext->GetTarget(&originalTarget);
             d2dContext->SetTarget(commandList.Get());
+            // We use an identity transform here to avoid the active transform being applied twice.
+            d2dContext->GetTransform(&originalTransform);
+            d2dContext->SetTransform(D2D1::Matrix3x2F::Identity());
             RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(COLOR_WHITE, &brush));
         }
     }
@@ -449,6 +453,7 @@ try
         // so now we draw that command list using MASK_INVERT over the existing image
         RETURN_IF_FAILED(commandList->Close());
         d2dContext->SetTarget(originalTarget.Get());
+        d2dContext->SetTransform(originalTransform);
         d2dContext->DrawImage(commandList.Get(), D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_MASK_INVERT);
     }
 
@@ -501,8 +506,8 @@ CATCH_RETURN()
 
     // Determine clip rectangle
     D2D1_RECT_F clipRect;
-    clipRect.top = origin.y;
-    clipRect.bottom = clipRect.top + drawingContext->cellSize.height;
+    clipRect.top = origin.y + drawingContext->topClipOffset;
+    clipRect.bottom = origin.y + drawingContext->cellSize.height - drawingContext->bottomClipOffset;
     clipRect.left = 0;
     clipRect.right = drawingContext->targetSize.width;
 
