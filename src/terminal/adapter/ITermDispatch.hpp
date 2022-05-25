@@ -85,6 +85,7 @@ public:
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
+    virtual bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) = 0; // DECAC
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
