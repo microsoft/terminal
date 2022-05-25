@@ -5,7 +5,6 @@
 #include "ColorSchemes.h"
 #include "ColorTableEntry.g.cpp"
 #include "ColorSchemes.g.cpp"
-#include "ColorSchemesPageNavigationState.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -34,25 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     static constexpr std::wstring_view BackgroundColorTag{ L"Background" };
     static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
     static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
-
-    static const std::array<hstring, 16> TableColorNames = {
-        RS_(L"ColorScheme_Black/Header"),
-        RS_(L"ColorScheme_Red/Header"),
-        RS_(L"ColorScheme_Green/Header"),
-        RS_(L"ColorScheme_Yellow/Header"),
-        RS_(L"ColorScheme_Blue/Header"),
-        RS_(L"ColorScheme_Purple/Header"),
-        RS_(L"ColorScheme_Cyan/Header"),
-        RS_(L"ColorScheme_White/Header"),
-        RS_(L"ColorScheme_BrightBlack/Header"),
-        RS_(L"ColorScheme_BrightRed/Header"),
-        RS_(L"ColorScheme_BrightGreen/Header"),
-        RS_(L"ColorScheme_BrightYellow/Header"),
-        RS_(L"ColorScheme_BrightBlue/Header"),
-        RS_(L"ColorScheme_BrightPurple/Header"),
-        RS_(L"ColorScheme_BrightCyan/Header"),
-        RS_(L"ColorScheme_BrightWhite/Header")
-    };
 
     static const std::array<std::wstring, 9> InBoxSchemes = {
         L"Campbell",
@@ -88,8 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::ColorSchemesPageNavigationState>();
-        _ViewModel = _State.ViewModel();
+        _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
         //const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
         //const auto it = std::find_if(begin(_ColorSchemeList),

@@ -5,24 +5,12 @@
 
 #include "ColorTableEntry.g.h"
 #include "ColorSchemes.g.h"
-#include "ColorSchemesPageNavigationState.g.h"
 #include "ColorSchemeViewModel.h"
 #include "ColorSchemesPageViewModel.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
-    {
-    public:
-        ColorSchemesPageNavigationState(const Editor::ColorSchemesPageViewModel& viewModel) :
-            _ViewModel{ viewModel } {}
-
-        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
-        WINRT_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
-        WINRT_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, nullptr);
-    };
-
     struct ColorSchemes : public HasScrollViewer<ColorSchemes>, ColorSchemesT<ColorSchemes>
     {
         ColorSchemes();
@@ -40,7 +28,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void DeleteConfirmation_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
-        WINRT_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
         WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 

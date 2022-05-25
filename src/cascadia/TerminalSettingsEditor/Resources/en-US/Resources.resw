@@ -1278,22 +1278,6 @@
     <value>Both HTML and RTF</value>
     <comment>An option to choose from for the "copy formatting" setting. Store both HTML and RTF data.</comment>
   </data>
-  <data name="ColorScheme_Select.Header" xml:space="preserve">
-    <value>Color scheme</value>
-    <comment>Header for a control to select the color scheme to edit.</comment>
-  </data>
-  <data name="ColorScheme_AddNew.Header" xml:space="preserve">
-    <value>Add a new color scheme</value>
-    <comment>Header for a control to add a new color scheme.</comment>
-  </data>
-  <data name="ColorScheme_Customize.Text" xml:space="preserve">
-    <value>Customize selected color scheme</value>
-    <comment>Header for a group of expanders that allow the user to edit the color scheme.</comment>
-  </data>
-  <data name="ColorScheme_Rename.Header" xml:space="preserve">
-    <value>Rename color scheme</value>
-    <comment>Header for a control to rename the currently selected color scheme.</comment>
-  </data>
   <data name="ColorScheme_RenameErrorTip.Subtitle" xml:space="preserve">
     <value>Please choose a different name.</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the subtitle and provides guidance to fix the issue.</comment>
