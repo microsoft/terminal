@@ -200,7 +200,7 @@ namespace winrt::TerminalApp::implementation
             transparent.Color(Windows::UI::Colors::Transparent());
             _tabRow.Background(transparent);
         }
-        _updateTabRowColors();
+        _updateThemeColors();
 
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
@@ -1418,7 +1418,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (e.PropertyName() == L"BackgroundBrush")
                 {
-                    page->_updateTabRowColors();
+                    page->_updateThemeColors();
                 }
             }
         });
@@ -2672,7 +2672,7 @@ namespace winrt::TerminalApp::implementation
 
         ////////////////////////////////////////////////////////////////////////
         // Begin Theme handling
-        _updateTabRowColors();
+        _updateThemeColors();
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -3971,7 +3971,7 @@ namespace winrt::TerminalApp::implementation
         applicationState.DismissedMessages(std::move(messages));
     }
 
-    void TerminalPage::_updateTabRowColors()
+    void TerminalPage::_updateThemeColors()
     {
         if (_settings == nullptr)
         {
@@ -3981,7 +3981,7 @@ namespace winrt::TerminalApp::implementation
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         auto requestedTheme{ theme.RequestedTheme() };
 
-        // TODO! move me somewhere else
+        // First: Update the colors of our individual TabViewItems. This applies tab.background to the tabs via TerminalTab::ThemeColor
         {
             auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
             for (const auto& tab : _tabs)
@@ -4110,6 +4110,6 @@ namespace winrt::TerminalApp::implementation
         // Stash if we're activated. Use that when we reload
         // the settings, change active panes, etc.
         _activated = activated;
-        _updateTabRowColors();
+        _updateThemeColors();
     }
 }

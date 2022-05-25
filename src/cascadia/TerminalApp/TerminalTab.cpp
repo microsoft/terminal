@@ -1343,7 +1343,7 @@ namespace winrt::TerminalApp::implementation
         // -------------------- | --          | --
         // Runtime Color        | _optional_  | Color Picker / `setTabColor` action
         // Control Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT
-        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme
+        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme (handled in _RecalculateAndApplyTabColor)
         // Tab Default Color    | **default** | TabView in XAML
         //
         // coalesce will get us the first of these values that's
@@ -1352,7 +1352,6 @@ namespace winrt::TerminalApp::implementation
 
         return til::coalesce(_runtimeTabColor,
                              controlTabColor,
-                             _themeTabColor, // TODO! what the fuck when did I leave this here? This legit isn't used.
                              std::optional<Windows::UI::Color>(std::nullopt));
     }
 
@@ -1396,26 +1395,37 @@ namespace winrt::TerminalApp::implementation
 
             auto tab{ ptrTab };
 
+            // GetTabColor will return the color set by the color picker, or the
+            // color specified in the profile. If neither of those were set,
+            // then look to _themeColor to see if there's a value there.
+            // Otherwise, clear our color, falling back to the TabView defaults.
             auto currentColor = tab->GetTabColor();
             if (currentColor.has_value())
             {
                 tab->_ApplyTabColor(currentColor.value());
             }
-            else if (tab->_themeColor == nullptr)
+            else if (tab->_themeColor != nullptr)
             {
-                tab->_ClearTabBackgroundColor();
-            }
-            else
-            {
-                const auto terminalBrush = [tab]() -> Media::Brush { if (const auto& control{ tab->GetActiveTerminalControl() }){ return control.BackgroundBrush(); } return nullptr; }();
+                // One-liner to safely get the active control's brush.
+                const auto terminalBrush =
+                    [tab]() -> Media::Brush { if (const auto& c{ tab->GetActiveTerminalControl() }){ return c.BackgroundBrush(); } return nullptr; }();
+
                 if (const auto themeBrush{ tab->_themeColor.Evaluate(Application::Current().Resources(), terminalBrush, false) })
                 {
+                    // ThemeColor.Evaluate will get us a Brush (because the
+                    // TermControl could have an acrylic BG, for example). Take
+                    // that brush, and get the color out of it. We don't really
+                    // want to have the tab items themselves be acrylic.
                     tab->_ApplyTabColor(til::color{ ThemeColor::ColorFromBrush(themeBrush) });
                 }
                 else
                 {
                     tab->_ClearTabBackgroundColor();
                 }
+            }
+            else
+            {
+                tab->_ClearTabBackgroundColor();
             }
         });
     }

@@ -114,7 +114,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
-        std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
