@@ -61,13 +61,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;                        \
     }
 
-#define THEME_OBJECT(classname, macro)         \
-    struct classname : classname##T<classname> \
+#define THEME_OBJECT(className, macro)         \
+    struct className : className##T<className> \
     {                                          \
         macro(THEME_SETTINGS_INITIALIZE);      \
                                                \
     public:                                    \
-        COPY_THEME_OBJECT(classname, macro);   \
+        COPY_THEME_OBJECT(className, macro);   \
     };
 
     THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
