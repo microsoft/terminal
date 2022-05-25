@@ -52,6 +52,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
 
+        void CreatePseudoWindow();
+
     private:
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;

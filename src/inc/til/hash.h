@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "bit.h"
+
 namespace til
 {
     template<typename T>
@@ -129,7 +131,11 @@ namespace til
     {
         // This runs murmurhash3's finalizer (fmix32/fmix64) on a single integer.
         // It's fast, public domain and produces good results.
-        auto h = static_cast<size_t>(v);
+        //
+        // Using til::as_unsigned here allows the compiler to drop the first
+        // `>> 33` mix for all Ts which are >= 32 bits.
+        // The existence of sign extension shouldn't change hash quality.
+        size_t h = til::as_unsigned(v);
         if constexpr (sizeof(size_t) == 4)
         {
             h ^= h >> 16;

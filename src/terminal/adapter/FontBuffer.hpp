@@ -48,7 +48,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _endOfCharacter();
 
         std::tuple<size_t, size_t, size_t> _calculateDimensions() const;
-        void _packAndCenterBitPatterns();
+        void _packAndCenterBitPatterns() noexcept;
         void _fillUnusedCharacters();
         std::array<uint16_t, MAX_HEIGHT> _generateErrorGlyph();
 

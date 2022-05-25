@@ -30,8 +30,11 @@ DERR
 dlldata
 DONTADDTORECENT
 DWORDLONG
+<<<<<<< HEAD
 DWMSBT
 DWMWA
+=======
+>>>>>>> origin/main
 endfor
 enumset
 environstrings
@@ -157,7 +160,6 @@ serializer
 SETVERSION
 SHELLEXECUTEINFOW
 shobjidl
-SHOWDEFAULT
 SHOWHIDE
 SHOWMINIMIZED
 SHOWTIP
