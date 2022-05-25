@@ -224,16 +224,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        // Give the new scheme a distinct name
-        const hstring schemeName{ fmt::format(L"Color Scheme {}", _State.Settings().GlobalSettings().ColorSchemes().Size() + 1) };
-        Model::ColorScheme scheme{ schemeName };
-
-        // Add the new color scheme
-        _State.Settings().GlobalSettings().AddColorScheme(scheme);
-
         // Update current page
-        //_ColorSchemeList.Append(scheme);
-        ColorSchemeComboBox().SelectedItem(scheme);
+        ColorSchemeComboBox().SelectedItem(_ViewModel.RequestAddNew());
     }
 
     // Function Description:

@@ -65,6 +65,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings.UpdateColorSchemeReferences(name, L"Campbell");
     }
 
+    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
+    {
+        const hstring schemeName{ fmt::format(L"Color Scheme {}", _settings.GlobalSettings().ColorSchemes().Size() + 1) };
+        Model::ColorScheme scheme{ schemeName };
+
+        // Add the new color scheme
+        _settings.GlobalSettings().AddColorScheme(scheme);
+
+        // Construct the new color scheme VM
+        const Editor::ColorSchemeViewModel schemeVM{ scheme };
+        _AllColorSchemes.Append(schemeVM);
+        return schemeVM;
+    }
+
     bool ColorSchemesPageViewModel::CanDeleteCurrentScheme() const
     {
         if (const auto& scheme{ CurrentScheme() })
