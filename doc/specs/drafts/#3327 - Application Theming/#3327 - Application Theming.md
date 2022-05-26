@@ -194,7 +194,7 @@ are:
     - `tabRow.unfocusedBackground`
     - `window.background.useMica`
 * Theme color variants:
-    - `"#rrggbb"` or `"#aarrggbb"`
+    - `"#rrggbb"` or `"#rrggbbaa"`
     - `"accent"`
     - `"terminalBackground"`
 
