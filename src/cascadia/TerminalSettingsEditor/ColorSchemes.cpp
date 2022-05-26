@@ -26,26 +26,6 @@ namespace winrt
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    // The first 8 entries of the color table are non-bright colors, whereas the rest are bright.
-    static constexpr uint8_t ColorTableDivider{ 8 };
-
-    static constexpr std::wstring_view ForegroundColorTag{ L"Foreground" };
-    static constexpr std::wstring_view BackgroundColorTag{ L"Background" };
-    static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
-    static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
-
-    static const std::array<std::wstring, 9> InBoxSchemes = {
-        L"Campbell",
-        L"Campbell Powershell",
-        L"Vintage",
-        L"One Half Dark",
-        L"One Half Light",
-        L"Solarized Dark",
-        L"Solarized Light",
-        L"Tango Dark",
-        L"Tango Light"
-    };
-
     ColorSchemes::ColorSchemes()
     {
         InitializeComponent();

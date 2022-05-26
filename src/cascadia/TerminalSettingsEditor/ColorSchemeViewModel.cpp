@@ -10,14 +10,6 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr uint8_t ColorTableDivider{ 8 };
-    static constexpr uint8_t ColorTableSize{ 16 };
-
-    static constexpr std::wstring_view ForegroundColorTag{ L"Foreground" };
-    static constexpr std::wstring_view BackgroundColorTag{ L"Background" };
-    static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
-    static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
-
     static const std::array<hstring, 16> TableColorNames = {
         RS_(L"ColorScheme_Black/Header"),
         RS_(L"ColorScheme_Red/Header"),
