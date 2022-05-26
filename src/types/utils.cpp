@@ -111,11 +111,11 @@ til::color Utils::ColorFromHexString(const std::string_view str)
     }
     else if (str.size() == 9)
     {
-        // #aarrggbb
-        aStr = std::string(&str.at(1), 2);
-        rStr = std::string(&str.at(3), 2);
-        gStr = std::string(&str.at(5), 2);
-        bStr = std::string(&str.at(7), 2);
+        // #rrggbbaa
+        rStr = std::string(&str.at(1), 2);
+        gStr = std::string(&str.at(3), 2);
+        bStr = std::string(&str.at(5), 2);
+        zStr = std::string(&str.at(7), 2);
     }
 
     const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));

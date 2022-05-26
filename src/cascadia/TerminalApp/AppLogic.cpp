@@ -739,13 +739,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {
-        if (!_loadedInitialSettings)
-        {
-            // Load settings if we haven't already
-            LoadSettings();
-        }
-
-        return _settings.GlobalSettings().CurrentTheme().RequestedTheme();
+        return Theme().RequestedTheme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -966,7 +960,7 @@ namespace winrt::TerminalApp::implementation
 
     void AppLogic::_RefreshThemeRoutine()
     {
-        _ApplyTheme(_settings.GlobalSettings().CurrentTheme().RequestedTheme());
+        _ApplyTheme(GetRequestedTheme());
     }
 
     // Function Description:
