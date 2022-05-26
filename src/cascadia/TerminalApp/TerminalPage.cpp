@@ -4065,17 +4065,15 @@ namespace winrt::TerminalApp::implementation
             if (const auto tabRowBg{ _activated ? theme.TabRow().Background() :
                                                   theme.TabRow().UnfocusedBackground() })
             {
-                const auto terminalBrush = [this]() -> Media::Brush {
-                    if (const auto& control{ _GetActiveControl() })
-                    {
-                        return control.BackgroundBrush();
-                    }
-                    else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                    {
-                        return settingsTab.Content().try_as<Controls::Page>().Background();
-                    }
-                    return nullptr;
-                }();
+                Media::Brush terminalBrush{ nullptr };
+                if (const auto& control{ _GetActiveControl() })
+                {
+                    terminalBrush = control.BackgroundBrush();
+                }
+                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                {
+                    terminalBrush = settingsTab.Content().try_as<Controls::Page>().Background();
+                }
 
                 const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
                 bgColor = ThemeColor::ColorFromBrush(themeBrush);
