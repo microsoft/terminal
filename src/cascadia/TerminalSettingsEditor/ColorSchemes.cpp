@@ -97,22 +97,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                    const SelectionChangedEventArgs& args)
     {
         //  Update the color scheme this page is modifying
-        const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
-        _ViewModel.RequestSetCurrentScheme(*colorScheme);
-
-        //_State.LastSelectedScheme(colorScheme.Name());
-
-        // Set the text disclaimer for the text box
-        hstring disclaimer{};
-        const std::wstring schemeName{ colorScheme->Name() };
-        if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
+        if (args.AddedItems().Size() > 0)
         {
-            // load disclaimer for in-box profiles
-            disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
-        }
-        DeleteButtonDisclaimer().Text(disclaimer);
+            const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
+            _ViewModel.RequestSetCurrentScheme(*colorScheme);
 
-        IsRenaming(false);
+            //_State.LastSelectedScheme(colorScheme.Name());
+
+            // Set the text disclaimer for the text box
+            hstring disclaimer{};
+            const std::wstring schemeName{ colorScheme->Name() };
+            if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
+            {
+                // load disclaimer for in-box profiles
+                disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
+            }
+            DeleteButtonDisclaimer().Text(disclaimer);
+
+            IsRenaming(false);
+        }
     }
 
     // Function Description:
@@ -170,21 +173,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.RequestDeleteCurrentScheme();
-
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
-        if (static_cast<uint32_t>(removedSchemeIndex) < ViewModel().AllColorSchemes().Size() - 1)
+        _ViewModel.RequestDeleteCurrentScheme();
+        if (static_cast<uint32_t>(removedSchemeIndex) < ViewModel().AllColorSchemes().Size())
         {
             // select same index
-            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex + 1);
+            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex);
         }
         else
         {
             // select last color scheme (avoid out of bounds error)
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
         }
-        ViewModel().AllColorSchemes().RemoveAt(removedSchemeIndex);
-
         DeleteButton().Flyout().Hide();
 
         // GH#11971, part 2. If we delete a scheme, and the next scheme we've
@@ -204,7 +204,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // Update current page
-        ColorSchemeComboBox().SelectedItem(_ViewModel.RequestAddNew());
+        const auto newSchemeVM = _ViewModel.RequestAddNew();
+        ColorSchemeComboBox().SelectedItem(newSchemeVM);
     }
 
     // Function Description:

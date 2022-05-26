@@ -129,6 +129,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    Model::ColorScheme ColorSchemeViewModel::SettingsModelObject()
+    {
+        return _scheme;
+    }
+
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
     {
         Name(TableColorNames[index]);

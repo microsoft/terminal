@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             // update the settings model
             CurrentScheme().Name(newName);
+            _settings.GlobalSettings().RemoveColorScheme(oldName);
+            _settings.GlobalSettings().AddColorScheme(CurrentScheme().SettingsModelObject());
             _settings.UpdateColorSchemeReferences(oldName, newName);
             return true;
         }
@@ -57,6 +59,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemesPageViewModel::RequestDeleteCurrentScheme()
     {
         const auto name{ CurrentScheme().Name() };
+
+        for (uint32_t i = 0; i < _AllColorSchemes.Size(); ++i)
+        {
+            if (_AllColorSchemes.GetAt(i).Name() == name)
+            {
+                _AllColorSchemes.RemoveAt(i);
+                break;
+            }
+        }
 
         // Delete scheme from settings model
         _settings.GlobalSettings().RemoveColorScheme(name);

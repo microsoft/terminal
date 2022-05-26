@@ -20,6 +20,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
 
+        Model::ColorScheme SettingsModelObject();
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentNonBrightColorTable, nullptr);
