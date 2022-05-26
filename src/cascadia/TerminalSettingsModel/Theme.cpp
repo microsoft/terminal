@@ -67,7 +67,7 @@ static til::color _getAccentColorForTitlebar()
 {
     // The color used for the "Use Accent color in the title bar" in DWM is
     // stored in HKCU\Software\Microsoft\Windows\DWM\AccentColor.
-    return til::color{ static_cast<COLORREF>(readDwmSubValue(openDwmRegKey(), RegKeyAccentColor)) };
+    return til::color{ static_cast<COLORREF>(readDwmSubValue(openDwmRegKey(), RegKeyAccentColor)) }.with_alpha(255);
 }
 
 til::color ThemeColor::ColorFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
@@ -109,10 +109,9 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
 
         const auto accentBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
         accentBrush.Color(accentColor);
-        if (forTitlebar)
-        {
-            accentBrush.Opacity(1.0);
-        }
+
+        // _getAccentColorForTitlebar should have already filled the alpha
+        // channel in with 255
 
         return accentBrush;
     }
@@ -260,28 +259,23 @@ winrt::com_ptr<Theme> Theme::Copy() const
 winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
 {
     auto result = winrt::make_self<Theme>();
-    result->LayerJson(json);
-    return result;
-}
 
-void Theme::LayerJson(const Json::Value& json)
-{
     if (json.isString())
     {
         // We found a string, not an object. Just secretly promote that string
         // to a theme object with just the applicationTheme set from that value.
-        JsonUtils::GetValue(json, _Name);
+        JsonUtils::GetValue(json, result->_Name);
         winrt::Windows::UI::Xaml::ElementTheme requestedTheme{ winrt::Windows::UI::Xaml::ElementTheme::Default };
         JsonUtils::GetValue(json, requestedTheme);
 
         auto window{ winrt::make_self<implementation::WindowTheme>() };
         window->RequestedTheme(requestedTheme);
-        _Window = *window;
+        result->_Window = *window;
 
-        return;
+        return result;
     }
 
-    JsonUtils::GetValueForKey(json, NameKey, _Name);
+    JsonUtils::GetValueForKey(json, NameKey, result->_Name);
 
     // This will use each of the ConversionTrait's from above to quickly parse the sub-objects
 
@@ -290,13 +284,15 @@ void Theme::LayerJson(const Json::Value& json)
         std::optional<type> _val;                                             \
         _val = JsonUtils::GetValueForKey<std::optional<type>>(json, jsonKey); \
         if (_val)                                                             \
-            _##name = *_val;                                                  \
+            result->_##name = *_val;                                          \
         else                                                                  \
-            _##name = nullptr;                                                \
+            result->_##name = nullptr;                                        \
     }
 
     MTSM_THEME_SETTINGS(THEME_SETTINGS_LAYER_JSON)
 #undef THEME_SETTINGS_LAYER_JSON
+
+    return result;
 }
 
 // Method Description:

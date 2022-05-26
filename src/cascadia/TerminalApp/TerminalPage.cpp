@@ -1412,8 +1412,7 @@ namespace winrt::TerminalApp::implementation
 
         term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
 
-        auto weakThis{ get_weak() };
-        term.PropertyChanged([weakThis](auto& /*sender*/, auto& e) {
+        term.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& e) {
             if (auto page{ weakThis.get() })
             {
                 if (e.PropertyName() == L"BackgroundBrush")
@@ -4050,12 +4049,11 @@ namespace winrt::TerminalApp::implementation
             const til::color backgroundColor = backgroundSolidBrush.Color();
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            acrylicBrush.FallbackColor(backgroundColor);
-            acrylicBrush.TintColor(backgroundColor);
+            acrylicBrush.FallbackColor(bgColor);
+            acrylicBrush.TintColor(bgColor);
             acrylicBrush.TintOpacity(0.5);
 
             TitlebarBrush(acrylicBrush);
-            bgColor = backgroundColor;
         }
         else if (theme.TabRow() && theme.TabRow().Background())
         {
