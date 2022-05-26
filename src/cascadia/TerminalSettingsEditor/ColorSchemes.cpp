@@ -69,21 +69,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
-        // Try to look up the scheme that was navigated to. If we find it, immediately select it.
-        //const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
-        //const auto it = std::find_if(begin(_ColorSchemeList),
-        //                             end(_ColorSchemeList),
-        //                             [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
 
-        //if (it != end(_ColorSchemeList))
-        //{
-        //    auto scheme = *it;
-        //    ColorSchemeComboBox().SelectedItem(scheme);
-        //}
-        //else
-        //{
-        //    ColorScheme(_AllColorSchemes.GetAt(0));
-        //}
+        // If there hasn't been a settings reload since the last time we came
+        // to the color schemes page, the view model has remained the same and knows
+        // the last selected color scheme, so just select that
+        ColorSchemeComboBox().SelectedItem(_ViewModel.CurrentScheme());
     }
 
     // Function Description:
