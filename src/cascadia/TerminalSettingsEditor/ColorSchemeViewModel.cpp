@@ -139,15 +139,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Tag(winrt::box_value(tag));
         Color(color);
     }
-
-    Windows::UI::Color ColorTableEntry::Color()
-    {
-        return _color;
-    }
-
-    void ColorTableEntry::Color(Windows::UI::Color newColor)
-    {
-        _color = newColor;
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Color" });
-    }
 }

@@ -102,7 +102,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                           const MUX::Controls::ColorChangedEventArgs& args)
     {
         const til::color newColor{ args.NewColor() };
-
         if (const auto& picker{ sender.try_as<MUX::Controls::ColorPicker>() })
         {
             if (const auto& tag{ picker.Tag() })
@@ -174,8 +173,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // Update current page
-        const auto newSchemeVM = _ViewModel.RequestAddNew();
-        ColorSchemeComboBox().SelectedItem(newSchemeVM);
+        ColorSchemeComboBox().SelectedItem(_ViewModel.RequestAddNew());
     }
 
     // Function Description:

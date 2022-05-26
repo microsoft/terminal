@@ -63,10 +63,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorTableEntry(uint8_t index, Windows::UI::Color color);
         ColorTableEntry(std::wstring_view tag, Windows::UI::Color color);
 
-        Windows::UI::Color Color();
-        void Color(Windows::UI::Color newColor);
-
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(IInspectable, Tag, _PropertyChangedHandlers);
 
