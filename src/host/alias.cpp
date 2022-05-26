@@ -62,8 +62,8 @@ std::unordered_map<std::wstring,
                                                         const std::string_view target,
                                                         const std::string_view exeName) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const codepage = gci.CP;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto codepage = gci.CP;
 
     try
     {
@@ -163,8 +163,8 @@ std::unordered_map<std::wstring,
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), targetString.size() == 0);
 
     // TargetLength is a byte count, convert to characters.
-    size_t targetSize = targetString.size();
-    size_t const cchNull = 1;
+    auto targetSize = targetString.size();
+    const size_t cchNull = 1;
 
     // The total space we need is the length of the string + the null terminator.
     size_t neededSize;
@@ -199,8 +199,8 @@ std::unordered_map<std::wstring,
                                                         size_t& written,
                                                         const std::string_view exeName) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const codepage = gci.CP;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto codepage = gci.CP;
 
     // Ensure output variables are initialized
     written = 0;
@@ -229,7 +229,7 @@ std::unordered_map<std::wstring,
         RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), 0 == target.size());
 
         // Allocate a unicode buffer of the right size.
-        std::unique_ptr<wchar_t[]> targetBuffer = std::make_unique<wchar_t[]>(targetNeeded);
+        auto targetBuffer = std::make_unique<wchar_t[]>(targetNeeded);
         RETURN_IF_NULL_ALLOC(targetBuffer);
 
         // Call the Unicode version of this method
@@ -277,7 +277,7 @@ std::unordered_map<std::wstring,
 
     try
     {
-        HRESULT hr = GetConsoleAliasWImplHelper(source, target, written, exeName);
+        auto hr = GetConsoleAliasWImplHelper(source, target, written, exeName);
 
         if (FAILED(hr))
         {
@@ -321,8 +321,8 @@ static std::wstring aliasesSeparator(L"=");
 
         // Each of the aliases will be made up of the source, a separator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
-        size_t const cchNull = 1;
-        size_t cchSeparator = aliasesSeparator.size();
+        const size_t cchNull = 1;
+        auto cchSeparator = aliasesSeparator.size();
         // If we're counting how much multibyte space will be needed, trial convert the separator before we add.
         if (!countInUnicode)
         {
@@ -337,8 +337,8 @@ static std::wstring aliasesSeparator(L"=");
             for (auto& pair : list)
             {
                 // Alias stores lengths in bytes.
-                size_t cchSource = pair.first.size();
-                size_t cchTarget = pair.second.size();
+                auto cchSource = pair.first.size();
+                auto cchTarget = pair.second.size();
 
                 // If we're counting how much multibyte space will be needed, trial convert the source and target strings before we add.
                 if (!countInUnicode)
@@ -373,8 +373,8 @@ static std::wstring aliasesSeparator(L"=");
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(const std::string_view exeName,
                                                                 size_t& bufferRequired) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const codepage = gci.CP;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto codepage = gci.CP;
 
     // Ensure output variables are initialized
     bufferRequired = 0;
@@ -453,12 +453,12 @@ void Alias::s_ClearCmdExeAliases()
 
     std::wstring exeNameString(exeName);
 
-    LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer->data() : nullptr;
+    auto AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer->data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
     // Each of the aliases will be made up of the source, a separator, the target, then a null character.
     // They are of the form "Source=Target" when returned.
-    size_t const cchNull = 1;
+    const size_t cchNull = 1;
 
     // Find without creating.
     auto exeIter = g_aliasData.find(exeNameString);
@@ -468,8 +468,8 @@ void Alias::s_ClearCmdExeAliases()
         for (auto& pair : list)
         {
             // Alias stores lengths in bytes.
-            size_t const cchSource = pair.first.size();
-            size_t const cchTarget = pair.second.size();
+            const auto cchSource = pair.first.size();
+            const auto cchTarget = pair.second.size();
 
             // Add up how many characters we will need for the full alias data.
             size_t cchNeeded = 0;
@@ -530,8 +530,8 @@ void Alias::s_ClearCmdExeAliases()
                                                           gsl::span<char> alias,
                                                           size_t& written) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const codepage = gci.CP;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto codepage = gci.CP;
 
     // Ensure output variables are initialized
     written = 0;
@@ -558,7 +558,7 @@ void Alias::s_ClearCmdExeAliases()
         RETURN_HR_IF(S_OK, 0 == bufferNeeded);
 
         // Allocate a unicode buffer of the right size.
-        std::unique_ptr<wchar_t[]> aliasBuffer = std::make_unique<wchar_t[]>(bufferNeeded);
+        auto aliasBuffer = std::make_unique<wchar_t[]>(bufferNeeded);
         RETURN_IF_NULL_ALLOC(aliasBuffer);
 
         // Call the Unicode version of this method
@@ -623,11 +623,11 @@ void Alias::s_ClearCmdExeAliases()
     size_t cchNeeded = 0;
 
     // Each alias exe will be made up of the string payload and a null terminator.
-    size_t const cchNull = 1;
+    const size_t cchNull = 1;
 
     for (auto& pair : g_aliasData)
     {
-        size_t cchExe = pair.first.size();
+        auto cchExe = pair.first.size();
 
         // If we're counting how much multibyte space will be needed, trial convert the exe string before we add.
         if (!countInUnicode)
@@ -654,7 +654,7 @@ void Alias::s_ClearCmdExeAliases()
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept
 {
     LockConsole();
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleAliasExesLengthImplHelper(false, gci.CP, bufferRequired);
@@ -698,15 +698,15 @@ void Alias::s_ClearCmdExeAliases()
         til::at(*aliasExesBuffer, 0) = UNICODE_NULL;
     }
 
-    LPWSTR AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer->data() : nullptr;
+    auto AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer->data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
-    size_t const cchNull = 1;
+    const size_t cchNull = 1;
 
     for (auto& pair : g_aliasData)
     {
         // AliasList stores length in bytes. Add 1 for null terminator.
-        size_t const cchExe = pair.first.size();
+        const auto cchExe = pair.first.size();
 
         size_t cchNeeded;
         RETURN_IF_FAILED(SizeTAdd(cchExe, cchNull, &cchNeeded));
@@ -748,8 +748,8 @@ void Alias::s_ClearCmdExeAliases()
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
                                                             size_t& written) noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    UINT const codepage = gci.CP;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto codepage = gci.CP;
 
     // Ensure output variables are initialized
     written = 0;
@@ -772,7 +772,7 @@ void Alias::s_ClearCmdExeAliases()
         RETURN_HR_IF(S_OK, 0 == bufferNeeded);
 
         // Allocate a unicode buffer of the right size.
-        std::unique_ptr<wchar_t[]> targetBuffer = std::make_unique<wchar_t[]>(bufferNeeded);
+        auto targetBuffer = std::make_unique<wchar_t[]>(bufferNeeded);
         RETURN_IF_NULL_ALLOC(targetBuffer);
 
         // Call the Unicode version of this method
@@ -1143,7 +1143,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
                                         size_t& lineCount)
 {
     // Copy source text into a local for manipulation.
-    std::wstring sourceCopy(sourceText);
+    auto sourceCopy = sourceText;
 
     // Trim trailing \r\n off of sourceCopy if it has one.
     s_TrimTrailingCrLf(sourceCopy);
@@ -1194,7 +1194,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
     const auto allParams = s_GetArgString(sourceCopy);
 
     // The final text will be the target but with macros replaced.
-    std::wstring finalText(target);
+    auto finalText = target;
     lineCount = s_ReplaceMacros(finalText, tokens, allParams);
 
     return finalText;

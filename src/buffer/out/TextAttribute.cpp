@@ -11,6 +11,8 @@ static_assert(sizeof(TextAttribute) == 14);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextAttribute>);
 
 namespace
 {
@@ -112,10 +114,10 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
 // - a WORD with legacy-style attributes for this textattribute.
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
-    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
-    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
+    const auto fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const auto bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = IsIntense() && _foreground.CanBeBrightened();
+    const auto brighten = IsIntense() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 

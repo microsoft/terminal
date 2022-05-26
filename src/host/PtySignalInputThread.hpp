@@ -15,10 +15,7 @@ Author(s):
 --*/
 #pragma once
 
-namespace Microsoft::Console::VirtualTerminal
-{
-    class ConGetSet;
-}
+#include "outputStream.hpp"
 
 namespace Microsoft::Console
 {
@@ -36,10 +33,12 @@ namespace Microsoft::Console
         PtySignalInputThread& operator=(const PtySignalInputThread&) = delete;
 
         void ConnectConsole() noexcept;
+        void CreatePseudoWindow();
 
     private:
         enum class PtySignal : unsigned short
         {
+            ShowHideWindow = 1,
             ClearBuffer = 2,
             SetParent = 3,
             ResizeWindow = 8
@@ -50,6 +49,12 @@ namespace Microsoft::Console
             unsigned short sx;
             unsigned short sy;
         };
+
+        struct ShowHideData
+        {
+            unsigned short show; // used as a bool, but passed as a ushort
+        };
+
         struct SetParentData
         {
             uint64_t handle;
@@ -60,6 +65,7 @@ namespace Microsoft::Console
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoSetWindowParent(const SetParentData& data);
         void _DoClearBuffer();
+        void _DoShowHide(const bool show);
         void _Shutdown();
 
         wil::unique_hfile _hFile;
@@ -67,7 +73,8 @@ namespace Microsoft::Console
         DWORD _dwThreadId;
         bool _consoleConnected;
         std::optional<ResizeWindowData> _earlyResize;
-        std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
+        std::optional<ShowHideData> _initialShowHide;
+        ConhostInternalGetSet _api;
 
     public:
         std::optional<SetParentData> _earlyReparent;

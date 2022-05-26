@@ -57,9 +57,9 @@ static bool ConhostV2ForcedInRegistry()
 {
     // If the registry value doesn't exist, or exists and is non-zero, we should default to using the v2 console.
     // Otherwise, in the case of an explicit value of 0, we should use the legacy console.
-    bool fShouldUseConhostV2 = true;
+    auto fShouldUseConhostV2 = true;
     PCSTR pszErrorDescription = nullptr;
-    bool fIgnoreError = false;
+    auto fIgnoreError = false;
     DWORD dwValue;
     DWORD dwType;
     DWORD cbValue = sizeof(dwValue);
@@ -106,7 +106,7 @@ static bool ConhostV2ForcedInRegistry()
     // Make sure this is a console file.
     FILE_FS_DEVICE_INFORMATION DeviceInformation;
     IO_STATUS_BLOCK IoStatusBlock;
-    NTSTATUS const Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
+    const auto Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
     if (!NT_SUCCESS(Status))
     {
         RETURN_NTSTATUS(Status);
@@ -140,7 +140,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
 [[nodiscard]] static HRESULT ActivateLegacyConhost(const HANDLE handle)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // TraceLog that we're using the legacy console. We won't log new console
     // because there's already a count of how many total processes were launched.
@@ -152,7 +152,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
                       TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY),
                       TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-    const PCWSTR pszConhostDllName = L"ConhostV1.dll";
+    const auto pszConhostDllName = L"ConhostV1.dll";
 
     // Load our implementation, and then Load/Launch the IO thread.
     wil::unique_hmodule hConhostBin(LoadLibraryExW(pszConhostDllName, nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
@@ -160,7 +160,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     {
         typedef NTSTATUS (*PFNCONSOLECREATEIOTHREAD)(__in HANDLE Server);
 
-        PFNCONSOLECREATEIOTHREAD pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
+        auto pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
         if (pfnConsoleCreateIoThread != nullptr)
         {
             hr = HRESULT_FROM_NT(pfnConsoleCreateIoThread(handle));
@@ -260,12 +260,12 @@ int CALLBACK wWinMain(
                           GetStdHandle(STD_INPUT_HANDLE),
                           GetStdHandle(STD_OUTPUT_HANDLE));
 
-    HRESULT hr = args.ParseCommandline();
+    auto hr = args.ParseCommandline();
     if (SUCCEEDED(hr))
     {
         // Only try to register as a handoff target if we are NOT a part of Windows.
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
-        bool defAppEnabled = false;
+        auto defAppEnabled = false;
         if (args.ShouldRunAsComServer() && SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(defAppEnabled)) && defAppEnabled)
         {
             try

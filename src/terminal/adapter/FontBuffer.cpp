@@ -478,7 +478,7 @@ std::tuple<size_t, size_t, size_t> FontBuffer::_calculateDimensions() const
     }
 }
 
-void FontBuffer::_packAndCenterBitPatterns()
+void FontBuffer::_packAndCenterBitPatterns() noexcept
 {
     // If this is a text font, we'll clip the bits up to the text width and
     // center them within the full cell width. For a full cell font we'll just
@@ -584,7 +584,7 @@ std::array<uint16_t, FontBuffer::MAX_HEIGHT> FontBuffer::_generateErrorGlyph()
         const auto yBit = (1 << y);
         if (heightMask & yBit)
         {
-            const uint16_t inputScanline = til::at(inputBitPattern, y);
+            const auto inputScanline = til::at(inputBitPattern, y);
             uint16_t outputScanline = 0;
             for (auto x = MAX_WIDTH; x-- > 0;)
             {

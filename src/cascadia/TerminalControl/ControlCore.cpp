@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     static bool _EnsureStaticInitialization()
     {
         // use C++11 magic statics to make sure we only do this once.
-        static bool initialized = []() {
+        static auto initialized = []() {
             // *** THIS IS A SINGLETON ***
             SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
 
@@ -93,12 +93,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTitleChanged = std::bind(&ControlCore::_terminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
-        auto pfnTabColorChanged = std::bind(&ControlCore::_terminalTabColorChanged, this, std::placeholders::_1);
-        _terminal->SetTabColorChangedCallback(pfnTabColorChanged);
-
-        auto pfnBackgroundColorChanged = std::bind(&ControlCore::_terminalBackgroundColorChanged, this, std::placeholders::_1);
-        _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
-
         auto pfnScrollPositionChanged = std::bind(&ControlCore::_terminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
@@ -107,6 +101,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
+
+        auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
+        _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
@@ -124,6 +121,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Now create the renderer and initialize the render thread.
             const auto& renderSettings = _terminal->GetRenderSettings();
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
+
+            _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
+            _renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });
 
             _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
                 if (auto strongThis{ weakThis.get() })
@@ -390,11 +390,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            // try to update the selection
-            if (const auto updateSlnParams{ ::Terminal::ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            if (_terminal->IsInMarkMode() && modifiers.IsCtrlPressed() && vkey == 'A')
             {
                 auto lock = _terminal->LockForWriting();
-                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second);
+                _terminal->SelectAll();
+                _renderer->TriggerSelection();
+                return true;
+            }
+
+            // try to update the selection
+            if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
                 _renderer->TriggerSelection();
                 return true;
             }
@@ -645,6 +653,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
 
+        // Trigger a redraw to repaint the window background and tab colors.
+        _renderer->TriggerRedrawAll(true, true);
+
         _updateAntiAliasingMode();
 
         if (sizeChanged)
@@ -706,8 +717,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   concerned with initialization process. Value forwarded to event handler.
     void ControlCore::_updateFont(const bool initialUpdate)
     {
-        const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
-                                            _compositionScale);
+        const auto newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
+                                             _compositionScale);
 
         _terminal->SetFontInfo(_actualFont);
 
@@ -844,7 +855,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
-        const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
         if (SUCCEEDED(hr) && hr != S_FALSE)
         {
             _connection.Resize(vp.Height(), vp.Width());
@@ -890,7 +901,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _refreshSizeUnderLock();
     }
 
-    void ControlCore::SetSelectionAnchor(til::point const& position)
+    void ControlCore::SetSelectionAnchor(const til::point& position)
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SetSelectionAnchor(position.to_win32_coord());
@@ -900,7 +911,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - position: the point in terminal coordinates (in cells, not pixels)
-    void ControlCore::SetEndSelectionPoint(til::point const& position)
+    void ControlCore::SetEndSelectionPoint(const til::point& position)
     {
         if (!_terminal->IsSelectionActive())
         {
@@ -990,6 +1001,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                        winrt::to_hstring(rtfData),
                                                                        formats));
         return true;
+    }
+
+    void ControlCore::SelectAll()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->SelectAll();
+        _renderer->TriggerSelection();
+    }
+
+    void ControlCore::ToggleMarkMode()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->ToggleMarkMode();
+        _renderer->TriggerSelection();
+    }
+
+    bool ControlCore::IsInMarkMode() const
+    {
+        return _terminal->IsInMarkMode();
     }
 
     // Method Description:
@@ -1136,36 +1166,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Called for the Terminal's TabColorChanged callback. This will re-raise
-    //   a new winrt TypedEvent that can be listened to.
-    // - The listeners to this event will re-query the control for the current
-    //   value of TabColor().
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ControlCore::_terminalTabColorChanged(const std::optional<til::color> /*color*/)
-    {
-        // Raise a TabColorChanged event
-        _TabColorChangedHandlers(*this, nullptr);
-    }
-
-    // Method Description:
-    // - Called for the Terminal's BackgroundColorChanged callback. This will
-    //   re-raise a new winrt TypedEvent that can be listened to.
-    // - The listeners to this event will re-query the control for the current
-    //   value of BackgroundColor().
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ControlCore::_terminalBackgroundColorChanged(const COLORREF /*color*/)
-    {
-        // Raise a BackgroundColorChanged event
-        _BackgroundColorChangedHandlers(*this, nullptr);
-    }
-
-    // Method Description:
     // - Update the position and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   Additionally fires a ScrollPositionChanged event for anyone who's
@@ -1212,6 +1212,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_terminalTaskbarProgressChanged()
     {
         _TaskbarProgressChangedHandlers(*this, nullptr);
+    }
+
+    void ControlCore::_terminalShowWindowChanged(bool showOrHide)
+    {
+        if (_initializedTerminal)
+        {
+            auto showWindow = winrt::make_self<implementation::ShowWindowArgs>(showOrHide);
+            _ShowWindowChangedHandlers(*this, *showWindow);
+        }
     }
 
     bool ControlCore::HasSelection() const
@@ -1261,17 +1270,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const Search::Direction direction = goForward ?
-                                                Search::Direction::Forward :
-                                                Search::Direction::Backward;
+        const auto direction = goForward ?
+                                   Search::Direction::Forward :
+                                   Search::Direction::Backward;
 
-        const Search::Sensitivity sensitivity = caseSensitive ?
-                                                    Search::Sensitivity::CaseSensitive :
-                                                    Search::Sensitivity::CaseInsensitive;
+        const auto sensitivity = caseSensitive ?
+                                     Search::Sensitivity::CaseSensitive :
+                                     Search::Sensitivity::CaseInsensitive;
 
         ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
-        const bool foundMatch{ search.FindNext() };
+        const auto foundMatch{ search.FindNext() };
         if (foundMatch)
         {
             _terminal->SetBlockSelection(false);
@@ -1351,6 +1360,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _SwapChainChangedHandlers(*this, nullptr);
     }
 
+    void ControlCore::_rendererBackgroundColorChanged()
+    {
+        _BackgroundColorChangedHandlers(*this, nullptr);
+    }
+
+    void ControlCore::_rendererTabColorChanged()
+    {
+        _TabColorChangedHandlers(*this, nullptr);
+    }
+
     void ControlCore::BlinkAttributeTick()
     {
         auto lock = _terminal->LockForWriting();
@@ -1423,7 +1442,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        ::Terminal::SelectionExpansion mode = ::Terminal::SelectionExpansion::Char;
+        auto mode = ::Terminal::SelectionExpansion::Char;
         if (numberOfClicks == 1)
         {
             mode = ::Terminal::SelectionExpansion::Char;
@@ -1516,7 +1535,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
         {
-            _terminal->EraseInDisplay(::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType::Scrollback);
+            _terminal->EraseScrollback();
         }
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
@@ -1675,8 +1694,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
-        _renderer->TriggerRedrawAll();
-        _BackgroundColorChangedHandlers(*this, nullptr);
+        _renderer->TriggerRedrawAll(true);
     }
 
     bool ControlCore::HasUnfocusedAppearance() const
@@ -1693,6 +1711,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             _setOpacity(opacityAdjust);
+        }
+    }
+
+    // Method Description:
+    // - Notifies the attached PTY that the window has changed visibility state
+    // - NOTE: Most VT commands are generated in `TerminalDispatch` and sent to this
+    //         class as the target for transmission. But since this message isn't
+    //         coming in via VT parsing (and rather from a window state transition)
+    //         we generate and send it here.
+    // Arguments:
+    // - visible: True for visible; false for not visible.
+    // Return Value:
+    // - <none>
+    void ControlCore::WindowVisibilityChanged(const bool showOrHide)
+    {
+        if (_initializedTerminal)
+        {
+            // show is true, hide is false
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ShowHide(showOrHide);
+            }
         }
     }
 
@@ -1727,6 +1767,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then the renderer should not render "default background" text with a
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
-        return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
+        return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
     }
 }

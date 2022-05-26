@@ -174,6 +174,15 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
+    const u16x2 cellCount{
+        gsl::narrow_cast<u16>(srNewViewport.Right - srNewViewport.Left + 1),
+        gsl::narrow_cast<u16>(srNewViewport.Bottom - srNewViewport.Top + 1),
+    };
+    if (_api.cellCount != cellCount)
+    {
+        _api.cellCount = cellCount;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
+    }
     return S_OK;
 }
 
@@ -396,7 +405,6 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     if (_api.sizeInPixel != newSize && newSize != u16x2{})
     {
         _api.sizeInPixel = newSize;
-        _api.cellCount = _api.sizeInPixel / _api.fontMetrics.cellSize;
         WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
     }
 
@@ -536,7 +544,6 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
 
     if (previousCellSize != _api.fontMetrics.cellSize)
     {
-        _api.cellCount = _api.sizeInPixel / _api.fontMetrics.cellSize;
         WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
     }
 }

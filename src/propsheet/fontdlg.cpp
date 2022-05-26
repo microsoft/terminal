@@ -78,8 +78,8 @@ UINT GetItemHeight(const HWND hDlg)
     GetObject(hbmTT, sizeof(BITMAP), &bmTT);
 
     // Compute the height of face name listbox entries
-    HDC hDC = GetDC(hDlg);
-    HFONT hFont = GetWindowFont(hDlg);
+    auto hDC = GetDC(hDlg);
+    auto hFont = GetWindowFont(hDlg);
     if (hFont)
     {
         hFont = (HFONT)SelectObject(hDC, hFont);
@@ -104,7 +104,7 @@ BOOL ShouldAllowAllMonoTTFonts()
 // Given pwszTTFace and optional pwszAltTTFace, determine if the font is only available in bold weights
 BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
 {
-    BOOL fFoundNormalWeightFont = FALSE;
+    auto fFoundNormalWeightFont = FALSE;
 
     for (ULONG i = 0; i < NumberOfFonts; i++)
     {
@@ -155,7 +155,7 @@ BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
 // 1. Get currently entered font size
 // 2. Check to see if the size is a valid custom size
 // 3. If the size is custom, add it to the points size list
-static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
+static void AddCustomFontSizeToListIfNeeded(const __in HWND hDlg)
 {
     WCHAR wszBuf[3]; // only need space for point sizes. the max we allow is "72"
 
@@ -164,14 +164,14 @@ static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
     {
         // we have text, now retrieve it as an actual size
         BOOL fTranslated;
-        const SHORT nPointSize = (SHORT)GetDlgItemInt(hDlg, IDD_POINTSLIST, &fTranslated, TRUE);
+        const auto nPointSize = (SHORT)GetDlgItemInt(hDlg, IDD_POINTSLIST, &fTranslated, TRUE);
         if (fTranslated &&
             nPointSize >= MIN_PIXEL_HEIGHT &&
             nPointSize <= MAX_PIXEL_HEIGHT &&
             IsFontSizeCustom(gpStateInfo->FaceName, nPointSize))
         {
             // we got a proper custom size. let's see if it's in our point size list
-            LONG iSize = (LONG)SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)wszBuf);
+            auto iSize = (LONG)SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)wszBuf);
             if (iSize == CB_ERR)
             {
                 // the size isn't in our list, so we haven't created them yet. do so now.
@@ -182,7 +182,7 @@ static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
                 SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_SETCURSEL, iSize, 0);
 
                 // get the current font selection
-                LONG lCurrentFont = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0);
+                auto lCurrentFont = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0);
 
                 // now get the current font's face name
                 WCHAR wszFontFace[LF_FACESIZE];
@@ -197,11 +197,11 @@ static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
                 COORD coordFontSize;
                 coordFontSize.X = 0;
                 coordFontSize.Y = nPointSize;
-                const int iFont = FindCreateFont(FF_MODERN | TMPF_VECTOR | TMPF_TRUETYPE,
-                                                 wszFontFace,
-                                                 coordFontSize,
-                                                 0,
-                                                 gpStateInfo->CodePage);
+                const auto iFont = FindCreateFont(FF_MODERN | TMPF_VECTOR | TMPF_TRUETYPE,
+                                                  wszFontFace,
+                                                  coordFontSize,
+                                                  0,
+                                                  gpStateInfo->CodePage);
                 SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_SETITEMDATA, (WPARAM)iSize, (LPARAM)iFont);
             }
         }
@@ -538,9 +538,9 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
                         const BOOL fAddBoldFonts)
 {
     WCHAR wszText[80];
-    int iLastShowX = 0;
-    int iLastShowY = 0;
-    int nSameSize = 0;
+    auto iLastShowX = 0;
+    auto iLastShowY = 0;
+    auto nSameSize = 0;
 
     for (ULONG i = 0; i < NumberOfFonts; i++)
     {
@@ -663,7 +663,7 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
             }
         }
 
-        LONG lListIndex = lcbFINDSTRINGEXACT(hWndShow, fRasterFont, wszText);
+        auto lListIndex = lcbFINDSTRINGEXACT(hWndShow, fRasterFont, wszText);
         if (lListIndex == LB_ERR)
         {
             lListIndex = lcbADDSTRING(hWndShow, fRasterFont, wszText);
@@ -696,8 +696,8 @@ int FontListCreate(
     HWND hWndHide; // Combo or List box
     HWND hWndFaceCombo;
     BOOL bLB;
-    UINT CodePage = gpStateInfo->CodePage;
-    BOOL fFindTTFont = FALSE;
+    auto CodePage = gpStateInfo->CodePage;
+    auto fFindTTFont = FALSE;
     LPWSTR pwszAltTTFace;
     LONG_PTR dwExStyle;
 
@@ -1026,7 +1026,7 @@ Return Value:
 
 {
     WCHAR szBuf[90];
-    int nTmp = 0;
+    auto nTmp = 0;
     BOOL bOK;
 
     if (GetDlgItemText(hDlg, IDD_POINTSLIST, szBuf, ARRAYSIZE(szBuf)))
@@ -1130,7 +1130,7 @@ int FindCreateFont(
 #define NOT_CREATED_NOR_FOUND -1
 #define CREATED_BUT_NOT_FOUND -2
 
-    int FontIndex = NOT_CREATED_NOR_FOUND;
+    auto FontIndex = NOT_CREATED_NOR_FOUND;
     BOOL bFontOK;
     WCHAR AltFaceName[LF_FACESIZE];
     COORD AltFontSize;
@@ -1138,7 +1138,7 @@ int FindCreateFont(
     ULONG AltFontIndex = 0, i;
     LPWSTR pwszAltFace;
 
-    BYTE CharSet = CodePageToCharSet(CodePage);
+    auto CharSet = CodePageToCharSet(CodePage);
 
     FAIL_FAST_IF(!(OEMCP != 0));
 

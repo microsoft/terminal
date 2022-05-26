@@ -21,11 +21,11 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - True if the event is handled. False otherwise.
 Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(!IsInSelectingState());
 
-    const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
-    const bool ctrlPressed = WI_IsFlagSet(GetKeyState(VK_CONTROL), KEY_PRESSED);
+    const auto wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
+    const auto ctrlPressed = WI_IsFlagSet(GetKeyState(VK_CONTROL), KEY_PRESSED);
 
     // if escape or ctrl-c, cancel selection
     if (!IsMouseButtonDown())
@@ -94,9 +94,9 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
 // - Keyboard handling cases in this function should be synchronized with HandleKeyboardLineSelectionEvent
 bool Selection::s_IsValidKeyboardLineSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
-    bool fIsValidCombination = false;
+    auto fIsValidCombination = false;
 
-    const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
+    const auto wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     if (pInputKeyInfo->IsShiftOnly())
     {
@@ -145,9 +145,9 @@ COORD Selection::WordByWordSelection(const bool fReverse,
                                      const COORD coordAnchor,
                                      const COORD coordSelPoint) const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    COORD outCoord = coordSelPoint;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& screenInfo = gci.GetActiveOutputBuffer();
+    auto outCoord = coordSelPoint;
 
     // first move one character in the requested direction
     if (!fReverse)
@@ -163,13 +163,13 @@ COORD Selection::WordByWordSelection(const bool fReverse,
     auto charData = *screenInfo.GetTextDataAt(outCoord);
 
     // we want to go until the state change from delim to non-delim
-    bool fCurrIsDelim = IsWordDelim(charData);
+    auto fCurrIsDelim = IsWordDelim(charData);
     bool fPrevIsDelim;
 
     // find the edit-line boundaries that we can highlight
     COORD coordMaxLeft;
     COORD coordMaxRight;
-    const bool fSuccess = s_GetInputLineBoundaries(&coordMaxLeft, &coordMaxRight);
+    const auto fSuccess = s_GetInputLineBoundaries(&coordMaxLeft, &coordMaxRight);
 
     // if line boundaries fail, then set them to the buffer corners so they don't restrict anything.
     if (!fSuccess)
@@ -183,7 +183,7 @@ COORD Selection::WordByWordSelection(const bool fReverse,
 
     // track whether we failed to move during an operation
     // if we failed to move, we hit the end of the buffer and should just highlight to there and be done.
-    bool fMoveSucceeded = false;
+    auto fMoveSucceeded = false;
 
     // determine if we're highlighting more text or unhighlighting already selected text.
     bool fUnhighlighting;
@@ -284,8 +284,8 @@ COORD Selection::WordByWordSelection(const bool fReverse,
 // - Keyboard handling cases in this function should be synchronized with IsValidKeyboardLineSelection
 bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     // if this isn't a valid key combination for this function, exit quickly.
     if (!s_IsValidKeyboardLineSelection(pInputKeyInfo))
@@ -318,10 +318,10 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     }
 
     // anchor is the first clicked position
-    const COORD coordAnchor = _coordSelectionAnchor;
+    const auto coordAnchor = _coordSelectionAnchor;
 
     // rect covers the entire selection
-    const SMALL_RECT rectSelection = _srSelectionRect;
+    const auto rectSelection = _srSelectionRect;
 
     // the selection point is the other corner of the rectangle from the anchor that we're about to manipulate
     COORD coordSelPoint;
@@ -331,7 +331,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     // this is the maximum size of the buffer
     const auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
 
-    const SHORT sWindowHeight = gci.GetActiveOutputBuffer().GetViewport().Height();
+    const auto sWindowHeight = gci.GetActiveOutputBuffer().GetViewport().Height();
 
     FAIL_FAST_IF(!bufferSize.IsInBounds(coordSelPoint));
 
@@ -340,7 +340,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 
     COORD coordInputLineStart;
     COORD coordInputLineEnd;
-    bool fHaveInputLine = s_GetInputLineBoundaries(&coordInputLineStart, &coordInputLineEnd);
+    auto fHaveInputLine = s_GetInputLineBoundaries(&coordInputLineStart, &coordInputLineEnd);
 
     if (pInputKeyInfo->IsShiftOnly())
     {
@@ -586,7 +586,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         if (attr.IsTrailing())
         {
             // try to move off by highlighting the lead half too.
-            bool fSuccess = bufferSize.DecrementInBounds(coordSelPoint);
+            auto fSuccess = bufferSize.DecrementInBounds(coordSelPoint);
 
             // if that fails, move off to the next character
             if (!fSuccess)
@@ -623,15 +623,15 @@ void Selection::CheckAndSetAlternateSelection()
 // - True if the event is handled. False otherwise.
 bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     //  It's a numeric key,  a text mode buffer and the color selection regkey is set,
     //  then check to see if the user wants to color the selection or search and
     //  highlight the selection.
-    bool fAltPressed = pInputKeyInfo->IsAltPressed();
-    bool fShiftPressed = pInputKeyInfo->IsShiftPressed();
-    bool fCtrlPressed = false;
+    auto fAltPressed = pInputKeyInfo->IsAltPressed();
+    auto fShiftPressed = pInputKeyInfo->IsShiftPressed();
+    auto fCtrlPressed = false;
 
     // Shift implies a find-and-color operation.
     // We only support finding a string,  not a block.
@@ -650,7 +650,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         fCtrlPressed = pInputKeyInfo->IsCtrlPressed();
     }
 
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
 
     //  Clip the selection to within the console buffer
     screenInfo.ClipToScreenBuffer(&_srSelectionRect);
@@ -741,8 +741,8 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 // - True if the event is handled. False otherwise.
 bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const WORD wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
 
     // we're selecting via keyboard -- handle keystrokes
     if (wVirtualKeyCode == VK_RIGHT ||
@@ -754,12 +754,12 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         wVirtualKeyCode == VK_END ||
         wVirtualKeyCode == VK_HOME)
     {
-        SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
-        TextBuffer& textBuffer = ScreenInfo.GetTextBuffer();
+        auto& ScreenInfo = gci.GetActiveOutputBuffer();
+        auto& textBuffer = ScreenInfo.GetTextBuffer();
         SHORT iNextRightX = 0;
         SHORT iNextLeftX = 0;
 
-        const COORD cursorPos = textBuffer.GetCursor().GetPosition();
+        const auto cursorPos = textBuffer.GetCursor().GetPosition();
 
         try
         {
@@ -810,7 +810,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
         CATCH_LOG();
 
-        Cursor& cursor = textBuffer.GetCursor();
+        auto& cursor = textBuffer.GetCursor();
         switch (wVirtualKeyCode)
         {
         case VK_RIGHT:
@@ -852,7 +852,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         case VK_NEXT:
         {
             cursor.IncrementYPosition(ScreenInfo.GetViewport().Height() - 1);
-            const COORD coordBufferSize = ScreenInfo.GetTerminalBufferSize().Dimensions();
+            const auto coordBufferSize = ScreenInfo.GetTerminalBufferSize().Dimensions();
             if (cursor.GetPosition().Y >= coordBufferSize.Y)
             {
                 cursor.SetYPosition(coordBufferSize.Y - 1);
@@ -927,7 +927,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 
             cursor.SetHasMoved(true);
             _coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
-            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor, false);
+            ScreenInfo.MakeCursorVisible(_coordSelectionAnchor);
             _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
             _srSelectionRect.Top = _srSelectionRect.Bottom = _coordSelectionAnchor.Y;
         }
@@ -948,7 +948,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 // - If true, the boundaries returned are valid. If false, they should be discarded.
 [[nodiscard]] bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();
 
     auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
@@ -963,8 +963,8 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
     }
 
     const auto& cookedRead = gci.CookedReadData();
-    const COORD coordStart = cookedRead.OriginalCursorPosition();
-    COORD coordEnd = cookedRead.OriginalCursorPosition();
+    const auto coordStart = cookedRead.OriginalCursorPosition();
+    auto coordEnd = cookedRead.OriginalCursorPosition();
 
     if (coordEnd.X < 0 && coordEnd.Y < 0)
     {
@@ -1005,12 +1005,12 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 // - If true, the boundaries returned are valid. If false, they should be discarded.
 void Selection::GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, _Out_opt_ COORD* const pcoordValidEnd) const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD coordEnd;
     coordEnd.X = 0;
     coordEnd.Y = 0;
 
-    const bool fHaveInput = s_GetInputLineBoundaries(nullptr, &coordEnd);
+    const auto fHaveInput = s_GetInputLineBoundaries(nullptr, &coordEnd);
 
     if (!fHaveInput)
     {
@@ -1049,7 +1049,7 @@ void Selection::GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, 
 // - True if it's within the bounds (inclusive). False otherwise.
 bool Selection::s_IsWithinBoundaries(const COORD coordPosition, const COORD coordStart, const COORD coordEnd)
 {
-    bool fInBoundaries = false;
+    auto fInBoundaries = false;
 
     if (Utils::s_CompareCoords(coordStart, coordPosition) <= 0)
     {

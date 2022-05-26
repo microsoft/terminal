@@ -142,7 +142,7 @@ VtIo::VtIo() :
     }
     auto& globals = ServiceLocator::LocateGlobals();
 
-    const CONSOLE_INFORMATION& gci = globals.getConsoleInformation();
+    const auto& gci = globals.getConsoleInformation();
 
     try
     {
@@ -153,9 +153,9 @@ VtIo::VtIo() :
 
         if (IsValidHandle(_hOutput.get()))
         {
-            Viewport initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                                gci.GetWindowSize().X,
-                                                                gci.GetWindowSize().Y);
+            auto initialViewport = Viewport::FromDimensions({ 0, 0 },
+                                                            gci.GetWindowSize().X,
+                                                            gci.GetWindowSize().Y);
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
@@ -248,7 +248,7 @@ bool VtIo::IsUsingVt() const
     {
         return S_FALSE;
     }
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
 
     if (_pVtRenderEngine)
     {
@@ -257,6 +257,10 @@ bool VtIo::IsUsingVt() const
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
+            ServiceLocator::SetPseudoWindowCallback([&](bool showOrHide) -> void {
+                // Set the remote window visibility to the request
+                LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
+            });
         }
         CATCH_RETURN();
     }
@@ -296,16 +300,32 @@ bool VtIo::IsUsingVt() const
 
     if (_pPtySignalInputThread)
     {
-        // IMPORTANT! Start the pseudo window on this thread. This thread has a
-        // message pump. If you DON'T, then a DPI change in the owning hwnd will
-        // cause us to get a dpi change as well, which we'll never deque and
-        // handle, effectively HANGING THE OWNER HWND.
+        // Let the signal thread know that the console is connected.
         //
-        // Let the signal thread know that the console is connected
+        // By this point, the pseudo window should have already been created, by
+        // ConsoleInputThreadProcWin32. That thread has a message pump, which is
+        // needed to ensure that DPI change messages to the owning terminal
+        // window don't end up hanging because the pty didn't also process it.
         _pPtySignalInputThread->ConnectConsole();
     }
 
     return S_OK;
+}
+
+// Method Description:
+// - Create our pseudo window. This is exclusively called by
+//   ConsoleInputThreadProcWin32 on the console input thread.
+//    * It needs to be called on that thread, before any other calls to
+//      LocatePseudoWindow, to make sure that the input thread is the HWND's
+//      message thread.
+//    * It needs to be plumbed through the signal thread, because the signal
+//      thread knows if someone should be marked as the window's owner. It's
+//      VERY IMPORTANT that any initial owners are set up when the window is
+//      first created.
+// - Refer to GH#13066 for details.
+void VtIo::CreatePseudoWindow()
+{
+    _pPtySignalInputThread->CreatePseudoWindow();
 }
 
 // Method Description:
@@ -354,7 +374,7 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::SuppressResizeRepaint()
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SuppressResizeRepaint();
@@ -372,7 +392,7 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT
 [[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_lookingForCursorPosition)
     {
         if (_pVtRenderEngine)
@@ -387,7 +407,7 @@ bool VtIo::IsUsingVt() const
 
 [[nodiscard]] HRESULT VtIo::SwitchScreenBuffer(const bool useAltBuffer)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SwitchScreenBuffer(useAltBuffer);
@@ -408,7 +428,7 @@ void VtIo::CloseOutput()
     // This will release the lock when it goes out of scope
     std::lock_guard<std::mutex> lk(_shutdownLock);
 
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
     // DON'T RemoveRenderEngine, as that requires the engine list lock, and this
     // is usually being triggered on a paint operation, when the lock is already
     // owned by the paint.

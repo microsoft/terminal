@@ -145,9 +145,9 @@ std::string GenerateFuzzedToken(
     __in DWORD ctokens)
 {
     std::string csis[] = { CSI, C1CSI };
-    std::string s = CFuzzChance::SelectOne(csis);
+    auto s = CFuzzChance::SelectOne(csis);
 
-    BYTE manipulations = (BYTE)CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1);
+    auto manipulations = (BYTE)CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1);
     for (BYTE i = 0; i < manipulations; i++)
     {
         CFuzzType<std::string> ft(map, cmap, std::string(""));
@@ -169,7 +169,7 @@ std::string GenerateFuzzedOscToken(
     __in DWORD ctokens)
 {
     std::string s(OSC);
-    BYTE manipulations = (BYTE)CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1);
+    auto manipulations = (BYTE)CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1);
     for (BYTE i = 0; i < manipulations; i++)
     {
         CFuzzType<std::string> ft(map, cmap, std::string(""));
@@ -411,7 +411,7 @@ std::string GenerateOscTitleToken()
         { 100,
           [](std::string) {
               std::string s;
-              SHORT limit = CFuzzChance::GetRandom<SHORT>(0, 10);
+              auto limit = CFuzzChance::GetRandom<SHORT>(0, 10);
               // append up to 10 numbers for the param
               for (SHORT i = 0; i < limit; i++)
               {
@@ -440,7 +440,7 @@ std::string GenerateOscColorTableToken()
         { 100,
           [](std::string) {
               std::string s;
-              SHORT limit = CFuzzChance::GetRandom<SHORT>(0, 10);
+              auto limit = CFuzzChance::GetRandom<SHORT>(0, 10);
               // append up to 10 numbers for the param
               for (SHORT i = 0; i < limit; i++)
               {
@@ -486,7 +486,7 @@ std::string GenerateOscColorTableToken()
                       }
                   }
 
-                  SHORT numColors = CFuzzChance::GetRandom<SHORT>(0, 5);
+                  auto numColors = CFuzzChance::GetRandom<SHORT>(0, 5);
 
                   // append up to 10 numbers for the param
                   for (SHORT i = 0; i < numColors; i++)
@@ -549,11 +549,11 @@ std::string GenerateOscHyperlinkToken()
               s.append(";");
 
               // Maybe append some key-value pairs
-              SHORT numPairs = CFuzzChance::GetRandom<SHORT>(0, 5);
+              auto numPairs = CFuzzChance::GetRandom<SHORT>(0, 5);
               for (SHORT i = 0; i < numPairs; i++)
               {
                   // usually add an id
-                  SHORT limit = CFuzzChance::GetRandom<SHORT>(0, 10);
+                  auto limit = CFuzzChance::GetRandom<SHORT>(0, 10);
                   switch (limit)
                   {
                   case 0:
@@ -590,7 +590,7 @@ std::string GenerateOscHyperlinkToken()
 
               s.append(";");
               // append some characters for the uri
-              SHORT limit = CFuzzChance::GetRandom<SHORT>();
+              auto limit = CFuzzChance::GetRandom<SHORT>();
               for (SHORT i = 0; i < limit; i++)
               {
                   AppendFormat(s, "%c", CFuzzChance::GetRandom<BYTE>());
@@ -610,10 +610,10 @@ int __cdecl wmain(int argc, WCHAR* argv[])
         return -1;
     }
 
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    auto hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (SUCCEEDED(hr))
     {
-        LPWSTR pwszOutputDir = argv[2];
+        auto pwszOutputDir = argv[2];
         DWORD dwFileCount = _wtoi(argv[1]);
         for (DWORD i = 0; i < dwFileCount; i++)
         {
@@ -632,7 +632,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
                 outputFile += L"\\" + sGuid + L".bin";
 
                 std::string text;
-                for (int j = 0; j < CFuzzChance::GetRandom<BYTE>(); j++)
+                for (auto j = 0; j < CFuzzChance::GetRandom<BYTE>(); j++)
                 {
                     text.append(GenerateToken());
                 }

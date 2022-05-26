@@ -9,34 +9,58 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
       mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
+
+                <ResourceDictionary>
+                    <ResourceDictionary.ThemeDictionaries>
+
+                        <!--
+                            These two values are "SolidBackgroundFillColorTertiary".
+                            We can't just put those here though as
+                            StaticResources, because XAML will evaluate their
+                            values when the App is first loaded, and we'll
+                            always use the value from the OS theme, regardless
+                            of the requested theme. Kinda the same thing we've
+                            had to do with TabViewBackground in the past.
+                        -->
+
+                        <ResourceDictionary x:Key="Dark">
+                            <Color x:Key="SettingsPageBackground">#282828</Color>
+                        </ResourceDictionary>
+
+                        <ResourceDictionary x:Key="Light">
+                            <Color x:Key="SettingsPageBackground">#F9F9F9</Color>
+                        </ResourceDictionary>
+
+                        <ResourceDictionary x:Key="HighContrast">
+                            <!--  Define resources for HighContrast mode here  -->
+                            <StaticResource x:Key="SettingsPageBackground"
+                                            ResourceKey="SystemColorWindowColorBrush" />
+                        </ResourceDictionary>
+
+                    </ResourceDictionary.ThemeDictionaries>
+                </ResourceDictionary>
+
             </ResourceDictionary.MergedDictionaries>
 
-            <AcrylicBrush x:Key="NavigationViewDefaultPaneBackground"
-                          BackgroundSource="Backdrop"
-                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
-                          TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.5" />
-            <AcrylicBrush x:Key="NavigationViewTopPaneBackground"
-                          BackgroundSource="Backdrop"
-                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
-                          TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.5" />
-            <AcrylicBrush x:Key="NavigationViewExpandedPaneBackground"
-                          BackgroundSource="HostBackdrop"
-                          FallbackColor="{ThemeResource SystemChromeMediumLowColor}"
-                          TintColor="{ThemeResource SystemChromeMediumColor}"
-                          TintOpacity="0.7" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"
+                             Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground"
+                             Color="Transparent" />
+
+            <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
+            <Thickness x:Key="NavigationViewMinimalContentGridBorderThickness">0</Thickness>
+
         </ResourceDictionary>
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
+                         Background="{ThemeResource SettingsPageBackground}"
                          IsBackButtonVisible="Collapsed"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
@@ -156,7 +180,7 @@
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"
                   Height="80"
-                  BorderBrush="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                  BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                   BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

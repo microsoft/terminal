@@ -127,7 +127,7 @@ bool InputStateMachineEngine::ActionExecute(const wchar_t wch)
 // - True if successfully generated and written. False otherwise.
 bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool writeAlt)
 {
-    bool success = false;
+    auto success = false;
     if (wch == UNICODE_ETX && !writeAlt)
     {
         // This is Ctrl+C, which is handled specially by the host.
@@ -138,8 +138,8 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
     {
         // This is a C0 Control Character.
         // This should be translated as Ctrl+(wch+x40)
-        wchar_t actualChar = wch;
-        bool writeCtrl = true;
+        auto actualChar = wch;
+        auto writeCtrl = true;
 
         short vkey = 0;
         DWORD modifierState = 0;
@@ -238,7 +238,7 @@ bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     short vkey = 0;
     DWORD modifierState = 0;
-    bool success = _GenerateKeyFromChar(wch, vkey, modifierState);
+    auto success = _GenerateKeyFromChar(wch, vkey, modifierState);
     if (success)
     {
         success = _WriteSingleKey(wch, vkey, modifierState);
@@ -303,10 +303,10 @@ bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
         return _pfnFlushToInputQueue();
     }
 
-    bool success = false;
+    auto success = false;
 
     // There are no intermediates, so the id is effectively the final char.
-    const wchar_t wch = gsl::narrow_cast<wchar_t>(id);
+    const auto wch = gsl::narrow_cast<wchar_t>(id);
 
     // 0x7f is DEL, which we treat effectively the same as a ctrl character.
     if (wch == 0x7f)
@@ -377,7 +377,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     DWORD modifierState = 0;
     short vkey = 0;
 
-    bool success = false;
+    auto success = false;
     switch (id)
     {
     case CsiActionCodes::MouseDown:
@@ -490,7 +490,7 @@ bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch, const VTParam
     const DWORD modifierState = 0;
     short vkey = 0;
 
-    bool success = _GetSs3KeysVkey(wch, vkey);
+    auto success = _GetSs3KeysVkey(wch, vkey);
 
     if (success)
     {
@@ -565,9 +565,9 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
     //       that aren't on the current keyboard.
     // MSFT:13994942
 
-    const bool shift = WI_IsFlagSet(modifierState, SHIFT_PRESSED);
-    const bool ctrl = WI_IsFlagSet(modifierState, LEFT_CTRL_PRESSED);
-    const bool alt = WI_IsFlagSet(modifierState, LEFT_ALT_PRESSED);
+    const auto shift = WI_IsFlagSet(modifierState, SHIFT_PRESSED);
+    const auto ctrl = WI_IsFlagSet(modifierState, LEFT_CTRL_PRESSED);
+    const auto alt = WI_IsFlagSet(modifierState, LEFT_ALT_PRESSED);
 
     INPUT_RECORD next{ 0 };
 
@@ -702,7 +702,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
     // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
     std::vector<INPUT_RECORD> input;
     _GenerateWrappedSequence(wch, vkey, modifierState, input);
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(input));
+    auto inputEvents = IInputEvent::Create(gsl::make_span(input));
 
     return _pDispatch->WriteInput(inputEvents);
 }
@@ -717,7 +717,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
 // - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modifierState)
 {
-    const wchar_t wch = gsl::narrow_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
+    const auto wch = gsl::narrow_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
     return _WriteSingleKey(wch, vkey, modifierState);
 }
 
@@ -742,7 +742,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWO
 
     // pack and write input record
     // 1 record - the modifiers don't get their own events
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(gsl::make_span(&rgInput, 1));
+    auto inputEvents = IInputEvent::Create(gsl::make_span(&rgInput, 1));
     return _pDispatch->WriteInput(inputEvents);
 }
 
@@ -756,7 +756,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWO
 // - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept
 {
-    DWORD modifiers = _GetModifier(parameters.at(1));
+    auto modifiers = _GetModifier(parameters.at(1));
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
     //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
@@ -781,7 +781,7 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const VTParameters pa
 // - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const VTParameters parameters) noexcept
 {
-    DWORD modifiers = _GetModifier(parameters.at(1));
+    auto modifiers = _GetModifier(parameters.at(1));
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
     //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
@@ -1044,7 +1044,7 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
                                                    DWORD& modifierState) noexcept
 {
     // Low order byte is key, high order is modifiers
-    const short keyscan = VkKeyScanW(wch);
+    const auto keyscan = VkKeyScanW(wch);
 
     short key = LOBYTE(keyscan);
 
@@ -1096,7 +1096,7 @@ void InputStateMachineEngine::SetFlushToInputQueueCallback(std::function<bool()>
 bool InputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                                          unsigned int& function) const noexcept
 {
-    bool success = false;
+    auto success = false;
     function = DispatchTypes::WindowManipulationType::Invalid;
 
     if (!parameters.empty())
