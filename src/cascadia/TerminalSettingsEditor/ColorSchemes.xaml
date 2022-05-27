@@ -91,10 +91,10 @@
                             Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsRenaming), Mode=OneWay}">
                     <!--  Select a color scheme  -->
                     <ComboBox x:Name="ColorSchemeComboBox"
-                                  ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
-                                  SelectedIndex="0"
+                              ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
+                              SelectedIndex="0"
                               SelectionChanged="ColorSchemeSelectionChanged"
-                                  Style="{StaticResource ComboBoxSettingStyle}">
+                              Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="local:ColorSchemeViewModel">
                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" />

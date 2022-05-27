@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme) :
         _scheme{ scheme },
         _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
-        _CurrentBrightColorTable { single_threaded_observable_vector<Editor::ColorTableEntry>() }
+        _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         _Name = scheme.Name();
 
