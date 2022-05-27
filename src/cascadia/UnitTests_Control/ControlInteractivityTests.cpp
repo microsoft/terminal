@@ -23,8 +23,9 @@ namespace ControlUnitTests
 {
     class ControlInteractivityTests
     {
+        
         BEGIN_TEST_CLASS(ControlInteractivityTests)
-            TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
+            // TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
         END_TEST_CLASS()
 
         TEST_METHOD(TestAdjustAcrylic);
@@ -197,7 +198,7 @@ namespace ControlUnitTests
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         END_TEST_METHOD_PROPERTIES()
 
-        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        // WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         auto [settings, conn] = _createSettingsAndConnection();
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
@@ -661,7 +662,7 @@ namespace ControlUnitTests
     void ControlInteractivityTests::PointerClickOutsideActiveRegion()
     {
         // This is a test for GH#10642
-        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        // WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         auto [settings, conn] = _createSettingsAndConnection();
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
@@ -679,8 +680,11 @@ namespace ControlUnitTests
         auto expectedBufferHeight = 20;
 
         auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
+            auto height = args.ViewHeight();
+            // if (height == 0)
+            //     DebugBreak();
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
-            VERIFY_ARE_EQUAL(expectedViewHeight, args.ViewHeight());
+            VERIFY_ARE_EQUAL(expectedViewHeight, height);
             VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());
         };
         core->ScrollPositionChanged(scrollChangedHandler);
@@ -697,6 +701,7 @@ namespace ControlUnitTests
             }
 
             conn->WriteInput(L"Foo\r\n");
+            Sleep(20);
         }
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
