@@ -21,6 +21,14 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Core.OptionalColor Color;
     };
 
+    enum ScrollToMarkDirection
+    {
+        Previous,
+        Next,
+        First,
+        Last
+    };
+
     // These are properties of the TerminalCore that should be queryable by the
     // rest of the app.
     interface ICoreState
@@ -48,6 +56,7 @@ namespace Microsoft.Terminal.Control
         void AddMark(ScrollMark mark);
         void ClearMark();
         void ClearAllMarks();
+        void ScrollToMark(ScrollToMarkDirection direction);
         IVector<ScrollMark> ScrollMarks { get; };
 
     };

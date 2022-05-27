@@ -2909,6 +2909,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void TermControl::ClearMark() { _core.ClearMark(); }
     void TermControl::ClearAllMarks() { _core.ClearAllMarks(); }
+    void TermControl::ScrollToMark(const Control::ScrollToMarkDirection& direction) { _core.ScrollToMark(direction); }
 
     Windows::Foundation::Collections::IVector<Control::ScrollMark> TermControl::ScrollMarks() const
     {

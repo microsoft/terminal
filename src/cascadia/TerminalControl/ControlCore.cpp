@@ -1842,4 +1842,89 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::ClearMark() { _terminal->ClearMark(); }
     void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
+
+    void ControlCore::ScrollToMark(const Control::ScrollToMarkDirection& direction)
+    {
+        const auto currentOffset = ScrollOffset();
+        const auto& marks{ _terminal->GetScrollMarks() };
+
+        std::optional<DispatchTypes::ScrollMark> tgt;
+
+        switch (direction)
+        {
+        case ScrollToMarkDirection::Last:
+        {
+            int highest = currentOffset;
+            for (const auto& mark : marks)
+            {
+                const auto newY = mark.start.y;
+                if (newY > highest)
+                {
+                    tgt = mark;
+                    highest = newY;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::First:
+        {
+            int lowest = currentOffset;
+            for (const auto& mark : marks)
+            {
+                const auto newY = mark.start.y;
+                if (newY < lowest)
+                {
+                    tgt = mark;
+                    lowest = newY;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::Next:
+        {
+            int minDistance = INT_MAX;
+            for (const auto& mark : marks)
+            {
+                const auto delta = mark.start.y - currentOffset;
+                if (delta > 0 && delta < minDistance)
+                {
+                    tgt = mark;
+                    minDistance = delta;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::Previous:
+        default:
+        {
+            int minDistance = INT_MAX;
+            for (const auto& mark : marks)
+            {
+                const auto delta = currentOffset - mark.start.y;
+                if (delta > 0 && delta < minDistance)
+                {
+                    tgt = mark;
+                    minDistance = delta;
+                }
+            }
+            break;
+        }
+        }
+
+        if (tgt.has_value())
+        {
+            UserScrollViewport(tgt->start.y);
+        }
+        else
+        {
+            if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
+            {
+                UserScrollViewport(BufferHeight());
+            }
+            else if (direction == ScrollToMarkDirection::First || direction == ScrollToMarkDirection::Previous)
+            {
+                UserScrollViewport(0);
+            }
+        }
+    }
 }
