@@ -283,7 +283,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ScrollToMarkArgs>())
         {
-            _ApplyToActiveControls([realArgs](auto& control) {
+            _ApplyToActiveControls([&realArgs](auto& control) {
                 control.ScrollToMark(realArgs.Direction());
             });
         }
