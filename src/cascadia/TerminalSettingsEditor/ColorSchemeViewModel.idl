@@ -12,18 +12,18 @@ namespace Microsoft.Terminal.Settings.Editor
         String Name;
 
         // Terminal Colors
-        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentNonBrightColorTable;
-        Windows.Foundation.Collections.IVector<ColorTableEntry> CurrentBrightColorTable;
+        Windows.Foundation.Collections.IVector<ColorTableEntry> NonBrightColorTable;
+        Windows.Foundation.Collections.IVector<ColorTableEntry> BrightColorTable;
 
         Microsoft.Terminal.Settings.Model.ColorScheme SettingsModelObject { get; };
 
         ColorTableEntry ColorEntryAt(UInt32 Index);
 
         // System Colors
-        ColorTableEntry CurrentForegroundColor;
-        ColorTableEntry CurrentBackgroundColor;
-        ColorTableEntry CurrentCursorColor;
-        ColorTableEntry CurrentSelectionBackgroundColor;
+        ColorTableEntry ForegroundColor;
+        ColorTableEntry BackgroundColor;
+        ColorTableEntry CursorColor;
+        ColorTableEntry SelectionBackgroundColor;
     }
 
     [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged

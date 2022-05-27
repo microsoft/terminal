@@ -44,13 +44,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentNonBrightColorTable, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, CurrentBrightColorTable, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);
 
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentForegroundColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentBackgroundColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentCursorColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CurrentSelectionBackgroundColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, ForegroundColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, BackgroundColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CursorColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, SelectionBackgroundColor, _PropertyChangedHandlers, nullptr);
 
     private:
         winrt::hstring _Name;

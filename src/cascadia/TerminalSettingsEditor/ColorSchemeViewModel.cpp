@@ -31,8 +31,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme) :
         _scheme{ scheme },
-        _CurrentNonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
-        _CurrentBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
+        _NonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
+        _BrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         _Name = scheme.Name();
 
@@ -79,23 +79,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             entry.PropertyChanged(colorEntryChangedHandler);
             if (i < ColorTableDivider)
             {
-                _CurrentNonBrightColorTable.Append(entry);
+                _NonBrightColorTable.Append(entry);
             }
             else
             {
-                _CurrentBrightColorTable.Append(entry);
+                _BrightColorTable.Append(entry);
             }
         }
 
-        _CurrentForegroundColor = winrt::make<ColorTableEntry>(ForegroundColorTag, til::color(scheme.Foreground()));
-        _CurrentBackgroundColor = winrt::make<ColorTableEntry>(BackgroundColorTag, til::color(scheme.Background()));
-        _CurrentCursorColor = winrt::make<ColorTableEntry>(CursorColorTag, til::color(scheme.CursorColor()));
-        _CurrentSelectionBackgroundColor = winrt::make<ColorTableEntry>(SelectionBackgroundColorTag, til::color(scheme.SelectionBackground()));
+        _ForegroundColor = winrt::make<ColorTableEntry>(ForegroundColorTag, til::color(scheme.Foreground()));
+        _BackgroundColor = winrt::make<ColorTableEntry>(BackgroundColorTag, til::color(scheme.Background()));
+        _CursorColor = winrt::make<ColorTableEntry>(CursorColorTag, til::color(scheme.CursorColor()));
+        _SelectionBackgroundColor = winrt::make<ColorTableEntry>(SelectionBackgroundColorTag, til::color(scheme.SelectionBackground()));
 
-        _CurrentForegroundColor.PropertyChanged(colorEntryChangedHandler);
-        _CurrentBackgroundColor.PropertyChanged(colorEntryChangedHandler);
-        _CurrentCursorColor.PropertyChanged(colorEntryChangedHandler);
-        _CurrentSelectionBackgroundColor.PropertyChanged(colorEntryChangedHandler);
+        _ForegroundColor.PropertyChanged(colorEntryChangedHandler);
+        _BackgroundColor.PropertyChanged(colorEntryChangedHandler);
+        _CursorColor.PropertyChanged(colorEntryChangedHandler);
+        _SelectionBackgroundColor.PropertyChanged(colorEntryChangedHandler);
     }
 
     winrt::hstring ColorSchemeViewModel::Name()
@@ -113,11 +113,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (index < ColorTableDivider)
         {
-            return _CurrentNonBrightColorTable.GetAt(index);
+            return _NonBrightColorTable.GetAt(index);
         }
         else
         {
-            return _CurrentBrightColorTable.GetAt(index - ColorTableDivider);
+            return _BrightColorTable.GetAt(index - ColorTableDivider);
         }
     }
 

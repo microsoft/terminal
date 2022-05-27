@@ -317,7 +317,7 @@
                         <ContentControl x:Name="ForegroundButton"
                                         Grid.Row="0"
                                         Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.CurrentForegroundColor, Mode=OneWay}"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ForegroundColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
@@ -329,7 +329,7 @@
                         <ContentControl x:Name="BackgroundButton"
                                         Grid.Row="1"
                                         Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.CurrentBackgroundColor, Mode=OneWay}"
+                                        Content="{x:Bind ViewModel.CurrentScheme.BackgroundColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
@@ -341,7 +341,7 @@
                         <ContentControl x:Name="CursorColorButton"
                                         Grid.Row="2"
                                         Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.CurrentCursorColor, Mode=OneWay}"
+                                        Content="{x:Bind ViewModel.CurrentScheme.CursorColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
@@ -353,7 +353,7 @@
                         <ContentControl x:Name="SelectionBackgroundButton"
                                         Grid.Row="3"
                                         Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.CurrentSelectionBackgroundColor, Mode=OneWay}"
+                                        Content="{x:Bind ViewModel.CurrentScheme.SelectionBackgroundColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
                     </Grid>

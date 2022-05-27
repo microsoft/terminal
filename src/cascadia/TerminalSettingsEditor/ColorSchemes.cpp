@@ -108,30 +108,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (index < ColorTableDivider)
                     {
-                        _ViewModel.CurrentScheme().CurrentNonBrightColorTable().GetAt(*index).Color(newColor);
+                        _ViewModel.CurrentScheme().NonBrightColorTable().GetAt(*index).Color(newColor);
                     }
                     else
                     {
-                        _ViewModel.CurrentScheme().CurrentBrightColorTable().GetAt(*index - ColorTableDivider).Color(newColor);
+                        _ViewModel.CurrentScheme().BrightColorTable().GetAt(*index - ColorTableDivider).Color(newColor);
                     }
                 }
                 else if (const auto stringTag{ tag.try_as<hstring>() })
                 {
                     if (stringTag == ForegroundColorTag)
                     {
-                        _ViewModel.CurrentScheme().CurrentForegroundColor().Color(newColor);
+                        _ViewModel.CurrentScheme().ForegroundColor().Color(newColor);
                     }
                     else if (stringTag == BackgroundColorTag)
                     {
-                        _ViewModel.CurrentScheme().CurrentBackgroundColor().Color(newColor);
+                        _ViewModel.CurrentScheme().BackgroundColor().Color(newColor);
                     }
                     else if (stringTag == CursorColorTag)
                     {
-                        _ViewModel.CurrentScheme().CurrentCursorColor().Color(newColor);
+                        _ViewModel.CurrentScheme().CursorColor().Color(newColor);
                     }
                     else if (stringTag == SelectionBackgroundColorTag)
                     {
-                        _ViewModel.CurrentScheme().CurrentSelectionBackgroundColor().Color(newColor);
+                        _ViewModel.CurrentScheme().SelectionBackgroundColor().Color(newColor);
                     }
                 }
             }

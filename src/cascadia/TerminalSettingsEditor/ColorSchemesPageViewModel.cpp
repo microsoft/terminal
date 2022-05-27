@@ -5,9 +5,6 @@
 #include "ColorSchemesPageViewModel.h"
 #include "ColorSchemesPageViewModel.g.cpp"
 
-#include <LibraryResources.h>
-#include "..\WinRTUtils\inc\Utils.h"
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     ColorSchemesPageViewModel::ColorSchemesPageViewModel(const Model::CascadiaSettings& settings) :
@@ -21,6 +18,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _settings = settings;
         _MakeColorSchemeVMsHelper();
+    }
+
+    void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
+    {
+        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> allColorSchemes{ single_threaded_observable_vector<Editor::ColorSchemeViewModel>() };
+        const auto& colorSchemeMap{ _settings.GlobalSettings().ColorSchemes() };
+        for (const auto& pair : colorSchemeMap)
+        {
+            const auto viewModel = Editor::ColorSchemeViewModel(pair.Value());
+            allColorSchemes.Append(viewModel);
+        }
+        _AllColorSchemes = allColorSchemes;
     }
 
     void ColorSchemesPageViewModel::RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme)
@@ -93,17 +102,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), myName) == std::end(InBoxSchemes);
         }
         return false;
-    }
-
-    void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
-    {
-        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> AllColorSchemes{ single_threaded_observable_vector<Editor::ColorSchemeViewModel>() };
-        const auto& colorSchemeMap{ _settings.GlobalSettings().ColorSchemes() };
-        for (const auto& pair : colorSchemeMap)
-        {
-            const auto viewModel = Editor::ColorSchemeViewModel(pair.Value());
-            AllColorSchemes.Append(viewModel);
-        }
-        _AllColorSchemes = AllColorSchemes;
     }
 }
