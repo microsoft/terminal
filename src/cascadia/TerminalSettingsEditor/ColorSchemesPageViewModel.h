@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ColorSchemesPageViewModel(const Model::CascadiaSettings& settings);
+        void UpdateSettings(const Model::CascadiaSettings& settings);
 
         void RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme);
         bool RequestRenameCurrentScheme(winrt::hstring newName);

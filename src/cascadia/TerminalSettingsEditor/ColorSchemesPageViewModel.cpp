@@ -17,6 +17,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentScheme(_AllColorSchemes.GetAt(0));
     }
 
+    void ColorSchemesPageViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
+    {
+        _settings = settings;
+        _MakeColorSchemeVMsHelper();
+    }
+
     void ColorSchemesPageViewModel::RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme)
     {
         CurrentScheme(scheme);

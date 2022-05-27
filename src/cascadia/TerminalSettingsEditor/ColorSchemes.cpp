@@ -72,8 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
             _ViewModel.RequestSetCurrentScheme(*colorScheme);
 
-            //_State.LastSelectedScheme(colorScheme.Name());
-
             // Set the text disclaimer for the text box
             hstring disclaimer{};
             const std::wstring schemeName{ colorScheme->Name() };
