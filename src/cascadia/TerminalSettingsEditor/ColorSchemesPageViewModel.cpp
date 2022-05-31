@@ -22,14 +22,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
     {
-        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> allColorSchemes{ single_threaded_observable_vector<Editor::ColorSchemeViewModel>() };
-        const auto& colorSchemeMap{ _settings.GlobalSettings().ColorSchemes() };
+        std::vector<Editor::ColorSchemeViewModel> allColorSchemes;
+
+        const auto colorSchemeMap = _settings.GlobalSettings().ColorSchemes();
         for (const auto& pair : colorSchemeMap)
         {
-            const auto viewModel = Editor::ColorSchemeViewModel(pair.Value());
-            allColorSchemes.Append(viewModel);
+            allColorSchemes.emplace_back(Editor::ColorSchemeViewModel(pair.Value()));
         }
-        _AllColorSchemes = allColorSchemes;
+
+        _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
     }
 
     void ColorSchemesPageViewModel::RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme)
@@ -62,8 +63,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemesPageViewModel::RequestDeleteCurrentScheme()
     {
         const auto name{ CurrentScheme().Name() };
+        const auto size{ _AllColorSchemes.Size() };
 
-        for (uint32_t i = 0; i < _AllColorSchemes.Size(); ++i)
+        for (uint32_t i = 0; i < size; ++i)
         {
             if (_AllColorSchemes.GetAt(i).Name() == name)
             {
@@ -98,8 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto& scheme{ CurrentScheme() })
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
-            const std::wstring myName{ scheme.Name() };
-            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), myName) == std::end(InBoxSchemes);
+            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) == std::end(InBoxSchemes);
         }
         return false;
     }

@@ -10,25 +10,6 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static const std::array<hstring, 16> TableColorNames = {
-        RS_(L"ColorScheme_Black/Header"),
-        RS_(L"ColorScheme_Red/Header"),
-        RS_(L"ColorScheme_Green/Header"),
-        RS_(L"ColorScheme_Yellow/Header"),
-        RS_(L"ColorScheme_Blue/Header"),
-        RS_(L"ColorScheme_Purple/Header"),
-        RS_(L"ColorScheme_Cyan/Header"),
-        RS_(L"ColorScheme_White/Header"),
-        RS_(L"ColorScheme_BrightBlack/Header"),
-        RS_(L"ColorScheme_BrightRed/Header"),
-        RS_(L"ColorScheme_BrightGreen/Header"),
-        RS_(L"ColorScheme_BrightYellow/Header"),
-        RS_(L"ColorScheme_BrightBlue/Header"),
-        RS_(L"ColorScheme_BrightPurple/Header"),
-        RS_(L"ColorScheme_BrightCyan/Header"),
-        RS_(L"ColorScheme_BrightWhite/Header")
-    };
-
     ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme) :
         _scheme{ scheme },
         _NonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
@@ -128,6 +109,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
     {
+        static const std::array<hstring, 16> TableColorNames = {
+            RS_(L"ColorScheme_Black/Header"),
+            RS_(L"ColorScheme_Red/Header"),
+            RS_(L"ColorScheme_Green/Header"),
+            RS_(L"ColorScheme_Yellow/Header"),
+            RS_(L"ColorScheme_Blue/Header"),
+            RS_(L"ColorScheme_Purple/Header"),
+            RS_(L"ColorScheme_Cyan/Header"),
+            RS_(L"ColorScheme_White/Header"),
+            RS_(L"ColorScheme_BrightBlack/Header"),
+            RS_(L"ColorScheme_BrightRed/Header"),
+            RS_(L"ColorScheme_BrightGreen/Header"),
+            RS_(L"ColorScheme_BrightYellow/Header"),
+            RS_(L"ColorScheme_BrightBlue/Header"),
+            RS_(L"ColorScheme_BrightPurple/Header"),
+            RS_(L"ColorScheme_BrightCyan/Header"),
+            RS_(L"ColorScheme_BrightWhite/Header")
+        };
+
         Name(TableColorNames[index]);
         Tag(winrt::box_value<uint8_t>(index));
         Color(color);

@@ -8,28 +8,28 @@
 #include "ViewModelHelpers.h"
 #include "ColorSchemes.h"
 
-static constexpr uint8_t ColorTableDivider{ 8 };
-static constexpr uint8_t ColorTableSize{ 16 };
-
-static constexpr std::wstring_view ForegroundColorTag{ L"Foreground" };
-static constexpr std::wstring_view BackgroundColorTag{ L"Background" };
-static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
-static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
-
-static const std::array<std::wstring, 9> InBoxSchemes = {
-    L"Campbell",
-    L"Campbell Powershell",
-    L"Vintage",
-    L"One Half Dark",
-    L"One Half Light",
-    L"Solarized Dark",
-    L"Solarized Light",
-    L"Tango Dark",
-    L"Tango Light"
-};
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    inline static constexpr uint8_t ColorTableDivider{ 8 };
+    inline static constexpr uint8_t ColorTableSize{ 16 };
+
+    inline static constexpr std::wstring_view ForegroundColorTag{ L"Foreground" };
+    inline static constexpr std::wstring_view BackgroundColorTag{ L"Background" };
+    inline static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
+    inline static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
+
+    inline static constexpr std::array<std::wstring_view, 9> InBoxSchemes = {
+        L"Campbell",
+        L"Campbell Powershell",
+        L"Vintage",
+        L"One Half Dark",
+        L"One Half Light",
+        L"Solarized Dark",
+        L"Solarized Light",
+        L"Tango Dark",
+        L"Tango Light"
+    };
+
     struct ColorSchemeViewModel : ColorSchemeViewModelT<ColorSchemeViewModel>, ViewModelHelper<ColorSchemeViewModel>
     {
     public:
