@@ -88,7 +88,7 @@
                         Orientation="Horizontal">
 
                 <StackPanel Orientation="Horizontal"
-                            Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(IsRenaming), Mode=OneWay}">
+                            Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.InRenameMode), Mode=OneWay}">
                     <!--  Select a color scheme  -->
                     <ComboBox x:Name="ColorSchemeComboBox"
                               ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
@@ -117,7 +117,7 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal"
-                            Visibility="{x:Bind IsRenaming, Mode=OneWay}">
+                            Visibility="{x:Bind ViewModel.InRenameMode, Mode=OneWay}">
 
                     <!--  Shown when color scheme name is already in use  -->
                     <muxc:TeachingTip x:Name="RenameErrorTip"

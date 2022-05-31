@@ -183,7 +183,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::Rename_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         NameBox().Text(_ViewModel.CurrentScheme().Name());
-        IsRenaming(true);
+        _ViewModel.RequestEnterRename();
         NameBox().Focus(FocusState::Programmatic);
         NameBox().SelectAll();
     }
@@ -196,7 +196,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::RenameCancel_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        IsRenaming(false);
+        _ViewModel.RequestExitRename(false, {});
         RenameErrorTip().IsOpen(false);
         RenameButton().Focus(FocusState::Programmatic);
     }
@@ -219,7 +219,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
-        if (_ViewModel.RequestRenameCurrentScheme(newName))
+        if (_ViewModel.RequestExitRename(true, newName))
         {
             // update the UI
             RenameErrorTip().IsOpen(false);

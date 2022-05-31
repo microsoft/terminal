@@ -41,23 +41,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
     }
 
-    bool ColorSchemesPageViewModel::RequestRenameCurrentScheme(winrt::hstring newName)
+    void ColorSchemesPageViewModel::RequestEnterRename()
     {
-        // check if different name is already in use
-        const auto oldName{ CurrentScheme().Name() };
-        if (newName != oldName && _settings.GlobalSettings().ColorSchemes().HasKey(newName))
+        InRenameMode(true);
+    }
+
+    bool ColorSchemesPageViewModel::RequestExitRename(bool saveChanges, hstring newName)
+    {
+        InRenameMode(false);
+        if (saveChanges)
         {
-            return false;
+            // check if different name is already in use
+            const auto oldName{ CurrentScheme().Name() };
+            if (newName != oldName && _settings.GlobalSettings().ColorSchemes().HasKey(newName))
+            {
+                return false;
+            }
+            else
+            {
+                // update the settings model
+                CurrentScheme().Name(newName);
+                _settings.GlobalSettings().RemoveColorScheme(oldName);
+                _settings.GlobalSettings().AddColorScheme(CurrentScheme().SettingsModelObject());
+                _settings.UpdateColorSchemeReferences(oldName, newName);
+                return true;
+            }
         }
-        else
-        {
-            // update the settings model
-            CurrentScheme().Name(newName);
-            _settings.GlobalSettings().RemoveColorScheme(oldName);
-            _settings.GlobalSettings().AddColorScheme(CurrentScheme().SettingsModelObject());
-            _settings.UpdateColorSchemeReferences(oldName, newName);
-            return true;
-        }
+        return false;
     }
 
     void ColorSchemesPageViewModel::RequestDeleteCurrentScheme()
