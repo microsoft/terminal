@@ -27,7 +27,7 @@ public:
     void Shutdown();
     void Lock();
     void Unlock();
-    void PlayNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration);
+    void PlayNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) noexcept;
 
 private:
     std::promise<void> _shutdownPromise;

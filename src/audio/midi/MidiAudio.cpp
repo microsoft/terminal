@@ -91,7 +91,8 @@ void MidiAudio::Unlock()
     }
 }
 
-void MidiAudio::PlayNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
+void MidiAudio::PlayNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) noexcept
+try
 {
     // The MidiOut is a local static because we can only have one instance,
     // and we only want to construct it when it's actually needed.
@@ -112,3 +113,4 @@ void MidiAudio::PlayNote(const int noteNumber, const int velocity, const std::ch
         midiOut.OutputMessage(MidiOut::NOTE_OFF, noteNumber, velocity);
     }
 }
+CATCH_LOG()
