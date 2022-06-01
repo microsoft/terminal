@@ -1,7 +1,7 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2019-08-30
-last updated: 2021-09-23
+last updated: 2022-06-1
 issue id: 715
 ---
 
@@ -39,7 +39,7 @@ Relatively recently, TerminalControl was split into `TerminalControl`, `ControlI
 
 The first branch will be updated to _modify_ the selection instead of usually _clearing_ it. This will happen by converting the key event into parameters to forward to `TerminalCore`, which then updates the selection appropriately.
 
-#### Idea: Make keyboard selection a collection of standard keybindings
+#### Abandoned Idea: Make keyboard selection a collection of standard keybindings
 One idea is to introduce an `updateSelection` action that conditionally works if a selection is active (similar to the `copy` action). For these key bindings, if there is no selection, the key events are forwarded to the application.
 
 Thanks to Keybinding Args, there would only be 1 new command:
@@ -81,7 +81,7 @@ This idea was abandoned due to several reasons:
 4. 12 new items in the command palette is also pretty excessive.
 5. If proven wrong when this is in WT Preview, we can revisit this and make them customizable then. It's better to add the ability to customize it later than take it away.
 
-#### Idea: Make keyboard selection a simulation of mouse selection
+#### Abandoned Idea: Make keyboard selection a simulation of mouse selection
 It may seem that some effort can be saved by making the keyboard selection act as a simulation of mouse selection. There is a union of mouse and keyboard activity that can be represented in a single set of selection motion interfaces that are commanded by the TermControl's Mouse/Keyboard handler and adapted into appropriate motions in the Terminal Core.
 
 However, the mouse handler operates by translating a pixel coordinate on the screen to a text buffer coordinate. This would have to be rewritten and the approach was deemed unworthy.
@@ -119,74 +119,84 @@ For `SelectionExpansion = Buffer`, the selection endpoint will be moved to the b
 
 **NOTE**: If `copyOnSelect` is enabled, we need to make sure we **DO NOT** update the clipboard on every change in selection. The user must explicitly choose to copy the selected text from the buffer.
 
-### Copy Mode
-Copy Mode is a mode where the user can create and modify a selection using only the keyboard. The following flowchart covers how the new `copymode()` action works:
+### Mark Mode
 
-![Copy Mode Flowchart][images/CopyModeFlowchart.png]
+Mark Mode is a mode where the user can create and modify a selection using only the keyboard.
 
-**NOTE**: `copyMode()` refers to the action, whereas `updateSelection()` refers to the underlying function that is being called in the code.
+When no selection is present, the user may use the `markMode` action to enter mark mode. Upon doing so, a selection will be created at the current cursor position.
 
-If a selection is not active, a "start" and "end" selection point is created at the cursor position. `updateSelection()` calls then move "start" and "end" together as one position. This position will be denoted with a "y-beam".
+When in mark mode, the user may...
+- press <kbd>ESC</kbd> to clear the selection and exit mark mode
+- invoke the `markMode` action to exit mark mode
+- invoke the `copy` action (this includes right-clicking the terminal) to copy the selected text, clear the selection, and exit mark mode
+- move the cursor in the following ways:
+    - arrow keys --> move by character
+    - ctrl + left/right --> move by word 
+    - ctrl + home/end --> move to the beginning/end of the buffer
+    - home/end --> move to the beginning/end of the line respectively
+    - pgup/pgdn --> move up/down by viewport respectively
+- expand the selection in the following ways:
+    - shift + arrow keys --> move the "end" endpoint by character
+    - ctrl + shift + left/right --> move the "end" endpoint by word 
+    - ctrl + shift + home/end --> move the "end" endpoint to the beginning/end of the buffer
+    - shift + home/end --> move the "end" endpoint to the beginning/end of the line respectively
+    - shift + pgup/pgdn --> move the "end" endpoint up/down by viewport respectively
 
-![Y-Beam Example][images/Y-Beam.png]
+As with mouse selections, keybindings are still respected and pressing a key that is not bound to a keybinding (or mentioned above) will clear the selection and exit mark mode.
 
-If a selection is active, `copyMode` leaves the selection untouched, all subsequent `updateSelection()` calls move "start". The y-beam is then cut vertically in half, where one half is drawn on the "start" endpoint, and the other half is drawn on the "end" endpoint. Since the user is moving "start", only the half-y-beam is drawn on the "start" endpoint.
+#### Corner cases
 
-![Separated Y-Beam Example][images/Half-Y-Beam.png]
+- In mark mode, if a selection was created via the keyboard, moving the cursor moves at the "end" endpoint. This is consistent with conhost.
+- If a user creates a selection using the mouse, then enters mark mode, mark mode inherits the existing selection as if it was made using the keyboard.
+- If `copyOnSelect` is enabled, the selection is copied when the selection operation is "complete". Thus, the selection is copied when the `copy` keybinding is used or the selection is copied using the mouse.
+- If `copyOnSelect` is enabled, `ESC` is interpreted as "cancelling" the selection, so nothing is copied. Keys that generate input are also interpreted as "cancelling" the selection. Only the `copy` keybinding or copying using the mouse is considered "completing" the selection operation, and copying the content to the clipboard.
 
-**NOTE:** Both half y-beams could have been presented as shown in the image below. This idea was omitted because then there is no indication for which half y-beam is currently focused.
-
-![Both Separated Y-Beams Example][images/Split-Y-Beam.png]
-
-Invoking `copyMode()` again, will then anchor "start" (meaning that it will be kept in place). Subsequent `updateSelection()` calls move the "end" selection point. As before, the half-y-beam is only drawn on the "end" to denote that this is the endpoint that is being moved.
-
-Invoking `copyMode()` essentially cycles between which selection point is targeted. The half-y-beam is drawn on the targeted endpoint.
+**NOTE** - Related to #3884:
+    If the user has chosen to have selections persist after a copy operation, the selection created by Copy Mode is treated no differently than one created with the mouse. The selection will persist after a copy operation. However, if the user exits Copy Mode in any of the other situations, the selection is cleared.
 
 #### Block Selection
 A user can normally create a block selection by holding <kbd>alt</kbd> then creating a selection.
 
-If the user is in Copy Mode, and desires to make a block selection, they can use the `toggleBlockSelection()` action. `toggleBlockSelection()` takes an existing selection, and transforms it into a block selection (or vice-versa).
+If the user is in Mark Mode, and desires to make a block selection, they can use the `toggleBlockSelection()` action. `toggleBlockSelection()` takes an existing selection, and transforms it into a block selection (or vice-versa).
 
-All selections created in Copy Mode will have block selection disabled by default.
+All selections created in Mark Mode will have block selection disabled by default.
 
 #### Rendering during Copy Mode
 Since we are just moving the selection endpoints, rendering the selection rects should operate normally. We need to ensure that we still scroll when we move a selection point past the top/bottom of the viewport.
 
 In ConHost, output would be paused when a selection was present. Windows Terminal does not pause the output when a selection is present, however, it does not scroll to the new output.
 
-#### Interaction with CopyOnSelect
-If `copyOnSelect` is enabled, the selection is copied when the selection operation is "complete". Thus, the selection is copied when the `copy` keybinding is used or the selection is copied using the mouse.
-
 #### Interaction with Mouse Selection
 If a selection exists, the user is basically already in Copy Mode. The user should be modifying the "end" endpoint of the selection when using the `updateSelection()` bindings. The existing selection should not be cleared (contrary to prior behavior). However, the half-y-beam will not be drawn. Once the user presses the `copyMode` or `moveSelectionPoint` keybinding, the half-y-beam is drawn on the targeted endpoint (which will then be "start").
 
 During Copy Mode, if the user attempts to create a selection using the mouse, any existing selections are cleared and the mouse creates a selection normally. However, contrary to prior behavior, the user will still be in Copy Mode. The target endpoint being modified in Copy Mode, however, will be the "end" endpoint of the selection, instead of the cursor (as explained earlier in the flowchart).
 
-#### Exiting Copy Mode
-The user exits copy mode when the selection is cleared. Thus, the user can press...
-- the `ESC` key
-- the `copy()` action (which also copies the contents of the selection to the user's clipboard)
-- keys that generate input and clear a selection
 
-In all of these cases, the selection will be cleared.
+#### Abandoned Idea: Copy Mode
+Copy Mode is a more complex version of Mark Mode that is intended to provide a built-in way to switch the active selection endpoint. This idea was abandoned because we would then run into a user education issue. Rather than reinventing the wheel, selection should feel natural like that of a text editor, and any diversion from that model should be introduced separately (i.e. keybindings). Doing so ensures that users can "hit the ground running" when trying to make a selection, but won't be hindered by new functionality that is available.
 
-If `copyOnSelect` is enabled, `ESC` is interpreted as "cancelling" the selection, so nothing is copied. Keys that generate input are also interpreted as "cancelling" the selection. Only the `copy` keybinding or copying using the mouse is considered "completing" the selection operation, and copying the content to the clipboard.
+Copy Mode is a mode where the user can create and modify a selection using only the keyboard. The following flowchart covers how the new `copymode()` action works:
 
-**NOTE** - Related to #3884:
-    If the user has chosen to have selections persist after a copy operation, the selection created by Copy Mode is treated no differently than one created with the mouse. The selection will persist after a copy operation. However, if the user exits Copy Mode in any of the other situations, the selection is cleared.
+![Copy Mode Flowchart][images/CopyModeFlowchart.png]
 
+**NOTE**: `copyMode()` refers to the action, whereas `updateSelection()` refers to the underlying function that is being called in the code.
 
+If a selection is not active, a "start" and "end" selection point is created at the cursor position. `updateSelection()` calls then move "start" and "end" together as one position.
+
+Invoking `copyMode()` again, will then anchor "start" (meaning that it will be kept in place). Subsequent `updateSelection()` calls move the "end" selection point.
+
+Invoking `copyMode()` essentially cycles between which selection point is targeted.
 
 ## UI/UX Design
 
 ### Key Bindings
 
-There will only be 1 new command that needs to be added:
 | Action | Keybinding Args | Description |
 |--|--|--|
-| `selectAll`  | | Select the entire text buffer. |
-| `copyMode`      | | Cycle the selection point targeted by `moveSelectionPoint`. If no selection exists, a selection is created at the cursor. |
-| `toggleBlockSelection`      | | Transform the existing selection between a block selection and a line selection.  |
+| `selectAll`                    | none | Select the entire text buffer. |
+| `markMode`                     | none | Toggle mark mode. If no selection exists, create a selection at the cursor position. Otherwise, use the existing selection as one in mark mode. |
+| `toggleBlockSelection`         | none | Transform the existing selection between a block selection and a line selection.  |
+| `switchSelectionEndpoint`      | none | If a selection is present, switch which selection endpoint is targetted when in mark mode or quick edit mode. |
 
 By default, the following key binding will be set:
 ```JS
@@ -194,8 +204,29 @@ By default, the following key binding will be set:
 
 // Copy Mode
 { "command": "copyMode", "keys": "ctrl+shift+m" },
-{ "command": "toggleBlockSelection", "keys": "alt+shift+m" },
+{ "command": "toggleBlockSelection" },
+{ "command": "switchSelectionEndpoint" },
 ```
+
+### Y-Beam
+
+A y-beam will be used to identify which selection endpoint is currently being moved when in mark mode.
+
+When we're moving the cursor (this happens when mark mode is entered from no existing selection), a full y-beam will be displayed at the cursor position.
+
+![Y-Beam Example][./images/Y-Beam.png]
+
+When <kbd>shift</kbd> is held, we're expanding the selection. In this case, the y-beam will be split, and the relevant half will be rendered on the active endpoint.
+
+![Separated Y-Beam Example][./images/Half-Y-Beam.png]
+
+**NOTE:** Both half y-beams could have been presented as shown in the image below. This idea was omitted because then there is no indication for which half y-beam is currently focused.
+
+![Both Separated Y-Beams Example][./images/Split-Y-Beam.png]
+
+### Miscellaneous
+
+When mark mode is enabled, the cursor will stop blinking.
 
 ## Capabilities
 
