@@ -30,7 +30,7 @@ AppCommandlineArgs::AppCommandlineArgs()
 // - nonzero return values are defined in CLI::ExitCodes
 int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
-    const int argc = static_cast<int>(command.Argc());
+    const auto argc = static_cast<int>(command.Argc());
 
     // Stash a pointer to the current Commandline instance we're parsing.
     // When we're trying to parse the commandline for a new-tab/split-pane
@@ -186,6 +186,10 @@ void AppCommandlineArgs::_buildParser()
     _app.add_option("-w,--window",
                     _windowTarget,
                     RS_A(L"CmdWindowTargetArgDesc"));
+
+    _app.add_option("-s,--saved",
+                    _loadPersistedLayoutIdx,
+                    RS_A(L"CmdSavedLayoutArgDesc"));
 
     // Subcommands
     _buildNewTabParser();
@@ -700,6 +704,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _swapPaneDirection = FocusDirection::None;
 
     _focusPaneTarget = -1;
+    _loadPersistedLayoutIdx = -1;
 
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
@@ -804,7 +809,7 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
         else
         {
             // Harder case: There was a match.
-            const bool matchedFirstChar = match.position(0) == 0;
+            const auto matchedFirstChar = match.position(0) == 0;
             // If the match was at the beginning of the string, then the
             // next arg should be "", since there was no content before the
             // delimiter. Otherwise, add one, since the regex will include
@@ -915,6 +920,12 @@ void AppCommandlineArgs::ValidateStartupCommands()
         }
     }
 }
+std::optional<uint32_t> AppCommandlineArgs::GetPersistedLayoutIdx() const noexcept
+{
+    return _loadPersistedLayoutIdx >= 0 ?
+               std::optional{ static_cast<uint32_t>(_loadPersistedLayoutIdx) } :
+               std::nullopt;
+}
 
 std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
 {
@@ -1002,7 +1013,7 @@ int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Mo
     // Convert the commandline into an array of args with
     // CommandLineToArgvW, similar to how the app typically does when
     // called from the commandline.
-    int argc = 0;
+    auto argc = 0;
     wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(args.Commandline().c_str(), &argc) };
     if (argv)
     {

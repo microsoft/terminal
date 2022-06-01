@@ -31,7 +31,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool FinalizeSixelData();
 
         gsl::span<const uint16_t> GetBitPattern() const noexcept;
-        til::size GetCellSize() const;
+        til::size GetCellSize() const noexcept;
         size_t GetTextCenteringHint() const noexcept;
         VTID GetDesignation() const noexcept;
 
@@ -48,14 +48,14 @@ namespace Microsoft::Console::VirtualTerminal
         void _endOfCharacter();
 
         std::tuple<size_t, size_t, size_t> _calculateDimensions() const;
-        void _packAndCenterBitPatterns();
+        void _packAndCenterBitPatterns() noexcept;
         void _fillUnusedCharacters();
         std::array<uint16_t, MAX_HEIGHT> _generateErrorGlyph();
 
         DispatchTypes::DrcsCellMatrix _cellMatrix;
         DispatchTypes::DrcsCellMatrix _pendingCellMatrix;
-        size_t _cellHeight;
-        size_t _pendingCellHeight;
+        VTInt _cellHeight;
+        VTInt _pendingCellHeight;
         bool _sizeDeclaredAsMatrix;
         size_t _declaredWidth;
         size_t _declaredHeight;

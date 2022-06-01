@@ -16,7 +16,7 @@ class Alias
 public:
     static void s_ClearCmdExeAliases();
 
-    static void s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
+    static void s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PCWCH pwchSource,
                                           _In_ size_t cbSource,
                                           _Out_writes_bytes_(cbTargetWritten) PWCHAR pwchTarget,
                                           _In_ const size_t cbTargetSize,

@@ -38,7 +38,7 @@ static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
 static bool _EnsureStaticInitialization()
 {
     // use C++11 magic statics to make sure we only do this once.
-    static bool initialized = []() {
+    static auto initialized = []() {
         // *** THIS IS A SINGLETON ***
         SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
 
@@ -55,7 +55,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
 try
 {
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
-    HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    auto terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
     if (terminal)
     {
@@ -178,7 +178,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
 {
     _EnsureStaticInitialization();
 
-    HINSTANCE hInstance = wil::GetModuleInstanceHandle();
+    auto hInstance = wil::GetModuleInstanceHandle();
 
     if (RegisterTermClass(hInstance))
     {
@@ -214,7 +214,10 @@ HRESULT HwndTerminal::Initialize()
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
     auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
     auto* const localPointerToThread = renderThread.get();
-    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
+    auto& renderSettings = _terminal->GetRenderSettings();
+    renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
+    renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
+    _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
     RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
@@ -236,12 +239,8 @@ HRESULT HwndTerminal::Initialize()
 
     _renderEngine = std::move(dxEngine);
 
-    _terminal->SetBackgroundCallback([](auto) {});
-
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
-    _terminal->SetDefaultBackground(RGB(12, 12, 12));
-    _terminal->SetDefaultForeground(RGB(204, 204, 204));
-    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept { _WriteTextToConnection(input); });
+    _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
@@ -281,7 +280,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
     _terminal->SetScrollPositionChangedCallback(callback);
 }
 
-void HwndTerminal::_WriteTextToConnection(const std::wstring& input) noexcept
+void HwndTerminal::_WriteTextToConnection(const std::wstring_view input) noexcept
 {
     if (!_pfnWriteCallback)
     {
@@ -535,7 +534,7 @@ try
     };
 
     auto lock = _terminal->LockForWriting();
-    const bool altPressed = GetKeyState(VK_MENU) < 0;
+    const auto altPressed = GetKeyState(VK_MENU) < 0;
     const til::size fontSize{ this->_actualFont.GetSize() };
 
     this->_terminal->SetBlockSelection(altPressed);
@@ -549,11 +548,11 @@ try
 
     if (multiClickMapper == 3)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Line);
+        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Line);
     }
     else if (multiClickMapper == 2)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Word);
+        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Word);
     }
     else
     {
@@ -582,19 +581,25 @@ try
 
     RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.area() == 0); // either dimension = 0, area == 0
 
-    if (this->_singleClickTouchdownPos)
+    // This is a copy of ControlInteractivity::PointerMoved
+    if (_singleClickTouchdownPos)
     {
-        const auto& touchdownPoint{ *this->_singleClickTouchdownPos };
-        const auto distance{ std::sqrtf(std::powf(cursorPosition.x<float>() - touchdownPoint.x<float>(), 2) + std::powf(cursorPosition.y<float>() - touchdownPoint.y<float>(), 2)) };
-        if (distance >= (std::min(fontSize.width(), fontSize.height()) / 4.f))
+        const auto touchdownPoint = *_singleClickTouchdownPos;
+        const auto dx = cursorPosition.x - touchdownPoint.x;
+        const auto dy = cursorPosition.y - touchdownPoint.y;
+        const auto w = fontSize.width;
+        const auto distanceSquared = dx * dx + dy * dy;
+        const auto maxDistanceSquared = w * w / 16; // (w / 4)^2
+
+        if (distanceSquared >= maxDistanceSquared)
         {
-            _terminal->SetSelectionAnchor(touchdownPoint / fontSize);
+            _terminal->SetSelectionAnchor((touchdownPoint / fontSize).to_win32_coord());
             // stop tracking the touchdown point
             _singleClickTouchdownPos = std::nullopt;
         }
     }
 
-    this->_terminal->SetSelectionEnd(cursorPosition / fontSize);
+    this->_terminal->SetSelectionEnd((cursorPosition / fontSize).to_win32_coord());
     this->_renderer->TriggerSelection();
 
     return S_OK;
@@ -619,7 +624,7 @@ void _stdcall TerminalClearSelection(void* terminal)
 bool _stdcall TerminalIsSelectionActive(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
+    const auto selectionActive = publicTerminal->_terminal->IsSelectionActive();
     return selectionActive;
 }
 
@@ -677,7 +682,7 @@ static ControlKeyStates getControlKeyState() noexcept
 bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 {
     // Only allow the transit of mouse events if shift isn't pressed.
-    const bool shiftPressed = GetKeyState(VK_SHIFT) < 0;
+    const auto shiftPressed = GetKeyState(VK_SHIFT) < 0;
     return !shiftPressed && _focused && _terminal->IsTrackingMouseInput();
 }
 
@@ -696,9 +701,9 @@ try
         wheelDelta = HIWORD(wParam);
 
         // If it's a *WHEEL event, it's in screen coordinates, not window (?!)
-        POINT coordsToTransform = cursorPosition;
+        auto coordsToTransform = cursorPosition.to_win32_point();
         ScreenToClient(_hwnd.get(), &coordsToTransform);
-        cursorPosition = coordsToTransform;
+        cursorPosition = til::point{ coordsToTransform };
     }
 
     const TerminalInput::MouseButtonState state{
@@ -707,7 +712,7 @@ try
         WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
     };
 
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+    return _terminal->SendMouseEvent((cursorPosition / fontSize).to_win32_coord(), uMsg, getControlKeyState(), wheelDelta, state);
 }
 catch (...)
 {
@@ -781,15 +786,17 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
-        publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
-        publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
+        auto& renderSettings = publicTerminal->_terminal->GetRenderSettings();
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, theme.DefaultBackground);
+
         publicTerminal->_renderEngine->SetSelectionBackground(theme.DefaultSelectionBackground, theme.SelectionBackgroundAlpha);
 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            [[gsl::suppress(bounds .3)]] publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
+            [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
     }
 
@@ -842,7 +849,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Arguments:
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
 try
 {
     std::wstring finalString;
@@ -854,17 +861,17 @@ try
     }
 
     // allocate the final clipboard data
-    const size_t cchNeeded = finalString.size() + 1;
-    const size_t cbNeeded = sizeof(wchar_t) * cchNeeded;
+    const auto cchNeeded = finalString.size() + 1;
+    const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
 
-    PWSTR pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
+    auto pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
     RETURN_LAST_ERROR_IF_NULL(pwszClipboard);
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
     // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const HRESULT hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
     GlobalUnlock(globalHandle.get());
     RETURN_IF_FAILED(hr);
 
@@ -882,13 +889,13 @@ try
         if (fAlsoCopyFormatting)
         {
             const auto& fontData = _actualFont;
-            int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
-            const COLORREF bgColor = _terminal->GetAttributeColors(_terminal->GetDefaultBrushColors()).second;
+            const int iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
+            const auto bgColor = _terminal->GetAttributeColors({}).second;
 
-            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
-            std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
         }
     }
@@ -909,22 +916,22 @@ CATCH_RETURN()
 // - lpszFormat - the name of the format
 HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
 {
-    const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
+    const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)
     {
         wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
         RETURN_LAST_ERROR_IF_NULL(globalHandleData.get());
 
-        PSTR pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
+        auto pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
         RETURN_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
         // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
+        const auto hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
         GlobalUnlock(globalHandleData.get());
         RETURN_IF_FAILED(hr2);
 
-        UINT const CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
+        const auto CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
         RETURN_LAST_ERROR_IF(0 == CF_FORMAT);
 
         RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
@@ -946,14 +953,14 @@ void HwndTerminal::_PasteTextFromClipboard() noexcept
         return;
     }
 
-    HANDLE ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
+    auto ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
     if (ClipboardDataHandle == nullptr)
     {
         CloseClipboard();
         return;
     }
 
-    PCWCH pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
+    auto pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
 
     _StringPaste(pwstr);
 
@@ -977,7 +984,7 @@ void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
     CATCH_LOG();
 }
 
-COORD HwndTerminal::GetFontSize() const
+COORD HwndTerminal::GetFontSize() const noexcept
 {
     return _actualFont.GetSize();
 }

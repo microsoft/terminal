@@ -13,9 +13,9 @@ Abstract:
 
 #pragma once
 
-#include "..\..\buffer\out\TextAttribute.hpp"
-#include "..\..\terminal\adapter\DispatchTypes.hpp"
-#include <bitset>
+#include "../../buffer/out/TextAttribute.hpp"
+#include "../../terminal/adapter/DispatchTypes.hpp"
+#include <til/enumset.h>
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -51,14 +51,11 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr int c_MaxStoredSgrPushes = 10;
 
     private:
-        // Note the +1 in the size of the bitset: this is because we use the
-        // SgrSaveRestoreStackOptions enum values as bitset flags, so they are naturally
-        // one-based.
-        typedef std::bitset<static_cast<size_t>(DispatchTypes::SgrSaveRestoreStackOptions::Max) + 1> AttrBitset;
+        typedef til::enumset<DispatchTypes::SgrSaveRestoreStackOptions> AttrBitset;
 
         TextAttribute _CombineWithCurrentAttributes(const TextAttribute& currentAttributes,
                                                     const TextAttribute& savedAttribute,
-                                                    const AttrBitset validParts); // valid parts of savedAttribute
+                                                    const AttrBitset validParts) noexcept; // valid parts of savedAttribute
 
         struct SavedSgrAttributes
         {

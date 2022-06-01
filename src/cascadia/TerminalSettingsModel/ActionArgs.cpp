@@ -18,6 +18,9 @@
 #include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetFocusModeArgs.g.cpp"
+#include "SetFullScreenArgs.g.cpp"
+#include "SetMaximizedArgs.g.cpp"
 #include "SetColorSchemeArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
@@ -34,10 +37,13 @@
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
+#include "ExportBufferArgs.g.cpp"
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
+#include "AdjustOpacityArgs.g.cpp"
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 using namespace winrt::Microsoft::Terminal::Control;
 
@@ -93,6 +99,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
+        if (Elevate())
+        {
+            ss << fmt::format(L"elevate: {}, ", Elevate().Value());
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
@@ -121,15 +132,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!StartingDirectory().empty())
         {
-            // If the directory ends in a '\', we need to add another one on so that the enclosing quote added
-            // afterwards isn't escaped
-            const auto trailingBackslashEscape = StartingDirectory().back() == L'\\' ? L"\\" : L"";
-            ss << fmt::format(L"--startingDirectory \"{}{}\" ", StartingDirectory(), trailingBackslashEscape);
+            ss << fmt::format(L"--startingDirectory {} ", QuoteAndEscapeCommandlineArg(StartingDirectory()));
         }
 
         if (!TabTitle().empty())
         {
-            ss << fmt::format(L"--title \"{}\" ", TabTitle());
+            ss << fmt::format(L"--title {} ", QuoteAndEscapeCommandlineArg(TabTitle()));
         }
 
         if (TabColor())
@@ -152,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!ColorScheme().empty())
         {
-            ss << fmt::format(L"--colorScheme \"{}\" ", ColorScheme());
+            ss << fmt::format(L"--colorScheme {} ", QuoteAndEscapeCommandlineArg(ColorScheme()));
         }
 
         if (!Commandline().empty())
@@ -300,6 +308,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"MoveFocusPreviousInOrder");
         case FocusDirection::First:
             return RS_(L"MoveFocusFirstPane");
+        case FocusDirection::Parent:
+            return RS_(L"MoveFocusParentPane");
+        case FocusDirection::Child:
+            return RS_(L"MoveFocusChildPane");
         }
 
         return winrt::hstring{
@@ -451,6 +463,33 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         default:
             return RS_(L"OpenSettingsUICommandKey");
         }
+    }
+
+    winrt::hstring SetFocusModeArgs::GenerateName() const
+    {
+        if (IsFocusMode())
+        {
+            return RS_(L"EnableFocusModeCommandKey");
+        }
+        return RS_(L"DisableFocusModeCommandKey");
+    }
+
+    winrt::hstring SetFullScreenArgs::GenerateName() const
+    {
+        if (IsFullScreen())
+        {
+            return RS_(L"EnableFullScreenCommandKey");
+        }
+        return RS_(L"DisableFullScreenCommandKey");
+    }
+
+    winrt::hstring SetMaximizedArgs::GenerateName() const
+    {
+        if (IsMaximized())
+        {
+            return RS_(L"EnableMaximizedCommandKey");
+        }
+        return RS_(L"DisableMaximizedCommandKey");
     }
 
     winrt::hstring SetColorSchemeArgs::GenerateName() const
@@ -695,6 +734,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         Id())
         };
     }
+
+    winrt::hstring ExportBufferArgs::GenerateName() const
+    {
+        if (!Path().empty())
+        {
+            // "Export text to {path}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ExportBufferToPathCommandKey")),
+                            Path())
+            };
+        }
+        else
+        {
+            // "Export text"
+            return RS_(L"ExportBufferCommandKey");
+        }
+    }
+
     winrt::hstring ClearBufferArgs::GenerateName() const
     {
         // "Clear Buffer"
@@ -717,5 +774,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MultipleActionsArgs::GenerateName() const
     {
         return L"";
+    }
+
+    winrt::hstring AdjustOpacityArgs::GenerateName() const
+    {
+        if (Relative())
+        {
+            if (Opacity() >= 0)
+            {
+                // "Increase background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"IncreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+            else
+            {
+                // "Decrease background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"DecreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+        }
+        else
+        {
+            // "Set background opacity to {Opacity}%"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"AdjustOpacityCommandKey")),
+                            Opacity())
+            };
+        }
     }
 }

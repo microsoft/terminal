@@ -94,7 +94,7 @@ void _PrepDefAppCombo(const HWND hDlg,
                       const std::vector<DelegationConfig::DelegationPackage>& list,
                       const DelegationConfig::DelegationPackage& selected)
 {
-    const HWND hCombo = GetDlgItem(hDlg, dlgItem);
+    const auto hCombo = GetDlgItem(hDlg, dlgItem);
     ComboBox_ResetContent(hCombo);
 
     DWORD selectedIndex = 0;
@@ -158,9 +158,9 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
     SendDlgItemMessage(hDlg, IDD_TERMINAL_CURSOR_GREENSCROLL, UDM_SETRANGE, 0, colorRange);
     SendDlgItemMessage(hDlg, IDD_TERMINAL_CURSOR_BLUESCROLL, UDM_SETRANGE, 0, colorRange);
 
-    const bool initialTerminalFG = gpStateInfo->DefaultForeground != INVALID_COLOR;
-    const bool initialTerminalBG = gpStateInfo->DefaultBackground != INVALID_COLOR;
-    const bool initialCursorLegacy = gpStateInfo->CursorColor == INVALID_COLOR;
+    const auto initialTerminalFG = gpStateInfo->DefaultForeground != INVALID_COLOR;
+    const auto initialTerminalBG = gpStateInfo->DefaultBackground != INVALID_COLOR;
+    const auto initialCursorLegacy = gpStateInfo->CursorColor == INVALID_COLOR;
     if (initialTerminalFG)
     {
         g_fakeForegroundColor = gpStateInfo->DefaultForeground;
@@ -234,7 +234,7 @@ void _ChangeColorControl(const HWND hDlg,
                          const WORD colorControl,
                          DWORD& setting) noexcept
 {
-    BOOL bOK = FALSE;
+    auto bOK = FALSE;
     int newValue = GetDlgItemInt(hDlg, item, &bOK, TRUE);
     int r = GetRValue(setting);
     int g = GetGValue(setting);
@@ -307,7 +307,7 @@ bool _CommandColorInput(const HWND hDlg,
                         const WORD command,
                         const std::function<void(HWND, WORD)> changeFunction) noexcept
 {
-    bool handled = false;
+    auto handled = false;
 
     switch (command)
     {
@@ -323,7 +323,7 @@ bool _CommandColorInput(const HWND hDlg,
 
 bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) noexcept
 {
-    bool handled = false;
+    auto handled = false;
     switch (item)
     {
     case IDD_TERMINAL_CURSOR_USECOLOR:
@@ -393,7 +393,7 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
     {
         if (CBN_SELCHANGE == command)
         {
-            const HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
+            const auto hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
             const DWORD comboItem = ComboBox_GetCurSel(hCombo);
             if (CB_ERR != comboItem)
             {
@@ -410,7 +410,7 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
 
 INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wParam, const LPARAM lParam)
 {
-    static bool fHaveInitialized = false;
+    static auto fHaveInitialized = false;
 
     switch (wMsg)
     {
@@ -433,7 +433,7 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
             case NM_CLICK:
             case NM_RETURN:
             {
-                PNMLINK pnmLink = (PNMLINK)lParam;
+                auto pnmLink = (PNMLINK)lParam;
                 if (0 == pnmLink->item.iLink)
                 {
                     ShellExecute(nullptr,
@@ -462,7 +462,7 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
                 {
                     // Fake the dialog proc into thinking the edit control just
                     // lost focus so it'll update properly
-                    int item = GetDlgCtrlID(GetFocus());
+                    auto item = GetDlgCtrlID(GetFocus());
                     if (item)
                     {
                         SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);

@@ -42,9 +42,15 @@ HRESULT UiaTextRangeBase::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                  _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pData);
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
+    // GH#8730: The cursor position may be in a delayed state, resulting in it being out of bounds.
+    // If that's the case, clamp it to be within bounds.
+    // TODO GH#12440: We should be able to just check some fields off of the Cursor object,
+    // but Windows Terminal isn't updating those flags properly.
     _start = cursor.GetPosition();
+    pData->GetTextBuffer().GetSize().Clamp(_start);
     _end = _start;
 
     UiaTracing::TextRange::Constructor(*this);
@@ -91,8 +97,8 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
     clientPoint.x = static_cast<LONG>(point.x);
     clientPoint.y = static_cast<LONG>(point.y);
     // get row that point resides in
-    const RECT windowRect = _getTerminalRect();
-    const SMALL_RECT viewport = _pData->GetViewport().ToInclusive();
+    const auto windowRect = _getTerminalRect();
+    const auto viewport = _pData->GetViewport().ToInclusive();
     short row = 0;
     if (clientPoint.y <= windowRect.top)
     {
@@ -107,7 +113,7 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
         // change point coords to pixels relative to window
         _TranslatePointFromScreen(&clientPoint);
 
-        const COORD currentFontSize = _getScreenFontSize();
+        const auto currentFontSize = _getScreenFontSize();
         row = gsl::narrow<SHORT>(clientPoint.y / static_cast<LONG>(currentFontSize.Y)) + viewport.Top;
     }
     _start = { 0, row };
@@ -220,15 +226,18 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
                                                   _Out_ int* pRetVal) noexcept
 try
 {
-    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRetVal);
     *pRetVal = 0;
+
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // get the text range that we're comparing to
     const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
-    if (range == nullptr)
-    {
-        return E_INVALIDARG;
-    }
+    RETURN_HR_IF_NULL(E_INVALIDARG, range);
 
     // get endpoint value that we're comparing to
     const auto other = range->GetEndpoint(targetEndpoint);
@@ -240,10 +249,7 @@ try
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
     //   Ensure both endpoints fit in the current buffer.
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
-    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
-    {
-        return E_FAIL;
-    }
+    RETURN_HR_IF(E_FAIL, !bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true));
 
     // compare them
     *pRetVal = bufferSize.CompareInBounds(mine, other, true);
@@ -259,6 +265,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     try
     {
@@ -286,16 +293,16 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     // If we're past document end,
     // set us to ONE BEFORE the document end.
     // This allows us to expand properly.
-    if (bufferSize.CompareInBounds(_start, documentEnd, true) >= 0)
+    if (bufferSize.CompareInBounds(_start, documentEnd.to_win32_coord(), true) >= 0)
     {
-        _start = documentEnd;
+        _start = documentEnd.to_win32_coord();
         bufferSize.DecrementInBounds(_start, true);
     }
 
     if (unit == TextUnit_Character)
     {
-        _start = buffer.GetGlyphStart(_start, documentEnd);
-        _end = buffer.GetGlyphEnd(_start, true, documentEnd);
+        _start = buffer.GetGlyphStart(til::point{ _start }, documentEnd).to_win32_coord();
+        _end = buffer.GetGlyphEnd(til::point{ _start }, true, documentEnd).to_win32_coord();
     }
     else if (unit <= TextUnit_Word)
     {
@@ -307,10 +314,10 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     {
         // expand to line
         _start.X = 0;
-        if (_start.Y == documentEnd.y())
+        if (_start.Y == documentEnd.y)
         {
             // we're on the last line
-            _end = documentEnd;
+            _end = documentEnd.to_win32_coord();
             bufferSize.IncrementInBounds(_end, true);
         }
         else
@@ -323,7 +330,7 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     {
         // expand to document
         _start = bufferSize.Origin();
-        _end = documentEnd;
+        _end = documentEnd.to_win32_coord();
     }
 }
 
@@ -360,18 +367,18 @@ std::optional<bool> UiaTextRangeBase::_verifyAttr(TEXTATTRIBUTEID attributeId, V
 
         // The font weight can be any value from 0 to 900.
         // The text buffer doesn't store the actual value,
-        // we just store "IsBold" and "IsFaint".
+        // we just store "IsIntense" and "IsFaint".
         const auto queryFontWeight{ val.lVal };
 
         if (queryFontWeight > FW_NORMAL)
         {
             // we're looking for a bold font weight
-            return attr.IsBold();
+            return attr.IsIntense();
         }
         else
         {
             // we're looking for "normal" font weight
-            return !attr.IsBold();
+            return !attr.IsIntense();
         }
     }
     case UIA_ForegroundColorAttributeId:
@@ -443,6 +450,12 @@ try
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
+
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // AttributeIDs that require special handling
     switch (attributeId)
@@ -541,7 +554,7 @@ try
 
     // Iterate from searchStart to searchEnd in the buffer.
     // If we find the attribute we're looking for, we update resultFirstAnchor/SecondAnchor appropriately.
-    Viewport viewportRange{ bufferSize };
+    auto viewportRange{ bufferSize };
     if (_blockRange)
     {
         const auto originX{ std::min(_start.X, inclusiveEnd.X) };
@@ -578,7 +591,7 @@ try
     if (resultFirstAnchor.has_value() && resultSecondAnchor.has_value())
     {
         RETURN_IF_FAILED(Clone(ppRetVal));
-        UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+        auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
 
         // IMPORTANT: resultFirstAnchor and resultSecondAnchor make up an inclusive range.
         range._start = searchBackwards ? *resultSecondAnchor : *resultFirstAnchor;
@@ -604,6 +617,12 @@ try
 {
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
+
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const std::wstring queryText{ text, SysStringLen(text) };
     const auto bufferSize = _getOptimizedBufferSize();
@@ -637,7 +656,7 @@ try
             (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))
         {
             RETURN_IF_FAILED(Clone(ppRetVal));
-            UiaTextRangeBase& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+            auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
             range._start = start;
             range._end = end;
 
@@ -674,10 +693,10 @@ bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT
     {
         // The font weight can be any value from 0 to 900.
         // The text buffer doesn't store the actual value,
-        // we just store "IsBold" and "IsFaint".
+        // we just store "IsIntense" and "IsFaint".
         // Source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
         pRetVal->vt = VT_I4;
-        pRetVal->lVal = attr.IsBold() ? FW_BOLD : FW_NORMAL;
+        pRetVal->lVal = attr.IsIntense() ? FW_BOLD : FW_NORMAL;
         return true;
     }
     case UIA_ForegroundColorAttributeId:
@@ -729,6 +748,12 @@ try
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     VariantInit(pRetVal);
+
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // AttributeIDs that require special handling
     switch (attributeId)
@@ -787,7 +812,7 @@ try
     const auto inclusiveEnd{ _getInclusiveEnd() };
 
     // Check if the entire text range has that text attribute
-    Viewport viewportRange{ bufferSize };
+    auto viewportRange{ bufferSize };
     if (_blockRange)
     {
         const auto originX{ std::min(_start.X, inclusiveEnd.X) };
@@ -817,13 +842,14 @@ CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
+
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
-
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
-    *ppRetVal = nullptr;
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     try
     {
@@ -839,7 +865,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
-        const til::point viewportOrigin = viewport.Origin();
+        const auto viewportOrigin = viewport.Origin();
         const auto viewportEnd = viewport.EndExclusive();
 
         // startAnchor: the earliest COORD we will get a bounding rect for
@@ -880,8 +906,8 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
                 // Convert the buffer coordinates to an equivalent range of
                 // screen cells, taking line rendition into account.
                 const auto lineRendition = buffer.GetLineRendition(rect.Top);
-                til::rectangle r{ BufferToScreenLine(rect, lineRendition) };
-                r -= viewportOrigin;
+                til::rect r{ BufferToScreenLine(rect, lineRendition) };
+                r -= til::point{ viewportOrigin };
                 _getBoundingRect(r, coords);
             }
         }
@@ -892,7 +918,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         {
             return E_OUTOFMEMORY;
         }
-        HRESULT hr = E_UNEXPECTED;
+        auto hr = E_UNEXPECTED;
         for (LONG i = 0; i < gsl::narrow<LONG>(coords.size()); ++i)
         {
             hr = SafeArrayPutElement(*ppRetVal, &i, &coords.at(i));
@@ -925,21 +951,19 @@ CATCH_RETURN();
 IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal) noexcept
 try
 {
-    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRetVal);
+    RETURN_HR_IF(E_INVALIDARG, maxLength < -1);
     *pRetVal = nullptr;
 
-    if (maxLength < -1)
-    {
-        return E_INVALIDARG;
-    }
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const auto maxLengthOpt = (maxLength == -1) ?
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([this]() noexcept {
-        _pData->UnlockConsole();
-    });
     const auto text = _getTextValue(maxLengthOpt);
     Unlock.reset();
 
@@ -1013,13 +1037,14 @@ try
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // We can abstract this movement by moving _start
     // GH#7342: check if we're past the documentEnd
     // If so, clamp each endpoint to the end of the document.
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
-    const COORD documentEnd = _getDocumentEnd();
+    const auto documentEnd = _getDocumentEnd().to_win32_coord();
     if (bufferSize.CompareInBounds(_start, documentEnd, true) > 0)
     {
         _start = documentEnd;
@@ -1075,15 +1100,13 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
-    if (count == 0)
-    {
-        return S_OK;
-    }
 
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+    RETURN_HR_IF(S_OK, count == 0);
 
     // GH#7342: check if we're past the documentEnd
     // If so, clamp each endpoint to the end of the document.
@@ -1092,7 +1115,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     auto documentEnd = bufferSize.EndExclusive();
     try
     {
-        documentEnd = _getDocumentEnd();
+        documentEnd = _getDocumentEnd().to_win32_coord();
     }
     CATCH_LOG();
 
@@ -1141,10 +1164,8 @@ try
     });
 
     const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
-    if (range == nullptr)
-    {
-        return E_INVALIDARG;
-    }
+    RETURN_HR_IF_NULL(E_INVALIDARG, range);
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // TODO GH#5406: create a different UIA parent object for each TextBuffer
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
@@ -1152,10 +1173,7 @@ try
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     const auto mine = GetEndpoint(endpoint);
     const auto other = range->GetEndpoint(targetEndpoint);
-    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
-    {
-        return E_FAIL;
-    }
+    RETURN_HR_IF(E_FAIL, !bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true));
 
     SetEndpoint(endpoint, range->GetEndpoint(targetEndpoint));
 
@@ -1171,6 +1189,7 @@ try
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     if (IsDegenerate())
     {
@@ -1215,6 +1234,7 @@ try
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const auto oldViewport = _pData->GetViewport().ToInclusive();
     const auto viewportHeight = _getViewportHeight(oldViewport);
@@ -1225,7 +1245,7 @@ try
     const base::ClampedNumeric<short> topRow = 0;
     const base::ClampedNumeric<short> bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
 
-    SMALL_RECT newViewport = oldViewport;
+    auto newViewport = oldViewport;
 
     // there's a bunch of +1/-1s here for setting the viewport. These
     // are to account for the inclusivity of the viewport boundaries.
@@ -1299,9 +1319,9 @@ IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY
 
 #pragma endregion
 
-const COORD UiaTextRangeBase::_getScreenFontSize() const
+const COORD UiaTextRangeBase::_getScreenFontSize() const noexcept
 {
-    COORD coordRet = _pData->GetFontInfo().GetSize();
+    auto coordRet = _pData->GetFontInfo().GetSize();
 
     // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.
     coordRet.X = std::max(coordRet.X, 1i16);
@@ -1367,20 +1387,20 @@ const til::point UiaTextRangeBase::_getDocumentEnd() const
 // - coords - vector to add the calculated coords to
 // Return Value:
 // - <none>
-void UiaTextRangeBase::_getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const
+void UiaTextRangeBase::_getBoundingRect(const til::rect& textRect, _Inout_ std::vector<double>& coords) const
 {
-    const til::size currentFontSize = _getScreenFontSize();
+    const til::size currentFontSize{ _getScreenFontSize() };
 
     POINT topLeft{ 0 };
     POINT bottomRight{ 0 };
 
     // we want to clamp to a long (output type), not a short (input type)
     // so we need to explicitly say <long,long>
-    topLeft.x = base::ClampMul(textRect.left(), currentFontSize.width());
-    topLeft.y = base::ClampMul(textRect.top(), currentFontSize.height());
+    topLeft.x = base::ClampMul(textRect.left, currentFontSize.width);
+    topLeft.y = base::ClampMul(textRect.top, currentFontSize.height);
 
-    bottomRight.x = base::ClampMul(textRect.right(), currentFontSize.width());
-    bottomRight.y = base::ClampMul(textRect.bottom(), currentFontSize.height());
+    bottomRight.x = base::ClampMul(textRect.right, currentFontSize.width);
+    bottomRight.y = base::ClampMul(textRect.bottom, currentFontSize.height);
 
     // convert the coords to be relative to the screen instead of
     // the client window
@@ -1411,7 +1431,7 @@ void UiaTextRangeBase::_getBoundingRect(const til::rectangle textRect, _Inout_ s
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
                                                     _In_ const TextPatternRangeEndpoint endpoint,
-                                                    _Out_ gsl::not_null<int*> const pAmountMoved,
+                                                    _Out_ const gsl::not_null<int*> pAmountMoved,
                                                     _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
@@ -1421,12 +1441,12 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
         return;
     }
 
-    const bool allowBottomExclusive = !preventBufferEnd;
-    const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const auto allowBottomExclusive = !preventBufferEnd;
+    const auto moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto& buffer = _pData->GetTextBuffer();
 
-    bool success = true;
-    til::point target = GetEndpoint(endpoint);
+    auto success = true;
+    til::point target{ GetEndpoint(endpoint) };
     const auto documentEnd{ _getDocumentEnd() };
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
@@ -1451,7 +1471,7 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
         }
     }
 
-    SetEndpoint(endpoint, target);
+    SetEndpoint(endpoint, target.to_win32_coord());
 }
 
 // Routine Description:
@@ -1468,7 +1488,7 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
-                                               _Out_ gsl::not_null<int*> const pAmountMoved,
+                                               _Out_ const gsl::not_null<int*> pAmountMoved,
                                                _In_ const bool preventBufferEnd)
 {
     *pAmountMoved = 0;
@@ -1478,8 +1498,8 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         return;
     }
 
-    const bool allowBottomExclusive = !preventBufferEnd;
-    const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const auto allowBottomExclusive = !preventBufferEnd;
+    const auto moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto& buffer = _pData->GetTextBuffer();
     const auto bufferSize = buffer.GetSize();
     const auto bufferOrigin = bufferSize.Origin();
@@ -1488,7 +1508,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     auto resultPos = GetEndpoint(endpoint);
     auto nextPos = resultPos;
 
-    bool success = true;
+    auto success = true;
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         nextPos = resultPos;
@@ -1496,7 +1516,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (bufferSize.CompareInBounds(nextPos, documentEnd, true) >= 0)
+            if (bufferSize.CompareInBounds(nextPos, documentEnd.to_win32_coord(), true) >= 0)
             {
                 success = false;
             }
@@ -1507,7 +1527,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             }
             else if (allowBottomExclusive)
             {
-                resultPos = documentEnd;
+                resultPos = documentEnd.to_win32_coord();
                 (*pAmountMoved)++;
             }
             else
@@ -1584,7 +1604,7 @@ bool UiaTextRangeBase::_tryMoveToWordStart(const TextBuffer& buffer, const til::
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
-                                               _Out_ gsl::not_null<int*> const pAmountMoved,
+                                               _Out_ const gsl::not_null<int*> pAmountMoved,
                                                _In_ const bool preventBoundary) noexcept
 {
     *pAmountMoved = 0;
@@ -1594,18 +1614,18 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         return;
     }
 
-    const bool allowBottomExclusive = !preventBoundary;
-    const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const auto allowBottomExclusive = !preventBoundary;
+    const auto moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _getOptimizedBufferSize();
 
     auto documentEnd{ bufferSize.EndExclusive() };
     try
     {
-        documentEnd = _getDocumentEnd();
+        documentEnd = _getDocumentEnd().to_win32_coord();
     }
     CATCH_LOG();
 
-    bool success = true;
+    auto success = true;
     auto resultPos = GetEndpoint(endpoint);
 
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
@@ -1692,7 +1712,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
                                                    _In_ const TextPatternRangeEndpoint endpoint,
-                                                   _Out_ gsl::not_null<int*> const pAmountMoved,
+                                                   _Out_ const gsl::not_null<int*> pAmountMoved,
                                                    _In_ const bool preventBoundary) noexcept
 {
     *pAmountMoved = 0;
@@ -1702,7 +1722,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         return;
     }
 
-    const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const auto moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _getOptimizedBufferSize();
 
     const auto target = GetEndpoint(endpoint);
@@ -1713,7 +1733,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         auto documentEnd{ bufferSize.EndExclusive() };
         try
         {
-            documentEnd = _getDocumentEnd();
+            documentEnd = _getDocumentEnd().to_win32_coord();
         }
         CATCH_LOG();
 

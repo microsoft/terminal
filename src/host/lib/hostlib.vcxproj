@@ -9,8 +9,10 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO host-common.vcxitems -->
   <Import Project="$(SolutionDir)src\host\host-common.vcxitems" />
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>

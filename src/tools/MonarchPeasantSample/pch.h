@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #define WIN32_LEAN_AND_MEAN
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
@@ -24,3 +24,5 @@
 #include "til.h"
 
 #include <conio.h>
+
+#include <cppwinrt_utils.h>

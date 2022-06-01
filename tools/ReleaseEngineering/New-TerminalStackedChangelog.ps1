@@ -21,6 +21,8 @@
 #
 # $ New-TerminalStackedChangelog origin/release-1.8..origin/release-1.9
 
+#Requires -Version 7.0
+
 [CmdletBinding()]
 Param(
     [string[]]$RevisionRanges

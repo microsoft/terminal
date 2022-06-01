@@ -6,7 +6,7 @@
 #include "../TerminalControl/ControlCore.h"
 #include "MockControlSettings.h"
 #include "MockConnection.h"
-#include "../UnitTests_TerminalCore/TestUtils.h"
+#include "../../inc/TestUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -67,7 +67,7 @@ namespace ControlUnitTests
         {
             Log::Comment(L"Create ControlCore object");
 
-            auto core = winrt::make_self<Control::implementation::ControlCore>(settings, conn);
+            auto core = winrt::make_self<Control::implementation::ControlCore>(settings, settings, conn);
             core->_inUnitTests = true;
             return core;
         }
@@ -125,22 +125,26 @@ namespace ControlUnitTests
         VERIFY_IS_NOT_NULL(core);
 
         // A callback to make sure that we're raising TransparencyChanged events
-        double expectedOpacity = 0.5;
+        auto expectedOpacity = 0.5;
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
-            VERIFY_ARE_EQUAL(expectedOpacity, settings->Opacity());
-            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings.Opacity());
+            VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
+            // The Settings object's opacity shouldn't be changed
+            VERIFY_ARE_EQUAL(0.5, settings->Opacity());
 
             if (expectedOpacity < 1.0)
             {
                 VERIFY_IS_TRUE(settings->UseAcrylic());
-                VERIFY_IS_TRUE(core->_settings.UseAcrylic());
+                VERIFY_IS_TRUE(core->_settings->UseAcrylic());
             }
 
             // GH#603: Adjusting opacity shouldn't change whether or not we
             // requested acrylic.
-            VERIFY_IS_TRUE(settings->UseAcrylic());
-            VERIFY_IS_TRUE(core->_settings.UseAcrylic());
+
+            auto expectedUseAcrylic = winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() ? true :
+                                                                                                                                      (expectedOpacity < 1.0 ? true : false);
+            VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
+            VERIFY_ARE_EQUAL(true, core->_settings->UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
 
@@ -229,7 +233,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
                      L"(leaving the cursor afer 'Bar')");
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
@@ -268,7 +272,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
                      L"(leaving the cursor afer 'Bar')");
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
@@ -307,7 +311,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
                      L"(leaving the cursor afer 'Bar')");
-        for (int i = 0; i < 40; ++i)
+        for (auto i = 0; i < 40; ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }

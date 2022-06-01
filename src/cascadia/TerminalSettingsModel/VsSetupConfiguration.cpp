@@ -21,16 +21,23 @@ std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryIn
     wil::com_ptr<IEnumSetupInstances> e;
     THROW_IF_FAILED(pQuery->EnumInstances(&e));
 
-    ComPtrSetupInstance rgpInstance;
-    auto result = e->Next(1, &rgpInstance, nullptr);
-    while (S_OK == result)
+    for (ComPtrSetupInstance rgpInstance; S_OK == THROW_IF_FAILED(e->Next(1, &rgpInstance, nullptr));)
     {
-        // wrap the COM pointers in a friendly interface
-        instances.emplace_back(VsSetupInstance{ pQuery, rgpInstance });
-        result = e->Next(1, &rgpInstance, nullptr);
+        instances.emplace_back(pQuery, std::move(rgpInstance));
     }
 
-    THROW_IF_FAILED(result);
+    // Sort instances based on version and install date from latest to oldest.
+    std::sort(instances.begin(), instances.end(), [](const VsSetupInstance& a, const VsSetupInstance& b) {
+        const auto aVersion = a.GetComparableVersion();
+        const auto bVersion = b.GetComparableVersion();
+
+        if (aVersion == bVersion)
+        {
+            return a.GetComparableInstallDate() > b.GetComparableInstallDate();
+        }
+
+        return aVersion > bVersion;
+    });
 
     return instances;
 }
@@ -95,6 +102,13 @@ std::wstring VsSetupConfiguration::GetInstanceId(ISetupInstance* pInst)
     return bstrInstanceId.get();
 }
 
+unsigned long long VsSetupConfiguration::GetInstallDate(ISetupInstance* pInst)
+{
+    FILETIME ftInstallDate{ 0 };
+    THROW_IF_FAILED(pInst->GetInstallDate(&ftInstallDate));
+    return wil::filetime::to_int64(ftInstallDate);
+}
+
 std::wstring VsSetupConfiguration::GetStringProperty(ISetupPropertyStore* pProps, std::wstring_view name)
 {
     if (pProps == nullptr)
@@ -103,7 +117,7 @@ std::wstring VsSetupConfiguration::GetStringProperty(ISetupPropertyStore* pProps
     }
 
     wil::unique_variant var;
-    if (FAILED(pProps->GetValue(name.data(), &var)))
+    if (FAILED(pProps->GetValue(name.data(), &var)) || var.vt != VT_BSTR)
     {
         return std::wstring{};
     }

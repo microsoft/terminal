@@ -60,7 +60,7 @@ public:
     //
     STDMETHODIMP DoEditSession(TfEditCookie ec)
     {
-        HRESULT hr = _DoEditSession(ec);
+        auto hr = _DoEditSession(ec);
         Release(); // Release reference count for asynchronous edit session.
         return hr;
     }

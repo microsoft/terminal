@@ -6,6 +6,7 @@
 #include "../types/TermControlUiaTextRange.hpp"
 #include <UIAutomationClient.h>
 #include <UIAutomationCoreApi.h>
+#include "../types/UiaTracing.h"
 
 // the same as COR_E_NOTSUPPORTED
 // we don't want to import the CLR headers to get it
@@ -162,13 +163,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             THROW_IF_FAILED(SafeArrayGetLBound(pReturnVal, 1, &lBound));
             THROW_IF_FAILED(SafeArrayGetUBound(pReturnVal, 1, &uBound));
 
-            long count = uBound - lBound + 1;
+            auto count = uBound - lBound + 1;
 
             std::vector<double> vec;
             vec.reserve(count);
-            for (int i = 0; i < count; i++)
+            for (auto i = 0; i < count; i++)
             {
-                double element = pVals[i];
+                auto element = pVals[i];
                 vec.push_back(element);
             }
 
@@ -182,6 +183,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     XamlAutomation::IRawElementProviderSimple XamlUiaTextRange::GetEnclosingElement()
     {
+        ::Microsoft::Console::Types::UiaTracing::TextRange::GetEnclosingElement(*static_cast<::Microsoft::Console::Types::UiaTextRangeBase*>(_uiaProvider.get()));
         return _parentProvider;
     }
 

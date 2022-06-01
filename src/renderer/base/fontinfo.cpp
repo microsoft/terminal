@@ -5,19 +5,12 @@
 
 #include "../inc/FontInfo.hpp"
 
-bool operator==(const FontInfo& a, const FontInfo& b)
-{
-    return (static_cast<FontInfoBase>(a) == static_cast<FontInfoBase>(b) &&
-            a._coordSize == b._coordSize &&
-            a._coordSizeUnscaled == b._coordSizeUnscaled);
-}
-
-FontInfo::FontInfo(const std::wstring_view faceName,
+FontInfo::FontInfo(const std::wstring_view& faceName,
                    const unsigned char family,
                    const unsigned int weight,
                    const COORD coordSize,
                    const unsigned int codePage,
-                   const bool fSetDefaultRasterFont /* = false */) :
+                   const bool fSetDefaultRasterFont /* = false */) noexcept :
     FontInfoBase(faceName, family, weight, fSetDefaultRasterFont, codePage),
     _coordSize(coordSize),
     _coordSizeUnscaled(coordSize),
@@ -26,38 +19,36 @@ FontInfo::FontInfo(const std::wstring_view faceName,
     ValidateFont();
 }
 
-FontInfo::FontInfo(const FontInfo& fiFont) :
-    FontInfoBase(fiFont),
-    _coordSize(fiFont.GetSize()),
-    _coordSizeUnscaled(fiFont.GetUnscaledSize())
+bool FontInfo::operator==(const FontInfo& other) noexcept
 {
+    return FontInfoBase::operator==(other) &&
+           _coordSize == other._coordSize &&
+           _coordSizeUnscaled == other._coordSizeUnscaled;
 }
 
-COORD FontInfo::GetUnscaledSize() const
+COORD FontInfo::GetUnscaledSize() const noexcept
 {
     return _coordSizeUnscaled;
 }
 
-COORD FontInfo::GetSize() const
+COORD FontInfo::GetSize() const noexcept
 {
     return _coordSize;
 }
 
-void FontInfo::SetFromEngine(const std::wstring_view faceName,
+void FontInfo::SetFromEngine(const std::wstring_view& faceName,
                              const unsigned char family,
                              const unsigned int weight,
                              const bool fSetDefaultRasterFont,
                              const COORD coordSize,
-                             const COORD coordSizeUnscaled)
+                             const COORD coordSizeUnscaled) noexcept
 {
     FontInfoBase::SetFromEngine(faceName,
                                 family,
                                 weight,
                                 fSetDefaultRasterFont);
-
     _coordSize = coordSize;
     _coordSizeUnscaled = coordSizeUnscaled;
-
     _ValidateCoordSize();
 }
 
@@ -71,12 +62,12 @@ void FontInfo::SetFallback(const bool didFallback) noexcept
     _didFallback = didFallback;
 }
 
-void FontInfo::ValidateFont()
+void FontInfo::ValidateFont() noexcept
 {
     _ValidateCoordSize();
 }
 
-void FontInfo::_ValidateCoordSize()
+void FontInfo::_ValidateCoordSize() noexcept
 {
     // a (0,0) font is okay for the default raster font, as we will eventually set the dimensions based on the font GDI
     // passes back to us.

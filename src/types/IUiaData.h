@@ -33,6 +33,7 @@ namespace Microsoft::Console::Types
         IUiaData& operator=(IUiaData&&) = default;
 
     public:
+        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
         virtual const bool IsSelectionActive() const = 0;
         virtual const bool IsBlockSelection() const = 0;
         virtual void ClearSelection() = 0;
@@ -40,6 +41,7 @@ namespace Microsoft::Console::Types
         virtual const COORD GetSelectionAnchor() const noexcept = 0;
         virtual const COORD GetSelectionEnd() const noexcept = 0;
         virtual void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr) = 0;
+        virtual const bool IsUiaDataInitialized() const noexcept = 0;
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.

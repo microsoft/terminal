@@ -11,7 +11,8 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
-    "trimBlockSelection": false,
+    "trimBlockSelection": true,
+    "trimPaste": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -24,7 +25,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "startOnUserLogin":  false,
+    "startOnUserLogin": false,
     "theme": "system",
     "snapToGridOnResize": true,
     "disableAnimations": false,
@@ -304,6 +305,7 @@
         { "command": "quakeMode", "keys":"win+sc(41)" },
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
+        { "command": "restoreLastClosed"},
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -354,6 +356,8 @@
         { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
         { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
         { "command": { "action": "moveFocus", "direction": "first" } },
+        { "command": { "action": "moveFocus", "direction": "parent" } },
+        { "command": { "action": "moveFocus", "direction": "child" } },
         { "command": { "action": "swapPane", "direction": "down" } },
         { "command": { "action": "swapPane", "direction": "left" } },
         { "command": { "action": "swapPane", "direction": "right" } },
@@ -380,6 +384,8 @@
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
+        { "command": "selectAll", "keys": "ctrl+shift+a" },
+        { "command": "markMode", "keys": "ctrl+shift+m" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },
@@ -389,6 +395,7 @@
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
         { "command": { "action": "clearBuffer", "clear": "all" } },
+        { "command": "exportBuffer" },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
@@ -448,6 +455,17 @@
                         }
                     ]
                 }
+            ]
+        },
+        {
+            // Set opacity...
+            "name": { "key": "SetOpacityParentCommandName" },
+            "commands": [
+                { "command": { "action": "adjustOpacity", "opacity": 0, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 25, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 50, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
         }
     ]

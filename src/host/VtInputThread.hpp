@@ -26,6 +26,7 @@ namespace Microsoft::Console
         [[nodiscard]] HRESULT Start();
         static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
         void DoReadInput(const bool throwOnFail);
+        void SetLookingForDSR(const bool looking) noexcept;
 
     private:
         [[nodiscard]] HRESULT _HandleRunInput(const std::string_view u8Str);
@@ -37,6 +38,8 @@ namespace Microsoft::Console
 
         bool _exitRequested;
         HRESULT _exitResult;
+
+        std::function<void(bool)> _pfnSetLookingForDSR;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
         til::u8state _u8State;

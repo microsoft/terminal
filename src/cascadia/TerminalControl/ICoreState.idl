@@ -22,5 +22,10 @@ namespace Microsoft.Terminal.Control
         Boolean BracketedPasteEnabled { get; };
 
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
+
+        Microsoft.Terminal.Core.Scheme ColorScheme { get; set; };
+
+        UInt64 OwningHwnd;
+
     };
 }

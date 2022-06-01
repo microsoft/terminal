@@ -14,5 +14,5 @@ Author(s):
 
 #pragma once
 
-void ToggleV2LayoutControls(__in const HWND hDlg);
+void ToggleV2LayoutControls(const __in HWND hDlg);
 INT_PTR WINAPI ScreenSizeDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam);

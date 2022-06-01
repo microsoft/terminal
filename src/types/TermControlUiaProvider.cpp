@@ -16,9 +16,6 @@ HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ ::Microsoft::Console
     RETURN_IF_FAILED(ScreenInfoUiaProviderBase::RuntimeClassInitialize(uiaData));
 
     _controlInfo = controlInfo;
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
     return S_OK;
 }
 
@@ -26,11 +23,6 @@ IFACEMETHODIMP TermControlUiaProvider::Navigate(_In_ NavigateDirection direction
                                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    /*ApiMsgNavigate apiMsg;
-    apiMsg.Direction = direction;
-    Tracing::s_TraceUia(this, ApiCall::Navigate, &apiMsg);*/
     *ppProvider = nullptr;
 
     if (direction == NavigateDirection_Parent)
@@ -52,12 +44,12 @@ IFACEMETHODIMP TermControlUiaProvider::Navigate(_In_ NavigateDirection direction
     return S_OK;
 }
 
-IFACEMETHODIMP TermControlUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
+IFACEMETHODIMP TermControlUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    const RECT rc = _controlInfo->GetBounds();
+    const auto rc = _controlInfo->GetBounds();
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -97,17 +89,17 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
     return S_OK;
 }
 
-const COORD TermControlUiaProvider::GetFontSize() const
+const COORD TermControlUiaProvider::GetFontSize() const noexcept
 {
     return _controlInfo->GetFontSize();
 }
 
-const RECT TermControlUiaProvider::GetPadding() const
+const RECT TermControlUiaProvider::GetPadding() const noexcept
 {
     return _controlInfo->GetPadding();
 }
 
-const double TermControlUiaProvider::GetScaleFactor() const
+const double TermControlUiaProvider::GetScaleFactor() const noexcept
 {
     return _controlInfo->GetScaleFactor();
 }

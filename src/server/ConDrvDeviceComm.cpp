@@ -41,11 +41,11 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
 [[nodiscard]] HRESULT ConDrvDeviceComm::ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
                                                _Out_ CONSOLE_API_MSG* const pMessage) const
 {
-    HRESULT hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
-                            pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
-                            pReplyMsg == nullptr ? 0 : sizeof(pReplyMsg->Complete),
-                            &pMessage->Descriptor,
-                            sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
+    auto hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
+                         pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
+                         pReplyMsg == nullptr ? 0 : sizeof(pReplyMsg->Complete),
+                         &pMessage->Descriptor,
+                         sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
 
     if (hr == HRESULT_FROM_WIN32(ERROR_IO_PENDING))
     {

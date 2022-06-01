@@ -15,7 +15,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     VtEngine(std::move(hPipe), initialViewport),
     _fUseAsciiOnly(fUseAsciiOnly),
     _needToDisableCursor(false),
-    _lastCursorIsVisible(false),
+    // GH#12401: Ensure a DECTCEM cursor show/hide sequence
+    // is emitted on the first frame no matter what.
+    _lastCursorIsVisible(Tribool::Invalid),
     _nextCursorIsVisible(true)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
@@ -37,12 +39,22 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     RETURN_IF_FAILED(VtEngine::StartPaint());
 
-    _trace.TraceLastText(_lastText);
+    _trace.TraceLastText(til::point{ _lastText });
 
     // Prep us to think that the cursor is not visible this frame. If it _is_
     // visible, then PaintCursor will be called, and we'll set this to true
     // during the frame.
     _nextCursorIsVisible = false;
+
+    // Do not perform synchronization clearing in passthrough mode.
+    // In passthrough, the terminal leads and we follow what it is
+    // handling from the client application.
+    // (This is in contrast to full PTY mode where WE, the ConPTY, lead and
+    //  it follows our state.)
+    if (_passthrough)
+    {
+        _firstPaint = false;
+    }
 
     if (_firstPaint)
     {
@@ -57,16 +69,16 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        gsl::span<const til::rectangle> dirty;
+        gsl::span<const til::rect> dirty;
         RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
-        Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));
+        auto dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0).to_small_rect());
 
         // If there's more than 1, union them all up with the 1 we already have.
         for (size_t i = 1; i < dirty.size(); ++i)
         {
-            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i)));
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i).to_small_rect()));
         }
     }
 
@@ -98,31 +110,20 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     {
         // If the cursor was previously visible, let's hide it for this frame,
         // by prepending a cursor off.
-        if (_lastCursorIsVisible)
+        if (_lastCursorIsVisible != Tribool::False)
         {
             _buffer.insert(0, "\x1b[?25l");
-            _lastCursorIsVisible = false;
+            _lastCursorIsVisible = Tribool::False;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
         // need to worry, it's already off.
     }
 
-    // If the cursor is moving from off -> on (including cases where we just
-    // disabled if for this frame), show the cursor at the end of the frame
-    if (_nextCursorIsVisible && !_lastCursorIsVisible)
+    if (_lastCursorIsVisible != static_cast<Tribool>(_nextCursorIsVisible))
     {
-        RETURN_IF_FAILED(_ShowCursor());
+        RETURN_IF_FAILED(_nextCursorIsVisible ? _ShowCursor() : _HideCursor());
+        _lastCursorIsVisible = static_cast<Tribool>(_nextCursorIsVisible);
     }
-    // Otherwise, if the cursor previously was visible, and it should be hidden
-    // (on -> off), hide it at the end of the frame.
-    else if (!_nextCursorIsVisible && _lastCursorIsVisible)
-    {
-        RETURN_IF_FAILED(_HideCursor());
-    }
-
-    // Update our tracker of what we thought the last cursor state of the
-    // terminal was.
-    _lastCursorIsVisible = _nextCursorIsVisible;
 
     RETURN_IF_FAILED(VtEngine::EndPaint());
 
@@ -136,6 +137,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      16-color attributes.
 // Arguments:
 // - textAttributes - Text attributes to use for the colors and character rendition
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
 // - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes: indicates if we should change the background color of
@@ -143,6 +145,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                        const RenderSettings& /*renderSettings*/,
                                                         const gsl::not_null<IRenderData*> /*pData*/,
                                                         const bool /*usingSoftFont*/,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
@@ -198,7 +201,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // the last cell of the row. We're in a deferred wrap, but the host
     // thinks the cursor is actually in-frame.
     // See ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame
-    const bool cursorIsInDeferredWrap = (nextCursorPosition.X == _lastText.X - 1) && (nextCursorPosition.Y == _lastText.Y);
+    const auto cursorIsInDeferredWrap = (nextCursorPosition.X == _lastText.X - 1) && (nextCursorPosition.Y == _lastText.Y);
     // If all three of these conditions are true, then:
     //   * cursorIsInDeferredWrap: The cursor is in a position where the line
     //     filled the last cell of the row, but the host tried to paint it in
@@ -233,12 +236,12 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - coord: location to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
+[[nodiscard]] HRESULT XtermEngine::_MoveCursor(const COORD coord) noexcept
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     const auto originalPos = _lastText;
-    _trace.TraceMoveCursor(_lastText, coord);
-    bool performedSoftWrap = false;
+    _trace.TraceMoveCursor(til::point{ _lastText }, til::point{ coord });
+    auto performedSoftWrap = false;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
         if (coord.X == 0 && coord.Y == 0)
@@ -256,7 +259,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
             // If the previous line wrapped, then the cursor is already at this
             //      position, we just don't know it yet. Don't emit anything.
-            bool previousLineWrapped = false;
+            auto previousLineWrapped = false;
             if (_wrappedRow.has_value())
             {
                 previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
@@ -348,19 +351,19 @@ try
 {
     _trace.TraceScrollFrame(_scrollDelta);
 
-    if (_scrollDelta.x() != 0)
+    if (_scrollDelta.x != 0)
     {
         // No easy way to shift left-right. Everything needs repainting.
         return InvalidateAll();
     }
-    if (_scrollDelta.y() == 0)
+    if (_scrollDelta.y == 0)
     {
         // There's nothing to do here. Do nothing.
         return S_OK;
     }
 
-    const short dy = _scrollDelta.y<short>();
-    const short absDy = static_cast<short>(abs(dy));
+    const auto dy = _scrollDelta.narrow_y<short>();
+    const auto absDy = static_cast<short>(abs(dy));
 
     // Save the old wrap state here. We're going to clear it so that
     // _MoveCursor will definitely move us to the right position. We'll
@@ -382,7 +385,7 @@ try
         // statement here.
 
         // Move the cursor to the bottom of the current viewport
-        const short bottom = _lastViewport.BottomInclusive();
+        const auto bottom = _lastViewport.BottomInclusive();
         RETURN_IF_FAILED(_MoveCursor({ 0, bottom }));
         // Emit some number of newlines to create space in the buffer.
         RETURN_IF_FAILED(_Write(std::string(absDy, '\n')));
@@ -411,7 +414,7 @@ try
     // position we think we left the cursor.
     //
     // See GH#5113
-    _trace.TraceLastText(_lastText);
+    _trace.TraceLastText(til::point{ _lastText });
     if (_wrappedRow.has_value())
     {
         _wrappedRow.value() += dy;
@@ -430,7 +433,7 @@ try
         // one frame, and the second line in another frame that included other
         // changes _above_ the wrapped line, that we maintain the wrap state in
         // the Terminal.
-        const til::rectangle lastCellOfWrappedRow{
+        const til::rect lastCellOfWrappedRow{
             til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
             til::size{ 1, 1 }
         };
@@ -441,7 +444,7 @@ try
     // If the entire viewport was invalidated this frame, don't mark the bottom
     // line as new. There are cases where this can cause visual artifacts - see
     // GH#5039 and ConptyRoundtripTests::ClearHostTrickeryTest
-    const bool allInvalidated = _invalidMap.all();
+    const auto allInvalidated = _invalidMap.all();
     _newBottomLine = !allInvalidated;
 
     // GH#5502 - keep track of the BG color we had when we emitted this new
@@ -501,7 +504,7 @@ CATCH_RETURN();
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
                                                    const COORD coord,
                                                    const bool /*trimLeft*/,
                                                    const bool lineWrapped) noexcept
@@ -512,7 +515,7 @@ CATCH_RETURN();
 }
 
 // Method Description:
-// - Wrapper for ITerminalOutputConnection. Write either an ascii-only, or a
+// - Wrapper for _Write. Write either an ascii-only, or a
 //      proper utf-8 string, depending on our mode.
 // Arguments:
 // - wstr - wstring of text to be written
@@ -534,6 +537,25 @@ CATCH_RETURN();
     // To fix this, flush here, so this string is sent to the connected terminal
     // application.
 
+    return _Flush();
+}
+
+// Method Description:
+// - Sends a command to set the terminal's window to visible or hidden
+// Arguments:
+// - showOrHide - True if show; false if hide.
+// Return Value:
+// - S_OK or suitable HRESULT error from either conversion or writing pipe.
+[[nodiscard]] HRESULT XtermEngine::SetWindowVisibility(const bool showOrHide) noexcept
+{
+    if (showOrHide)
+    {
+        RETURN_IF_FAILED(_Write("\x1b[1t"));
+    }
+    else
+    {
+        RETURN_IF_FAILED(_Write("\x1b[2t"));
+    }
     return _Flush();
 }
 

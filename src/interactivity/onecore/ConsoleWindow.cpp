@@ -11,7 +11,7 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 using namespace Microsoft::Console::Types;
 
-BOOL ConsoleWindow::EnableBothScrollBars()
+BOOL ConsoleWindow::EnableBothScrollBars() noexcept
 {
     return FALSE;
 }
@@ -20,28 +20,28 @@ int ConsoleWindow::UpdateScrollBar(bool /*isVertical*/,
                                    bool /*isAltBuffer*/,
                                    UINT /*pageSize*/,
                                    int /*maxSize*/,
-                                   int /*viewportPosition*/)
+                                   int /*viewportPosition*/) noexcept
 {
     return 0;
 }
 
-bool ConsoleWindow::IsInFullscreen() const
+bool ConsoleWindow::IsInFullscreen() const noexcept
 {
     return true;
 }
 
-void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
+void ConsoleWindow::SetIsFullscreen(const bool /*fFullscreenEnabled*/) noexcept
 {
 }
 
 void ConsoleWindow::ChangeViewport(const SMALL_RECT NewWindow)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
-    COORD const FontSize = ScreenInfo.GetScreenFontSize();
+    auto& ScreenInfo = gci.GetActiveOutputBuffer();
+    const auto FontSize = ScreenInfo.GetScreenFontSize();
 
-    Selection* pSelection = &Selection::Instance();
+    auto pSelection = &Selection::Instance();
     pSelection->HideSelection();
 
     ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), true);
@@ -56,87 +56,86 @@ void ConsoleWindow::ChangeViewport(const SMALL_RECT NewWindow)
     ScreenInfo.UpdateScrollBars();
 }
 
-void ConsoleWindow::CaptureMouse()
+void ConsoleWindow::CaptureMouse() noexcept
 {
 }
 
-BOOL ConsoleWindow::ReleaseMouse()
+BOOL ConsoleWindow::ReleaseMouse() noexcept
 {
     return TRUE;
 }
 
-HWND ConsoleWindow::GetWindowHandle() const
+HWND ConsoleWindow::GetWindowHandle() const noexcept
 {
     return nullptr;
 }
 
-void ConsoleWindow::SetOwner()
+void ConsoleWindow::SetOwner() noexcept
 {
 }
 
-BOOL ConsoleWindow::GetCursorPosition(LPPOINT /*lpPoint*/)
-{
-    return FALSE;
-}
-
-BOOL ConsoleWindow::GetClientRectangle(LPRECT /*lpRect*/)
+BOOL ConsoleWindow::GetCursorPosition(LPPOINT /*lpPoint*/) noexcept
 {
     return FALSE;
 }
 
-int ConsoleWindow::MapPoints(LPPOINT /*lpPoints*/, UINT /*cPoints*/)
+BOOL ConsoleWindow::GetClientRectangle(LPRECT /*lpRect*/) noexcept
+{
+    return FALSE;
+}
+
+int ConsoleWindow::MapPoints(LPPOINT /*lpPoints*/, UINT /*cPoints*/) noexcept
 {
     return 0;
 }
 
-BOOL ConsoleWindow::ConvertScreenToClient(LPPOINT /*lpPoint*/)
+BOOL ConsoleWindow::ConvertScreenToClient(LPPOINT /*lpPoint*/) noexcept
 {
     return 0;
 }
 
-BOOL ConsoleWindow::SendNotifyBeep() const
+BOOL ConsoleWindow::SendNotifyBeep() const noexcept
 {
     return Beep(800, 200);
 }
 
-BOOL ConsoleWindow::PostUpdateScrollBars() const
+BOOL ConsoleWindow::PostUpdateScrollBars() const noexcept
 {
     return FALSE;
 }
 
-BOOL ConsoleWindow::PostUpdateWindowSize() const
+BOOL ConsoleWindow::PostUpdateWindowSize() const noexcept
 {
     return FALSE;
 }
 
-void ConsoleWindow::UpdateWindowSize(COORD const /*coordSizeInChars*/)
+void ConsoleWindow::UpdateWindowSize(const COORD /*coordSizeInChars*/) noexcept
 {
 }
 
-void ConsoleWindow::UpdateWindowText()
+void ConsoleWindow::UpdateWindowText() noexcept
 {
 }
 
-void ConsoleWindow::HorizontalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/)
+void ConsoleWindow::HorizontalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/) noexcept
 {
 }
 
-void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/)
+void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/) noexcept
 {
 }
 
-[[nodiscard]] HRESULT ConsoleWindow::SignalUia(_In_ EVENTID /*id*/)
+[[nodiscard]] HRESULT ConsoleWindow::SignalUia(_In_ EVENTID /*id*/) noexcept
 {
     return E_NOTIMPL;
 }
 
-[[nodiscard]] HRESULT ConsoleWindow::UiaSetTextAreaFocus()
+[[nodiscard]] HRESULT ConsoleWindow::UiaSetTextAreaFocus() noexcept
 {
     return E_NOTIMPL;
 }
 
 RECT ConsoleWindow::GetWindowRect() const noexcept
 {
-    RECT rc = { 0 };
-    return rc;
+    return {};
 }

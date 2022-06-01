@@ -58,7 +58,7 @@ namespace SettingsModelLocalTests
         const auto commands1Json = VerifyParseSucceeded(commands1String);
         const auto commands2Json = VerifyParseSucceeded(commands2String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -92,7 +92,7 @@ namespace SettingsModelLocalTests
         const auto commands2Json = VerifyParseSucceeded(commands2String);
         const auto commands3Json = VerifyParseSucceeded(commands3String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -154,7 +154,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -272,7 +272,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(3u, warnings.size());
@@ -298,7 +298,7 @@ namespace SettingsModelLocalTests
         const std::string commands0String{ R"([ { "name": { "key": "DuplicateTabCommandKey"}, "command": "copy" } ])" };
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -340,7 +340,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -410,7 +410,7 @@ namespace SettingsModelLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -465,15 +465,19 @@ namespace SettingsModelLocalTests
                 "name":"action7_startingDirectoryWithTrailingSlash",
                 "command": { "action": "newWindow", "startingDirectory":"C:\\", "commandline": "bar.exe" }
             },
+            {
+                "name":"action8_tabTitleEscaping",
+                "command": { "action": "newWindow", "tabTitle":"\\\";foo\\" }
+            }
         ])" };
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
+        auto commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(8u, commands.Size());
+        VERIFY_ARE_EQUAL(9u, commands.Size());
 
         {
             auto command = commands.Lookup(L"action0");
@@ -585,6 +589,21 @@ namespace SettingsModelLocalTests
             Log::Comment(NoThrowString().Format(
                 L"cmdline: \"%s\"", cmdline.c_str()));
             VERIFY_ARE_EQUAL(L"--startingDirectory \"C:\\\\\" -- \"bar.exe\"", terminalArgs.ToCommandline());
+        }
+
+        {
+            auto command = commands.Lookup(L"action8_tabTitleEscaping");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            auto cmdline = terminalArgs.ToCommandline();
+            Log::Comment(NoThrowString().Format(
+                L"cmdline: \"%s\"", cmdline.c_str()));
+            VERIFY_ARE_EQUAL(LR"-(--title "\\\"\;foo\\")-", terminalArgs.ToCommandline());
         }
     }
 }

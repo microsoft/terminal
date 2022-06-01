@@ -13,6 +13,10 @@
 #include <Windows.ApplicationModel.h>
 #include <Windows.ApplicationModel.AppExtensions.h>
 
+#include "../inc/conint.h"
+
+#include <initguid.h>
+
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation;
@@ -24,6 +28,9 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 
 #define DELEGATION_CONSOLE_KEY_NAME L"DelegationConsole"
 #define DELEGATION_TERMINAL_KEY_NAME L"DelegationTerminal"
+
+DEFINE_GUID(CLSID_SystemDelegationConsole, 0x2eaca947, 0x7f5f, 0x4cfa, 0xba, 0x87, 0x8f, 0x7f, 0xbe, 0xef, 0xbe, 0x69);
+DEFINE_GUID(CLSID_SystemDelegationTerminal, 0xe12cff52, 0xa866, 0x4c77, 0x9a, 0x90, 0xf5, 0x70, 0xa7, 0xaa, 0x2c, 0x6b);
 
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
@@ -223,7 +230,7 @@ try
     LOG_IF_FAILED(s_GetDefaultTerminalId(defTerm));
 
     // The default one is the 0th one because that's supposed to be the inbox conhost one.
-    DelegationPackage chosenPackage = packages.at(0);
+    auto chosenPackage = packages.at(0);
 
     // Search through and find a package that matches. If we failed to match because
     // it's torn across multiple or something not in the catalog, we'll offer the inbox conhost one.
@@ -262,13 +269,43 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DelegationConfig::s_GetDefaultConsoleId(IID& iid) noexcept
 {
     iid = { 0 };
-    return s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
+
+    auto hr = s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
+
+    auto defApp = false;
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
+    {
+        if (FAILED(hr))
+        {
+            // If we can't find a user-defined delegation console/terminal, use the hardcoded
+            // delegation console/terminal instead.
+            iid = CLSID_SystemDelegationConsole;
+            hr = S_OK;
+        }
+    }
+
+    return hr;
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_GetDefaultTerminalId(IID& iid) noexcept
 {
     iid = { 0 };
-    return s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
+
+    auto hr = s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
+
+    auto defApp = false;
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
+    {
+        if (FAILED(hr))
+        {
+            // If we can't find a user-defined delegation console/terminal, use the hardcoded
+            // delegation console/terminal instead.
+            iid = CLSID_SystemDelegationTerminal;
+            hr = S_OK;
+        }
+    }
+
+    return hr;
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_Get(PCWSTR value, IID& iid) noexcept
@@ -282,12 +319,12 @@ CATCH_RETURN()
     RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey));
 
     DWORD bytesNeeded = 0;
-    NTSTATUS result = RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                          value,
-                                                          0,
-                                                          REG_SZ,
-                                                          nullptr,
-                                                          &bytesNeeded);
+    auto result = RegistrySerialization::s_QueryValue(startupKey.get(),
+                                                      value,
+                                                      0,
+                                                      REG_SZ,
+                                                      nullptr,
+                                                      &bytesNeeded);
 
     if (NTSTATUS_FROM_WIN32(ERROR_SUCCESS) != result)
     {

@@ -60,7 +60,7 @@ Users will be able to add a new setting to their font objects (added in [#10433]
 There is one point to note here about clashing. For example, if a user has the old "weight" setting defined _as well as_ a "wght" axis defined, we will only use the "wght" axis value. We prioritize that value for a few reasons:
 
 1. It is the more recent addition to our settings model. Thus, it is likely that a user that has defined both values probably just forgot to remove the old value.
-2. It is the more precise value, it is a specific float value whereas the the old "weight" setting is an enum (that eventually gets mapped to a float value).
+2. It is the more precise value, it is a specific float value whereas the old "weight" setting is an enum (that eventually gets mapped to a float value).
 
 ## Capabilities
 
@@ -74,7 +74,7 @@ Should not affect security.
 
 ### Reliability
 
-Aside from additional parsing required for the settings file (which inherently offers more locations for parsing to fail), we need to be careful about badly formed/non-existant feature tags or axes specified in the user-defined dictionaries. We must make sure to ignore such declarations (perhaps alongside emitting a warning to the user) and only apply those that are correctly formed and exist.
+Aside from additional parsing required for the settings file (which inherently offers more locations for parsing to fail), we need to be careful about badly formed/non-existent feature tags or axes specified in the user-defined dictionaries. We must make sure to ignore such declarations (perhaps alongside emitting a warning to the user) and only apply those that are correctly formed and exist.
 
 ### Compatibility
 

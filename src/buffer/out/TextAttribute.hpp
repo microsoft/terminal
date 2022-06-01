@@ -41,8 +41,8 @@ public:
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
-        _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
+        _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
+        _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
         _extendedAttrs{ ExtendedAttributes::Normal },
         _hyperlinkId{ 0 }
     {
@@ -64,13 +64,6 @@ public:
     static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
-    std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
-                                                     const COLORREF defaultFgColor,
-                                                     const COLORREF defaultBgColor,
-                                                     const bool reverseScreenMode = false,
-                                                     const bool blinkingIsFaint = false,
-                                                     const bool boldIsBright = true) const noexcept;
-
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
     bool IsTopHorizontalDisplayed() const noexcept;
@@ -83,15 +76,18 @@ public:
 
     void Invert() noexcept;
 
-    friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend constexpr bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend constexpr bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
-    friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+    inline bool operator==(const TextAttribute& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextAttribute)) == 0;
+    }
+
+    inline bool operator!=(const TextAttribute& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextAttribute)) != 0;
+    }
 
     bool IsLegacy() const noexcept;
-    bool IsBold() const noexcept;
+    bool IsIntense() const noexcept;
     bool IsFaint() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
@@ -102,7 +98,7 @@ public:
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
 
-    void SetBold(bool isBold) noexcept;
+    void SetIntense(bool isIntense) noexcept;
     void SetFaint(bool isFaint) noexcept;
     void SetItalic(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
@@ -167,19 +163,14 @@ public:
     }
 
 private:
-    static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
-    {
-        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
-    }
-
-    static BYTE s_legacyDefaultForeground;
-    static BYTE s_legacyDefaultBackground;
+    static std::array<TextColor, 16> s_legacyForegroundColorMap;
+    static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 
     uint16_t _wAttrLegacy; // sizeof: 2, alignof: 2
     uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
-    ExtendedAttributes _extendedAttrs; // sizeof: 1, alignof: 1
+    ExtendedAttributes _extendedAttrs; // sizeof: 2, alignof: 2
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -195,20 +186,6 @@ enum class TextAttributeBehavior
     Current, // use text attribute of cell being written to
     StoredOnly, // only use the contained text attribute and skip the insertion of anything else
 };
-
-constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return a._wAttrLegacy == b._wAttrLegacy &&
-           a._foreground == b._foreground &&
-           a._background == b._background &&
-           a._extendedAttrs == b._extendedAttrs &&
-           a._hyperlinkId == b._hyperlinkId;
-}
-
-constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return !(a == b);
-}
 
 #ifdef UNIT_TESTING
 
@@ -226,10 +203,10 @@ namespace WEX
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
+                    L"{FG:%s,BG:%s,intense:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
-                    attr.IsBold(),
+                    attr.IsIntense(),
                     attr._wAttrLegacy,
                     static_cast<DWORD>(attr._extendedAttrs));
             }

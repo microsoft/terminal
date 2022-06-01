@@ -28,7 +28,7 @@ Revision History:
 #include "../server/WaitQueue.h"
 
 #include "../host/RenderData.hpp"
-#include "../renderer/inc/BlinkingState.hpp"
+#include "../audio/midi/MidiAudio.hpp"
 
 // clang-format off
 // Flags flags
@@ -78,7 +78,6 @@ class CONSOLE_INFORMATION :
 {
 public:
     CONSOLE_INFORMATION();
-    ~CONSOLE_INFORMATION();
     CONSOLE_INFORMATION(const CONSOLE_INFORMATION& c) = delete;
     CONSOLE_INFORMATION& operator=(const CONSOLE_INFORMATION& c) = delete;
 
@@ -104,16 +103,16 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    void LockConsole();
-    bool TryLockConsole();
-    void UnlockConsole();
-    bool IsConsoleLocked() const;
-    ULONG GetCSRecursionCount();
+    static void LockConsole();
+    static void UnlockConsole();
+    static bool IsConsoleLocked();
+    static ULONG GetCSRecursionCount();
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    void SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer);
     bool HasActiveOutputBuffer() const;
 
     InputBuffer* const GetActiveInputBuffer() const;
@@ -123,10 +122,6 @@ public:
     const COOKED_READ_DATA& CookedReadData() const noexcept;
     COOKED_READ_DATA& CookedReadData() noexcept;
     void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
-
-    COLORREF GetDefaultForeground() const noexcept;
-    COLORREF GetDefaultBackground() const noexcept;
-    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring_view newTitlePrefix);
@@ -143,14 +138,15 @@ public:
     friend class SCREEN_INFORMATION;
     friend class CommonState;
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
-    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
+
+    MidiAudio& GetMidiAudio();
+    void ShutdownMidiAudio();
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
     RenderData renderData;
 
 private:
-    CRITICAL_SECTION _csConsoleLock; // serialize input and output using this
     std::wstring _Title;
     std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _TitleAndPrefix;
@@ -161,7 +157,7 @@ private:
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
-    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
+    std::unique_ptr<MidiAudio> _midiAudio;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

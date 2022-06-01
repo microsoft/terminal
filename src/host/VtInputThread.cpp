@@ -8,7 +8,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "input.h"
 #include "../terminal/parser/InputStateMachineEngine.hpp"
-#include "outputStream.hpp" // For ConhostInternalGetSet
 #include "../terminal/adapter/InteractDispatch.hpp"
 #include "../types/inc/convert.hpp"
 #include "server.h"
@@ -31,15 +30,12 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _u8State{},
     _dwThreadId{ 0 },
     _exitRequested{ false },
-    _exitResult{ S_OK }
+    _exitResult{ S_OK },
+    _pfnSetLookingForDSR{}
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    auto pGetSet = std::make_unique<ConhostInternalGetSet>(gci);
-
-    auto dispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
+    auto dispatch = std::make_unique<InteractDispatch>();
 
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
 
@@ -50,6 +46,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     // we need this callback to be able to flush an unknown input sequence to the app
     auto flushCallback = std::bind(&StateMachine::FlushToTerminal, _pInputStateMachine.get());
     engineRef->SetFlushToInputQueueCallback(flushCallback);
+
+    // we need this callback to capture the reply if someone requests a status from the terminal
+    _pfnSetLookingForDSR = std::bind(&InputStateMachineEngine::SetLookingForDSR, engineRef, std::placeholders::_1);
 }
 
 // Method Description:
@@ -94,7 +93,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
-    VtInputThread* const pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
+    const auto pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
@@ -110,7 +109,7 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
 {
     char buffer[256];
     DWORD dwRead = 0;
-    bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+    auto fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
     // If we failed to read because the terminal broke our pipe (usually due
     //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
@@ -123,7 +122,7 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
         return;
     }
 
-    HRESULT hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
+    auto hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
     if (FAILED(hr))
     {
         if (throwOnFail)
@@ -135,6 +134,14 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
         {
             LOG_IF_FAILED(hr);
         }
+    }
+}
+
+void VtInputThread::SetLookingForDSR(const bool looking) noexcept
+{
+    if (_pfnSetLookingForDSR)
+    {
+        _pfnSetLookingForDSR(looking);
     }
 }
 

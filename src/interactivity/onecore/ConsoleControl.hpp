@@ -20,12 +20,12 @@ Author(s):
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class ConsoleControl sealed : public IConsoleControl
+    class ConsoleControl : public IConsoleControl
     {
     public:
         // IConsoleControl Members
-        [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId);
-        [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground);
-        [[nodiscard]] NTSTATUS EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
+        [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId) noexcept override;
+        [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground) noexcept override;
+        [[nodiscard]] NTSTATUS EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags) override;
     };
 }

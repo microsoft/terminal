@@ -17,7 +17,7 @@ using namespace Microsoft::Console::Types;
 //          This is an Inclusive rect.
 // Return Value:
 // - S_OK.
-[[nodiscard]] HRESULT VtEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT VtEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     area = _invalidMap.runs();
     return S_OK;
@@ -82,8 +82,8 @@ bool VtEngine::_WillWriteSingleChar() const
     // Either the next character to the right or the immediately previous
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
-    bool invalidIsNext = invalidPoint == til::point{ _lastText };
-    bool invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
+    auto invalidIsNext = invalidPoint == til::point{ _lastText };
+    auto invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
 
     return invalidIsNext || invalidIsLast;
 }

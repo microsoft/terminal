@@ -108,8 +108,8 @@ private:
     friend void _stdcall TerminalKillFocus(void* terminal);
 
     void _UpdateFont(int newDpi);
-    void _WriteTextToConnection(const std::wstring& text) noexcept;
-    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting);
+    void _WriteTextToConnection(const std::wstring_view text) noexcept;
+    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting);
     HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
     void _PasteTextFromClipboard() noexcept;
     void _StringPaste(const wchar_t* const pData) noexcept;
@@ -128,7 +128,7 @@ private:
     void _SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept;
 
     // Inherited via IControlAccessibilityInfo
-    COORD GetFontSize() const override;
+    COORD GetFontSize() const noexcept override;
     RECT GetBounds() const noexcept override;
     double GetScaleFactor() const noexcept override;
     void ChangeViewport(const SMALL_RECT NewWindow) override;

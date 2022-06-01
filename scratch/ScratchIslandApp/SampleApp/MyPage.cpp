@@ -41,7 +41,7 @@ namespace winrt::SampleApp::implementation
         TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
 
         TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
-        Control::TermControl control{ *settings, conn };
+        Control::TermControl control{ *settings, *settings, conn };
 
         InProcContent().Children().Append(control);
     }

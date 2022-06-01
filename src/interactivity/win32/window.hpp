@@ -16,6 +16,13 @@ Author(s):
 
 #include "../inc/IConsoleWindow.hpp"
 
+namespace Microsoft::Console::Render
+{
+    class AtlasEngine;
+    class DxEngine;
+    class GdiEngine;
+}
+
 namespace Microsoft::Console::Interactivity::Win32
 {
     class WindowUiaProvider;
@@ -89,8 +96,8 @@ namespace Microsoft::Console::Interactivity::Win32
 
     protected:
         // prevent accidental generation of copies
-        Window(Window const&) = delete;
-        void operator=(Window const&) = delete;
+        Window(const Window&) = delete;
+        void operator=(const Window&) = delete;
 
     private:
         Window();
@@ -105,7 +112,14 @@ namespace Microsoft::Console::Interactivity::Win32
         Settings* _pSettings;
 
         HWND _hWnd;
-        static Window* s_Instance;
+
+        Render::GdiEngine* pGdiEngine = nullptr;
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+        Render::DxEngine* pDxEngine = nullptr;
+#endif
+#if TIL_FEATURE_ATLASENGINE_ENABLED
+        Render::AtlasEngine* pAtlasEngine = nullptr;
+#endif
 
         [[nodiscard]] NTSTATUS _InternalSetWindowSize();
         void _UpdateWindowSize(const SIZE sizeNew);

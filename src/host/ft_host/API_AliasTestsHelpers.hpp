@@ -97,7 +97,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         VERIFY_FAIL(L"Unknown type.");
     }
 
-    DWORD const cbExpectedTargetString = (DWORD)TLEN(ptszExpectedTargetGiven) * sizeof(TCH);
+    const DWORD cbExpectedTargetString = (DWORD)TLEN(ptszExpectedTargetGiven) * sizeof(TCH);
 
     switch (dwTarget)
     {
@@ -239,8 +239,8 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
 
     // Perform the test
     SetLastError(S_OK);
-    DWORD const dwActualResult = GetConsoleAliasT(ptszSource, ptchTargetBuffer, cbTargetBuffer, ptszExeName);
-    DWORD const dwActualLastError = GetLastError();
+    const auto dwActualResult = GetConsoleAliasT(ptszSource, ptchTargetBuffer, cbTargetBuffer, ptszExeName);
+    const auto dwActualLastError = GetLastError();
 
     VERIFY_ARE_EQUAL(dwExpectedResult, dwActualResult, L"Ensure result code/return value matches expected.");
     VERIFY_ARE_EQUAL(dwExpectedLastError, dwActualLastError, L"Ensure last error code matches expected.");

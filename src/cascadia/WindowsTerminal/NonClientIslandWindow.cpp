@@ -55,7 +55,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
 {
     IslandWindow::MakeWindow();
 
-    static ATOM dragBarWindowClass{ []() {
+    static auto dragBarWindowClass{ []() {
         WNDCLASSEX wcEx{};
         wcEx.cbSize = sizeof(wcEx);
         wcEx.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -87,51 +87,203 @@ void NonClientIslandWindow::MakeWindow() noexcept
     THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
 }
 
-// Function Description:
-// - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
-LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
 {
-    std::optional<UINT> nonClientMessage{ std::nullopt };
+    auto rcParent = GetWindowRect();
+    // The size of the buttons doesn't change over the life of the application.
+    const auto buttonWidthInDips{ _titlebar.CaptionButtonWidth() };
 
-    // translate WM_ messages on the window to WM_NC* on the top level window
+    // However, the DPI scaling might, so get the updated size of the buttons in pixels
+    const auto buttonWidthInPixels{ buttonWidthInDips * GetCurrentDpiScale() };
+
+    // make sure to account for the width of the window frame!
+    const til::rect nonClientFrame{ GetNonClientFrame(_currentDpi) };
+    const auto rightBorder{ rcParent.right - nonClientFrame.right };
+    // From the right to the left,
+    // * are we in the close button?
+    // * the maximize button?
+    // * the minimize button?
+    // If we're not, then we're in either the top resize border, or just
+    // generally in the titlebar.
+    if ((rightBorder - pointer.x) < (buttonWidthInPixels))
+    {
+        return HTCLOSE;
+    }
+    else if ((rightBorder - pointer.x) < (buttonWidthInPixels * 2))
+    {
+        return HTMAXBUTTON;
+    }
+    else if ((rightBorder - pointer.x) < (buttonWidthInPixels * 3))
+    {
+        return HTMINBUTTON;
+    }
+    else
+    {
+        // If we're not on a caption button, then check if we're on the top
+        // border. If we're not on the top border, then we're just generally in
+        // the caption area.
+        const auto resizeBorderHeight = _GetResizeHandleHeight();
+        const auto isOnResizeBorder = pointer.y < rcParent.top + resizeBorderHeight;
+
+        return isOnResizeBorder ? HTTOP : HTCAPTION;
+    }
+}
+
+// Function Description:
+// - The window procedure for the drag bar forwards clicks on its client area to
+//   its parent as non-client clicks.
+// - BODGY: It also _manually_ handles the caption buttons. They exist in the
+//   titlebar, and work reasonably well with just XAML, if the drag bar isn't
+//   covering them.
+// - However, to get snap layout support (GH#9443), we need to actually return
+//   HTMAXBUTTON where the maximize button is. If the drag bar doesn't cover the
+//   caption buttons, then the core input site (which takes up the entirety of
+//   the XAML island) will steal the WM_NCHITTEST before we get a chance to
+//   handle it.
+// - So, the drag bar covers the caption buttons, and manually handles hovering
+//   and pressing them when needed. This gives the impression that they're
+//   getting input as they normally would, even if they're not _really_ getting
+//   input via XAML.
+LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
+                                                        WPARAM const wparam,
+                                                        LPARAM const lparam) noexcept
+{
     switch (message)
     {
-    case WM_LBUTTONDOWN:
-        nonClientMessage = WM_NCLBUTTONDOWN;
-        break;
-    case WM_LBUTTONDBLCLK:
-        nonClientMessage = WM_NCLBUTTONDBLCLK;
-        break;
-    case WM_LBUTTONUP:
-        nonClientMessage = WM_NCLBUTTONUP;
-        break;
-    case WM_RBUTTONDOWN:
-        nonClientMessage = WM_NCRBUTTONDOWN;
-        break;
-    case WM_RBUTTONDBLCLK:
-        nonClientMessage = WM_NCRBUTTONDBLCLK;
-        break;
-    case WM_RBUTTONUP:
-        nonClientMessage = WM_NCRBUTTONUP;
-        break;
-    }
-
-    if (nonClientMessage.has_value())
+    case WM_NCHITTEST:
     {
-        const POINT clientPt{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
-        POINT screenPt{ clientPt };
-        if (ClientToScreen(_dragBarWindow.get(), &screenPt))
+        // Try to determine what part of the window is being hovered here. This
+        // is absolutely critical to making sure Snap Layouts (GH#9443) works!
+        return _dragBarNcHitTest(til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
+    }
+    break;
+
+    case WM_NCMOUSEMOVE:
+        // When we get this message, it's because the mouse moved when it was
+        // over somewhere we said was the non-client area.
+        //
+        // We'll use this to communicate state to the title bar control, so that
+        // it can update its visuals.
+        // - If we're over a button, hover it.
+        // - If we're over _anything else_, stop hovering the buttons.
+        switch (wparam)
         {
+        case HTTOP:
+        case HTCAPTION:
+        {
+            _titlebar.ReleaseButtons();
+
+            // Pass caption-related nonclient messages to the parent window.
+            // Make sure to do this for the HTTOP, which is the top resize
+            // border, so we can resize the window on the top.
             auto parentWindow{ GetHandle() };
-
-            const LPARAM newLparam = MAKELPARAM(screenPt.x, screenPt.y);
-            // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
-            // then pass that click through as an NC click in that location.
-            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, newLparam) };
-            SendMessage(parentWindow, nonClientMessage.value(), hitTest, newLparam);
-
-            return 0;
+            return SendMessage(parentWindow, message, wparam, lparam);
         }
+        case HTMINBUTTON:
+        case HTMAXBUTTON:
+        case HTCLOSE:
+            _titlebar.HoverButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            break;
+        default:
+            _titlebar.ReleaseButtons();
+        }
+
+        // If we haven't previously asked for mouse tracking, request mouse
+        // tracking. We need to do this so we can get the WM_NCMOUSELEAVE
+        // message when the mouse leave the titlebar. Otherwise, we won't always
+        // get that message (especially if the user moves the mouse _real
+        // fast_).
+        if (!_trackingMouse &&
+            (wparam == HTMINBUTTON || wparam == HTMAXBUTTON || wparam == HTCLOSE))
+        {
+            TRACKMOUSEEVENT ev{};
+            ev.cbSize = sizeof(TRACKMOUSEEVENT);
+            // TME_NONCLIENT is absolutely critical here. In my experimentation,
+            // we'd get WM_MOUSELEAVE messages after just a HOVER_DEFAULT
+            // timeout even though we're not requesting TME_HOVER, which kinda
+            // ruined the whole point of this.
+            ev.dwFlags = TME_LEAVE | TME_NONCLIENT;
+            ev.hwndTrack = _dragBarWindow.get();
+            ev.dwHoverTime = HOVER_DEFAULT; // we don't _really_ care about this.
+            LOG_IF_WIN32_BOOL_FALSE(TrackMouseEvent(&ev));
+            _trackingMouse = true;
+        }
+        break;
+
+    case WM_NCMOUSELEAVE:
+    case WM_MOUSELEAVE:
+        // When the mouse leaves the drag rect, make sure to dismiss any hover.
+        _titlebar.ReleaseButtons();
+        _trackingMouse = false;
+        break;
+
+    // NB: *Shouldn't be forwarding these* when they're not over the caption
+    // because they can inadvertently take action using the system's default
+    // metrics instead of our own.
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONDBLCLK:
+        // Manual handling for mouse clicks in the drag bar. If it's in a
+        // caption button, then tell the titlebar to "press" the button, which
+        // should change its visual state.
+        //
+        // If it's not in a caption button, then just forward the message along
+        // to the root HWND. Make sure to do this for the HTTOP, which is the
+        // top resize border.
+        switch (wparam)
+        {
+        case HTTOP:
+        case HTCAPTION:
+        {
+            // Pass caption-related nonclient messages to the parent window.
+            auto parentWindow{ GetHandle() };
+            return SendMessage(parentWindow, message, wparam, lparam);
+        }
+        // The buttons won't work as you'd expect; we need to handle those
+        // ourselves.
+        case HTMINBUTTON:
+        case HTMAXBUTTON:
+        case HTCLOSE:
+            _titlebar.PressButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            break;
+        }
+        return 0;
+
+    case WM_NCLBUTTONUP:
+        // Manual handling for mouse RELEASES in the drag bar. If it's in a
+        // caption button, then manually handle what we'd expect for that button.
+        //
+        // If it's not in a caption button, then just forward the message along
+        // to the root HWND.
+        switch (wparam)
+        {
+        case HTTOP:
+        case HTCAPTION:
+        {
+            // Pass caption-related nonclient messages to the parent window.
+            // The buttons won't work as you'd expect; we need to handle those ourselves.
+            auto parentWindow{ GetHandle() };
+            return SendMessage(parentWindow, message, wparam, lparam);
+        }
+        break;
+
+        // If we do find a button, then tell the titlebar to raise the same
+        // event that would be raised if it were "tapped"
+        case HTMINBUTTON:
+        case HTMAXBUTTON:
+        case HTCLOSE:
+            _titlebar.ReleaseButtons();
+            _titlebar.ClickButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            break;
+        }
+        return 0;
+
+    // Make sure to pass along right-clicks in this region to our parent window
+    // - we don't need to handle these.
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONDBLCLK:
+    case WM_NCRBUTTONUP:
+        auto parentWindow{ GetHandle() };
+        return SendMessage(parentWindow, message, wparam, lparam);
     }
 
     return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
@@ -142,15 +294,15 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
 //   This window is used to capture clicks on the non-client area.
 void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 {
-    const til::rectangle rect{ _GetDragAreaRect() };
+    const til::rect rect{ _GetDragAreaRect() };
     if (_IsTitlebarVisible() && rect.size().area() > 0)
     {
         SetWindowPos(_dragBarWindow.get(),
                      HWND_TOP,
-                     rect.left<int>(),
-                     rect.top<int>() + _GetTopBorderHeight(),
-                     rect.width<int>(),
-                     rect.height<int>(),
+                     rect.left,
+                     rect.top + _GetTopBorderHeight(),
+                     rect.width(),
+                     rect.height(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
         SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
     }
@@ -279,10 +431,17 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
     {
         const auto scale = GetCurrentDpiScale();
         const auto transform = _dragBar.TransformToVisual(_rootGrid);
+
+        // GH#9443: Previously, we'd only extend the drag bar from the left of
+        // the tabs to the right of the caption buttons. Now, we're extending it
+        // all the way to the right side of the window, covering the caption
+        // buttons. We'll manually handle input to those buttons, to make it
+        // seem like they're still getting XAML input. We do this so we can get
+        // snap layout support for the maximize button.
         const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
             0.0f,
             0.0f,
-            static_cast<float>(_dragBar.ActualWidth()),
+            static_cast<float>(_rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
@@ -310,6 +469,12 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     {
         _UpdateIslandPosition(width, height);
     }
+
+    // GH#11367: We need to do this,
+    // otherwise the titlebar may still be partially visible
+    // when we move between different DPI monitors.
+    RefreshCurrentDPI();
+    _UpdateFrameMargins();
 }
 
 // Method Description:
@@ -330,7 +495,7 @@ void NonClientIslandWindow::_UpdateMaximizedState()
 }
 
 // Method Description:
-// - Called when the the windows goes from restored to maximized or from
+// - Called when the windows goes from restored to maximized or from
 //   maximized to restored. Updates the maximize button's icon and the frame
 //   margins.
 void NonClientIslandWindow::_OnMaximizeChange() noexcept
@@ -341,8 +506,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -374,7 +539,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
     // buttons, which will make them clickable. It's perhaps not the right fix,
     // but it works.
     // _GetTopBorderHeight() returns 0 when we're maximized.
-    const short topBorderHeight = ::base::saturated_cast<short>((originalTopHeight == 0) ? -1 : originalTopHeight);
+    const auto topBorderHeight = ::base::saturated_cast<short>((originalTopHeight == 0) ? -1 : originalTopHeight);
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
@@ -423,7 +588,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return 0;
     }
 
-    NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+    auto params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
 
     // Store the original top before the default window proc applies the
     // default frame.
@@ -464,7 +629,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // still mouse-over the taskbar to reveal it.
     // GH#5209 - make sure to use MONITOR_DEFAULTTONEAREST, so that this will
     // still find the right monitor even when we're restoring from minimized.
-    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
+    auto hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     if (hMon && (_isMaximized || _fullscreen))
     {
         MONITORINFO monInfo{ 0 };
@@ -474,7 +639,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // First, check if we have an auto-hide taskbar at all:
         APPBARDATA autohide{ 0 };
         autohide.cbSize = sizeof(autohide);
-        UINT state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
+        auto state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
         if (WI_IsFlagSet(state, ABS_AUTOHIDE))
         {
             // This helper can be used to determine if there's a auto-hide
@@ -484,14 +649,14 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
                 data.cbSize = sizeof(data);
                 data.uEdge = edge;
                 data.rc = monInfo.rcMonitor;
-                HWND hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
+                auto hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
                 return hTaskbar != nullptr;
             };
 
-            const bool onTop = hasAutohideTaskbar(ABE_TOP);
-            const bool onBottom = hasAutohideTaskbar(ABE_BOTTOM);
-            const bool onLeft = hasAutohideTaskbar(ABE_LEFT);
-            const bool onRight = hasAutohideTaskbar(ABE_RIGHT);
+            const auto onTop = hasAutohideTaskbar(ABE_TOP);
+            const auto onBottom = hasAutohideTaskbar(ABE_BOTTOM);
+            const auto onLeft = hasAutohideTaskbar(ABE_LEFT);
+            const auto onRight = hasAutohideTaskbar(ABE_RIGHT);
 
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
@@ -544,6 +709,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // we didn't change them.
     LPARAM lParam = MAKELONG(ptMouse.x, ptMouse.y);
     const auto originalRet = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
+
     if (originalRet != HTCLIENT)
     {
         // If we're the quake window, suppress resizing on any side except the
@@ -604,7 +770,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // with that message at the time it was sent to handle the message
         // correctly.
         const auto screenPtLparam{ GetMessagePos() };
-        const LRESULT hitTest{ SendMessage(GetHandle(), WM_NCHITTEST, 0, screenPtLparam) };
+        const auto hitTest{ SendMessage(GetHandle(), WM_NCHITTEST, 0, screenPtLparam) };
         if (hitTest == HTTOP)
         {
             // We have to set the vertical resize cursor manually on
@@ -794,7 +960,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
     if (ps.rcPaint.top < topBorderHeight)
     {
-        RECT rcTopBorder = ps.rcPaint;
+        auto rcTopBorder = ps.rcPaint;
         rcTopBorder.bottom = topBorderHeight;
 
         // To show the original top border, we have to paint on top of it with
@@ -806,7 +972,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
     if (ps.rcPaint.bottom > topBorderHeight)
     {
-        RECT rcRest = ps.rcPaint;
+        auto rcRest = ps.rcPaint;
         rcRest.top = topBorderHeight;
 
         const auto backgroundBrush = _titlebar.Background();
@@ -834,10 +1000,14 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         // See NonClientIslandWindow::_UpdateFrameMargins for more information.
         HDC opaqueDc;
         BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
-        HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+        auto buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
         if (!buf || !opaqueDc)
         {
-            winrt::throw_last_error();
+            // MSFT:34673647 - BeginBufferedPaint can fail, but it probably
+            // shouldn't bring the whole Terminal down with it. So don't
+            // throw_last_error here.
+            LOG_LAST_ERROR();
+            return 0;
         }
 
         ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
@@ -917,13 +1087,13 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
-    const til::rectangle windowPos{ GetWindowRect() };
+    const til::rect windowPos{ GetWindowRect() };
     SetWindowPos(GetHandle(),
                  HWND_TOP,
-                 windowPos.left<int>(),
-                 windowPos.top<int>(),
-                 windowPos.width<int>(),
-                 windowPos.height<int>(),
+                 windowPos.left,
+                 windowPos.top,
+                 windowPos.width(),
+                 windowPos.height(),
                  SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 

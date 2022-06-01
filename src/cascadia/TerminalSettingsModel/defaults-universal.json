@@ -22,7 +22,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "startOnUserLogin":  false,
+    "startOnUserLogin": false,
     "theme": "system",
     "snapToGridOnResize": true,
 

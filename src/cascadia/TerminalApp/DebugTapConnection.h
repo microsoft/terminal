@@ -4,7 +4,7 @@
 #pragma once
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include "../../inc/cppwinrt_utils.h"
+#include <til/latch.h>
 
 namespace winrt::Microsoft::TerminalApp::implementation
 {
@@ -16,7 +16,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
-        void WriteInput(hstring const& data);
+        void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept;
@@ -35,6 +35,8 @@ namespace winrt::Microsoft::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
         winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _wrappedConnection;
         winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _inputSide;
+
+        til::latch _start{ 1 };
 
         friend class DebugInputTapConnection;
     };

@@ -14,6 +14,11 @@
         <!-- This will cause unpackaged activation failures in XAML Islands. -->
         <!-- (We use unpackaged activation in test scenarios.) See GH#10265. -->
         <maxversiontested Id="10.0.18362.0"/>
+
+        <!-- You apparently are expected to include all the maxversiontested
+        entries separately. They are treated like an array. This one turns on Segoe
+        UI Variable, GH #12452 -->
+        <maxversiontested Id="10.0.22000.0"/>
         <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
     </application>
   </compatibility>
@@ -22,6 +27,7 @@
     <windowsSettings>
       <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
       <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+      <heapType xmlns="http://schemas.microsoft.com/SMI/2020/WindowsSettings">SegmentHeap</heapType>
     </windowsSettings>
   </application>
 </assembly>

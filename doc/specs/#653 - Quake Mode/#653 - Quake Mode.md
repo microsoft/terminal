@@ -714,7 +714,7 @@ Docs regarding hiding a window from the taskbar:
 ### Footnotes
 
 <a name="footnote-1"><a>[1]: Quitting the terminal is different than closing the
-windows one-by-one. Quiting implies an atomic action, for closing all the
+windows one-by-one. Quitting implies an atomic action, for closing all the
 windows. Once [#766] lands, this will give us a chance to persist the state of
 _all_ open windows. This will allow us to re-open with all the user's windows,
 not just the one that happened to be closed last.

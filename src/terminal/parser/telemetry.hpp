@@ -99,6 +99,7 @@ namespace Microsoft::Console::VirtualTerminal
             REP,
             OSCFG,
             OSCBG,
+            DECAC1,
             DECSWL,
             DECDWL,
             DECDHL,
@@ -106,6 +107,8 @@ namespace Microsoft::Console::VirtualTerminal
             OSCSCB,
             XTPUSHSGR,
             XTPOPSGR,
+            DECAC,
+            DECPS,
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };
@@ -121,7 +124,7 @@ namespace Microsoft::Console::VirtualTerminal
         // Used to prevent multiple instances
         TermTelemetry() noexcept;
         ~TermTelemetry();
-        TermTelemetry(TermTelemetry const&) = delete;
+        TermTelemetry(const TermTelemetry&) = delete;
         TermTelemetry(TermTelemetry&&) = delete;
         TermTelemetry& operator=(const TermTelemetry&) = delete;
         TermTelemetry& operator=(TermTelemetry&&) = delete;

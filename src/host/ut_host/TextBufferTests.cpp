@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -15,7 +15,7 @@
 #include "_stream.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
@@ -26,7 +26,7 @@ using namespace WEX::TestExecution;
 
 class TextBufferTests
 {
-    DummyRenderTarget _renderTarget;
+    DummyRenderer _renderer;
     CommonState* m_state;
 
     TEST_CLASS(TextBufferTests);
@@ -81,11 +81,11 @@ class TextBufferTests
 
     TEST_METHOD(TestDoubleBytePadFlag);
 
-    void DoBoundaryTest(PWCHAR const pwszInputString,
-                        short const cLength,
-                        short const cMax,
-                        short const cLeft,
-                        short const cRight);
+    void DoBoundaryTest(PCWCHAR const pwszInputString,
+                        const short cLength,
+                        const short cMax,
+                        const short cLeft,
+                        const short cRight);
 
     TEST_METHOD(TestBoundaryMeasuresRegularString);
 
@@ -99,7 +99,7 @@ class TextBufferTests
 
     TEST_METHOD(TestNewlineCursor);
 
-    void TestLastNonSpace(short const cursorPosY);
+    void TestLastNonSpace(const short cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
 
@@ -114,9 +114,9 @@ class TextBufferTests
 
     TEST_METHOD(TestRgbEraseLine);
 
-    TEST_METHOD(TestUnBold);
-    TEST_METHOD(TestUnBoldRgb);
-    TEST_METHOD(TestComplexUnBold);
+    TEST_METHOD(TestUnintense);
+    TEST_METHOD(TestUnintenseRgb);
+    TEST_METHOD(TestComplexUnintense);
 
     TEST_METHOD(CopyAttrs);
 
@@ -126,8 +126,8 @@ class TextBufferTests
 
     TEST_METHOD(CopyLastAttr);
 
-    TEST_METHOD(TestRgbThenBold);
-    TEST_METHOD(TestResetClearsBoldness);
+    TEST_METHOD(TestRgbThenIntense);
+    TEST_METHOD(TestResetClearsIntensity);
 
     TEST_METHOD(TestBackspaceRightSideVt);
 
@@ -145,6 +145,8 @@ class TextBufferTests
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
     TEST_METHOD(TestBurrito);
+
+    TEST_METHOD(TestAppendRTFText);
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
@@ -165,7 +167,7 @@ void TextBufferTests::TestBufferCreate()
 
 TextBuffer& TextBufferTests::GetTbi()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
@@ -181,22 +183,22 @@ SHORT TextBufferTests::GetBufferHeight()
 
 void TextBufferTests::TestBufferRowByOffset()
 {
-    TextBuffer& textBuffer = GetTbi();
-    SHORT csBufferHeight = GetBufferHeight();
+    auto& textBuffer = GetTbi();
+    auto csBufferHeight = GetBufferHeight();
 
     VERIFY_IS_TRUE(csBufferHeight > 20);
 
     short sId = csBufferHeight / 2 - 5;
 
-    const ROW& row = textBuffer.GetRowByOffset(sId);
+    const auto& row = textBuffer.GetRowByOffset(sId);
     VERIFY_ARE_EQUAL(row.GetId(), sId);
 }
 
 void TextBufferTests::TestWrapFlag()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
-    ROW& Row = textBuffer._GetFirstRow();
+    auto& Row = textBuffer._GetFirstRow();
 
     // no wrap by default
     VERIFY_IS_FALSE(Row.WasWrapForced());
@@ -212,10 +214,10 @@ void TextBufferTests::TestWrapFlag()
 
 void TextBufferTests::TestWrapThroughWriteLine()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
     auto VerifyWrap = [&](bool expected) {
-        ROW& Row = textBuffer._GetFirstRow();
+        auto& Row = textBuffer._GetFirstRow();
 
         if (expected)
         {
@@ -284,9 +286,9 @@ void TextBufferTests::TestWrapThroughWriteLine()
 
 void TextBufferTests::TestDoubleBytePadFlag()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
-    ROW& Row = textBuffer._GetFirstRow();
+    auto& Row = textBuffer._GetFirstRow();
 
     // no padding by default
     VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
@@ -300,15 +302,15 @@ void TextBufferTests::TestDoubleBytePadFlag()
     VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 }
 
-void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
-                                     short const cLength,
-                                     short const cMax,
-                                     short const cLeft,
-                                     short const cRight)
+void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
+                                     const short cLength,
+                                     const short cMax,
+                                     const short cLeft,
+                                     const short cRight)
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
-    CharRow& charRow = textBuffer._GetFirstRow().GetCharRow();
+    auto& charRow = textBuffer._GetFirstRow().GetCharRow();
 
     // copy string into buffer
     for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
@@ -319,7 +321,7 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     // space pad the rest of the string
     if (cLength < cMax)
     {
-        for (short cStart = cLength; cStart < cMax; cStart++)
+        for (auto cStart = cLength; cStart < cMax; cStart++)
         {
             charRow.ClearGlyph(cStart);
         }
@@ -333,30 +335,31 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
 
 void TextBufferTests::TestBoundaryMeasuresRegularString()
 {
-    SHORT csBufferWidth = GetBufferWidth();
+    auto csBufferWidth = GetBufferWidth();
 
     // length 44, left 0, right 44
-    const PWCHAR pwszLazyDog = L"The quick brown fox jumps over the lazy dog.";
+    const auto pwszLazyDog = L"The quick brown fox jumps over the lazy dog.";
     DoBoundaryTest(pwszLazyDog, 44, csBufferWidth, 0, 44);
 }
 
 void TextBufferTests::TestBoundaryMeasuresFloatingString()
 {
-    SHORT csBufferWidth = GetBufferWidth();
+    auto csBufferWidth = GetBufferWidth();
 
     // length 5 spaces + 4 chars + 5 spaces = 14, left 5, right 9
-    const PWCHAR pwszOffsets = L"     C:\\>     ";
+    const auto pwszOffsets = L"     C:\\>     ";
     DoBoundaryTest(pwszOffsets, 14, csBufferWidth, 5, 9);
 }
 
 void TextBufferTests::TestCopyProperties()
 {
-    TextBuffer& otherTbi = GetTbi();
+    auto& otherTbi = GetTbi();
 
-    std::unique_ptr<TextBuffer> testTextBuffer = std::make_unique<TextBuffer>(otherTbi.GetSize().Dimensions(),
-                                                                              otherTbi._currentAttributes,
-                                                                              12,
-                                                                              otherTbi._renderTarget);
+    auto testTextBuffer = std::make_unique<TextBuffer>(otherTbi.GetSize().Dimensions(),
+                                                       otherTbi._currentAttributes,
+                                                       12,
+                                                       otherTbi.IsActiveBuffer(),
+                                                       otherTbi._renderer);
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
@@ -388,23 +391,23 @@ void TextBufferTests::TestCopyProperties()
 
 void TextBufferTests::TestInsertCharacter()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
     // get starting cursor position
-    COORD const coordCursorBefore = textBuffer.GetCursor().GetPosition();
+    const auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // Get current row from the buffer
-    ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
+    auto& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
 
     // create some sample test data
     const auto wch = L'Z';
     const std::wstring_view wchTest(&wch, 1);
     DbcsAttribute dbcsAttribute;
     dbcsAttribute.SetTrailing();
-    WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
-    TextAttribute TestAttributes = TextAttribute(wAttrTest);
+    const auto wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
+    auto TestAttributes = TextAttribute(wAttrTest);
 
-    CharRow& charRow = Row.GetCharRow();
+    auto& charRow = Row.GetCharRow();
     charRow.DbcsAttrAt(coordCursorBefore.X).SetLeading();
     // ensure that the buffer didn't start with these fields
     VERIFY_ARE_NOT_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
@@ -432,21 +435,21 @@ void TextBufferTests::TestInsertCharacter()
 
 void TextBufferTests::TestIncrementCursor()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
     // only checking X increments here
     // Y increments are covered in the NewlineCursor test
 
-    short const sBufferWidth = textBuffer.GetSize().Width();
+    const auto sBufferWidth = textBuffer.GetSize().Width();
 
-    short const sBufferHeight = textBuffer.GetSize().Height();
+    const auto sBufferHeight = textBuffer.GetSize().Height();
     VERIFY_IS_TRUE(sBufferWidth > 1 && sBufferHeight > 1);
 
     Log::Comment(L"Test normal case of moving once to the right within a single line");
     textBuffer.GetCursor().SetXPosition(0);
     textBuffer.GetCursor().SetYPosition(0);
 
-    COORD coordCursorBefore = textBuffer.GetCursor().GetPosition();
+    auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     textBuffer.IncrementCursor();
 
@@ -467,11 +470,11 @@ void TextBufferTests::TestIncrementCursor()
 
 void TextBufferTests::TestNewlineCursor()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
-    const short sBufferHeight = textBuffer.GetSize().Height();
+    const auto sBufferHeight = textBuffer.GetSize().Height();
 
-    const short sBufferWidth = textBuffer.GetSize().Width();
+    const auto sBufferWidth = textBuffer.GetSize().Width();
     // width and height are sufficiently large for upcoming math
     VERIFY_IS_TRUE(sBufferWidth > 4 && sBufferHeight > 4);
 
@@ -483,7 +486,7 @@ void TextBufferTests::TestNewlineCursor()
     // set cursor Y position to not-the-final row in the buffer
     textBuffer.GetCursor().SetYPosition(3);
 
-    COORD coordCursorBefore = textBuffer.GetCursor().GetPosition();
+    auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // perform operation
     textBuffer.NewlineCursor();
@@ -512,12 +515,12 @@ void TextBufferTests::TestNewlineCursor()
     // This is okay because the backing circular buffer changes, not the logical screen position (final visible line of the buffer)
 }
 
-void TextBufferTests::TestLastNonSpace(short const cursorPosY)
+void TextBufferTests::TestLastNonSpace(const short cursorPosY)
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
     textBuffer.GetCursor().SetYPosition(cursorPosY);
 
-    COORD coordLastNonSpace = textBuffer.GetLastNonSpaceCharacter();
+    auto coordLastNonSpace = textBuffer.GetLastNonSpaceCharacter();
 
     // We expect the last non space character to be the last printable character in the row.
     // The .Right property on a row is 1 past the last printable character in the row.
@@ -525,7 +528,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     // If there are no characters in the row, the last character would be -1 and we need to seek backwards to find the previous row with a character.
 
     // start expected position from cursor
-    COORD coordExpected = textBuffer.GetCursor().GetPosition();
+    auto coordExpected = textBuffer.GetCursor().GetPosition();
 
     // Try to get the X position from the current cursor position.
     coordExpected.X = static_cast<short>(textBuffer.GetRowByOffset(coordExpected.Y).GetCharRow().MeasureRight()) - 1;
@@ -559,11 +562,11 @@ void TextBufferTests::TestGetLastNonSpaceCharacter()
 
 void TextBufferTests::TestSetWrapOnCurrentRow()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
-    short sCurrentRow = textBuffer.GetCursor().GetPosition().Y;
+    auto sCurrentRow = textBuffer.GetCursor().GetPosition().Y;
 
-    ROW& Row = textBuffer.GetRowByOffset(sCurrentRow);
+    auto& Row = textBuffer.GetRowByOffset(sCurrentRow);
 
     Log::Comment(L"Testing off to on");
 
@@ -590,9 +593,9 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
 
 void TextBufferTests::TestIncrementCircularBuffer()
 {
-    TextBuffer& textBuffer = GetTbi();
+    auto& textBuffer = GetTbi();
 
-    short const sBufferHeight = textBuffer.GetSize().Height();
+    const auto sBufferHeight = textBuffer.GetSize().Height();
 
     VERIFY_IS_TRUE(sBufferHeight > 4); // buffer should be sufficiently large
 
@@ -602,7 +605,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
     for (UINT iTestIndex = 0; iTestIndex < ARRAYSIZE(rgRowsToTest); iTestIndex++)
     {
-        const short iRowToTestIndex = rgRowsToTest[iTestIndex];
+        const auto iRowToTestIndex = rgRowsToTest[iTestIndex];
 
         short iNextRowIndex = iRowToTestIndex + 1;
         // if we're at or crossing the height, loop back to 0 (circular buffer)
@@ -614,8 +617,8 @@ void TextBufferTests::TestIncrementCircularBuffer()
         textBuffer._firstRow = iRowToTestIndex;
 
         // fill first row with some stuff
-        ROW& FirstRow = textBuffer._GetFirstRow();
-        CharRow& charRow = FirstRow.GetCharRow();
+        auto& FirstRow = textBuffer._GetFirstRow();
+        auto& charRow = FirstRow.GetCharRow();
         const auto stuff = L'A';
         charRow.GlyphAt(0) = { &stuff, 1 };
 
@@ -636,11 +639,12 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
 void TextBufferTests::TestMixedRgbAndLegacyForeground()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     // Case 1 -
     //      Write '\E[m\E[38;2;64;128;255mX\E[49mX\E[m'
@@ -648,12 +652,12 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     //      FG = rgb(64;128;255), BG = rgb(default)
     Log::Comment(L"Case 1 \"\\E[m\\E[38;2;64;128;255mX\\E[49mX\\E[m\"");
 
-    wchar_t* sequence = L"\x1b[m\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
+    const auto sequence = L"\x1b[m\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
     stateMachine.ProcessString(sequence);
-    const short x = cursor.GetPosition().X;
-    const short y = cursor.GetPosition().Y;
-    const ROW& row = tbi.GetRowByOffset(y);
+    const auto x = cursor.GetPosition().X;
+    const auto y = cursor.GetPosition().Y;
+    const auto& row = tbi.GetRowByOffset(y);
     const auto attrRow = &row.GetAttrRow();
     const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
     const auto attrA = attrs[x - 2];
@@ -670,22 +674,23 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     const auto fgColor = RGB(64, 128, 255);
-    const auto bgColor = gci.LookupAttributeColors(si.GetAttributes()).second;
+    const auto bgColor = renderSettings.GetAttributeColors(si.GetAttributes()).second;
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     // Case 2 -
     //      \E[m\E[48;2;64;128;255mX\E[39mX\E[m
@@ -693,7 +698,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     //      FG = rgb(default), BG = rgb(64;128;255)
     Log::Comment(L"Case 2 \"\\E[m\\E[48;2;64;128;255mX\\E[39mX\\E[m\"");
 
-    wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
+    const auto sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
     stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -714,28 +719,29 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     const auto bgColor = RGB(64, 128, 255);
-    const auto fgColor = gci.LookupAttributeColors(si.GetAttributes()).first;
+    const auto fgColor = renderSettings.GetAttributeColors(si.GetAttributes()).first;
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     // Case 3 -
     //      '\E[m\E[48;2;64;128;255mX\E[4mX\E[m'
     //      Make sure that the second X has RGB attributes AND underline
     Log::Comment(L"Case 3 \"\\E[m\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
-    wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
+    const auto sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
     stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -756,34 +762,36 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
     const auto bgColor = RGB(64, 128, 255);
-    const auto fgColor = gci.LookupAttributeColors(si.GetAttributes()).first;
+    const auto fgColor = renderSettings.GetAttributeColors(si.GetAttributes()).first;
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
     VERIFY_ARE_EQUAL(attrA.IsUnderlined(), false);
     VERIFY_ARE_EQUAL(attrB.IsUnderlined(), true);
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
+
     // Case 4 -
     //      '\E[m\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
     Log::Comment(L"Case 4 ;\"\\E[m\\E[32mX\\E[1mX\"");
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
-    wchar_t* sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
+    const auto sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
     stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -803,20 +811,21 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, bright_green);
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestRgbEraseLine()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -854,27 +863,28 @@ void TextBufferTests::TestRgbEraseLine()
         const auto attr0 = attrs[0];
 
         VERIFY_ARE_EQUAL(attr0.IsLegacy(), false);
-        VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr0).second, RGB(64, 128, 255));
+        VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr0).second, RGB(64, 128, 255));
 
         for (auto i = 1; i < len; i++)
         {
             const auto attr = attrs[i];
             LOG_ATTR(attr);
             VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
-            VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr).second, RGB(128, 128, 255));
+            VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr).second, RGB(128, 128, 255));
         }
         std::wstring reset = L"\x1b[0m";
         stateMachine.ProcessString(reset);
     }
 }
 
-void TextBufferTests::TestUnBold()
+void TextBufferTests::TestUnintense()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -887,8 +897,8 @@ void TextBufferTests::TestUnBold()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -911,20 +921,21 @@ void TextBufferTests::TestUnBold()
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, dark_green);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestUnBoldRgb()
+void TextBufferTests::TestUnintenseRgb()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -938,8 +949,8 @@ void TextBufferTests::TestUnBoldRgb()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -965,20 +976,21 @@ void TextBufferTests::TestUnBoldRgb()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, dark_green);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestComplexUnBold()
+void TextBufferTests::TestComplexUnintense()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -997,8 +1009,8 @@ void TextBufferTests::TestComplexUnBold()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1037,23 +1049,23 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(attrE.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrF.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(bright_green, RGB(1, 2, 3)));
-    VERIFY_IS_TRUE(attrA.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(bright_green, RGB(1, 2, 3)));
+    VERIFY_IS_TRUE(attrA.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(dark_green, RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrB.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(dark_green, RGB(1, 2, 3)));
+    VERIFY_IS_FALSE(attrB.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(RGB(32, 32, 32), RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrC.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC), std::make_pair(RGB(32, 32, 32), RGB(1, 2, 3)));
+    VERIFY_IS_FALSE(attrC.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrD), gci.LookupAttributeColors(attrC));
-    VERIFY_IS_TRUE(attrD.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrD), renderSettings.GetAttributeColors(attrC));
+    VERIFY_IS_TRUE(attrD.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrE), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
-    VERIFY_IS_TRUE(attrE.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrE), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
+    VERIFY_IS_TRUE(attrE.IsIntense());
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrF), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
-    VERIFY_IS_FALSE(attrF.IsBold());
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrF), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
+    VERIFY_IS_FALSE(attrF.IsIntense());
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -1061,11 +1073,12 @@ void TextBufferTests::TestComplexUnBold()
 
 void TextBufferTests::CopyAttrs()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     cursor.SetXPosition(0);
@@ -1079,8 +1092,8 @@ void TextBufferTests::CopyAttrs()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_blue = gci.GetColorTableEntry(1);
-    const auto dark_magenta = gci.GetColorTableEntry(5);
+    const auto dark_blue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
+    const auto dark_magenta = gci.GetColorTableEntry(TextColor::DARK_MAGENTA);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1103,17 +1116,18 @@ void TextBufferTests::CopyAttrs()
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_blue);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_magenta);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, dark_blue);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, dark_magenta);
 }
 
 void TextBufferTests::EmptySgrTest()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     cursor.SetXPosition(0);
@@ -1121,7 +1135,7 @@ void TextBufferTests::EmptySgrTest()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
 
     // Case 1 -
     //      Write '\x1b[0mX\x1b[31mX\x1b[31;m'
@@ -1133,7 +1147,7 @@ void TextBufferTests::EmptySgrTest()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const COLORREF darkRed = gci.GetColorTableEntry(4);
+    const auto darkRed = gci.GetColorTableEntry(TextColor::DARK_RED);
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x,
@@ -1156,22 +1170,23 @@ void TextBufferTests::EmptySgrTest()
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(defaultFg, defaultBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(defaultFg, defaultBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(darkRed, defaultBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(darkRed, defaultBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(defaultFg, defaultBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC), std::make_pair(defaultFg, defaultBg));
 
     stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestReverseReset()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
 
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
@@ -1180,7 +1195,7 @@ void TextBufferTests::TestReverseReset()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
 
     // Case 1 -
     //      Write '\E[42m\E[38;2;128;5;255mX\E[7mX\E[27mX'
@@ -1192,8 +1207,8 @@ void TextBufferTests::TestReverseReset()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const COLORREF rgbColor = RGB(128, 5, 255);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto rgbColor = RGB(128, 5, 255);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1217,11 +1232,11 @@ void TextBufferTests::TestReverseReset()
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(rgbColor, dark_green));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(rgbColor, dark_green));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(dark_green, rgbColor));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(dark_green, rgbColor));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(rgbColor, dark_green));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC), std::make_pair(rgbColor, dark_green));
 
     stateMachine.ProcessString(reset);
 }
@@ -1230,11 +1245,12 @@ void TextBufferTests::CopyLastAttr()
 {
     DisableVerifyExceptions disable;
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+    auto& renderSettings = gci.GetRenderSettings();
 
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
@@ -1243,24 +1259,24 @@ void TextBufferTests::CopyLastAttr()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
 
-    const COLORREF solFg = RGB(101, 123, 131);
-    const COLORREF solBg = RGB(0, 43, 54);
-    const COLORREF solCyan = RGB(42, 161, 152);
+    const auto solFg = RGB(101, 123, 131);
+    const auto solBg = RGB(0, 43, 54);
+    const auto solCyan = RGB(42, 161, 152);
 
     std::wstring solFgSeq = L"\x1b[38;2;101;123;131m";
     std::wstring solBgSeq = L"\x1b[48;2;0;43;54m";
     std::wstring solCyanSeq = L"\x1b[38;2;42;161;152m";
 
     // Make sure that the color table has certain values we expect
-    const COLORREF defaultBrightBlack = RGB(118, 118, 118);
-    const COLORREF defaultBrightYellow = RGB(249, 241, 165);
-    const COLORREF defaultBrightCyan = RGB(97, 214, 214);
+    const auto defaultBrightBlack = RGB(118, 118, 118);
+    const auto defaultBrightYellow = RGB(249, 241, 165);
+    const auto defaultBrightCyan = RGB(97, 214, 214);
 
-    gci.SetColorTableEntry(8, defaultBrightBlack);
-    gci.SetColorTableEntry(14, defaultBrightYellow);
-    gci.SetColorTableEntry(11, defaultBrightCyan);
+    gci.SetColorTableEntry(TextColor::BRIGHT_BLACK, defaultBrightBlack);
+    gci.SetColorTableEntry(TextColor::BRIGHT_YELLOW, defaultBrightYellow);
+    gci.SetColorTableEntry(TextColor::BRIGHT_CYAN, defaultBrightCyan);
 
     // Write (solFg, solBG) X \n
     //       (solFg, solBG) X (solCyan, solBG) X \n
@@ -1301,9 +1317,9 @@ void TextBufferTests::CopyLastAttr()
         x,
         y));
 
-    const ROW& row1 = tbi.GetRowByOffset(y + 1);
-    const ROW& row2 = tbi.GetRowByOffset(y + 2);
-    const ROW& row3 = tbi.GetRowByOffset(y + 3);
+    const auto& row1 = tbi.GetRowByOffset(y + 1);
+    const auto& row2 = tbi.GetRowByOffset(y + 2);
+    const auto& row3 = tbi.GetRowByOffset(y + 3);
 
     const std::vector<TextAttribute> attrs1{ row1.GetAttrRow().begin(), row1.GetAttrRow().end() };
     const std::vector<TextAttribute> attrs2{ row2.GetAttrRow().begin(), row2.GetAttrRow().end() };
@@ -1330,36 +1346,38 @@ void TextBufferTests::CopyLastAttr()
     LOG_ATTR(attr3B);
     LOG_ATTR(attr3C);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr1A), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr1A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr2A), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr2A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr2B), std::make_pair(solCyan, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr2B), std::make_pair(solCyan, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3A), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr3A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3B), std::make_pair(solCyan, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr3B), std::make_pair(solCyan, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3C), std::make_pair(solFg, solBg));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attr3C), std::make_pair(solFg, solBg));
 
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestRgbThenBold()
+void TextBufferTests::TestRgbThenIntense()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
+
     // See MSFT:16398982
     Log::Comment(NoThrowString().Format(
-        L"Test that a bold following a RGB color doesn't remove the RGB color"));
+        L"Test that an intense attribute following a RGB color doesn't remove the RGB color"));
     Log::Comment(L"\"\\x1b[38;2;40;40;40m\\x1b[48;2;168;153;132mX\\x1b[1mX\\x1b[m\"");
     const auto foreground = RGB(40, 40, 40);
     const auto background = RGB(168, 153, 132);
 
-    const wchar_t* const sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
+    const auto sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
     stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -1373,7 +1391,7 @@ void TextBufferTests::TestRgbThenBold()
         x,
         y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT intense"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1381,22 +1399,24 @@ void TextBufferTests::TestRgbThenBold()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(foreground, background));
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(foreground, background));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA), std::make_pair(foreground, background));
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB), std::make_pair(foreground, background));
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
-void TextBufferTests::TestResetClearsBoldness()
+void TextBufferTests::TestResetClearsIntensity()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
+    const auto& renderSettings = gci.GetRenderSettings();
+
     Log::Comment(NoThrowString().Format(
-        L"Test that resetting bold attributes clears the boldness."));
+        L"Test that resetting intense attributes clears the intensity."));
     const auto x0 = cursor.GetPosition().X;
 
     // Test assumes that the background/foreground were default attribute when it starts up,
@@ -1404,11 +1424,11 @@ void TextBufferTests::TestResetClearsBoldness()
     TextAttribute defaultAttribute;
     si.SetAttributes(defaultAttribute);
 
-    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto [defaultFg, defaultBg] = renderSettings.GetAttributeColors(si.GetAttributes());
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
-    wchar_t* sequence = L"\x1b[32mA\x1b[1mB\x1b[0mC\x1b[32mD";
+    const auto sequence = L"\x1b[32mA\x1b[1mB\x1b[0mC\x1b[32mD";
     Log::Comment(NoThrowString().Format(sequence));
     stateMachine.ProcessString(sequence);
 
@@ -1426,39 +1446,39 @@ void TextBufferTests::TestResetClearsBoldness()
         x,
         y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT intense"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
     LOG_ATTR(attrD);
 
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC).first, defaultFg);
-    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrD).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrA).first, dark_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrB).first, bright_green);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrC).first, defaultFg);
+    VERIFY_ARE_EQUAL(renderSettings.GetAttributeColors(attrD).first, dark_green);
 
-    VERIFY_IS_FALSE(attrA.IsBold());
-    VERIFY_IS_TRUE(attrB.IsBold());
-    VERIFY_IS_FALSE(attrC.IsBold());
-    VERIFY_IS_FALSE(attrD.IsBold());
+    VERIFY_IS_FALSE(attrA.IsIntense());
+    VERIFY_IS_TRUE(attrB.IsIntense());
+    VERIFY_IS_FALSE(attrC.IsIntense());
+    VERIFY_IS_FALSE(attrD.IsIntense());
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
 void TextBufferTests::TestBackspaceRightSideVt()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
 
     Log::Comment(L"verify that backspace has the same behavior as a vt CUB sequence once "
                  L"we've traversed to the right side of the current row");
 
-    const wchar_t* const sequence = L"\033[1000Cx\by\n";
+    const auto sequence = L"\033[1000Cx\by\n";
     Log::Comment(NoThrowString().Format(sequence));
 
     const auto preCursorPosition = cursor.GetPosition();
@@ -1480,11 +1500,11 @@ void TextBufferTests::TestBackspaceRightSideVt()
 
 void TextBufferTests::TestBackspaceStrings()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = tbi.GetCursor();
 
     const auto x0 = cursor.GetPosition().X;
     const auto y0 = cursor.GetPosition().Y;
@@ -1522,11 +1542,11 @@ void TextBufferTests::TestBackspaceStringsAPI()
 {
     // Pretty much the same as the above test, but explicitly DOESN'T use the
     //  state machine.
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    const TextBuffer& tbi = si.GetTextBuffer();
-    const Cursor& cursor = tbi.GetCursor();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    const auto& tbi = si.GetTextBuffer();
+    const auto& cursor = tbi.GetCursor();
 
     gci.SetVirtTermLevel(0);
     WI_ClearFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -1552,7 +1572,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
     {
-        wchar_t* str = L"\b \b";
+        const auto str = L"\b \b";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
 
         VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
@@ -1583,19 +1603,19 @@ void TextBufferTests::TestBackspaceStringsAPI()
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
     {
-        wchar_t* str = L"a";
+        const auto str = L"a";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
-        wchar_t* str = L"\b";
+        const auto str = L"\b";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
-        wchar_t* str = L" ";
+        const auto str = L" ";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
-        wchar_t* str = L"\b";
+        const auto str = L"\b";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
 
@@ -1605,11 +1625,11 @@ void TextBufferTests::TestBackspaceStringsAPI()
 
 void TextBufferTests::TestRepeatCharacter()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    TextBuffer& tbi = si.GetTextBuffer();
-    StateMachine& stateMachine = si.GetStateMachine();
-    Cursor& cursor = tbi.GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
 
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
@@ -1733,18 +1753,18 @@ void TextBufferTests::ResizeTraditional()
     const COORD smallSize = { 5, 5 };
     const TextAttribute defaultAttr(0);
 
-    TextBuffer buffer(smallSize, defaultAttr, 12, _renderTarget);
+    TextBuffer buffer(smallSize, defaultAttr, 12, false, _renderer);
 
     Log::Comment(L"Fill buffer with some data and do assorted resize operations.");
 
-    wchar_t expectedChar = L'A';
+    auto expectedChar = L'A';
     const std::wstring_view expectedView(&expectedChar, 1);
     TextAttribute expectedAttr(FOREGROUND_RED);
     OutputCellIterator it(expectedChar, expectedAttr);
     const auto finalIt = buffer.Write(it);
     VERIFY_ARE_EQUAL(smallSize.X * smallSize.Y, finalIt.GetCellDistance(it), L"Verify we said we filled every cell.");
 
-    const Viewport writtenView = Viewport::FromDimensions({ 0, 0 }, smallSize);
+    const auto writtenView = Viewport::FromDimensions({ 0, 0 }, smallSize);
 
     Log::Comment(L"Ensure every cell has our test pattern value.");
     {
@@ -1758,7 +1778,7 @@ void TextBufferTests::ResizeTraditional()
     }
 
     Log::Comment(L"Resize to X and Y.");
-    COORD newSize = smallSize;
+    auto newSize = smallSize;
 
     if (shrinkX)
     {
@@ -1783,7 +1803,7 @@ void TextBufferTests::ResizeTraditional()
 
     // When we resize, we expect the attributes to be unchanged, but the new cells
     //  to be filled with spaces
-    wchar_t expectedSpace = UNICODE_SPACE;
+    auto expectedSpace = UNICODE_SPACE;
     std::wstring_view expectedSpaceView(&expectedSpace, 1);
 
     VERIFY_SUCCEEDED(buffer.ResizeTraditional(newSize));
@@ -1829,7 +1849,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     const COORD bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer
     const COORD pos{ 2, 1 };
@@ -1871,7 +1891,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     const COORD bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer
     const COORD pos{ 2, 1 };
@@ -1911,7 +1931,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     const COORD bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer in the bottom row
     const COORD pos{ 0, bufferSize.Y - 1 };
@@ -1946,7 +1966,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     const COORD bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer in the last column
     const COORD pos{ bufferSize.X - 1, 0 };
@@ -1978,7 +1998,7 @@ void TextBufferTests::TestBurrito()
     COORD bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // This is the burrito emoji: 🌯
     // It's encoded in UTF-16, as needed by the buffer.
@@ -1992,6 +2012,37 @@ void TextBufferTests::TestBurrito()
     _buffer->IncrementCursor();
     _buffer->IncrementCursor();
     VERIFY_IS_FALSE(afterBurritoIter);
+}
+
+void TextBufferTests::TestAppendRTFText()
+{
+    {
+        std::ostringstream contentStream;
+        const auto ascii = L"This is some Ascii \\ {}";
+        TextBuffer::_AppendRTFText(contentStream, ascii);
+        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "Low code units: á é í ó ú ⮁ ⮂" in UTF-16
+        const auto lowCodeUnits = L"Low code units: \x00E1 \x00E9 \x00ED \x00F3 \x00FA \x2B81 \x2B82";
+        TextBuffer::_AppendRTFText(contentStream, lowCodeUnits);
+        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "High code units: ꞵ ꞷ" in UTF-16
+        const auto highCodeUnits = L"High code units: \xA7B5 \xA7B7";
+        TextBuffer::_AppendRTFText(contentStream, highCodeUnits);
+        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream.str());
+    }
+    {
+        std::ostringstream contentStream;
+        // "Surrogates: 🍦 👾 👀" in UTF-16
+        const auto surrogates = L"Surrogates: \xD83C\xDF66 \xD83D\xDC7E \xD83D\xDC40";
+        TextBuffer::_AppendRTFText(contentStream, surrogates);
+        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream.str());
+    }
 }
 
 void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer)
@@ -2022,7 +2073,7 @@ void TextBufferTests::GetWordBoundaries()
     COORD bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"word other",
@@ -2120,7 +2171,7 @@ void TextBufferTests::GetWordBoundaries()
     for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
-        COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
+        auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
     }
@@ -2131,7 +2182,7 @@ void TextBufferTests::MoveByWord()
     COORD bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"word other",
@@ -2190,13 +2241,13 @@ void TextBufferTests::MoveByWord()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"movingForwards", movingForwards), L"Get movingForwards variant");
 
     const std::wstring_view delimiters = L" ";
-    const COORD lastCharPos = _buffer->GetLastNonSpaceCharacter();
+    const auto lastCharPos = _buffer->GetLastNonSpaceCharacter();
     for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
         auto pos{ test.startPos };
         const auto result = movingForwards ?
-                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
+                                _buffer->MoveToNextWord(pos, delimiters, til::point{ lastCharPos }) :
                                 _buffer->MoveToPreviousWord(pos, delimiters);
         const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
         VERIFY_ARE_EQUAL(expected, pos);
@@ -2237,12 +2288,12 @@ void TextBufferTests::GetGlyphBoundaries()
     COORD bufferSize{ 10, 10 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // This is the burrito emoji: 🌯
     // It's encoded in UTF-16, as needed by the buffer.
     const auto burrito = L"\xD83C\xDF2F";
-    const wchar_t* const output = wideGlyph ? burrito : L"X";
+    const auto output = wideGlyph ? burrito : L"X";
 
     const OutputCellIterator iter{ output };
 
@@ -2250,7 +2301,7 @@ void TextBufferTests::GetGlyphBoundaries()
     {
         Log::Comment(test.name.c_str());
         auto target = test.start;
-        _buffer->Write(iter, target);
+        _buffer->Write(iter, target.to_win32_coord());
 
         auto start = _buffer->GetGlyphStart(target);
         auto end = _buffer->GetGlyphEnd(target, true);
@@ -2273,7 +2324,7 @@ void TextBufferTests::GetTextRects()
     COORD bufferSize{ 20, 50 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Setup: Write lines of text to the buffer
     const std::vector<std::wstring> text = { L"0123456789",
@@ -2353,7 +2404,7 @@ void TextBufferTests::GetText()
         COORD bufferSize{ 10, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
-        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
         // Setup: Write lines of text to the buffer
         const std::vector<std::wstring> bufferText = { L"12345",
@@ -2445,7 +2496,7 @@ void TextBufferTests::GetText()
         COORD bufferSize{ 5, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
-        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
         // Setup: Write lines of text to the buffer
         const std::vector<std::wstring> bufferText = { L"1234567",
@@ -2581,12 +2632,12 @@ void TextBufferTests::HyperlinkTrim()
     const COORD bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
-    const auto url = L"test.url";
-    const auto otherUrl = L"other.url";
-    const auto customId = L"CustomId";
-    const auto otherCustomId = L"OtherCustomId";
+    static constexpr std::wstring_view url{ L"test.url" };
+    static constexpr std::wstring_view otherUrl{ L"other.url" };
+    static constexpr std::wstring_view customId{ L"CustomId" };
+    static constexpr std::wstring_view otherCustomId{ L"OtherCustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
@@ -2606,8 +2657,8 @@ void TextBufferTests::HyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
-    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
-    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, std::hash<std::wstring_view>{}(otherUrl));
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, til::hash(url));
+    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, til::hash(otherUrl));
 
     // The hyperlink reference that was only in the first row should be deleted from the map
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
@@ -2627,10 +2678,10 @@ void TextBufferTests::NoHyperlinkTrim()
     const COORD bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
-    const auto url = L"test.url";
-    const auto customId = L"CustomId";
+    static constexpr std::wstring_view url{ L"test.url" };
+    static constexpr std::wstring_view customId{ L"CustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
@@ -2647,7 +2698,7 @@ void TextBufferTests::NoHyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
-    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, til::hash(url));
 
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);

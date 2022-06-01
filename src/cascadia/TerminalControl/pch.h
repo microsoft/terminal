@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -57,8 +57,12 @@
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <telemetry/ProjectTelemetry.h>
 
+#include <ShlObj_core.h>
 #include <WinUser.h>
 
 #include "til.h"
 
 #include "ThrottledFunc.h"
+
+#include <cppwinrt_utils.h>
+#include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

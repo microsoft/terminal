@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Peasant.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 #include "RenameRequestArgs.h"
 
 namespace RemotingUnitTests
@@ -36,6 +35,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
+
+        winrt::hstring GetWindowLayout();
+
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, ActiveTabTitle);
 
@@ -49,6 +51,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
     private:
         Peasant(const uint64_t testPID);

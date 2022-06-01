@@ -21,7 +21,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <!--  Include the MUX Controls resources  -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"
-                                       ControlsResourcesVersion="Version1" />
+                                       ControlsResourcesVersion="Version2" />
                 <ResourceDictionary>
 
                     <!--
@@ -46,28 +46,143 @@
                                      Color="{ThemeResource SystemErrorTextColor}" />
 
                     <!--  Suppress top padding  -->
-                    <Thickness x:Key="TabViewHeaderPadding">9,0,8,0</Thickness>
+                    <Thickness x:Key="TabViewHeaderPadding">9,0,5,0</Thickness>
 
-                    <!--  Remove when implementing WinUI 2.6  -->
-                    <Thickness x:Key="FlyoutContentPadding">12</Thickness>
+                    <!--  Shadow that can be used by any control.  -->
+                    <ThemeShadow x:Name="SharedShadow" />
+
+                    <!--  Colored button which changes on hover/press  -->
+                    <Style x:Key="ColorButtonStyle"
+                           TargetType="Button">
+                        <Setter Property="BackgroundSizing" Value="OuterBorderEdge" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource ButtonBorderBrush}" />
+                        <Setter Property="BorderThickness" Value="{ThemeResource ButtonBorderThemeThickness}" />
+                        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+                        <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
+                        <Setter Property="FocusVisualMargin" Value="-3" />
+                        <Setter Property="Width" Value="32" />
+                        <Setter Property="Height" Value="32" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <Border x:Name="ColorButtonBackground"
+                                                Background="{TemplateBinding Background}"
+                                                BackgroundSizing="{TemplateBinding BackgroundSizing}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="{TemplateBinding CornerRadius}" />
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal" />
+
+                                                <VisualState x:Name="PointerOver">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                                       Storyboard.TargetProperty="Opacity">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="0.9" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                                       Storyboard.TargetProperty="BorderBrush">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="{ThemeResource ButtonBorderBrushPointerOver}" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+
+                                                <VisualState x:Name="Pressed">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                                       Storyboard.TargetProperty="Opacity">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="0.8" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                                       Storyboard.TargetProperty="BorderBrush">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="{ThemeResource ButtonBorderBrushPressed}" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+
+                                                <VisualState x:Name="Disabled">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                                       Storyboard.TargetProperty="Background">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="{ThemeResource ButtonBackgroundDisabled}" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ColorButtonBackground"
+                                                                                       Storyboard.TargetProperty="BorderBrush">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="{ThemeResource ButtonBorderBrushDisabled}" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
 
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!--  Define resources for Dark mode here  -->
-                            <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#FF333333" />
 
-                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
-                                             Color="#FF333333" />
+                            <!--
+                                Originally, we were using the raw value of
+                                ApplicationPageBackgroundThemeBrush here, which is
+                                evaluated as SolidBackgroundFillColorBase. If we try
+                                to use those resources directly though, we don't get
+                                the properly themed versions. Presumably because the
+                                App itself can't have it's RequestedTheme changed at
+                                runtime.
+                                
+                                However, after more discussion with the WinUI
+                                team, we determined that those colors don't
+                                provide enough contrast. The color here (and in
+                                light mode) were chosen for greater contrast.
+                                
+                                See GH #12356 for more history on the subject.
+                            -->
+                            <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#0a0a0a" />
+
+                            <StaticResource x:Key="UnfocusedBorderBrush"
+                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!--  Define resources for Light mode here  -->
-                            <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#FFCCCCCC" />
 
-                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
-                                             Color="#FFCCCCCC" />
+                            <!--
+                                GH #12398 has more history on this value, as well as GH #12400
+                            -->
+                            <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#dadada" />
+
+                            <StaticResource x:Key="UnfocusedBorderBrush"
+                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                        </ResourceDictionary>
+
+                        <ResourceDictionary x:Key="HighContrast">
+                            <!--  Define resources for HighContrast mode here  -->
+
+                            <!--
+                                MSFT:38264744
+                                You'd think that if a key wasn't present in a ThemeDictionary,
+                                it'd fall back to the original value. You'd be wrong - if you
+                                provide a Light&dark version of a resource, but not the
+                                HighContrast version, the resource loader will fall back to the
+                                Light value.
+                                
+                                SystemColorButtonFaceColorBrush is the default background color for WinUI's TabViewBackground under high contrast mode.
+                            -->
+                            <StaticResource x:Key="TabViewBackground"
+                                            ResourceKey="SystemColorButtonFaceColorBrush" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

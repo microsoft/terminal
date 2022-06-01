@@ -7,11 +7,21 @@
     <ProjectName>OpenConsoleProxy</ProjectName>
     <TargetName>OpenConsoleProxy</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <!--
+    !! LOAD BEARING !!
+    We need this to be a static library during Fuzzing builds.
+    OpenConsoleProxy is a hard build dependency of OpenConsole, because it produces the interface
+    headers for its IDL files. When building with Fuzzing, the DLL build fails; it tries to produce
+    a usable PE file though it's not a fuzzing target.
+    Conditionally changing this to a static library maintains the OpenConsole build dependency during
+    regular builds, while preventing the build failure during fuzzing builds.
+    -->
+    <ConfigurationType Condition="'$(Configuration)'=='Fuzzing'">StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl">
-      <!-- 
+      <!--
         In Razzle, IDL files generate %FileName%.h
         In Visual Studio, IDL files generate %FileName%_h.h
         Visual Studio is easier to override than Razzle.
@@ -31,6 +41,7 @@
   <ItemGroup>
     <ClInclude Include="$(IntDir)\IConsoleHandoff.h" />
     <ClInclude Include="$(IntDir)\ITerminalHandoff.h" />
+    <ClInclude Include="nodefaultlib_shim.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(IntDir)\dlldata.c" />
@@ -49,21 +60,32 @@
       <PreprocessorDefinitions>PROXY_CLSID_IS={0x1833E661,0xCC81,0x4DD0,{0x87,0xC6,0xC2,0xF7,0x4B,0xD3,0x9E,0xFA}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'==''">
+  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">
     <ClCompile>
       <PreprocessorDefinitions>PROXY_CLSID_IS={0xDEC4804D,0x56D1,0x4F73,{0x9F,0xBE,0x68,0x28,0xE7,0xC8,0x5C,0x56}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <CallingConvention>StdCall</CallingConvention>
+      <AdditionalIncludeDirectories>.;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CallingConvention Condition="'$(Platform)'!='ARM64'">StdCall</CallingConvention>
       <!-- Must be Stdcall on all platforms to resolve _ObjectStublessClient3 -->
       <PreprocessorDefinitions>REGISTER_PROXY_DLL;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <SDLCheck>false</SDLCheck>
+      <ForcedIncludeFiles>nodefaultlib_shim.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>OpenConsoleProxy.def</ModuleDefinitionFile>
+      <!--
+        Not depending on the CRT cuts binary size by half and prevents issues if this DLL
+        is copied elsewhere and executed outside of our app package without our bundled CRT present.
+      -->
+      <AdditionalDependencies />
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <EntryPointSymbol>DllMain</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

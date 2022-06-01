@@ -80,18 +80,17 @@ namespace SettingsModelLocalTests
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         const auto campbellSpan = gsl::make_span(expectedCampbellTable);
-        Utils::InitializeCampbellColorTable(campbellSpan);
-        Utils::SetColorTableAlpha(campbellSpan, 0);
+        Utils::InitializeColorTable(campbellSpan);
 
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {
-            const auto& expected = expectedCampbellTable.at(i);
+            const til::color expected{ expectedCampbellTable.at(i) };
             const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
             VERIFY_ARE_EQUAL(expected, actual);
         }
 
         Log::Comment(L"Roundtrip Test for Color Scheme");
-        Json::Value outJson{ scheme->ToJson() };
+        auto outJson{ scheme->ToJson() };
         VERIFY_ARE_EQUAL(schemeObject, outJson);
     }
 

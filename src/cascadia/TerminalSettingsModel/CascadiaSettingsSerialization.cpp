@@ -11,8 +11,7 @@
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
-#include "VsDevCmdGenerator.h"
-#include "VsDevShellGenerator.h"
+#include "VisualStudioGenerator.h"
 #include "WslDistroGenerator.h"
 
 // The following files are generated at build time into the "Generated Files" directory.
@@ -25,8 +24,11 @@
 #include "userDefaults.h"
 
 #include "ApplicationState.h"
+#include "DefaultTerminal.h"
 #include "FileUtils.h"
 
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::ApplicationModel::AppExtensions;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
@@ -37,8 +39,6 @@ static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
-static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view GuidKey{ "guid" };
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -79,6 +79,14 @@ static std::filesystem::path buildPath(const std::wstring_view& lhs, const std::
     buffer.append(lhs);
     buffer.append(rhs);
     return { std::move(buffer) };
+}
+
+void ParsedSettings::clear()
+{
+    globals = {};
+    baseLayerProfile = {};
+    profiles.clear();
+    profilesByGuid.clear();
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -131,8 +139,7 @@ void SettingsLoader::GenerateProfiles()
     _executeGenerator(PowershellCoreProfileGenerator{});
     _executeGenerator(WslDistroGenerator{});
     _executeGenerator(AzureCloudShellGenerator{});
-    _executeGenerator(VsDevCmdGenerator{});
-    _executeGenerator(VsDevShellGenerator{});
+    _executeGenerator(VisualStudioGenerator{});
 }
 
 // A new settings.json gets a special treatment:
@@ -178,22 +185,7 @@ void SettingsLoader::MergeInboxIntoUserSettings()
 {
     for (const auto& profile : inboxSettings.profiles)
     {
-        if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), profile); !inserted)
-        {
-            // If inserted is false, we got a matching user profile with identical GUID.
-            // --> The generated profile is a parent of the existing user profile.
-            it->second->InsertParent(profile);
-        }
-        else
-        {
-            // If inserted is true, then this is a generated profile that doesn't exist in the user's settings.
-            // While emplace() has already created an appropriate entry in .profilesByGuid, we still need to
-            // add it to .profiles (which is basically a sorted list of .profilesByGuid's values).
-            //
-            // When a user modifies a profile they shouldn't modify the (static/constant)
-            // inbox profile of course. That's why we need to call CreateChild here.
-            userSettings.profiles.emplace_back(CreateChild(profile));
-        }
+        _addUserProfileParent(profile);
     }
 }
 
@@ -216,27 +208,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                 try
                 {
                     const auto content = ReadUTF8File(fragmentExt.path());
-                    _parse(OriginTag::Fragment, source, content, fragmentSettings);
-
-                    for (const auto& fragmentProfile : fragmentSettings.profiles)
-                    {
-                        if (const auto updates = fragmentProfile->Updates(); updates != winrt::guid{})
-                        {
-                            if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
-                            {
-                                it->second->InsertParent(0, fragmentProfile);
-                            }
-                        }
-                        else
-                        {
-                            _appendProfile(CreateChild(fragmentProfile), userSettings);
-                        }
-                    }
-
-                    for (const auto& kv : fragmentSettings.globals->ColorSchemes())
-                    {
-                        userSettings.globals->AddColorScheme(kv.Value());
-                    }
+                    _parseFragment(source, content, fragmentSettings);
                 }
                 CATCH_LOG();
             }
@@ -265,10 +237,29 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
         }
     }
 
-    // Search through app extensions
-    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings"
-    const auto catalog = winrt::Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(AppExtensionHostName);
-    const auto extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+    // Search through app extensions.
+    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings".
+    //
+    // GH#12305: Open() can throw an 0x80070490 "Element not found.".
+    // It's unclear to me under which circumstances this happens as no one on the team
+    // was able to reproduce the user's issue, even if the application was run unpackaged.
+    // The error originates from `CallerIdentity::GetCallingProcessAppId` which returns E_NOT_SET.
+    // A comment can be found, reading:
+    // > Gets the "strong" AppId from the process token. This works for UWAs and Centennial apps,
+    // > strongly named processes where the AppId is stored securely in the process token. [...]
+    // > E_NOT_SET is returned for processes without strong AppIds.
+    IVectorView<AppExtension> extensions;
+    try
+    {
+        const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
+        extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+    }
+    CATCH_LOG();
+
+    if (!extensions)
+    {
+        return;
+    }
 
     for (const auto& ext : extensions)
     {
@@ -299,22 +290,41 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
     }
 }
 
+// See FindFragmentsAndMergeIntoUserSettings.
+// This function does the same, but for a single given JSON blob and source
+// and at the time of writing is used for unit tests only.
+void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
+{
+    ParsedSettings fragmentSettings;
+    _parseFragment(source, content, fragmentSettings);
+}
+
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
 // It layers all remaining objects onto each other (those that aren't covered
 // by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
 void SettingsLoader::FinalizeLayering()
 {
     // Layer default globals -> user globals
-    userSettings.globals->InsertParent(inboxSettings.globals);
+    userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
     userSettings.globals->_FinalizeInheritance();
     // Layer default profile defaults -> user profile defaults
-    userSettings.baseLayerProfile->InsertParent(inboxSettings.baseLayerProfile);
+    userSettings.baseLayerProfile->AddLeastImportantParent(inboxSettings.baseLayerProfile);
     userSettings.baseLayerProfile->_FinalizeInheritance();
     // Layer user profile defaults -> user profiles
     for (const auto& profile : userSettings.profiles)
     {
-        profile->InsertParent(0, userSettings.baseLayerProfile);
+        profile->AddMostImportantParent(userSettings.baseLayerProfile);
+
+        // This completes the parenting process that was started in _addUserProfileParent().
         profile->_FinalizeInheritance();
+        if (profile->Origin() == OriginTag::None)
+        {
+            // If you add more fields here, make sure to do the same in
+            // implementation::CreateChild().
+            profile->Origin(OriginTag::User);
+            profile->Name(profile->Name());
+            profile->Hidden(profile->Hidden());
+        }
     }
 }
 
@@ -324,11 +334,14 @@ void SettingsLoader::FinalizeLayering()
 // This section of code recognizes if a profile was seen before and marks it as
 // `"hidden": true` by default and thus ensures the behavior the user expects:
 // Profiles won't show up again after they've been removed from settings.json.
+//
+// Returns true if something got changed and
+// the settings need to be saved to disk.
 bool SettingsLoader::DisableDeletedProfiles()
 {
     const auto& state = winrt::get_self<ApplicationState>(ApplicationState::SharedInstance());
     auto generatedProfileIds = state->GeneratedProfiles();
-    bool newGeneratedProfiles = false;
+    auto newGeneratedProfiles = false;
 
     for (const auto& profile : _getNonUserOriginProfiles())
     {
@@ -349,6 +362,56 @@ bool SettingsLoader::DisableDeletedProfiles()
     }
 
     return newGeneratedProfiles;
+}
+
+// Runs migrations and fixups on user settings.
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::FixupUserSettings()
+{
+    struct CommandlinePatch
+    {
+        winrt::guid guid;
+        std::wstring_view before;
+        std::wstring_view after;
+    };
+
+    static constexpr std::array commandlinePatches{
+        CommandlinePatch{ DEFAULT_COMMAND_PROMPT_GUID, L"cmd.exe", L"%SystemRoot%\\System32\\cmd.exe" },
+        CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
+    };
+
+    auto fixedUp = false;
+
+    for (const auto& profile : userSettings.profiles)
+    {
+        if (!profile->HasCommandline())
+        {
+            continue;
+        }
+
+        for (const auto& patch : commandlinePatches)
+        {
+            if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+            {
+                profile->ClearCommandline();
+
+                // GH#12842:
+                // With the commandline field on the user profile gone, it's actually unknown what
+                // commandline it'll inherit, since a user profile can have multiple parents. We have to
+                // make sure we restore the correct commandline in case we don't inherit the expected one.
+                if (profile->Commandline() != patch.after)
+                {
+                    profile->Commandline(winrt::hstring{ patch.after });
+                }
+
+                fixedUp = true;
+                break;
+            }
+        }
+    }
+
+    return fixedUp;
 }
 
 // Give a string of length N and a position of [0,N) this function returns
@@ -433,17 +496,6 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
     return Json::Value::nullSingleton();
 }
 
-// Returns true if the given Json::Value looks like a profile.
-// We introduced a bug (GH#9962, fixed in GH#9964) that would result in one or
-// more nameless, guid-less profiles being emitted into the user's settings file.
-// Those profiles would show up in the list as "Default" later.
-bool SettingsLoader::_isValidProfileObject(const Json::Value& profileJson)
-{
-    return profileJson.isObject() &&
-           (profileJson.isMember(NameKey.data(), NameKey.data() + NameKey.size()) || // has a name (can generate a guid)
-            profileJson.isMember(GuidKey.data(), GuidKey.data() + GuidKey.size())); // or has a guid
-}
-
 // We treat userSettings.profiles as an append-only array and will
 // append profiles into the userSettings as necessary in this function.
 // _userProfileCount stores the number of profiles that were in userJSON during construction.
@@ -458,94 +510,212 @@ gsl::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfil
 }
 
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
+// This function is to be used for user settings files.
 void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
 {
-    const auto json = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
-    const auto& profilesObject = _getJSONValue(json, ProfilesKey);
-    const auto& defaultsObject = _getJSONValue(profilesObject, DefaultSettingsKey);
-    const auto& profilesArray = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
+    const auto json = _parseJson(content);
 
-    // globals
+    settings.clear();
+
     {
-        settings.globals = GlobalAppSettings::FromJson(json);
+        settings.globals = GlobalAppSettings::FromJson(json.root);
 
-        if (const auto& schemes = _getJSONValue(json, SchemesKey))
+        for (const auto& schemeJson : json.colorSchemes)
         {
-            for (const auto& schemeJson : schemes)
+            if (const auto scheme = ColorScheme::FromJson(schemeJson))
             {
-                if (schemeJson.isObject())
-                {
-                    if (const auto scheme = ColorScheme::FromJson(schemeJson))
-                    {
-                        settings.globals->AddColorScheme(*scheme);
-                    }
-                }
+                settings.globals->AddColorScheme(*scheme);
             }
         }
     }
 
-    // profiles.defaults
     {
-        settings.baseLayerProfile = Profile::FromJson(defaultsObject);
+        settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
         settings.baseLayerProfile->ClearGuid();
         settings.baseLayerProfile->Origin(OriginTag::ProfilesDefaults);
     }
 
-    // profiles.list
     {
-        const auto size = profilesArray.size();
-
-        // NOTE: This function is supposed to *replace* the contents of ParsedSettings. Don't break this promise.
-        // SettingsLoader::FindFragmentsAndMergeIntoUserSettings relies on this.
-        settings.profiles.clear();
+        const auto size = json.profilesList.size();
         settings.profiles.reserve(size);
-
-        settings.profilesByGuid.clear();
         settings.profilesByGuid.reserve(size);
 
-        for (const auto& profileJson : profilesArray)
+        for (const auto& profileJson : json.profilesList)
         {
-            if (_isValidProfileObject(profileJson))
+            auto profile = _parseProfile(origin, source, profileJson);
+            // GH#9962: Discard Guid-less, Name-less profiles.
+            if (profile->HasGuid())
             {
-                auto profile = Profile::FromJson(profileJson);
-                profile->Origin(origin);
-
-                // The Guid() generation below depends on the value of Source().
-                // --> Provide one if we got one.
-                if (!source.empty())
-                {
-                    profile->Source(source);
-                }
-
-                // The Guid() getter generates one from Name() and Source() if none exists otherwise.
-                // We want to ensure that every profile has a GUID no matter what, not just to
-                // cache the value, but also to make them consistently identifiable later on.
-                if (!profile->HasGuid())
-                {
-                    profile->Guid(profile->Guid());
-                }
-
-                _appendProfile(std::move(profile), settings);
+                _appendProfile(std::move(profile), profile->Guid(), settings);
             }
         }
     }
 }
 
+// Just like _parse, but is to be used for fragment files, which don't support anything but color
+// schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
+void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
+{
+    const auto json = _parseJson(content);
+
+    settings.clear();
+
+    {
+        settings.globals = winrt::make_self<GlobalAppSettings>();
+
+        for (const auto& schemeJson : json.colorSchemes)
+        {
+            try
+            {
+                if (const auto scheme = ColorScheme::FromJson(schemeJson))
+                {
+                    settings.globals->AddColorScheme(*scheme);
+                }
+            }
+            CATCH_LOG()
+        }
+    }
+
+    {
+        const auto size = json.profilesList.size();
+        settings.profiles.reserve(size);
+        settings.profilesByGuid.reserve(size);
+
+        for (const auto& profileJson : json.profilesList)
+        {
+            try
+            {
+                auto profile = _parseProfile(OriginTag::Fragment, source, profileJson);
+                // GH#9962: Discard Guid-less, Name-less profiles, but...
+                // allow ones with an Updates field, as those are special for fragments.
+                // We need to make sure to only call Guid() if HasGuid() is true,
+                // as Guid() will dynamically generate a return value otherwise.
+                const auto guid = profile->HasGuid() ? profile->Guid() : profile->Updates();
+                if (guid != winrt::guid{})
+                {
+                    _appendProfile(std::move(profile), guid, settings);
+                }
+            }
+            CATCH_LOG()
+        }
+    }
+
+    for (const auto& fragmentProfile : settings.profiles)
+    {
+        if (const auto updates = fragmentProfile->Updates(); updates != winrt::guid{})
+        {
+            if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
+            {
+                it->second->AddMostImportantParent(fragmentProfile);
+            }
+        }
+        else
+        {
+            _addUserProfileParent(fragmentProfile);
+        }
+    }
+
+    for (const auto& kv : settings.globals->ColorSchemes())
+    {
+        userSettings.globals->AddColorScheme(kv.Value());
+    }
+}
+
+SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)
+{
+    auto root = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
+    const auto& colorSchemes = _getJSONValue(root, SchemesKey);
+    const auto& profilesObject = _getJSONValue(root, ProfilesKey);
+    const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
+    const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList };
+}
+
+// Just a common helper function between _parse and _parseFragment.
+// Parses a profile and ensures it has a Guid if possible.
+winrt::com_ptr<Profile> SettingsLoader::_parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson)
+{
+    auto profile = Profile::FromJson(profileJson);
+    profile->Origin(origin);
+
+    // The Guid() generation below depends on the value of Source().
+    // --> Provide one if we got one.
+    if (!source.empty())
+    {
+        profile->Source(source);
+    }
+
+    // If none exists. the Guid() getter generates one from Name() and optionally Source().
+    // We want to ensure that every profile has a GUID no matter what, not just to
+    // cache the value, but also to make them consistently identifiable later on.
+    if (!profile->HasGuid() && profile->HasName())
+    {
+        profile->Guid(profile->Guid());
+    }
+
+    return profile;
+}
+
 // Adds a profile to the ParsedSettings instance. Takes ownership of the profile.
 // It ensures no duplicate GUIDs are added to the ParsedSettings instance.
-void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, ParsedSettings& settings)
+void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings)
 {
     // FYI: The static_cast ensures we don't move the profile into
     // `profilesByGuid`, even though we still need it later for `profiles`.
-    if (settings.profilesByGuid.emplace(profile->Guid(), static_cast<const winrt::com_ptr<Profile>&>(profile)).second)
+    if (settings.profilesByGuid.emplace(guid, static_cast<const winrt::com_ptr<Profile>&>(profile)).second)
     {
         settings.profiles.emplace_back(profile);
     }
     else
     {
         duplicateProfile = true;
+    }
+}
+
+// If the given ParsedSettings instance contains a profile with the given profile's GUID,
+// the profile is added as a parent. Otherwise a new child profile is created.
+void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile)
+{
+    if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), nullptr); !inserted)
+    {
+        // If inserted is false, we got a matching user profile with identical GUID.
+        // --> The generated profile is a parent of the existing user profile.
+        it->second->AddLeastImportantParent(profile);
+    }
+    else
+    {
+        // If inserted is true, then this is a generated profile that doesn't exist
+        // in the user's settings (which makes this branch somewhat unlikely).
+        //
+        // When a user modifies a profile they shouldn't modify the (static/constant)
+        // inbox profile of course. That's why we need to create a child.
+        // And since we previously added the (now) parent profile into profilesByGuid
+        // we'll have to replace it->second with the (new) child profile.
+        //
+        // These additional things are required to complete a (user) profile:
+        // * A call to _FinalizeInheritance()
+        // * Every profile should at least have Origin(), Name() and Hidden() set
+        // They're handled by SettingsLoader::FinalizeLayering() and detected by
+        // the missing Origin(). Setting these fields as late as possible ensures
+        // that we pick up the correct, inherited values of all of the child's parents.
+        //
+        // If you add more fields here, make sure to do the same in
+        // implementation::CreateChild().
+        auto child = winrt::make_self<Profile>();
+        child->AddLeastImportantParent(profile);
+        child->Guid(profile->Guid());
+
+        // If profile is a dynamic/generated profile, a fragment's
+        // Source() should have no effect on this user profile.
+        if (profile->HasSource())
+        {
+            child->Source(profile->Source());
+        }
+
+        it->second = child;
+        userSettings.profiles.emplace_back(std::move(child));
     }
 }
 
@@ -598,6 +768,18 @@ try
 {
     const auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
     const auto firstTimeSetup = settingsString.empty();
+
+    // GH#11119: If we find that the settings file doesn't exist, or is empty,
+    // then let's quick delete the state file as well. If the user does have a
+    // state file, and not a settings, then they probably tried to reset their
+    // settings. It might have data in it that was only relevant for a previous
+    // iteration of the settings file. If we don't, we'll load the old state and
+    // ignore all dynamic profiles (for example)!
+    if (firstTimeSetup)
+    {
+        ApplicationState::SharedInstance().Reset();
+    }
+
     const auto settingsStringView = firstTimeSetup ? UserSettingsJson : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
@@ -621,9 +803,9 @@ try
     loader.FinalizeLayering();
 
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
-    // Coincidentally this is also the time we should write the new settings.json
-    // to disk (so that it contains the new profiles for manual editing by the user).
+    // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
+    mustWriteToDisk |= loader.FixupUserSettings();
 
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
@@ -691,7 +873,14 @@ CascadiaSettings::CascadiaSettings(const std::string_view& userJSON, const std::
 {
 }
 
-CascadiaSettings::CascadiaSettings(SettingsLoader&& loader)
+CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
+    // The CascadiaSettings class declaration initializes these fields by default,
+    // but we're going to set these fields in our constructor later on anyways.
+    _globals{},
+    _baseLayerProfile{},
+    _allProfiles{},
+    _activeProfiles{},
+    _warnings{}
 {
     std::vector<Model::Profile> allProfiles;
     std::vector<Model::Profile> activeProfiles;
@@ -811,12 +1000,6 @@ void CascadiaSettings::WriteSettingsToDisk() const
 {
     const auto settingsPath = _settingsPath();
 
-    {
-        // create a timestamped backup file
-        const auto backupSettingsPath = fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath.native(), fmt::localtime(std::time(nullptr)));
-        LOG_IF_WIN32_BOOL_FALSE(CopyFileW(settingsPath.c_str(), backupSettingsPath.c_str(), TRUE));
-    }
-
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
     wbuilder.settings_["indentation"] = "    ";
@@ -842,7 +1025,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    Json::Value json{ _globals->ToJson() };
+    auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
     json["$schema"] = "https://aka.ms/terminal-profiles-schema";
 

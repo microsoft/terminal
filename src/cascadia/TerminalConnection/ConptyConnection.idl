@@ -5,11 +5,19 @@ import "ITerminalConnection.idl";
 
 namespace Microsoft.Terminal.TerminalConnection
 {
+    delegate void NewConnectionHandler(ConptyConnection connection);
+
     [default_interface] runtimeclass ConptyConnection : ITerminalConnection
     {
         ConptyConnection();
         Guid Guid { get; };
+        String Commandline { get; };
+
         void ClearBuffer();
+
+        void ShowHide(Boolean show);
+
+        void ReparentWindow(UInt64 newParent);
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();

@@ -2,8 +2,9 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "thread.hpp"
+
+#include "renderer.hpp"
 
 #pragma hdrstop
 
@@ -56,23 +57,23 @@ RenderThread::~RenderThread()
 // - Create all of the Events we'll need, and the actual thread we'll be doing
 //      work on.
 // Arguments:
-// - pRendererParent: the IRenderer that owns this thread, and which we should
+// - pRendererParent: the Renderer that owns this thread, and which we should
 //      trigger frames for.
 // Return Value:
 // - S_OK if we succeeded, else an HRESULT corresponding to a failure to create
 //      an Event or Thread.
-[[nodiscard]] HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
+[[nodiscard]] HRESULT RenderThread::Initialize(Renderer* const pRendererParent) noexcept
 {
     _pRenderer = pRendererParent;
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     // Create event before thread as thread will start immediately.
     if (SUCCEEDED(hr))
     {
-        HANDLE hEvent = CreateEventW(nullptr, // non-inheritable security attributes
-                                     FALSE, // auto reset event
-                                     FALSE, // initially unsignaled
-                                     nullptr // no name
+        auto hEvent = CreateEventW(nullptr, // non-inheritable security attributes
+                                   FALSE, // auto reset event
+                                   FALSE, // initially unsignaled
+                                   nullptr // no name
         );
 
         if (hEvent == nullptr)
@@ -87,10 +88,10 @@ RenderThread::~RenderThread()
 
     if (SUCCEEDED(hr))
     {
-        HANDLE hPaintEnabledEvent = CreateEventW(nullptr,
-                                                 TRUE, // manual reset event
-                                                 FALSE, // initially signaled
-                                                 nullptr);
+        auto hPaintEnabledEvent = CreateEventW(nullptr,
+                                               TRUE, // manual reset event
+                                               FALSE, // initially signaled
+                                               nullptr);
 
         if (hPaintEnabledEvent == nullptr)
         {
@@ -104,10 +105,10 @@ RenderThread::~RenderThread()
 
     if (SUCCEEDED(hr))
     {
-        HANDLE hPaintCompletedEvent = CreateEventW(nullptr,
-                                                   TRUE, // manual reset event
-                                                   TRUE, // initially signaled
-                                                   nullptr);
+        auto hPaintCompletedEvent = CreateEventW(nullptr,
+                                                 TRUE, // manual reset event
+                                                 TRUE, // initially signaled
+                                                 nullptr);
 
         if (hPaintCompletedEvent == nullptr)
         {
@@ -121,12 +122,12 @@ RenderThread::~RenderThread()
 
     if (SUCCEEDED(hr))
     {
-        HANDLE hThread = CreateThread(nullptr, // non-inheritable security attributes
-                                      0, // use default stack size
-                                      s_ThreadProc,
-                                      this,
-                                      0, // create immediately
-                                      nullptr // we don't need the thread ID
+        auto hThread = CreateThread(nullptr, // non-inheritable security attributes
+                                    0, // use default stack size
+                                    s_ThreadProc,
+                                    this,
+                                    0, // create immediately
+                                    nullptr // we don't need the thread ID
         );
 
         if (hThread == nullptr)
@@ -152,7 +153,7 @@ RenderThread::~RenderThread()
 
 DWORD WINAPI RenderThread::s_ThreadProc(_In_ LPVOID lpParameter)
 {
-    RenderThread* const pContext = static_cast<RenderThread*>(lpParameter);
+    const auto pContext = static_cast<RenderThread*>(lpParameter);
 
     if (pContext != nullptr)
     {
@@ -213,18 +214,12 @@ DWORD WINAPI RenderThread::_ThreadProc()
         LOG_IF_FAILED(_pRenderer->PaintFrame());
 
         SetEvent(_hPaintCompletedEvent);
-
-        // extra check before we sleep since it's a "long" activity, relatively speaking.
-        if (_fKeepRunning)
-        {
-            Sleep(s_FrameLimitMilliseconds);
-        }
     }
 
     return S_OK;
 }
 
-void RenderThread::NotifyPaint()
+void RenderThread::NotifyPaint() noexcept
 {
     if (_fWaiting.load(std::memory_order_acquire))
     {
@@ -236,17 +231,17 @@ void RenderThread::NotifyPaint()
     }
 }
 
-void RenderThread::EnablePainting()
+void RenderThread::EnablePainting() noexcept
 {
     SetEvent(_hPaintEnabledEvent);
 }
 
-void RenderThread::DisablePainting()
+void RenderThread::DisablePainting() noexcept
 {
     ResetEvent(_hPaintEnabledEvent);
 }
 
-void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
+void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) noexcept
 {
     // When rendering takes place via DirectX, and a console application
     // currently owns the screen, and a new console application is launched (or

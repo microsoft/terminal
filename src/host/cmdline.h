@@ -94,8 +94,8 @@ protected:
     CommandLine();
 
     // delete these because we don't want to accidentally get copies of the singleton
-    CommandLine(CommandLine const&) = delete;
-    CommandLine& operator=(CommandLine const&) = delete;
+    CommandLine(const CommandLine&) = delete;
+    CommandLine& operator=(const CommandLine&) = delete;
 
     [[nodiscard]] NTSTATUS _startCommandListPopup(COOKED_READ_DATA& cookedReadData);
     [[nodiscard]] NTSTATUS _startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData);
@@ -147,8 +147,6 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 // Word delimiters
 bool IsWordDelim(const wchar_t wch);
 bool IsWordDelim(const std::wstring_view charData);
-
-[[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept;
 
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 

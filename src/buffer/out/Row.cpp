@@ -113,8 +113,8 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
-    uint16_t colorStarts = gsl::narrow_cast<uint16_t>(index);
-    uint16_t currentIndex = colorStarts;
+    auto colorStarts = gsl::narrow_cast<uint16_t>(index);
+    auto currentIndex = colorStarts;
 
     while (it && currentIndex <= finalColumnInRow)
     {
@@ -141,7 +141,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
         // Fill the text if the behavior isn't set to saying there's only a color stored in this iterator.
         if (it->TextAttrBehavior() != TextAttributeBehavior::StoredOnly)
         {
-            const bool fillingLastColumn = currentIndex == finalColumnInRow;
+            const auto fillingLastColumn = currentIndex == finalColumnInRow;
 
             // TODO: MSFT: 19452170 - We need to ensure when writing any trailing byte that the one to the left
             // is a matching leading byte. Likewise, if we're writing a leading byte, we need to make sure we still have space in this loop

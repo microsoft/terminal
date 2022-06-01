@@ -8,6 +8,7 @@ parameters:
 
 jobs:
 - job: ProcessTestResults
+  displayName: Process Helix Results ${{ parameters.platform }} ${{ parameters.configuration }}
   condition: ${{ parameters.condition }}
   dependsOn: ${{ parameters.dependsOn }}
   pool:

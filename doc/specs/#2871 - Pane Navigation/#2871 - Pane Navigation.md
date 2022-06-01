@@ -241,7 +241,7 @@ So `focusPane(target=1, direction=up)` will attempt to focus the pane above pane
 
 > 👉 **NOTE**: At this point, the author considered "Do we even want a separate
 > action to engage the tab switcher with panes expanded?" Perhaps panes being
-> visible in the tab switcher is just part fo the tab switcher's behavior. Maybe
+> visible in the tab switcher is just part of the tab switcher's behavior. Maybe
 > there shouldn't be a separate "open the tab switcher with the panes expanded
 > to the pane I'm currently on, and the panes listed in MRU order" action.
 

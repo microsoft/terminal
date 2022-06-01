@@ -11,8 +11,9 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
 
+#include <til/ticket_lock.h>
+
 using Microsoft::Console::Interactivity::ServiceLocator;
-using Microsoft::Console::Render::BlinkingState;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
@@ -44,42 +45,52 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
 {
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-    InitializeCriticalSection(&_csConsoleLock);
 }
 
-CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
-{
-    DeleteCriticalSection(&_csConsoleLock);
-}
+// Access to thread-local variables is thread-safe, because each thread
+// gets its own copy of this variable with a default value of 0.
+//
+// Whenever we want to acquire the lock we increment recursionCount and on
+// each release we decrement it again. We can then make the lock safe for
+// reentrancy by only acquiring/releasing the lock if the recursionCount is 0.
+// In a sense, recursionCount is counting the actual function
+// call recursion depth of the caller. This works as long as
+// the caller makes sure to properly call Unlock() once for each Lock().
+static thread_local ULONG recursionCount = 0;
+static til::ticket_lock lock;
 
-bool CONSOLE_INFORMATION::IsConsoleLocked() const
+bool CONSOLE_INFORMATION::IsConsoleLocked()
 {
-    // The critical section structure's OwningThread field contains the ThreadId despite having the HANDLE type.
-    // This requires us to hard cast the ID to compare.
-    return _csConsoleLock.OwningThread == (HANDLE)GetCurrentThreadId();
+    return recursionCount != 0;
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::LockConsole()
 {
-    EnterCriticalSection(&_csConsoleLock);
-}
-
-#pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-bool CONSOLE_INFORMATION::TryLockConsole()
-{
-    return !!TryEnterCriticalSection(&_csConsoleLock);
+    // See description of recursionCount a few lines above.
+    const auto rc = ++recursionCount;
+    FAIL_FAST_IF(rc == 0);
+    if (rc == 1)
+    {
+        lock.lock();
+    }
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::UnlockConsole()
 {
-    LeaveCriticalSection(&_csConsoleLock);
+    // See description of recursionCount a few lines above.
+    const auto rc = --recursionCount;
+    FAIL_FAST_IF(rc == ULONG_MAX);
+    if (rc == 0)
+    {
+        lock.unlock();
+    }
 }
 
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 {
-    return _csConsoleLock.RecursionCount;
+    return recursionCount;
 }
 
 // Routine Description:
@@ -92,13 +103,13 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 // - STATUS_SUCCESS if successful.
 [[nodiscard]] NTSTATUS CONSOLE_INFORMATION::AllocateConsole(const std::wstring_view title)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
     WI_SetFlagIf(gci.Flags, CONSOLE_AUTO_POSITION, !!gci.GetAutoPosition());
     WI_SetFlagIf(gci.Flags, CONSOLE_QUICK_EDIT_MODE, !!gci.GetQuickEdit());
     WI_SetFlagIf(gci.Flags, CONSOLE_HISTORY_NODUP, !!gci.GetHistoryNoDup());
 
-    Selection* const pSelection = &Selection::Instance();
+    const auto pSelection = &Selection::Instance();
     pSelection->SetLineSelection(!!gci.GetLineSelection());
 
     SetConsoleCPInfo(TRUE);
@@ -129,13 +140,13 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    NTSTATUS Status = DoCreateScreenBuffer();
+    auto Status = DoCreateScreenBuffer();
     if (!NT_SUCCESS(Status))
     {
         goto ErrorExit2;
     }
 
-    gci.pCurrentScreenBuffer = gci.ScreenBuffers;
+    gci.SetActiveOutputBuffer(*gci.ScreenBuffers);
 
     gci.GetActiveOutputBuffer().ScrollScale = gci.GetScrollScale();
 
@@ -203,6 +214,16 @@ const SCREEN_INFORMATION& CONSOLE_INFORMATION::GetActiveOutputBuffer() const
     return *pCurrentScreenBuffer;
 }
 
+void CONSOLE_INFORMATION::SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer)
+{
+    if (pCurrentScreenBuffer)
+    {
+        pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(false);
+    }
+    pCurrentScreenBuffer = &screenBuffer;
+    pCurrentScreenBuffer->GetTextBuffer().SetAsActiveBuffer(true);
+}
+
 bool CONSOLE_INFORMATION::HasActiveOutputBuffer() const
 {
     return (pCurrentScreenBuffer != nullptr);
@@ -220,54 +241,6 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 }
 
 // Method Description:
-// - Return the default foreground color of the console. If the settings are
-//      configured to have a default foreground color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
-// Arguments:
-// - <none>
-// Return Value:
-// - the default foreground color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
-{
-    const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
-}
-
-// Method Description:
-// - Return the default background color of the console. If the settings are
-//      configured to have a default background color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
-// Arguments:
-// - <none>
-// Return Value:
-// - the default background color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
-{
-    const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
-}
-
-// Method Description:
-// - Get the colors of a particular text attribute, using our color table,
-//      and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the foreground color of.
-// Return Value:
-// - The color values of the attribute's foreground and background.
-std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
-{
-    _blinkingState.RecordBlinkingUsage(attr);
-    return attr.CalculateRgbColors(
-        GetColorTable(),
-        GetDefaultForeground(),
-        GetDefaultBackground(),
-        IsScreenReversed(),
-        _blinkingState.IsBlinkingFaint());
-}
-
-// Method Description:
 // - Set the console's title, and trigger a renderer update of the title.
 //      This does not include the title prefix, such as "Mark", "Select", or "Scroll"
 // Arguments:
@@ -277,6 +250,20 @@ std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const T
 void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 {
     _Title = std::wstring{ newTitle.begin(), newTitle.end() };
+
+    // Sanitize the input if we're in pty mode. No control chars - this string
+    //      will get emitted back to the TTY in a VT sequence, and we don't want
+    //      to embed control characters in that string. Note that we can't use
+    //      IsInVtIoMode for this test, because the VT I/O thread won't have
+    //      been created when the title is first set during startup.
+    if (ServiceLocator::LocateGlobals().launchArgs.InConptyMode())
+    {
+        _Title.erase(std::remove_if(_Title.begin(), _Title.end(), [](auto ch) {
+                         return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                     }),
+                     _Title.end());
+    }
+
     _TitleAndPrefix = _Prefix + _Title;
 
     auto* const pRender = ServiceLocator::LocateGlobals().pRender;
@@ -386,14 +373,37 @@ Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexc
 }
 
 // Method Description:
-// - return a reference to the console's blinking state.
+// - Returns the MIDI audio instance, created on demand.
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the console's blinking state.
-BlinkingState& CONSOLE_INFORMATION::GetBlinkingState() const noexcept
+// - a reference to the MidiAudio instance.
+MidiAudio& CONSOLE_INFORMATION::GetMidiAudio()
 {
-    return _blinkingState;
+    if (!_midiAudio)
+    {
+        _midiAudio = std::make_unique<MidiAudio>();
+        _midiAudio->Initialize();
+    }
+    return *_midiAudio;
+}
+
+// Method Description:
+// - Shuts down the MIDI audio system if previously instantiated.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CONSOLE_INFORMATION::ShutdownMidiAudio()
+{
+    if (_midiAudio)
+    {
+        // We lock the console here to make sure the shutdown promise is
+        // set before the audio is unlocked in the thread that is playing.
+        LockConsole();
+        _midiAudio->Shutdown();
+        UnlockConsole();
+    }
 }
 
 // Method Description:

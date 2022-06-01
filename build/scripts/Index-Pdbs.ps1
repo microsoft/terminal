@@ -23,6 +23,7 @@ $mappedFiles = New-Object System.Collections.ArrayList
 
 foreach ($file in (Get-ChildItem -r:$recursive "$SearchDir\*.pdb"))
 {
+    $mappedFiles = New-Object System.Collections.ArrayList
     Write-Verbose "Found $file"
 
     $ErrorActionPreference = "Continue" # Azure Pipelines defaults to "Stop", continue past errors in this script.
@@ -50,7 +51,7 @@ foreach ($file in (Get-ChildItem -r:$recursive "$SearchDir\*.pdb"))
             if ($relative)
             {
                 $mapping = $allFiles[$i] + "*$relative"
-                $mappedFiles.Add($mapping)
+                $ignore = $mappedFiles.Add($mapping)
 
                 Write-Verbose "Mapped path $($i): $mapping"
             }
@@ -78,7 +79,26 @@ $($mappedFiles -join "`r`n")
 SRCSRV: end ------------------------------------------------
 "@ | Set-Content $pdbstrFile
 
+    Write-Host
+    Write-Host
+    Write-Host (Get-Content $pdbstrFile)
+    Write-Host
+    Write-Host
+
+    Write-Host "$pdbstrExe -p:""$file"" -w -s:srcsrv -i:$pdbstrFile"
     & $pdbstrExe -p:"$file" -w -s:srcsrv -i:$pdbstrFile
+    Write-Host
+    Write-Host
+
+    Write-Host "$pdbstrExe -p:""$file"" -r -s:srcsrv"
+    & $pdbstrExe -p:"$file" -r -s:srcsrv
+    Write-Host
+    Write-Host
+
+    Write-Host "$srctoolExe $file"
+    & $srctoolExe "$file"
+    Write-Host
+    Write-Host
 }
 
 # Return with exit 0 to override any weird error code from other tools

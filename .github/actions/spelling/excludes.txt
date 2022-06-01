@@ -52,6 +52,7 @@ SUMS$
 \.xpm$
 \.yml$
 \.zip$
+^build/config/
 ^consolegit2gitfilters\.json$
 ^dep/
 ^doc/reference/master-sequence-list.csv$
@@ -61,12 +62,14 @@ SUMS$
 ^src/host/runft\.bat$
 ^src/host/runut\.bat$
 ^src/interactivity/onecore/BgfxEngine\.
+^src/renderer/atlas/
 ^src/renderer/wddmcon/WddmConRenderer\.
 ^src/terminal/adapter/ut_adapter/run\.bat$
 ^src/terminal/parser/delfuzzpayload\.bat$
 ^src/terminal/parser/ft_fuzzer/run\.bat$
 ^src/terminal/parser/ft_fuzzer/VTCommandFuzzer\.cpp$
 ^src/terminal/parser/ft_fuzzwrapper/run\.bat$
+^src/terminal/parser/ut_parser/Base64Test.cpp$
 ^src/terminal/parser/ut_parser/run\.bat$
 ^src/tools/integrity/packageuwp/ConsoleUWP\.appxSources$
 ^src/tools/lnkd/lnkd\.bat$
@@ -74,6 +77,7 @@ SUMS$
 ^src/tools/texttests/fira\.txt$
 ^src/tools/U8U16Test/(?:fr|ru|zh)\.txt$
 ^src/types/ut_types/UtilsTests.cpp$
+^tools/ReleaseEngineering/ServicingPipeline.ps1$
 ^\.github/actions/spelling/
 ^\.gitignore$
 \.vsdx$

@@ -16,16 +16,6 @@ static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
-static constexpr std::string_view CursorShapeKey{ "cursorShape" };
-static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
-static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
-static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
-static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
-static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
-static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
-static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
-static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
-static constexpr std::string_view IntenseTextStyleKey{ "intenseTextStyle" };
 static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view OpacityKey{ "opacity" };
 
@@ -37,21 +27,17 @@ AppearanceConfig::AppearanceConfig(winrt::weak_ref<Profile> sourceProfile) :
 winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile)
 {
     auto appearance{ winrt::make_self<AppearanceConfig>(std::move(sourceProfile)) };
-    appearance->_BackgroundImagePath = source->_BackgroundImagePath;
-    appearance->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
-    appearance->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
-    appearance->_ColorSchemeName = source->_ColorSchemeName;
     appearance->_Foreground = source->_Foreground;
     appearance->_Background = source->_Background;
     appearance->_SelectionBackground = source->_SelectionBackground;
     appearance->_CursorColor = source->_CursorColor;
-    appearance->_CursorShape = source->_CursorShape;
-    appearance->_CursorHeight = source->_CursorHeight;
-    appearance->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
-    appearance->_RetroTerminalEffect = source->_RetroTerminalEffect;
-    appearance->_PixelShaderPath = source->_PixelShaderPath;
-    appearance->_IntenseTextStyle = source->_IntenseTextStyle;
     appearance->_Opacity = source->_Opacity;
+
+#define APPEARANCE_SETTINGS_COPY(type, name, jsonKey, ...) \
+    appearance->_##name = source->_##name;
+    MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_COPY)
+#undef APPEARANCE_SETTINGS_COPY
+
     return appearance;
 }
 
@@ -63,17 +49,12 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
-    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
-    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
-    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
-    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
-    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
-    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
-    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
-    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
-    JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
-    JsonUtils::SetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
     JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
+
+#define APPEARANCE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+    MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_TO_JSON)
+#undef APPEARANCE_SETTINGS_TO_JSON
 
     return json;
 }
@@ -95,18 +76,14 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
-    JsonUtils::GetValueForKey(json, CursorHeightKey, _CursorHeight);
-    JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
-    JsonUtils::GetValueForKey(json, CursorShapeKey, _CursorShape);
-    JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
-    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
-    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
-    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
-    JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
-    JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
-    JsonUtils::GetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
     JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
+
+#define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_LAYER_JSON)
+#undef APPEARANCE_SETTINGS_LAYER_JSON
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()

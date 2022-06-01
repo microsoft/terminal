@@ -23,7 +23,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'\x30a2'; // katakana A
+        const auto wch = L'\x30a2'; // katakana A
         const size_t limit = 5;
 
         OutputCellIterator it(wch, limit);
@@ -55,7 +55,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
         const size_t limit = 5;
 
         OutputCellIterator it(wch, limit);
@@ -79,7 +79,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
 
         OutputCellIterator it(wch);
 
@@ -150,7 +150,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
 
         const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
@@ -177,7 +177,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
 
         const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
