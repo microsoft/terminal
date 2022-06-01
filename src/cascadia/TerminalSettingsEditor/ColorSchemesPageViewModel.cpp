@@ -8,7 +8,8 @@
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     ColorSchemesPageViewModel::ColorSchemesPageViewModel(const Model::CascadiaSettings& settings) :
-        _settings{ settings }
+        _settings{ settings },
+        _viewModelToSchemeMap{ winrt::single_threaded_map<Editor::ColorSchemeViewModel, Model::ColorScheme>() }
     {
         _MakeColorSchemeVMsHelper();
         CurrentScheme(_AllColorSchemes.GetAt(0));
@@ -55,7 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // We will need access to the settings model object later, but we don't
             // want to expose it on the color scheme VM, so we store the reference to it
             // in our internal map
-            _ViewModelToSchemeMap.Insert(viewModel, scheme);
+            _viewModelToSchemeMap.Insert(viewModel, scheme);
         }
 
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
@@ -90,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // update the settings model
                 CurrentScheme().Name(newName);
                 _settings.GlobalSettings().RemoveColorScheme(oldName);
-                _settings.GlobalSettings().AddColorScheme(_ViewModelToSchemeMap.Lookup(CurrentScheme()));
+                _settings.GlobalSettings().AddColorScheme(_viewModelToSchemeMap.Lookup(CurrentScheme()));
                 _settings.UpdateColorSchemeReferences(oldName, newName);
                 return true;
             }
