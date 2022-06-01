@@ -105,6 +105,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
+        auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -201,6 +204,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderer->TriggerTeardown();
         }
+
+        _shutdownMidiAudio();
     }
 
     bool ControlCore::Initialize(const double actualWidth,
@@ -1223,6 +1228,66 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // Method Description:
+    // - Plays a single MIDI note, blocking for the duration.
+    // Arguments:
+    // - noteNumber - The MIDI note number to be played (0 - 127).
+    // - velocity - The force with which the note should be played (0 - 127).
+    // - duration - How long the note should be sustained (in microseconds).
+    void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
+    {
+        // We create the audio instance on demand, and lock it for the duration
+        // of the note output so it can't be destroyed while in use.
+        auto& midiAudio = _getMidiAudio();
+        midiAudio.Lock();
+
+        // We then unlock the terminal, so the UI doesn't hang while we're busy.
+        auto& terminalLock = _terminal->GetReadWriteLock();
+        terminalLock.unlock();
+
+        // This call will block for the duration, unless shutdown early.
+        midiAudio.PlayNote(noteNumber, velocity, duration);
+
+        // Once complete, we reacquire the terminal lock and unlock the audio.
+        // If the terminal has shutdown in the meantime, the Unlock call
+        // will throw an exception, forcing the thread to exit ASAP.
+        terminalLock.lock();
+        midiAudio.Unlock();
+    }
+
+    // Method Description:
+    // - Returns the MIDI audio instance, created on demand.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a reference to the MidiAudio instance.
+    MidiAudio& ControlCore::_getMidiAudio()
+    {
+        if (!_midiAudio)
+        {
+            _midiAudio = std::make_unique<MidiAudio>();
+            _midiAudio->Initialize();
+        }
+        return *_midiAudio;
+    }
+
+    // Method Description:
+    // - Shuts down the MIDI audio system if previously instantiated.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ControlCore::_shutdownMidiAudio()
+    {
+        if (_midiAudio)
+        {
+            // We lock the terminal here to make sure the shutdown promise is
+            // set before the audio is unlocked in the thread that is playing.
+            auto lock = _terminal->LockForWriting();
+            _midiAudio->Shutdown();
+        }
+    }
+
     bool ControlCore::HasSelection() const
     {
         return _terminal->IsSelectionActive();
@@ -1513,10 +1578,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::_connectionOutputHandler(const hstring& hstr)
     {
-        _terminal->Write(hstr);
+        try
+        {
+            _terminal->Write(hstr);
 
-        // Start the throttled update of where our hyperlinks are.
-        _updatePatternLocations->Run();
+            // Start the throttled update of where our hyperlinks are.
+            _updatePatternLocations->Run();
+        }
+        catch (...)
+        {
+            // We're expecting to receive an exception here if the terminal
+            // is closed while we're blocked playing a MIDI note.
+        }
     }
 
     // Method Description:

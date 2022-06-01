@@ -221,6 +221,11 @@ public:
         Log::Comment(L"SetWorkingDirectory MOCK called...");
     }
 
+    void PlayMidiNote(const int /*noteNumber*/, const int /*velocity*/, const std::chrono::microseconds /*duration*/) override
+    {
+        Log::Comment(L"PlayMidiNote MOCK called...");
+    }
+
     bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");

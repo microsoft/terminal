@@ -17,6 +17,7 @@
 
 #include "ControlCore.g.h"
 #include "ControlSettings.h"
+#include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
@@ -273,7 +274,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
+        void _terminalPlayMidiNote(const int noteNumber,
+                                   const int velocity,
+                                   const std::chrono::microseconds duration);
 #pragma endregion
+
+        std::unique_ptr<MidiAudio> _midiAudio;
+
+        MidiAudio& _getMidiAudio();
+        void _shutdownMidiAudio();
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);

@@ -118,6 +118,11 @@
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\audio\midi\lib\midi.vcxproj">
+      <Project>{3c67784e-1453-49c2-9660-483e2cc7f7ad}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

@@ -7,6 +7,7 @@
 
 #include "_stream.h"
 #include "getset.h"
+#include "handle.h"
 #include "directio.h"
 #include "output.h"
 
@@ -353,6 +354,34 @@ void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState
 // - <none>
 void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
 {
+}
+
+// Routine Description:
+// - Plays a single MIDI note, blocking for the duration.
+// Arguments:
+// - noteNumber - The MIDI note number to be played (0 - 127).
+// - velocity - The force with which the note should be played (0 - 127).
+// - duration - How long the note should be sustained (in milliseconds).
+// Return value:
+// - true if successful. false otherwise.
+void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
+{
+    // We create the audio instance on demand, and lock it for the duration
+    // of the note output so it can't be destroyed while in use.
+    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
+    midiAudio.Lock();
+
+    // We then unlock the console, so the UI doesn't hang while we're busy.
+    UnlockConsole();
+
+    // This call will block for the duration, unless shutdown early.
+    midiAudio.PlayNote(noteNumber, velocity, duration);
+
+    // Once complete, we reacquire the console lock and unlock the audio.
+    // If the console has shutdown in the meantime, the Unlock call
+    // will throw an exception, forcing the thread to exit ASAP.
+    LockConsole();
+    midiAudio.Unlock();
 }
 
 // Routine Description:
