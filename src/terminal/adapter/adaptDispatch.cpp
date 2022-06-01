@@ -2686,3 +2686,39 @@ void AdaptDispatch::_ReportDECSTBMSetting()
     response.append(L"r\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
+
+// Routine Description:
+// - DECPS - Plays a sequence of musical notes.
+// Arguments:
+// - params - The volume, duration, and note values to play.
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PlaySounds(const VTParameters parameters)
+{
+    // If we're a conpty, we return false so the command will be passed on
+    // to the connected terminal. But we need to flush the current frame
+    // first, otherwise the visual output will lag behind the sound.
+    if (_api.IsConsolePty())
+    {
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    // First parameter is the volume, in the range 0 to 7. We multiply by
+    // 127 / 7 to obtain an equivalent MIDI velocity in the range 0 to 127.
+    const auto velocity = std::min(parameters.at(0).value_or(0), 7) * 127 / 7;
+    // Second parameter is the duration, in the range 0 to 255. Units are
+    // 1/32 of a second, so we multiply by 1000000us/32 to obtain microseconds.
+    using namespace std::chrono_literals;
+    const auto duration = std::min(parameters.at(1).value_or(0), 255) * 1000000us / 32;
+    // The subsequent parameters are notes, in the range 0 to 25.
+    return parameters.subspan(2).for_each([=](const auto param) {
+        // Values 1 to 25 represent the notes C5 to C7, so we add 71 to
+        // obtain the equivalent MIDI note numbers (72 = C5).
+        const auto noteNumber = std::min(param.value_or(0), 25) + 71;
+        // But value 0 is meant to be silent, so if the note number is 71,
+        // we set the velocity to 0 (i.e. no volume).
+        _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
+        return true;
+    });
+}
