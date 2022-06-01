@@ -50,9 +50,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
 
-        // If there hasn't been a settings reload since the last time we came
-        // to the color schemes page, the view model has remained the same and knows
-        // the last selected color scheme, so just select that
         ColorSchemeComboBox().SelectedItem(_ViewModel.CurrentScheme());
     }
 

@@ -17,7 +17,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemesPageViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
     {
         _settings = settings;
+
+        // We want to re-initialize our AllColorSchemes list, but we want to make sure
+        // we still have the same CurrentScheme as before (if that scheme still exists)
+
+        // Store the name of the current scheme
+        const auto currentSchemeName = CurrentScheme().Name();
+
+        // Re-initialize the color scheme list
         _MakeColorSchemeVMsHelper();
+
+        // Re-select the previously selected scheme if it exists
+        const auto it = _AllColorSchemes.First();
+        while (it.HasCurrent())
+        {
+            auto scheme = *it;
+            if (scheme.Name() == currentSchemeName)
+            {
+                CurrentScheme(scheme);
+                break;
+            }
+            it.MoveNext();
+        }
     }
 
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
