@@ -48,7 +48,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorSchemeMap = _settings.GlobalSettings().ColorSchemes();
         for (const auto& pair : colorSchemeMap)
         {
-            allColorSchemes.emplace_back(Editor::ColorSchemeViewModel(pair.Value()));
+            const auto scheme = pair.Value();
+            Editor::ColorSchemeViewModel viewModel{ scheme };
+            allColorSchemes.emplace_back(viewModel);
+
+            // We will need access to the settings model object later, but we don't
+            // want to expose it on the color scheme VM, so we store the reference to it
+            // in our internal map
+            _VMToSchemeMap.Insert(viewModel, scheme);
         }
 
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
@@ -83,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // update the settings model
                 CurrentScheme().Name(newName);
                 _settings.GlobalSettings().RemoveColorScheme(oldName);
-                _settings.GlobalSettings().AddColorScheme(CurrentScheme().SettingsModelObject());
+                _settings.GlobalSettings().AddColorScheme(_VMToSchemeMap.Lookup(CurrentScheme()));
                 _settings.UpdateColorSchemeReferences(oldName, newName);
                 return true;
             }

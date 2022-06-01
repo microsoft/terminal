@@ -15,8 +15,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IVector<ColorTableEntry> NonBrightColorTable;
         Windows.Foundation.Collections.IVector<ColorTableEntry> BrightColorTable;
 
-        Microsoft.Terminal.Settings.Model.ColorScheme SettingsModelObject { get; };
-
         ColorTableEntry ColorEntryAt(UInt32 Index);
 
         // System Colors
