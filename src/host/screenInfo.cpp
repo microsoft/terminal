@@ -2268,7 +2268,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     }
 
     // do adjustments on a copy that's easily manipulated.
-    const til::rect viewportRect{ newViewport.ToExclusive() };
+    const til::rect viewportRect{ newViewport.ToInclusive() };
     const til::size coordScreenBufferSize{ GetBufferSize().Dimensions() };
 
     // MSFT-33471786, GH#13193:
