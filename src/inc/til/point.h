@@ -260,8 +260,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     constexpr HRESULT unwrap_coord_hr(const point pt, COORD& out) noexcept
     {
-        short x;
-        short y;
+        short x = 0;
+        short y = 0;
         if (narrow_maybe(pt.x, x) && narrow_maybe(pt.y, y))
         {
             out.X = x;

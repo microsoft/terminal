@@ -72,10 +72,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     constexpr HRESULT unwrap_small_rect_hr(const inclusive_rect& rect, SMALL_RECT& out) noexcept
     {
-        short l;
-        short t;
-        short r;
-        short b;
+        short l = 0;
+        short t = 0;
+        short r = 0;
+        short b = 0;
         if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
         {
             out.Left = l;
@@ -779,10 +779,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     constexpr HRESULT unwrap_exclusive_small_rect_hr(const rect& rect, SMALL_RECT& out) noexcept
     {
-        short l;
-        short t;
-        short r;
-        short b;
+        short l = 0;
+        short t = 0;
+        short r = 0;
+        short b = 0;
         if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
         {
             out.Left = l;
