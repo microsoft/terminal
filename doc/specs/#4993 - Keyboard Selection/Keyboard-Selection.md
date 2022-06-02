@@ -196,7 +196,7 @@ Invoking `copyMode()` essentially cycles between which selection point is target
 | `selectAll`                    | none | Select the entire text buffer. |
 | `markMode`                     | none | Toggle mark mode. If no selection exists, create a selection at the cursor position. Otherwise, use the existing selection as one in mark mode. |
 | `toggleBlockSelection`         | none | Transform the existing selection between a block selection and a line selection.  |
-| `switchSelectionEndpoint`      | none | If a selection is present, switch which selection endpoint is targetted when in mark mode or quick edit mode. |
+| `switchSelectionEndpoint`      | none | If a selection is present, switch which selection endpoint is targeted when in mark mode or quick edit mode. |
 
 By default, the following key binding will be set:
 ```JS
