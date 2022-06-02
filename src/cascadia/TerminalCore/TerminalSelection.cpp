@@ -309,6 +309,32 @@ void Terminal::ToggleMarkMode()
     }
 }
 
+// Method Description:
+// - switch the targetted selection endpoint with the other one (i.e. start <--> end)
+void Terminal::SwitchSelectionEndpoint()
+{
+    if (IsSelectionActive())
+    {
+        if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            // moving cursor --> anchor start, move end
+            _selectionEndpoint = SelectionEndpoint::End;
+        }
+        else if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            // moving end --> now we're moving start
+            _selectionEndpoint = SelectionEndpoint::Start;
+            _selection->pivot = _selection->end;
+        }
+        else if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start))
+        {
+            // moving start --> now we're moving end
+            _selectionEndpoint = SelectionEndpoint::End;
+            _selection->pivot = _selection->start;
+        }
+    }
+}
+
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
 {
     if ((_selectionMode == SelectionInteractionMode::Mark || mods.IsShiftPressed()) && !mods.IsAltPressed())

@@ -271,6 +271,7 @@ public:
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
     SelectionInteractionMode SelectionMode() const noexcept;
+    void SwitchSelectionEndpoint();
     void ToggleMarkMode();
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
