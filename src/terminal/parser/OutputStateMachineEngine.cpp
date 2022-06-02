@@ -620,6 +620,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC);
         break;
+    case CsiActionCodes::DECPS_PlaySound:
+        success = _dispatch->PlaySounds(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECPS);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;

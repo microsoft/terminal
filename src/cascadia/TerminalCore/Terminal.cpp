@@ -963,6 +963,15 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 #endif
 }
 
+// Method Description:
+// - Get a reference to the the terminal's read/write lock.
+// Return Value:
+// - a ticket_lock which can be used to manually lock or unlock the terminal.
+til::ticket_lock& Terminal::GetReadWriteLock() noexcept
+{
+    return _readWriteLock;
+}
+
 Viewport Terminal::_GetMutableViewport() const noexcept
 {
     // GH#3493: if we're in the alt buffer, then it's possible that the mutable
@@ -1300,6 +1309,15 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
 void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
 {
     _pfnShowWindowChanged.swap(pfn);
+}
+
+// Method Description:
+// - Allows setting a callback for playing MIDI notes.
+// Arguments:
+// - pfn: a function callback that takes a note number, a velocity level, and a duration
+void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept
+{
+    _pfnPlayMidiNote.swap(pfn);
 }
 
 // Method Description:

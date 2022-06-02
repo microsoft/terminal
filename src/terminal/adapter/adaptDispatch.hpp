@@ -141,6 +141,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         StringHandler RequestSetting() override; // DECRQSS
 
+        bool PlaySounds(const VTParameters parameters) override; // DECPS
+
     private:
         enum class ScrollDirection
         {

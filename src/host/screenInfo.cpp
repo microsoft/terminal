@@ -2268,30 +2268,19 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     }
 
     // do adjustments on a copy that's easily manipulated.
-    auto srCorrected = newViewport.ToExclusive();
+    const til::rect viewportRect{ newViewport.ToInclusive() };
+    const til::size coordScreenBufferSize{ GetBufferSize().Dimensions() };
 
-    if (srCorrected.Left < 0)
-    {
-        srCorrected.Right -= srCorrected.Left;
-        srCorrected.Left = 0;
-    }
-    if (srCorrected.Top < 0)
-    {
-        srCorrected.Bottom -= srCorrected.Top;
-        srCorrected.Top = 0;
-    }
+    // MSFT-33471786, GH#13193:
+    // newViewport may reside anywhere outside of the valid coordScreenBufferSize.
+    // For instance it might be scrolled down more than our text buffer allows to be scrolled.
+    const auto cx = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.width(), 1, coordScreenBufferSize.width));
+    const auto cy = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.height(), 1, coordScreenBufferSize.height));
+    const auto x = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
+    const auto y = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
 
-    const auto coordScreenBufferSize = GetBufferSize().Dimensions();
-    if (srCorrected.Right > coordScreenBufferSize.X)
-    {
-        srCorrected.Right = coordScreenBufferSize.X;
-    }
-    if (srCorrected.Bottom > coordScreenBufferSize.Y)
-    {
-        srCorrected.Bottom = coordScreenBufferSize.Y;
-    }
+    _viewport = Viewport::FromExclusive({ x, y, x + cx, y + cy });
 
-    _viewport = Viewport::FromExclusive(srCorrected);
     if (updateBottom)
     {
         UpdateBottom();
