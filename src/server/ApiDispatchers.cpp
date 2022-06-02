@@ -724,8 +724,7 @@
 
     auto size = til::wrap_coord_size(a->Size);
     m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, size);
-    a->Size = til::unwrap_coord_size(size);
-    return S_OK;
+    return til::unwrap_coord_size_hr(size, a->Size);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG* const m,
@@ -910,7 +909,7 @@
     // Backup originalRegion and set the written area to a 0 size rectangle in case of failures.
     const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     auto writtenRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = til::unwrap_small_rect(writtenRegion.ToInclusive());
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(writtenRegion.ToInclusive(), a->CharRegion));
 
     // Get input parameter buffer
     PVOID pvBuffer;
@@ -941,9 +940,7 @@
     }
 
     // Update the written region if we were successful
-    a->CharRegion = til::unwrap_small_rect(writtenRegion.ToInclusive());
-
-    return S_OK;
+    return til::unwrap_small_rect_hr(writtenRegion.ToInclusive(), a->CharRegion);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m,
@@ -1043,7 +1040,7 @@
     // Backup data region passed and set it to a zero size region in case we exit early for failures.
     const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     const auto zeroRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = til::unwrap_small_rect(zeroRegion.ToInclusive());
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(zeroRegion.ToInclusive(), a->CharRegion));
 
     PVOID pvBuffer;
     ULONG cbBuffer;
@@ -1079,7 +1076,7 @@
                                                                   finalRegion));
     }
 
-    a->CharRegion = til::unwrap_small_rect(finalRegion.ToInclusive());
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(finalRegion.ToInclusive(), a->CharRegion));
 
     // We have to reply back with the entire buffer length. The client side in kernelbase will trim out
     // the correct region of the buffer for return to the original caller.
@@ -1192,8 +1189,7 @@
 
     auto size = til::wrap_coord_size(a->FontSize);
     const auto hr = m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, size);
-    a->FontSize = til::unwrap_coord_size(size);
-    return hr;
+    return til::unwrap_coord_size_hr(size, a->FontSize);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m,
@@ -1236,8 +1232,7 @@
 
     auto size = til::wrap_coord_size(a->ScreenBufferDimensions);
     const auto hr = m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, size);
-    a->ScreenBufferDimensions = til::unwrap_coord_size(size);
-    return hr;
+    return til::unwrap_coord_size_hr(size, a->ScreenBufferDimensions);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m,

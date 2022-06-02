@@ -1779,10 +1779,10 @@ til::rect UiaTextRangeBase::_getTerminalRect() const
     }
 
     return {
-        static_cast<til::CoordType>(result.left),
-        static_cast<til::CoordType>(result.top),
-        static_cast<til::CoordType>(result.left + result.width),
-        static_cast<til::CoordType>(result.top + result.height),
+        gsl::narrow_cast<til::CoordType>(result.left),
+        gsl::narrow_cast<til::CoordType>(result.top),
+        gsl::narrow_cast<til::CoordType>(result.left + result.width),
+        gsl::narrow_cast<til::CoordType>(result.top + result.height),
     };
 }
 

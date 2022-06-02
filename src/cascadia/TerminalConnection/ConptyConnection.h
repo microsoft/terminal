@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void Start();
         void WriteInput(const hstring& data);
-        void Resize(til::CoordType rows, til::CoordType columns);
+        void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;
         void ClearBuffer();
 
@@ -53,8 +53,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const winrt::hstring& startingDirectory,
                                                                          const winrt::hstring& startingTitle,
                                                                          const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
-                                                                         til::CoordType rows,
-                                                                         til::CoordType columns,
+                                                                         uint32_t rows,
+                                                                         uint32_t columns,
                                                                          const winrt::guid& guid);
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);

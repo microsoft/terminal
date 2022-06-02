@@ -60,7 +60,7 @@ HRESULT GdiEngine::InvalidateSelection(const std::vector<til::rect>& rectangles)
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
-// - psrRegion - Character region (til::inclusive_rect) that has been changed
+// - psrRegion - Character region (til::rect) that has been changed
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
 HRESULT GdiEngine::Invalidate(const til::rect* const psrRegion) noexcept

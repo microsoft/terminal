@@ -245,17 +245,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     };
 
-    constexpr point wrap_coord(const COORD rect) noexcept
+    constexpr point wrap_coord(const COORD pt) noexcept
     {
-        return { rect.X, rect.Y };
+        return { pt.X, pt.Y };
     }
 
-    constexpr COORD unwrap_coord(const point rect)
+    constexpr COORD unwrap_coord(const point pt)
     {
         return {
-            gsl::narrow<short>(rect.X),
-            gsl::narrow<short>(rect.Y),
+            gsl::narrow<short>(pt.x),
+            gsl::narrow<short>(pt.y),
         };
+    }
+
+    constexpr HRESULT unwrap_coord_hr(const point pt, COORD& out) noexcept
+    {
+        short x;
+        short y;
+        if (narrow_maybe(pt.x, x) && narrow_maybe(pt.y, y))
+        {
+            out.X = x;
+            out.Y = y;
+            return S_OK;
+        }
+        return HRESULT_FROM_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 }
 

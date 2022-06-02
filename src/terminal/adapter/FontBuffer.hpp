@@ -32,22 +32,22 @@ namespace Microsoft::Console::VirtualTerminal
 
         gsl::span<const uint16_t> GetBitPattern() const noexcept;
         til::size GetCellSize() const noexcept;
-        til::CoordType GetTextCenteringHint() const noexcept;
+        size_t GetTextCenteringHint() const noexcept;
         VTID GetDesignation() const noexcept;
 
     private:
-        static constexpr til::CoordType MAX_WIDTH = 16;
-        static constexpr til::CoordType MAX_HEIGHT = 32;
-        static constexpr til::CoordType MAX_CHARS = 96;
+        static constexpr VTInt MAX_WIDTH = 16;
+        static constexpr VTInt MAX_HEIGHT = 32;
+        static constexpr VTInt MAX_CHARS = 96;
 
         void _buildCharsetId(const wchar_t ch);
         void _prepareCharacterBuffer();
         void _prepareNextCharacter();
-        void _addSixelValue(const til::CoordType value) noexcept;
+        void _addSixelValue(const VTInt value) noexcept;
         void _endOfSixelLine();
         void _endOfCharacter();
 
-        std::tuple<til::CoordType, til::CoordType, til::CoordType> _calculateDimensions() const;
+        std::tuple<VTInt, VTInt, VTInt> _calculateDimensions() const;
         void _packAndCenterBitPatterns() noexcept;
         void _fillUnusedCharacters();
         std::array<uint16_t, MAX_HEIGHT> _generateErrorGlyph();
@@ -57,22 +57,22 @@ namespace Microsoft::Console::VirtualTerminal
         VTInt _cellHeight;
         VTInt _pendingCellHeight;
         bool _sizeDeclaredAsMatrix;
-        til::CoordType _declaredWidth;
-        til::CoordType _declaredHeight;
-        til::CoordType _usedWidth;
-        til::CoordType _usedHeight;
-        til::CoordType _fullWidth;
-        til::CoordType _fullHeight;
-        til::CoordType _textWidth;
-        til::CoordType _textOffset;
-        til::CoordType _textCenteringHint;
+        VTInt _declaredWidth;
+        VTInt _declaredHeight;
+        VTInt _usedWidth;
+        VTInt _usedHeight;
+        VTInt _fullWidth;
+        VTInt _fullHeight;
+        VTInt _textWidth;
+        VTInt _textOffset;
+        size_t _textCenteringHint;
 
         DispatchTypes::DrcsFontSet _fontSet;
         DispatchTypes::DrcsFontSet _pendingFontSet;
         DispatchTypes::DrcsFontUsage _fontUsage;
         DispatchTypes::DrcsFontUsage _pendingFontUsage;
-        til::CoordType _linesPerPage;
-        til::CoordType _columnsPerPage;
+        VTInt _linesPerPage;
+        VTInt _columnsPerPage;
         bool _isTextFont;
 
         DispatchTypes::DrcsCharsetSize _charsetSize;
@@ -81,15 +81,15 @@ namespace Microsoft::Console::VirtualTerminal
         VTID _pendingCharsetId{ 0 };
         bool _charsetIdInitialized;
         VTIDBuilder _charsetIdBuilder;
-        til::CoordType _startChar;
-        til::CoordType _lastChar;
-        til::CoordType _currentChar;
+        VTInt _startChar;
+        VTInt _lastChar;
+        VTInt _currentChar;
 
         using buffer_type = std::array<uint16_t, MAX_HEIGHT * MAX_CHARS>;
         buffer_type _buffer;
         buffer_type::iterator _currentCharBuffer;
         bool _bufferCleared;
-        til::CoordType _sixelColumn;
-        til::CoordType _sixelRow;
+        VTInt _sixelColumn;
+        VTInt _sixelRow;
     };
 }

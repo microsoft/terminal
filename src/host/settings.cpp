@@ -564,7 +564,7 @@ til::size Settings::GetScreenBufferSize() const
 }
 void Settings::SetScreenBufferSize(const til::size dwScreenBufferSize)
 {
-    _dwScreenBufferSize = til::unwrap_coord_size(dwScreenBufferSize);
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwScreenBufferSize, _dwScreenBufferSize));
 }
 
 til::size Settings::GetWindowSize() const
@@ -573,7 +573,7 @@ til::size Settings::GetWindowSize() const
 }
 void Settings::SetWindowSize(const til::size dwWindowSize)
 {
-    _dwWindowSize = til::unwrap_coord_size(dwWindowSize);
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowSize, _dwWindowSize));
 }
 
 bool Settings::IsWindowSizePixelsValid() const
@@ -586,7 +586,7 @@ til::size Settings::GetWindowSizePixels() const
 }
 void Settings::SetWindowSizePixels(const til::size dwWindowSizePixels)
 {
-    _dwWindowSizePixels = til::unwrap_coord_size(dwWindowSizePixels);
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowSizePixels, _dwWindowSizePixels));
 }
 
 til::size Settings::GetWindowOrigin() const
@@ -595,7 +595,7 @@ til::size Settings::GetWindowOrigin() const
 }
 void Settings::SetWindowOrigin(const til::size dwWindowOrigin)
 {
-    _dwWindowOrigin = til::unwrap_coord_size(dwWindowOrigin);
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowOrigin, _dwWindowOrigin));
 }
 
 DWORD Settings::GetFont() const
@@ -613,7 +613,7 @@ til::size Settings::GetFontSize() const
 }
 void Settings::SetFontSize(const til::size dwFontSize)
 {
-    _dwFontSize = til::unwrap_coord_size(dwFontSize);
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwFontSize, _dwFontSize));
 }
 
 UINT Settings::GetFontFamily() const

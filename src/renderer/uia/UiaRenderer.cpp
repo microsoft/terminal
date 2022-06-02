@@ -54,7 +54,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
-// - psrRegion - Character region (til::inclusive_rect) that has been changed
+// - psrRegion - Character region (til::rect) that has been changed
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT UiaEngine::Invalidate(const til::rect* const /*psrRegion*/) noexcept

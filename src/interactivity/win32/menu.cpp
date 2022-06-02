@@ -300,8 +300,8 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& ScreenInfo = gci.GetActiveOutputBuffer();
-    pStateInfo->ScreenBufferSize = til::unwrap_coord_size(ScreenInfo.GetBufferSize().Dimensions());
-    pStateInfo->WindowSize = til::unwrap_coord_size(ScreenInfo.GetViewport().Dimensions());
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(ScreenInfo.GetBufferSize().Dimensions(), pStateInfo->ScreenBufferSize));
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(ScreenInfo.GetViewport().Dimensions(), pStateInfo->WindowSize));
 
     const auto rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
     pStateInfo->WindowPosX = rcWindow.left;
@@ -309,7 +309,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     const auto& currentFont = ScreenInfo.GetCurrentFont();
     pStateInfo->FontFamily = currentFont.GetFamily();
-    pStateInfo->FontSize = til::unwrap_coord_size(currentFont.GetUnscaledSize());
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(currentFont.GetUnscaledSize(), pStateInfo->FontSize));
     pStateInfo->FontWeight = currentFont.GetWeight();
     LOG_IF_FAILED(StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName().data()));
 

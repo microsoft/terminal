@@ -446,10 +446,10 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
         };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
         return {
-            static_cast<til::CoordType>(clientDragBarRect.X * scale),
-            static_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            static_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
-            static_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
+            gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale),
+            gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
     }
 

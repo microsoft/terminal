@@ -12,7 +12,7 @@
 // Return Value:
 // - constructed object
 ATTR_ROW::ATTR_ROW(const til::CoordType width, const TextAttribute attr) :
-    _data(gsl::narrow<uint16_t>(width), attr) {}
+    _data(gsl::narrow_cast<uint16_t>(width), attr) {}
 
 // Routine Description:
 // - Sets all properties of the ATTR_ROW to default values

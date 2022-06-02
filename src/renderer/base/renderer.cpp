@@ -1188,8 +1188,6 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         {
             for (auto& dirtyRect : dirtyAreas)
             {
-                // Make a copy as `TrimToViewport` will manipulate it and
-                // can destroy it for the next dirtyRect to test against.
                 if (const auto rectCopy = rect & dirtyRect)
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
