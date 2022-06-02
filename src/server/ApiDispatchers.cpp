@@ -1188,7 +1188,7 @@
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
     auto size = til::wrap_coord_size(a->FontSize);
-    const auto hr = m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, size);
+    RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, size));
     return til::unwrap_coord_size_hr(size, a->FontSize);
 }
 
@@ -1231,7 +1231,7 @@
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
     auto size = til::wrap_coord_size(a->ScreenBufferDimensions);
-    const auto hr = m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, size);
+    RETURN_IF_FAILED(m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, size));
     return til::unwrap_coord_size_hr(size, a->ScreenBufferDimensions);
 }
 

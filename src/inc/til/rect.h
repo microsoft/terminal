@@ -84,7 +84,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.Bottom = b;
             return S_OK;
         }
-        return HRESULT_FROM_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 
     namespace details
@@ -791,7 +791,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.Bottom = b;
             return S_OK;
         }
-        return HRESULT_FROM_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 }
 
