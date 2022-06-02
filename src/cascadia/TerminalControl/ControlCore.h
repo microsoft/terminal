@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
         void ToggleMarkMode();
+        bool SwitchSelectionEndpoint();
         bool IsInMarkMode() const;
 
         void GotFocus();

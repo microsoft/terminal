@@ -243,6 +243,7 @@ public:
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
+    void SwitchSelectionEndpoint();
     bool IsInMarkMode() const;
     void ToggleMarkMode();
 

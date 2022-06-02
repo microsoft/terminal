@@ -1053,4 +1053,14 @@ namespace winrt::TerminalApp::implementation
             args.Handled(true);
         }
     }
+
+    void TerminalPage::_HandleSwitchSelectionEndpoint(const IInspectable& /*sender*/,
+                                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.SwitchSelectionEndpoint();
+            args.Handled(handled);
+        }
+    }
 }

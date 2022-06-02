@@ -261,6 +261,14 @@ void Terminal::ToggleMarkMode()
     }
 }
 
+void Terminal::SwitchSelectionEndpoint()
+{
+    if (IsSelectionActive())
+    {
+        std::swap(_selection->start, _selection->end);
+    }
+}
+
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
 {
     if ((_markMode || mods.IsShiftPressed()) && !mods.IsAltPressed())

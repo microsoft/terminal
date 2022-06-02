@@ -52,6 +52,7 @@ namespace Microsoft.Terminal.Control
         void PasteTextFromClipboard();
         void SelectAll();
         void ToggleMarkMode();
+        Boolean SwitchSelectionEndpoint();
         void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
