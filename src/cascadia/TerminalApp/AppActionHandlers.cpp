@@ -1053,4 +1053,14 @@ namespace winrt::TerminalApp::implementation
             args.Handled(true);
         }
     }
+
+    void TerminalPage::_HandleToggleBlockSelection(const IInspectable& /*sender*/,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.ToggleBlockSelection();
+            args.Handled(handled);
+        }
+    }
 }
