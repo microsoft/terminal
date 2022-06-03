@@ -366,26 +366,17 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 3. Actually modify the selection
-    // NOTE: targetStart doesn't matter here
-    if (_markMode)
+    if (_markMode && !mods.IsShiftPressed())
     {
-        // [Mark Mode]
-        // - shift --> updating a standard selection
-        // - !shift --> move all three (i.e. just use arrow keys)
-        if (mods.IsShiftPressed())
-        {
-            auto targetStart = false;
-            std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
-        }
-        else
-        {
-            _selection->start = targetPos;
-            _selection->end = targetPos;
-            _selection->pivot = targetPos;
-        }
+        // [Mark Mode] + shift unpressed --> move all three (i.e. just use arrow keys)
+        _selection->start = targetPos;
+        _selection->end = targetPos;
+        _selection->pivot = targetPos;
     }
     else
     {
+        // [Mark Mode] + shift --> updating a standard selection
+        // NOTE: targetStart doesn't matter here
         auto targetStart = false;
         std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
     }
