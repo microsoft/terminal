@@ -2553,6 +2553,79 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
 }
 
 // Method Description:
+// - DECRSTS - Restores the terminal state from a stream of data previously
+//   saved with a DECRQTSR query.
+// Arguments:
+// - format - the format of the state report being restored.
+// Return Value:
+// - a function to receive the data or nullptr if the format is unsupported.
+ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchTypes::ReportFormat format)
+{
+    switch (format)
+    {
+    case DispatchTypes::ReportFormat::ColorTableReport:
+        return _RestoreColorTable();
+    default:
+        return nullptr;
+    }
+}
+
+// Method Description:
+// - DECCTR - This is a parser for the Color Table Report received via DECRSTS.
+//   The report contains a list of color definitions separated with a slash
+//   character. Each definition consists of 5 parameters: Pc;Pu;Px;Py;Pz
+//   - Pc is the color number.
+//   - Pu is the color model (1 = HLS, 2 = RGB).
+//   - Px, Py, and Pz are component values in the color model.
+// Arguments:
+// - <none>
+// Return Value:
+// - a function to parse the report data.
+ITermDispatch::StringHandler AdaptDispatch::_RestoreColorTable()
+{
+    return [this, parameter = VTInt{}, parameters = std::vector<VTParameter>{}](const auto ch) mutable {
+        if (ch >= L'0' && ch <= L'9')
+        {
+            parameter *= 10;
+            parameter += (ch - L'0');
+            parameter = std::min(parameter, MAX_PARAMETER_VALUE);
+        }
+        else if (ch == L';')
+        {
+            if (parameters.size() < 5)
+            {
+                parameters.push_back(parameter);
+            }
+            parameter = 0;
+        }
+        else if (ch == L'/' || ch == AsciiChars::ESC)
+        {
+            parameters.push_back(parameter);
+            const auto colorParameters = VTParameters{ parameters.data(), parameters.size() };
+            const auto colorNumber = colorParameters.at(0).value_or(0);
+            if (colorNumber < TextColor::TABLE_SIZE)
+            {
+                const auto colorModel = DispatchTypes::ColorModel{ colorParameters.at(1) };
+                const auto x = colorParameters.at(2).value_or(0);
+                const auto y = colorParameters.at(3).value_or(0);
+                const auto z = colorParameters.at(4).value_or(0);
+                if (colorModel == DispatchTypes::ColorModel::HLS)
+                {
+                    SetColorTableEntry(colorNumber, Utils::ColorFromHLS(x, y, z));
+                }
+                else if (colorModel == DispatchTypes::ColorModel::RGB)
+                {
+                    SetColorTableEntry(colorNumber, Utils::ColorFromRGB100(x, y, z));
+                }
+            }
+            parameters.clear();
+            parameter = 0;
+        }
+        return (ch != AsciiChars::ESC);
+    };
+}
+
+// Method Description:
 // - DECRQSS - Requests the state of a VT setting. The value being queried is
 //   identified by the intermediate and final characters of its control
 //   sequence, which are passed to the string handler.

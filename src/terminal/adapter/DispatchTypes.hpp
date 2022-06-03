@@ -245,6 +245,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         WindowFrame = 2,
     };
 
+    enum class ColorModel : VTInt
+    {
+        HLS = 1,
+        RGB = 2,
+    };
+
     enum class EraseType : VTInt
     {
         ToEnd = 0,
@@ -479,6 +485,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     {
         Size94 = 0,
         Size96 = 1
+    };
+
+    enum class ReportFormat : VTInt
+    {
+        TerminalStateReport = 1,
+        ColorTableReport = 2
     };
 
     constexpr VTInt s_sDECCOLMSetColumns = 132;
