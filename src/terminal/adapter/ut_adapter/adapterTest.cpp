@@ -92,7 +92,7 @@ public:
 
     til::rect GetViewport() const override
     {
-        return til::rect{ _viewport.Left, _viewport.Top, _viewport.Right, _viewport.Bottom };
+        return { _viewport.Left, _viewport.Top, _viewport.Right, _viewport.Bottom };
     }
 
     void SetViewportPosition(const til::point /*position*/) override
@@ -182,7 +182,7 @@ public:
         VERIFY_ARE_EQUAL(_expectedShowWindow, showOrHide);
     }
 
-    bool ResizeWindow(const size_t /*width*/, const size_t /*height*/) override
+    bool ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/) override
     {
         Log::Comment(L"ResizeWindow MOCK called...");
         return true;
@@ -269,7 +269,7 @@ public:
         _setTextAttributesResult = TRUE;
         _returnResponseResult = TRUE;
 
-        _textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
+        _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _viewport.Top = 20;
@@ -327,13 +327,13 @@ public:
             break;
         }
 
-        _textBuffer->GetCursor().SetPosition(til::unwrap_coord(cursorPos));
+        _textBuffer->GetCursor().SetPosition(cursorPos);
         _expectedCursorPos = cursorPos;
     }
 
     void ValidateExpectedCursorPos()
     {
-        VERIFY_ARE_EQUAL(_expectedCursorPos, til::point{ _textBuffer->GetCursor().GetPosition() });
+        VERIFY_ARE_EQUAL(_expectedCursorPos, _textBuffer->GetCursor().GetPosition());
     }
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
@@ -375,9 +375,9 @@ public:
     StateMachine* _stateMachine;
     DummyRenderer _renderer;
     std::unique_ptr<TextBuffer> _textBuffer;
-    til::inclusive_rect _viewport = { 0, 0, 0, 0 };
-    til::inclusive_rect _expectedScrollRegion = { 0, 0, 0, 0 };
-    til::inclusive_rect _activeScrollRegion = { 0, 0, 0, 0 };
+    til::inclusive_rect _viewport;
+    til::inclusive_rect _expectedScrollRegion;
+    til::inclusive_rect _activeScrollRegion;
 
     til::point _expectedCursorPos;
 
@@ -1696,7 +1696,7 @@ public:
         Log::Comment(L"Starting test...");
 
         til::inclusive_rect srTestMargins;
-        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
         _testGetSet->_viewport.Right = 8;
         _testGetSet->_viewport.Bottom = 8;
         auto sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
@@ -1998,7 +1998,7 @@ public:
         using FontUsage = DispatchTypes::DrcsFontUsage;
 
         FontBuffer fontBuffer;
-        SIZE expectedCellSize;
+        til::size expectedCellSize;
 
         const auto decdld = [&](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
             const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
@@ -2013,7 +2013,7 @@ public:
             }
             RETURN_BOOL_IF_FALSE(fontBuffer.FinalizeSixelData());
 
-            const auto cellSize = fontBuffer.GetCellSize().to_win32_size();
+            const auto cellSize = fontBuffer.GetCellSize();
             Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
             VERIFY_ARE_EQUAL(expectedCellSize.cx, cellSize.cx);
             VERIFY_ARE_EQUAL(expectedCellSize.cy, cellSize.cy);

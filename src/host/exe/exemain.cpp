@@ -194,6 +194,15 @@ static void _releaseNotifier() noexcept
     _comServerExitEvent.SetEvent();
 }
 
+// This method has the same behavior as gsl::narrow<T>, but instead of throwing an
+// exception on narrowing failure it'll return false. On success it returns true.
+template<typename T, typename U>
+constexpr bool narrow_maybe(U u, T& out) noexcept
+{
+    out = gsl::narrow_cast<T>(u);
+    return static_cast<U>(out) == u && (std::is_signed_v<T> == std::is_signed_v<U> || (out < T{}) == (u < U{}));
+}
+
 // Routine Description:
 // - Main entry point for EXE version of console launching.
 //   This can be used as a debugging/diagnostics tool as well as a method of testing the console without

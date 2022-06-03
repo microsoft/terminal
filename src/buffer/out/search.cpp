@@ -50,7 +50,7 @@ Search::Search(IUiaData& uiaData,
                const std::wstring& str,
                const Direction direction,
                const Sensitivity sensitivity,
-               const COORD anchor) :
+               const til::point anchor) :
     _direction(direction),
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
@@ -124,7 +124,7 @@ void Search::Color(const TextAttribute attr) const
 // been called and returned true.
 // Return Value:
 // - pair containing [start, end] coord positions of text found by search
-std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
+std::pair<til::point, til::point> Search::GetFoundLocation() const noexcept
 {
     return { _coordSelStart, _coordSelEnd };
 }
@@ -140,7 +140,7 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-COORD Search::s_GetInitialAnchor(const IUiaData& uiaData, const Direction direction)
+til::point Search::s_GetInitialAnchor(const IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
     const auto textBufferEndPosition = uiaData.GetTextBufferEndPosition();
@@ -187,10 +187,10 @@ COORD Search::s_GetInitialAnchor(const IUiaData& uiaData, const Direction direct
 // - end - If we found it, this is filled with the coordinate of the last character of the needle.
 // Return Value:
 // - True if we found it. False if not.
-bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const
+bool Search::_FindNeedleInHaystackAt(const til::point pos, til::point& start, til::point& end) const
 {
-    start = { 0 };
-    end = { 0 };
+    start = {};
+    end = {};
 
     auto bufferPos = pos;
 
@@ -269,7 +269,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const noexcept
 // - Helper to increment a coordinate in respect to the associated screen buffer
 // Arguments
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
-void Search::_IncrementCoord(COORD& coord) const noexcept
+void Search::_IncrementCoord(til::point& coord) const noexcept
 {
     _uiaData.GetTextBuffer().GetSize().IncrementInBoundsCircular(coord);
 }
@@ -278,7 +278,7 @@ void Search::_IncrementCoord(COORD& coord) const noexcept
 // - Helper to decrement a coordinate in respect to the associated screen buffer
 // Arguments
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
-void Search::_DecrementCoord(COORD& coord) const noexcept
+void Search::_DecrementCoord(til::point& coord) const noexcept
 {
     _uiaData.GetTextBuffer().GetSize().DecrementInBoundsCircular(coord);
 }
@@ -314,7 +314,7 @@ void Search::_UpdateNextPosition()
     {
         if (_direction == Direction::Forward)
         {
-            _coordNext = { 0 };
+            _coordNext = {};
         }
         else
         {

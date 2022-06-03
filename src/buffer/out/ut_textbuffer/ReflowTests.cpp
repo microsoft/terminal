@@ -36,9 +36,9 @@ namespace
 
     struct TestBuffer
     {
-        COORD size;
+        til::size size;
         std::vector<TestRow> rows;
-        COORD cursor;
+        til::point cursor;
     };
 
     struct TestCase
@@ -737,7 +737,7 @@ class ReflowTests
     {
         auto buffer = std::make_unique<TextBuffer>(testBuffer.size, TextAttribute{ 0x7 }, 0, false, renderer);
 
-        size_t i{};
+        til::CoordType i{};
         for (const auto& testRow : testBuffer.rows)
         {
             auto& row{ buffer->GetRowByOffset(i) };
@@ -745,7 +745,7 @@ class ReflowTests
             auto& charRow{ row.GetCharRow() };
             row.SetWrapForced(testRow.wrap);
 
-            size_t j{};
+            til::CoordType j{};
             for (auto it{ charRow.begin() }; it != charRow.end(); ++it)
             {
                 // Yes, we're about to manually create a buffer. It is unpleasant.
@@ -771,7 +771,7 @@ class ReflowTests
         return buffer;
     }
 
-    static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const COORD newSize)
+    static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const til::size newSize)
     {
         auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, renderer);
         TextBuffer::Reflow(originalBuffer, *buffer, std::nullopt, std::nullopt);
@@ -783,7 +783,7 @@ class ReflowTests
         VERIFY_ARE_EQUAL(testBuffer.cursor, buffer.GetCursor().GetPosition());
         VERIFY_ARE_EQUAL(testBuffer.size, buffer.GetSize().Dimensions());
 
-        size_t i{};
+        til::CoordType i{};
         for (const auto& testRow : testBuffer.rows)
         {
             NoThrowString indexString;
@@ -794,7 +794,7 @@ class ReflowTests
             indexString.Format(L"[Row %d]", i);
             VERIFY_ARE_EQUAL(testRow.wrap, row.WasWrapForced(), indexString);
 
-            size_t j{};
+            til::CoordType j{};
             for (auto it{ charRow.begin() }; it != charRow.end(); ++it)
             {
                 indexString.Format(L"[Cell %d, %d; Text line index %d]", it - charRow.begin(), i, j);

@@ -108,11 +108,11 @@ void IslandWindow::Close()
 // - pfn: a function to be called during the handling of WM_CREATE. It takes two
 //   parameters:
 //      * HWND: the HWND of the window that's being created.
-//      * RECT: The position on the screen that the system has proposed for our
+//      * til::rect: The position on the screen that the system has proposed for our
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, LaunchMode& launchMode)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const til::rect&, LaunchMode& launchMode)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -148,7 +148,7 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
 {
     // Get proposed window rect from create structure
     auto pcs = reinterpret_cast<CREATESTRUCTW*>(lParam);
-    RECT rc;
+    til::rect rc;
     rc.left = pcs->x;
     rc.top = pcs->y;
     rc.right = rc.left + pcs->cx;
@@ -713,9 +713,9 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 // Arguments:
 // - dpi: the scaling that we should use to calculate the border sizes.
 // Return Value:
-// - a RECT whose components represent the margins of the nonclient area,
+// - a til::rect whose components represent the margins of the nonclient area,
 //   relative to the client area.
-RECT IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
+til::rect IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
@@ -724,7 +724,7 @@ RECT IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
     // the error and go on. We'll use whatever the control proposed as the
     // size of our window, which will be at least close.
     LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
-    return islandFrame;
+    return til::rect{ islandFrame };
 }
 
 // Method Description:
@@ -733,7 +733,7 @@ RECT IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
 // - dpi: dpi of a monitor on which the window is placed
 // Return Value
 // - The size difference
-SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
+til::size IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
 {
     const auto islandFrame{ GetNonClientFrame(dpi) };
     return {
@@ -1015,7 +1015,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 // - Called when entering fullscreen, with the window's current monitor rect and work area.
 // - The current window position, dpi, work area, and maximized state are stored, and the
 //   window is positioned to the monitor rect.
-void IslandWindow::_SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork)
+void IslandWindow::_SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcWork)
 {
     const auto hWnd = GetHandle();
 
@@ -1039,7 +1039,7 @@ void IslandWindow::_SetFullscreenPosition(const RECT rcMonitor, const RECT rcWor
 //   window's current monitor (if the current work area or window DPI have changed).
 // - A fullscreen window's monitor can be changed by win+shift+left/right hotkeys or monitor
 //   topology changes (for example unplugging a monitor or disconnecting a remote session).
-void IslandWindow::_RestoreFullscreenPosition(const RECT rcWork)
+void IslandWindow::_RestoreFullscreenPosition(const RECT& rcWork)
 {
     const auto hWnd = GetHandle();
 
@@ -1698,7 +1698,7 @@ til::rect IslandWindow::_getQuakeModeSize(HMONITOR hmon)
         availableSpace.height / 2
     };
 
-    return til::rect{ origin, dimensions };
+    return { origin, dimensions };
 }
 
 void IslandWindow::HideWindow()

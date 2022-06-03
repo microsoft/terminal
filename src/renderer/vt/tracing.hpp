@@ -32,7 +32,7 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceLastText(const til::point lastText) const;
         void TraceScrollFrame(const til::point scrollDelta) const;
         void TraceMoveCursor(const til::point lastText, const til::point cursor) const;
-        void TraceSetWrapped(const short wrappedRow) const;
+        void TraceSetWrapped(const til::CoordType wrappedRow) const;
         void TraceClearWrapped() const;
         void TraceWrapped() const;
         void TracePaintCursor(const til::point coordCursor) const;
@@ -44,7 +44,7 @@ namespace Microsoft::Console::VirtualTerminal
                              const til::rect& lastViewport,
                              const til::point scrollDelta,
                              const bool cursorMoved,
-                             const std::optional<short>& wrappedRow) const;
+                             const std::optional<til::CoordType>& wrappedRow) const;
         void TraceEndPaint() const;
     };
 }
