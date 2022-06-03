@@ -205,34 +205,6 @@ class ViewportTests
         // clang-format on
     }
 
-    TEST_METHOD(ToRect)
-    {
-        til::point origin;
-        origin.X = 2;
-        origin.Y = 4;
-
-        til::size dimensions;
-        dimensions.X = 10;
-        dimensions.Y = 20;
-
-        const auto v = Viewport::FromDimensions(origin, dimensions);
-
-        const auto rc = v.ToRect();
-        const auto exclusive = v.ToExclusive();
-
-        VERIFY_ARE_EQUAL(exclusive.Left, v.Left());
-        VERIFY_ARE_EQUAL(rc.left, v.Left());
-
-        VERIFY_ARE_EQUAL(exclusive.Top, v.Top());
-        VERIFY_ARE_EQUAL(rc.top, v.Top());
-
-        VERIFY_ARE_EQUAL(exclusive.Right, v.RightExclusive());
-        VERIFY_ARE_EQUAL(rc.right, v.RightExclusive());
-
-        VERIFY_ARE_EQUAL(exclusive.Bottom, v.BottomExclusive());
-        VERIFY_ARE_EQUAL(rc.bottom, v.BottomExclusive());
-    }
-
     TEST_METHOD(IsInBoundsCoord)
     {
         til::inclusive_rect r;
@@ -666,7 +638,7 @@ class ViewportTests
         VERIFY_ARE_EQUAL(screen.Y, edges.Bottom);
     }
 
-    til::CoordType RandomShort()
+    til::CoordType RandomCoord()
     {
         til::CoordType s;
 
@@ -696,10 +668,10 @@ class ViewportTests
         for (UINT i = 0; i < cTestLoopInstances; i++)
         {
             til::point coordPos;
-            coordPos.X = RandomShort() % 20;
-            coordPos.Y = RandomShort() % 20;
+            coordPos.X = RandomCoord() % 20;
+            coordPos.Y = RandomCoord() % 20;
 
-            auto sAddAmount = RandomShort() % (sRowWidth * sRowWidth);
+            auto sAddAmount = RandomCoord() % (sRowWidth * sRowWidth);
 
             til::point coordFinal;
             coordFinal.X = (coordPos.X + sAddAmount) % sRowWidth;

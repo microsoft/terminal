@@ -780,30 +780,14 @@ void Viewport::ConvertFromOrigin(_Inout_ til::point* const pcoord) const noexcep
 }
 
 // Method Description:
-// - Returns an exclusive til::inclusive_rect equivalent to this viewport.
-// Arguments:
-// - <none>
-// Return Value:
-// - an exclusive til::inclusive_rect equivalent to this viewport.
-til::rect Viewport::ToExclusive() const noexcept
-{
-    return { Left(), Top(), RightExclusive(), BottomExclusive() };
-}
-
-// Method Description:
 // - Returns an exclusive til::rect equivalent to this viewport.
 // Arguments:
 // - <none>
 // Return Value:
 // - an exclusive til::rect equivalent to this viewport.
-til::rect Viewport::ToRect() const noexcept
+til::rect Viewport::ToExclusive() const noexcept
 {
-    til::rect r;
-    r.left = Left();
-    r.top = Top();
-    r.right = RightExclusive();
-    r.bottom = BottomExclusive();
-    return r;
+    return { Left(), Top(), RightExclusive(), BottomExclusive() };
 }
 
 // Method Description:

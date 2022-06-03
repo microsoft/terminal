@@ -334,7 +334,7 @@ void CommandListPopup::_drawList()
     WriteCoord.X = _region.Left + 1;
     WriteCoord.Y = _region.Top + 1;
     size_t lStringLength = Width();
-    for (SHORT i = 0; i < Height(); ++i)
+    for (til::CoordType i = 0; i < Height(); ++i)
     {
         const OutputCellIterator spaces(UNICODE_SPACE, _attributes, lStringLength);
         const auto result = _screenInfo.Write(spaces, WriteCoord);

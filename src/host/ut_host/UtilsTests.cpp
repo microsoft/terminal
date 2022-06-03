@@ -49,7 +49,7 @@ class UtilsTests
         return true;
     }
 
-    til::CoordType RandomShort()
+    til::CoordType RandomCoord()
     {
         til::CoordType s;
 
@@ -63,8 +63,8 @@ class UtilsTests
 
     void FillBothCoordsSameRandom(til::point* pcoordA, til::point* pcoordB)
     {
-        pcoordA->X = pcoordB->X = RandomShort();
-        pcoordA->Y = pcoordB->Y = RandomShort();
+        pcoordA->X = pcoordB->X = RandomCoord();
+        pcoordA->Y = pcoordB->Y = RandomCoord();
     }
 
     void LogCoordinates(const til::point coordA, const til::point coordB)
@@ -74,7 +74,7 @@ class UtilsTests
 
     void SubtractRandom(til::CoordType& psValue)
     {
-        const auto sRand = RandomShort();
+        const auto sRand = RandomCoord();
         psValue -= std::max(sRand % psValue, 1);
     }
 

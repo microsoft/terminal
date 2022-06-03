@@ -205,7 +205,7 @@ class ClipboardTests
                 keyEvent.reset(static_cast<KeyEvent* const>(events.front().release()));
                 events.pop_front();
 
-                const til::CoordType keyScanError = -1;
+                const short keyScanError = -1;
                 const auto keyState = VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
                 const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));

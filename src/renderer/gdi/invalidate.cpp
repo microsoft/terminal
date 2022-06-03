@@ -157,7 +157,7 @@ HRESULT GdiEngine::_InvalidOffset(const til::point* ppt) noexcept
 
         // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
         // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
-        _rcInvalid &= rcInvalidNew;
+        _rcInvalid |= rcInvalidNew;
 
         // Ensure invalid areas remain within bounds of window.
         RETURN_IF_FAILED(_InvalidRestrict());

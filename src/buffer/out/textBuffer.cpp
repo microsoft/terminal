@@ -1141,7 +1141,7 @@ til::point TextBuffer::GetWordStart(const til::point target, const std::wstring_
     else if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
         // if at/past the limit --> clamp to limit
-        copy = *limitOptional;
+        copy = limitOptional.value_or(bufferSize.BottomRightInclusive());
     }
 
     if (accessibilityMode)

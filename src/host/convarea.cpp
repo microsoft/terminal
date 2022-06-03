@@ -12,11 +12,6 @@
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-bool IsValidSmallRect(_In_ til::inclusive_rect* const Rect)
-{
-    return (Rect->Right >= Rect->Left && Rect->Bottom >= Rect->Top);
-}
-
 void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                              const Viewport& convRegion)
 {

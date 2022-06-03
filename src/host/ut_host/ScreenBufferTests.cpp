@@ -290,7 +290,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         L"alternate from that first alternate, before returning to the "
         L"main buffer.");
 
-    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
+    const auto psiOriginal = &gci.GetActiveOutputBuffer();
     auto Status = psiOriginal->UseAlternateScreenBuffer();
     if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
@@ -335,7 +335,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
     Log::Comment(
         L"Testing creating one alternate buffer, then creating another"
         L" alternate from the main, before returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = &gci.GetActiveOutputBuffer();
+    const auto psiOriginal = &gci.GetActiveOutputBuffer();
     auto Status = psiOriginal->UseAlternateScreenBuffer();
     if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {

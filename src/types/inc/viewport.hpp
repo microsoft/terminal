@@ -101,7 +101,6 @@ namespace Microsoft::Console::Types
 
         til::rect ToExclusive() const noexcept;
         til::inclusive_rect ToInclusive() const noexcept;
-        til::rect ToRect() const noexcept;
 
         Viewport ToOrigin() const noexcept;
 
