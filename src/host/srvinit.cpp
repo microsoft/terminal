@@ -26,7 +26,6 @@
 #include "../renderer/base/renderer.hpp"
 
 #include "../inc/conint.h"
-#include "../propslib/DelegationConfig.hpp"
 
 #include "tracing.hpp"
 
@@ -64,28 +63,25 @@ try
 
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
-    auto isEnabled = false;
-    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled)) && isEnabled)
+    if (Globals.delegationPair.IsUndecided() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
     {
-        IID delegationClsid;
-        if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
-        {
-            Globals.handoffConsoleClsid = delegationClsid;
-            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "SrvInit_FoundDelegationConsole",
-                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "ConsoleClsid"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        }
-        if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
-        {
-            Globals.handoffTerminalClsid = delegationClsid;
-            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "SrvInit_FoundDelegationTerminal",
-                              TraceLoggingGuid(Globals.handoffTerminalClsid.value(), "TerminalClsid"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        }
+        Globals.delegationPair = DelegationConfig::s_GetDelegationPair();
+
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_FoundDelegationConsole",
+                          TraceLoggingGuid(Globals.delegationPair.console, "ConsoleClsid"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_FoundDelegationTerminal",
+                          TraceLoggingGuid(Globals.delegationPair.terminal, "TerminalClsid"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+    if (Globals.delegationPair.IsDefault() && Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault())
+    {
+        Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
+        Globals.defaultTerminalMarkerCheckRequired = true;
     }
 
     // Create the accessibility notifier early in the startup process.
@@ -427,28 +423,15 @@ try
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
-    IID delegationClsid;
-    if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
+    g.delegationPair = DelegationConfig::s_GetDelegationPair();
+    if (!g.delegationPair.IsCustom())
     {
-        g.handoffConsoleClsid = delegationClsid;
-    }
-    if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
-    {
-        g.handoffTerminalClsid = delegationClsid;
-    }
-
-    if (!g.handoffTerminalClsid)
-    {
-        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                          "SrvInit_ReceiveHandoff_NoTerminal",
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        return E_NOT_SET;
+        g.delegationPair = DelegationConfig::TerminalDelegationPair;
     }
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff",
-                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
@@ -509,14 +492,14 @@ try
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
-                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+    RETURN_IF_FAILED(CoCreateInstance(g.delegationPair.terminal, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_CreatedDelegationTerminal",
-                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 

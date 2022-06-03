@@ -22,8 +22,8 @@ Revision History:
 #include "ConsoleArguments.hpp"
 #include "ApiRoutines.h"
 
+#include "../propslib/DelegationConfig.hpp"
 #include "../renderer/base/Renderer.hpp"
-
 #include "../server/DeviceComm.h"
 #include "../server/ConDrvDeviceComm.h"
 
@@ -71,10 +71,10 @@ public:
 
     bool handoffTarget = false;
 
-    std::optional<CLSID> handoffConsoleClsid;
-    std::optional<CLSID> handoffTerminalClsid;
+    DelegationConfig::DelegationPair delegationPair;
     wil::unique_hfile handoffInboxConsoleHandle;
     wil::unique_threadpool_wait handoffInboxConsoleExitWait;
+    bool defaultTerminalMarkerCheckRequired = false;
 
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
