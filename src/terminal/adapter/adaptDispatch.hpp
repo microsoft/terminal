@@ -205,6 +205,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
 
+        StringHandler _CreatePassthroughHandler();
+
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
