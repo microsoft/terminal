@@ -1843,6 +1843,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
         if (_processingIndividually)
         {
+            // Note whether we're dealing with the last character in the buffer.
+            _processingLastCharacter = (current + 1 >= string.size());
             // If we're processing characters individually, send it to the state machine.
             ProcessCharacter(til::at(string, current));
             ++current;
@@ -1921,6 +1923,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         {
             // Reset our state, and put all but the last char in again.
             ResetState();
+            _processingLastCharacter = false;
             // Chars to flush are [pwchSequenceStart, pwchCurr)
             auto wchIter = run.cbegin();
             while (wchIter < run.cend() - 1)
@@ -1929,6 +1932,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
                 wchIter++;
             }
             // Manually execute the last char [pwchCurr]
+            _processingLastCharacter = true;
             switch (_state)
             {
             case VTStates::Ground:
@@ -1972,6 +1976,19 @@ void StateMachine::ProcessString(const std::wstring_view string)
             cachedSequence.append(run);
         }
     }
+}
+
+// Routine Description:
+// - Determines whether the character being processed is the last in the
+//   current output fragment, or there are more still to come. Other parts
+//   of the framework can use this information to work more efficiently.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if we're processing the last character. False if not.
+bool StateMachine::IsProcessingLastCharacter() const noexcept
+{
+    return _processingLastCharacter;
 }
 
 // Routine Description:

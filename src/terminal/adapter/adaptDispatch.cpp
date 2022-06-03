@@ -2820,11 +2820,12 @@ ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
         auto& engine = stateMachine.Engine();
         return [&, buffer = std::wstring{}](const auto ch) mutable {
             // To make things more efficient, we buffer the string data before
-            // passing it through, only flushing if the buffer gets too large or
-            // we've reached the end of the string.
+            // passing it through, only flushing if the buffer gets too large,
+            // or we're dealing with the last character in the current output
+            // fragment, or we've reached the end of the string.
             const auto endOfString = ch == AsciiChars::ESC;
             buffer += ch;
-            if (buffer.length() >= 4096 || endOfString)
+            if (buffer.length() >= 4096 || stateMachine.IsProcessingLastCharacter() || endOfString)
             {
                 // The end of the string is signaled with an escape, but for it
                 // to be a valid string terminator we need to add a backslash.
