@@ -285,7 +285,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         // when writing to the buffer, specifically unset wrap if we get to the last column.
         // a fill operation should UNSET wrap in that scenario. See GH #1126 for more details.
         const auto done = screenInfo.Write(it, startingCoordinate, false);
-        const auto cellsModifiedCoord = done.GetCellDistance(it);
+        const auto cellsModifiedCoord = done.GetInputDistance(it);
 
         cellsModified = cellsModifiedCoord;
 
