@@ -1037,6 +1037,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
         _renderer->TriggerSelection();
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(false));
     }
 
     void ControlCore::ToggleMarkMode()
@@ -1044,6 +1045,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _terminal->ToggleMarkMode();
         _renderer->TriggerSelection();
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(false));
     }
 
     bool ControlCore::IsInMarkMode() const

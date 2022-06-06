@@ -323,8 +323,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update selection markers
         Windows::UI::Xaml::Media::SolidColorBrush selectionBackgroundBrush{ til::color{ newAppearance.SelectionBackground() } };
-        SelectionStartIcon().Foreground(selectionBackgroundBrush);
-        SelectionEndIcon().Foreground(selectionBackgroundBrush);
+        SelectionStartMarker().Fill(selectionBackgroundBrush);
+        SelectionEndMarker().Fill(selectionBackgroundBrush);
 
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
@@ -2742,36 +2742,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
                 const auto movingStart{ _core.MovingStart() };
                 const auto selectionAnchor{ movingStart ? _core.SelectionAnchor() : _core.SelectionEnd() };
-                const auto& icon{ movingStart ? SelectionStartIcon() : SelectionEndIcon() };
-                const auto& otherIcon{ movingStart ? SelectionEndIcon() : SelectionStartIcon() };
+                const auto& marker{ movingStart ? SelectionStartMarker() : SelectionEndMarker() };
+                const auto& otherMarker{ movingStart ? SelectionEndMarker() : SelectionStartMarker() };
                 if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
                 {
                     // if the endpoint is outside of the viewport,
                     // just hide the markers
-                    icon.Opacity(0);
-                    otherIcon.Opacity(0);
+                    marker.Visibility(Visibility::Collapsed);
+                    otherMarker.Visibility(Visibility::Collapsed);
                     co_return;
                 }
                 else
                 {
-                    icon.Opacity(1);
-                    otherIcon.Opacity(0);
+                    marker.Visibility(Visibility::Visible);
+                    otherMarker.Visibility(Visibility::Collapsed);
                 }
 
                 // Compute the location of the top left corner of the cell in DIPS
                 const til::point locationInDIPs{ _toPosInDips(selectionAnchor) };
 
-                // Move the icon to the top left corner of the cell
-                SelectionCanvas().SetLeft(icon,
+                // Move the marker to the top left corner of the cell
+                SelectionCanvas().SetLeft(marker,
                                           (locationInDIPs.x - SwapChainPanel().ActualOffset().x));
-                SelectionCanvas().SetTop(icon,
+                SelectionCanvas().SetTop(marker,
                                          (locationInDIPs.y - SwapChainPanel().ActualOffset().y));
             }
             else
             {
                 // hide selection markers
-                SelectionStartIcon().Opacity(0);
-                SelectionEndIcon().Opacity(0);
+                SelectionStartMarker().Visibility(Visibility::Collapsed);
+                SelectionEndMarker().Visibility(Visibility::Collapsed);
             }
         }
     }
@@ -2792,21 +2792,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            const bool isInitialChange)
     {
         // scale the selection markers to be the size of a cell
-        auto scaleIconMarker = [fontWidth, fontHeight](Windows::UI::Xaml::Controls::FontIcon icon) {
-            const auto size{ icon.DesiredSize() };
-            const auto scaleX = fontWidth / size.Width;
-            const auto scaleY = fontHeight / size.Height;
+        auto scaleMarker = [fontWidth, fontHeight](Windows::UI::Xaml::Shapes::Path shape) {
+            // The selection markers were designed to be 5x14 in size,
+            // so use those dimensions below for the scaling
+            const auto scaleX = fontWidth / 5.0;
+            const auto scaleY = fontHeight / 14.0;
 
             Windows::UI::Xaml::Media::ScaleTransform transform{};
             transform.ScaleX(transform.ScaleX() * scaleX);
             transform.ScaleY(transform.ScaleY() * scaleY);
-            icon.RenderTransform(transform);
+            shape.RenderTransform(transform);
 
-            // now hide the icon
-            icon.Opacity(0);
+            // now hide the shape
+            shape.Visibility(Visibility::Collapsed);
         };
-        scaleIconMarker(SelectionStartIcon());
-        scaleIconMarker(SelectionEndIcon());
+        scaleMarker(SelectionStartMarker());
+        scaleMarker(SelectionEndMarker());
 
         // Don't try to inspect the core here. The Core is raising this while
         // it's holding its write lock. If the handlers calls back to some

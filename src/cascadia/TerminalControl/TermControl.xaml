@@ -1216,19 +1216,12 @@
 
                     <Canvas x:Name="SelectionCanvas"
                             Visibility="Visible">
-                        <!--
-                            LOAD BEARING Use Opacity instead of Visibility for these two FontIcons.
-                            Visibility::Collapsed prevents us from acquiring the desired size of the icons,
-                            resulting in an inability to scale them upon a FontSize change event
-                        -->
-                        <FontIcon x:Name="SelectionStartIcon"
-                                  FontFamily="Segoe MDL2 Assets"
-                                  Glyph="&#xE893;"
-                                  Opacity="0" />
-                        <FontIcon x:Name="SelectionEndIcon"
-                                  FontFamily="Segoe MDL2 Assets"
-                                  Glyph="&#xE892;"
-                                  Opacity="0" />
+                        <Path Name="SelectionStartMarker"
+                              Data="M 0 0 L 4 5.5996094 L 4 14 L 5 14 L 5 7 L 5 4.1992188 L 5 0 L 0 0 z "
+                              Visibility="Collapsed" />
+                        <Path Name="SelectionEndMarker"
+                              Data="M 0 0 L 0 4.1992188 L 0 7 L 0 14 L 1 14 L 1 5.5996094 L 5 0 L 0 0 z "
+                              Visibility="Collapsed" />
                     </Canvas>
                 </SwapChainPanel>
 
