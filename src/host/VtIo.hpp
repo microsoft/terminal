@@ -34,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
 
         [[nodiscard]] HRESULT SuppressResizeRepaint();
-        [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
+        [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
 
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
 

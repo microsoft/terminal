@@ -69,8 +69,8 @@ public:
     Terminal& operator=(const Terminal&) = default;
     Terminal& operator=(Terminal&&) = default;
 
-    void Create(COORD viewportSize,
-                SHORT scrollbackLines,
+    void Create(til::size viewportSize,
+                til::CoordType scrollbackLines,
                 Microsoft::Console::Render::Renderer& renderer);
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
@@ -94,7 +94,7 @@ public:
     [[nodiscard]] std::unique_lock<til::ticket_lock> LockForWriting();
     til::ticket_lock& GetReadWriteLock() noexcept;
 
-    short GetBufferHeight() const noexcept;
+    til::CoordType GetBufferHeight() const noexcept;
 
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
@@ -118,7 +118,7 @@ public:
     void LineFeed(const bool withReturn) override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const override;
-    bool ResizeWindow(const size_t width, const size_t height) override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
     void EnableXtermBracketedPasteMode(const bool enabled) override;
@@ -137,10 +137,10 @@ public:
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
-    bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
+    bool SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
     bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
 
-    [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
+    [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() noexcept override;
 
@@ -150,14 +150,14 @@ public:
 
     void FocusChanged(const bool focused) noexcept override;
 
-    std::wstring GetHyperlinkAtPosition(const COORD position);
-    uint16_t GetHyperlinkIdAtPosition(const COORD position);
-    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const COORD position);
+    std::wstring GetHyperlinkAtPosition(const til::point position);
+    uint16_t GetHyperlinkIdAtPosition(const til::point position);
+    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const til::point position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
-    COORD GetTextBufferEndPosition() const noexcept override;
+    til::point GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
 
@@ -167,7 +167,7 @@ public:
 
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
-    COORD GetCursorPosition() const noexcept override;
+    til::point GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
@@ -178,7 +178,7 @@ public:
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
-    const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
+    const std::vector<size_t> GetPatternId(const til::point location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
@@ -187,11 +187,11 @@ public:
     const bool IsSelectionActive() const noexcept override;
     const bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
-    void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-    const COORD GetSelectionAnchor() const noexcept override;
-    const COORD GetSelectionEnd() const noexcept override;
+    void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
+    const til::point GetSelectionAnchor() const noexcept override;
+    const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
-    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
+    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute) override;
     const bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
@@ -237,9 +237,9 @@ public:
         Viewport,
         Buffer
     };
-    void MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode);
-    void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
+    void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
+    void SetSelectionAnchor(const til::point position);
+    void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
@@ -303,14 +303,14 @@ private:
     FontInfo _fontInfo{ DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false };
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
-    // the pivot is the COORD that remains selected when you extend a selection in any direction
+    // the pivot is the til::point that remains selected when you extend a selection in any direction
     //   this is particularly useful when a word selection is extended over its starting point
     //   see TerminalSelection.cpp for more information
     struct SelectionAnchors
     {
-        COORD start;
-        COORD end;
-        COORD pivot;
+        til::point start;
+        til::point end;
+        til::point pivot;
     };
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
@@ -322,7 +322,7 @@ private:
     std::unique_ptr<TextBuffer> _mainBuffer;
     std::unique_ptr<TextBuffer> _altBuffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
-    SHORT _scrollbackLines;
+    til::CoordType _scrollbackLines;
     bool _detectURLs{ false };
 
     til::size _altBufferSize;
@@ -346,7 +346,7 @@ private:
 
     interval_tree::IntervalTree<til::point, size_t> _patternIntervalTree;
     void _InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree);
-    void _InvalidateFromCoords(const COORD start, const COORD end);
+    void _InvalidateFromCoords(const til::point start, const til::point end);
 
     // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
     struct KeyEventCodes
@@ -372,7 +372,7 @@ private:
 
     void _WriteBuffer(const std::wstring_view& stringView);
 
-    void _AdjustCursorPosition(const COORD proposedPosition);
+    void _AdjustCursorPosition(const til::point proposedPosition);
 
     void _NotifyScrollEvent() noexcept;
 
@@ -384,14 +384,14 @@ private:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
-    std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
-    COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    void _MoveByChar(SelectionDirection direction, COORD& pos);
-    void _MoveByWord(SelectionDirection direction, COORD& pos);
-    void _MoveByViewport(SelectionDirection direction, COORD& pos);
-    void _MoveByBuffer(SelectionDirection direction, COORD& pos);
+    std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
+    std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
+    std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
+    til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    void _MoveByChar(SelectionDirection direction, til::point& pos);
+    void _MoveByWord(SelectionDirection direction, til::point& pos);
+    void _MoveByViewport(SelectionDirection direction, til::point& pos);
+    void _MoveByBuffer(SelectionDirection direction, til::point& pos);
 #pragma endregion
 
 #ifdef UNIT_TESTING

@@ -69,9 +69,9 @@ class TextBufferTests
 
     TextBuffer& GetTbi();
 
-    SHORT GetBufferWidth();
+    til::CoordType GetBufferWidth();
 
-    SHORT GetBufferHeight();
+    til::CoordType GetBufferHeight();
 
     TEST_METHOD(TestBufferRowByOffset);
 
@@ -82,10 +82,10 @@ class TextBufferTests
     TEST_METHOD(TestDoubleBytePadFlag);
 
     void DoBoundaryTest(PCWCHAR const pwszInputString,
-                        const short cLength,
-                        const short cMax,
-                        const short cLeft,
-                        const short cRight);
+                        const til::CoordType cLength,
+                        const til::CoordType cMax,
+                        const til::CoordType cLeft,
+                        const til::CoordType cRight);
 
     TEST_METHOD(TestBoundaryMeasuresRegularString);
 
@@ -99,7 +99,7 @@ class TextBufferTests
 
     TEST_METHOD(TestNewlineCursor);
 
-    void TestLastNonSpace(const short cursorPosY);
+    void TestLastNonSpace(const til::CoordType cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
 
@@ -171,12 +171,12 @@ TextBuffer& TextBufferTests::GetTbi()
     return gci.GetActiveOutputBuffer().GetTextBuffer();
 }
 
-SHORT TextBufferTests::GetBufferWidth()
+til::CoordType TextBufferTests::GetBufferWidth()
 {
     return GetTbi().GetSize().Width();
 }
 
-SHORT TextBufferTests::GetBufferHeight()
+til::CoordType TextBufferTests::GetBufferHeight()
 {
     return GetTbi().GetSize().Height();
 }
@@ -188,7 +188,7 @@ void TextBufferTests::TestBufferRowByOffset()
 
     VERIFY_IS_TRUE(csBufferHeight > 20);
 
-    short sId = csBufferHeight / 2 - 5;
+    auto sId = csBufferHeight / 2 - 5;
 
     const auto& row = textBuffer.GetRowByOffset(sId);
     VERIFY_ARE_EQUAL(row.GetId(), sId);
@@ -303,17 +303,17 @@ void TextBufferTests::TestDoubleBytePadFlag()
 }
 
 void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
-                                     const short cLength,
-                                     const short cMax,
-                                     const short cLeft,
-                                     const short cRight)
+                                     const til::CoordType cLength,
+                                     const til::CoordType cMax,
+                                     const til::CoordType cLeft,
+                                     const til::CoordType cRight)
 {
     auto& textBuffer = GetTbi();
 
     auto& charRow = textBuffer._GetFirstRow().GetCharRow();
 
     // copy string into buffer
-    for (size_t i = 0; i < static_cast<size_t>(cLength); ++i)
+    for (til::CoordType i = 0; i < cLength; ++i)
     {
         charRow.GlyphAt(i) = { &pwszInputString[i], 1 };
     }
@@ -328,9 +328,9 @@ void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
     }
 
     // left edge should be 0 since there are no leading spaces
-    VERIFY_ARE_EQUAL(charRow.MeasureLeft(), static_cast<size_t>(cLeft));
+    VERIFY_ARE_EQUAL(charRow.MeasureLeft(), cLeft);
     // right edge should be one past the index of the last character or the string length
-    VERIFY_ARE_EQUAL(charRow.MeasureRight(), static_cast<size_t>(cRight));
+    VERIFY_ARE_EQUAL(charRow.MeasureRight(), cRight);
 }
 
 void TextBufferTests::TestBoundaryMeasuresRegularString()
@@ -515,7 +515,7 @@ void TextBufferTests::TestNewlineCursor()
     // This is okay because the backing circular buffer changes, not the logical screen position (final visible line of the buffer)
 }
 
-void TextBufferTests::TestLastNonSpace(const short cursorPosY)
+void TextBufferTests::TestLastNonSpace(const til::CoordType cursorPosY)
 {
     auto& textBuffer = GetTbi();
     textBuffer.GetCursor().SetYPosition(cursorPosY);
@@ -531,7 +531,7 @@ void TextBufferTests::TestLastNonSpace(const short cursorPosY)
     auto coordExpected = textBuffer.GetCursor().GetPosition();
 
     // Try to get the X position from the current cursor position.
-    coordExpected.X = static_cast<short>(textBuffer.GetRowByOffset(coordExpected.Y).GetCharRow().MeasureRight()) - 1;
+    coordExpected.X = static_cast<til::CoordType>(textBuffer.GetRowByOffset(coordExpected.Y).GetCharRow().MeasureRight()) - 1;
 
     // If we went negative, this row was empty and we need to continue seeking upward...
     // - As long as X is negative (empty rows)
@@ -539,7 +539,7 @@ void TextBufferTests::TestLastNonSpace(const short cursorPosY)
     while (coordExpected.X < 0 && coordExpected.Y > 0)
     {
         coordExpected.Y--;
-        coordExpected.X = static_cast<short>(textBuffer.GetRowByOffset(coordExpected.Y).GetCharRow().MeasureRight()) - 1;
+        coordExpected.X = static_cast<til::CoordType>(textBuffer.GetRowByOffset(coordExpected.Y).GetCharRow().MeasureRight()) - 1;
     }
 
     VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X);
@@ -601,13 +601,13 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
     Log::Comment(L"Test 1 = FirstRow of circular buffer is not the final row of the buffer");
     Log::Comment(L"Test 2 = FirstRow of circular buffer IS THE FINAL ROW of the buffer (and therefore circles)");
-    short rgRowsToTest[] = { 2, sBufferHeight - 1 };
+    til::CoordType rgRowsToTest[] = { 2, sBufferHeight - 1 };
 
     for (UINT iTestIndex = 0; iTestIndex < ARRAYSIZE(rgRowsToTest); iTestIndex++)
     {
         const auto iRowToTestIndex = rgRowsToTest[iTestIndex];
 
-        short iNextRowIndex = iRowToTestIndex + 1;
+        auto iNextRowIndex = iRowToTestIndex + 1;
         // if we're at or crossing the height, loop back to 0 (circular buffer)
         if (iNextRowIndex >= sBufferHeight)
         {
@@ -1750,7 +1750,7 @@ void TextBufferTests::ResizeTraditional()
     bool shrinkY;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"shrinkY", shrinkY), L"Shrink Y = true, Grow Y = false");
 
-    const COORD smallSize = { 5, 5 };
+    const til::size smallSize = { 5, 5 };
     const TextAttribute defaultAttr(0);
 
     TextBuffer buffer(smallSize, defaultAttr, 12, false, _renderer);
@@ -1846,13 +1846,13 @@ void TextBufferTests::ResizeTraditional()
 void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
 {
     // Set up a text buffer for us
-    const COORD bufferSize{ 80, 10 };
+    const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer
-    const COORD pos{ 2, 1 };
+    const til::point pos{ 2, 1 };
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
@@ -1867,8 +1867,8 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     VERIFY_ARE_EQUAL(String(bButton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Make it the first row in the buffer so it will rotate around when we resize and cause renumbering
-    const SHORT delta = _buffer->GetFirstRowIndex() - pos.Y;
-    const COORD newPos{ pos.X, pos.Y + delta };
+    const auto delta = _buffer->GetFirstRowIndex() - pos.Y;
+    const til::point newPos{ pos.X, pos.Y + delta };
 
     _buffer->_SetFirstRowIndex(pos.Y);
 
@@ -1888,13 +1888,13 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
 void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
 {
     // Set up a text buffer for us
-    const COORD bufferSize{ 80, 10 };
+    const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer
-    const COORD pos{ 2, 1 };
+    const til::point pos{ 2, 1 };
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
@@ -1909,8 +1909,8 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     VERIFY_ARE_EQUAL(String(fire), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Prepare a delta and the new position we expect the symbol to be moved into.
-    const SHORT delta = 5;
-    const COORD newPos{ pos.X, pos.Y + delta };
+    const auto delta = 5;
+    const til::point newPos{ pos.X, pos.Y + delta };
 
     // Scroll the row with our data by delta.
     _buffer->ScrollRows(pos.Y, 1, delta);
@@ -1928,13 +1928,13 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
 void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
 {
     // Set up a text buffer for us
-    const COORD bufferSize{ 80, 10 };
+    const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer in the bottom row
-    const COORD pos{ 0, bufferSize.Y - 1 };
+    const til::point pos{ 0, bufferSize.Y - 1 };
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
@@ -1951,7 +1951,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     VERIFY_ARE_EQUAL(1u, _buffer->GetUnicodeStorage()._map.size(), L"There should be one item in the map.");
 
     // Perform resize to trim off the row of the buffer that included the emoji
-    COORD trimmedBufferSize{ bufferSize.X, bufferSize.Y - 1 };
+    til::size trimmedBufferSize{ bufferSize.X, bufferSize.Y - 1 };
 
     VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
 
@@ -1963,13 +1963,13 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
 void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
 {
     // Set up a text buffer for us
-    const COORD bufferSize{ 80, 10 };
+    const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer in the last column
-    const COORD pos{ bufferSize.X - 1, 0 };
+    const til::point pos{ bufferSize.X - 1, 0 };
     auto position = _buffer->_storage[pos.Y].GetCharRow().GlyphAt(pos.X);
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
@@ -1986,7 +1986,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     VERIFY_ARE_EQUAL(1u, _buffer->GetUnicodeStorage()._map.size(), L"There should be one item in the map.");
 
     // Perform resize to trim off the column of the buffer that included the emoji
-    COORD trimmedBufferSize{ bufferSize.X - 1, bufferSize.Y };
+    til::size trimmedBufferSize{ bufferSize.X - 1, bufferSize.Y };
 
     VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
 
@@ -1995,7 +1995,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
 
 void TextBufferTests::TestBurrito()
 {
-    COORD bufferSize{ 80, 9001 };
+    til::size bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2063,14 +2063,14 @@ void TextBufferTests::WriteLinesToBuffer(const std::vector<std::wstring>& text, 
             }
 
             OutputCellIterator iter{ line };
-            buffer.Write(iter, { 0, gsl::narrow<SHORT>(row) }, wrap);
+            buffer.Write(iter, { 0, gsl::narrow<til::CoordType>(row) }, wrap);
         }
     }
 }
 
 void TextBufferTests::GetWordBoundaries()
 {
-    COORD bufferSize{ 80, 9001 };
+    til::size bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2081,18 +2081,18 @@ void TextBufferTests::GetWordBoundaries()
     WriteLinesToBuffer(text, *_buffer);
 
     // Test Data:
-    // - COORD - starting position
-    // - COORD - expected result (accessibilityMode = false)
-    // - COORD - expected result (accessibilityMode = true)
+    // - til::point - starting position
+    // - til::point - expected result (accessibilityMode = false)
+    // - til::point - expected result (accessibilityMode = true)
     struct ExpectedResult
     {
-        COORD accessibilityModeDisabled;
-        COORD accessibilityModeEnabled;
+        til::point accessibilityModeDisabled;
+        til::point accessibilityModeEnabled;
     };
 
     struct Test
     {
-        COORD startPos;
+        til::point startPos;
         ExpectedResult expected;
     };
 
@@ -2134,7 +2134,7 @@ void TextBufferTests::GetWordBoundaries()
     const std::wstring_view delimiters = L" ";
     for (const auto& test : testData)
     {
-        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.X, test.startPos.Y));
         const auto result = _buffer->GetWordStart(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
@@ -2170,7 +2170,7 @@ void TextBufferTests::GetWordBoundaries()
 
     for (const auto& test : testData)
     {
-        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.X, test.startPos.Y));
         auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
@@ -2179,7 +2179,7 @@ void TextBufferTests::GetWordBoundaries()
 
 void TextBufferTests::MoveByWord()
 {
-    COORD bufferSize{ 80, 9001 };
+    til::size bufferSize{ 80, 9001 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2190,18 +2190,18 @@ void TextBufferTests::MoveByWord()
     WriteLinesToBuffer(text, *_buffer);
 
     // Test Data:
-    // - COORD - starting position
-    // - COORD - expected result (moving forwards)
-    // - COORD - expected result (moving backwards)
+    // - til::point - starting position
+    // - til::point - expected result (moving forwards)
+    // - til::point - expected result (moving backwards)
     struct ExpectedResult
     {
-        COORD moveForwards;
-        COORD moveBackwards;
+        til::point moveForwards;
+        til::point moveBackwards;
     };
 
     struct Test
     {
-        COORD startPos;
+        til::point startPos;
         ExpectedResult expected;
     };
 
@@ -2247,7 +2247,7 @@ void TextBufferTests::MoveByWord()
         Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
         auto pos{ test.startPos };
         const auto result = movingForwards ?
-                                _buffer->MoveToNextWord(pos, delimiters, til::point{ lastCharPos }) :
+                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
                                 _buffer->MoveToPreviousWord(pos, delimiters);
         const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
         VERIFY_ARE_EQUAL(expected, pos);
@@ -2285,7 +2285,7 @@ void TextBufferTests::GetGlyphBoundaries()
     bool wideGlyph;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"wideGlyph", wideGlyph), L"Get wide glyph variant");
 
-    COORD bufferSize{ 10, 10 };
+    til::size bufferSize{ 10, 10 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2301,7 +2301,7 @@ void TextBufferTests::GetGlyphBoundaries()
     {
         Log::Comment(test.name.c_str());
         auto target = test.start;
-        _buffer->Write(iter, target.to_win32_coord());
+        _buffer->Write(iter, target);
 
         auto start = _buffer->GetGlyphStart(target);
         auto end = _buffer->GetGlyphEnd(target, true);
@@ -2321,7 +2321,7 @@ void TextBufferTests::GetTextRects()
     // It's encoded in UTF-16, as needed by the buffer.
     const auto burrito = std::wstring(L"\xD83C\xDF2F");
 
-    COORD bufferSize{ 20, 50 };
+    til::size bufferSize{ 20, 50 };
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2348,7 +2348,7 @@ void TextBufferTests::GetTextRects()
     bool blockSelection;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"blockSelection", blockSelection), L"Get 'blockSelection' variant");
 
-    std::vector<SMALL_RECT> expected{};
+    std::vector<til::inclusive_rect> expected{};
     if (blockSelection)
     {
         expected.push_back({ 1, 0, 7, 0 });
@@ -2366,8 +2366,8 @@ void TextBufferTests::GetTextRects()
         expected.push_back({ 0, 4, 7, 4 });
     }
 
-    COORD start{ 1, 0 };
-    COORD end{ 7, 4 };
+    til::point start{ 1, 0 };
+    til::point end{ 7, 4 };
     const auto result = _buffer->GetTextRects(start, end, blockSelection, false);
     VERIFY_ARE_EQUAL(expected.size(), result.size());
     for (size_t i = 0; i < expected.size(); ++i)
@@ -2401,7 +2401,7 @@ void TextBufferTests::GetText()
 
     if (!wrappedText)
     {
-        COORD bufferSize{ 10, 20 };
+        til::size bufferSize{ 10, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
         auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2493,7 +2493,7 @@ void TextBufferTests::GetText()
     else
     {
         // Case 2: Wrapped Text
-        COORD bufferSize{ 5, 20 };
+        til::size bufferSize{ 5, 20 };
         UINT cursorSize = 12;
         TextAttribute attr{ 0x7f };
         auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2629,7 +2629,7 @@ void TextBufferTests::GetText()
 void TextBufferTests::HyperlinkTrim()
 {
     // Set up a text buffer for us
-    const COORD bufferSize{ 80, 10 };
+    const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2640,7 +2640,7 @@ void TextBufferTests::HyperlinkTrim()
     static constexpr std::wstring_view otherCustomId{ L"OtherCustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
-    const COORD pos{ 70, 0 };
+    const til::point pos{ 70, 0 };
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
@@ -2648,7 +2648,7 @@ void TextBufferTests::HyperlinkTrim()
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set a different hyperlink id somewhere else in the buffer
-    const COORD otherPos{ 70, 5 };
+    const til::point otherPos{ 70, 5 };
     const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
     newAttr.SetHyperlinkId(otherId);
     _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
@@ -2675,7 +2675,7 @@ void TextBufferTests::HyperlinkTrim()
 void TextBufferTests::NoHyperlinkTrim()
 {
     // Set up a text buffer for us
-    const COORD bufferSize{ 80, 10 };
+    const til::size bufferSize{ 80, 10 };
     const UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
@@ -2684,7 +2684,7 @@ void TextBufferTests::NoHyperlinkTrim()
     static constexpr std::wstring_view customId{ L"CustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
-    const COORD pos{ 70, 0 };
+    const til::point pos{ 70, 0 };
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
@@ -2692,7 +2692,7 @@ void TextBufferTests::NoHyperlinkTrim()
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set the same hyperlink id somewhere else in the buffer
-    const COORD otherPos{ 70, 5 };
+    const til::point otherPos{ 70, 5 };
     _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
 
     // Increment the circular buffer

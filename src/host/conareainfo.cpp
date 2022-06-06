@@ -15,15 +15,13 @@
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) :
-    coordCaBuffer(coordBufferSize),
-    rcViewCaWindow({ 0 }),
-    coordConView({ 0 })
+ConversionAreaBufferInfo::ConversionAreaBufferInfo(const til::size coordBufferSize) :
+    coordCaBuffer(coordBufferSize)
 {
 }
 
-ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
-                                       const COORD windowSize,
+ConversionAreaInfo::ConversionAreaInfo(const til::size bufferSize,
+                                       const til::size windowSize,
                                        const TextAttribute& fill,
                                        const TextAttribute& popupFill,
                                        const FontInfo fontInfo) :
@@ -110,7 +108,7 @@ void ConversionAreaInfo::SetAttributes(const TextAttribute& attr)
 // - text - Text to insert into the conversion area buffer
 // - column - Column to start at (X position)
 void ConversionAreaInfo::WriteText(const std::vector<OutputCell>& text,
-                                   const SHORT column)
+                                   const til::CoordType column)
 {
     gsl::span<const OutputCell> view(text.data(), text.size());
     _screenBuffer->Write(view, { column, 0 });
@@ -131,7 +129,7 @@ void ConversionAreaInfo::ClearArea() noexcept
     Paint();
 }
 
-[[nodiscard]] HRESULT ConversionAreaInfo::Resize(const COORD newSize) noexcept
+[[nodiscard]] HRESULT ConversionAreaInfo::Resize(const til::size newSize) noexcept
 {
     // attempt to resize underlying buffers
     RETURN_IF_NTSTATUS_FAILED(_screenBuffer->ResizeScreenBuffer(newSize, FALSE));
@@ -140,7 +138,7 @@ void ConversionAreaInfo::ClearArea() noexcept
     _caInfo.coordCaBuffer = newSize;
 
     // restrict viewport to buffer size.
-    const COORD restriction = { newSize.X - 1i16, newSize.Y - 1i16 };
+    const til::point restriction = { newSize.X - 1, newSize.Y - 1 };
     _caInfo.rcViewCaWindow.Left = std::min(_caInfo.rcViewCaWindow.Left, restriction.X);
     _caInfo.rcViewCaWindow.Right = std::min(_caInfo.rcViewCaWindow.Right, restriction.X);
     _caInfo.rcViewCaWindow.Top = std::min(_caInfo.rcViewCaWindow.Top, restriction.Y);
@@ -149,7 +147,7 @@ void ConversionAreaInfo::ClearArea() noexcept
     return S_OK;
 }
 
-void ConversionAreaInfo::SetWindowInfo(const SMALL_RECT view) noexcept
+void ConversionAreaInfo::SetWindowInfo(const til::inclusive_rect& view) noexcept
 {
     if (view.Left != _caInfo.rcViewCaWindow.Left ||
         view.Top != _caInfo.rcViewCaWindow.Top ||
@@ -172,7 +170,7 @@ void ConversionAreaInfo::SetWindowInfo(const SMALL_RECT view) noexcept
     }
 }
 
-void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
+void ConversionAreaInfo::SetViewPos(const til::point pos) noexcept
 {
     if (IsHidden())
     {
@@ -206,7 +204,7 @@ void ConversionAreaInfo::Paint() const noexcept
     auto& ScreenInfo = gci.GetActiveOutputBuffer();
     const auto viewport = ScreenInfo.GetViewport();
 
-    SMALL_RECT WriteRegion;
+    til::inclusive_rect WriteRegion;
     WriteRegion.Left = viewport.Left() + _caInfo.coordConView.X + _caInfo.rcViewCaWindow.Left;
     WriteRegion.Right = WriteRegion.Left + (_caInfo.rcViewCaWindow.Right - _caInfo.rcViewCaWindow.Left);
     WriteRegion.Top = viewport.Top() + _caInfo.coordConView.Y + _caInfo.rcViewCaWindow.Top;

@@ -102,7 +102,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
                          _In_ size_t cWords,
                          _In_ size_t cBytes,
-                         _In_ SHORT sOriginalXPosition,
+                         _In_ til::CoordType sOriginalXPosition,
                          _In_ BOOL fPrintableControlChars)
 {
     if (WI_IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
@@ -151,7 +151,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                 case UNICODE_TAB:
                 {
                     size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
-                    sOriginalXPosition = (SHORT)(sOriginalXPosition + TabSize);
+                    sOriginalXPosition = (til::CoordType)(sOriginalXPosition + TabSize);
                     if (cBytes < TabSize)
                         return TRUE;
                     cBytes -= TabSize;

@@ -38,14 +38,14 @@ Selection& Selection::Instance()
 // Arguments:
 // - <none> - Uses internal state to know what area is selected already.
 // Return Value:
-// - Returns a vector where each SMALL_RECT is one Row worth of the area to be selected.
+// - Returns a vector where each til::inclusive_rect is one Row worth of the area to be selected.
 // - Returns empty vector if no rows are selected.
 // - Throws exceptions for out of memory issues
-std::vector<SMALL_RECT> Selection::GetSelectionRects() const
+std::vector<til::inclusive_rect> Selection::GetSelectionRects() const
 {
     if (!_fSelectionVisible)
     {
-        return std::vector<SMALL_RECT>();
+        return std::vector<til::inclusive_rect>();
     }
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -53,7 +53,7 @@ std::vector<SMALL_RECT> Selection::GetSelectionRects() const
 
     // _coordSelectionAnchor is at one of the corners of _srSelectionRects
     // endSelectionAnchor is at the exact opposite corner
-    COORD endSelectionAnchor;
+    til::point endSelectionAnchor;
     endSelectionAnchor.X = (_coordSelectionAnchor.X == _srSelectionRect.Left) ? _srSelectionRect.Right : _srSelectionRect.Left;
     endSelectionAnchor.Y = (_coordSelectionAnchor.Y == _srSelectionRect.Top) ? _srSelectionRect.Bottom : _srSelectionRect.Top;
 
@@ -129,7 +129,7 @@ void Selection::_PaintSelection() const
 // - coordBufferPos - Position in which user started a selection
 // Return Value:
 // - <none>
-void Selection::InitializeMouseSelection(const COORD coordBufferPos)
+void Selection::InitializeMouseSelection(const til::point coordBufferPos)
 {
     Scrolling::s_ClearScroll();
 
@@ -174,7 +174,7 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
 // - coordSelectionEnd - The linear final position or opposite corner of the anchor to represent the complete selection area.
 // Return Value:
 // - <none>
-void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd)
+void Selection::AdjustSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd)
 {
     // modify the anchor and then just use extend to adjust the other portion of the selection rectangle
     _coordSelectionAnchor = coordSelectionStart;
@@ -189,7 +189,7 @@ void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coo
 // - coordBufferPos - Position to extend/contract the current selection up to.
 // Return Value:
 // - <none>
-void Selection::ExtendSelection(_In_ COORD coordBufferPos)
+void Selection::ExtendSelection(_In_ til::point coordBufferPos)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& screenInfo = gci.GetActiveOutputBuffer();
@@ -388,18 +388,18 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 // Arguments:
 // - psrRect - Rectangular area to fill with color
 // - attr - The color attributes to apply
-void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute attr)
+void Selection::ColorSelection(const til::inclusive_rect& srRect, const TextAttribute attr)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // Read selection rectangle, assumed already clipped to buffer.
     auto& screenInfo = gci.GetActiveOutputBuffer();
 
-    COORD coordTargetSize;
+    til::point coordTargetSize;
     coordTargetSize.X = CalcWindowSizeX(srRect);
     coordTargetSize.Y = CalcWindowSizeY(srRect);
 
-    COORD coordTarget;
+    til::point coordTarget;
     coordTarget.X = srRect.Left;
     coordTarget.Y = srRect.Top;
 
@@ -424,7 +424,7 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute att
 // - coordSelectionStart - Anchor point (start of selection) for the region to be colored
 // - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
 // - attr - Color to apply to region.
-void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
+void Selection::ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr)
 {
     // Extract row-by-row selection rectangles for the selection area.
     try
@@ -489,7 +489,7 @@ void Selection::InitializeMarkSelection()
 // - coordEnd - Position to select up to
 // Return Value:
 // - <none>
-void Selection::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
+void Selection::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
     // clear existing selection if applicable
     ClearSelection();
@@ -525,13 +525,13 @@ void Selection::SelectAll()
     const auto coordOldAnchor = _coordSelectionAnchor;
 
     // Attempt to get the boundaries of the current input line.
-    COORD coordInputStart;
-    COORD coordInputEnd;
+    til::point coordInputStart;
+    til::point coordInputEnd;
     const auto fHasInputArea = s_GetInputLineBoundaries(&coordInputStart, &coordInputEnd);
 
     // These variables will be used to specify the new selection area when we're done
-    COORD coordNewSelStart;
-    COORD coordNewSelEnd;
+    til::point coordNewSelStart;
+    til::point coordNewSelEnd;
 
     // Now evaluate conditions and attempt to assign a new selection area.
     if (!fHasInputArea)
