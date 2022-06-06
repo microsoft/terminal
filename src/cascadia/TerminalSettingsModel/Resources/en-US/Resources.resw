@@ -494,7 +494,7 @@
     <comment>A command to clear the part of the buffer above the viewport</comment>
   </data>
   <data name="DefaultWindowsConsoleAuthor" xml:space="preserve">
-    <value>Microsoft Corporation</value>
+    <value></value>
     <comment>Paired with `DefaultWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
   </data>
   <data name="DefaultWindowsConsoleName" xml:space="preserve">
