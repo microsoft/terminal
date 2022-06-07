@@ -196,14 +196,14 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
-                    <Button x:Name="ResetButton"
-                            x:Uid="Settings_ResetSettingsButton"
-                            Click="ResetButton_Click" />
                     <Button x:Name="SaveButton"
                             x:Uid="Settings_SaveSettingsButton"
-                            Margin="10,0,0,0"
                             Click="SaveButton_Click"
                             Style="{StaticResource AccentButtonStyle}" />
+                    <Button x:Name="ResetButton"
+                            x:Uid="Settings_ResetSettingsButton"
+                            Margin="10,0,0,0"
+                            Click="ResetButton_Click" />
                 </StackPanel>
             </Grid>
         </Grid>
