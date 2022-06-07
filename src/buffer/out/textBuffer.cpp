@@ -1142,7 +1142,7 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
         // that it actually points to a space in the buffer
         copy = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
     }
-    else if (bufferSize.CompareInBounds(target, limit.to_win32_coord(), true) >= 0)
+    else if (target >= limit)
     {
         // if at/past the limit --> clamp to limit
         copy = limitOptional->to_win32_coord();
@@ -1257,8 +1257,8 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 
     // Already at/past the limit. Can't move forward.
     const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
-    if (bufferSize.CompareInBounds(target, limit.to_win32_coord(), true) >= 0)
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    if (target >= limit)
     {
         return target;
     }
@@ -1286,7 +1286,7 @@ const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const st
     const auto bufferSize{ GetSize() };
     auto result{ target };
 
-    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    if (target >= limit)
     {
         // if we're already on/past the last RegularChar,
         // clamp result to that position
@@ -1423,7 +1423,7 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
     const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
     const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit.to_win32_coord()) };
 
-    if (bufferSize.CompareInBounds(copy, limit.to_win32_coord(), true) >= 0)
+    if (copy >= limit)
     {
         return false;
     }
@@ -1470,7 +1470,7 @@ const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<t
     const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit.to_win32_coord(), true) > 0)
+    if (resultPos > limit)
     {
         resultPos = limit.to_win32_coord();
     }
@@ -1498,7 +1498,7 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilit
     const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit.to_win32_coord(), true) > 0)
+    if (resultPos > limit)
     {
         resultPos = limit.to_win32_coord();
     }
@@ -1528,9 +1528,15 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilit
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    bool pastEndExclusive = false;
+    const auto limit = [bufferSize, limitOptional](bool& pastEndExclusive) {
+        const auto endExclusive{ bufferSize.EndExclusive() };
+        const auto val = limitOptional.value_or(endExclusive);
+        pastEndExclusive = val > endExclusive;
+        return pastEndExclusive ? endExclusive : val;
+    }(pastEndExclusive);
 
-    const auto distanceToLimit{ bufferSize.CompareInBounds(pos.to_win32_coord(), limit.to_win32_coord(), true) };
+    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit) + (pastEndExclusive ? 1 : 0) };
     if (distanceToLimit >= 0)
     {
         // Corner Case: we're on/past the limit
@@ -1573,7 +1579,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
     const auto bufferSize = GetSize();
     const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
 
-    if (bufferSize.CompareInBounds(pos.to_win32_coord(), limit.to_win32_coord(), true) > 0)
+    if (pos > limit)
     {
         // we're past the end
         // clamp us to the limit
@@ -1615,7 +1621,7 @@ const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, b
     // (0,0) is the top-left of the screen
     // the physically "higher" coordinate is closer to the top-left
     // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
+    const auto [higherCoord, lowerCoord] = start <= end ?
                                                std::make_tuple(start, end) :
                                                std::make_tuple(end, start);
 

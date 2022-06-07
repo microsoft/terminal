@@ -182,7 +182,7 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - the new start/end for a selection
 std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& targetStart) const
 {
-    if (targetStart = _activeBuffer().GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
+    if (targetStart = targetPos <= _selection->pivot)
     {
         // target is before pivot
         // treat target as start
@@ -371,7 +371,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
     {
     case SelectionDirection::Left:
         const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
-        if (_activeBuffer().GetSize().CompareInBounds(_selection->pivot, pos) < 0)
+        if (_selection->pivot < pos)
         {
             // If we're moving towards the pivot, move one more cell
             pos = wordStartPos;
@@ -392,7 +392,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
         break;
     case SelectionDirection::Right:
         const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
-        if (_activeBuffer().GetSize().CompareInBounds(pos, _selection->pivot) < 0)
+        if (pos < _selection->pivot)
         {
             // If we're moving towards the pivot, move one more cell
             pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
