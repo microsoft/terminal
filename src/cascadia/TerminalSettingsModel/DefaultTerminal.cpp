@@ -47,7 +47,7 @@ winrt::hstring DefaultTerminal::Author() const
     switch (_pkg.pair.kind)
     {
     case DelegationConfig::DelegationPairKind::Default:
-        return RS_(L"DefaultWindowsConsoleAuthor");
+        return {}; // The "Let Windows decide" option has no author.
     case DelegationConfig::DelegationPairKind::Conhost:
         return RS_(L"InboxWindowsConsoleAuthor");
     default:
