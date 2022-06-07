@@ -493,6 +493,10 @@
     <value>Clear scrollback</value>
     <comment>A command to clear the part of the buffer above the viewport</comment>
   </data>
+  <data name="DefaultWindowsConsoleName" xml:space="preserve">
+    <value>Let Windows decide</value>
+    <comment>This is the default option if a user doesn't choose to override Microsoft's choice of a Terminal.</comment>
+  </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
     <value>Microsoft Corporation</value>
     <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>

@@ -61,9 +61,11 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     til::latch latch{ 1 };
 
     const auto _ = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
         co_await winrt::resume_background();
         finalVal.emplace(co_await task);
-        latch.count_down();
     }();
 
     latch.wait();

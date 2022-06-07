@@ -721,7 +721,7 @@ BEGIN
     AUTOCHECKBOX    "Disable Scroll-Forward", IDD_DISABLE_SCROLLFORWARD, T_SCROLL_X+P_1, T_SCROLL_Y+P_2, T_SCROLL_W-P_4-P_4, 10
 
     GROUPBOX        "Default Terminal Application", -1, T_DEFAPP_X, T_DEFAPP_Y, T_DEFAPP_W, T_DEFAPP_H
-    COMBOBOX        IDD_TERMINAL_COMBO_DEFTERM, T_DEFTERM_X+P_0, T_DEFTERM_Y, T_DEFTERM_W, 10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP 
+    COMBOBOX        IDD_TERMINAL_COMBO_DEFTERM, T_DEFTERM_X+P_0, T_DEFTERM_Y, T_DEFTERM_W, 10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?linkid=2028595"">experimental terminal settings</A>",
                     IDD_HELP_TERMINAL, "SysLink", WS_TABSTOP, 10, 225, 200, 10
@@ -749,7 +749,8 @@ BEGIN
     IDS_TOOLTIP_EDIT_KEYS,       "Enable enhanced keyboard editing on command line."
     IDS_TOOLTIP_OPACITY,         "Adjust the transparency of the console window."
     IDS_TOOLTIP_INTERCEPT_COPY_PASTE,   "Use Ctrl+Shift+C/V as copy/paste shortcuts, regardless of input mode"
-    IDS_TERMINAL_DEF_INBOX,      "Windows Console Host"
+    IDS_TERMINAL_HANDOFF_DEFAULT, "Let Windows decide"
+    IDS_TERMINAL_HANDOFF_CONHOST, "Windows Console Host"
 END
 
 
