@@ -285,6 +285,10 @@ static void attemptHandoff(Globals& Globals, const CONSOLE_INFORMATION& gci, CON
         ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
         THROW_IF_FAILED(CoCreateInstance(Globals.delegationPair.console, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
 
+        // If we looked up the registered defterm pair, and it was left as the default (missing or {0}),
+        // AND velocity is enabled for DxD, then we switched the delegation pair to Terminal, with a notice
+        // that we still need to check whether Terminal actually wants to be the default Terminal.
+        // See ConsoleServerInitialization.
         if (Globals.defaultTerminalMarkerCheckRequired)
         {
             ::Microsoft::WRL::ComPtr<IDefaultTerminalMarker> marker;

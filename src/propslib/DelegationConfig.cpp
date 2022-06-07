@@ -194,7 +194,9 @@ try
     // We should find at least one package.
     RETURN_HR_IF(E_FAIL, packages.empty());
 
-    // Search through and find a package that matches.
+    // Get the currently set default console/terminal.
+    // Then, search through and find a package that matches.
+    // If we find one, then return it.
     const auto delegationPair = s_GetDelegationPair();
     for (auto& pkg : packages)
     {
@@ -240,6 +242,8 @@ CATCH_RETURN()
     }
 
     static constexpr const wchar_t* keys[2]{ DELEGATION_CONSOLE_KEY_NAME, DELEGATION_TERMINAL_KEY_NAME };
+    // values[0]/[1] will contain the delegation console/terminal
+    // respectively if set to a valid value within the registry.
     IID values[2]{ CLSID_Default, CLSID_Default };
 
     for (size_t i = 0; i < 2; ++i)
