@@ -1859,6 +1859,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.SelectAll();
     }
 
+    bool TermControl::ToggleBlockSelection()
+    {
+        return _core.ToggleBlockSelection();
+    }
+
     void TermControl::ToggleMarkMode()
     {
         _core.ToggleMarkMode();

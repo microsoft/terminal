@@ -1015,6 +1015,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderer->TriggerSelection();
     }
 
+    bool ControlCore::ToggleBlockSelection()
+    {
+        auto lock = _terminal->LockForWriting();
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->SetBlockSelection(!_terminal->IsBlockSelection());
+            _renderer->TriggerSelection();
+            return true;
+        }
+        return false;
+    }
+
     void ControlCore::ToggleMarkMode()
     {
         auto lock = _terminal->LockForWriting();

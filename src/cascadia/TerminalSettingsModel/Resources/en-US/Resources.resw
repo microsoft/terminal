@@ -529,4 +529,7 @@
     <value>Toggle mark mode</value>
     <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
   </data>
+  <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
+    <value>Toggle block selection</value>
+  </data>
 </root>

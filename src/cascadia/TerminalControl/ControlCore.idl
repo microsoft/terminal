@@ -66,6 +66,7 @@ namespace Microsoft.Terminal.Control
         void SendInput(String text);
         void PasteText(String text);
         void SelectAll();
+        Boolean ToggleBlockSelection();
         void ToggleMarkMode();
         void ClearBuffer(ClearBufferType clearType);
         Boolean IsInMarkMode();

@@ -258,6 +258,7 @@ void Terminal::ToggleMarkMode()
         _selection->end = cursorPos;
         _selection->pivot = cursorPos;
         _markMode = true;
+        _blockSelection = false;
     }
 }
 
