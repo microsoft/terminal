@@ -25,6 +25,12 @@ const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 const std::wstring_view ConsoleArguments::PASSTHROUGH_ARG = L"--passthrough";
+// NOTE: Thinking about adding more commandline args that control conpty, for
+// the Terminal? Make sure you add them to the commandline in
+// ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
+// defterm handoff s.t. they behave like a conpty connection that was started by
+// the terminal. If you forget them there, the conpty won't obey them, only for
+// defterm.
 
 std::wstring EscapeArgument(std::wstring_view ac)
 {
