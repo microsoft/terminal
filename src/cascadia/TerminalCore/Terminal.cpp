@@ -1504,6 +1504,11 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
                        const til::point& start,
                        const til::point& end)
 {
+    if (_inAltBuffer())
+    {
+        return;
+    }
+
     DispatchTypes::ScrollMark m = mark;
     m.start = start;
     m.end = end;
@@ -1552,7 +1557,12 @@ void Terminal::ClearAllMarks()
 
 const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const
 {
-    return _scrollMarks;
+    // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
+    // We want to return _no_ marks when we're in the alt buffer, to effectively
+    // hide them. We need to return a reference, so we can't just ctor an empty
+    // list here just for when we're in the alt buffer.
+    static std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
+    return _inAltBuffer() ? _altBufferMarks : _scrollMarks;
 }
 
 til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const

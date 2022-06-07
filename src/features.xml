@@ -116,4 +116,16 @@
             <brandingToken>Preview</brandingToken>
         </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_ScrollbarMarks</name>
+        <description>Enables the experimental scrollbar marks feature.</description>
+        <stage>AlwaysDisabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>
