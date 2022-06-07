@@ -54,6 +54,24 @@
         }
       ]
     },
+    "BellSound": {
+      "default": "",
+      "description": "Sets the file location of the sound played when the application emits a BEL character. If the path is invalid no sound will be played. This property also accepts an array of sounds and the terminal will pick one at random.",
+      "oneOf": [
+      {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+      ]
+    }, 
     "AppearanceConfig": {
       "properties": {
         "colorScheme": {
@@ -300,6 +318,7 @@
         "moveFocus",
         "movePane",
         "swapPane",
+        "markMode",
         "moveTab",
         "multipleActions",
         "newTab",
@@ -332,6 +351,7 @@
         "tabSearch",
         "toggleAlwaysOnTop",
         "toggleFocusMode",
+        "selectAll",
         "setFocusMode",
         "toggleFullscreen",
         "setFullScreen",
@@ -485,7 +505,7 @@
           "type": "boolean",
           "default": false,
           "description": "This will override the profile's `elevate` setting."
-        },
+        }
       },
       "type": "object"
     },
@@ -861,7 +881,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "SetFullScreenAction": {
       "description": "Arguments for a setFullScreen action",
@@ -881,7 +901,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "SetMaximizedAction": {
       "description": "Arguments for a setMaximized action",
@@ -901,7 +921,7 @@
             }
           }
         }
-      ],
+      ]
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
@@ -1633,7 +1653,7 @@
           "$ref": "#/$defs/CopyFormat"
         },
         "trimBlockSelection": {
-          "default": false,
+          "default": true,
           "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
           "type": "boolean"
         },
@@ -1689,6 +1709,11 @@
           "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
           "type": "boolean"
         },
+        "experimental.useBackgroundImageForWindow": {
+          "default": false,
+          "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
+          "type": "boolean"
+        },
         "initialCols": {
           "default": 120,
           "description": "The number of columns displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
@@ -1709,7 +1734,7 @@
         },
         "startOnUserLogin": {
           "default": false,
-          "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
+          "description": "When set to true, this enables the launch of Terminal at startup. Setting this to false will disable the startup task entry. If the Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
           "type": "boolean"
         },
         "firstWindowPreference": {
@@ -1761,7 +1786,7 @@
         },
         "useAcrylicInTabRow": {
           "default": false,
-          "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
+          "description": "When set to true, the tab row will have an acrylic material background with 50% opacity.",
           "type": "boolean"
         },
         "actions": {
@@ -2051,6 +2076,10 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "experimental.connection.passthroughMode": {
+          "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -2058,6 +2087,11 @@
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
+        },
+        "experimental.useAtlasEngine": {
+          "description": "Enable using the experimental new rendering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean",
+          "default": false
         },
         "fontFace": {
           "default": "Cascadia Mono",
@@ -2219,7 +2253,7 @@
         },
         "useAcrylic": {
           "default": false,
-          "description": "When set to true, the window will have an acrylic background. When set to false, the window will have a plain, untextured background.",
+          "description": "When set to true, the window will have an acrylic material background. When set to false, the window will have a plain, untextured background.",
           "type": "boolean"
         }
       },

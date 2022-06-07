@@ -8,7 +8,6 @@
 #include "output.h"
 #include "handle.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../terminal/adapter/DispatchCommon.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
@@ -21,12 +20,11 @@ using namespace Microsoft::Console::VirtualTerminal;
 PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
-    _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
+    _api{ ServiceLocator::LocateGlobals().getConsoleInformation() },
     _dwThreadId{ 0 },
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 PtySignalInputThread::~PtySignalInputThread()
@@ -46,7 +44,7 @@ PtySignalInputThread::~PtySignalInputThread()
 // - The return value of the underlying instance's _InputThread
 DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 {
-    PtySignalInputThread* const pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
+    const auto pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
@@ -57,6 +55,10 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 //      (in and screen buffers) haven't yet been initialized.
 // - NOTE: Call under LockConsole() to ensure other threads have an opportunity
 //         to set early-work state.
+// - We need to do this specifically on the thread with the message pump. If the
+//   window is created on another thread, then the window won't have a message
+//   pump associated with it, and a DPI change in the connected terminal could
+//   end up HANGING THE CONPTY (for example).
 // Arguments:
 // - <none>
 // Return Value:
@@ -68,6 +70,25 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         _DoResizeWindow(*_earlyResize);
     }
+    if (_initialShowHide)
+    {
+        _DoShowHide(_initialShowHide->show);
+    }
+
+    // We should have successfully used the _earlyReparent message in CreatePseudoWindow.
+}
+
+// Method Description:
+// - Create our pseudo window. We're doing this here, instead of in
+//   ConnectConsole, because the window is created in
+//   ConsoleInputThreadProcWin32, before ConnectConsole is first called. Doing
+//   this here ensures that the window is first created with the initial owner
+//   set up (if so specified).
+// - Refer to GH#13066 for details.
+void PtySignalInputThread::CreatePseudoWindow()
+{
+    HWND owner = _earlyReparent.has_value() ? reinterpret_cast<HWND>((*_earlyReparent).handle) : HWND_DESKTOP;
+    ServiceLocator::LocatePseudoWindow(owner);
 }
 
 // Method Description:
@@ -82,6 +103,33 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         switch (signalId)
         {
+        case PtySignal::ShowHideWindow:
+        {
+            ShowHideData msg = { 0 };
+            _GetData(&msg, sizeof(msg));
+
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // If the client app hasn't yet connected, stash our initial
+            // visibility for when we do. We default to not being visible - if a
+            // terminal wants the ConPTY windows to start "visible", then they
+            // should send a ShowHidePseudoConsole(..., true) to tell us to
+            // initially be visible.
+            //
+            // Notably, if they don't, then a ShowWindow(SW_HIDE) on the ConPTY
+            // HWND will initially do _nothing_, because the OS will think that
+            // the window is already hidden.
+            if (!_consoleConnected)
+            {
+                _initialShowHide = msg;
+            }
+            else
+            {
+                _DoShowHide(msg.show);
+            }
+            break;
+        }
         case PtySignal::ClearBuffer:
         {
             LockConsole();
@@ -120,6 +168,28 @@ void PtySignalInputThread::ConnectConsole() noexcept
 
             break;
         }
+        case PtySignal::SetParent:
+        {
+            SetParentData reparentMessage = { 0 };
+            _GetData(&reparentMessage, sizeof(reparentMessage));
+
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // If the client app hasn't yet connected, stash the new owner.
+            // We'll later (PtySignalInputThread::ConnectConsole) use the value
+            // to set up the owner of the conpty window.
+            if (!_consoleConnected)
+            {
+                _earlyReparent = reparentMessage;
+            }
+            else
+            {
+                _DoSetWindowParent(reparentMessage);
+            }
+
+            break;
+        }
         default:
         {
             THROW_HR(E_UNEXPECTED);
@@ -137,15 +207,58 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - <none>
 void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
-    if (DispatchCommon::s_ResizeWindow(*_pConApi, data.sx, data.sy))
+    if (_api.ResizeWindow(data.sx, data.sy))
     {
-        DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
     }
 }
 
 void PtySignalInputThread::_DoClearBuffer()
 {
-    _pConApi->PrivateClearBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
+}
+
+void PtySignalInputThread::_DoShowHide(const bool show)
+{
+    _api.ShowWindow(show);
+}
+
+// Method Description:
+// - Update the owner of the pseudo-window we're using for the conpty HWND. This
+//   allows to mark the pseudoconsole windows as "owner" by the terminal HWND
+//   that's actually hosting them.
+// - Refer to GH#2988
+// Arguments:
+// - data - Packet information containing owner HWND information
+// Return Value:
+// - <none>
+void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
+{
+    const auto owner{ reinterpret_cast<HWND>(data.handle) };
+    // This will initialize s_interactivityFactory for us. It will also
+    // conveniently return 0 when we're on OneCore.
+    //
+    // If the window hasn't been created yet, by some other call to
+    // LocatePseudoWindow, then this will also initialize the owner of the
+    // window.
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(owner) })
+    {
+        // DO NOT USE SetParent HERE!
+        //
+        // Calling SetParent on a window that is WS_VISIBLE will cause the OS to
+        // hide the window, make it a _child_ window, then call SW_SHOW on the
+        // window to re-show it. SW_SHOW, however, will cause the OS to also set
+        // that window as the _foreground_ window, which would result in the
+        // pty's hwnd stealing the foreground away from the owning terminal
+        // window. That's bad.
+        //
+        // SetWindowLongPtr seems to do the job of changing who the window owner
+        // is, without all the other side effects of reparenting the window.
+        // See #13066
+        ::SetWindowLongPtr(pseudoHwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
+    }
 }
 
 // Method Description:
@@ -166,7 +279,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     //       we want to gracefully close in.
     if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
     {
-        DWORD lastError = GetLastError();
+        auto lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
             _Shutdown();

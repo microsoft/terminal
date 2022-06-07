@@ -81,7 +81,7 @@ HRESULT RunOnUIThread(const TFunction& function)
         return HRESULT_FROM_WIN32(::GetLastError());
     }
 
-    HRESULT invokeResult = E_FAIL;
+    auto invokeResult = E_FAIL;
 
     auto asyncAction = d.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
                                   [&invokeResult, &function]() {
@@ -94,7 +94,7 @@ HRESULT RunOnUIThread(const TFunction& function)
     });
 
     // Wait for the callback to complete
-    HRESULT hr = completedEvent.Wait();
+    auto hr = completedEvent.Wait();
     if (FAILED(hr))
     {
         return hr;

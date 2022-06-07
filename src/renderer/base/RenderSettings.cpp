@@ -4,7 +4,7 @@
 #include "precomp.h"
 
 #include "../inc/RenderSettings.hpp"
-#include "../inc/IRenderTarget.hpp"
+#include "../base/renderer.hpp"
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/colorTable.hpp"
 
@@ -20,10 +20,14 @@ RenderSettings::RenderSettings() noexcept
 
     SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_FOREGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_BACKGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
 
     SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_WHITE);
     SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DARK_BLACK);
+    SetColorAliasIndex(ColorAlias::FrameForeground, TextColor::FRAME_FOREGROUND);
+    SetColorAliasIndex(ColorAlias::FrameBackground, TextColor::FRAME_BACKGROUND);
 }
 
 // Routine Description:
@@ -149,7 +153,10 @@ COLORREF RenderSettings::GetColorAlias(const ColorAlias alias) const
 // - tableIndex - The new position of the alias in the color table.
 void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
 {
-    gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    if (tableIndex < TextColor::TABLE_SIZE)
+    {
+        gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    }
 }
 
 // Routine Description:
@@ -180,7 +187,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     const auto defaultFgIndex = GetColorAliasIndex(ColorAlias::DefaultForeground);
     const auto defaultBgIndex = GetColorAliasIndex(ColorAlias::DefaultBackground);
 
-    const auto brightenFg = attr.IsBold() && GetRenderMode(Mode::IntenseIsBright);
+    const auto brightenFg = attr.IsIntense() && GetRenderMode(Mode::IntenseIsBright);
     const auto dimFg = attr.IsFaint() || (_blinkShouldBeFaint && attr.IsBlinking());
     const auto swapFgAndBg = attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed);
 
@@ -197,7 +204,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
 
         if (fgTextColor.IsIndex16() && (fgIndex < 8) && brightenFg)
         {
-            // There is a special case for bold here - we need to get the bright version of the foreground color
+            // There is a special case for intense here - we need to get the bright version of the foreground color
             fgIndex += 8;
         }
 
@@ -262,10 +269,10 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColorsWithAlpha(const 
 // Routine Description:
 // - Increments the position in the blink cycle, toggling the blink rendition
 //   state on every second call, potentially triggering a redraw of the given
-//   render target if there are blinking cells currently in view.
+//   renderer if there are blinking cells currently in view.
 // Arguments:
-// - renderTarget: the render target that will be redrawn.
-void RenderSettings::ToggleBlinkRendition(IRenderTarget& renderTarget) noexcept
+// - renderer: the renderer that will be redrawn.
+void RenderSettings::ToggleBlinkRendition(Renderer& renderer) noexcept
 try
 {
     if (GetRenderMode(Mode::BlinkAllowed))
@@ -283,7 +290,7 @@ try
             // We reset the _blinkIsInUse flag before redrawing, so we can
             // get a fresh assessment of the current blink attribute usage.
             _blinkIsInUse = false;
-            renderTarget.TriggerRedrawAll();
+            renderer.TriggerRedrawAll();
         }
     }
 }

@@ -9,6 +9,13 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+// Ensure the "safety" of til::point::as_win32_size
+static_assert(
+    sizeof(til::size) == sizeof(SIZE) &&
+    alignof(til::size) == alignof(SIZE) &&
+    offsetof(til::size, width) == offsetof(SIZE, cx) &&
+    offsetof(til::size, height) == offsetof(SIZE, cy));
+
 class SizeTests
 {
     TEST_CLASS(SizeTests);
@@ -42,26 +49,6 @@ class SizeTests
         const til::size sz{ width, height };
         VERIFY_ARE_EQUAL(width, sz.width);
         VERIFY_ARE_EQUAL(height, sz.height);
-    }
-
-    TEST_METHOD(MixedRawTypeConstruct)
-    {
-        const auto a = -5;
-        const int b = -10;
-
-        Log::Comment(L"Case 1: til::CoordType/int");
-        {
-            const til::size sz{ a, b };
-            VERIFY_ARE_EQUAL(a, sz.width);
-            VERIFY_ARE_EQUAL(b, sz.height);
-        }
-
-        Log::Comment(L"Case 2: int/til::CoordType");
-        {
-            const til::size sz{ b, a };
-            VERIFY_ARE_EQUAL(b, sz.width);
-            VERIFY_ARE_EQUAL(a, sz.height);
-        }
     }
 
     TEST_METHOD(CoordConstruct)
@@ -196,7 +183,7 @@ class SizeTests
 
         Log::Comment(L"1.) Addition results in value that is too large (width).");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ 1, 1 };
 
@@ -209,7 +196,7 @@ class SizeTests
 
         Log::Comment(L"2.) Addition results in value that is too large (height).");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ static_cast<til::CoordType>(0), bigSize };
             const til::size sz2{ 1, 1 };
 
@@ -235,7 +222,7 @@ class SizeTests
 
         Log::Comment(L"1.) Subtraction results in value that is too small (width).");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ -2, -2 };
 
@@ -248,7 +235,7 @@ class SizeTests
 
         Log::Comment(L"2.) Subtraction results in value that is too small (height).");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ static_cast<til::CoordType>(0), bigSize };
             const til::size sz2{ -2, -2 };
 
@@ -274,7 +261,7 @@ class SizeTests
 
         Log::Comment(L"1.) Multiplication results in value that is too large (width).");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ 10, 10 };
 
@@ -287,7 +274,7 @@ class SizeTests
 
         Log::Comment(L"2.) Multiplication results in value that is too large (height).");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ static_cast<til::CoordType>(0), bigSize };
             const til::size sz2{ 10, 10 };
 
@@ -304,7 +291,7 @@ class SizeTests
         Log::Comment(L"0.) Scale that should be in bounds.");
         {
             const til::size sz{ 5, 10 };
-            const float scale = 1.783f;
+            const auto scale = 1.783f;
 
             const til::size expected{ static_cast<til::CoordType>(ceil(5 * scale)), static_cast<til::CoordType>(ceil(10 * scale)) };
 
@@ -316,7 +303,7 @@ class SizeTests
         Log::Comment(L"1.) Scale results in value that is too large.");
         {
             const til::size sz{ 5, 10 };
-            constexpr float scale = std::numeric_limits<float>().max();
+            constexpr auto scale = std::numeric_limits<float>().max();
 
             auto fn = [&]() {
                 sz.scale(til::math::ceiling, scale);
@@ -340,7 +327,7 @@ class SizeTests
 
         Log::Comment(L"1.) Division by zero");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ 1, 1 };
 
@@ -371,11 +358,11 @@ class SizeTests
             const til::size sz{ -10, -5 };
             const til::size divisor{ 3, 2 };
 
-            // -10 / 3 is -3.333, rounded up is -4.
-            // -5 / 2 is -2.5, rounded up is -3.
-            const til::size expected{ -4, -3 };
+            auto fn = [&]() {
+                sz.divide_ceil(divisor);
+            };
 
-            VERIFY_ARE_EQUAL(expected, sz.divide_ceil(divisor));
+            VERIFY_THROWS(fn(), std::invalid_argument);
         }
     }
 
@@ -401,7 +388,7 @@ class SizeTests
 
         Log::Comment(L"1.) Area is out of bounds on multiplication.");
         {
-            constexpr til::CoordType bigSize = std::numeric_limits<til::CoordType>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ bigSize, bigSize };
 
             auto fn = [&]() {
@@ -437,55 +424,55 @@ class SizeTests
         Log::Comment(L"0.) Typical situation.");
         {
             const til::size sz{ 5, 10 };
-            SIZE val = sz.to_win32_size();
+            auto val = sz.to_win32_size();
             VERIFY_ARE_EQUAL(5, val.cx);
             VERIFY_ARE_EQUAL(10, val.cy);
         }
 
         Log::Comment(L"1.) Fit max width into SIZE (may overflow).");
         {
-            constexpr til::CoordType width = std::numeric_limits<til::CoordType>().max();
+            constexpr auto width = std::numeric_limits<til::CoordType>().max();
             const auto height = 10;
             const til::size sz{ width, height };
 
             // On some platforms, til::CoordType will fit inside cx/cy
-            const bool overflowExpected = width > std::numeric_limits<decltype(SIZE::cx)>().max();
+            const auto overflowExpected = width > std::numeric_limits<decltype(SIZE::cx)>().max();
 
             if (overflowExpected)
             {
                 auto fn = [&]() {
-                    SIZE val = sz.to_win32_size();
+                    auto val = sz.to_win32_size();
                 };
 
                 VERIFY_THROWS(fn(), gsl::narrowing_error);
             }
             else
             {
-                SIZE val = sz.to_win32_size();
+                auto val = sz.to_win32_size();
                 VERIFY_ARE_EQUAL(width, val.cx);
             }
         }
 
         Log::Comment(L"2.) Fit max height into SIZE (may overflow).");
         {
-            constexpr til::CoordType height = std::numeric_limits<til::CoordType>().max();
+            constexpr auto height = std::numeric_limits<til::CoordType>().max();
             const auto width = 10;
             const til::size sz{ width, height };
 
             // On some platforms, til::CoordType will fit inside cx/cy
-            const bool overflowExpected = height > std::numeric_limits<decltype(SIZE::cy)>().max();
+            const auto overflowExpected = height > std::numeric_limits<decltype(SIZE::cy)>().max();
 
             if (overflowExpected)
             {
                 auto fn = [&]() {
-                    SIZE val = sz.to_win32_size();
+                    auto val = sz.to_win32_size();
                 };
 
                 VERIFY_THROWS(fn(), gsl::narrowing_error);
             }
             else
             {
-                SIZE val = sz.to_win32_size();
+                auto val = sz.to_win32_size();
                 VERIFY_ARE_EQUAL(height, val.cy);
             }
         }
@@ -496,7 +483,7 @@ class SizeTests
         Log::Comment(L"0.) Typical situation.");
         {
             const til::size sz{ 5, 10 };
-            D2D1_SIZE_F val = sz.to_d2d_size();
+            auto val = sz.to_d2d_size();
             VERIFY_ARE_EQUAL(5, val.width);
             VERIFY_ARE_EQUAL(10, val.height);
         }

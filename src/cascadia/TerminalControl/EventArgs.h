@@ -11,6 +11,8 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
+#include "FoundResultsArgs.g.h"
+#include "ShowWindowArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -53,13 +55,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
     public:
-        PasteFromClipboardEventArgs(std::function<void(std::wstring_view)> clipboardDataHandler) :
-            m_clipboardDataHandler(clipboardDataHandler) {}
+        PasteFromClipboardEventArgs(std::function<void(std::wstring_view)> clipboardDataHandler, bool bracketedPasteEnabled) :
+            m_clipboardDataHandler(clipboardDataHandler),
+            _BracketedPasteEnabled{ bracketedPasteEnabled } {}
 
         void HandleClipboardData(hstring value)
         {
             m_clipboardDataHandler(value);
         };
+
+        WINRT_PROPERTY(bool, BracketedPasteEnabled, false);
 
     private:
         std::function<void(std::wstring_view)> m_clipboardDataHandler;
@@ -129,5 +134,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(double, Opacity);
+    };
+
+    struct FoundResultsArgs : public FoundResultsArgsT<FoundResultsArgs>
+    {
+    public:
+        FoundResultsArgs(const bool foundMatch) :
+            _FoundMatch(foundMatch)
+        {
+        }
+
+        WINRT_PROPERTY(bool, FoundMatch);
+    };
+
+    struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>
+    {
+    public:
+        ShowWindowArgs(const bool showOrHide) :
+            _ShowOrHide(showOrHide)
+        {
+        }
+
+        WINRT_PROPERTY(bool, ShowOrHide);
     };
 }

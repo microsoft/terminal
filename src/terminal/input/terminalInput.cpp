@@ -340,7 +340,7 @@ static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEven
             // However, if there are modifiers set, then we only want to match
             //      if the key's modifiers are the same as the modifiers in the
             //      mapping.
-            bool modifiersMatch = WI_AreAllFlagsClear(map.modifiers, MOD_PRESSED);
+            auto modifiersMatch = WI_AreAllFlagsClear(map.modifiers, MOD_PRESSED);
             if (!modifiersMatch)
             {
                 // The modifier mapping expects certain modifier keys to be
@@ -373,7 +373,7 @@ typedef std::function<void(const std::wstring_view)> InputSender;
 // - True if there was a match to a key translation, and we successfully modified and sent it to the input
 static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 {
-    bool success = false;
+    auto success = false;
 
     const auto match = _searchKeyMapping(keyEvent,
                                          { s_modifierKeyMapping.data(), s_modifierKeyMapping.size() });
@@ -383,9 +383,9 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         if (!v.sequence.empty())
         {
             std::wstring modified{ v.sequence }; // Make a copy so we can modify it.
-            const bool shift = keyEvent.IsShiftPressed();
-            const bool alt = keyEvent.IsAltPressed();
-            const bool ctrl = keyEvent.IsCtrlPressed();
+            const auto shift = keyEvent.IsShiftPressed();
+            const auto alt = keyEvent.IsAltPressed();
+            const auto ctrl = keyEvent.IsCtrlPressed();
             modified.at(modified.size() - 2) = L'1' + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
             sender(modified);
             success = true;
@@ -436,7 +436,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 
             const auto ctrl = keyEvent.IsCtrlPressed();
             const auto alt = keyEvent.IsAltPressed();
-            const bool shift = keyEvent.IsShiftPressed();
+            const auto shift = keyEvent.IsShiftPressed();
 
             // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
             const auto vkey = keyEvent.GetVirtualKeyCode();
@@ -449,8 +449,8 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
             // bits also match. This handles the hypothetical case we get a
             // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
             // has bits that are a superset of the bits set for question mark.
-            const bool wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
-            const bool wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
+            const auto wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
+            const auto wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
 
             // If the key pressed was exactly the ? key, then try to send the
             // appropriate sequence for a modified '?'. Otherwise, check if this
@@ -520,6 +520,14 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     if (!pInEvent)
     {
         return false;
+    }
+
+    // GH#11682: If this was a focus event, we can handle this. Steal the
+    // focused state, and return true if we're actually in focus event mode.
+    if (pInEvent->EventType() == InputEventType::FocusEvent)
+    {
+        const auto& focusEvent = *static_cast<const FocusEvent* const>(pInEvent);
+        return HandleFocus(focusEvent.GetFocus());
     }
 
     // On key presses, prepare to translate to VT compatible sequences
@@ -672,6 +680,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     }
 
     return false;
+}
+
+bool TerminalInput::HandleFocus(const bool focused) noexcept
+{
+    const auto enabled{ _inputMode.test(Mode::FocusEvent) };
+    if (enabled)
+    {
+        _SendInputSequence(focused ? L"\x1b[I" : L"\x1b[O");
+    }
+    return enabled;
 }
 
 // Routine Description:

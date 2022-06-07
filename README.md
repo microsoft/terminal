@@ -21,7 +21,7 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> 🔴 Note: Windows Terminal requires Windows 10 1903 (build 18362) or later
+> 🔴 Note: Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
 
@@ -272,11 +272,8 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * Kayla Cinnamon, Program Manager:
   [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-* Michael Niksa, Senior Developer:
-  [@michaelniksa](https://twitter.com/MichaelNiksa)
-* Mike Griese, Developer: [@zadjii](https://twitter.com/zadjii)
+* Mike Griese, Senior Developer: [@zadjii](https://twitter.com/zadjii)
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
-* Leon Liang, Developer: [@leonmsft](https://twitter.com/leonmsft)
 * Pankaj Bhojwani, Developer
 * Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)
 
@@ -284,7 +281,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
 
 ## Prerequisites
 
-* You must be running Windows 1903 (build >= 10.0.18362.0) or later to run
+* You must be running Windows 10 2004 (build >= 10.0.19041.0) or later to run
   Windows Terminal
 * You must [enable Developer Mode in the Windows Settings
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
@@ -302,6 +299,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
   * Universal Windows Platform Development
   * **The following Individual Components**
     * C++ (v142) Universal Windows Platform Tools
+* You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
 

@@ -13,6 +13,20 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    enum BreadcrumbSubPage
+    {
+        None = 0,
+        Profile_Appearance,
+        Profile_Advanced
+    };
+
+    runtimeclass Breadcrumb
+    {
+        IInspectable Tag;
+        String Label;
+        BreadcrumbSubPage SubPage;
+    }
+
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
     {
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
@@ -23,5 +37,7 @@ namespace Microsoft.Terminal.Settings.Editor
         // Due to the aforementioned bug, we can't use IInitializeWithWindow _here_ either.
         // Let's just smuggle the HWND in as a UInt64 :|
         void SetHostingWindow(UInt64 window);
+
+        Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
     }
 }

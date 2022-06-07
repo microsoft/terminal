@@ -24,19 +24,11 @@ namespace Microsoft::Console::Render
     class RenderEngineBase : public IRenderEngine
     {
     public:
-        ~RenderEngineBase() = 0;
-
-    protected:
-        RenderEngineBase();
-        RenderEngineBase(const RenderEngineBase&) = default;
-        RenderEngineBase(RenderEngineBase&&) = default;
-        RenderEngineBase& operator=(const RenderEngineBase&) = default;
-        RenderEngineBase& operator=(RenderEngineBase&&) = default;
-
-    public:
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
 
         [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;
+
+        [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
 
         [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                                              const SIZE cellSize,
@@ -51,14 +43,14 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
 
+        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
+
         void WaitUntilCanRender() noexcept override;
 
     protected:
         [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept = 0;
 
-        bool _titleChanged;
+        bool _titleChanged = false;
         std::wstring _lastFrameTitle;
     };
-
-    inline Microsoft::Console::Render::RenderEngineBase::~RenderEngineBase() {}
 }

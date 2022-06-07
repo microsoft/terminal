@@ -17,13 +17,21 @@ DefaultTerminal::DefaultTerminal(DelegationConfig::DelegationPackage&& pkg) :
 
 winrt::hstring DefaultTerminal::Name() const
 {
-    return _pkg.terminal.name.empty() ? winrt::hstring{ RS_(L"InboxWindowsConsoleName") } : winrt::hstring{ _pkg.terminal.name };
+    switch (_pkg.pair.kind)
+    {
+    case DelegationConfig::DelegationPairKind::Default:
+        return RS_(L"DefaultWindowsConsoleName");
+    case DelegationConfig::DelegationPairKind::Conhost:
+        return RS_(L"InboxWindowsConsoleName");
+    default:
+        return winrt::hstring{ _pkg.info.name };
+    }
 }
 
 winrt::hstring DefaultTerminal::Version() const
 {
     // If there's no version information... return empty string instead.
-    const auto& version = _pkg.terminal.version;
+    const auto& version = _pkg.info.version;
     if (DelegationConfig::PkgVersion{} == version)
     {
         return winrt::hstring{};
@@ -36,12 +44,20 @@ winrt::hstring DefaultTerminal::Version() const
 
 winrt::hstring DefaultTerminal::Author() const
 {
-    return _pkg.terminal.author.empty() ? winrt::hstring{ RS_(L"InboxWindowsConsoleAuthor") } : winrt::hstring{ _pkg.terminal.author };
+    switch (_pkg.pair.kind)
+    {
+    case DelegationConfig::DelegationPairKind::Default:
+        return {}; // The "Let Windows decide" option has no author.
+    case DelegationConfig::DelegationPairKind::Conhost:
+        return RS_(L"InboxWindowsConsoleAuthor");
+    default:
+        return winrt::hstring{ _pkg.info.author };
+    }
 }
 
 winrt::hstring DefaultTerminal::Icon() const
 {
-    return _pkg.terminal.logo.empty() ? winrt::hstring{ L"\uE756" } : winrt::hstring{ _pkg.terminal.logo };
+    return _pkg.info.logo.empty() ? winrt::hstring{ L"\uE756" } : winrt::hstring{ _pkg.info.logo };
 }
 
 std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> DefaultTerminal::Available()
@@ -76,11 +92,9 @@ std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> DefaultTe
 bool DefaultTerminal::HasCurrent()
 {
     std::vector<DelegationConfig::DelegationPackage> allPackages;
-    DelegationConfig::DelegationPackage currentPackage;
+    DelegationConfig::DelegationPackage currentPackage{ DelegationConfig::DefaultDelegationPair };
     LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(allPackages, currentPackage));
-
-    // Good old conhost has a hardcoded GUID of {00000000-0000-0000-0000-000000000000}.
-    return currentPackage.terminal.clsid != CLSID{};
+    return !currentPackage.pair.IsDefault();
 }
 
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#include "dwrite.hlsl"
+
 #define INVALID_COLOR 0xffffffff
 
 // These flags are shared with AtlasEngine::CellFlags.
@@ -10,7 +12,6 @@
 #define CellFlags_Inlined         0x00000001
 
 #define CellFlags_ColoredGlyph    0x00000002
-#define CellFlags_ThinFont        0x00000004
 
 #define CellFlags_Cursor          0x00000008
 #define CellFlags_Selected        0x00000010
@@ -39,7 +40,7 @@ cbuffer ConstBuffer : register(b0)
 {
     float4 viewport;
     float4 gammaRatios;
-    float grayscaleEnhancedContrast;
+    float enhancedContrast;
     uint cellCountX;
     uint2 cellSize;
     uint2 underlinePos;
@@ -47,17 +48,14 @@ cbuffer ConstBuffer : register(b0)
     uint backgroundColor;
     uint cursorColor;
     uint selectionColor;
+    uint useClearType;
 };
 StructuredBuffer<Cell> cells : register(t0);
 Texture2D<float4> glyphs : register(t1);
 
 float4 decodeRGBA(uint i)
 {
-    uint r = i & 0xff;
-    uint g = (i >> 8) & 0xff;
-    uint b = (i >> 16) & 0xff;
-    uint a = i >> 24;
-    float4 c = float4(r, g, b, a) / 255.0f;
+    float4 c = (i >> uint4(0, 8, 16, 24) & 0xff) / 255.0f;
     // Convert to premultiplied alpha for simpler alpha blending.
     c.rgb *= c.a;
     return c;
@@ -70,47 +68,20 @@ uint2 decodeU16x2(uint i)
 
 float4 alphaBlendPremultiplied(float4 bottom, float4 top)
 {
-    float ia = 1 - top.a;
-    return float4(bottom.rgb * ia + top.rgb, bottom.a * ia + top.a);
-}
-
-float applyLightOnDarkContrastAdjustment(float3 color)
-{
-    float lightness = 0.30f * color.r + 0.59f * color.g + 0.11f * color.b;
-    float multiplier = saturate(4.0f * (0.75f - lightness));
-    return grayscaleEnhancedContrast * multiplier;
-}
-
-float calcColorIntensity(float3 color)
-{
-    return (color.r + color.g + color.g + color.b) / 4.0f;
-}
-
-float enhanceContrast(float alpha, float k)
-{
-    return alpha * (k + 1.0f) / (alpha * k + 1.0f);
-}
-
-float applyAlphaCorrection(float a, float f, float4 g)
-{
-    return a + a * (1 - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));
+    bottom *= 1 - top.a;
+    return bottom + top;
 }
 
 // clang-format off
 float4 main(float4 pos: SV_Position): SV_Target
 // clang-format on
 {
-    if (any(pos.xy < viewport.xy) || any(pos.xy >= viewport.zw))
+    // We need to fill the entire render target with pixels, but only our "viewport"
+    // has cells we want to draw. The rest gets treated with the background color.
+    [branch] if (any(pos.xy < viewport.xy || pos.xy >= viewport.zw))
     {
         return decodeRGBA(backgroundColor);
     }
-
-    // If you want to write test a before/after change simultaneously
-    // you can turn the image into a checkerboard by writing:
-    //   if ((uint(pos.x) ^ uint(pos.y)) / 4 & 1) { return float4(1, 0, 0, 1); }
-    // This will generate a checkerboard of 4*4px red squares.
-    // Of course you wouldn't just return a red color there, but instead
-    // for instance run your new code and compare it with the old.
 
     uint2 viewportPos = pos.xy - viewport.xy;
     uint2 cellIndex = viewportPos / cellSize;
@@ -124,56 +95,85 @@ float4 main(float4 pos: SV_Position): SV_Target
 
     // Layer 1 (optional):
     // Colored cursors are drawn "in between" the background color and the text of a cell.
-    if ((cell.flags & CellFlags_Cursor) && cursorColor != INVALID_COLOR)
+    [branch] if (cell.flags & CellFlags_Cursor)
     {
-        // The cursor texture is stored at the top-left-most glyph cell.
-        // Cursor pixels are either entirely transparent or opaque.
-        // --> We can just use .a as a mask to flip cursor pixels on or off.
-        color = alphaBlendPremultiplied(color, decodeRGBA(cursorColor) * glyphs[cellPos].a);
+        [flatten] if (cursorColor != INVALID_COLOR)
+        {
+            // The cursor texture is stored at the top-left-most glyph cell.
+            // Cursor pixels are either entirely transparent or opaque.
+            // --> We can just use .a as a mask to flip cursor pixels on or off.
+            color = alphaBlendPremultiplied(color, decodeRGBA(cursorColor) * glyphs[cellPos].a);
+        }
     }
 
     // Layer 2:
     // Step 1: Underlines
-    if ((cell.flags & CellFlags_Underline) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y)
+    [branch] if (cell.flags & CellFlags_Underline)
     {
-        color = alphaBlendPremultiplied(color, fg);
+        [flatten] if (cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y)
+        {
+            color = alphaBlendPremultiplied(color, fg);
+        }
     }
-    if ((cell.flags & CellFlags_UnderlineDotted) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 1))
+    [branch] if (cell.flags & CellFlags_UnderlineDotted)
     {
-        color = alphaBlendPremultiplied(color, fg);
+        [flatten] if (cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 3) == 0)
+        {
+            color = alphaBlendPremultiplied(color, fg);
+        }
     }
     // Step 2: The cell's glyph, potentially drawn in the foreground color
     {
         float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
 
-        if (!(cell.flags & CellFlags_ColoredGlyph))
+        [branch] if (cell.flags & CellFlags_ColoredGlyph)
         {
-            float contrastBoost = (cell.flags & CellFlags_ThinFont) == 0 ? 0.0f : 0.5f;
-            float enhancedContrast = contrastBoost + applyLightOnDarkContrastAdjustment(fg.rgb);
-            float intensity = calcColorIntensity(fg.rgb);
-            float contrasted = enhanceContrast(glyph.a, enhancedContrast);
-            float correctedAlpha = applyAlphaCorrection(contrasted, intensity, gammaRatios);
-            glyph = fg * correctedAlpha;
+            color = alphaBlendPremultiplied(color, glyph);
         }
+        else
+        {
+            float3 foregroundStraight = DWrite_UnpremultiplyColor(fg);
+            float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, foregroundStraight);
 
-        color = alphaBlendPremultiplied(color, glyph);
+            [branch] if (useClearType)
+            {
+                // See DWrite_ClearTypeBlend
+                float3 contrasted = DWrite_EnhanceContrast3(glyph.rgb, blendEnhancedContrast);
+                float3 alphaCorrected = DWrite_ApplyAlphaCorrection3(contrasted, foregroundStraight, gammaRatios);
+                color = float4(lerp(color.rgb, foregroundStraight, alphaCorrected * fg.a), 1.0f);
+            }
+            else
+            {
+                // See DWrite_GrayscaleBlend
+                float intensity = DWrite_CalcColorIntensity(foregroundStraight);
+                float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
+                float4 alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+                color = alphaBlendPremultiplied(color, alphaCorrected * fg);
+            }
+        }
     }
     // Step 3: Lines, but not "under"lines
-    if ((cell.flags & CellFlags_Strikethrough) && cellPos.y >= strikethroughPos.x && cellPos.y < strikethroughPos.y)
+    [branch] if (cell.flags & CellFlags_Strikethrough)
     {
-        color = alphaBlendPremultiplied(color, fg);
+        [flatten] if (cellPos.y >= strikethroughPos.x && cellPos.y < strikethroughPos.y)
+        {
+            color = alphaBlendPremultiplied(color, fg);
+        }
     }
 
     // Layer 3 (optional):
-    // Uncolored cursors invert the cells color.
-    if ((cell.flags & CellFlags_Cursor) && cursorColor == INVALID_COLOR)
+    // Uncolored cursors are used as a mask that inverts the cells color.
+    [branch] if (cell.flags & CellFlags_Cursor)
     {
-        color.rgb = abs(glyphs[cellPos].rgb - color.rgb);
+        [flatten] if (cursorColor == INVALID_COLOR && glyphs[cellPos].a != 0)
+        {
+            color = float4(1 - color.rgb, 1);
+        }
     }
 
     // Layer 4:
     // The current selection is drawn semi-transparent on top.
-    if (cell.flags & CellFlags_Selected)
+    [branch] if (cell.flags & CellFlags_Selected)
     {
         color = alphaBlendPremultiplied(color, decodeRGBA(selectionColor));
     }

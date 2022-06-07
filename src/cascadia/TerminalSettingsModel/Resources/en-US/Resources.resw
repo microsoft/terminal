@@ -127,7 +127,7 @@
     <value>Split Pane...</value>
   </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
-    <value>Windows Terminal (Unpackaged)</value>
+    <value>Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
   </data>
   <data name="ApplicationVersionUnknown" xml:space="preserve">
@@ -464,10 +464,11 @@
     <value>Rename window...</value>
   </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
-    <value>Summon the Terminal window</value>
+    <value>Show/Hide the Terminal window</value>
   </data>
   <data name="QuakeModeCommandKey" xml:space="preserve">
-    <value>Summon Quake window</value>
+    <value>Show/Hide Quake window</value>
+    <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
   </data>
   <data name="FocusPaneCommandKey" xml:space="preserve">
     <value>Focus pane {0}</value>
@@ -491,6 +492,10 @@
   <data name="ClearScrollbackCommandKey" xml:space="preserve">
     <value>Clear scrollback</value>
     <comment>A command to clear the part of the buffer above the viewport</comment>
+  </data>
+  <data name="DefaultWindowsConsoleName" xml:space="preserve">
+    <value>Let Windows decide</value>
+    <comment>This is the default option if a user doesn't choose to override Microsoft's choice of a Terminal.</comment>
   </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
     <value>Microsoft Corporation</value>
@@ -520,5 +525,12 @@
   </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
     <value>Restore the last closed pane or tab</value>
+  </data>
+  <data name="SelectAllCommandKey" xml:space="preserve">
+    <value>Select all text</value>
+  </data>
+  <data name="MarkModeCommandKey" xml:space="preserve">
+    <value>Toggle mark mode</value>
+    <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
   </data>
 </root>

@@ -52,6 +52,7 @@ apimswincoresynchl
 apiset
 APPBARDATA
 appconsult
+appcontainer
 APPICON
 appium
 applet
@@ -319,6 +320,7 @@ concat
 concfg
 conclnt
 conddkrefs
+condev
 condrv
 conechokey
 conemu
@@ -472,6 +474,7 @@ cygwin
 CYHSCROLL
 CYMIN
 CYPADDEDBORDER
+CYRL
 CYSIZE
 CYSIZEFRAME
 CYSMICON
@@ -516,6 +519,7 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECCRA
 DECDHL
 decdld
 DECDLD
@@ -576,6 +580,7 @@ DEFFACE
 defing
 DEFPUSHBUTTON
 defterm
+deiconify
 DELAYLOAD
 deletable
 DELETEONRELEASE
@@ -666,16 +671,17 @@ dwl
 DWLP
 dwm
 dwmapi
+DWMWA
 dword
 dwrite
 dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxp
 dxsm
 dxttbmp
 Dyreen
-eachother
 eaf
 EASTEUROPE
 ECH
@@ -826,7 +832,6 @@ FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FORCEV
 foreach
-forground
 fprintf
 framebuffer
 FRAMECHANGED
@@ -1059,6 +1064,8 @@ ico
 IComponent
 ICONERROR
 Iconified
+iconify
+Iconify
 ICONINFORMATION
 IConsole
 ICONSTOP
@@ -1111,6 +1118,7 @@ Imatch
 ime
 Imm
 IMouse
+IMPEXP
 impl
 inbox
 inclusivity
@@ -1155,6 +1163,7 @@ ioctl
 iomanip
 iostream
 iot
+ipa
 ipch
 ipconfig
 IPersist
@@ -1197,6 +1206,7 @@ IWin
 IWindow
 IXaml
 IXMP
+IXP
 ixx
 jconcpp
 JOBOBJECT
@@ -1242,12 +1252,14 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KOK
 KPRIORITY
 KVM
 langid
 LANGUAGELIST
 lasterror
 lastexitcode
+LATN
 LAYOUTRTL
 LBN
 LBound
@@ -1476,6 +1488,7 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
+mspartners
 msrc
 msvcrt
 MSVCRTD
@@ -1622,6 +1635,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nugetversions
 nullability
 nullness
 nullonfailure
@@ -1694,7 +1708,6 @@ outfile
 Outof
 OUTOFCONTEXT
 OUTOFMEMORY
-outout
 Outptr
 outstr
 OVERLAPPEDWINDOW
@@ -1797,6 +1810,9 @@ placeholders
 platforming
 playsound
 plist
+PLOC
+PLOCA
+PLOCM
 PLOGICAL
 plugin
 PMv
@@ -1843,7 +1859,6 @@ pragma
 prc
 prealigned
 prebuilt
-precendence
 precomp
 prect
 prefast
@@ -1928,8 +1943,10 @@ qos
 QRSTU
 qsort
 queryable
+QUERYOPEN
 QUESTIONMARK
 quickedit
+QUZ
 QWER
 qzmp
 RAII
@@ -2004,6 +2021,7 @@ reparenting
 replatformed
 Replymessage
 repositorypath
+Requiresx
 rescap
 Resequence
 RESETCONTENT
@@ -2080,6 +2098,7 @@ rxvt
 safearray
 SAFECAST
 safemath
+sapi
 sba
 SBCS
 SBCSDBCS
@@ -2161,6 +2180,8 @@ SETTITLE
 setw
 Setwindow
 SETWINDOWINFO
+SFGAO
+SFGAOF
 sfi
 SFINAE
 SFUI
@@ -2181,8 +2202,10 @@ shlobj
 shlwapi
 SHORTPATH
 SHOWCURSOR
+SHOWDEFAULT
 SHOWMAXIMIZED
 SHOWMINNOACTIVE
+SHOWNA
 SHOWNOACTIVATE
 SHOWNORMAL
 SHOWWINDOW
@@ -2414,10 +2437,12 @@ tofrom
 tokenhelpers
 tokenized
 tokenizing
+toolbar
 toolbars
 TOOLINFO
 Toolset
 tooltip
+TOOLWINDOW
 TOPDOWNDIB
 TOPLEFT
 toplevel
@@ -2515,6 +2540,7 @@ UNICRT
 uninit
 uninitialize
 uninstall
+unintense
 Uniscribe
 unittest
 unittesting
@@ -2571,6 +2597,7 @@ uuidv
 UVWX
 UVWXY
 UWA
+UWAs
 uwp
 uxtheme
 vals
@@ -2621,6 +2648,7 @@ VSTS
 VSTT
 vstudio
 vswhere
+vtapi
 vtapp
 VTE
 VTID
@@ -2666,6 +2694,7 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
+wdx
 webclient
 webpage
 website
@@ -2700,6 +2729,7 @@ wincontypes
 WINCORE
 windbg
 WINDEF
+windev
 WINDIR
 windll
 WINDOWALPHA
@@ -2722,6 +2752,7 @@ windowsapp
 windowsdeveloper
 windowsinternalstring
 WINDOWSIZE
+windowsterminal
 windowsx
 WINDOWTEXT
 windowtheme
@@ -2860,6 +2891,7 @@ XTest
 XTPOPSGR
 XTPUSHSGR
 xtr
+XTWINOPS
 xunit
 xutr
 xvalue

@@ -55,7 +55,7 @@ jobs:
       solution: $(Build.SourcesDirectory)\OpenConsole.sln
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: '/t:MergePGOCounts /p:PGDPath=$(pgoArtifactsPath)\$(buildPlatform) /p:PGCRootPath=$(pgoArtifactsPath)\$(buildPlatform)'
+      msbuildArguments: '/t:MergePGOCounts /p:PGOBuildMode=Instrument /p:PGDPath=$(pgoArtifactsPath)\$(buildPlatform) /p:PGCRootPath=$(pgoArtifactsPath)\$(buildPlatform)'
 
   - task: CopyFiles@2
     displayName: 'Copy merged pgd to artifact staging'

@@ -25,7 +25,7 @@ static FILE* std_in = nullptr;
 // This will automatically try to terminate the job object (and all of the
 // binaries under test that are children) whenever this class gets shut down.
 // also closes the FILE pointers created by reopening stdin and stdout.
-auto OnAppExitKillJob = wil::scope_exit([&] {
+auto OnAppExitKillJob = wil::scope_exit([] {
     if (std_out != nullptr)
     {
         fclose(std_out);
@@ -68,15 +68,17 @@ END_MODULE()
 
 MODULE_SETUP(ModuleSetup)
 {
+    SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     // The sources files inside windows use a C define to say it's inside windows and we should be
     // testing against the inbox conhost. This is awesome for inbox TAEF RI gate tests so it uses
     // the one generated from the same build.
-    bool insideWindows = false;
+    auto insideWindows = false;
 #ifdef __INSIDE_WINDOWS
     insideWindows = true;
 #endif
 
-    bool forceOpenConsole = false;
+    auto forceOpenConsole = false;
     RuntimeParameters::TryGetValue(L"ForceOpenConsole", forceOpenConsole);
 
     if (forceOpenConsole)
@@ -86,7 +88,7 @@ MODULE_SETUP(ModuleSetup)
 
     // Look up a runtime parameter to see if we want to test as v1.
     // This is useful while developing tests to try to see if they run the same on v2 and v1.
-    bool testAsV1 = false;
+    auto testAsV1 = false;
     RuntimeParameters::TryGetValue(L"TestAsV1", testAsV1);
 
     if (testAsV1)
@@ -120,11 +122,11 @@ MODULE_SETUP(ModuleSetup)
     }
 
     // Must make mutable string of appropriate length to feed into args.
-    size_t const cchNeeded = value.GetLength() + 1;
+    const size_t cchNeeded = value.GetLength() + 1;
 
     // We use regular new (not a smart pointer) and a scope exit delete because CreateProcess needs mutable space
     // and it'd be annoying to const_cast the smart pointer's .get() just for the sake of.
-    PWSTR str = new WCHAR[cchNeeded];
+    auto str = new WCHAR[cchNeeded];
     auto cleanStr = wil::scope_exit([&] { if (nullptr != str) { delete[] str; } });
 
     VERIFY_SUCCEEDED_RETURN(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
@@ -195,9 +197,9 @@ MODULE_SETUP(ModuleSetup)
 
     // Now retrieve the actual list of process IDs in the job.
     DWORD cbRequired = sizeof(JOBOBJECT_BASIC_PROCESS_ID_LIST) + sizeof(ULONG_PTR) * pids.NumberOfAssignedProcesses;
-    PJOBOBJECT_BASIC_PROCESS_ID_LIST pPidList = reinterpret_cast<PJOBOBJECT_BASIC_PROCESS_ID_LIST>(HeapAlloc(GetProcessHeap(),
-                                                                                                             0,
-                                                                                                             cbRequired));
+    auto pPidList = reinterpret_cast<PJOBOBJECT_BASIC_PROCESS_ID_LIST>(HeapAlloc(GetProcessHeap(),
+                                                                                 0,
+                                                                                 cbRequired));
     VERIFY_IS_NOT_NULL(pPidList);
     auto scopeExit = wil::scope_exit([&]() { HeapFree(GetProcessHeap(), 0, pPidList); });
 
@@ -213,7 +215,7 @@ MODULE_SETUP(ModuleSetup)
     DWORD dwFindPid = 0;
     for (size_t i = 0; i < pPidList->NumberOfProcessIdsInList; i++)
     {
-        ULONG_PTR const pidCandidate = pPidList->ProcessIdList[i];
+        const auto pidCandidate = pPidList->ProcessIdList[i];
 
         if (pidCandidate != pi.dwProcessId && 0 != pidCandidate)
         {
@@ -239,7 +241,7 @@ MODULE_SETUP(ModuleSetup)
     Sleep(1000);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
-    int tries = 0;
+    auto tries = 0;
     while (tries < 5)
     {
         tries++;
@@ -250,7 +252,7 @@ MODULE_SETUP(ModuleSetup)
         //
         // std_out and std_in need to be closed when tests are finished, this is handled by the wil::scope_exit at the
         // top of this file.
-        errno_t err = 0;
+        auto err = 0;
         err = freopen_s(&std_out, "CONOUT$", "w+", stdout);
         VERIFY_ARE_EQUAL(0, err);
         err = freopen_s(&std_in, "CONIN$", "r+", stdin);
@@ -258,12 +260,12 @@ MODULE_SETUP(ModuleSetup)
 
         // Now, try to get at the console we've set up. It's possible 1s wasn't long enough. If that was, we'll try again.
 
-        HANDLE const hOut = GetStdOutputHandle();
+        const auto hOut = GetStdOutputHandle();
         VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
         CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
         csbiexBefore.cbSize = sizeof(csbiexBefore);
-        BOOL succeeded = GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore);
+        auto succeeded = GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore);
         if (!succeeded)
         {
             auto gle = GetLastError();

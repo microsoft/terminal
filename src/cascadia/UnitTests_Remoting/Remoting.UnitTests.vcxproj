@@ -19,9 +19,11 @@
     <TargetName>Remoting.Unit.Tests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+    <!-- TerminalCppWinrt is intentionally not set -->
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
 
   <!-- ========================= Headers ======================== -->
@@ -71,6 +73,6 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
-
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
 </Project>

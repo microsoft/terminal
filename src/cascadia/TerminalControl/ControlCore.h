@@ -80,6 +80,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        void SelectAll();
+        void ToggleMarkMode();
+        bool IsInMarkMode() const;
+
+        void GotFocus();
+        void LostFocus();
 
         void ToggleShaderEffects();
         void AdjustOpacity(const double adjustment);
@@ -138,13 +144,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
+        bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
 
         bool HasSelection() const;
         bool CopyOnSelect() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(til::point const& position);
-        void SetEndSelectionPoint(til::point const& position);
+        void SetSelectionAnchor(const til::point& position);
+        void SetEndSelectionPoint(const til::point& position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
@@ -167,6 +174,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool IsVintageOpacityAvailable() noexcept;
 
         void AdjustOpacity(const double opacity, const bool relative);
+
+        void WindowVisibilityChanged(const bool showOrHide);
+
+        // TODO:GH#1256 - When a tab can be torn out or otherwise reparented to
+        // another window, this value will need a custom setter, so that we can
+        // also update the connection.
+        WINRT_PROPERTY(uint64_t, OwningHwnd, 0);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
@@ -191,6 +205,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
         TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
+        TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
+        TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         // clang-format on
 
     private:
@@ -241,11 +257,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget _asyncCloseConnection();
 
-        void _setFontSize(int fontSize);
+        bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
-        void _doResizeUnderLock(const double newWidth,
-                                const double newHeight);
 
         void _sendInputToConnection(std::wstring_view wstr);
 
@@ -253,18 +267,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalCopyToClipboard(std::wstring_view wstr);
         void _terminalWarningBell();
         void _terminalTitleChanged(std::wstring_view wstr);
-        void _terminalTabColorChanged(const std::optional<til::color> color);
-        void _terminalBackgroundColorChanged(const COLORREF color);
         void _terminalScrollPositionChanged(const int viewTop,
                                             const int viewHeight,
                                             const int bufferSize);
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
+        void _terminalShowWindowChanged(bool showOrHide);
 #pragma endregion
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
         void _renderEngineSwapChainChanged();
+        void _rendererBackgroundColorChanged();
+        void _rendererTabColorChanged();
 #pragma endregion
 
         void _raiseReadOnlyWarning();

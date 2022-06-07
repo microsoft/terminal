@@ -171,8 +171,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - args: The selection changed args that tells us what's the new color scheme selected.
     // Return Value:
     // - <none>
-    void ColorSchemes::ColorSchemeSelectionChanged(IInspectable const& /*sender*/,
-                                                   SelectionChangedEventArgs const& args)
+    void ColorSchemes::ColorSchemeSelectionChanged(const IInspectable& /*sender*/,
+                                                   const SelectionChangedEventArgs& args)
     {
         //  Update the color scheme this page is modifying
         const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
@@ -223,8 +223,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - args: the args that contains the new color that was picked.
     // Return Value:
     // - <none>
-    void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
-                                          MUX::Controls::ColorChangedEventArgs const& args)
+    void ColorSchemes::ColorPickerChanged(const IInspectable& sender,
+                                          const MUX::Controls::ColorChangedEventArgs& args)
     {
         const til::color newColor{ args.NewColor() };
         if (const auto& picker{ sender.try_as<MUX::Controls::ColorPicker>() })
@@ -281,7 +281,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
-    void ColorSchemes::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         const auto schemeName{ CurrentColorScheme().Name() };
         _State.Settings().GlobalSettings().RemoveColorScheme(schemeName);
@@ -301,10 +301,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
         }
         _ColorSchemeList.RemoveAt(removedSchemeIndex);
+
         DeleteButton().Flyout().Hide();
+
+        // GH#11971, part 2. If we delete a scheme, and the next scheme we've
+        // loaded is an inbox one that _can't_ be deleted, then we need to toss
+        // focus to something sensible, rather than letting it fall out to the
+        // tab item.
+        //
+        // When deleting a scheme and the next scheme _is_ deletable, this isn't
+        // an issue, we'll already correctly focus the Delete button.
+        //
+        // However, it seems even more useful for focus to ALWAYS land on the
+        // scheme dropdown box. This forces Narrator to read the name of the
+        // newly selected color scheme, which seemed more useful.
+        ColorSchemeComboBox().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::AddNew_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // Give the new scheme a distinct name
         const hstring schemeName{ fmt::format(L"Color Scheme {}", _State.Settings().GlobalSettings().ColorSchemes().Size() + 1) };
@@ -324,7 +338,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void ColorSchemes::Rename_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void ColorSchemes::Rename_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         NameBox().Text(CurrentColorScheme().Name());
         IsRenaming(true);
@@ -332,20 +346,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         NameBox().SelectAll();
     }
 
-    void ColorSchemes::RenameAccept_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void ColorSchemes::RenameAccept_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _RenameCurrentScheme(NameBox().Text());
         RenameButton().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::RenameCancel_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void ColorSchemes::RenameCancel_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         IsRenaming(false);
         RenameErrorTip().IsOpen(false);
         RenameButton().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::NameBox_PreviewKeyDown(IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    void ColorSchemes::NameBox_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {

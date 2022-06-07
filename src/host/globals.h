@@ -34,6 +34,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 class Globals
 {
 public:
+    Globals();
+
     UINT uiOEMCP = GetOEMCP();
     UINT uiWindowsCP = GetACP();
     HINSTANCE hInstance;
@@ -65,7 +67,7 @@ public:
 
     bool IsHeadless() const;
 
-    ApiRoutines api;
+    IApiRoutines* api;
 
     bool handoffTarget = false;
 
@@ -80,4 +82,5 @@ public:
 
 private:
     CONSOLE_INFORMATION ciConsoleInformation;
+    ApiRoutines defaultApiRoutines;
 };

@@ -12,7 +12,12 @@ namespace Microsoft.Terminal.TerminalConnection
         ConptyConnection();
         Guid Guid { get; };
         String Commandline { get; };
+
         void ClearBuffer();
+
+        void ShowHide(Boolean show);
+
+        void ReparentWindow(UInt64 newParent);
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();

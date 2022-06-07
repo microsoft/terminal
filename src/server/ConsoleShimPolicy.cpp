@@ -28,8 +28,8 @@ ConsoleShimPolicy::ConsoleShimPolicy(const bool isCmd,
 ConsoleShimPolicy ConsoleShimPolicy::s_CreateInstance(const HANDLE hProcess)
 {
     // If we cannot determine the exe name, then we're probably not cmd or powershell.
-    bool isCmd = false;
-    bool isPowershell = false;
+    auto isCmd = false;
+    auto isPowershell = false;
 
     try
     {

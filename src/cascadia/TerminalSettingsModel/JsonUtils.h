@@ -314,7 +314,10 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                     val.push_back(trait.FromJson(element));
                 }
             }
-            else
+            // If the value was null, then we want to accept the value, with an
+            // empty array, not an array with a single empty string in it.
+            // See GH#12276
+            else if (!json.isNull())
             {
                 val.push_back(trait.FromJson(json));
             }

@@ -2,6 +2,8 @@ admins
 apc
 Apc
 bsd
+breadcrumb
+breadcrumbs
 calt
 CMMI
 ccmp
@@ -19,6 +21,8 @@ downside
 downsides
 dze
 dzhe
+EDDB
+EDDC
 Enum'd
 Fitt
 formattings
@@ -34,6 +38,7 @@ hostnames
 hyperlink
 hyperlinking
 hyperlinks
+iconify
 img
 inlined
 It'd
@@ -72,6 +77,8 @@ runtimes
 shcha
 slnt
 Sos
+timeline
+timelines
 timestamped
 TLDR
 tokenizes

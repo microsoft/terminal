@@ -27,6 +27,8 @@
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
 
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::ApplicationModel::AppExtensions;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
@@ -59,9 +61,11 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     til::latch latch{ 1 };
 
     const auto _ = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
         co_await winrt::resume_background();
         finalVal.emplace(co_await task);
-        latch.count_down();
     }();
 
     latch.wait();
@@ -183,7 +187,7 @@ void SettingsLoader::MergeInboxIntoUserSettings()
 {
     for (const auto& profile : inboxSettings.profiles)
     {
-        _addParentProfile(profile, userSettings);
+        _addUserProfileParent(profile);
     }
 }
 
@@ -235,10 +239,29 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
         }
     }
 
-    // Search through app extensions
-    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings"
-    const auto catalog = winrt::Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(AppExtensionHostName);
-    const auto extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+    // Search through app extensions.
+    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings".
+    //
+    // GH#12305: Open() can throw an 0x80070490 "Element not found.".
+    // It's unclear to me under which circumstances this happens as no one on the team
+    // was able to reproduce the user's issue, even if the application was run unpackaged.
+    // The error originates from `CallerIdentity::GetCallingProcessAppId` which returns E_NOT_SET.
+    // A comment can be found, reading:
+    // > Gets the "strong" AppId from the process token. This works for UWAs and Centennial apps,
+    // > strongly named processes where the AppId is stored securely in the process token. [...]
+    // > E_NOT_SET is returned for processes without strong AppIds.
+    IVectorView<AppExtension> extensions;
+    try
+    {
+        const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
+        extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+    }
+    CATCH_LOG();
+
+    if (!extensions)
+    {
+        return;
+    }
 
     for (const auto& ext : extensions)
     {
@@ -293,7 +316,17 @@ void SettingsLoader::FinalizeLayering()
     for (const auto& profile : userSettings.profiles)
     {
         profile->AddMostImportantParent(userSettings.baseLayerProfile);
+
+        // This completes the parenting process that was started in _addUserProfileParent().
         profile->_FinalizeInheritance();
+        if (profile->Origin() == OriginTag::None)
+        {
+            // If you add more fields here, make sure to do the same in
+            // implementation::CreateChild().
+            profile->Origin(OriginTag::User);
+            profile->Name(profile->Name());
+            profile->Hidden(profile->Hidden());
+        }
     }
 }
 
@@ -303,11 +336,14 @@ void SettingsLoader::FinalizeLayering()
 // This section of code recognizes if a profile was seen before and marks it as
 // `"hidden": true` by default and thus ensures the behavior the user expects:
 // Profiles won't show up again after they've been removed from settings.json.
+//
+// Returns true if something got changed and
+// the settings need to be saved to disk.
 bool SettingsLoader::DisableDeletedProfiles()
 {
     const auto& state = winrt::get_self<ApplicationState>(ApplicationState::SharedInstance());
     auto generatedProfileIds = state->GeneratedProfiles();
-    bool newGeneratedProfiles = false;
+    auto newGeneratedProfiles = false;
 
     for (const auto& profile : _getNonUserOriginProfiles())
     {
@@ -328,6 +364,56 @@ bool SettingsLoader::DisableDeletedProfiles()
     }
 
     return newGeneratedProfiles;
+}
+
+// Runs migrations and fixups on user settings.
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::FixupUserSettings()
+{
+    struct CommandlinePatch
+    {
+        winrt::guid guid;
+        std::wstring_view before;
+        std::wstring_view after;
+    };
+
+    static constexpr std::array commandlinePatches{
+        CommandlinePatch{ DEFAULT_COMMAND_PROMPT_GUID, L"cmd.exe", L"%SystemRoot%\\System32\\cmd.exe" },
+        CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
+    };
+
+    auto fixedUp = false;
+
+    for (const auto& profile : userSettings.profiles)
+    {
+        if (!profile->HasCommandline())
+        {
+            continue;
+        }
+
+        for (const auto& patch : commandlinePatches)
+        {
+            if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+            {
+                profile->ClearCommandline();
+
+                // GH#12842:
+                // With the commandline field on the user profile gone, it's actually unknown what
+                // commandline it'll inherit, since a user profile can have multiple parents. We have to
+                // make sure we restore the correct commandline in case we don't inherit the expected one.
+                if (profile->Commandline() != patch.after)
+                {
+                    profile->Commandline(winrt::hstring{ patch.after });
+                }
+
+                fixedUp = true;
+                break;
+            }
+        }
+    }
+
+    return fixedUp;
 }
 
 // Give a string of length N and a position of [0,N) this function returns
@@ -529,7 +615,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
         else
         {
-            _addParentProfile(fragmentProfile, userSettings);
+            _addUserProfileParent(fragmentProfile);
         }
     }
 
@@ -592,9 +678,9 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const win
 
 // If the given ParsedSettings instance contains a profile with the given profile's GUID,
 // the profile is added as a parent. Otherwise a new child profile is created.
-void SettingsLoader::_addParentProfile(const winrt::com_ptr<implementation::Profile>& profile, ParsedSettings& settings)
+void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile)
 {
-    if (const auto [it, inserted] = settings.profilesByGuid.emplace(profile->Guid(), profile); !inserted)
+    if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), nullptr); !inserted)
     {
         // If inserted is false, we got a matching user profile with identical GUID.
         // --> The generated profile is a parent of the existing user profile.
@@ -602,14 +688,36 @@ void SettingsLoader::_addParentProfile(const winrt::com_ptr<implementation::Prof
     }
     else
     {
-        // If inserted is true, then this is a generated profile that doesn't exist in the user's settings.
-        // While emplace() has already created an appropriate entry in .profilesByGuid, we still need to
-        // add it to .profiles (which is basically a sorted list of .profilesByGuid's values).
+        // If inserted is true, then this is a generated profile that doesn't exist
+        // in the user's settings (which makes this branch somewhat unlikely).
         //
         // When a user modifies a profile they shouldn't modify the (static/constant)
-        // inbox profile of course. That's why we need to call CreateChild here.
-        // But we don't need to call _FinalizeInheritance() yet as this is handled by SettingsLoader::FinalizeLayering().
-        settings.profiles.emplace_back(CreateChild(profile));
+        // inbox profile of course. That's why we need to create a child.
+        // And since we previously added the (now) parent profile into profilesByGuid
+        // we'll have to replace it->second with the (new) child profile.
+        //
+        // These additional things are required to complete a (user) profile:
+        // * A call to _FinalizeInheritance()
+        // * Every profile should at least have Origin(), Name() and Hidden() set
+        // They're handled by SettingsLoader::FinalizeLayering() and detected by
+        // the missing Origin(). Setting these fields as late as possible ensures
+        // that we pick up the correct, inherited values of all of the child's parents.
+        //
+        // If you add more fields here, make sure to do the same in
+        // implementation::CreateChild().
+        auto child = winrt::make_self<Profile>();
+        child->AddLeastImportantParent(profile);
+        child->Guid(profile->Guid());
+
+        // If profile is a dynamic/generated profile, a fragment's
+        // Source() should have no effect on this user profile.
+        if (profile->HasSource())
+        {
+            child->Source(profile->Source());
+        }
+
+        it->second = child;
+        userSettings.profiles.emplace_back(std::move(child));
     }
 }
 
@@ -697,9 +805,9 @@ try
     loader.FinalizeLayering();
 
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
-    // Coincidentally this is also the time we should write the new settings.json
-    // to disk (so that it contains the new profiles for manual editing by the user).
+    // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
+    mustWriteToDisk |= loader.FixupUserSettings();
 
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
@@ -894,12 +1002,6 @@ void CascadiaSettings::WriteSettingsToDisk() const
 {
     const auto settingsPath = _settingsPath();
 
-    {
-        // create a timestamped backup file
-        const auto backupSettingsPath = fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath.native(), fmt::localtime(std::time(nullptr)));
-        LOG_IF_WIN32_BOOL_FALSE(CopyFileW(settingsPath.c_str(), backupSettingsPath.c_str(), TRUE));
-    }
-
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
     wbuilder.settings_["indentation"] = "    ";
@@ -925,7 +1027,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    Json::Value json{ _globals->ToJson() };
+    auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
     json["$schema"] = "https://aka.ms/terminal-profiles-schema";
 
@@ -976,21 +1078,4 @@ void CascadiaSettings::_resolveDefaultProfile() const
 
     // Use the first profile as the new default.
     GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
-}
-
-void CascadiaSettings::_validateCorrectDefaultShellPaths() const
-{
-    for (auto profile : _allProfiles)
-    {
-        if (profile.Guid() == DEFAULT_COMMAND_PROMPT_GUID &&
-            profile.Commandline() == L"cmd.exe")
-        {
-            profile.ClearCommandline();
-        }
-        else if (profile.Guid() == DEFAULT_WINDOWS_POWERSHELL_GUID &&
-                 profile.Commandline() == L"powershell.exe")
-        {
-            profile.ClearCommandline();
-        }
-    }
 }

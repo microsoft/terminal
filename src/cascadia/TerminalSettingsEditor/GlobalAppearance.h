@@ -25,11 +25,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        bool FeatureNotificationIconEnabled() const noexcept;
-
         WINRT_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals(), Theme);
-        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals(), TabWidthMode);
+        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals().Theme);
+        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals().TabWidthMode);
 
     public:
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.

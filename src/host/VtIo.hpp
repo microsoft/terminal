@@ -36,6 +36,8 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
+        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
+
         void CloseInput();
         void CloseOutput();
 
@@ -49,6 +51,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool IsResizeQuirkEnabled() const;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
+
+        void CreatePseudoWindow();
 
     private:
         // After CreateIoHandlers is called, these will be invalid.
@@ -66,6 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _resizeQuirk{ false };
         bool _win32InputMode{ false };
+        bool _passthroughMode{ false };
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;

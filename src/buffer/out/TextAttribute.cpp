@@ -11,6 +11,8 @@ static_assert(sizeof(TextAttribute) == 14);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextAttribute>);
 
 namespace
 {
@@ -91,7 +93,7 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
     const auto bg{ attribute.GetBackground() };
     auto copy{ attribute };
     if (fg.IsIndex16() &&
-        attribute.IsBold() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
+        attribute.IsIntense() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
         fg.GetIndex() == (s_ansiDefaultForeground & ~FOREGROUND_INTENSITY))
     {
         // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
@@ -112,10 +114,10 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
 // - a WORD with legacy-style attributes for this textattribute.
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
-    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
-    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
+    const auto fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const auto bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
     const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = IsBold() && _foreground.CanBeBrightened();
+    const auto brighten = IsIntense() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 
@@ -255,9 +257,9 @@ void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
 }
 
-bool TextAttribute::IsBold() const noexcept
+bool TextAttribute::IsIntense() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Intense);
 }
 
 bool TextAttribute::IsFaint() const noexcept
@@ -305,9 +307,9 @@ bool TextAttribute::IsReverseVideo() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
 }
 
-void TextAttribute::SetBold(bool isBold) noexcept
+void TextAttribute::SetIntense(bool isIntense) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Intense, isIntense);
 }
 
 void TextAttribute::SetFaint(bool isFaint) noexcept

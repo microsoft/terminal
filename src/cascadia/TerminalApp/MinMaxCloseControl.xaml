@@ -19,11 +19,12 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
+                    <Color x:Key="CloseButtonColor">#C42B1C</Color>
                     <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver"
-                                    ResourceKey="SystemControlBackgroundBaseLowBrush" />
+                                    ResourceKey="SubtleFillColorSecondary" />
                     <StaticResource x:Key="CaptionButtonBackgroundPressed"
-                                    ResourceKey="SystemControlBackgroundBaseMediumLowBrush" />
+                                    ResourceKey="SubtleFillColorTertiary" />
                     <StaticResource x:Key="CaptionButtonStroke"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
                     <StaticResource x:Key="CaptionButtonStrokeColor"
@@ -36,23 +37,26 @@
                                      Color="Transparent" />
                     <Color x:Key="CaptionButtonBackgroundColor">Transparent</Color>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver"
-                                     Color="#e81123" />
+                                     Color="{ThemeResource CloseButtonColor}" />
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver"
                                      Color="White" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed"
-                                     Color="#f1707a" />
+                                     Opacity="0.9"
+                                     Color="{ThemeResource CloseButtonColor}" />
                     <SolidColorBrush x:Key="CloseButtonStrokePressed"
-                                     Color="Black" />
+                                     Opacity="0.7"
+                                     Color="White" />
                     <SolidColorBrush x:Key="CloseButtonBackground"
                                      Color="#00e81123" />
                     <Color x:Key="CloseButtonBackgroundColor">#00e81123</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="CloseButtonColor">#C42B1C</Color>
                     <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver"
-                                    ResourceKey="SystemControlBackgroundBaseLowBrush" />
+                                    ResourceKey="SubtleFillColorSecondary" />
                     <StaticResource x:Key="CaptionButtonBackgroundPressed"
-                                    ResourceKey="SystemControlBackgroundBaseMediumLowBrush" />
+                                    ResourceKey="SubtleFillColorTertiary" />
                     <StaticResource x:Key="CaptionButtonStroke"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
                     <StaticResource x:Key="CaptionButtonStrokeColor"
@@ -65,19 +69,21 @@
                                      Color="Transparent" />
                     <Color x:Key="CaptionButtonBackgroundColor">Transparent</Color>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver"
-                                     Color="#e81123" />
+                                     Color="{ThemeResource CloseButtonColor}" />
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver"
                                      Color="White" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed"
-                                     Color="#f1707a" />
+                                     Opacity="0.9"
+                                     Color="{ThemeResource CloseButtonColor}" />
                     <SolidColorBrush x:Key="CloseButtonStrokePressed"
-                                     Color="Black" />
+                                     Opacity="0.7"
+                                     Color="White" />
                     <SolidColorBrush x:Key="CloseButtonBackground"
                                      Color="#00e81123" />
                     <Color x:Key="CloseButtonBackgroundColor">#00e81123</Color>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <x:Double x:Key="CaptionButtonStrokeWidth">3.0</x:Double>
+                    <x:Double x:Key="CaptionButtonStrokeWidth">2.0</x:Double>
                     <SolidColorBrush x:Key="CaptionButtonBackground"
                                      Color="{ThemeResource SystemColorButtonFaceColor}" />
                     <StaticResource x:Key="CaptionButtonBackgroundColor"
@@ -165,7 +171,7 @@
                                                     <ColorAnimation Storyboard.TargetName="ButtonBaseElement"
                                                                     Storyboard.TargetProperty="(UIElement.Background).(SolidColorBrush.Color)"
                                                                     To="{ThemeResource CaptionButtonBackgroundColor}"
-                                                                    Duration="0:0:0.2" />
+                                                                    Duration="0:0:0.15" />
                                                     <ColorAnimation Storyboard.TargetName="Path"
                                                                     Storyboard.TargetProperty="(UIElement.Stroke).(SolidColorBrush.Color)"
                                                                     To="{ThemeResource CaptionButtonStrokeColor}"
@@ -247,9 +253,10 @@
             Click="_MaximizeClick"
             Style="{StaticResource CaptionButton}">
         <Button.Resources>
+            <!--  These paths are complicated, but taken directly from WinUI's WindowCaptionButton paths.  -->
             <ResourceDictionary>
-                <x:String x:Key="CaptionButtonPath">M 0 0 H 10 V 10 H 0 V 0</x:String>
-                <x:String x:Key="CaptionButtonPathWindowMaximized">M 0 2 h 8 v 8 h -8 v -8 M 2 2 v -2 h 8 v 8 h -2</x:String>
+                <x:String x:Key="CaptionButtonPath">M 1.516 -0.001 L 7.451 0.009 C 8.751 0.019 9 1 8.981 1.477 L 9.002 7.558 M 9.002 7.547 C 8.929 8.669 8 9 7.43 9.015 L 1.464 9.005 C 0.374 8.973 0 8 -0.004 7.484 L -0.004 1.477 C 0 1 0.415 0.009 1.527 -0.001</x:String>
+                <x:String x:Key="CaptionButtonPathWindowMaximized">M 1.516 -0.001 L 7.451 0.009 C 8.751 0.019 9 1 8.981 1.477 L 9.002 7.558 M 11 6 L 11 2 C 11 0 10 -2 8.011 -1.946 L 7.06 -1.969 L 3 -2 M 9.002 7.547 C 8.929 8.669 8 9 7.43 9.015 L 1.464 9.005 C 0.374 8.973 0 8 -0.004 7.484 L -0.004 1.477 C 0 1 0.415 0.009 1.527 -0.001</x:String>
             </ResourceDictionary>
         </Button.Resources>
         <ToolTipService.ToolTip>

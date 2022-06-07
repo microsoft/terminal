@@ -58,7 +58,7 @@ VS needs to be able to persist settings just as a simple set of global settings.
 When the application needs to retrieve these settings, they need to use them as a tripartite structure: frontend-component-terminal settings.
 
 Each frontend will have its own set of settings.
-Each component implementation will also ned to have some settings that control it.
+Each component implementation will also need to have some settings that control it.
 The terminal also will have some settings specific to the terminal.
 
 ### Globals and Profiles

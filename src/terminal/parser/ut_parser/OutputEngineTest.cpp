@@ -36,10 +36,6 @@ namespace Microsoft
 class DummyDispatch final : public TermDispatch
 {
 public:
-    virtual void Execute(const wchar_t /*wchControl*/) override
-    {
-    }
-
     virtual void Print(const wchar_t /*wchPrintable*/) override
     {
     }
@@ -67,7 +63,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         // The OscString state shouldn't escape out after an ESC.
         // Same for DcsPassThrough and SosPmApcString state.
-        bool shouldEscapeOut = true;
+        auto shouldEscapeOut = true;
 
         switch (uiTest)
         {
@@ -330,9 +326,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         VERIFY_ARE_EQUAL(mach._parameters.size(), 4u);
         VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324);
         VERIFY_IS_FALSE(mach._parameters.at(2).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8);
     }
 
     TEST_METHOD(TestCsiMaxParamCount)
@@ -365,7 +361,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         for (size_t i = 0; i < MAX_PARAMETER_COUNT; i++)
         {
             VERIFY_IS_TRUE(mach._parameters.at(i).has_value());
-            VERIFY_ARE_EQUAL(mach._parameters.at(i).value(), i % 10);
+            VERIFY_ARE_EQUAL(mach._parameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 10));
         }
     }
 
@@ -380,17 +376,17 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'[');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
-        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        for (auto i = 0; i < 50; i++) // Any number of leading zeros should be supported
         {
             mach.ProcessCharacter(L'0');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         }
-        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         }
-        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345u);
+        VERIFY_ARE_EQUAL(mach._parameters.back(), 12345);
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -542,7 +538,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'0');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         mach.ProcessCharacter(L';');
-        for (int i = 0; i < 260u; i++) // The buffer is only 256 long, so any longer value should work :P
+        for (auto i = 0; i < 260u; i++) // The buffer is only 256 long, so any longer value should work :P
         {
             mach.ProcessCharacter(L's');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
@@ -563,12 +559,12 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L']');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
-        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -588,17 +584,17 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L']');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
-        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        for (auto i = 0; i < 50; i++) // Any number of leading zeros should be supported
         {
             mach.ProcessCharacter(L'0');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
         {
             mach.ProcessCharacter((wchar_t)(L'1' + i));
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
         }
-        VERIFY_ARE_EQUAL(mach._oscParameter, 12345u);
+        VERIFY_ARE_EQUAL(mach._oscParameter, 12345);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
         mach.ProcessCharacter(L's');
@@ -781,9 +777,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         VERIFY_ARE_EQUAL(mach._parameters.size(), 4u);
         VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 324);
         VERIFY_IS_FALSE(mach._parameters.at(2).has_value());
-        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
+        VERIFY_ARE_EQUAL(mach._parameters.at(3), 8);
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'\\');
@@ -986,10 +982,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 class StatefulDispatch final : public TermDispatch
 {
 public:
-    virtual void Execute(const wchar_t /*wchControl*/) override
-    {
-    }
-
     virtual void Print(const wchar_t wchPrintable) override
     {
         _printString += wchPrintable;
@@ -1072,77 +1064,77 @@ public:
         *this = dispatch;
     }
 
-    bool CursorUp(_In_ size_t const uiDistance) noexcept override
+    bool CursorUp(const VTInt uiDistance) noexcept override
     {
         _cursorUp = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorDown(_In_ size_t const uiDistance) noexcept override
+    bool CursorDown(const VTInt uiDistance) noexcept override
     {
         _cursorDown = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorBackward(_In_ size_t const uiDistance) noexcept override
+    bool CursorBackward(const VTInt uiDistance) noexcept override
     {
         _cursorBackward = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorForward(_In_ size_t const uiDistance) noexcept override
+    bool CursorForward(const VTInt uiDistance) noexcept override
     {
         _cursorForward = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorNextLine(_In_ size_t const uiDistance) noexcept override
+    bool CursorNextLine(const VTInt uiDistance) noexcept override
     {
         _cursorNextLine = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorPrevLine(_In_ size_t const uiDistance) noexcept override
+    bool CursorPrevLine(const VTInt uiDistance) noexcept override
     {
         _cursorPreviousLine = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorHorizontalPositionAbsolute(_In_ size_t const uiPosition) noexcept override
+    bool CursorHorizontalPositionAbsolute(const VTInt uiPosition) noexcept override
     {
         _cursorHorizontalPositionAbsolute = true;
         _cursorDistance = uiPosition;
         return true;
     }
 
-    bool VerticalLinePositionAbsolute(_In_ size_t const uiPosition) noexcept override
+    bool VerticalLinePositionAbsolute(const VTInt uiPosition) noexcept override
     {
         _verticalLinePositionAbsolute = true;
         _cursorDistance = uiPosition;
         return true;
     }
 
-    bool HorizontalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    bool HorizontalPositionRelative(const VTInt uiDistance) noexcept override
     {
         _horizontalPositionRelative = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool VerticalPositionRelative(_In_ size_t const uiDistance) noexcept override
+    bool VerticalPositionRelative(const VTInt uiDistance) noexcept override
     {
         _verticalPositionRelative = true;
         _cursorDistance = uiDistance;
         return true;
     }
 
-    bool CursorPosition(_In_ size_t const uiLine, _In_ size_t const uiColumn) noexcept override
+    bool CursorPosition(const VTInt uiLine, const VTInt uiColumn) noexcept override
     {
         _cursorPosition = true;
         _line = uiLine;
@@ -1178,14 +1170,14 @@ public:
         return true;
     }
 
-    bool InsertCharacter(_In_ size_t const uiCount) noexcept override
+    bool InsertCharacter(const VTInt uiCount) noexcept override
     {
         _insertCharacter = true;
         _cursorDistance = uiCount;
         return true;
     }
 
-    bool DeleteCharacter(_In_ size_t const uiCount) noexcept override
+    bool DeleteCharacter(const VTInt uiCount) noexcept override
     {
         _deleteCharacter = true;
         _cursorDistance = uiCount;
@@ -1257,7 +1249,7 @@ public:
 
     bool _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
     {
-        bool fSuccess = false;
+        auto fSuccess = false;
         switch (param)
         {
         case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
@@ -1316,7 +1308,7 @@ public:
         return _ModeParamsHelper(param, false);
     }
 
-    bool SetColumns(_In_ size_t const uiColumns) noexcept override
+    bool SetColumns(const VTInt uiColumns) noexcept override
     {
         _windowWidth = uiColumns;
         return true;
@@ -1395,7 +1387,7 @@ public:
         return true;
     }
 
-    bool ForwardTab(const size_t numTabs) noexcept override
+    bool ForwardTab(const VTInt numTabs) noexcept override
     {
         _forwardTab = true;
         _numTabs = numTabs;
@@ -1571,11 +1563,11 @@ class StateMachineExternalTest final
         static const size_t cchBufferMax = 20;
 
         wchar_t pwszDistance[cchBufferMax];
-        int cchDistance = swprintf_s(pwszDistance, cchBufferMax, L"%zu", number);
+        auto cchDistance = swprintf_s(pwszDistance, cchBufferMax, L"%zu", number);
 
         if (cchDistance > 0 && cchDistance < cchBufferMax)
         {
-            for (int i = 0; i < cchDistance; i++)
+            for (auto i = 0; i < cchDistance; i++)
             {
                 pMachine->ProcessCharacter(pwszDistance[i]);
             }
@@ -1601,8 +1593,8 @@ class StateMachineExternalTest final
         }
     }
 
-    void TestCsiCursorMovement(wchar_t const wchCommand,
-                               size_t const uiDistance,
+    void TestCsiCursorMovement(const wchar_t wchCommand,
+                               const size_t uiDistance,
                                const bool fUseDistance,
                                const bool fAddExtraParam,
                                const bool* const pfFlag,
@@ -2063,7 +2055,7 @@ class StateMachineExternalTest final
         size_t uiDispatchTypes;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDispatchTypes::EraseType", uiDispatchTypes));
 
-        WCHAR wchOp = L'\0';
+        auto wchOp = L'\0';
         bool* pfOperationCallback = nullptr;
 
         auto dispatch = std::make_unique<StatefulDispatch>();
@@ -2145,7 +2137,7 @@ class StateMachineExternalTest final
                              const StatefulDispatch& dispatch)
     {
         VERIFY_ARE_EQUAL(expectedOptions.size(), dispatch._options.size());
-        bool optionsValid = true;
+        auto optionsValid = true;
 
         for (size_t i = 0; i < dispatch._options.size(); i++)
         {
@@ -2222,7 +2214,7 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -2272,23 +2264,23 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'm');
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[3] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[4] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[4] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[5] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[6] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[6] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[7] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[8] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[8] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[9] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[10] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[10] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[11] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[12] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[12] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[13] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[14] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[14] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[15] = DispatchTypes::GraphicsOptions::Underline;
-        rgExpected[16] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[16] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 17 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2299,7 +2291,7 @@ class StateMachineExternalTest final
         mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
         VerifyDispatchTypes({ rgExpected, 2 }, *pDispatch);
 
@@ -2311,9 +2303,9 @@ class StateMachineExternalTest final
         mach.ProcessString(sequence);
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Off;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2326,7 +2318,7 @@ class StateMachineExternalTest final
 
         rgExpected[0] = DispatchTypes::GraphicsOptions::Off;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundRed;
-        rgExpected[2] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[2] = DispatchTypes::GraphicsOptions::Intense;
         VerifyDispatchTypes({ rgExpected, 3 }, *pDispatch);
 
         pDispatch->ClearState();
@@ -2543,7 +2535,7 @@ class StateMachineExternalTest final
         VERIFY_IS_TRUE(pDispatch->_setGraphics);
         VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::Underline;
         rgExpected[2] = DispatchTypes::GraphicsOptions::Negative;
         rgExpected[3] = DispatchTypes::GraphicsOptions::ForegroundBlack;
@@ -2560,7 +2552,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\x1b[1;30mHello World\x1b[2J");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
 
@@ -2580,7 +2572,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"30mHello World\x1b[2J");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
         expectedDispatchTypes = DispatchTypes::EraseType::All;
 
@@ -2595,7 +2587,7 @@ class StateMachineExternalTest final
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 5: A sequence with mixed ProcessCharacter and ProcessString calls");
 
-        rgExpected[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        rgExpected[0] = DispatchTypes::GraphicsOptions::Intense;
         rgExpected[1] = DispatchTypes::GraphicsOptions::ForegroundBlack;
 
         mach.ProcessString(L"\x1b[1;");

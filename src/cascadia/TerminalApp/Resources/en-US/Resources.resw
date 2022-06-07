@@ -405,6 +405,9 @@
   <data name="NewWindowRun.Text" xml:space="preserve">
     <value>Shift+Click to open a new window</value>
   </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl+Click to open as administrator</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
@@ -706,6 +709,9 @@
   <data name="ExportSuccess" xml:space="preserve">
     <value>Successfully exported terminal content</value>
   </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Find</value>
+  </data>
   <data name="PlainText" xml:space="preserve">
     <value>Plain Text</value>
   </data>
@@ -724,5 +730,9 @@
   <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
     <value>Open Settings</value>
     <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>Suggestions found: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
   </data>
 </root>

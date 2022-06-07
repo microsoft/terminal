@@ -26,6 +26,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         TerminalSettings();
 
+        static TerminalSettings CreateForPreview(CascadiaSettings appSettings, Profile profile);
         static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
         static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
 

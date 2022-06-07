@@ -52,7 +52,7 @@ stages:
           sed -i s/INSERT_ASSIGNED_HERE/$(ado_assigned_to)/ build/Fuzz/notifications-ado.json
         displayName: Configure OneFuzz
       - bash: |
-          onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $target_exe_path --notification_config build/Fuzz/notifications-ado.json OpenConsole $test_name $(Build.SourceVersion) default
+          onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $target_exe_path --notification_config @./build/Fuzz/notifications-ado.json OpenConsole $test_name $(Build.SourceVersion) default
         displayName: Submit OneFuzz Job
         env:
           target_exe_path: $(Build.ArtifactStagingDirectory)/$(artifactName)/Fuzzing/x64/test/OpenConsoleFuzzer.exe

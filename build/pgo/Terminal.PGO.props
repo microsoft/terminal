@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <NuGetPackageDirectory>$(MSBuildThisFileDirectory)..\..\packages</NuGetPackageDirectory>
-    <PkgMicrosoft_PGO_Helpers_Cpp>$(NuGetPackageDirectory)\Microsoft.PGO-Helpers.Cpp.0.2.22</PkgMicrosoft_PGO_Helpers_Cpp>
+    <PkgMicrosoft_PGO_Helpers_Cpp>$(NuGetPackageDirectory)\Microsoft.Internal.PGO-Helpers.Cpp.0.2.34</PkgMicrosoft_PGO_Helpers_Cpp>
   </PropertyGroup>
 
   <!-- Get version information -->
@@ -19,6 +19,12 @@
 
     <!-- Mandatory.  Minor version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
     <PGOPackageVersionMinor>$(VersionMinor)</PGOPackageVersionMinor>
+
+    <!-- Mandatory, defaults to 0.  Patch version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <PGOPackageVersionPatch>0</PGOPackageVersionPatch>
+    
+    <!-- Optional, defaults to empty.  Prerelease version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <PGOPackageVersionPrerelease></PGOPackageVersionPrerelease>
 
     <!-- Mandatory.  Path to nuget.config file for the project.  Path is relative to where the props file will be. -->
     <PGONuGetConfigPath>$(MSBuildThisFileDirectory)..\..\nuget.config</PGONuGetConfigPath>

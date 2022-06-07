@@ -99,6 +99,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
+        if (Elevate())
+        {
+            ss << fmt::format(L"elevate: {}, ", Elevate().Value());
+        }
+
         auto s = ss.str();
         if (s.empty())
         {

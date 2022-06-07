@@ -49,29 +49,29 @@
 // of EnumEntries so that we may display all possible values of the given
 // enum type and its localized names. It also provides a getter and setter
 // for the setting we wish to bind to.
-#define GETSET_BINDABLE_ENUM_SETTING(name, enumType, settingsModelName, settingNameInModel)                                                            \
-public:                                                                                                                                                \
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List()                   \
-    {                                                                                                                                                  \
-        return _##name##List;                                                                                                                          \
-    }                                                                                                                                                  \
-                                                                                                                                                       \
-    winrt::Windows::Foundation::IInspectable Current##name()                                                                                           \
-    {                                                                                                                                                  \
-        return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_##name##Map.Lookup(settingsModelName.settingNameInModel())); \
-    }                                                                                                                                                  \
-                                                                                                                                                       \
-    void Current##name(const winrt::Windows::Foundation::IInspectable& enumEntry)                                                                      \
-    {                                                                                                                                                  \
-        if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())                                                     \
-        {                                                                                                                                              \
-            auto setting = winrt::unbox_value<enumType>(ee.EnumValue());                                                                               \
-            settingsModelName.settingNameInModel(setting);                                                                                             \
-        }                                                                                                                                              \
-    }                                                                                                                                                  \
-                                                                                                                                                       \
-private:                                                                                                                                               \
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##List;                 \
+#define GETSET_BINDABLE_ENUM_SETTING(name, enumType, viewModelSettingGetSet)                                                             \
+public:                                                                                                                                  \
+    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List()     \
+    {                                                                                                                                    \
+        return _##name##List;                                                                                                            \
+    }                                                                                                                                    \
+                                                                                                                                         \
+    winrt::Windows::Foundation::IInspectable Current##name()                                                                             \
+    {                                                                                                                                    \
+        return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_##name##Map.Lookup(viewModelSettingGetSet())); \
+    }                                                                                                                                    \
+                                                                                                                                         \
+    void Current##name(const winrt::Windows::Foundation::IInspectable& enumEntry)                                                        \
+    {                                                                                                                                    \
+        if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())                                       \
+        {                                                                                                                                \
+            auto setting = winrt::unbox_value<enumType>(ee.EnumValue());                                                                 \
+            viewModelSettingGetSet(setting);                                                                                             \
+        }                                                                                                                                \
+    }                                                                                                                                    \
+                                                                                                                                         \
+private:                                                                                                                                 \
+    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##List;   \
     winrt::Windows::Foundation::Collections::IMap<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##Map;
 
 // This macro defines a dependency property for a WinRT class.
@@ -87,7 +87,7 @@ public:                                                                  \
     {                                                                    \
         return winrt::unbox_value<type>(GetValue(_##name##Property));    \
     }                                                                    \
-    void name(type const& value)                                         \
+    void name(const type& value)                                         \
     {                                                                    \
         SetValue(_##name##Property, winrt::box_value(value));            \
     }                                                                    \
@@ -97,7 +97,7 @@ private:                                                                 \
 
 namespace winrt::Microsoft::Terminal::Settings
 {
-    winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);
+    winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
 }
 
@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings
 // may not have popups in them. Rather than define the same exact body for all
 // their ViewChanging events, the HasScrollViewer struct will just do it for
 // you!
-inline void DismissAllPopups(winrt::Windows::UI::Xaml::XamlRoot const& xamlRoot)
+inline void DismissAllPopups(const winrt::Windows::UI::Xaml::XamlRoot& xamlRoot)
 {
     const auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
     for (const auto& p : popups)
@@ -123,7 +123,7 @@ template<typename T>
 struct HasScrollViewer
 {
     // When the ScrollViewer scrolls, dismiss any popups we might have.
-    void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender,
+    void ViewChanging(const winrt::Windows::Foundation::IInspectable& sender,
                       const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
     {
         // Inside this struct, we can't get at the XamlRoot() that our subclass

@@ -9,6 +9,7 @@
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
   <Import Project="..\..\common.build.pre.props" />
+  <Import Project="..\..\common.nugetversions.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
@@ -87,4 +88,5 @@
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.post.props" />
+  <Import Project="..\..\common.nugetversions.targets" />
 </Project>

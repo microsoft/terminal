@@ -82,8 +82,8 @@ void NotificationIcon::CreateNotificationIcon()
 
     nid.uCallbackMessage = CM_NOTIFY_FROM_NOTIFICATION_AREA;
 
-    // AppName happens to be in CascadiaPackage's Resources.
-    ScopedResourceLoader loader{ L"Resources" };
+    // AppName happens to be in the ContextMenu's Resources, see GH#12264
+    ScopedResourceLoader loader{ L"TerminalApp/ContextMenu" };
     const auto appNameLoc = loader.GetLocalizedString(L"AppName");
 
     nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));

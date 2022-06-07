@@ -140,6 +140,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _hyperlinkHandler(const std::wstring_view uri);
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta);
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
         til::point _getTerminalPosition(const til::point pixelPosition);

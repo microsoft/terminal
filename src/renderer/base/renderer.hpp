@@ -16,7 +16,7 @@ Author(s):
 
 #pragma once
 
-#include "../inc/IRenderTarget.hpp"
+#include "../inc/IRenderEngine.hpp"
 #include "../inc/RenderSettings.hpp"
 
 #include "thread.hpp"
@@ -24,9 +24,17 @@ Author(s):
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../buffer/out/CharRow.hpp"
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
+#endif
+
 namespace Microsoft::Console::Render
 {
-    class Renderer : public IRenderTarget
+    class Renderer
     {
     public:
         Renderer(const RenderSettings& renderSettings,
@@ -35,23 +43,26 @@ namespace Microsoft::Console::Render
                  const size_t cEngines,
                  std::unique_ptr<RenderThread> thread);
 
-        virtual ~Renderer();
+        ~Renderer();
 
         [[nodiscard]] HRESULT PaintFrame();
 
+        void NotifyPaintFrame() noexcept;
         void TriggerSystemRedraw(const RECT* const prcDirtyClient);
-        void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
-        void TriggerRedraw(const COORD* const pcoord) override;
-        void TriggerRedrawCursor(const COORD* const pcoord) override;
-        void TriggerRedrawAll() override;
-        void TriggerTeardown() noexcept override;
+        void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
+        void TriggerRedraw(const COORD* const pcoord);
+        void TriggerRedrawCursor(const COORD* const pcoord);
+        void TriggerRedrawAll(const bool backgroundChanged = false, const bool frameChanged = false);
+        void TriggerTeardown() noexcept;
 
-        void TriggerSelection() override;
-        void TriggerScroll() override;
-        void TriggerScroll(const COORD* const pcoordDelta) override;
+        void TriggerSelection();
+        void TriggerScroll();
+        void TriggerScroll(const COORD* const pcoordDelta);
 
-        void TriggerCircling() override;
-        void TriggerTitleChange() override;
+        void TriggerFlush(const bool circling);
+        void TriggerTitleChange();
+
+        void TriggerNewTextNotification(const std::wstring_view newText);
 
         void TriggerFontChange(const int iDpi,
                                const FontInfoDesired& FontInfoDesired,
@@ -73,6 +84,8 @@ namespace Microsoft::Console::Render
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
 
+        void SetBackgroundColorChangedCallback(std::function<void()> pfn);
+        void SetFrameColorChangedCallback(std::function<void()> pfn);
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
@@ -82,7 +95,6 @@ namespace Microsoft::Console::Render
         static IRenderEngine::GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
-        void _NotifyPaintFrame();
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
@@ -111,11 +123,15 @@ namespace Microsoft::Console::Render
         Microsoft::Console::Types::Viewport _viewport;
         std::vector<Cluster> _clusterBuffer;
         std::vector<SMALL_RECT> _previousSelection;
+        std::function<void()> _pfnBackgroundColorChanged;
+        std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
+        bool _forceUpdateViewport = true;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;
+        friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
     };
 }

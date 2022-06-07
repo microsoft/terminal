@@ -69,7 +69,7 @@ namespace Microsoft::Console::VirtualTerminal
                 _nextPushIndex--;
             }
 
-            SavedSgrAttributes& restoreMe = _storedSgrAttributes.at(_nextPushIndex);
+            auto& restoreMe = _storedSgrAttributes.at(_nextPushIndex);
 
             if (restoreMe.ValidParts.test(SgrSaveRestoreStackOptions::All))
             {
@@ -94,7 +94,7 @@ namespace Microsoft::Console::VirtualTerminal
         // before we even got here.
         FAIL_FAST_IF(validParts.test(SgrSaveRestoreStackOptions::All));
 
-        TextAttribute result = currentAttributes;
+        auto result = currentAttributes;
 
         // From xterm documentation:
         //
@@ -104,7 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         //            optional parameters correspond to the SGR encoding for video
         //            attributes, except for colors (which do not have a unique SGR
         //            code):
-        //              Ps = 1  -> Bold.
+        //              Ps = 1  -> Intense.
         //              Ps = 2  -> Faint.
         //              Ps = 3  -> Italicized.
         //              Ps = 4  -> Underlined.
@@ -118,10 +118,10 @@ namespace Microsoft::Console::VirtualTerminal
         //
         //  (some closing braces for people with editors that get thrown off without them: }})
 
-        // Boldness = 1,
-        if (validParts.test(SgrSaveRestoreStackOptions::Boldness))
+        // Intense = 1,
+        if (validParts.test(SgrSaveRestoreStackOptions::Intense))
         {
-            result.SetBold(savedAttribute.IsBold());
+            result.SetIntense(savedAttribute.IsIntense());
         }
 
         // Faintness = 2,

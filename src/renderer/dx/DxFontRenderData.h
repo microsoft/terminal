@@ -39,7 +39,7 @@ namespace Microsoft::Console::Render
             float strikethroughWidth;
         };
 
-        DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) noexcept;
+        DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory);
 
         // DirectWrite text analyzer from the factory
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> Analyzer();
@@ -132,6 +132,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
 
+        wil::com_ptr<IDWriteFontCollection> _nearbyCollection;
         std::wstring _userLocaleName;
         DxFontInfo _defaultFontInfo;
         til::size _glyphCell;

@@ -2,22 +2,21 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "DxFontRenderData.h"
-
-#include "unicode.hpp"
 
 #include <VersionHelpers.h>
 
+#include "../base/FontCache.h"
+
 static constexpr float POINTS_PER_INCH = 72.0f;
-static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 static constexpr size_t TAG_LENGTH = 4;
 
 using namespace Microsoft::Console::Render;
 
-DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) noexcept :
+DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) :
     _dwriteFactory(dwriteFactory),
+    _nearbyCollection{ FontCache::GetCached() },
     _fontSize{},
     _glyphCell{},
     _lineMetrics{},
@@ -127,7 +126,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     const auto textFormatIt = _textFormatMap.find(_ToMapKey(weight, style, stretch));
     if (textFormatIt == _textFormatMap.end())
     {
-        DxFontInfo fontInfo = _defaultFontInfo;
+        auto fontInfo = _defaultFontInfo;
         fontInfo.SetWeight(weight);
         fontInfo.SetStyle(style);
         fontInfo.SetStretch(stretch);
@@ -136,7 +135,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         // It should have an integer pixel width by our math.
         // Then below, apply the line spacing to the format to position the floating point pixel height characters
         // into a cell that has an integer pixel height leaving some padding above/below as necessary to round them out.
-        std::wstring localeName = UserLocaleName();
+        auto localeName = UserLocaleName();
         Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat;
         THROW_IF_FAILED(_BuildTextFormat(fontInfo, localeName).As(&textFormat));
         THROW_IF_FAILED(textFormat->SetLineSpacing(_lineSpacing.method, _lineSpacing.height, _lineSpacing.baseline));
@@ -159,13 +158,13 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     const auto fontFaceIt = _fontFaceMap.find(_ToMapKey(weight, style, stretch));
     if (fontFaceIt == _fontFaceMap.end())
     {
-        DxFontInfo fontInfo = _defaultFontInfo;
+        auto fontInfo = _defaultFontInfo;
         fontInfo.SetWeight(weight);
         fontInfo.SetStyle(style);
         fontInfo.SetStretch(stretch);
 
-        std::wstring fontLocaleName = UserLocaleName();
-        Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace = fontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
+        auto fontLocaleName = UserLocaleName();
+        auto fontFace = fontInfo.ResolveFontFaceWithFallback(_nearbyCollection.get(), fontLocaleName);
 
         _fontFaceMap.emplace(_ToMapKey(weight, style, stretch), fontFace);
         return fontFace;
@@ -240,8 +239,8 @@ try
     float baseline; // vertical position counted down from the top where the characters "sit"
     RETURN_IF_FAILED(format->GetLineSpacing(&spacingMethod, &lineSpacing, &baseline));
 
-    const float ascentPixels = baseline;
-    const float descentPixels = lineSpacing - baseline;
+    const auto ascentPixels = baseline;
+    const auto descentPixels = lineSpacing - baseline;
 
     // We need this for the designUnitsPerEm which will be required to move back and forth between
     // Design Units and Pixels. I'll elaborate below.
@@ -330,10 +329,10 @@ try
     // See also: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics
 
     // The scale is a multiplier and the translation is addition. So *1 and +0 will mean nothing happens.
-    const float defaultBoxVerticalScaleFactor = 1.0f;
-    float boxVerticalScaleFactor = defaultBoxVerticalScaleFactor;
-    const float defaultBoxVerticalTranslation = 0.0f;
-    float boxVerticalTranslation = defaultBoxVerticalTranslation;
+    const auto defaultBoxVerticalScaleFactor = 1.0f;
+    auto boxVerticalScaleFactor = defaultBoxVerticalScaleFactor;
+    const auto defaultBoxVerticalTranslation = 0.0f;
+    auto boxVerticalTranslation = defaultBoxVerticalTranslation;
     {
         // First, find the dimensions of the glyph representing our fully filled box.
 
@@ -401,10 +400,10 @@ try
     }
 
     // The horizontal adjustments follow the exact same logic as the vertical ones.
-    const float defaultBoxHorizontalScaleFactor = 1.0f;
-    float boxHorizontalScaleFactor = defaultBoxHorizontalScaleFactor;
-    const float defaultBoxHorizontalTranslation = 0.0f;
-    float boxHorizontalTranslation = defaultBoxHorizontalTranslation;
+    const auto defaultBoxHorizontalScaleFactor = 1.0f;
+    auto boxHorizontalScaleFactor = defaultBoxHorizontalScaleFactor;
+    const auto defaultBoxHorizontalTranslation = 0.0f;
+    auto boxHorizontalTranslation = defaultBoxHorizontalTranslation;
     {
         // This is the only difference. We don't have a horizontalOriginX from the metrics.
         // However, https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics says
@@ -467,7 +466,7 @@ bool DxFontRenderData::DidUserSetAxes() const noexcept
 // Routine Description:
 // - Function called to inform us whether to use the user set weight
 //   in the font axes
-// - Called by CustomTextLayout, when the text attribute is bold we should
+// - Called by CustomTextLayout, when the text attribute is intense we should
 //   ignore the user set weight, otherwise setting the bold font axis
 //   breaks the bold font attribute
 // Arguments:
@@ -547,7 +546,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
     {
         // Store the weight aside: we will be creating a span of all the axes in the vector except the weight,
         // and then we will add the weight to the vector
-        // We are doing this so that when the text attribute is bold, we can apply all the axes except the weight
+        // We are doing this so that when the text attribute is intense, we can apply all the axes except the weight
         std::optional<DWRITE_FONT_AXIS_VALUE> weightAxis;
 
         // Since we are calling an 'emplace_back' after creating the span,
@@ -707,11 +706,11 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
 // - None
 void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi)
 {
-    std::wstring fontLocaleName = UserLocaleName();
+    auto fontLocaleName = UserLocaleName();
     // This is the first attempt to resolve font face after `UpdateFont`.
     // Note that the following line may cause property changes _inside_ `_defaultFontInfo` because the desired font may not exist.
     // See the implementation of `ResolveFontFaceWithFallback` for details.
-    const Microsoft::WRL::ComPtr<IDWriteFontFace1> face = _defaultFontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
+    const auto face = _defaultFontInfo.ResolveFontFaceWithFallback(_nearbyCollection.get(), fontLocaleName);
 
     DWRITE_FONT_METRICS1 fontMetrics;
     face->GetMetrics(&fontMetrics);
@@ -738,7 +737,7 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
     // - 12 ppi font * (96 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 16 pixels tall font for 100% display (96 dpi is 100%)
     // - 12 ppi font * (144 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 24 pixels tall font for 150% display (144 dpi is 150%)
     // - 12 ppi font * (192 dpi / 96 dpi) * (96 dpi / 72 points per inch) = 32 pixels tall font for 200% display (192 dpi is 200%)
-    float heightDesired = desired.GetEngineSize().Y * USER_DEFAULT_SCREEN_DPI / POINTS_PER_INCH;
+    auto heightDesired = desired.GetEngineSize().Y * USER_DEFAULT_SCREEN_DPI / POINTS_PER_INCH;
 
     // The advance is the number of pixels left-to-right (X dimension) for the given font.
     // We're finding a proportional factor here with the design units in "ems", not an actual pixel measurement.
@@ -746,14 +745,14 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
     // Now we play trickery with the font size. Scale by the DPI to get the height we expect.
     heightDesired *= (static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI));
 
-    const float widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
+    const auto widthAdvance = static_cast<float>(advanceInDesignUnits) / fontMetrics.designUnitsPerEm;
 
     // Use the real pixel height desired by the "em" factor for the width to get the number of pixels
     // we will need per character in width. This will almost certainly result in fractional X-dimension pixels.
-    const float widthApprox = heightDesired * widthAdvance;
+    const auto widthApprox = heightDesired * widthAdvance;
 
     // Since we can't deal with columns of the presentation grid being fractional pixels in width, round to the nearest whole pixel.
-    const float widthExact = round(widthApprox);
+    const auto widthExact = round(widthApprox);
 
     // Now reverse the "em" factor from above to turn the exact pixel width into a (probably) fractional
     // height in pixels of each character. It's easier for us to pad out height and align vertically
@@ -763,12 +762,12 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
 
     // Now figure out the basic properties of the character height which include ascent and descent
     // for this specific font size.
-    const float ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
-    const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
+    const auto ascent = (fontSize * fontMetrics.ascent) / fontMetrics.designUnitsPerEm;
+    const auto descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
 
     // Get the gap.
-    const float gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
-    const float halfGap = gap / 2;
+    const auto gap = (fontSize * fontMetrics.lineGap) / fontMetrics.designUnitsPerEm;
+    const auto halfGap = gap / 2;
 
     // We're going to build a line spacing object here to track all of this data in our format.
     DWRITE_LINE_SPACING lineSpacing = {};
@@ -828,9 +827,9 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
     // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
     // As such, we need to give the same original size parameter back here without padding
     // or rounding or scaling manipulation.
-    const COORD unscaled = desired.GetEngineSize();
+    const auto unscaled = desired.GetEngineSize();
 
-    const COORD scaled = coordSize;
+    const auto scaled = coordSize;
 
     actual.SetFromEngine(_defaultFontInfo.GetFamilyName(),
                          desired.GetFamily(),
@@ -898,7 +897,7 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontInfo.GetFamilyName().data(),
-                                                     fontInfo.GetNearbyCollection(),
+                                                     _nearbyCollection.get(),
                                                      fontInfo.GetWeight(),
                                                      fontInfo.GetStyle(),
                                                      fontInfo.GetStretch(),

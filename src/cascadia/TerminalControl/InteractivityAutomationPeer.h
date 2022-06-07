@@ -49,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SignalSelectionChanged() override;
         void SignalTextChanged() override;
         void SignalCursorChanged() override;
+        void NotifyNewOutput(std::wstring_view newOutput) override;
 #pragma endregion
 
 #pragma region ITextProvider Pattern
@@ -73,6 +74,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(SelectionChanged, IInspectable, IInspectable);
         TYPED_EVENT(TextChanged, IInspectable, IInspectable);
         TYPED_EVENT(CursorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(NewOutput, IInspectable, hstring);
 
     private:
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider _CreateXamlUiaTextRange(::ITextRangeProvider* returnVal) const;

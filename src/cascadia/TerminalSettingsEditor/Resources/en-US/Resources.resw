@@ -279,21 +279,13 @@
     <value>When disabled, the terminal will render only the updates to the screen between frames.</value>
     <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
   </data>
-  <data name="Globals_InitialCols.Header" xml:space="preserve">
+  <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columns</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
   </data>
-  <data name="Globals_InitialCols.HelpText" xml:space="preserve">
-    <value>The number of columns displayed in the window upon first load. Measured in characters.</value>
-    <comment>A description for what the "columns" setting does. Presented near "Globals_InitialCols.Header".</comment>
-  </data>
-  <data name="Globals_InitialRows.Header" xml:space="preserve">
+  <data name="Globals_InitialRows.Text" xml:space="preserve">
     <value>Rows</value>
     <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
-  </data>
-  <data name="Globals_InitialRows.HelpText" xml:space="preserve">
-    <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
-    <comment>A description for what the "rows" setting does. Presented near "Globals_InitialRows.Header".</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Initial Columns</value>
@@ -372,19 +364,19 @@
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>Show acrylic in tab row (requires relaunch)</value>
-    <comment>Header for a control to toggle whether acrylic shows in the tab row. Changing this setting requires the user to relaunch the app.</comment>
+    <value>Use acrylic material in the tab row (requires relaunch)</value>
+    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
     <value>When checked, the tab row will have the acrylic material.</value>
-    <comment>A description for what the "use acrylic in tab row" setting does. Presented near "Globals_AcrylicTabRow.Header".</comment>
+    <comment>A description for the "Globals_AcrylicTabRow.Header" setting does. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
-    <value>When disabled, the title bar will be 'Windows Terminal'.</value>
+    <value>When disabled, the title bar will be 'Terminal'.</value>
     <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
@@ -408,7 +400,7 @@
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
-    <value>When enabled, this enables the launch of Windows Terminal at machine startup.</value>
+    <value>When enabled, this enables the launch of Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
@@ -416,7 +408,7 @@
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
   <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
-    <value>Windows Terminal will always be the topmost window on the desktop.</value>
+    <value>Terminal will always be the topmost window on the desktop.</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
@@ -471,17 +463,33 @@
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
+  <data name="Nav_Appearance.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Appearance</value>
+    <comment>Tooltip for the "appearance" menu item.</comment>
+  </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
     <comment>Header for the "color schemes" menu item. This navigates to a page that lets you see and modify schemes of colors that can be used by the terminal.</comment>
+  </data>
+  <data name="Nav_ColorSchemes.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Color schemes</value>
+    <comment>Tooltip for the "color schemes" menu item.</comment>
   </data>
   <data name="Nav_Interaction.Content" xml:space="preserve">
     <value>Interaction</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
+  <data name="Nav_Interaction.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Interaction</value>
+    <comment>Tooltip for the "interaction" menu item.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Startup</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
+  </data>
+  <data name="Nav_Launch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Startup</value>
+    <comment>Tooltip for the "startup" menu item.</comment>
   </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
@@ -491,28 +499,36 @@
     <value>Defaults</value>
     <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
   </data>
+  <data name="Nav_ProfileDefaults.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defaults</value>
+    <comment>Tooltip for the "profile defaults" menu item.</comment>
+  </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
+  </data>
+  <data name="Nav_Rendering.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Rendering</value>
+    <comment>Tooltip for the "rendering" menu item.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
-  <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
-    <value>Acrylic opacity</value>
-    <comment>Header for a control to determine the level of opacity for the acrylic rendering material. The user can choose to make the acrylic background of the app more or less opaque.</comment>
+  <data name="Nav_Actions.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Actions</value>
+    <comment>Tooltip for the "actions" menu item.</comment>
   </data>
-  <data name="Profile_AcrylicOpacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the window.</value>
-    <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
+  <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background opacity</value>
+    <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
   </data>
   <data name="Profile_Opacity.Header" xml:space="preserve">
     <value>Background opacity</value>
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
   </data>
   <data name="Profile_Opacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the window.</value>
+    <value>Sets the opacity of the window.</value>
     <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
   </data>
   <data name="Profile_Advanced.Header" xml:space="preserve">
@@ -526,6 +542,10 @@
   <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
     <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When disabled, this behavior will be disabled.</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header".</comment>
+  </data>
+  <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Text antialiasing</value>
+    <comment>Name for a control to select the graphical anti-aliasing format of text.</comment>
   </data>
   <data name="Profile_AntialiasingMode.Header" xml:space="preserve">
     <value>Text antialiasing</value>
@@ -551,6 +571,14 @@
     <value>Appearance</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image path</value>
+    <comment>Name for a control to determine the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImage.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image path</value>
+    <comment>Name for a control to determine the image presented on the background of the app.</comment>
+  </data>
   <data name="Profile_BackgroundImage.Header" xml:space="preserve">
     <value>Background image path</value>
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
@@ -558,6 +586,10 @@
   <data name="Profile_BackgroundImage.HelpText" xml:space="preserve">
     <value>File location of the image used in the background of the window.</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image alignment</value>
+    <comment>Name for a control to choose the visual alignment of the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImageAlignment.Header" xml:space="preserve">
     <value>Background image alignment</value>
@@ -607,13 +639,21 @@
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image opacity</value>
+    <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>
+  </data>
   <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
     <value>Background image opacity</value>
     <comment>Header for a control to choose the opacity of the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
-    <value>Sets the transparency of the background image.</value>
+    <value>Sets the opacity of the background image.</value>
     <comment>A description for what the "background image opacity" setting does. Presented near "Profile_BackgroundImageOpacity".</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Background image stretch mode</value>
+    <comment>Name for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
   </data>
   <data name="Profile_BackgroundImageStretchMode.Header" xml:space="preserve">
     <value>Background image stretch mode</value>
@@ -639,6 +679,10 @@
     <value>Uniform to fill</value>
     <comment>An option to choose from for the "background image stretch mode" setting. When selected, the content is resized to fill the destination dimensions while it preserves its native aspect ratio. But if the aspect ratio of the destination differs, the image is clipped to fit in the space (to fill the space)</comment>
   </data>
+  <data name="Profile_CloseOnExit.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Profile termination behavior</value>
+    <comment>Name for a control to select the behavior of a terminal session (a profile) when it closes.</comment>
+  </data>
   <data name="Profile_CloseOnExit.Header" xml:space="preserve">
     <value>Profile termination behavior</value>
     <comment>Header for a control to select the behavior of a terminal session (a profile) when it closes.</comment>
@@ -663,6 +707,10 @@
     <value>Name of the color scheme to use.</value>
     <comment>A description for what the "color scheme" setting does. Presented near "Profile_ColorScheme".</comment>
   </data>
+  <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Command line</value>
+    <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
+  </data>
   <data name="Profile_Commandline.Header" xml:space="preserve">
     <value>Command line</value>
     <comment>Header for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
@@ -686,6 +734,10 @@
   <data name="Profile_CursorHeight.HelpText" xml:space="preserve">
     <value>Sets the percentage height of the cursor starting from the bottom. Only works with the vintage cursor shape.</value>
     <comment>A description for what the "cursor height" setting does. Presented near "Profile_CursorHeight".</comment>
+  </data>
+  <data name="Profile_CursorShape.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Cursor shape</value>
+    <comment>Name for a control to select the shape of the text cursor.</comment>
   </data>
   <data name="Profile_CursorShape.Header" xml:space="preserve">
     <value>Cursor shape</value>
@@ -739,6 +791,14 @@
     <value>Size of the font in points.</value>
     <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
   </data>
+  <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font weight</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontWeightSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font weight</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
   <data name="Profile_FontWeight.Header" xml:space="preserve">
     <value>Font weight</value>
     <comment>Header for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -759,6 +819,14 @@
     <value>If enabled, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
+  <data name="Profile_Elevate.Header" xml:space="preserve">
+    <value>Run this profile as Administrator</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
+  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+    <value>If enabled, the profile will open in an Admin terminal window automatically. If the current window is already running as admin, it'll open in this window.</value>
+    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>History size</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -770,6 +838,10 @@
   <data name="Profile_HistorySize.HelpText" xml:space="preserve">
     <value>The number of lines above the ones displayed in the window you can scroll back to.</value>
     <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
+  </data>
+  <data name="Profile_Icon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Icon</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
   </data>
   <data name="Profile_Icon.Header" xml:space="preserve">
     <value>Icon</value>
@@ -786,6 +858,10 @@
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_PaddingSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Padding</value>
+    <comment>Name for a control to determine the amount of space between text in a terminal and the edge of the window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Padding</value>
@@ -811,6 +887,10 @@
     <value>When enabled, enables automatic adjustment of indistinguishable colors, which will, only when necessary, adjust the foreground color's lightness to make it more visible (based on the background color).</value>
     <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
+  <data name="Profile_ScrollbarVisibility.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Scrollbar visibility</value>
+    <comment>Name for a control to select the visibility of the scrollbar in a session.</comment>
+  </data>
   <data name="Profile_ScrollbarVisibility.Header" xml:space="preserve">
     <value>Scrollbar visibility</value>
     <comment>Header for a control to select the visibility of the scrollbar in a session.</comment>
@@ -826,6 +906,10 @@
   <data name="Profile_SnapOnInput.Header" xml:space="preserve">
     <value>Scroll to input when typing</value>
     <comment>Header for a control to toggle if keyboard input should automatically scroll to where the input was placed.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Starting directory</value>
+    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>Starting directory</value>
@@ -848,7 +932,7 @@
     <comment>A supplementary setting to the "starting directory" setting. "Parent" refers to the parent process of the current process.</comment>
   </data>
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>If enabled, this profile will spawn in the directory from which Windows Terminal was launched.</value>
+    <value>If enabled, this profile will spawn in the directory from which Terminal was launched.</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
@@ -859,6 +943,10 @@
     <value>Use the tab title to override the default title of the tab and suppress any title change messages from the application.</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle".</comment>
   </data>
+  <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Tab title</value>
+    <comment>Name for a control to determine the title of the tab. This is represented using a text box.</comment>
+  </data>
   <data name="Profile_TabTitle.Header" xml:space="preserve">
     <value>Tab title</value>
     <comment>Header for a control to determine the title of the tab. This is represented using a text box.</comment>
@@ -868,16 +956,24 @@
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
-    <value>Unfocused Appearance</value>
+    <value>Unfocused appearance</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
+  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
+    <value>Add</value>
+    <comment>Button label that adds an unfocused appearance for this profile.</comment>
+  </data>
+  <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Button label that deletes the unfocused appearance for this profile.</comment>
+  </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
-    <value>Enable acrylic</value>
-    <comment>Header for a control to toggle the acrylic-like rendering of the background. The acrylic material creates a translucent texture.</comment>
+    <value>Enable acrylic material</value>
+    <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
     <value>Applies a translucent texture to the background of the window.</value>
-    <comment>A description for what the "enable acrylic" setting does. Presented near "Profile_UseAcrylic".</comment>
+    <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
   <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
     <value>Use desktop wallpaper</value>
@@ -931,6 +1027,10 @@
     <value>Maximized full screen focus</value>
     <comment>An option to choose from for the "launch mode" setting. Opens the app maximized in full screen and in focus mode.</comment>
   </data>
+  <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bell notification style</value>
+    <comment>Name for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
+  </data>
   <data name="Profile_BellStyle.Header" xml:space="preserve">
     <value>Bell notification style</value>
     <comment>Header for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
@@ -942,6 +1042,10 @@
   <data name="Profile_UseAtlasEngine.Header" xml:space="preserve">
     <value>Enable experimental text rendering engine</value>
     <comment>An option to enable an experimental text rendering engine</comment>
+  </data>
+  <data name="Profile_VtPassthrough.Header" xml:space="preserve">
+    <value>Enable experimental virtual terminal passthrough</value>
+    <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Audible</value>
@@ -1003,9 +1107,13 @@
     <value>Thin</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
-  <data name="Globals_LaunchSize.Text" xml:space="preserve">
+  <data name="Globals_LaunchSize.Header" xml:space="preserve">
     <value>Launch size</value>
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
+  </data>
+  <data name="Globals_LaunchSize.HelpText" xml:space="preserve">
+    <value>The number of rows and columns displayed in the window upon first load. Measured in characters.</value>
+    <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
     <value>All</value>
@@ -1046,17 +1154,17 @@
     <value>The name of the profile that appears in the dropdown.</value>
     <comment>A description for what the "name" setting does. Presented near "Profile_Name".</comment>
   </data>
+  <data name="Profile_Name.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Name</value>
+    <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
+  </data>
   <data name="Profile_Name.Header" xml:space="preserve">
     <value>Name</value>
     <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
   </data>
-  <data name="Profile_AcrylicHeader.Text" xml:space="preserve">
-    <value>Acrylic</value>
-    <comment>Header for a group of settings related to the acrylic texture rendering on the background of the app.</comment>
-  </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>Transparency</value>
-    <comment>Header for a group of settings related to transparency, including the acrylic texture rendering on the background of the app.</comment>
+    <comment>Header for a group of settings related to transparency, including the acrylic material background of the app.</comment>
   </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
@@ -1065,6 +1173,10 @@
   <data name="Profile_CursorHeader.Text" xml:space="preserve">
     <value>Cursor</value>
     <comment>Header for a group of settings that control the appearance of the cursor. Presented near "Profile_CursorHeight" and other keys starting with "Profile_Cursor".</comment>
+  </data>
+  <data name="Profile_AdditionalSettingsHeader.Text" xml:space="preserve">
+    <value>Additional settings</value>
+    <comment>Header for the buttons that navigate to additional settings for the profile.</comment>
   </data>
   <data name="Profile_TextHeader.Text" xml:space="preserve">
     <value>Text</value>
@@ -1101,6 +1213,10 @@
   <data name="RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Cancel rename</value>
     <comment>Text label for a button that can be used to cancel a rename operation during the renaming process.</comment>
+  </data>
+  <data name="ColorSchemesDisclaimer.Text" xml:space="preserve">
+    <value>Schemes defined here can be applied to your profiles under the "Appearances" section of the profile settings pages.</value>
+    <comment>A disclaimer presented at the top of a page. "Appearances" should match Profile_Appearance.Header.</comment>
   </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
     <value>Settings defined here will apply to all profiles unless they are overridden by a profile's settings.</value>
@@ -1210,9 +1326,17 @@
     <value>If enabled, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
+  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Create Appearance</value>
+    <comment>Name for a control which creates an the unfocused appearance settings for this profile.</comment>
+  </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
     <comment>A description for what the create unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Delete Appearance</value>
+    <comment>Name for a control which deletes an the unfocused appearance settings for this profile.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Delete the unfocused appearance for this profile.</value>
@@ -1285,6 +1409,10 @@
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>Text Formatting</value>
     <comment>Header for a control to how text is formatted</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Intense text style</value>
+    <comment>Name for a control to select how "intense" text is formatted (bold, bright, both or none)</comment>
   </data>
   <data name="Appearance_IntenseTextStyle.Header" xml:space="preserve">
     <value>Intense text style</value>

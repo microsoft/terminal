@@ -9,6 +9,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="adapterTest.cpp" />
     <ClCompile Include="inputTest.cpp" />
@@ -26,6 +27,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\interactivity\base\lib\InteractivityBase.vcxproj">
       <Project>{06ec74cb-9a12-429c-b551-8562ec964846}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\renderer\base\lib\base.vcxproj">
+      <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
@@ -45,4 +49,5 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>

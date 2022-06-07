@@ -35,7 +35,9 @@
     <Page Include="Interaction.xaml" />
     <Page Include="Launch.xaml" />
     <Page Include="MainPage.xaml" />
-    <Page Include="Profiles.xaml" />
+    <Page Include="Profiles_Base.xaml" />
+    <Page Include="Profiles_Advanced.xaml" />
+    <Page Include="Profiles_Appearance.xaml" />
     <Page Include="Appearances.xaml" />
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />

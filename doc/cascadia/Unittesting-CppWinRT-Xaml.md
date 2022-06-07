@@ -268,7 +268,7 @@ this:
   </ItemDefinitionGroup>
 ```
 
-Again, verify the correct paths to your dependant C++/WinRT dlls, as they may be
+Again, verify the correct paths to your dependent C++/WinRT dlls, as they may be
 different than the above
 
 #### Activating the manifest from TAEF

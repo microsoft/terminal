@@ -43,7 +43,7 @@
 
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.
-        HANDLE const hServer = ServerHandle.release();
+        const auto hServer = ServerHandle.release();
 
         // Now that the console object was created, we're in a state that lets us
         // create the default io objects.
@@ -108,7 +108,7 @@
                                           &AttributeListSize);
 
         // Alloc space
-        wistd::unique_ptr<BYTE[]> AttributeList = wil::make_unique_nothrow<BYTE[]>(AttributeListSize);
+        auto AttributeList = wil::make_unique_nothrow<BYTE[]>(AttributeListSize);
         RETURN_IF_NULL_ALLOC(AttributeList);
 
         StartupInformation.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(AttributeList.get());
@@ -154,7 +154,7 @@
         }
 
         // Expand any environment variables present in the command line string.
-        std::wstring cmdLine = wil::ExpandEnvironmentStringsW<std::wstring>(pwszCmdLine);
+        auto cmdLine = wil::ExpandEnvironmentStringsW<std::wstring>(pwszCmdLine);
         // Call create process
         wil::unique_process_information ProcessInformation;
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(NULL,

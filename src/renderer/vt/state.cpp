@@ -54,7 +54,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _bufferLine{},
     _buffer{},
     _formatBuffer{},
-    _conversionBuffer{}
+    _conversionBuffer{},
+    _pfnSetLookingForDSR{}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -64,6 +65,37 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _usingTestCallback = false;
 #endif
 }
+
+// Method Description:
+// - Writes a fill of characters to our file handle (repeat of same character over and over)
+[[nodiscard]] HRESULT VtEngine::_WriteFill(const size_t n, const char c) noexcept
+try
+{
+    _trace.TraceStringFill(n, c);
+#ifdef UNIT_TESTING
+    if (_usingTestCallback)
+    {
+        const std::string str(n, c);
+        // Try to get the last error. If that wasn't set, then the test probably
+        // doesn't set last error. No matter. We'll just return with E_FAIL
+        // then. This is a unit test, we don't particularly care.
+        const auto succeeded = _pfnTestCallback(str.data(), str.size());
+        auto hr = E_FAIL;
+        if (!succeeded)
+        {
+            const auto err = ::GetLastError();
+            // If there wasn't an error in GLE, just use E_FAIL
+            hr = SUCCEEDED_WIN32(err) ? hr : HRESULT_FROM_WIN32(err);
+        }
+        return succeeded ? S_OK : hr;
+    }
+#endif
+
+    // TODO GH10001: Replace me with REP
+    _buffer.append(n, c);
+    return S_OK;
+}
+CATCH_RETURN();
 
 // Method Description:
 // - Writes the characters to our file handle. If we're building the unit tests,
@@ -115,7 +147,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 
     if (!_pipeBroken)
     {
-        bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
@@ -213,19 +245,42 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - HRESULT S_OK
 [[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
-    HRESULT hr = S_OK;
-    const Viewport oldView = _lastViewport;
-    const Viewport newView = Viewport::FromInclusive(srNewViewport);
+    auto hr = S_OK;
+    const auto newView = Viewport::FromInclusive(srNewViewport);
+    const auto oldSize = _lastViewport.Dimensions();
+    const auto newSize = newView.Dimensions();
 
-    _lastViewport = newView;
-
-    if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
+    if (oldSize != newSize)
     {
         // Don't emit a resize event if we've requested it be suppressed
         if (!_suppressResizeRepaint)
         {
-            hr = _ResizeWindow(newView.Width(), newView.Height());
+            hr = _ResizeWindow(newSize.X, newSize.Y);
         }
+
+        if (_resizeQuirk)
+        {
+            // GH#3490 - When the viewport width changed, don't do anything extra here.
+            // If the buffer had areas that were invalid due to the resize, then the
+            // buffer will have triggered it's own invalidations for what it knows is
+            // invalid. Previously, we'd invalidate everything if the width changed,
+            // because we couldn't be sure if lines were reflowed.
+            _invalidMap.resize(til::size{ newSize });
+        }
+        else
+        {
+            if (SUCCEEDED(hr))
+            {
+                _invalidMap.resize(til::size{ newSize }, true); // resize while filling in new space with repaint requests.
+
+                // Viewport is smaller now - just update it all.
+                if (oldSize.Y > newSize.Y || oldSize.X > newSize.X)
+                {
+                    hr = InvalidateAll();
+                }
+            }
+        }
+
         _resized = true;
     }
 
@@ -237,29 +292,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     // If we only clear the flag when the new viewport is different, this can
     //      lead to the first _actual_ resize being suppressed.
     _suppressResizeRepaint = false;
-
-    if (_resizeQuirk)
-    {
-        // GH#3490 - When the viewport width changed, don't do anything extra here.
-        // If the buffer had areas that were invalid due to the resize, then the
-        // buffer will have triggered it's own invalidations for what it knows is
-        // invalid. Previously, we'd invalidate everything if the width changed,
-        // because we couldn't be sure if lines were reflowed.
-        _invalidMap.resize(til::size{ newView.Dimensions() });
-    }
-    else
-    {
-        if (SUCCEEDED(hr))
-        {
-            _invalidMap.resize(til::size{ newView.Dimensions() }, true); // resize while filling in new space with repaint requests.
-
-            // Viewport is smaller now - just update it all.
-            if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
-            {
-                hr = InvalidateAll();
-            }
-        }
-    }
+    _lastViewport = newView;
 
     return hr;
 }
@@ -380,6 +413,23 @@ HRESULT VtEngine::RequestCursor() noexcept
 }
 
 // Method Description:
+// - Sends a notification through to the `VtInputThread` that it should
+//   watch for and capture the response from a DSR message we're about to send.
+//   This is typically `RequestCursor` at the time of writing this, but in theory
+//   could be another DSR as well.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if all goes well. Invalid state error if no notification function is installed.
+//   (see `SetLookingForDSRCallback` to install one.)
+[[nodiscard]] HRESULT VtEngine::_ListenForDSR() noexcept
+{
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), !_pfnSetLookingForDSR);
+    _pfnSetLookingForDSR(true);
+    return S_OK;
+}
+
+// Method Description:
 // - Tell the vt renderer to begin a resize operation. During a resize
 //   operation, the vt renderer should _not_ request to be repainted during a
 //   text buffer circling event. Any callers of this method should make sure to
@@ -415,12 +465,35 @@ void VtEngine::EndResizeRequest()
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:
-// - <none>
+// - resizeQuirk - True to turn on the quirk. False otherwise.
 // Return Value:
 // - true iff we were started with the `--resizeQuirk` flag enabled.
 void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     _resizeQuirk = resizeQuirk;
+}
+
+// Method Description:
+// - Configure the renderer to understand that we're operating in limited-draw
+//   passthrough mode. We do not need to handle full responsibility for replicating
+//   buffer state to the attached terminal.
+// Arguments:
+// - passthrough - True to turn on passthrough mode. False otherwise.
+// Return Value:
+// - true iff we were started with an output mode for passthrough. false otherwise.
+void VtEngine::SetPassthroughMode(const bool passthrough) noexcept
+{
+    _passthrough = passthrough;
+}
+
+void VtEngine::SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept
+{
+    _pfnSetLookingForDSR = pfnLooking;
+}
+
+void VtEngine::SetTerminalCursorTextPosition(const COORD cursor) noexcept
+{
+    _lastText = cursor;
 }
 
 // Method Description:
@@ -452,6 +525,14 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 HRESULT VtEngine::RequestWin32Input() noexcept
 {
     RETURN_IF_FAILED(_RequestWin32Input());
+    RETURN_IF_FAILED(_RequestFocusEventMode());
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
+}
+
+HRESULT VtEngine::SwitchScreenBuffer(const bool useAltBuffer) noexcept
+{
+    RETURN_IF_FAILED(_SwitchScreenBuffer(useAltBuffer));
     RETURN_IF_FAILED(_Flush());
     return S_OK;
 }

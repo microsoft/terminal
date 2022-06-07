@@ -21,7 +21,7 @@
     Version="0.5.0.0" />
 
   <Properties>
-    <DisplayName>Windows Terminal Preview</DisplayName>
+    <DisplayName>ms-resource:AppStoreNamePre</DisplayName>
     <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -31,7 +31,95 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="EN-US" />
+    <Resource Language="EN-GB" />
+    <Resource Language="AF-ZA" />
+    <Resource Language="AM-ET" />
+    <Resource Language="AR-SA" />
+    <Resource Language="AS-IN" />
+    <Resource Language="AZ-LATN-AZ" />
+    <Resource Language="BG-BG" />
+    <Resource Language="BN-IN" />
+    <Resource Language="BS-LATN-BA" />
+    <Resource Language="CA-ES" />
+    <Resource Language="CA-ES-VALENCIA" />
+    <Resource Language="CS-CZ" />
+    <Resource Language="CY-GB" />
+    <Resource Language="DA-DK" />
+    <Resource Language="DE-DE" />
+    <Resource Language="EL-GR" />
+    <Resource Language="ES-ES" />
+    <Resource Language="ES-MX" />
+    <Resource Language="ET-EE" />
+    <Resource Language="EU-ES" />
+    <Resource Language="FA-IR" />
+    <Resource Language="FI-FI" />
+    <Resource Language="FIL-PH" />
+    <Resource Language="FR-CA" />
+    <Resource Language="FR-FR" />
+    <Resource Language="GA-IE" />
+    <Resource Language="GD-GB" />
+    <Resource Language="GL-ES" />
+    <Resource Language="GU-IN" />
+    <Resource Language="HE-IL" />
+    <Resource Language="HI-IN" />
+    <Resource Language="HR-HR" />
+    <Resource Language="HU-HU" />
+    <Resource Language="HY-AM" />
+    <Resource Language="ID-ID" />
+    <Resource Language="IS-IS" />
+    <Resource Language="IT-IT" />
+    <Resource Language="JA-JP" />
+    <Resource Language="KA-GE" />
+    <Resource Language="KK-KZ" />
+    <Resource Language="KM-KH" />
+    <Resource Language="KN-IN" />
+    <Resource Language="KO-KR" />
+    <Resource Language="KOK-IN" />
+    <Resource Language="LB-LU" />
+    <Resource Language="LO-LA" />
+    <Resource Language="LT-LT" />
+    <Resource Language="LV-LV" />
+    <Resource Language="MI-NZ" />
+    <Resource Language="MK-MK" />
+    <Resource Language="ML-IN" />
+    <Resource Language="MR-IN" />
+    <Resource Language="MS-MY" />
+    <Resource Language="MT-MT" />
+    <Resource Language="NB-NO" />
+    <Resource Language="NE-NP" />
+    <Resource Language="NL-NL" />
+    <Resource Language="NN-NO" />
+    <Resource Language="OR-IN" />
+    <Resource Language="PA-IN" />
+    <Resource Language="PL-PL" />
+    <Resource Language="PT-BR" />
+    <Resource Language="PT-PT" />
+    <Resource Language="QPS-PLOC" />
+    <Resource Language="QPS-PLOCA" />
+    <Resource Language="QPS-PLOCM" />
+    <Resource Language="QUZ-PE" />
+    <Resource Language="RO-RO" />
+    <Resource Language="RU-RU" />
+    <Resource Language="SK-SK" />
+    <Resource Language="SL-SI" />
+    <Resource Language="SQ-AL" />
+    <Resource Language="SR-CYRL-BA" />
+    <Resource Language="SR-CYRL-RS" />
+    <Resource Language="SR-LATN-RS" />
+    <Resource Language="SV-SE" />
+    <Resource Language="TA-IN" />
+    <Resource Language="TE-IN" />
+    <Resource Language="TH-TH" />
+    <Resource Language="TR-TR" />
+    <Resource Language="TT-RU" />
+    <Resource Language="UG-CN" />
+    <Resource Language="UK-UA" />
+    <Resource Language="UR-PK" />
+    <Resource Language="UZ-LATN-UZ" />
+    <Resource Language="VI-VN" />
+    <Resource Language="ZH-CN" />
+    <Resource Language="ZH-TW" />
   </Resources>
 
   <Applications>
@@ -88,7 +176,7 @@
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
                 Id="Terminal-Pre"
-                DisplayName="Windows Terminal Preview"
+                DisplayName="Terminal Preview"
                 Description="Terminal host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
@@ -101,6 +189,7 @@
                 <com:ProxyStub Id="1833E661-CC81-4DD0-87C6-C2F74BD39EFA" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
                 <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/>
                 <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/>
+                <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/>
             </com:ComInterface>
         </com:Extension>
         <com:Extension Category="windows.comServer">
@@ -147,4 +236,9 @@
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>
+
+  <mp:PhoneIdentity
+    PhoneProductId="43878781-e1d0-4e2e-ae17-c4b63c8fb084"
+    PhonePublisherId="95d94207-0c7c-47ed-82db-d75c81153c35" />
+
 </Package>

@@ -11,7 +11,7 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
-    "trimBlockSelection": false,
+    "trimBlockSelection": true,
     "trimPaste": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
@@ -384,6 +384,8 @@
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
+        { "command": "selectAll", "keys": "ctrl+shift+a" },
+        { "command": "markMode", "keys": "ctrl+shift+m" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },
@@ -465,6 +467,6 @@
                 { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
                 { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
-        },
+        }
     ]
 }

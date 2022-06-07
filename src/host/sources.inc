@@ -70,7 +70,6 @@ SOURCES = \
     ..\dbcs.cpp      \
     ..\convarea.cpp  \
     ..\screenInfo.cpp \
-    ..\ScreenBufferRenderTarget.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \
@@ -94,6 +93,7 @@ SOURCES = \
     ..\CommandListPopup.cpp \
     ..\CopyFromCharPopup.cpp \
     ..\CopyToCharPopup.cpp \
+    ..\VtApiRoutines.cpp \
 
 
 # -------------------------------------

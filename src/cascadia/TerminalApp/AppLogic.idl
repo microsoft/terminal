@@ -33,6 +33,8 @@ namespace TerminalApp
         SystemMenuItemHandler Handler { get; };
     };
 
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -89,6 +91,7 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void WindowVisibilityChanged(Boolean showOrHide);
 
         TaskbarState TaskbarState{ get; };
 
@@ -130,5 +133,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
     }
 }
