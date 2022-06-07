@@ -28,6 +28,7 @@ Fitt
 formattings
 ftp
 fvar
+gantt
 gcc
 geeksforgeeks
 ghe

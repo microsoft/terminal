@@ -50,34 +50,32 @@ gantt
     dateFormat  YYYY-MM-DD
     axisFormat  %d %b
     section Terminal 1.14
-        Lockdown&bake           :done, 2022-05-06, 2w
+        Lock down & bake        :done, 2022-05-06, 2w
         Release 1.14            :milestone, 2022-05-24
     section Terminal 1.15
-        Features                :active, a1, 2022-05-06, 4w
-        Bugfix                  :a2, after a1  , 2w
-        Lockdown&bake           :after a2  , 2w
-        Release 1.15            :milestone, 2022-07-05, 0
+        Features                :a1, done, 2022-05-06, 4w
+        Bugfix                  :a2, active, after a1  , 1w
+        Lock down & bake        :after a2  , 1w
+        Release 1.15            :milestone, 2022-06-21, 0
         1.15 becomes Stable     :milestone, after b3, 0
     section Terminal 1.16
         Features                :b1, after a2, 4w
         Bugfix                  :b2, after b1  , 2w
-        Lockdown&bake           :b3, after b2  , 2w
+        Lock down & bake        :b3, after b2  , 2w
         Release 1.16            :milestone, after b3, 0
         1.16 becomes Stable     :milestone, after c3, 0
     section Terminal 1.17
         Features                :c1, after b2, 4w
         Bugfix                  :c2, after c1  , 2w
-        Lockdown&bake           :c3, after c2  , 2w
+        Lock down & bake        :c3, after c2  , 2w
         Release 1.17            :milestone, after c3, 0
         1.17 becomes Stable     :milestone, after d3, 0
     section Terminal 1.18
         Features                :d1, after c2, 4w
         Bugfix                  :d2, after d1  , 2w
-        Lockdown&bake           :d3, after d2  , 2w
+        Lock down & bake        :d3, after d2  , 2w
         Release 1.18            :milestone, after d3, 0
 ```
-
-Again, these dates do not represent confirmed release dates, they are merely planning guidelines.
 
 ## Issue Triage & Prioritization
 
