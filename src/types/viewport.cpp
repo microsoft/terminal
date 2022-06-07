@@ -208,13 +208,8 @@ bool Viewport::IsInBounds(const Viewport& other) const noexcept
 //                        includes the last til::point in a given viewport.
 // Return Value:
 // - True if it lies inside the viewport. False otherwise.
-bool Viewport::IsInBounds(const til::point pos, bool allowEndExclusive) const noexcept
+bool Viewport::IsInBounds(const til::point pos) const noexcept
 {
-    if (allowEndExclusive && pos == EndExclusive())
-    {
-        return true;
-    }
-
     return pos.X >= Left() && pos.X < RightExclusive() &&
            pos.Y >= Top() && pos.Y < BottomExclusive();
 }
@@ -365,11 +360,11 @@ bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Viewport::CompareInBounds(const til::point first, const til::point second, bool allowEndExclusive) const noexcept
+int Viewport::CompareInBounds(const til::point first, const til::point second) const noexcept
 {
     // Assert that our coordinates are within the expected boundaries
-    FAIL_FAST_IF(!IsInBounds(first, allowEndExclusive));
-    FAIL_FAST_IF(!IsInBounds(second, allowEndExclusive));
+    FAIL_FAST_IF(!IsInBounds(first));
+    FAIL_FAST_IF(!IsInBounds(second));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
@@ -432,7 +427,7 @@ bool Viewport::WalkInBounds(til::point& pos, const WalkDir dir, bool allowEndExc
 bool Viewport::WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool allowEndExclusive) const noexcept
 {
     // Assert that the position given fits inside this viewport.
-    FAIL_FAST_IF(!IsInBounds(pos, allowEndExclusive));
+    assert((allowEndExclusive && pos == EndExclusive()) || IsInBounds(pos));
 
     if (dir.x == XWalk::LeftToRight)
     {
