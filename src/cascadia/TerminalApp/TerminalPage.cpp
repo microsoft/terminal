@@ -1084,8 +1084,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  L".",
                                                                                  L"Azure",
                                                                                  nullptr,
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 settings.InitialRows(),
+                                                                                 settings.InitialCols(),
                                                                                  winrt::guid());
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
@@ -1135,8 +1135,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  newWorkingDirectory,
                                                                                  settings.StartingTitle(),
                                                                                  envMap.GetView(),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 settings.InitialRows(),
+                                                                                 settings.InitialCols(),
                                                                                  winrt::guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
@@ -1822,9 +1822,17 @@ namespace winrt::TerminalApp::implementation
         // Instead, let's just promote this first split to be a tab instead.
         // Crash avoided, and we don't need to worry about inserting a new-tab
         // command in at the start.
-        if (!focusedTab && _tabs.Size() == 0)
+        if (!focusedTab)
         {
-            _CreateNewTabFromPane(newPane);
+            if (_tabs.Size() == 0)
+            {
+                _CreateNewTabFromPane(newPane);
+            }
+            else
+            {
+                // The focused tab isn't a terminal tab
+                return;
+            }
         }
         else
         {

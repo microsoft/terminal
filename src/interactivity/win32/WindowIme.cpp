@@ -42,7 +42,7 @@ RECT GetImeSuggestionWindowPos()
     ClientToScreen(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &ptSuggestion);
 
     // Move into suggestion rectangle.
-    RECT rcSuggestion = { 0 };
+    RECT rcSuggestion;
     rcSuggestion.top = rcSuggestion.bottom = ptSuggestion.y;
     rcSuggestion.left = rcSuggestion.right = ptSuggestion.x;
 
@@ -64,5 +64,5 @@ RECT GetImeSuggestionWindowPos()
 // - Rectangle specifying current text box area.
 RECT GetTextBoxArea()
 {
-    return Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleWindow()->GetWindowRect();
+    return Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleWindow()->GetWindowRect().to_win32_rect();
 }

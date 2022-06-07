@@ -65,7 +65,7 @@ using namespace Microsoft::Console::Interactivity;
 // - targetOrigin - upper left coordinates of new location rectangle
 static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
                            const Viewport& source,
-                           const COORD targetOrigin)
+                           const til::point targetOrigin)
 {
     const auto sourceOrigin = source.Origin();
 
@@ -86,7 +86,7 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
         {
             const auto delta = targetOrigin.Y - source.Top();
 
-            screenInfo.GetTextBuffer().ScrollRows(source.Top(), source.Height(), gsl::narrow<SHORT>(delta));
+            screenInfo.GetTextBuffer().ScrollRows(source.Top(), source.Height(), delta);
 
             return;
         }
@@ -121,7 +121,7 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
 // Return Value:
 // - vector of attribute data
 std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
-                                       const COORD coordRead,
+                                       const til::point coordRead,
                                        const size_t amountToRead)
 {
     // Short circuit. If nothing to read, leave early.
@@ -178,7 +178,7 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
 // Return Value:
 // - wstring
 std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
-                               const COORD coordRead,
+                               const til::point coordRead,
                                const size_t amountToRead)
 {
     // Short circuit. If nothing to read, leave early.
@@ -238,7 +238,7 @@ std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
 // Return Value:
 // - string of char data
 std::string ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
-                              const COORD coordRead,
+                              const til::point coordRead,
                               const size_t amountToRead)
 {
     const auto wstr = ReadOutputStringW(screenInfo, coordRead, amountToRead);
@@ -247,7 +247,7 @@ std::string ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
     return ConvertToA(gci.OutputCP, wstr);
 }
 
-void ScreenBufferSizeChange(const COORD coordNewSize)
+void ScreenBufferSizeChange(const til::size coordNewSize)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -305,7 +305,7 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
         // Trigger a graphical update if we're active.
         if (screenInfo.IsActiveScreenBuffer())
         {
-            COORD coordDelta = { 0 };
+            til::point coordDelta;
             coordDelta.Y = -1;
 
             auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
@@ -336,9 +336,9 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 // - fillAttrsGiven - Attribute to fill source region with.
 // NOTE: Throws exceptions
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
-                  const SMALL_RECT scrollRectGiven,
-                  const std::optional<SMALL_RECT> clipRectGiven,
-                  const COORD destinationOriginGiven,
+                  const til::inclusive_rect scrollRectGiven,
+                  const std::optional<til::inclusive_rect> clipRectGiven,
+                  const til::point destinationOriginGiven,
                   const wchar_t fillCharGiven,
                   const TextAttribute fillAttrsGiven)
 {
@@ -499,7 +499,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
@@ -511,6 +511,8 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
+
+    gci.ShutdownMidiAudio();
 
     // Jiggle the handle: (see MSFT:19419231)
     // When we call this function, we'll only actually close the console once

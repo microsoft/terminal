@@ -127,6 +127,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnShowWindowChanged = std::bind(&ControlCore::_terminalShowWindowChanged, this, std::placeholders::_1);
         _terminal->SetShowWindowCallback(pfnShowWindowChanged);
 
+        auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -223,6 +226,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderer->TriggerTeardown();
         }
+
+        _shutdownMidiAudio();
     }
 
     bool ControlCore::Initialize(const double actualWidth,
@@ -267,8 +272,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // and react accordingly.
             _updateFont(true);
 
-            const COORD windowSize{ static_cast<short>(windowWidth),
-                                    static_cast<short>(windowHeight) };
+            const til::size windowSize{ static_cast<til::CoordType>(windowWidth),
+                                        static_cast<til::CoordType>(windowHeight) };
 
             // First set up the dx engine with the window size in pixels.
             // Then, using the font, get the number of characters that can fit.
@@ -461,7 +466,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const short wheelDelta,
                                      const TerminalInput::MouseButtonState state)
     {
-        return _terminal->SendMouseEvent(viewportPos.to_win32_coord(), uiButton, states, wheelDelta, state);
+        return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
     }
 
     void ControlCore::UserScrollViewport(const int viewTop)
@@ -585,12 +590,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
-        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
+        decltype(_terminal->GetHyperlinkIntervalFromPosition({})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
-            newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition->to_win32_coord());
-            newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition->to_win32_coord());
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
         }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
@@ -620,7 +625,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }.to_win32_coord()) };
+        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }) };
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -628,7 +633,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(_lastHoveredCell->to_win32_coord()) };
+            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
         }
         return {};
     }
@@ -798,7 +803,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::_setFontSizeUnderLock(int fontSize)
     {
         // Make sure we have a non-zero font size
-        const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
+        const auto newSize = std::max(fontSize, 1);
         const auto fontFace = _settings->FontFace();
         const auto fontWeight = _settings->FontWeight();
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
@@ -854,8 +859,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
-        auto cx = gsl::narrow_cast<short>(_panelWidth * _compositionScale);
-        auto cy = gsl::narrow_cast<short>(_panelHeight * _compositionScale);
+        auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
+        auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
@@ -923,17 +928,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _refreshSizeUnderLock();
     }
 
-    void ControlCore::SetSelectionAnchor(const til::point& position)
+    void ControlCore::SetSelectionAnchor(const til::point position)
     {
         auto lock = _terminal->LockForWriting();
-        _terminal->SetSelectionAnchor(position.to_win32_coord());
+        _terminal->SetSelectionAnchor(position);
     }
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - position: the point in terminal coordinates (in cells, not pixels)
-    void ControlCore::SetEndSelectionPoint(const til::point& position)
+    void ControlCore::SetEndSelectionPoint(const til::point position)
     {
         if (!_terminal->IsSelectionActive())
         {
@@ -950,7 +955,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
 
         // save location (for rendering) + render
-        _terminal->SetSelectionEnd(terminalPosition.to_win32_coord());
+        _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
     }
 
@@ -1030,6 +1035,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
         _renderer->TriggerSelection();
+    }
+
+    bool ControlCore::ToggleBlockSelection()
+    {
+        auto lock = _terminal->LockForWriting();
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->SetBlockSelection(!_terminal->IsBlockSelection());
+            _renderer->TriggerSelection();
+            return true;
+        }
+        return false;
     }
 
     void ControlCore::ToggleMarkMode()
@@ -1249,6 +1266,66 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // Method Description:
+    // - Plays a single MIDI note, blocking for the duration.
+    // Arguments:
+    // - noteNumber - The MIDI note number to be played (0 - 127).
+    // - velocity - The force with which the note should be played (0 - 127).
+    // - duration - How long the note should be sustained (in microseconds).
+    void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
+    {
+        // We create the audio instance on demand, and lock it for the duration
+        // of the note output so it can't be destroyed while in use.
+        auto& midiAudio = _getMidiAudio();
+        midiAudio.Lock();
+
+        // We then unlock the terminal, so the UI doesn't hang while we're busy.
+        auto& terminalLock = _terminal->GetReadWriteLock();
+        terminalLock.unlock();
+
+        // This call will block for the duration, unless shutdown early.
+        midiAudio.PlayNote(noteNumber, velocity, duration);
+
+        // Once complete, we reacquire the terminal lock and unlock the audio.
+        // If the terminal has shutdown in the meantime, the Unlock call
+        // will throw an exception, forcing the thread to exit ASAP.
+        terminalLock.lock();
+        midiAudio.Unlock();
+    }
+
+    // Method Description:
+    // - Returns the MIDI audio instance, created on demand.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a reference to the MidiAudio instance.
+    MidiAudio& ControlCore::_getMidiAudio()
+    {
+        if (!_midiAudio)
+        {
+            _midiAudio = std::make_unique<MidiAudio>();
+            _midiAudio->Initialize();
+        }
+        return *_midiAudio;
+    }
+
+    // Method Description:
+    // - Shuts down the MIDI audio system if previously instantiated.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ControlCore::_shutdownMidiAudio()
+    {
+        if (_midiAudio)
+        {
+            // We lock the terminal here to make sure the shutdown promise is
+            // set before the audio is unlocked in the thread that is playing.
+            auto lock = _terminal->LockForWriting();
+            _midiAudio->Shutdown();
+        }
+    }
+
     bool ControlCore::HasSelection() const
     {
         return _terminal->IsSelectionActive();
@@ -1449,7 +1526,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForReading();
-        return til::point{ _terminal->GetCursorPosition() }.to_core_point();
+        return _terminal->GetCursorPosition().to_core_point();
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
@@ -1501,7 +1578,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If shift is pressed and there is a selection we extend it using
             // the selection mode (expand the "end" selection point)
-            _terminal->SetSelectionEnd(terminalPosition.to_win32_coord(), mode);
+            _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
         else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
@@ -1509,7 +1586,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
             // (expand both "start" and "end" selection points)
-            _terminal->MultiClickSelection(terminalPosition.to_win32_coord(), mode);
+            _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
 
@@ -1539,10 +1616,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::_connectionOutputHandler(const hstring& hstr)
     {
-        _terminal->Write(hstr);
+        try
+        {
+            _terminal->Write(hstr);
 
-        // Start the throttled update of where our hyperlinks are.
-        _updatePatternLocations->Run();
+            // Start the throttled update of where our hyperlinks are.
+            _updatePatternLocations->Run();
+        }
+        catch (...)
+        {
+            // We're expecting to receive an exception here if the terminal
+            // is closed while we're blocked playing a MIDI note.
+        }
     }
 
     // Method Description:

@@ -17,6 +17,7 @@
 
 #include "ControlCore.g.h"
 #include "ControlSettings.h"
+#include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
@@ -81,6 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
+        bool ToggleBlockSelection();
         void ToggleMarkMode();
         bool IsInMarkMode() const;
 
@@ -157,8 +159,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool HasSelection() const;
         bool CopyOnSelect() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(const til::point& position);
-        void SetEndSelectionPoint(const til::point& position);
+        void SetSelectionAnchor(const til::point position);
+        void SetEndSelectionPoint(const til::point position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
@@ -280,7 +282,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
+        void _terminalPlayMidiNote(const int noteNumber,
+                                   const int velocity,
+                                   const std::chrono::microseconds duration);
 #pragma endregion
+
+        std::unique_ptr<MidiAudio> _midiAudio;
+
+        MidiAudio& _getMidiAudio();
+        void _shutdownMidiAudio();
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
