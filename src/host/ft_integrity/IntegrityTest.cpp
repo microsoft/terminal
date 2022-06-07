@@ -220,7 +220,7 @@ void IntegrityTest::_TestValidationHelper(const bool fIsBlockExpected,
     wistd::unique_ptr<wchar_t[]> stringData = wil::make_unique_nothrow<wchar_t[]>(cch);
     THROW_IF_NULL_ALLOC(stringData);
 
-    COORD coordRead = { 0 };
+    til::point coordRead;
     for (coordRead.Y = 0; coordRead.Y < 8; coordRead.Y++)
     {
         ZeroMemory(stringData.get(), sizeof(wchar_t) * cch);

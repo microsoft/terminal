@@ -7,7 +7,7 @@
 
 using namespace Microsoft::Console::Interactivity::OneCore;
 
-void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT /*rectangle*/) noexcept
+void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ const til::rect& /*rectangle*/) noexcept
 {
 }
 

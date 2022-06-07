@@ -54,22 +54,22 @@ public:
     using const_reverse_iterator = typename boost::container::small_vector_base<value_type>::const_reverse_iterator;
     using reference = typename CharRowCellReference;
 
-    CharRow(size_t rowWidth, ROW* const pParent) noexcept;
+    CharRow(til::CoordType rowWidth, ROW* const pParent) noexcept;
 
-    size_t size() const noexcept;
-    [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
-    size_t MeasureLeft() const noexcept;
-    size_t MeasureRight() const;
+    til::CoordType size() const noexcept;
+    [[nodiscard]] HRESULT Resize(const til::CoordType newSize) noexcept;
+    til::CoordType MeasureLeft() const noexcept;
+    til::CoordType MeasureRight() const;
     bool ContainsText() const noexcept;
-    const DbcsAttribute& DbcsAttrAt(const size_t column) const;
-    DbcsAttribute& DbcsAttrAt(const size_t column);
-    void ClearGlyph(const size_t column);
+    const DbcsAttribute& DbcsAttrAt(const til::CoordType column) const;
+    DbcsAttribute& DbcsAttrAt(const til::CoordType column);
+    void ClearGlyph(const til::CoordType column);
 
-    const DelimiterClass DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const;
+    const DelimiterClass DelimiterClassAt(const til::CoordType column, const std::wstring_view wordDelimiters) const;
 
     // working with glyphs
-    const reference GlyphAt(const size_t column) const;
-    reference GlyphAt(const size_t column);
+    const reference GlyphAt(const til::CoordType column) const;
+    reference GlyphAt(const til::CoordType column);
 
     // iterators
     iterator begin() noexcept;
@@ -82,7 +82,7 @@ public:
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
-    COORD GetStorageKey(const size_t column) const noexcept;
+    til::point GetStorageKey(const til::CoordType column) const noexcept;
 
     void UpdateParent(ROW* const pParent);
 
@@ -91,7 +91,7 @@ public:
 
 private:
     void Reset() noexcept;
-    void ClearCell(const size_t column);
+    void ClearCell(const til::CoordType column);
     std::wstring GetText() const;
 
 protected:

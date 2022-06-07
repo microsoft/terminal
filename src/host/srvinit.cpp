@@ -763,9 +763,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     Cac->ConsoleInfo.SetStartupFlags(Data.StartupFlags);
     Cac->ConsoleInfo.SetFillAttribute(Data.FillAttribute);
     Cac->ConsoleInfo.SetShowWindow(Data.ShowWindow);
-    Cac->ConsoleInfo.SetScreenBufferSize(Data.ScreenBufferSize);
-    Cac->ConsoleInfo.SetWindowSize(Data.WindowSize);
-    Cac->ConsoleInfo.SetWindowOrigin(Data.WindowOrigin);
+    Cac->ConsoleInfo.SetScreenBufferSize(til::wrap_coord_size(Data.ScreenBufferSize));
+    Cac->ConsoleInfo.SetWindowSize(til::wrap_coord_size(Data.WindowSize));
+    Cac->ConsoleInfo.SetWindowOrigin(til::wrap_coord_size(Data.WindowOrigin));
     Cac->ProcessGroupId = Data.ProcessGroupId;
     Cac->ConsoleApp = Data.ConsoleApp;
     Cac->WindowVisible = Data.WindowVisible;

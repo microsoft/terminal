@@ -82,6 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
+        bool ToggleBlockSelection();
         void ToggleMarkMode();
         bool IsInMarkMode() const;
 
@@ -155,8 +156,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Core::Point SelectionEnd() const;
         bool MovingEnd() const;
         bool MovingCursor() const;
-        void SetSelectionAnchor(const til::point& position);
-        void SetEndSelectionPoint(const til::point& position);
+        void SetSelectionAnchor(const til::point position);
+        void SetEndSelectionPoint(const til::point position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,

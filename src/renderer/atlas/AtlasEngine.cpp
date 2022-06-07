@@ -447,7 +447,7 @@ void AtlasEngine::WaitUntilCanRender() noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(const gsl::span<const Cluster> clusters, const COORD coord, const bool fTrimLeft, const bool lineWrapped) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(const gsl::span<const Cluster> clusters, const til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
     const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
@@ -491,7 +491,7 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
 try
 {
     if (!_api.bufferLineWasHyperlinked && lines.test(GridLines::Underline) && WI_IsFlagClear(_api.flags, CellFlags::Underline))
@@ -508,14 +508,21 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintSelection(SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
 try
 {
     // Unfortunately there's no step after Renderer::_PaintBufferOutput that
     // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
     // As such we got to call _flushBufferLine() here just to be sure.
     _flushBufferLine();
-    _setCellFlags(rect, CellFlags::Selected, CellFlags::Selected);
+
+    const u16r u16rect{
+        rect.narrow_left<u16>(),
+        rect.narrow_top<u16>(),
+        rect.narrow_right<u16>(),
+        rect.narrow_bottom<u16>(),
+    };
+    _setCellFlags(u16rect, CellFlags::Selected, CellFlags::Selected);
     return S_OK;
 }
 CATCH_RETURN()
@@ -544,7 +551,7 @@ try
     // Clear the previous cursor
     if (_api.invalidatedCursorArea.non_empty())
     {
-        _setCellFlags(til::bit_cast<SMALL_RECT>(_api.invalidatedCursorArea), CellFlags::Cursor, CellFlags::None);
+        _setCellFlags(_api.invalidatedCursorArea, CellFlags::Cursor, CellFlags::None);
     }
 
     if (options.isOn)
@@ -552,10 +559,10 @@ try
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<SHORT>(std::min<int>(point.X, _r.cellCount.x - 1));
-        const auto y = gsl::narrow_cast<SHORT>(std::min<int>(point.Y, _r.cellCount.y - 1));
-        const SHORT right = x + 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
-        const SHORT bottom = y + 1;
+        const auto x = gsl::narrow_cast<uint16_t>(clamp<int>(point.X, 0, _r.cellCount.x - 1));
+        const auto y = gsl::narrow_cast<uint16_t>(clamp<int>(point.Y, 0, _r.cellCount.y - 1));
+        const auto right = gsl::narrow_cast<uint16_t>(x + 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar)));
+        const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
         _setCellFlags({ x, y, right, bottom }, CellFlags::Cursor, CellFlags::Cursor);
     }
 
@@ -1086,18 +1093,18 @@ AtlasEngine::Cell* AtlasEngine::_getCell(u16 x, u16 y) noexcept
     return _r.cells.data() + static_cast<size_t>(_r.cellCount.x) * y + x;
 }
 
-void AtlasEngine::_setCellFlags(SMALL_RECT coords, CellFlags mask, CellFlags bits) noexcept
+void AtlasEngine::_setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept
 {
-    assert(coords.Left <= coords.Right);
-    assert(coords.Top <= coords.Bottom);
-    assert(coords.Right <= _r.cellCount.x);
-    assert(coords.Bottom <= _r.cellCount.y);
+    assert(coords.left <= coords.right);
+    assert(coords.top <= coords.bottom);
+    assert(coords.right <= _r.cellCount.x);
+    assert(coords.bottom <= _r.cellCount.y);
 
     const auto filter = ~mask;
-    const auto width = static_cast<size_t>(coords.Right) - coords.Left;
-    const auto height = static_cast<size_t>(coords.Bottom) - coords.Top;
+    const auto width = static_cast<size_t>(coords.right) - coords.left;
+    const auto height = static_cast<size_t>(coords.bottom) - coords.top;
     const auto stride = static_cast<size_t>(_r.cellCount.x);
-    auto row = _r.cells.data() + static_cast<size_t>(_r.cellCount.x) * coords.Top + coords.Left;
+    auto row = _r.cells.data() + static_cast<size_t>(_r.cellCount.x) * coords.top + coords.left;
     const auto end = row + height * stride;
 
     for (; row != end; row += stride)

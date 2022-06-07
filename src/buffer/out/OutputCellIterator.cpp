@@ -531,16 +531,16 @@ OutputCellView OutputCellIterator::s_GenerateView(const OutputCell& cell)
 // - Gets the distance between two iterators relative to the input data given in.
 // Return Value:
 // - The number of items of the input run consumed between these two iterators.
-ptrdiff_t OutputCellIterator::GetInputDistance(OutputCellIterator other) const noexcept
+til::CoordType OutputCellIterator::GetInputDistance(OutputCellIterator other) const noexcept
 {
-    return _pos - other._pos;
+    return gsl::narrow_cast<til::CoordType>(_pos - other._pos);
 }
 
 // Routine Description:
 // - Gets the distance between two iterators relative to the number of cells inserted.
 // Return Value:
 // - The number of cells in the backing buffer filled between these two iterators.
-ptrdiff_t OutputCellIterator::GetCellDistance(OutputCellIterator other) const noexcept
+til::CoordType OutputCellIterator::GetCellDistance(OutputCellIterator other) const noexcept
 {
-    return _distance - other._distance;
+    return gsl::narrow_cast<til::CoordType>(_distance - other._distance);
 }

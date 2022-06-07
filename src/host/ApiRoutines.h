@@ -118,19 +118,19 @@ public:
     [[nodiscard]] HRESULT FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
                                                          const WORD attribute,
                                                          const size_t lengthToWrite,
-                                                         const COORD startingCoordinate,
+                                                         const til::point startingCoordinate,
                                                          size_t& cellsModified) noexcept override;
 
     [[nodiscard]] HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                           const char character,
                                                           const size_t lengthToWrite,
-                                                          const COORD startingCoordinate,
+                                                          const til::point startingCoordinate,
                                                           size_t& cellsModified) noexcept override;
 
     [[nodiscard]] HRESULT FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                           const wchar_t character,
                                                           const size_t lengthToWrite,
-                                                          const COORD startingCoordinate,
+                                                          const til::point startingCoordinate,
                                                           size_t& cellsModified,
                                                           const bool enablePowershellShim = false) noexcept override;
 
@@ -162,25 +162,25 @@ public:
                                                            const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept override;
 
     [[nodiscard]] HRESULT SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
-                                                         const COORD size) noexcept override;
+                                                         const til::size size) noexcept override;
 
     [[nodiscard]] HRESULT SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
-                                                       const COORD position) noexcept override;
+                                                       const til::point position) noexcept override;
 
     void GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
-                                         COORD& size) noexcept override;
+                                         til::size& size) noexcept override;
 
     [[nodiscard]] HRESULT ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
-                                                         const SMALL_RECT& source,
-                                                         const COORD target,
-                                                         std::optional<SMALL_RECT> clip,
+                                                         const til::inclusive_rect& source,
+                                                         const til::point target,
+                                                         std::optional<til::inclusive_rect> clip,
                                                          const char fillCharacter,
                                                          const WORD fillAttribute) noexcept override;
 
     [[nodiscard]] HRESULT ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
-                                                         const SMALL_RECT& source,
-                                                         const COORD target,
-                                                         std::optional<SMALL_RECT> clip,
+                                                         const til::inclusive_rect& source,
+                                                         const til::point target,
+                                                         std::optional<til::inclusive_rect> clip,
                                                          const wchar_t fillCharacter,
                                                          const WORD fillAttribute,
                                                          const bool enableCmdShim = false) noexcept override;
@@ -190,20 +190,20 @@ public:
 
     [[nodiscard]] HRESULT SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
                                                    const bool isAbsolute,
-                                                   const SMALL_RECT& windowRect) noexcept override;
+                                                   const til::inclusive_rect& windowRect) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
-                                                         const COORD origin,
+                                                         const til::point origin,
                                                          gsl::span<WORD> buffer,
                                                          size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
-                                                          const COORD origin,
+                                                          const til::point origin,
                                                           gsl::span<char> buffer,
                                                           size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
-                                                          const COORD origin,
+                                                          const til::point origin,
                                                           gsl::span<wchar_t> buffer,
                                                           size_t& written) noexcept override;
 
@@ -229,17 +229,17 @@ public:
 
     [[nodiscard]] HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
                                                           const gsl::span<const WORD> attrs,
-                                                          const COORD target,
+                                                          const til::point target,
                                                           size_t& used) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                            const std::string_view text,
-                                                           const COORD target,
+                                                           const til::point target,
                                                            size_t& used) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                            const std::wstring_view text,
-                                                           const COORD target,
+                                                           const til::point target,
                                                            size_t& used) noexcept override;
 
     [[nodiscard]] HRESULT ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
@@ -279,7 +279,7 @@ public:
 
     [[nodiscard]] HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
                                                  const DWORD index,
-                                                 COORD& size) noexcept override;
+                                                 til::size& size) noexcept override;
 
     //// driver will pare down for non-Ex method
     [[nodiscard]] HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
@@ -288,7 +288,7 @@ public:
 
     [[nodiscard]] HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
                                                     const ULONG flags,
-                                                    COORD& newSize) noexcept override;
+                                                    til::size& newSize) noexcept override;
 
     void GetConsoleDisplayModeImpl(ULONG& flags) noexcept override;
 
