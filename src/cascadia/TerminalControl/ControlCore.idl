@@ -92,7 +92,8 @@ namespace Microsoft.Terminal.Control
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
         Microsoft.Terminal.Core.Point SelectionAnchor { get; };
         Microsoft.Terminal.Core.Point SelectionEnd { get; };
-        Boolean MovingStart { get; };
+        Boolean MovingEnd { get; };
+        Boolean MovingCursor { get; };
 
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };

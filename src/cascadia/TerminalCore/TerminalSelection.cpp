@@ -327,11 +327,18 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
     return std::nullopt;
 }
 
-bool Terminal::MovingStart() const noexcept
+bool Terminal::MovingEnd() const noexcept
 {
-    // true --> we're moving start endpoint ("higher")
-    // false --> we're moving end endpoint ("lower")
-    return _selection->start == _selection->pivot ? false : true;
+    // true --> we're moving end endpoint ("lower")
+    // false --> we're moving start endpoint ("higher")
+    return _selection->start == _selection->pivot;
+}
+
+bool Terminal::MovingCursor() const noexcept
+{
+    // true --> we're moving end endpoint ("lower")
+    // false --> we're moving start endpoint ("higher")
+    return _selection->start == _selection->pivot && _selection->pivot == _selection->end;
 }
 
 // Method Description:
@@ -345,8 +352,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     // 1. Figure out which endpoint to update
     // One of the endpoints is the pivot,
     // signifying that the other endpoint is the one we want to move.
-    const auto movingEnd{ _selection->start == _selection->pivot };
-    auto targetPos{ movingEnd ? _selection->end : _selection->start };
+    auto targetPos{ MovingEnd() ? _selection->end : _selection->start };
 
     // 2. Perform the movement
     switch (mode)

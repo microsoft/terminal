@@ -928,10 +928,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return { end.X, end.Y };
     }
 
-    bool ControlCore::MovingStart() const
+    bool ControlCore::MovingEnd() const
     {
         auto lock = _terminal->LockForReading();
-        return _terminal->MovingStart();
+        return _terminal->MovingEnd();
+    }
+
+    bool ControlCore::MovingCursor() const
+    {
+        auto lock = _terminal->LockForReading();
+        return _terminal->MovingCursor();
     }
 
     // Method Description:

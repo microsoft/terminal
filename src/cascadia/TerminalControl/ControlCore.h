@@ -153,7 +153,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         Core::Point SelectionAnchor() const;
         Core::Point SelectionEnd() const;
-        bool MovingStart() const;
+        bool MovingEnd() const;
+        bool MovingCursor() const;
         void SetSelectionAnchor(const til::point& position);
         void SetEndSelectionPoint(const til::point& position);
 

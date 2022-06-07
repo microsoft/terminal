@@ -2738,12 +2738,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_core.HasSelection() && !args.ClearMarkers())
             {
+                // lambda helper function that can be used to display a selection marker
+                // - targetEnd: if true, target the "end" selection marker. Otherwise, target "start".
+                auto displayMarker = [&](bool targetEnd) {
+                    // Compute the location of the top left corner of the cell in DIPS
+                    const auto terminalPos{ targetEnd ? _core.SelectionEnd() : _core.SelectionAnchor() };
+                    const til::point locationInDIPs{ _toPosInDips(terminalPos) };
+
+                    // Move the marker to the top left corner of the cell
+                    const auto& marker{ targetEnd ? SelectionEndMarker() : SelectionStartMarker() };
+                    SelectionCanvas().SetLeft(marker,
+                                              (locationInDIPs.x - SwapChainPanel().ActualOffset().x));
+                    SelectionCanvas().SetTop(marker,
+                                             (locationInDIPs.y - SwapChainPanel().ActualOffset().y));
+                    marker.Visibility(Visibility::Visible);
+                };
+
                 // show/update selection markers
                 // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
-                const auto movingStart{ _core.MovingStart() };
-                const auto selectionAnchor{ movingStart ? _core.SelectionAnchor() : _core.SelectionEnd() };
-                const auto& marker{ movingStart ? SelectionStartMarker() : SelectionEndMarker() };
-                const auto& otherMarker{ movingStart ? SelectionEndMarker() : SelectionStartMarker() };
+                const auto movingEnd{ _core.MovingEnd() };
+                const auto selectionAnchor{ movingEnd ? _core.SelectionEnd() : _core.SelectionAnchor() };
+                const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
+                const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
                 if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
                 {
                     // if the endpoint is outside of the viewport,
@@ -2752,20 +2768,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     otherMarker.Visibility(Visibility::Collapsed);
                     co_return;
                 }
+                else if (_core.MovingCursor())
+                {
+                    // display both markers
+                    displayMarker(true);
+                    displayMarker(false);
+                }
                 else
                 {
-                    marker.Visibility(Visibility::Visible);
+                    // display one marker,
+                    // but hide the other
+                    displayMarker(movingEnd);
                     otherMarker.Visibility(Visibility::Collapsed);
                 }
-
-                // Compute the location of the top left corner of the cell in DIPS
-                const til::point locationInDIPs{ _toPosInDips(selectionAnchor) };
-
-                // Move the marker to the top left corner of the cell
-                SelectionCanvas().SetLeft(marker,
-                                          (locationInDIPs.x - SwapChainPanel().ActualOffset().x));
-                SelectionCanvas().SetTop(marker,
-                                         (locationInDIPs.y - SwapChainPanel().ActualOffset().y));
             }
             else
             {

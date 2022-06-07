@@ -248,7 +248,8 @@ public:
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
-    bool MovingStart() const noexcept;
+    bool MovingEnd() const noexcept;
+    bool MovingCursor() const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
 
