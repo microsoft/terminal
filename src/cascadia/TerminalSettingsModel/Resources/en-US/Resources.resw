@@ -385,7 +385,7 @@
   </data>
   <data name="AddMarkWithColorCommandKey" xml:space="preserve">
     <value>Add a mark, color:{0}</value>
-    <comment>{0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
+    <comment>{Locked="color"}. "color" is a literal parameter name that shouldn't be translated. {0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
   </data>
   <data name="ClearMarkCommandKey" xml:space="preserve">
     <value>Clear mark</value>
