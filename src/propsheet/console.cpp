@@ -96,7 +96,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
             gpStateInfo->FaceName[0] = TEXT('\0');
         }
 
-        if (g_defAppEnabled)
+        if (Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
         {
             LOG_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(g_selectedPackage));
         }
@@ -552,7 +552,7 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE* pPsp, const s
         {
             pTerminalPage->dwSize = sizeof(PROPSHEETPAGE);
             pTerminalPage->hInstance = ghInstance;
-            if (g_defAppEnabled)
+            if (Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
             {
                 pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL_WITH_DEFTERM);
             }
@@ -629,7 +629,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     // Find the available default console/terminal packages
     //
 
-    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(g_defAppEnabled)) && g_defAppEnabled)
+    if (Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
     {
         LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(g_availablePackages, g_selectedPackage));
     }

@@ -265,8 +265,7 @@ int CALLBACK wWinMain(
     {
         // Only try to register as a handoff target if we are NOT a part of Windows.
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
-        bool defAppEnabled = false;
-        if (args.ShouldRunAsComServer() && SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(defAppEnabled)) && defAppEnabled)
+        if (args.ShouldRunAsComServer() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
         {
             try
             {
