@@ -267,11 +267,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto height = vp.Height();
             _connection.Resize(height, width);
 
-            if (_OwningHwnd != 0)
+            if (_owningHwnd != 0)
             {
                 if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
                 {
-                    conpty.ReparentWindow(_OwningHwnd);
+                    conpty.ReparentWindow(_owningHwnd);
                 }
             }
 
@@ -1853,5 +1853,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
+    }
+
+    uint64_t ControlCore::OwningHwnd()
+    {
+        return _owningHwnd;
+    }
+
+    void ControlCore::OwningHwnd(uint64_t owner)
+    {
+        if (owner != _owningHwnd && _connection)
+        {
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ReparentWindow(owner);
+            }
+        }
+        _owningHwnd = owner;
     }
 }
