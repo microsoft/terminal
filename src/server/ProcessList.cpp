@@ -305,7 +305,7 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
     {
         const auto pProcessHandle = *it;
 
-        // If we're a delgated-to console (OpenConsole), then make sure to pass
+        // If we're a delegated-to console (OpenConsole), then make sure to pass
         // in the value of the handle in the origin conhost, not our own.
         if (const auto& handleToUse = pProcessHandle->_hProcessInConhost ?
                                           pProcessHandle->_hProcessInConhost :
