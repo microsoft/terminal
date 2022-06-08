@@ -53,8 +53,8 @@ gantt
         Lock down & bake        :done, 2022-05-06, 2w
         Release 1.14            :milestone, 2022-05-24
     section Terminal 1.15
-        Features                :a1, done, 2022-05-06, 4w
-        Bugfix                  :a2, active, after a1  , 1w
+        Features                :done, a1, 2022-05-06, 4w
+        Bugfix                  :active, a2, after a1  , 1w
         Lock down & bake        :after a2  , 1w
         Release 1.15            :milestone, 2022-06-21, 0
         1.15 becomes Stable     :milestone, after b3, 0
