@@ -7,6 +7,8 @@
 
 #include "../../inc/HostSignals.hpp"
 
+#include "../../interactivity/inc/ServiceLocator.hpp"
+
 using namespace Microsoft::Console::Interactivity;
 
 RemoteConsoleControl::RemoteConsoleControl(HANDLE signalPipe) :
@@ -57,12 +59,50 @@ template<typename T>
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
 {
-    HostSignalSetForegroundData data{};
-    data.sizeInBytes = sizeof(data);
-    data.processId = HandleToULong(hProcess);
-    data.isForeground = fForeground;
+    // return LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground));
 
-    return _SendTypedPacket(_pipe.get(), HostSignals::SetForeground, data);
+    enum ControlType
+    {
+        ConsoleSetVDMCursorBounds,
+        ConsoleNotifyConsoleApplication,
+        ConsoleFullscreenSwitch,
+        ConsoleSetCaretInfo,
+        ConsoleSetReserveKeys,
+        ConsoleSetForeground,
+        ConsoleSetWindowOwner,
+        ConsoleEndTask,
+    };
+    CONSOLESETFOREGROUND Flags;
+    Flags.hProcess = hProcess;
+    Flags.bForeground = fForeground;
+    auto control = [](_In_ ControlType ConsoleCommand,
+                      _In_reads_bytes_(ConsoleInformationLength) PVOID ConsoleInformation,
+                      _In_ DWORD ConsoleInformationLength) -> NTSTATUS {
+        {
+            wil::unique_hmodule _hUser32{ LoadLibraryW(L"user32.dll") };
+            if (_hUser32)
+            {
+                typedef NTSTATUS(WINAPI * PfnConsoleControl)(ControlType Command, PVOID Information, DWORD Length);
+
+                static auto pfn = (PfnConsoleControl)GetProcAddress(_hUser32.get(), "ConsoleControl");
+
+                if (pfn != nullptr)
+                {
+                    return pfn(ConsoleCommand, ConsoleInformation, ConsoleInformationLength);
+                }
+            }
+
+            return STATUS_UNSUCCESSFUL;
+        }
+    };
+    return LOG_IF_NTSTATUS_FAILED(control(ControlType::ConsoleSetForeground, hProcess, fForeground));
+
+    // HostSignalSetForegroundData data{};
+    // data.sizeInBytes = sizeof(data);
+    // data.processId = HandleToULong(hProcess);
+    // data.isForeground = fForeground;
+
+    // return _SendTypedPacket(_pipe.get(), HostSignals::SetForeground, data);
 }
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
