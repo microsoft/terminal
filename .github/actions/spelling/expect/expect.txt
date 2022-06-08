@@ -1082,6 +1082,7 @@ ICore
 IData
 IDCANCEL
 IDD
+IDefault
 IDesktop
 IDevice
 IDictionary
