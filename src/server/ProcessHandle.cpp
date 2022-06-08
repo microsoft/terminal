@@ -38,6 +38,17 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
         Telemetry::Instance().LogProcessConnected(_hProcess.get());
     }
 
+    // GH#13211 - If we're running as the delegation console (someone handed off
+    // to us), then we need to make sure the original conhost has access to this
+    // process handle as well. Otherwise, the future calls to
+    // ConsoleControl(SetForeground,...) won't work, because the literal handle
+    // value doesn't exist in the original conhost process space.
+    // * g.handoffInboxConsoleHandle is only set when we've been delegated to
+    // * We can't just pass something like the PID, because the OS conhost
+    //   already expects a literal handle value via the HostSignalInputThread.
+    //   If we changed that in the OpenConsole version, then there'll surely be
+    //   the chance for a mispatch between the OS conhost and the delegated
+    //   console.
     if (const auto& conhost{ ServiceLocator::LocateGlobals().handoffInboxConsoleHandle })
     {
         LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
@@ -52,6 +63,7 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
 
 ConsoleProcessHandle::~ConsoleProcessHandle()
 {
+    // Close out the handle in the origin conhost.
     const auto& conhost{ ServiceLocator::LocateGlobals().handoffInboxConsoleHandle };
     if (_hProcessInConhost && conhost)
     {
@@ -59,7 +71,7 @@ ConsoleProcessHandle::~ConsoleProcessHandle()
                                                 _hProcessInConhost.get(),
                                                 nullptr /* hTargetProcessHandle */,
                                                 nullptr /* lpTargetHandle, ignored */,
-                                                0 /*dwDesiredAccess, ignored*/,
+                                                0 /* dwDesiredAccess, ignored */,
                                                 false,
                                                 DUPLICATE_CLOSE_SOURCE));
     }

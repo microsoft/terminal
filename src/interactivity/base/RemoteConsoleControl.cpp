@@ -65,11 +65,11 @@ template<typename T>
     return _SendTypedPacket(_pipe.get(), HostSignals::SetForeground, data);
 }
 
-[[nodiscard]] NTSTATUS RemoteConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+[[nodiscard]] NTSTATUS RemoteConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     HostSignalEndTaskData data{};
     data.sizeInBytes = sizeof(data);
-    data.processId = HandleToULong(hProcessId);
+    data.processId = dwProcessId;
     data.eventType = dwEventType;
     data.ctrlFlags = ulCtrlFlags;
 

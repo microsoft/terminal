@@ -96,10 +96,9 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         {
             auto msg = _ReceiveTypedPacket<HostSignalSetForegroundData>();
 
-            // if (wil::unique_handle hClient{ OpenProcess(PROCESS_QUERY_INFORMATION, false, msg.processId) })
-            // {
-            //     LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hClient.get(), msg.isForeground));
-            // }
+            // GH#13211 - The OpenConsole side should have already duplicated
+            // the handle to us, and processId should be the value in our
+            // process space.
             LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.processId), msg.isForeground));
 
             break;
@@ -108,7 +107,7 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         {
             auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
 
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(ULongToHandle(msg.processId), msg.eventType, msg.ctrlFlags));
+            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(msg.processId, msg.eventType, msg.ctrlFlags));
 
             break;
         }
