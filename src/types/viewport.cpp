@@ -365,6 +365,7 @@ bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
+#pragma warning(suppress : 4100)
 int Viewport::CompareInBounds(const til::point first, const til::point second, bool allowEndExclusive) const noexcept
 {
     // Assert that our coordinates are within the expected boundaries
