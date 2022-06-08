@@ -305,9 +305,9 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
     {
         const auto pProcessHandle = *it;
 
-        if (pProcessHandle->_hProcess != nullptr)
+        if (const auto& handleToUse = pProcessHandle->_hProcessInConhost ? pProcessHandle->_hProcessInConhost : pProcessHandle->_hProcess)
         {
-            _ModifyProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
+            _ModifyProcessForegroundRights(handleToUse.get(), fForeground);
         }
 
         it = std::next(it);

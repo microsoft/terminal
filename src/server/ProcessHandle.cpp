@@ -8,6 +8,9 @@
 #include "../host/globals.h"
 #include "../host/telemetry.hpp"
 
+#include "../interactivity/inc/ServiceLocator.hpp"
+
+using namespace Microsoft::Console::Interactivity;
 // Routine Description:
 // - Constructs an instance of the ConsoleProcessHandle Class
 // - NOTE: Can throw if allocation fails or if there is a console policy we do not understand.
@@ -33,6 +36,32 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     if (nullptr != _hProcess.get())
     {
         Telemetry::Instance().LogProcessConnected(_hProcess.get());
+    }
+
+    if (const auto& conhost{ ServiceLocator::LocateGlobals().handoffInboxConsoleHandle })
+    {
+        LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                                _hProcess.get(),
+                                                conhost.get(),
+                                                _hProcessInConhost.put(),
+                                                0 /*dwDesiredAccess, ignored*/,
+                                                false,
+                                                DUPLICATE_SAME_ACCESS));
+    }
+}
+
+ConsoleProcessHandle::~ConsoleProcessHandle()
+{
+    const auto& conhost{ ServiceLocator::LocateGlobals().handoffInboxConsoleHandle };
+    if (_hProcessInConhost && conhost)
+    {
+        LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(conhost.get(),
+                                                _hProcessInConhost.get(),
+                                                nullptr /* hTargetProcessHandle */,
+                                                nullptr /* lpTargetHandle, ignored */,
+                                                0 /*dwDesiredAccess, ignored*/,
+                                                false,
+                                                DUPLICATE_CLOSE_SOURCE));
     }
 }
 

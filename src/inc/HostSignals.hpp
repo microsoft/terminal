@@ -19,7 +19,7 @@ namespace Microsoft::Console
     struct HostSignalSetForegroundData
     {
         uint32_t sizeInBytes;
-        uint32_t processId;
+        uint32_t processId; // THIS NEEDS TO BE A PID, NOT A HANDLE
         bool isForeground;
     };
 

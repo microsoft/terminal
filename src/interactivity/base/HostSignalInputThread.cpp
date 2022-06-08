@@ -96,6 +96,10 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         {
             auto msg = _ReceiveTypedPacket<HostSignalSetForegroundData>();
 
+            // if (wil::unique_handle hClient{ OpenProcess(PROCESS_QUERY_INFORMATION, false, msg.processId) })
+            // {
+            //     LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hClient.get(), msg.isForeground));
+            // }
             LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.processId), msg.isForeground));
 
             break;
