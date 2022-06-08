@@ -992,7 +992,7 @@ int Terminal::ViewStartIndex() const noexcept
 
 int Terminal::ViewEndIndex() const noexcept
 {
-    return _inAltBuffer() ? _altBufferSize.height : _mutableViewport.BottomInclusive();
+    return _inAltBuffer() ? _altBufferSize.height - 1 : _mutableViewport.BottomInclusive();
 }
 
 // _VisibleStartIndex is the first visible line of the buffer

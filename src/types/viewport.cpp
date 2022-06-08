@@ -368,8 +368,8 @@ bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
 int Viewport::CompareInBounds(const til::point first, const til::point second, bool allowEndExclusive) const noexcept
 {
     // Assert that our coordinates are within the expected boundaries
-    FAIL_FAST_IF(!IsInBounds(first, allowEndExclusive));
-    FAIL_FAST_IF(!IsInBounds(second, allowEndExclusive));
+    assert(IsInBounds(first, allowEndExclusive));
+    assert(IsInBounds(second, allowEndExclusive));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
@@ -432,7 +432,7 @@ bool Viewport::WalkInBounds(til::point& pos, const WalkDir dir, bool allowEndExc
 bool Viewport::WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool allowEndExclusive) const noexcept
 {
     // Assert that the position given fits inside this viewport.
-    FAIL_FAST_IF(!IsInBounds(pos, allowEndExclusive));
+    assert(IsInBounds(pos, allowEndExclusive));
 
     if (dir.x == XWalk::LeftToRight)
     {
