@@ -2511,7 +2511,6 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
 // Method Description:
 // - Performs a FinalTerm action
-// - Ascribes to the ITermDispatch interface
 // - Currently, the actions we support are:
 //   * `OSC133;A`: mark a line as a prompt line
 // - Not actually used in conhost
@@ -2546,7 +2545,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 
     if (action == L"A") // FTCS_PROMPT
     {
-        // Simply just mark this line as the a prompt line.
+        // Simply just mark this line as a prompt line.
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
         _api.AddMark(mark);
