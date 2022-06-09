@@ -1524,15 +1524,15 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize = GetSize();
-    bool pastEndExclusive = false;
-    const auto limit = [bufferSize, limitOptional](bool& pastEndExclusive) {
-        const auto endExclusive{ bufferSize.EndExclusive() };
-        const auto val = limitOptional.value_or(endExclusive);
-        pastEndExclusive = val > endExclusive;
-        return pastEndExclusive ? endExclusive : val;
-    }(pastEndExclusive);
+    bool pastEndInclusive = false;
+    const auto limit = [bufferSize, limitOptional](bool& pastEndInclusive) {
+        const auto endInclusive{ bufferSize.BottomRightInclusive() };
+        const auto val = limitOptional.value_or(endInclusive);
+        pastEndInclusive = val > endInclusive;
+        return pastEndInclusive ? endInclusive : val;
+    }(pastEndInclusive);
 
-    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit) + (pastEndExclusive ? 1 : 0) };
+    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit) + (pastEndInclusive ? 1 : 0) };
     if (distanceToLimit >= 0)
     {
         // Corner Case: we're on/past the limit
