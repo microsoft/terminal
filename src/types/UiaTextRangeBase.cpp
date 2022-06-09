@@ -248,11 +248,10 @@ try
     // TODO GH#5406: create a different UIA parent object for each TextBuffer
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
     //   Ensure both endpoints fit in the current buffer.
-    const auto bufferSize = _pData->GetTextBuffer().GetSize();
-    RETURN_HR_IF(E_FAIL, !bufferSize.IsInBounds(mine) || !bufferSize.IsInBounds(other));
 
-    // compare them
-    *pRetVal = bufferSize.CompareInBounds(mine, other);
+    // directly calculate the distance between the two endpoints
+    *pRetVal = (mine.Y - other.Y) * _pData->GetTextBuffer().GetSize().Width();
+    *pRetVal += (mine.X - other.X);
 
     UiaTracing::TextRange::CompareEndpoints(*this, endpoint, *range, targetEndpoint, *pRetVal);
     return S_OK;

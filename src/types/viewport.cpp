@@ -203,9 +203,6 @@ bool Viewport::IsInBounds(const Viewport& other) const noexcept
 // - Determines if the given coordinate position lies within this viewport.
 // Arguments:
 // - pos - Coordinate position
-// - allowEndExclusive - if true, allow the EndExclusive til::point as a valid position.
-//                        Used in accessibility to signify that the exclusive end
-//                        includes the last til::point in a given viewport.
 // Return Value:
 // - True if it lies inside the viewport. False otherwise.
 bool Viewport::IsInBounds(const til::point pos) const noexcept
@@ -350,9 +347,6 @@ bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
 // Arguments:
 // - first- The first coordinate position
 // - second - The second coordinate position
-// - allowEndExclusive - if true, allow the EndExclusive til::point as a valid position.
-//                        Used in accessibility to signify that the exclusive end
-//                        includes the last til::point in a given viewport.
 // Return Value:
 // -  Negative if First is to the left of the Second.
 // -  0 if First and Second are the same coordinate.
