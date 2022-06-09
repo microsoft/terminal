@@ -481,3 +481,8 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
             changedRect.bottom - 1);
     }
 }
+
+void ConhostInternalGetSet::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+{
+    // Not implemented for conhost.
+}

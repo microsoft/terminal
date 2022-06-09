@@ -49,7 +49,8 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false }
+    _trimBlockSelection{ false },
+    _autoMarkPrompts{ false }
 {
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
@@ -121,6 +122,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
+    _autoMarkPrompts = settings.AutoMarkPrompts();
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -211,6 +213,11 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     _defaultCursorShape = cursorShape;
+
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks whose color
+    // may have changed.
+    _NotifyScrollEvent();
 }
 
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
@@ -750,6 +757,22 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         vkey = _VirtualKeyFromCharacter(ch);
     }
 
+    // GH#1527: When the user has auto mark prompts enabled, we're going to try
+    // and heuristically detect if this was the line the prompt was on.
+    // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
+    //   as prompts. That's omitted for now.)
+    // * AND we're not in the alt buffer
+    //
+    // Then treat this line like it's a prompt mark.
+    if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
+        // color for any MarkCategory::Prompt marks without one set.
+        AddMark(mark);
+    }
+
     // Unfortunately, the UI doesn't give us both a character down and a
     // character up event, only a character received event. So fake sending both
     // to the terminal input translator. Unless it's in win32-input-mode, it'll
@@ -1198,6 +1221,17 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
 
     if (rowsPushedOffTopOfBuffer != 0)
     {
+        if (_scrollMarks.size() > 0)
+        {
+            for (auto& mark : _scrollMarks)
+            {
+                mark.start.y -= rowsPushedOffTopOfBuffer;
+            }
+            _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
+                                              _scrollMarks.end(),
+                                              [](const VirtualTerminal::DispatchTypes::ScrollMark& m) { return m.start.y < 0; }),
+                               _scrollMarks.end());
+        }
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
@@ -1450,6 +1484,11 @@ void Terminal::ApplyScheme(const Scheme& colorScheme)
     _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
 
     _renderSettings.MakeAdjustedColorArray();
+
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks whose color
+    // may have changed.
+    _NotifyScrollEvent();
 }
 
 bool Terminal::_inAltBuffer() const noexcept
@@ -1474,5 +1513,103 @@ void Terminal::_updateUrlDetection()
     else
     {
         ClearPatternTree();
+    }
+}
+
+void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+                       const til::point& start,
+                       const til::point& end)
+{
+    if (_inAltBuffer())
+    {
+        return;
+    }
+
+    DispatchTypes::ScrollMark m = mark;
+    m.start = start;
+    m.end = end;
+
+    _scrollMarks.push_back(m);
+
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks
+    _NotifyScrollEvent();
+}
+
+void Terminal::ClearMark()
+{
+    // Look for one where the cursor is, or where the selection is if we have
+    // one. Any mark that intersects the cursor/selection, on either side
+    // (inclusive), will get cleared.
+    const til::point cursor{ _activeBuffer().GetCursor().GetPosition() };
+    til::point start{ cursor };
+    til::point end{ cursor };
+
+    if (IsSelectionActive())
+    {
+        start = til::point{ GetSelectionAnchor() };
+        end = til::point{ GetSelectionEnd() };
+    }
+
+    _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
+                                      _scrollMarks.end(),
+                                      [&start, &end](const auto& m) {
+                                          return (m.start >= start && m.start <= end) ||
+                                                 (m.end >= start && m.end <= end);
+                                      }),
+                       _scrollMarks.end());
+
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks
+    _NotifyScrollEvent();
+}
+void Terminal::ClearAllMarks()
+{
+    _scrollMarks.clear();
+    // Tell the control that the scrollbar has somehow changed. Used as a
+    // workaround to force the control to redraw any scrollbar marks
+    _NotifyScrollEvent();
+}
+
+const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const
+{
+    // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
+    // We want to return _no_ marks when we're in the alt buffer, to effectively
+    // hide them. We need to return a reference, so we can't just ctor an empty
+    // list here just for when we're in the alt buffer.
+    static std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
+    return _inAltBuffer() ? _altBufferMarks : _scrollMarks;
+}
+
+til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const
+{
+    if (mark.color.has_value())
+    {
+        return *mark.color;
+    }
+
+    switch (mark.category)
+    {
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Prompt:
+    {
+        return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
+    }
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Error:
+    {
+        return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
+    }
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Warning:
+    {
+        return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
+    }
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Success:
+    {
+        return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
+    }
+    default:
+    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Info:
+    {
+        return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
+    }
     }
 }

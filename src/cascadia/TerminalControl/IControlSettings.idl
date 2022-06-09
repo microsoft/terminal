@@ -56,6 +56,7 @@ namespace Microsoft.Terminal.Control
         // Experimental Settings
         Boolean ForceFullRepaintRendering { get; };
         Boolean SoftwareRendering { get; };
+        Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
     };
 }
