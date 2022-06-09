@@ -2279,6 +2279,7 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
+stdc
 stdcall
 stdcpp
 stderr
