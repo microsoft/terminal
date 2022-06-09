@@ -8,9 +8,6 @@
 #include "../host/globals.h"
 #include "../host/telemetry.hpp"
 
-#include "../interactivity/inc/ServiceLocator.hpp"
-
-using namespace Microsoft::Console::Interactivity;
 // Routine Description:
 // - Constructs an instance of the ConsoleProcessHandle Class
 // - NOTE: Can throw if allocation fails or if there is a console policy we do not understand.
@@ -36,44 +33,6 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     if (nullptr != _hProcess.get())
     {
         Telemetry::Instance().LogProcessConnected(_hProcess.get());
-    }
-
-    // GH#13211 - If we're running as the delegation console (someone handed off
-    // to us), then we need to make sure the original conhost has access to this
-    // process handle as well. Otherwise, the future calls to
-    // ConsoleControl(SetForeground,...) won't work, because the literal handle
-    // value doesn't exist in the original conhost process space.
-    // * g.handoffInboxConsoleHandle is only set when we've been delegated to
-    // * We can't just pass something like the PID, because the OS conhost
-    //   already expects a literal handle value via the HostSignalInputThread.
-    //   If we changed that in the OpenConsole version, then there'll surely be
-    //   the chance for a mispatch between the OS conhost and the delegated
-    //   console.
-    if (const auto& conhost{ ServiceLocator::LocateGlobals().handoffInboxConsoleHandle })
-    {
-        LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
-                                                _hProcess.get(),
-                                                conhost.get(),
-                                                _hProcessInConhost.put(),
-                                                0 /*dwDesiredAccess, ignored*/,
-                                                false,
-                                                DUPLICATE_SAME_ACCESS));
-    }
-}
-
-ConsoleProcessHandle::~ConsoleProcessHandle()
-{
-    // Close out the handle in the origin conhost.
-    const auto& conhost{ ServiceLocator::LocateGlobals().handoffInboxConsoleHandle };
-    if (_hProcessInConhost && conhost)
-    {
-        LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(conhost.get(),
-                                                _hProcessInConhost.get(),
-                                                nullptr /* hTargetProcessHandle */,
-                                                nullptr /* lpTargetHandle, ignored */,
-                                                0 /* dwDesiredAccess, ignored */,
-                                                false,
-                                                DUPLICATE_CLOSE_SOURCE));
     }
 }
 

@@ -94,12 +94,11 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         }
         case HostSignals::SetForeground:
         {
-            auto msg = _ReceiveTypedPacket<HostSignalSetForegroundData>();
+            _ReceiveTypedPacket<HostSignalSetForegroundData>();
 
-            // GH#13211 - The OpenConsole side should have already duplicated
-            // the handle to us, and processId should be the value in our
-            // process space.
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(ULongToHandle(msg.processId), msg.isForeground));
+            // GH#13211 - This honestly shouldn't be called by OpenConsole
+            // anymore, but it's possible that a much older version of
+            // OpenConsole is still calling this. Just do nothing.
 
             break;
         }

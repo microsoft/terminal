@@ -305,13 +305,9 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
     {
         const auto pProcessHandle = *it;
 
-        // If we're a delegated-to console (OpenConsole), then make sure to pass
-        // in the value of the handle in the origin conhost, not our own.
-        if (const auto& handleToUse = pProcessHandle->_hProcessInConhost ?
-                                          pProcessHandle->_hProcessInConhost :
-                                          pProcessHandle->_hProcess)
+        if (pProcessHandle->_hProcess)
         {
-            _ModifyProcessForegroundRights(handleToUse.get(), fForeground);
+            _ModifyProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
         }
 
         it = std::next(it);

@@ -50,7 +50,7 @@ private:
     ConsoleProcessHandle(const DWORD dwProcessId,
                          const DWORD dwThreadId,
                          const ULONG ulProcessGroupId);
-    ~ConsoleProcessHandle();
+    ~ConsoleProcessHandle() = default;
     ConsoleProcessHandle(const ConsoleProcessHandle&) = delete;
     ConsoleProcessHandle(ConsoleProcessHandle&&) = delete;
     ConsoleProcessHandle& operator=(const ConsoleProcessHandle&) & = delete;
@@ -59,7 +59,6 @@ private:
     ULONG _ulTerminateCount;
     ULONG const _ulProcessGroupId;
     wil::unique_handle const _hProcess;
-    wil::unique_handle _hProcessInConhost;
 
     mutable ULONG64 _processCreationTime;
 

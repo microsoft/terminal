@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "../inc/IConsoleControl.hpp"
+#include "../win32/ConsoleControl.hpp"
 
 namespace Microsoft::Console::Interactivity
 {
@@ -29,5 +30,7 @@ namespace Microsoft::Console::Interactivity
 
     private:
         wil::unique_handle _pipe;
+
+        Win32::ConsoleControl _control;
     };
 }
