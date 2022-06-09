@@ -13,13 +13,13 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 
-ULONG Scrolling::s_ucWheelScrollLines = 0;
-ULONG Scrolling::s_ucWheelScrollChars = 0;
+til::CoordType Scrolling::s_ucWheelScrollLines = 0;
+til::CoordType Scrolling::s_ucWheelScrollChars = 0;
 
 void Scrolling::s_UpdateSystemMetrics()
 {
-    s_ucWheelScrollLines = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollLines();
-    s_ucWheelScrollChars = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollCharacters();
+    s_ucWheelScrollLines = ::base::saturated_cast<decltype(s_ucWheelScrollLines)>(ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollLines());
+    s_ucWheelScrollChars = ::base::saturated_cast<decltype(s_ucWheelScrollChars)>(ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollCharacters());
 }
 
 bool Scrolling::s_IsInScrollMode()
@@ -112,7 +112,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
     if (isMouseWheel && s_ucWheelScrollLines > 0)
     {
         // Rounding could cause this to be zero if gucWSL is bigger than 240 or so.
-        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1ul);
+        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1);
 
         // If we change direction we need to throw away any remainder we may have in the other direction.
         if ((ScreenInfo.WheelDelta > 0) == (wheelDelta > 0))
@@ -124,7 +124,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             ScreenInfo.WheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(ScreenInfo.WheelDelta) >= ulActualDelta)
+        if (abs(ScreenInfo.WheelDelta) >= ulActualDelta)
         {
             /*
             * By default, SHIFT + WM_MOUSEWHEEL will scroll 1/2 the
@@ -134,7 +134,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             til::CoordType delta = 1;
             if (hasShift)
             {
-                delta = std::max((ScreenInfo.GetViewport().Height() * ScreenInfo.ScrollScale) / 2, 1u);
+                delta = std::max((ScreenInfo.GetViewport().Height() * ::base::saturated_cast<til::CoordType>(ScreenInfo.ScrollScale)) / 2, 1);
 
                 // Account for scroll direction changes by adjusting delta if there was a direction change.
                 delta *= (ScreenInfo.WheelDelta < 0 ? -1 : 1);
@@ -161,7 +161,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
     }
     else if (isMouseHWheel && s_ucWheelScrollChars > 0)
     {
-        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1ul);
+        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1);
 
         if ((ScreenInfo.HWheelDelta > 0) == (wheelDelta > 0))
         {
@@ -172,7 +172,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             ScreenInfo.HWheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(ScreenInfo.HWheelDelta) >= ulActualDelta)
+        if (abs(ScreenInfo.HWheelDelta) >= ulActualDelta)
         {
             til::CoordType delta = 1;
 
