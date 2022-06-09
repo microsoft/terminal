@@ -2541,7 +2541,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         return false;
     }
 
-    const auto action{ parts[0] };
+    const auto action = til::at(parts, 0);
 
     if (action == L"A") // FTCS_PROMPT
     {
