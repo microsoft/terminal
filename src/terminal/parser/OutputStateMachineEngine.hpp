@@ -187,7 +187,8 @@ namespace Microsoft::Console::VirtualTerminal
             SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
-            ResetCursorColor = 112
+            ResetCursorColor = 112,
+            ITerm2Action = 1337,
         };
 
         bool _GetOscTitle(const std::wstring_view string,

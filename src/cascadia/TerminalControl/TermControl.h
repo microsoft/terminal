@@ -67,6 +67,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
+
+        Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
+        void AddMark(const Control::ScrollMark& mark);
+        void ClearMark();
+        void ClearAllMarks();
+        void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -195,6 +202,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        bool _showMarksInScrollbar{ false };
 
         inline bool _IsClosing() const noexcept
         {
@@ -287,6 +295,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
         void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+        void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
     };
 }
 

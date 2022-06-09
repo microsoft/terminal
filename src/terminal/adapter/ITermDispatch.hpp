@@ -135,6 +135,8 @@ public:
 
     virtual bool DoConEmuAction(const std::wstring_view string) = 0;
 
+    virtual bool DoITerm2Action(const std::wstring_view string) = 0;
+
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,

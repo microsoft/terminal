@@ -2466,6 +2466,50 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - Performs a iTerm2 action
+// - Ascribes to the ITermDispatch interface
+// - Currently, the actions we support are:
+//   * `OSC1337;SetMark`: mark a line as a prompt line
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"SetMark")
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.AddMark(mark);
+        return true;
+    }
+    return false;
+}
+
+// Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is
 //   transmitted in sixel format via the returned StringHandler function.

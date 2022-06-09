@@ -102,6 +102,11 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
+    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const;
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+                 const til::point& start,
+                 const til::point& end);
+
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     void PrintString(const std::wstring_view string) override;
@@ -129,10 +134,17 @@ public:
     void ShowWindow(bool showOrHide) override;
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
+
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 #pragma endregion
+
+    void ClearMark();
+    void ClearAllMarks();
+    til::color GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
@@ -290,6 +302,7 @@ private:
     bool _suppressApplicationTitle;
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
+    bool _autoMarkPrompts;
 
     size_t _taskbarState;
     size_t _taskbarProgress;
@@ -355,6 +368,8 @@ private:
         WORD ScanCode;
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
+
+    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

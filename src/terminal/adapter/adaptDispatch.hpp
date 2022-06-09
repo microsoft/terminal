@@ -130,6 +130,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoConEmuAction(const std::wstring_view string) override;
 
+        bool DoITerm2Action(const std::wstring_view string) override;
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
