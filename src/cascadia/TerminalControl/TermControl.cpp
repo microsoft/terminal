@@ -2818,9 +2818,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto scaleX = fontWidth / 5.0;
             const auto scaleY = fontHeight / 14.0;
 
-            Windows::UI::Xaml::Media::ScaleTransform transform{};
-            transform.ScaleX(transform.ScaleX() * scaleX);
-            transform.ScaleY(transform.ScaleY() * scaleY);
+            Windows::UI::Xaml::Media::ScaleTransform transform;
+            transform.ScaleX(scaleX);
+            transform.ScaleY(scaleY);
             shape.RenderTransform(transform);
 
             // now hide the shape

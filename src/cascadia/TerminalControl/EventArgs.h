@@ -14,7 +14,6 @@
 #include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
-#include "cppwinrt_utils.h" // TODO CARLOS: maybe we can remove this include?
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
