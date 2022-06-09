@@ -2530,6 +2530,11 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         return false;
     }
 
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
     const auto parts = Utils::SplitString(string, L';');
 
     if (parts.size() < 1)
