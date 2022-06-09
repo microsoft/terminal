@@ -186,10 +186,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void WindowVisibilityChanged(const bool showOrHide);
 
-        // TODO:GH#1256 - When a tab can be torn out or otherwise reparented to
-        // another window, this value will need a custom setter, so that we can
-        // also update the connection.
-        WINRT_PROPERTY(uint64_t, OwningHwnd, 0);
+        uint64_t OwningHwnd();
+        void OwningHwnd(uint64_t owner);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
@@ -258,6 +256,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _panelWidth{ 0 };
         double _panelHeight{ 0 };
         double _compositionScale{ 0 };
+
+        uint64_t _owningHwnd{ 0 };
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
