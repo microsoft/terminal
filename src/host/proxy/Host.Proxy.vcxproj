@@ -82,8 +82,7 @@
     dependency on any libraries inside our package **or** inside any of our dependency packages. It has to stand
     on its own.
     Therefore, we're going to use the Hybrid CRT model from WinAppSDK for only OpenConsoleProxy. It statically
-    links the runtime and STL (vcruntime, msvcp), and dynamically links the UCRT insgtead of msvcrt. The UCRT
-    ships with Windows.
+    links the runtime and STL and dynamically links the UCRT instead of the VC++ CRT. The UCRT ships with Windows.
     WinAppSDK asserts that this is "supported according to the CRT maintainer."
   -->
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
