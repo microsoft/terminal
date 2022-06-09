@@ -2510,6 +2510,56 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 }
 
 // Method Description:
+// - Performs a FinalTerm action
+// - Currently, the actions we support are:
+//   * `OSC133;A`: mark a line as a prompt line
+// - Not actually used in conhost
+// - The remainder of the FTCS prompt sequences are tracked in GH#11000
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"A") // FTCS_PROMPT
+    {
+        // Simply just mark this line as a prompt line.
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.AddMark(mark);
+        return true;
+    }
+
+    // When we add the rest of the FTCS sequences (GH#11000), we should add a
+    // simple state machine here to track the most recently emitted mark from
+    // this set of sequences, and which sequence was emitted last, so we can
+    // modify the state of that mark as we go.
+    return false;
+}
+
+// Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is
 //   transmitted in sixel format via the returned StringHandler function.

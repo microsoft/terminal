@@ -26,6 +26,7 @@ EDDC
 Enum'd
 Fitt
 formattings
+FTCS
 ftp
 fvar
 gcc
