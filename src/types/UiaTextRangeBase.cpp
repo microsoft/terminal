@@ -246,12 +246,13 @@ try
     const auto mine = GetEndpoint(endpoint);
 
     // TODO GH#5406: create a different UIA parent object for each TextBuffer
-    //   This is a temporary solution to comparing two UTRs from different TextBuffers
-    //   Ensure both endpoints fit in the current buffer.
+    //   We should return E_FAIL if we detect that the endpoints are from two different TextBuffer objects.
+    //   For now, we're fine to not do that because we're not using any code that can FAIL_FAST anymore.
 
-    // directly calculate the distance between the two endpoints
-    *pRetVal = (mine.Y - other.Y) * _pData->GetTextBuffer().GetSize().Width();
-    *pRetVal += (mine.X - other.X);
+    // compare them
+    *pRetVal = mine < other ? -1 :
+               mine > other ? 1 :
+                              0;
 
     UiaTracing::TextRange::CompareEndpoints(*this, endpoint, *range, targetEndpoint, *pRetVal);
     return S_OK;
