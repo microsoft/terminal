@@ -46,7 +46,8 @@
     X(bool, ForceVTInput, false)                                                                                  \
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
-    X(bool, VtPassthrough, false)
+    X(bool, VtPassthrough, false)                                                                                 \
+    X(bool, AutoMarkPrompts)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
@@ -68,5 +69,6 @@
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
+    X(bool, UseAtlasEngine, false)                                                                                                                       \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
-    X(bool, UseAtlasEngine, false)
+    X(bool, ShowMarks, false)

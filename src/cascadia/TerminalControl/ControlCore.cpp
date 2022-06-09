@@ -37,6 +37,28 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
+    {
+        Core::OptionalColor result;
+        result.Color = c;
+        result.HasValue = true;
+        return result;
+    }
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
+    {
+        Core::OptionalColor result;
+        if (c.has_value())
+        {
+            result.Color = *c;
+            result.HasValue = true;
+        }
+        else
+        {
+            result.HasValue = false;
+        }
+        return result;
+    }
+
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
     // See microsoft/terminal#2066 for more info.
     static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
@@ -1196,6 +1218,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        if (!_initializedTerminal)
+        {
+            return;
+        }
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
         // We're **NOT** taking the lock here unlike _scrollbarChangeHandler because
         // we are already under lock (since this usually happens as a result of writing).
@@ -1853,5 +1879,141 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
+    }
+
+    Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
+    {
+        auto internalMarks{ _terminal->GetScrollMarks() };
+        auto v = winrt::single_threaded_observable_vector<Control::ScrollMark>();
+        for (const auto& mark : internalMarks)
+        {
+            Control::ScrollMark m{};
+
+            // sneaky: always evaluate the color of the mark to a real value
+            // before shoving it into the optional. If the mark doesn't have a
+            // specific color set, we'll use the value from the color table
+            // that's appropriate for this category of mark. If we do have a
+            // color set, then great we'll use that. The TermControl can then
+            // always use the value in the Mark regardless if it was actually
+            // set or not.
+            m.Color = OptionalFromColor(_terminal->GetColorForMark(mark));
+            m.Start = mark.start.to_core_point();
+            m.End = mark.end.to_core_point();
+
+            v.Append(m);
+        }
+
+        return v;
+    }
+
+    void ControlCore::AddMark(const Control::ScrollMark& mark)
+    {
+        ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark m{};
+
+        if (mark.Color.HasValue)
+        {
+            m.color = til::color{ mark.Color.Color };
+        }
+
+        if (HasSelection())
+        {
+            m.start = til::point{ _terminal->GetSelectionAnchor() };
+            m.end = til::point{ _terminal->GetSelectionEnd() };
+        }
+        else
+        {
+            m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
+        }
+
+        // The version of this that only accepts a ScrollMark will automatically
+        // set the start & end to the cursor position.
+        _terminal->AddMark(m, m.start, m.end);
+    }
+    void ControlCore::ClearMark() { _terminal->ClearMark(); }
+    void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
+
+    void ControlCore::ScrollToMark(const Control::ScrollToMarkDirection& direction)
+    {
+        const auto currentOffset = ScrollOffset();
+        const auto& marks{ _terminal->GetScrollMarks() };
+
+        std::optional<DispatchTypes::ScrollMark> tgt;
+
+        switch (direction)
+        {
+        case ScrollToMarkDirection::Last:
+        {
+            int highest = currentOffset;
+            for (const auto& mark : marks)
+            {
+                const auto newY = mark.start.y;
+                if (newY > highest)
+                {
+                    tgt = mark;
+                    highest = newY;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::First:
+        {
+            int lowest = currentOffset;
+            for (const auto& mark : marks)
+            {
+                const auto newY = mark.start.y;
+                if (newY < lowest)
+                {
+                    tgt = mark;
+                    lowest = newY;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::Next:
+        {
+            int minDistance = INT_MAX;
+            for (const auto& mark : marks)
+            {
+                const auto delta = mark.start.y - currentOffset;
+                if (delta > 0 && delta < minDistance)
+                {
+                    tgt = mark;
+                    minDistance = delta;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::Previous:
+        default:
+        {
+            int minDistance = INT_MAX;
+            for (const auto& mark : marks)
+            {
+                const auto delta = currentOffset - mark.start.y;
+                if (delta > 0 && delta < minDistance)
+                {
+                    tgt = mark;
+                    minDistance = delta;
+                }
+            }
+            break;
+        }
+        }
+
+        if (tgt.has_value())
+        {
+            UserScrollViewport(tgt->start.y);
+        }
+        else
+        {
+            if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
+            {
+                UserScrollViewport(BufferHeight());
+            }
+            else if (direction == ScrollToMarkDirection::First || direction == ScrollToMarkDirection::Previous)
+            {
+                UserScrollViewport(0);
+            }
+        }
     }
 }

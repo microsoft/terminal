@@ -26,6 +26,9 @@ namespace Microsoft.Terminal.Core
 
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
+
+        Boolean AutoMarkPrompts;
+
     };
 
 }
