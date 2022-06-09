@@ -617,13 +617,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         switch (Direction())
         {
-        case ScrollToMarkDirection::Last:
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::Last:
             return winrt::hstring{ RS_(L"ScrollToLastMarkCommandKey") };
-        case ScrollToMarkDirection::First:
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::First:
             return winrt::hstring{ RS_(L"ScrollToFirstMarkCommandKey") };
-        case ScrollToMarkDirection::Next:
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::Next:
             return winrt::hstring{ RS_(L"ScrollToNextMarkCommandKey") };
-        case ScrollToMarkDirection::Previous:
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::Previous:
         default:
             return winrt::hstring{ RS_(L"ScrollToPreviousMarkCommandKey") };
         }

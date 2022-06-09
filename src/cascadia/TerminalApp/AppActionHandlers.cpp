@@ -283,88 +283,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ScrollToMarkArgs>())
         {
-            _ApplyToActiveControls([realArgs](auto& control) {
-                const auto currentOffset = control.ScrollOffset();
-                const auto marks{ control.ScrollMarks() };
-
-                std::optional<Control::ScrollMark> tgt{ std::nullopt };
-                const auto dir{ realArgs.Direction() };
-                switch (dir)
-                {
-                case ScrollToMarkDirection::Last:
-                {
-                    int highest = currentOffset;
-                    for (const auto& mark : marks)
-                    {
-                        const auto newY = mark.Start.Y;
-                        if (newY > highest)
-                        {
-                            tgt = mark;
-                            highest = newY;
-                        }
-                    }
-                    break;
-                }
-                case ScrollToMarkDirection::First:
-                {
-                    int lowest = currentOffset;
-                    for (const auto& mark : marks)
-                    {
-                        const auto newY = mark.Start.Y;
-                        if (newY < lowest)
-                        {
-                            tgt = mark;
-                            lowest = newY;
-                        }
-                    }
-                    break;
-                }
-                case ScrollToMarkDirection::Next:
-                {
-                    int minDistance = INT_MAX;
-                    for (const auto& mark : marks)
-                    {
-                        const auto delta = mark.Start.Y - currentOffset;
-                        if (delta > 0 && delta < minDistance)
-                        {
-                            tgt = mark;
-                            minDistance = delta;
-                        }
-                    }
-                    break;
-                }
-                case ScrollToMarkDirection::Previous:
-                default:
-                {
-                    int minDistance = INT_MAX;
-                    for (const auto& mark : marks)
-                    {
-                        const auto delta = currentOffset - mark.Start.Y;
-                        if (delta > 0 && delta < minDistance)
-                        {
-                            tgt = mark;
-                            minDistance = delta;
-                        }
-                    }
-                    break;
-                }
-                }
-
-                if (tgt.has_value())
-                {
-                    control.ScrollViewport(tgt->Start.Y);
-                }
-                else
-                {
-                    if (dir == ScrollToMarkDirection::Last || dir == ScrollToMarkDirection::Next)
-                    {
-                        control.ScrollViewport(control.BufferHeight());
-                    }
-                    else if (dir == ScrollToMarkDirection::First || dir == ScrollToMarkDirection::Previous)
-                    {
-                        control.ScrollViewport(0);
-                    }
-                }
+            _ApplyToActiveControls([&realArgs](auto& control) {
+                control.ScrollToMark(realArgs.Direction());
             });
         }
         args.Handled(true);
@@ -1180,6 +1100,16 @@ namespace winrt::TerminalApp::implementation
         {
             control.ToggleMarkMode();
             args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleToggleBlockSelection(const IInspectable& /*sender*/,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.ToggleBlockSelection();
+            args.Handled(handled);
         }
     }
 }

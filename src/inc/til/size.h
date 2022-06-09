@@ -133,18 +133,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(static_cast<int64_t>(width) * static_cast<int64_t>(height));
         }
 
-#ifdef _WINCONTYPES_
-        explicit constexpr size(const COORD other) noexcept :
-            width{ other.X }, height{ other.Y }
-        {
-        }
-
-        constexpr COORD to_win32_coord() const
-        {
-            return { gsl::narrow<short>(width), gsl::narrow<short>(height) };
-        }
-#endif
-
 #ifdef _WINDEF_
         explicit constexpr size(const SIZE other) noexcept :
             width{ other.cx }, height{ other.cy }
@@ -204,17 +192,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     };
 
-    constexpr size wrap_coord_size(const COORD rect) noexcept
+    constexpr size wrap_coord_size(const COORD sz) noexcept
     {
-        return { rect.X, rect.Y };
+        return { sz.X, sz.Y };
     }
 
-    constexpr COORD unwrap_coord_size(const size rect)
+    constexpr COORD unwrap_coord_size(const size sz)
     {
         return {
-            gsl::narrow<short>(rect.width),
-            gsl::narrow<short>(rect.height),
+            gsl::narrow<short>(sz.width),
+            gsl::narrow<short>(sz.height),
         };
+    }
+
+    constexpr HRESULT unwrap_coord_size_hr(const size sz, COORD& out) noexcept
+    {
+        short x = 0;
+        short y = 0;
+        if (narrow_maybe(sz.width, x) && narrow_maybe(sz.height, y))
+        {
+            out.X = x;
+            out.Y = y;
+            return S_OK;
+        }
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 };
 

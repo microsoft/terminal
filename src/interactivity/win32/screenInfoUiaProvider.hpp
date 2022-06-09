@@ -43,7 +43,7 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
         HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow) override;
+        void ChangeViewport(const til::inclusive_rect& NewWindow) override;
 
     protected:
         HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
@@ -59,8 +59,8 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // specific endpoint range
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                const COORD start,
-                                const COORD end,
+                                const til::point start,
+                                const til::point end,
                                 const std::wstring_view wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 

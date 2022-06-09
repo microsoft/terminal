@@ -184,7 +184,7 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_TO_MARK_ARGS(X) \
-    X(ScrollToMarkDirection, Direction, "direction", false, ScrollToMarkDirection::Previous)
+    X(Microsoft::Terminal::Control::ScrollToMarkDirection, Direction, "direction", false, Microsoft::Terminal::Control::ScrollToMarkDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADD_MARK_ARGS(X) \

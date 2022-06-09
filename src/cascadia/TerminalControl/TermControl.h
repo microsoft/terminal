@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void SelectAll();
+        bool ToggleBlockSelection();
         void ToggleMarkMode();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -71,6 +72,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AddMark(const Control::ScrollMark& mark);
         void ClearMark();
         void ClearAllMarks();
+        void ScrollToMark(const Control::ScrollToMarkDirection& direction);
 
 #pragma endregion
 

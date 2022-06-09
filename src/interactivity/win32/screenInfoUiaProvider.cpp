@@ -92,7 +92,7 @@ HWND ScreenInfoUiaProvider::GetWindowHandle() const
     return _pUiaParent->GetWindowHandle();
 }
 
-void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+void ScreenInfoUiaProvider::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     _pUiaParent->ChangeViewport(NewWindow);
 }
@@ -139,8 +139,8 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* c
 }
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const COORD start,
-                                               const COORD end,
+                                               const til::point start,
+                                               const til::point end,
                                                const std::wstring_view wordDelimiters,
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {

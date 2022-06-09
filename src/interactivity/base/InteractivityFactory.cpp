@@ -478,7 +478,18 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
 // - <none>
 void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
 {
-    if (_pseudoWindowMessageCallback)
+    // BODGY
+    //
+    // GH#13158 - At least temporarily, only allow the PTY to HIDE the terminal
+    // window. There seem to be many issues with this so far, and the quickest
+    // route to mitigate them seems to be limiting the interaction here to
+    // allowing ConPTY to minimize the terminal only. This will still allow
+    // applications to hide the Terminal via GetConsoleWindow(), but should
+    // broadly prevent any other impact of this feature.
+    //
+    // Should we need to restore this functionality in the future, we should
+    // only do so with great caution.
+    if (_pseudoWindowMessageCallback && showOrHide == false)
     {
         _pseudoWindowMessageCallback(showOrHide);
     }

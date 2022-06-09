@@ -381,11 +381,11 @@
     <value>Scroll to the last mark</value>
   </data>
   <data name="AddMarkCommandKey" xml:space="preserve">
-    <value>Add a mark</value>
+    <value>Add a scroll mark</value>
   </data>
   <data name="AddMarkWithColorCommandKey" xml:space="preserve">
-    <value>Add a mark, color:{0}</value>
-    <comment>{0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
+    <value>Add a scroll mark, color:{0}</value>
+    <comment>{Locked="color"}. "color" is a literal parameter name that shouldn't be translated. {0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
   </data>
   <data name="ClearMarkCommandKey" xml:space="preserve">
     <value>Clear mark</value>
@@ -518,6 +518,10 @@
     <value>Clear scrollback</value>
     <comment>A command to clear the part of the buffer above the viewport</comment>
   </data>
+  <data name="DefaultWindowsConsoleName" xml:space="preserve">
+    <value>Let Windows decide</value>
+    <comment>This is the default option if a user doesn't choose to override Microsoft's choice of a Terminal.</comment>
+  </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
     <value>Microsoft Corporation</value>
     <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
@@ -553,5 +557,8 @@
   <data name="MarkModeCommandKey" xml:space="preserve">
     <value>Toggle mark mode</value>
     <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
+  </data>
+  <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
+    <value>Toggle block selection</value>
   </data>
 </root>

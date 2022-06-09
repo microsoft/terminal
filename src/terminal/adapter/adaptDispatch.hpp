@@ -135,7 +135,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool DoFinalTermAction(const std::wstring_view string) override;
 
         StringHandler DownloadDRCS(const VTInt fontNumber,
-
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
                                    const DispatchTypes::DrcsCellMatrix cellMatrix,
@@ -144,7 +143,11 @@ namespace Microsoft::Console::VirtualTerminal
                                    const VTParameter cellHeight,
                                    const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
 
+        StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) override; // DECRSTS
+
         StringHandler RequestSetting() override; // DECRQSS
+
+        bool PlaySounds(const VTParameters parameters) override; // DECPS
 
     private:
         enum class ScrollDirection
@@ -200,6 +203,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ClearAllTabStops() noexcept;
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const VTInt width);
+
+        StringHandler _RestoreColorTable();
 
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();

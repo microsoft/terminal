@@ -281,8 +281,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         _Elevate = profile.Elevate();
-        _AutoMarkPrompts = profile.AutoMarkPrompts();
-        _ShowMarks = profile.ShowMarks();
+        _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
+        _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
     }
 
     // Method Description:

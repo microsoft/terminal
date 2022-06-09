@@ -107,14 +107,6 @@ namespace Microsoft.Terminal.Settings.Model
         ToMouse,
     };
 
-    enum ScrollToMarkDirection
-    {
-        Previous,
-        Next,
-        First,
-        Last
-    };
-
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -301,7 +293,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
     {
-        ScrollToMarkDirection Direction { get; };
+        Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
     };
 
     [default_interface] runtimeclass AddMarkArgs : IActionArgs

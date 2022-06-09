@@ -148,7 +148,11 @@ public:
                                        const VTParameter cellHeight,
                                        const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
 
+    virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
+
     virtual StringHandler RequestSetting() = 0; // DECRQSS
+
+    virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

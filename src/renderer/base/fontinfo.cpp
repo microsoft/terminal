@@ -8,7 +8,7 @@
 FontInfo::FontInfo(const std::wstring_view& faceName,
                    const unsigned char family,
                    const unsigned int weight,
-                   const COORD coordSize,
+                   const til::size coordSize,
                    const unsigned int codePage,
                    const bool fSetDefaultRasterFont /* = false */) noexcept :
     FontInfoBase(faceName, family, weight, fSetDefaultRasterFont, codePage),
@@ -26,12 +26,12 @@ bool FontInfo::operator==(const FontInfo& other) noexcept
            _coordSizeUnscaled == other._coordSizeUnscaled;
 }
 
-COORD FontInfo::GetUnscaledSize() const noexcept
+til::size FontInfo::GetUnscaledSize() const noexcept
 {
     return _coordSizeUnscaled;
 }
 
-COORD FontInfo::GetSize() const noexcept
+til::size FontInfo::GetSize() const noexcept
 {
     return _coordSize;
 }
@@ -40,8 +40,8 @@ void FontInfo::SetFromEngine(const std::wstring_view& faceName,
                              const unsigned char family,
                              const unsigned int weight,
                              const bool fSetDefaultRasterFont,
-                             const COORD coordSize,
-                             const COORD coordSizeUnscaled) noexcept
+                             const til::size coordSize,
+                             const til::size coordSizeUnscaled) noexcept
 {
     FontInfoBase::SetFromEngine(faceName,
                                 family,
