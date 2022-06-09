@@ -41,6 +41,6 @@ public:
 private:
     static BOOL s_IsPointInRectangle(const til::rect* prc, const til::point pt);
 
-    static ULONG s_ucWheelScrollLines;
-    static ULONG s_ucWheelScrollChars;
+    static til::CoordType s_ucWheelScrollLines;
+    static til::CoordType s_ucWheelScrollChars;
 };
