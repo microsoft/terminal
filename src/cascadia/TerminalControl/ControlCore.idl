@@ -22,7 +22,6 @@ namespace Microsoft.Terminal.Control
         IsRightButtonDown = 0x4
     };
 
-
     enum ClearBufferType
     {
         Screen,

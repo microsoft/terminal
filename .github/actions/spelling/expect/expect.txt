@@ -959,7 +959,6 @@ guardxfg
 guc
 gui
 guidatom
-guiddef
 GValue
 GWL
 GWLP
@@ -1567,7 +1566,6 @@ NOCOLOR
 NOCOMM
 NOCONTEXTHELP
 NOCOPYBITS
-nodefaultlib
 nodiscard
 NODUP
 noexcept

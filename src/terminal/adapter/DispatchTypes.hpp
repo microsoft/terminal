@@ -496,4 +496,22 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
+    enum class MarkCategory : size_t
+    {
+        Prompt = 0,
+        Error = 1,
+        Warning = 2,
+        Success = 3,
+        Info = 4
+    };
+
+    struct ScrollMark
+    {
+        std::optional<til::color> color;
+        til::point start;
+        til::point end; // exclusive
+        MarkCategory category{ MarkCategory::Info };
+        // Other things we may want to think about in the future are listed in
+        // GH#11000
+    };
 }
