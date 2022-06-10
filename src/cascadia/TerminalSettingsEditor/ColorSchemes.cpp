@@ -34,8 +34,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(ColorSchemeComboBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         ToolTipService::SetToolTip(ColorSchemeComboBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
 
-        Automation::AutomationProperties::SetName(RenameButton(), RS_(L"Rename/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-
         Automation::AutomationProperties::SetName(NameBox(), RS_(L"ColorScheme_Name/Header"));
         Automation::AutomationProperties::SetFullDescription(NameBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         ToolTipService::SetToolTip(NameBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
@@ -171,31 +169,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemeComboBox().SelectedItem(_ViewModel.RequestAddNew());
     }
 
-    // Function Description:
-    // - Pre-populates/focuses the name TextBox, updates the UI
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ColorSchemes::Rename_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        NameBox().Text(_ViewModel.CurrentScheme().Name());
-        _ViewModel.RequestEnterRename();
-        NameBox().Focus(FocusState::Programmatic);
-        NameBox().SelectAll();
-    }
-
     void ColorSchemes::RenameAccept_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _RenameCurrentScheme(NameBox().Text());
-        RenameButton().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::RenameCancel_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.RequestExitRename(false, {});
         RenameErrorTip().IsOpen(false);
-        RenameButton().Focus(FocusState::Programmatic);
+        NameBox().Text(_ViewModel.CurrentScheme().Name());
     }
 
     void ColorSchemes::NameBox_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
@@ -208,13 +190,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
             RenameErrorTip().IsOpen(false);
+            NameBox().Text(_ViewModel.CurrentScheme().Name());
             e.Handled(true);
         }
     }
 
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
-        if (_ViewModel.RequestExitRename(true, newName))
+        if (_ViewModel.RequestRenameCurrentScheme(newName))
         {
             // update the UI
             RenameErrorTip().IsOpen(false);
@@ -224,6 +207,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
             ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
             ColorSchemeComboBox().SelectedIndex(selectedIndex);
+
+            NameBox().Focus(FocusState::Programmatic);
         }
         else
         {

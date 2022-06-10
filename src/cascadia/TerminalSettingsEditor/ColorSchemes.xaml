@@ -151,33 +151,133 @@
                     </StackPanel>
                 </local:SettingContainer>
 
-                
+                <local:SettingContainer Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <Grid x:Name="ColorTableGrid"
+                          Style="{StaticResource ColorTableGridStyle}">
+                        <Grid.ColumnDefinitions>
+                            <!--  Labels  -->
+                            <ColumnDefinition Width="Auto" />
+
+                            <!--  Regular Colors  -->
+                            <ColumnDefinition Width="Auto" />
+
+                            <!--  Bright Colors  -->
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ContentControl x:Name="NonBrightBlack"
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(0), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="NonBrightRed"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(1), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="NonBrightGreen"
+                                        Grid.Row="2"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(2), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="NonBrightYellow"
+                                        Grid.Row="3"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(3), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="NonBrightBlue"
+                                        Grid.Row="4"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(4), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="NonBrightPurple"
+                                        Grid.Row="5"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(5), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="NonBrightCyan"
+                                        Grid.Row="6"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(6), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="NonBrightWhite"
+                                        Grid.Row="7"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(7), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightBlack"
+                                        Grid.Row="0"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(8), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightRed"
+                                        Grid.Row="1"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(9), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightGreen"
+                                        Grid.Row="2"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(10), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightYellow"
+                                        Grid.Row="3"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(11), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightBlue"
+                                        Grid.Row="4"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(12), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightPurple"
+                                        Grid.Row="5"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(13), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightCyan"
+                                        Grid.Row="6"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(14), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                        <ContentControl x:Name="BrightWhite"
+                                        Grid.Row="7"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(15), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
+                                        Style="{StaticResource ColorControlStyle}" />
+                    </Grid>
+                </local:SettingContainer>
             </StackPanel>
 
             <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
-
-                <!--  Select Color and Add New Button  -->
-                <StackPanel Margin="0,5,0,0"
-                        Orientation="Horizontal">
-
-                    <StackPanel Orientation="Horizontal"
-                            Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.InRenameMode), Mode=OneWay}">
-                        <!--  Rename Button  -->
-                        <!--  Bind IsEnabled to prevent a the color scheme from returning from the dead  -->
-                        <Button x:Name="RenameButton"
-                            x:Uid="Rename"
-                            Click="Rename_Click"
-                            IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
-                            Style="{StaticResource SmallButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE8AC;" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
 
                 <!--  Terminal Colors (Left Column)  -->
                 <StackPanel x:Name="ColorPanel"
@@ -185,133 +285,6 @@
                     <StackPanel>
                         <TextBlock x:Uid="ColorScheme_TerminalColorsHeader"
                                Style="{StaticResource GroupHeaderStyle}" />
-                        <Grid x:Name="ColorTableGrid"
-                          Style="{StaticResource ColorTableGridStyle}">
-                            <Grid.ColumnDefinitions>
-                                <!--  Labels  -->
-                                <ColumnDefinition Width="Auto" />
-
-                                <!--  Regular Colors  -->
-                                <ColumnDefinition Width="Auto" />
-
-                                <!--  Bright Colors  -->
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <ContentControl x:Name="NonBrightBlack"
-                                        Grid.Row="0"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(0), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-
-                            <ContentControl x:Name="NonBrightRed"
-                                        Grid.Row="1"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(1), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-
-                            <ContentControl x:Name="NonBrightGreen"
-                                        Grid.Row="2"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(2), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-
-                            <ContentControl x:Name="NonBrightYellow"
-                                        Grid.Row="3"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(3), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-
-                            <ContentControl x:Name="NonBrightBlue"
-                                        Grid.Row="4"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(4), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-
-                            <ContentControl x:Name="NonBrightPurple"
-                                        Grid.Row="5"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(5), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-
-                            <ContentControl x:Name="NonBrightCyan"
-                                        Grid.Row="6"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(6), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-
-                            <ContentControl x:Name="NonBrightWhite"
-                                        Grid.Row="7"
-                                        Grid.Column="1"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(7), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightBlack"
-                                        Grid.Row="0"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(8), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightRed"
-                                        Grid.Row="1"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(9), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightGreen"
-                                        Grid.Row="2"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(10), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightYellow"
-                                        Grid.Row="3"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(11), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightBlue"
-                                        Grid.Row="4"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(12), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightPurple"
-                                        Grid.Row="5"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(13), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightCyan"
-                                        Grid.Row="6"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(14), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                            <ContentControl x:Name="BrightWhite"
-                                        Grid.Row="7"
-                                        Grid.Column="2"
-                                        Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(15), Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorTableEntryTemplate}"
-                                        Style="{StaticResource ColorControlStyle}" />
-                        </Grid>
                     </StackPanel>
 
                     <!--  System Colors (Right Column)  -->
