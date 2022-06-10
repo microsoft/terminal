@@ -47,6 +47,10 @@
     ON_ALL_ACTIONS(ScrollDownPage)         \
     ON_ALL_ACTIONS(ScrollToTop)            \
     ON_ALL_ACTIONS(ScrollToBottom)         \
+    ON_ALL_ACTIONS(ScrollToMark)           \
+    ON_ALL_ACTIONS(AddMark)                \
+    ON_ALL_ACTIONS(ClearMark)              \
+    ON_ALL_ACTIONS(ClearAllMarks)          \
     ON_ALL_ACTIONS(ResizePane)             \
     ON_ALL_ACTIONS(MoveFocus)              \
     ON_ALL_ACTIONS(MovePane)               \
@@ -119,6 +123,8 @@
     ON_ALL_ACTIONS_WITH_ARGS(ResizePane)           \
     ON_ALL_ACTIONS_WITH_ARGS(ScrollDown)           \
     ON_ALL_ACTIONS_WITH_ARGS(ScrollUp)             \
+    ON_ALL_ACTIONS_WITH_ARGS(ScrollToMark)         \
+    ON_ALL_ACTIONS_WITH_ARGS(AddMark)              \
     ON_ALL_ACTIONS_WITH_ARGS(SendInput)            \
     ON_ALL_ACTIONS_WITH_ARGS(SetColorScheme)       \
     ON_ALL_ACTIONS_WITH_ARGS(SetTabColor)          \

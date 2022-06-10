@@ -147,7 +147,8 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev' or '$(WindowsTerminalBranding)'=='Preview'">
+    <!-- GH#13252 Only vend this dependency for Dev and Preview builds. -->
     <SDKReference Include="Microsoft.Midi.GmDls, Version=10.0.22000.0" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->

@@ -278,6 +278,55 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleScrollToMark(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<ScrollToMarkArgs>())
+        {
+            _ApplyToActiveControls([&realArgs](auto& control) {
+                control.ScrollToMark(realArgs.Direction());
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleAddMark(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<AddMarkArgs>())
+        {
+            _ApplyToActiveControls([realArgs](auto& control) {
+                Control::ScrollMark mark;
+                if (realArgs.Color())
+                {
+                    mark.Color.Color = realArgs.Color().Value();
+                    mark.Color.HasValue = true;
+                }
+                else
+                {
+                    mark.Color.HasValue = false;
+                }
+                control.AddMark(mark);
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearMark(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearMark();
+        });
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearAllMarks(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearAllMarks();
+        });
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleFindMatch(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {

@@ -22,13 +22,13 @@ using namespace Microsoft::Console::Interactivity::OneCore;
     return STATUS_SUCCESS;
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     USER_API_MSG m{};
     const auto a = &m.u.EndTask;
 
     RtlZeroMemory(a, sizeof(*a));
-    a->ProcessId = hProcessId;
+    a->ProcessId = ULongToHandle(dwProcessId); // This is actually a PID, even though the struct expects a HANDLE.
     a->ConsoleEventCode = dwEventType;
     a->ConsoleFlags = ulCtrlFlags;
 

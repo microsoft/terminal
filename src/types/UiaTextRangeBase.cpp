@@ -1289,9 +1289,9 @@ try
         }
     }
 
-    FAIL_FAST_IF(!(newViewport.Top >= topRow));
-    FAIL_FAST_IF(!(newViewport.Bottom <= bottomRow));
-    FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
+    assert(newViewport.Top >= topRow);
+    assert(newViewport.Bottom <= bottomRow);
+    assert(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport));
 
     Unlock.reset();
 
@@ -1338,7 +1338,7 @@ til::size UiaTextRangeBase::_getScreenFontSize() const noexcept
 // - The viewport height
 til::CoordType UiaTextRangeBase::_getViewportHeight(const til::inclusive_rect& viewport) const noexcept
 {
-    FAIL_FAST_IF(!(viewport.Bottom >= viewport.Top));
+    assert(viewport.Bottom >= viewport.Top);
     // + 1 because til::inclusive_rect is inclusive on both sides so subtracting top
     // and bottom gets rid of 1 more then it should.
     return viewport.Bottom - viewport.Top + 1;
