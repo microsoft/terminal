@@ -549,7 +549,7 @@ public:
 
 private:
     bool _focus;
-    const bool _cameFromApi;
+    bool _cameFromApi;
 
 #ifdef UNIT_TESTING
     friend std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);
