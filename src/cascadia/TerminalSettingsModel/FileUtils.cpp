@@ -50,9 +50,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     {
         static std::filesystem::path baseSettingsPath = []() {
             wil::unique_cotaskmem_string localAppDataFolder;
-            // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
-            // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
-            // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
+            // We're using KF_FLAG_NO_PACKAGE_REDIRECTION to ensure that we always get the
+            // user's actual local AppData directory.
             THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_NO_PACKAGE_REDIRECTION, nullptr, &localAppDataFolder));
 
             // Returns a path like C:\Users\<username>\AppData\Local
