@@ -100,7 +100,25 @@ bool ColorScheme::_layerJson(const Json::Value& json)
     // Required fields
     for (unsigned int i = 0; i < TableColors.size(); ++i)
     {
-        isValid &= JsonUtils::GetValueForKey(json, til::at(TableColors, i), til::at(_table, i));
+        std::string_view tableColorName = til::at(TableColors, i);
+        bool valueForKeyIsValid = JsonUtils::GetValueForKey(json, tableColorName, til::at(_table, i));
+
+        // If GetValueForKey failed, try again with alternate color names
+        if (!valueForKeyIsValid)
+        {
+            if (tableColorName == "purple")
+            {
+                tableColorName = "magenta";
+            }
+            else if (tableColorName == "brightPurple")
+            {
+                tableColorName = "brightMagenta";
+            }
+
+            valueForKeyIsValid = JsonUtils::GetValueForKey(json, tableColorName, til::at(_table, i));
+        }
+
+        isValid &= valueForKeyIsValid;
     }
 
     return isValid;
