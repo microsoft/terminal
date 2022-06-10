@@ -1151,8 +1151,12 @@
     <comment>Button label that creates a new color scheme.</comment>
   </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
-    <value>Delete color scheme</value>
+    <value>Delete</value>
     <comment>Button label that deletes the selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_Delete.Header" xml:space="preserve">
+    <value>Delete color scheme</value>
+    <comment>Header for the control that allows the user to delete the currently selected color scheme.</comment>
   </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
     <value>Name</value>
@@ -1322,11 +1326,11 @@
     <value>Reset to inherited value.</value>
     <comment>This button will remove a user's customization from a given setting, restoring it to the value that the profile inherited. This is a text label on a button.</comment>
   </data>
-  <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
+  <data name="ColorScheme_TerminalColorsHeader.Header" xml:space="preserve">
     <value>Terminal colors</value>
     <comment>A header for a grouping of colors in the color scheme. These colors are used for basic parts of the terminal.</comment>
   </data>
-  <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
+  <data name="ColorScheme_SystemColorsHeader.Header" xml:space="preserve">
     <value>System colors</value>
     <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
   </data>

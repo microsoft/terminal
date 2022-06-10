@@ -44,7 +44,6 @@
             <Style x:Key="ColorSchemesColorButtonStyle"
                    BasedOn="{StaticResource ColorButtonStyle}"
                    TargetType="Button">
-                <Setter Property="Width" Value="96" />
             </Style>
 
             <Style TargetType="ColorPicker">
@@ -102,20 +101,18 @@
                     <Button x:Name="AddNewButton"
                         Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                  Glyph="&#xE710;" />
-                            <TextBlock x:Uid="ColorScheme_AddNewButton"
+                        <TextBlock x:Uid="ColorScheme_AddNewButton"
                                    Style="{StaticResource IconButtonTextBlockStyle}" />
-                        </StackPanel>
                     </Button>
                 </local:SettingContainer>
-
-                <!--  TOD: Apply to profiles should be here  -->
 
                 <TextBlock x:Uid="ColorScheme_Customize"
                            Margin="0,48,0,0"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+                <TextBlock x:Name="DeleteButtonDisclaimer"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource DisclaimerStyle}" />
 
                 <local:SettingContainer x:Uid="ColorScheme_Rename"
                                         Style="{StaticResource ExpanderSettingContainerStyle}"
@@ -151,7 +148,8 @@
                     </StackPanel>
                 </local:SettingContainer>
 
-                <local:SettingContainer Style="{StaticResource ExpanderSettingContainerStyle}">
+                <local:SettingContainer Style="{StaticResource ExpanderSettingContainerStyle}"
+                                        x:Uid="ColorScheme_TerminalColorsHeader">
                     <Grid x:Name="ColorTableGrid"
                           Style="{StaticResource ColorTableGridStyle}">
                         <Grid.ColumnDefinitions>
@@ -175,48 +173,80 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
+                        <TextBlock x:Uid="ColorScheme_Black"
+                                   Grid.Row="0"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightBlack"
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(0), Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
+                        <TextBlock x:Uid="ColorScheme_Red"
+                                   Grid.Row="1"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightRed"
                                         Grid.Row="1"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(1), Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
+                        <TextBlock x:Uid="ColorScheme_Green"
+                                   Grid.Row="2"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightGreen"
                                         Grid.Row="2"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(2), Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
+                        <TextBlock x:Uid="ColorScheme_Yellow"
+                                   Grid.Row="3"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightYellow"
                                         Grid.Row="3"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(3), Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
+                        <TextBlock x:Uid="ColorScheme_Blue"
+                                   Grid.Row="4"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightBlue"
                                         Grid.Row="4"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(4), Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
+                        <TextBlock x:Uid="ColorScheme_Purple"
+                                   Grid.Row="5"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightPurple"
                                         Grid.Row="5"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(5), Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
+                        <TextBlock x:Uid="ColorScheme_Cyan"
+                                   Grid.Row="6"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightCyan"
                                         Grid.Row="6"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(6), Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
+                        <TextBlock x:Uid="ColorScheme_White"
+                                   Grid.Row="7"
+                                   Grid.Column="0"
+                                   Style="{StaticResource ColorLabelStyle}" />
                         <ContentControl x:Name="NonBrightWhite"
                                         Grid.Row="7"
                                         Grid.Column="1"
@@ -273,100 +303,80 @@
                                         Style="{StaticResource ColorControlStyle}" />
                     </Grid>
                 </local:SettingContainer>
-            </StackPanel>
 
-            <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
-                    Margin="{StaticResource StandardIndentMargin}"
-                    Spacing="24">
+                <local:SettingContainer Style="{StaticResource ExpanderSettingContainerStyle}"
+                                        x:Uid="ColorScheme_SystemColorsHeader">
+                    <Grid Style="{StaticResource ColorTableGridStyle}">
 
-                <!--  Terminal Colors (Left Column)  -->
-                <StackPanel x:Name="ColorPanel"
-                        Spacing="48">
-                    <StackPanel>
-                        <TextBlock x:Uid="ColorScheme_TerminalColorsHeader"
-                               Style="{StaticResource GroupHeaderStyle}" />
-                    </StackPanel>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                    <!--  System Colors (Right Column)  -->
-                    <StackPanel>
-                        <TextBlock x:Uid="ColorScheme_SystemColorsHeader"
-                               Style="{StaticResource GroupHeaderStyle}" />
-                        <Grid Style="{StaticResource ColorTableGridStyle}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <!--  Foreground  -->
-                            <TextBlock x:Uid="ColorScheme_Foreground"
+                        <!--  Foreground  -->
+                        <TextBlock x:Uid="ColorScheme_Foreground"
                                    Grid.Row="0"
                                    Grid.Column="0"
                                    Style="{StaticResource ColorLabelStyle}" />
-                            <ContentControl x:Name="ForegroundButton"
+                        <ContentControl x:Name="ForegroundButton"
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.ForegroundColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
-                            <!--  Background  -->
-                            <TextBlock x:Uid="ColorScheme_Background"
+                        <!--  Background  -->
+                        <TextBlock x:Uid="ColorScheme_Background"
                                    Grid.Row="1"
                                    Grid.Column="0"
                                    Style="{StaticResource ColorLabelStyle}" />
-                            <ContentControl x:Name="BackgroundButton"
+                        <ContentControl x:Name="BackgroundButton"
                                         Grid.Row="1"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.BackgroundColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
-                            <!--  Cursor Color  -->
-                            <TextBlock x:Uid="ColorScheme_CursorColor"
+                        <!--  Cursor Color  -->
+                        <TextBlock x:Uid="ColorScheme_CursorColor"
                                    Grid.Row="2"
                                    Grid.Column="0"
                                    Style="{StaticResource ColorLabelStyle}" />
-                            <ContentControl x:Name="CursorColorButton"
+                        <ContentControl x:Name="CursorColorButton"
                                         Grid.Row="2"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.CursorColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
 
-                            <!--  Selection Background  -->
-                            <TextBlock x:Uid="ColorScheme_SelectionBackground"
+                        <!--  Selection Background  -->
+                        <TextBlock x:Uid="ColorScheme_SelectionBackground"
                                    Grid.Row="3"
                                    Grid.Column="0"
                                    Style="{StaticResource ColorLabelStyle}" />
-                            <ContentControl x:Name="SelectionBackgroundButton"
+                        <ContentControl x:Name="SelectionBackgroundButton"
                                         Grid.Row="3"
                                         Grid.Column="1"
                                         Content="{x:Bind ViewModel.CurrentScheme.SelectionBackgroundColor, Mode=OneWay}"
                                         ContentTemplate="{StaticResource ColorTableEntryTemplate}"
                                         Style="{StaticResource ColorControlStyle}" />
-                        </Grid>
-                    </StackPanel>
-                </StackPanel>
+                    </Grid>
+                </local:SettingContainer>
 
-                <!--  Delete Button  -->
-                <StackPanel Style="{StaticResource PivotStackStyle}">
+                <local:SettingContainer x:Uid="ColorScheme_Delete"
+                                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}">
                     <Button x:Name="DeleteButton"
-                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource DeleteButtonStyle}">
                         <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon Glyph="&#xE74D;" />
-                                <TextBlock x:Uid="ColorScheme_DeleteButton"
+                            <TextBlock x:Uid="ColorScheme_DeleteButton"
                                        Style="{StaticResource IconButtonTextBlockStyle}" />
-                            </StackPanel>
                         </Button.Content>
                         <Button.Flyout>
                             <Flyout>
@@ -379,9 +389,15 @@
                             </Flyout>
                         </Button.Flyout>
                     </Button>
-                    <TextBlock x:Name="DeleteButtonDisclaimer"
-                           VerticalAlignment="Center"
-                           Style="{StaticResource DisclaimerStyle}" />
+                </local:SettingContainer>
+            </StackPanel>
+
+            <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{StaticResource StandardIndentMargin}"
+                    Spacing="24">
+
+                <!--  Delete Button  -->
+                <StackPanel Style="{StaticResource PivotStackStyle}">
                 </StackPanel>
             </StackPanel>
             <VisualStateManager.VisualStateGroups>
