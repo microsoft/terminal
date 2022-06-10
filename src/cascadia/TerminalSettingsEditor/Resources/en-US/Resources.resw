@@ -139,43 +139,43 @@
     <value>Background</value>
     <comment>This is the header for a control that lets the user select the background color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_Black.Header" xml:space="preserve">
+  <data name="ColorScheme_Black.Text" xml:space="preserve">
     <value>Black</value>
     <comment>This is the header for a control that lets the user select the black color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_Blue.Header" xml:space="preserve">
+  <data name="ColorScheme_Blue.Text" xml:space="preserve">
     <value>Blue</value>
     <comment>This is the header for a control that lets the user select the blue color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightBlack.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightBlack.Text" xml:space="preserve">
     <value>Bright black</value>
     <comment>This is the header for a control that lets the user select the bright black color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightBlue.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightBlue.Text" xml:space="preserve">
     <value>Bright blue</value>
     <comment>This is the header for a control that lets the user select the bright blue color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightCyan.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightCyan.Text" xml:space="preserve">
     <value>Bright cyan</value>
     <comment>This is the header for a control that lets the user select the bright cyan color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightGreen.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightGreen.Text" xml:space="preserve">
     <value>Bright green</value>
     <comment>This is the header for a control that lets the user select the bright green color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightPurple.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightPurple.Text" xml:space="preserve">
     <value>Bright purple</value>
     <comment>This is the header for a control that lets the user select the bright purple color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightRed.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightRed.Text" xml:space="preserve">
     <value>Bright red</value>
     <comment>This is the header for a control that lets the user select the bright red color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightWhite.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightWhite.Text" xml:space="preserve">
     <value>Bright white</value>
     <comment>This is the header for a control that lets the user select the bright white color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_BrightYellow.Header" xml:space="preserve">
+  <data name="ColorScheme_BrightYellow.Text" xml:space="preserve">
     <value>Bright yellow</value>
     <comment>This is the header for a control that lets the user select the bright yellow color for text displayed on the screen.</comment>
   </data>
@@ -183,7 +183,7 @@
     <value>Cursor color</value>
     <comment>This is the header for a control that lets the user select the text cursor's color displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_Cyan.Header" xml:space="preserve">
+  <data name="ColorScheme_Cyan.Text" xml:space="preserve">
     <value>Cyan</value>
     <comment>This is the header for a control that lets the user select the cyan color for text displayed on the screen.</comment>
   </data>
@@ -191,11 +191,11 @@
     <value>Foreground</value>
     <comment>This is the header for a control that lets the user select the foreground color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_Green.Header" xml:space="preserve">
+  <data name="ColorScheme_Green.Text" xml:space="preserve">
     <value>Green</value>
     <comment>This is the header for a control that lets the user select the green color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_Purple.Header" xml:space="preserve">
+  <data name="ColorScheme_Purple.Text" xml:space="preserve">
     <value>Purple</value>
     <comment>This is the header for a control that lets the user select the purple color for text displayed on the screen.</comment>
   </data>
@@ -203,15 +203,15 @@
     <value>Selection background</value>
     <comment>This is the header for a control that lets the user select the background color for selected text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_Red.Header" xml:space="preserve">
+  <data name="ColorScheme_Red.Text" xml:space="preserve">
     <value>Red</value>
     <comment>This is the header for a control that lets the user select the red color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_White.Header" xml:space="preserve">
+  <data name="ColorScheme_White.Text" xml:space="preserve">
     <value>White</value>
     <comment>This is the header for a control that lets the user select the white color for text displayed on the screen.</comment>
   </data>
-  <data name="ColorScheme_Yellow.Header" xml:space="preserve">
+  <data name="ColorScheme_Yellow.Text" xml:space="preserve">
     <value>Yellow</value>
     <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
   </data>

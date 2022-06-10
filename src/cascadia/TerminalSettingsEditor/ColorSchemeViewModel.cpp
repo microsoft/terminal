@@ -105,22 +105,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
     {
         static const std::array<hstring, 16> TableColorNames = {
-            RS_(L"ColorScheme_Black/Header"),
-            RS_(L"ColorScheme_Red/Header"),
-            RS_(L"ColorScheme_Green/Header"),
-            RS_(L"ColorScheme_Yellow/Header"),
-            RS_(L"ColorScheme_Blue/Header"),
-            RS_(L"ColorScheme_Purple/Header"),
-            RS_(L"ColorScheme_Cyan/Header"),
-            RS_(L"ColorScheme_White/Header"),
-            RS_(L"ColorScheme_BrightBlack/Header"),
-            RS_(L"ColorScheme_BrightRed/Header"),
-            RS_(L"ColorScheme_BrightGreen/Header"),
-            RS_(L"ColorScheme_BrightYellow/Header"),
-            RS_(L"ColorScheme_BrightBlue/Header"),
-            RS_(L"ColorScheme_BrightPurple/Header"),
-            RS_(L"ColorScheme_BrightCyan/Header"),
-            RS_(L"ColorScheme_BrightWhite/Header")
+            RS_(L"ColorScheme_Black/Text"),
+            RS_(L"ColorScheme_Red/Text"),
+            RS_(L"ColorScheme_Green/Text"),
+            RS_(L"ColorScheme_Yellow/Text"),
+            RS_(L"ColorScheme_Blue/Text"),
+            RS_(L"ColorScheme_Purple/Text"),
+            RS_(L"ColorScheme_Cyan/Text"),
+            RS_(L"ColorScheme_White/Text"),
+            RS_(L"ColorScheme_BrightBlack/Text"),
+            RS_(L"ColorScheme_BrightRed/Text"),
+            RS_(L"ColorScheme_BrightGreen/Text"),
+            RS_(L"ColorScheme_BrightYellow/Text"),
+            RS_(L"ColorScheme_BrightBlue/Text"),
+            RS_(L"ColorScheme_BrightPurple/Text"),
+            RS_(L"ColorScheme_BrightCyan/Text"),
+            RS_(L"ColorScheme_BrightWhite/Text")
         };
 
         Name(TableColorNames[index]);
