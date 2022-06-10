@@ -46,6 +46,7 @@ inlined
 It'd
 kje
 libfuzzer
+libuv
 liga
 lje
 Llast
