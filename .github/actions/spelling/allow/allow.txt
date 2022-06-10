@@ -29,6 +29,7 @@ formattings
 FTCS
 ftp
 fvar
+gantt
 gcc
 geeksforgeeks
 ghe
