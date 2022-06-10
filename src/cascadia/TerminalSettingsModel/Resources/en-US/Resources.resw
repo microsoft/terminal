@@ -299,16 +299,19 @@
     <value>Next tab</value>
   </data>
   <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
-    <value>Open both settings and default settings files</value>
+    <value>Open both settings and default settings files (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenDefaultSettingsCommandKey" xml:space="preserve">
-    <value>Open default settings file</value>
+    <value>Open default settings file (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
     <value>Open new tab dropdown</value>
   </data>
   <data name="OpenSettingsCommandKey" xml:space="preserve">
-    <value>Open settings file</value>
+    <value>Open settings file (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Set the tab color...</value>
