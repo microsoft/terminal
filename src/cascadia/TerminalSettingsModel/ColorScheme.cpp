@@ -21,24 +21,30 @@ static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 
-static constexpr std::array<std::string_view, 16> TableColors = {
-    "black",
-    "red",
-    "green",
-    "yellow",
-    "blue",
-    "purple",
-    "cyan",
-    "white",
-    "brightBlack",
-    "brightRed",
-    "brightGreen",
-    "brightYellow",
-    "brightBlue",
-    "brightPurple",
-    "brightCyan",
-    "brightWhite"
-};
+static constexpr size_t ColorSchemeExpectedSize = 16;
+static constexpr std::array<std::pair<std::string_view, size_t>, 18> TableColorsMapping{ {
+    // Primary color mappings
+    { "black", 0 },
+    { "red", 1 },
+    { "green", 2 },
+    { "yellow", 3 },
+    { "blue", 4 },
+    { "purple", 5 },
+    { "cyan", 6 },
+    { "white", 7 },
+    { "brightBlack", 8 },
+    { "brightRed", 9 },
+    { "brightGreen", 10 },
+    { "brightYellow", 11 },
+    { "brightBlue", 12 },
+    { "brightPurple", 13 },
+    { "brightCyan", 14 },
+    { "brightWhite", 15 },
+
+    // Alternate color mappings (GH#11456)
+    { "magenta", 5 },
+    { "brightMagenta", 13 },
+} };
 
 ColorScheme::ColorScheme() noexcept :
     ColorScheme{ winrt::hstring{} }
@@ -98,28 +104,17 @@ bool ColorScheme::_layerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
 
     // Required fields
-    for (unsigned int i = 0; i < TableColors.size(); ++i)
+    size_t colorCount = 0;
+    for (const auto& [key, index] : TableColorsMapping)
     {
-        std::string_view tableColorName = til::at(TableColors, i);
-        bool valueForKeyIsValid = JsonUtils::GetValueForKey(json, tableColorName, til::at(_table, i));
-
-        // If GetValueForKey failed, try again with alternate color names
-        if (!valueForKeyIsValid)
+        colorCount += JsonUtils::GetValueForKey(json, key, til::at(_table, index));
+        if (colorCount == ColorSchemeExpectedSize)
         {
-            if (tableColorName == "purple")
-            {
-                tableColorName = "magenta";
-            }
-            else if (tableColorName == "brightPurple")
-            {
-                tableColorName = "brightMagenta";
-            }
-
-            valueForKeyIsValid = JsonUtils::GetValueForKey(json, tableColorName, til::at(_table, i));
+            break;
         }
-
-        isValid &= valueForKeyIsValid;
     }
+
+    isValid &= (colorCount == 16); // Valid schemes should have exactly 16 colors
 
     return isValid;
 }
@@ -140,9 +135,10 @@ Json::Value ColorScheme::ToJson() const
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
 
-    for (unsigned int i = 0; i < TableColors.size(); ++i)
+    for (size_t i = 0; i < ColorSchemeExpectedSize; ++i)
     {
-        JsonUtils::SetValueForKey(json, til::at(TableColors, i), til::at(_table, i));
+        const auto& key = til::at(TableColorsMapping, i).first;
+        JsonUtils::SetValueForKey(json, key, til::at(_table, i));
     }
 
     return json;
