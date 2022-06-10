@@ -301,7 +301,7 @@ void InputTest::TerminalInputTests()
     inputEvent = IInputEvent::Create(irUnhandled);
     VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify MENU_EVENT was NOT handled.");
 
-    Log::Comment(L"Testing FOCUS_EVENTs is handled by TestFocusEvents");
+    // Testing FOCUS_EVENTs is handled by TestFocusEvents
 }
 
 void InputTest::TestFocusEvents()
