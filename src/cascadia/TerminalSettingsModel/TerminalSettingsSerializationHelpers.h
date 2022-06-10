@@ -546,3 +546,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
         pair_type{ "setAsDefault", ValueType::SetAsDefault },
     };
 };
+
+// Possible ScrollToMarkDirection values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
+{
+    JSON_MAPPINGS(4) = {
+        pair_type{ "previous", ValueType::Previous },
+        pair_type{ "next", ValueType::Next },
+        pair_type{ "first", ValueType::First },
+        pair_type{ "last", ValueType::Last },
+    };
+};

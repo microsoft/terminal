@@ -357,8 +357,8 @@ bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
 int Viewport::CompareInBounds(const til::point first, const til::point second) const noexcept
 {
     // Assert that our coordinates are within the expected boundaries
-    FAIL_FAST_IF(!IsInBounds(first));
-    FAIL_FAST_IF(!IsInBounds(second));
+    assert(!IsInBounds(first));
+    assert(!IsInBounds(second));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.

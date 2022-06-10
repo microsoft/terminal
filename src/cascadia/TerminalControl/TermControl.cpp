@@ -124,20 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
-                    control->_isInternalScrollBarUpdate = true;
-
-                    auto scrollBar = control->ScrollBar();
-                    if (update.newValue)
-                    {
-                        scrollBar.Value(*update.newValue);
-                    }
-                    scrollBar.Maximum(update.newMaximum);
-                    scrollBar.Minimum(update.newMinimum);
-                    scrollBar.ViewportSize(update.newViewportSize);
-                    // scroll one full screen worth at a time when the scroll bar is clicked
-                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
-
-                    control->_isInternalScrollBarUpdate = false;
+                    control->_throttledUpdateScrollbar(update);
                 }
             });
 
@@ -146,6 +133,57 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
+    }
+
+    void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
+    {
+        // Assumptions:
+        // * we're already not closing
+        // * caller already checked weak ptr to make sure we're still alive
+
+        _isInternalScrollBarUpdate = true;
+
+        auto scrollBar = ScrollBar();
+        if (update.newValue)
+        {
+            scrollBar.Value(*update.newValue);
+        }
+        scrollBar.Maximum(update.newMaximum);
+        scrollBar.Minimum(update.newMinimum);
+        scrollBar.ViewportSize(update.newViewportSize);
+        // scroll one full screen worth at a time when the scroll bar is clicked
+        scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
+
+        _isInternalScrollBarUpdate = false;
+
+        if (_showMarksInScrollbar)
+        {
+            // Update scrollbar marks
+            ScrollBarCanvas().Children().Clear();
+            const auto marks{ _core.ScrollMarks() };
+            const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
+            const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
+
+            for (const auto m : marks)
+            {
+                Windows::UI::Xaml::Shapes::Rectangle r;
+                Media::SolidColorBrush brush{};
+                // Sneaky: technically, a mark doesn't need to have a color set,
+                // it might want to just use the color from the palette for that
+                // kind of mark. Fortunately, ControlCore is kind enough to
+                // pre-evaluate that for us, and shove the real value into the
+                // Color member, regardless if the mark has a literal value set.
+                brush.Color(static_cast<til::color>(m.Color.Color));
+                r.Fill(brush);
+                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
+                r.Height(2);
+                const auto markRow = m.Start.Y;
+                const auto fractionalHeight = markRow / totalBufferRows;
+                const auto relativePos = fractionalHeight * fullHeight;
+                ScrollBarCanvas().Children().Append(r);
+                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+            }
+        }
     }
 
     // Method Description:
@@ -404,6 +442,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                              newMargin.Right,
                                                              newMargin.Bottom });
         }
+
+        _showMarksInScrollbar = settings.ShowMarks();
+        // Clear out all the current marks
+        ScrollBarCanvas().Children().Clear();
+        // When we hot reload the settings, the core will send us a scrollbar
+        // update. If we enabled scrollbar marks, then great, when we handle
+        // that message, we'll redraw them.
     }
 
     // Method Description:
@@ -2861,6 +2906,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::OwningHwnd()
     {
         return _core.OwningHwnd();
+    }
+
+    void TermControl::AddMark(const Control::ScrollMark& mark)
+    {
+        _core.AddMark(mark);
+    }
+    void TermControl::ClearMark() { _core.ClearMark(); }
+    void TermControl::ClearAllMarks() { _core.ClearAllMarks(); }
+    void TermControl::ScrollToMark(const Control::ScrollToMarkDirection& direction) { _core.ScrollToMark(direction); }
+
+    Windows::Foundation::Collections::IVector<Control::ScrollMark> TermControl::ScrollMarks() const
+    {
+        return _core.ScrollMarks();
     }
 
 }

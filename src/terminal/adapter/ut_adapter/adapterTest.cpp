@@ -237,6 +237,11 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
+    {
+        Log::Comment(L"AddMark MOCK called...");
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.

@@ -58,6 +58,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
+        bool IsProcessingLastCharacter() const noexcept;
 
         void ResetState() noexcept;
 
@@ -199,5 +200,6 @@ namespace Microsoft::Console::VirtualTerminal
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
         bool _processingIndividually;
+        bool _processingLastCharacter;
     };
 }

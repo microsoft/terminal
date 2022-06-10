@@ -37,12 +37,12 @@ using namespace Microsoft::Console::Interactivity::Win32;
                    sizeof(Flags));
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
 
     CONSOLEENDTASK ConsoleEndTaskParams;
-    ConsoleEndTaskParams.ProcessId = hProcessId;
+    ConsoleEndTaskParams.ProcessId = ULongToHandle(dwProcessId); // This is actually a PID, even though the struct expects a HANDLE.
     ConsoleEndTaskParams.ConsoleEventCode = dwEventType;
     ConsoleEndTaskParams.ConsoleFlags = ulCtrlFlags;
     ConsoleEndTaskParams.hwnd = pConsoleWindow == nullptr ? nullptr : pConsoleWindow->GetWindowHandle();

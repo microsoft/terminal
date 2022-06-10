@@ -298,6 +298,12 @@ void Terminal::UseMainScreenBuffer()
     CATCH_LOG();
 }
 
+void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+    AddMark(mark, cursorPos, cursorPos);
+}
+
 // Method Description:
 // - Reacts to a client asking us to show or hide the window.
 // Arguments:

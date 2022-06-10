@@ -130,6 +130,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoConEmuAction(const std::wstring_view string) override;
 
+        bool DoITerm2Action(const std::wstring_view string) override;
+
+        bool DoFinalTermAction(const std::wstring_view string) override;
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
@@ -204,6 +208,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
+
+        StringHandler _CreatePassthroughHandler();
 
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;

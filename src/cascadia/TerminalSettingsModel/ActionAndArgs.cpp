@@ -39,6 +39,10 @@ static constexpr std::string_view ScrollUpKey{ "scrollUp" };
 static constexpr std::string_view ScrollUpPageKey{ "scrollUpPage" };
 static constexpr std::string_view ScrollToTopKey{ "scrollToTop" };
 static constexpr std::string_view ScrollToBottomKey{ "scrollToBottom" };
+static constexpr std::string_view ScrollToMarkKey{ "scrollToMark" };
+static constexpr std::string_view AddMarkKey{ "addMark" };
+static constexpr std::string_view ClearMarkKey{ "clearMark" };
+static constexpr std::string_view ClearAllMarksKey{ "clearAllMarks" };
 static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
@@ -354,6 +358,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
                 { ShortcutAction::ScrollToTop, RS_(L"ScrollToTopCommandKey") },
                 { ShortcutAction::ScrollToBottom, RS_(L"ScrollToBottomCommandKey") },
+                { ShortcutAction::ScrollToMark, RS_(L"ScrollToPreviousMarkCommandKey") },
+                { ShortcutAction::AddMark, RS_(L"AddMarkCommandKey") },
+                { ShortcutAction::ClearMark, RS_(L"ClearMarkCommandKey") },
+                { ShortcutAction::ClearAllMarks, RS_(L"ClearAllMarksCommandKey") },
                 { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },

@@ -26,8 +26,10 @@ EDDC
 Enum'd
 Fitt
 formattings
+FTCS
 ftp
 fvar
+gantt
 gcc
 geeksforgeeks
 ghe
@@ -44,6 +46,7 @@ inlined
 It'd
 kje
 libfuzzer
+libuv
 liga
 lje
 Llast

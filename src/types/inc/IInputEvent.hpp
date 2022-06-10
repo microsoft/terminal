@@ -514,12 +514,14 @@ class FocusEvent : public IInputEvent
 {
 public:
     constexpr FocusEvent(const FOCUS_EVENT_RECORD& record) :
-        _focus{ !!record.bSetFocus }
+        _focus{ !!record.bSetFocus },
+        _cameFromApi{ true }
     {
     }
 
     constexpr FocusEvent(const bool focus) :
-        _focus{ focus }
+        _focus{ focus },
+        _cameFromApi{ false }
     {
     }
 
@@ -539,8 +541,15 @@ public:
 
     void SetFocus(const bool focus) noexcept;
 
+    // BODGY - see FocusEvent.cpp for details.
+    constexpr bool CameFromApi() const noexcept
+    {
+        return _cameFromApi;
+    }
+
 private:
     bool _focus;
+    bool _cameFromApi;
 
 #ifdef UNIT_TESTING
     friend std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);
