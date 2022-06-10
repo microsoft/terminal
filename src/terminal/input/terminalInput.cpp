@@ -532,7 +532,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // GH#13238 - Filter out focus events that came from the API.
         if (focusEvent.CameFromApi())
         {
-            return true;
+            return false;
         }
 
         return HandleFocus(focusEvent.GetFocus());
