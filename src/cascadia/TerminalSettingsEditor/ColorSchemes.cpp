@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             DeleteButtonDisclaimer().Text(disclaimer);
 
-            IsRenaming(false);
+            NameBox().Text(_ViewModel.CurrentScheme().Name());
         }
     }
 
@@ -207,11 +207,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
-            IsRenaming(false);
             RenameErrorTip().IsOpen(false);
             e.Handled(true);
         }
-        ColorSchemeComboBox().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
@@ -220,7 +218,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             // update the UI
             RenameErrorTip().IsOpen(false);
-            IsRenaming(false);
 
             // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
             // We need to manually force the ComboBox to refresh itself.

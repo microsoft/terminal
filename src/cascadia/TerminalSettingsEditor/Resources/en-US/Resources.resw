@@ -135,6 +135,22 @@
     <value>Duplicate</value>
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
+  <data name="ColorScheme_Select.Header" xml:space="preserve">
+    <value>Color Scheme</value>
+    <comment>This is the header for a control that lets the user select the color scheme to edit.</comment>
+  </data>
+  <data name="ColorScheme_Add.Header" xml:space="preserve">
+    <value>Add new</value>
+    <comment>This is the header for a control that lets the user add a new color scheme.</comment>
+  </data>
+  <data name="ColorScheme_Customize.Text" xml:space="preserve">
+    <value>Customize selected color scheme</value>
+    <comment>This is the header for the section where the user can customize the currently selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_Rename.Header" xml:space="preserve">
+    <value>Rename color scheme</value>
+    <comment>This is the header for a control that allows the user to rename the currently selected color scheme.</comment>
+  </data>
   <data name="ColorScheme_Background.Text" xml:space="preserve">
     <value>Background</value>
     <comment>This is the header for a control that lets the user select the background color for text displayed on the screen.</comment>
