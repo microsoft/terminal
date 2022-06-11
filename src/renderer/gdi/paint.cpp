@@ -121,7 +121,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     szGutter.cx = _szMemorySurface.cx % coordFontSize.X;
     szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
 
-    RECT rcScrollLimit;
+    RECT rcScrollLimit{};
     RETURN_IF_FAILED(LongSub(_szMemorySurface.cx, szGutter.cx, &rcScrollLimit.right));
     RETURN_IF_FAILED(LongSub(_szMemorySurface.cy, szGutter.cy, &rcScrollLimit.bottom));
 

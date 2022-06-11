@@ -640,7 +640,7 @@ try
         case SwapChainMode::ForHwnd:
         {
             // use the HWND's dimensions for the swap chain dimensions.
-            RECT rect;
+            RECT rect{};
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
 
             _swapChainDesc.Width = rect.right - rect.left;
@@ -1222,7 +1222,7 @@ CATCH_RETURN();
     {
     case SwapChainMode::ForHwnd:
     {
-        RECT clientRect;
+        RECT clientRect{};
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rect{ clientRect }.size();

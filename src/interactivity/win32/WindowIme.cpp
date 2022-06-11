@@ -42,7 +42,7 @@ RECT GetImeSuggestionWindowPos()
     ClientToScreen(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &ptSuggestion);
 
     // Move into suggestion rectangle.
-    RECT rcSuggestion;
+    RECT rcSuggestion{};
     rcSuggestion.top = rcSuggestion.bottom = ptSuggestion.y;
     rcSuggestion.left = rcSuggestion.right = ptSuggestion.x;
 
