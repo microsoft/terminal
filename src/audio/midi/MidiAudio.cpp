@@ -21,16 +21,25 @@ namespace
 
         MidiOut() noexcept
         {
-            midiOutOpen(&handle, MIDI_MAPPER, NULL, NULL, CALLBACK_NULL);
-            OutputMessage(PROGRAM_CHANGE, SQUARE_WAVE_SYNTH);
+            if constexpr (Feature_DECPSViaMidiPlayer::IsEnabled())
+            {
+                midiOutOpen(&handle, MIDI_MAPPER, NULL, NULL, CALLBACK_NULL);
+                OutputMessage(PROGRAM_CHANGE, SQUARE_WAVE_SYNTH);
+            }
         }
         ~MidiOut() noexcept
         {
-            midiOutClose(handle);
+            if constexpr (Feature_DECPSViaMidiPlayer::IsEnabled())
+            {
+                midiOutClose(handle);
+            }
         }
         void OutputMessage(const int b1, const int b2, const int b3 = 0, const int b4 = 0) noexcept
         {
-            midiOutShortMsg(handle, MAKELONG(MAKEWORD(b1, b2), MAKEWORD(b3, b4)));
+            if constexpr (Feature_DECPSViaMidiPlayer::IsEnabled())
+            {
+                midiOutShortMsg(handle, MAKELONG(MAKEWORD(b1, b2), MAKEWORD(b3, b4)));
+            }
         }
 
         MidiOut(const MidiOut&) = delete;

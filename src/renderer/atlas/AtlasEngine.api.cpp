@@ -40,7 +40,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 #pragma region IRenderEngine
 
-[[nodiscard]] HRESULT AtlasEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT AtlasEngine::Invalidate(const til::rect* const psrRegion) noexcept
 {
     //assert(psrRegion->Top < psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
 
@@ -50,7 +50,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 {
     //assert(psrRegion->Left <= psrRegion->Right && psrRegion->Left >= 0 && psrRegion->Right <= _api.cellCount.x);
     //assert(psrRegion->Top <= psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
@@ -68,19 +68,19 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateSystem(const til::rect* const prcDirtyClient) noexcept
 {
     const auto top = prcDirtyClient->top / _api.fontMetrics.cellSize.y;
     const auto bottom = prcDirtyClient->bottom / _api.fontMetrics.cellSize.y;
 
     // BeginPaint() protects against invalid out of bounds numbers.
-    SMALL_RECT rect;
-    rect.Top = gsl::narrow_cast<SHORT>(top);
-    rect.Bottom = gsl::narrow_cast<SHORT>(bottom);
+    til::rect rect;
+    rect.Top = top;
+    rect.Bottom = bottom;
     return Invalidate(&rect);
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
 {
     for (const auto& rect : rectangles)
     {
@@ -93,7 +93,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 {
     const auto delta = pcoordDelta->Y;
     if (delta == 0)
@@ -153,7 +153,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return UpdateFont(fontInfoDesired, fontInfo, {}, {});
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const SIZE cellSize, const size_t centeringHint) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint) noexcept
 {
     return S_OK;
 }
@@ -172,7 +172,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
     const u16x2 cellCount{
         gsl::narrow_cast<u16>(srNewViewport.Right - srNewViewport.Left + 1),
@@ -236,10 +236,10 @@ try
 
         DeleteObject(SelectObject(hdc.get(), hfont.get()));
 
-        SIZE sz;
+        til::size sz;
         RETURN_HR_IF(E_FAIL, !GetTextExtentPoint32W(hdc.get(), L"M", 1, &sz));
-        resultingCellSize.X = gsl::narrow<SHORT>(sz.cx);
-        resultingCellSize.Y = gsl::narrow<SHORT>(sz.cy);
+        resultingCellSize.X = sz.cx;
+        resultingCellSize.Y = sz.cy;
     }
 #endif
 
@@ -254,11 +254,11 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT AtlasEngine::GetFontSize(_Out_ til::size* pFontSize) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pFontSize);
-    pFontSize->X = gsl::narrow_cast<SHORT>(_api.fontMetrics.cellSize.x);
-    pFontSize->Y = gsl::narrow_cast<SHORT>(_api.fontMetrics.cellSize.y);
+    pFontSize->X = _api.fontMetrics.cellSize.x;
+    pFontSize->Y = _api.fontMetrics.cellSize.y;
     return S_OK;
 }
 
@@ -315,14 +315,14 @@ HRESULT AtlasEngine::Enable() noexcept
 {
     assert(_api.fontMetrics.cellSize.x != 0);
     assert(_api.fontMetrics.cellSize.y != 0);
-    return Types::Viewport::FromDimensions(viewInPixels.Origin(), COORD{ gsl::narrow_cast<short>(viewInPixels.Width() / _api.fontMetrics.cellSize.x), gsl::narrow_cast<short>(viewInPixels.Height() / _api.fontMetrics.cellSize.y) });
+    return Types::Viewport::FromDimensions(viewInPixels.Origin(), { viewInPixels.Width() / _api.fontMetrics.cellSize.x, viewInPixels.Height() / _api.fontMetrics.cellSize.y });
 }
 
 [[nodiscard]] Microsoft::Console::Types::Viewport AtlasEngine::GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept
 {
     assert(_api.fontMetrics.cellSize.x != 0);
     assert(_api.fontMetrics.cellSize.y != 0);
-    return Types::Viewport::FromDimensions(viewInCharacters.Origin(), COORD{ gsl::narrow_cast<short>(viewInCharacters.Width() * _api.fontMetrics.cellSize.x), gsl::narrow_cast<short>(viewInCharacters.Height() * _api.fontMetrics.cellSize.y) });
+    return Types::Viewport::FromDimensions(viewInCharacters.Origin(), { viewInCharacters.Width() * _api.fontMetrics.cellSize.x, viewInCharacters.Height() * _api.fontMetrics.cellSize.y });
 }
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
@@ -393,7 +393,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     _api.warningCallback = std::move(pfn);
 }
 
-[[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const SIZE pixels) noexcept
+[[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const til::size pixels) noexcept
 {
     u16x2 newSize;
     RETURN_IF_FAILED(vec2_narrow(pixels.cx, pixels.cy, newSize));
@@ -619,10 +619,15 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto cellHeight = gsl::narrow<u16>(std::ceil(baseline + descentInPx + halfGapInPx));
 
     {
-        COORD resultingCellSize;
-        resultingCellSize.X = gsl::narrow<SHORT>(cellWidth);
-        resultingCellSize.Y = gsl::narrow<SHORT>(cellHeight);
-        fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, resultingCellSize, requestedSize);
+        til::size coordSize;
+        coordSize.X = cellWidth;
+        coordSize.Y = cellHeight;
+
+        til::size coordSizeUnscaled;
+        coordSizeUnscaled.X = coordSize.X * USER_DEFAULT_SCREEN_DPI / _api.dpi;
+        coordSizeUnscaled.Y = coordSize.Y * USER_DEFAULT_SCREEN_DPI / _api.dpi;
+
+        fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, coordSizeUnscaled);
     }
 
     if (fontMetrics)

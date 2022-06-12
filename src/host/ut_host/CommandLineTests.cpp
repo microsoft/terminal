@@ -255,7 +255,7 @@ class CommandLineTests
 
         auto& commandLine = CommandLine::Instance();
         const auto cursorPos = commandLine._moveCursorToEndOfPrompt(cookedReadData);
-        VERIFY_ARE_EQUAL(cursorPos.X, gsl::narrow<short>(expectedCursorPos));
+        VERIFY_ARE_EQUAL(cursorPos.X, gsl::narrow<til::CoordType>(expectedCursorPos));
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, expectedCursorPos);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, expectedBufferPos);
     }
@@ -297,7 +297,7 @@ class CommandLineTests
 
         auto& commandLine = CommandLine::Instance();
         // cursor position at beginning of "blah"
-        short expectedPos = 10;
+        til::CoordType expectedPos = 10;
         auto cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
@@ -374,8 +374,8 @@ class CommandLineTests
         // NOTE: need to initialize the actually cursor and keep it up to date with the changes here. remove
         once functions are fixed
         // try to move right, nothing should happen
-        short expectedPos = gsl::narrow<short>(endCursorPos);
-        COORD cursorPos = MoveCursorRightByWord(cookedReadData);
+        auto expectedPos = endCursorPos;
+        auto cursorPos = MoveCursorRightByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, endBufferPos);

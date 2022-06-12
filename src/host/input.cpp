@@ -326,7 +326,7 @@ void ProcessCtrlEvents()
         if (NT_SUCCESS(Status))
         {
             Status = ServiceLocator::LocateConsoleControl()
-                         ->EndTask((HANDLE)rgProcessHandleList[i].dwProcessID,
+                         ->EndTask(rgProcessHandleList[i].dwProcessID,
                                    EventType,
                                    CtrlFlags);
             if (rgProcessHandleList[i].hProcess == nullptr)

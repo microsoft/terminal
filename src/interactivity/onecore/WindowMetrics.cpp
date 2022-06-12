@@ -20,7 +20,7 @@
 
 using namespace Microsoft::Console::Interactivity::OneCore;
 
-RECT WindowMetrics::GetMinClientRectInPixels()
+til::rect WindowMetrics::GetMinClientRectInPixels()
 {
     // We need to always return something viable for this call,
     // so by default, set the font and display size to our headless
@@ -28,11 +28,11 @@ RECT WindowMetrics::GetMinClientRectInPixels()
     // If we get information from the Server, great. We'll calculate
     // the values for that at the end.
     // If we don't... then at least we have a non-zero rectangle.
-    COORD FontSize{};
+    til::size FontSize;
     FontSize.X = HEADLESS_FONT_SIZE_WIDTH;
     FontSize.Y = HEADLESS_FONT_SIZE_HEIGHT;
 
-    RECT DisplaySize{};
+    til::rect DisplaySize;
     DisplaySize.right = HEADLESS_DISPLAY_SIZE_WIDTH;
     DisplaySize.bottom = HEADLESS_DISPLAY_SIZE_HEIGHT;
 
@@ -112,7 +112,7 @@ RECT WindowMetrics::GetMinClientRectInPixels()
     return DisplaySize;
 }
 
-RECT WindowMetrics::GetMaxClientRectInPixels()
+til::rect WindowMetrics::GetMaxClientRectInPixels()
 {
     // OneCore consoles only have one size and cannot be resized.
     return GetMinClientRectInPixels();

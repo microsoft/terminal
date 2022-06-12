@@ -667,6 +667,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(6),
                                           parameters.at(7));
         break;
+    case DcsActionCodes::DECRSTS_RestoreTerminalState:
+        handler = _dispatch->RestoreTerminalState(parameters.at(0));
+        break;
     case DcsActionCodes::DECRQSS_RequestSetting:
         handler = _dispatch->RequestSetting();
         break;
@@ -832,6 +835,16 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::ConEmuAction:
     {
         success = _dispatch->DoConEmuAction(string);
+        break;
+    }
+    case OscActionCodes::ITerm2Action:
+    {
+        success = _dispatch->DoITerm2Action(string);
+        break;
+    }
+    case OscActionCodes::FinalTermAction:
+    {
+        success = _dispatch->DoFinalTermAction(string);
         break;
     }
     default:

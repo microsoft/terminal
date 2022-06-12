@@ -23,7 +23,7 @@ namespace Microsoft::Console::Interactivity::OneCore
     class AccessibilityNotifier : public IAccessibilityNotifier
     {
     public:
-        void NotifyConsoleCaretEvent(_In_ RECT rectangle) noexcept override;
+        void NotifyConsoleCaretEvent(_In_ const til::rect& rectangle) noexcept override;
         void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position) noexcept override;
         void NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y) noexcept override;
         void NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute) noexcept override;

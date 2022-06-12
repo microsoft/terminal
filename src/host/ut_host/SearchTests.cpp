@@ -57,7 +57,7 @@ class SearchTests
         return true;
     }
 
-    void DoFoundChecks(Search& s, COORD& coordStartExpected, SHORT lineDelta)
+    void DoFoundChecks(Search& s, til::point& coordStartExpected, til::CoordType lineDelta)
     {
         auto coordEndExpected = coordStartExpected;
         coordEndExpected.X += 1;
@@ -91,7 +91,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 0 };
+        til::point coordStartExpected;
         Search s(gci.renderData, L"AB", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
@@ -100,7 +100,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 2, 0 };
+        til::point coordStartExpected = { 2, 0 };
         Search s(gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
@@ -109,7 +109,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 0 };
+        til::point coordStartExpected;
         Search s(gci.renderData, L"ab", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
@@ -118,7 +118,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 2, 0 };
+        til::point coordStartExpected = { 2, 0 };
         Search s(gci.renderData, L"\x304b", Search::Direction::Forward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, 1);
     }
@@ -127,7 +127,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 0, 3 };
+        til::point coordStartExpected = { 0, 3 };
         Search s(gci.renderData, L"AB", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }
@@ -136,7 +136,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 2, 3 };
+        til::point coordStartExpected = { 2, 3 };
         Search s(gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseSensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }
@@ -145,7 +145,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 0, 3 };
+        til::point coordStartExpected = { 0, 3 };
         Search s(gci.renderData, L"ab", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }
@@ -154,7 +154,7 @@ class SearchTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        COORD coordStartExpected = { 2, 3 };
+        til::point coordStartExpected = { 2, 3 };
         Search s(gci.renderData, L"\x304b", Search::Direction::Backward, Search::Sensitivity::CaseInsensitive);
         DoFoundChecks(s, coordStartExpected, -1);
     }

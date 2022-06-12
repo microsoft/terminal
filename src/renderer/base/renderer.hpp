@@ -48,16 +48,16 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintFrame();
 
         void NotifyPaintFrame() noexcept;
-        void TriggerSystemRedraw(const RECT* const prcDirtyClient);
+        void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
-        void TriggerRedraw(const COORD* const pcoord);
-        void TriggerRedrawCursor(const COORD* const pcoord);
+        void TriggerRedraw(const til::point* const pcoord);
+        void TriggerRedrawCursor(const til::point* const pcoord);
         void TriggerRedrawAll(const bool backgroundChanged = false, const bool frameChanged = false);
         void TriggerTeardown() noexcept;
 
         void TriggerSelection();
         void TriggerScroll();
-        void TriggerScroll(const COORD* const pcoordDelta);
+        void TriggerScroll(const til::point* const pcoordDelta);
 
         void TriggerFlush(const bool circling);
         void TriggerTitleChange();
@@ -69,7 +69,7 @@ namespace Microsoft::Console::Render
                                _Out_ FontInfo& FontInfo);
 
         void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                            const SIZE cellSize,
+                            const til::size cellSize,
                             const size_t centeringHint);
 
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
@@ -99,15 +99,15 @@ namespace Microsoft::Console::Render
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const COORD target, const bool lineWrapped);
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const COORD coordTarget);
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-        std::vector<SMALL_RECT> _GetSelectionRects() const;
+        std::vector<til::rect> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
@@ -122,7 +122,7 @@ namespace Microsoft::Console::Render
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
         std::vector<Cluster> _clusterBuffer;
-        std::vector<SMALL_RECT> _previousSelection;
+        std::vector<til::rect> _previousSelection;
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;

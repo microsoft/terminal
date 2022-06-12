@@ -37,6 +37,28 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
+    {
+        Core::OptionalColor result;
+        result.Color = c;
+        result.HasValue = true;
+        return result;
+    }
+    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
+    {
+        Core::OptionalColor result;
+        if (c.has_value())
+        {
+            result.Color = *c;
+            result.HasValue = true;
+        }
+        else
+        {
+            result.HasValue = false;
+        }
+        return result;
+    }
+
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
     // See microsoft/terminal#2066 for more info.
     static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
@@ -250,8 +272,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // and react accordingly.
             _updateFont(true);
 
-            const COORD windowSize{ static_cast<short>(windowWidth),
-                                    static_cast<short>(windowHeight) };
+            const til::size windowSize{ static_cast<til::CoordType>(windowWidth),
+                                        static_cast<til::CoordType>(windowHeight) };
 
             // First set up the dx engine with the window size in pixels.
             // Then, using the font, get the number of characters that can fit.
@@ -267,11 +289,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto height = vp.Height();
             _connection.Resize(height, width);
 
-            if (_OwningHwnd != 0)
+            if (_owningHwnd != 0)
             {
                 if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
                 {
-                    conpty.ReparentWindow(_OwningHwnd);
+                    conpty.ReparentWindow(_owningHwnd);
                 }
             }
 
@@ -444,7 +466,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const short wheelDelta,
                                      const TerminalInput::MouseButtonState state)
     {
-        return _terminal->SendMouseEvent(viewportPos.to_win32_coord(), uiButton, states, wheelDelta, state);
+        return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
     }
 
     void ControlCore::UserScrollViewport(const int viewTop)
@@ -568,12 +590,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
-        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
+        decltype(_terminal->GetHyperlinkIntervalFromPosition({})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
-            newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition->to_win32_coord());
-            newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition->to_win32_coord());
+            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
         }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
@@ -603,7 +625,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }.to_win32_coord()) };
+        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }) };
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -611,7 +633,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(_lastHoveredCell->to_win32_coord()) };
+            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
         }
         return {};
     }
@@ -781,7 +803,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::_setFontSizeUnderLock(int fontSize)
     {
         // Make sure we have a non-zero font size
-        const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
+        const auto newSize = std::max(fontSize, 1);
         const auto fontFace = _settings->FontFace();
         const auto fontWeight = _settings->FontWeight();
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
@@ -837,8 +859,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
-        auto cx = gsl::narrow_cast<short>(_panelWidth * _compositionScale);
-        auto cy = gsl::narrow_cast<short>(_panelHeight * _compositionScale);
+        auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
+        auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
@@ -906,17 +928,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _refreshSizeUnderLock();
     }
 
-    void ControlCore::SetSelectionAnchor(const til::point& position)
+    void ControlCore::SetSelectionAnchor(const til::point position)
     {
         auto lock = _terminal->LockForWriting();
-        _terminal->SetSelectionAnchor(position.to_win32_coord());
+        _terminal->SetSelectionAnchor(position);
     }
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - position: the point in terminal coordinates (in cells, not pixels)
-    void ControlCore::SetEndSelectionPoint(const til::point& position)
+    void ControlCore::SetEndSelectionPoint(const til::point position)
     {
         if (!_terminal->IsSelectionActive())
         {
@@ -933,7 +955,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
 
         // save location (for rendering) + render
-        _terminal->SetSelectionEnd(terminalPosition.to_win32_coord());
+        _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
     }
 
@@ -1013,6 +1035,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
         _renderer->TriggerSelection();
+    }
+
+    bool ControlCore::ToggleBlockSelection()
+    {
+        auto lock = _terminal->LockForWriting();
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->SetBlockSelection(!_terminal->IsBlockSelection());
+            _renderer->TriggerSelection();
+            return true;
+        }
+        return false;
     }
 
     void ControlCore::ToggleMarkMode()
@@ -1184,6 +1218,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const int viewHeight,
                                                      const int bufferSize)
     {
+        if (!_initializedTerminal)
+        {
+            return;
+        }
         // Clear the regex pattern tree so the renderer does not try to render them while scrolling
         // We're **NOT** taking the lock here unlike _scrollbarChangeHandler because
         // we are already under lock (since this usually happens as a result of writing).
@@ -1488,7 +1526,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForReading();
-        return til::point{ _terminal->GetCursorPosition() }.to_core_point();
+        return _terminal->GetCursorPosition().to_core_point();
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
@@ -1540,7 +1578,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If shift is pressed and there is a selection we extend it using
             // the selection mode (expand the "end" selection point)
-            _terminal->SetSelectionEnd(terminalPosition.to_win32_coord(), mode);
+            _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
         else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
@@ -1548,7 +1586,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
             // (expand both "start" and "end" selection points)
-            _terminal->MultiClickSelection(terminalPosition.to_win32_coord(), mode);
+            _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
 
@@ -1841,5 +1879,158 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
+    }
+
+    uint64_t ControlCore::OwningHwnd()
+    {
+        return _owningHwnd;
+    }
+
+    void ControlCore::OwningHwnd(uint64_t owner)
+    {
+        if (owner != _owningHwnd && _connection)
+        {
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ReparentWindow(owner);
+            }
+        }
+        _owningHwnd = owner;
+    }
+
+    Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
+    {
+        auto internalMarks{ _terminal->GetScrollMarks() };
+        auto v = winrt::single_threaded_observable_vector<Control::ScrollMark>();
+        for (const auto& mark : internalMarks)
+        {
+            Control::ScrollMark m{};
+
+            // sneaky: always evaluate the color of the mark to a real value
+            // before shoving it into the optional. If the mark doesn't have a
+            // specific color set, we'll use the value from the color table
+            // that's appropriate for this category of mark. If we do have a
+            // color set, then great we'll use that. The TermControl can then
+            // always use the value in the Mark regardless if it was actually
+            // set or not.
+            m.Color = OptionalFromColor(_terminal->GetColorForMark(mark));
+            m.Start = mark.start.to_core_point();
+            m.End = mark.end.to_core_point();
+
+            v.Append(m);
+        }
+
+        return v;
+    }
+
+    void ControlCore::AddMark(const Control::ScrollMark& mark)
+    {
+        ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark m{};
+
+        if (mark.Color.HasValue)
+        {
+            m.color = til::color{ mark.Color.Color };
+        }
+
+        if (HasSelection())
+        {
+            m.start = til::point{ _terminal->GetSelectionAnchor() };
+            m.end = til::point{ _terminal->GetSelectionEnd() };
+        }
+        else
+        {
+            m.start = m.end = til::point{ _terminal->GetTextBuffer().GetCursor().GetPosition() };
+        }
+
+        // The version of this that only accepts a ScrollMark will automatically
+        // set the start & end to the cursor position.
+        _terminal->AddMark(m, m.start, m.end);
+    }
+    void ControlCore::ClearMark() { _terminal->ClearMark(); }
+    void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
+
+    void ControlCore::ScrollToMark(const Control::ScrollToMarkDirection& direction)
+    {
+        const auto currentOffset = ScrollOffset();
+        const auto& marks{ _terminal->GetScrollMarks() };
+
+        std::optional<DispatchTypes::ScrollMark> tgt;
+
+        switch (direction)
+        {
+        case ScrollToMarkDirection::Last:
+        {
+            int highest = currentOffset;
+            for (const auto& mark : marks)
+            {
+                const auto newY = mark.start.y;
+                if (newY > highest)
+                {
+                    tgt = mark;
+                    highest = newY;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::First:
+        {
+            int lowest = currentOffset;
+            for (const auto& mark : marks)
+            {
+                const auto newY = mark.start.y;
+                if (newY < lowest)
+                {
+                    tgt = mark;
+                    lowest = newY;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::Next:
+        {
+            int minDistance = INT_MAX;
+            for (const auto& mark : marks)
+            {
+                const auto delta = mark.start.y - currentOffset;
+                if (delta > 0 && delta < minDistance)
+                {
+                    tgt = mark;
+                    minDistance = delta;
+                }
+            }
+            break;
+        }
+        case ScrollToMarkDirection::Previous:
+        default:
+        {
+            int minDistance = INT_MAX;
+            for (const auto& mark : marks)
+            {
+                const auto delta = currentOffset - mark.start.y;
+                if (delta > 0 && delta < minDistance)
+                {
+                    tgt = mark;
+                    minDistance = delta;
+                }
+            }
+            break;
+        }
+        }
+
+        if (tgt.has_value())
+        {
+            UserScrollViewport(tgt->start.y);
+        }
+        else
+        {
+            if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
+            {
+                UserScrollViewport(BufferHeight());
+            }
+            else if (direction == ScrollToMarkDirection::First || direction == ScrollToMarkDirection::Previous)
+            {
+                UserScrollViewport(0);
+            }
+        }
     }
 }

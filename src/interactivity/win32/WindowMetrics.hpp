@@ -21,25 +21,25 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         // IWindowMetrics Members
         ~WindowMetrics() = default;
-        RECT GetMinClientRectInPixels();
-        RECT GetMaxClientRectInPixels();
+        til::rect GetMinClientRectInPixels();
+        til::rect GetMaxClientRectInPixels();
 
         // Public Members
-        RECT GetMaxWindowRectInPixels();
-        RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
+        til::rect GetMaxWindowRectInPixels();
+        til::rect GetMaxWindowRectInPixels(const til::rect* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
 
-        BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
+        BOOL AdjustWindowRectEx(_Inout_ til::rect* prc,
                                 const DWORD dwStyle,
                                 const BOOL fMenu,
                                 const DWORD dwExStyle);
-        BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
+        BOOL AdjustWindowRectEx(_Inout_ til::rect* prc,
                                 const DWORD dwStyle,
                                 const BOOL fMenu,
                                 const DWORD dwExStyle,
                                 const int iDpi);
 
-        void ConvertClientRectToWindowRect(_Inout_ RECT* const prc);
-        void ConvertWindowRectToClientRect(_Inout_ RECT* const prc);
+        void ConvertClientRectToWindowRect(_Inout_ til::rect* const prc);
+        void ConvertWindowRectToClientRect(_Inout_ til::rect* const prc);
 
     private:
         enum ConvertRectangle
@@ -48,11 +48,11 @@ namespace Microsoft::Console::Interactivity::Win32
             WINDOW_TO_CLIENT
         };
 
-        BOOL UnadjustWindowRectEx(_Inout_ LPRECT prc,
+        BOOL UnadjustWindowRectEx(_Inout_ til::rect* prc,
                                   const DWORD dwStyle,
                                   const BOOL fMenu,
                                   const DWORD dwExStyle);
 
-        void ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle crDirection);
+        void ConvertRect(_Inout_ til::rect* const prc, const ConvertRectangle crDirection);
     };
 }

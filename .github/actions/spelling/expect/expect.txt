@@ -520,6 +520,7 @@ DECAWM
 DECCKM
 DECCOLM
 DECCRA
+DECCTR
 DECDHL
 decdld
 DECDLD
@@ -545,7 +546,9 @@ DECREQTPARM
 DECRLM
 DECRQM
 DECRQSS
+DECRQTSR
 DECRST
+DECRSTS
 DECSASD
 DECSC
 DECSCA
@@ -956,7 +959,6 @@ guardxfg
 guc
 gui
 guidatom
-guiddef
 GValue
 GWL
 GWLP
@@ -1006,6 +1008,7 @@ hkey
 hkl
 HKLM
 hlocal
+HLS
 hlsl
 HMENU
 HMIDIOUT
@@ -1078,6 +1081,7 @@ ICore
 IData
 IDCANCEL
 IDD
+IDefault
 IDesktop
 IDevice
 IDictionary
@@ -1562,7 +1566,6 @@ NOCOLOR
 NOCOMM
 NOCONTEXTHELP
 NOCOPYBITS
-nodefaultlib
 nodiscard
 NODUP
 noexcept
