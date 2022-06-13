@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     class PreviewConnection : public winrt::implements<PreviewConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
     {
     public:
-        PreviewConnection() noexcept;
+        PreviewConnection(const winrt::hstring previewString) noexcept;
 
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings) noexcept;
         void Start() noexcept;
@@ -31,5 +31,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);
         TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, IInspectable);
+
+    private:
+        const winrt::hstring _previewString;
     };
 }

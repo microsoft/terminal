@@ -14,10 +14,12 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 
+static const winrt::hstring PreviewText{ L"Windows Terminal\r\nCopyright (c) Microsoft Corporation\r\n\nC:\\Windows\\Terminal> " };
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles_Appearance::Profiles_Appearance() :
-        _previewControl{ Control::TermControl(Model::TerminalSettings{}, nullptr, make<PreviewConnection>()) }
+        _previewControl{ Control::TermControl(Model::TerminalSettings{}, nullptr, make<PreviewConnection>(PreviewText)) }
     {
         InitializeComponent();
 

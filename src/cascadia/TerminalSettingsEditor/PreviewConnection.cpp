@@ -8,11 +8,10 @@
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;
 
-static constexpr std::wstring_view PreviewText{ L"Windows Terminal\r\nCopyright (c) Microsoft Corporation\r\n\nC:\\Windows\\Terminal> " };
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    PreviewConnection::PreviewConnection() noexcept
+    PreviewConnection::PreviewConnection(const winrt::hstring previewString) noexcept :
+        _previewString{ previewString }
     {
     }
 
@@ -21,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // First send a sequence to disable cursor blinking
         _TerminalOutputHandlers(L"\x1b[?12l");
         // Send the preview text
-        _TerminalOutputHandlers(PreviewText);
+        _TerminalOutputHandlers(_previewString);
     }
 
     void PreviewConnection::Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) noexcept
