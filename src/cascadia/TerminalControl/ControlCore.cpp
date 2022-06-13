@@ -2020,7 +2020,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto viewHeight = ViewHeight();
         auto bufferSize = BufferHeight();
 
-        // UserScrollViewport, to update the Terminal about where the veiwport should be
+        // UserScrollViewport, to update the Terminal about where the viewport should be
         // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
         if (tgt.has_value())
         {
