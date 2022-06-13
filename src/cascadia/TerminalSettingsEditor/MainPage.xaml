@@ -179,7 +179,7 @@
             </Frame>
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"
-                  Height="80"
+                  Height="55"
                   BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                   BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>
