@@ -999,7 +999,7 @@ void Window::s_CalculateWindowRect(const til::size coordWindowInChars,
 
 til::rect Window::GetWindowRect() const noexcept
 {
-    RECT rc;
+    RECT rc{};
     ::GetWindowRect(GetWindowHandle(), &rc);
     return til::rect{ rc };
 }

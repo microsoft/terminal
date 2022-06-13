@@ -147,7 +147,7 @@ GdiEngine::~GdiEngine()
 #if DBG
     if (_debugWindow != INVALID_HANDLE_VALUE && _debugWindow != nullptr)
     {
-        RECT rc;
+        RECT rc{};
         THROW_IF_WIN32_BOOL_FALSE(GetWindowRect(_hwndTargetWindow, &rc));
 
         THROW_IF_WIN32_BOOL_FALSE(SetWindowPos(_debugWindow, nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE));
