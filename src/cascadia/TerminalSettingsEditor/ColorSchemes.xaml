@@ -43,8 +43,7 @@
 
             <Style x:Key="ColorSchemesColorButtonStyle"
                    BasedOn="{StaticResource ColorButtonStyle}"
-                   TargetType="Button">
-            </Style>
+                   TargetType="Button" />
 
             <Style TargetType="ColorPicker">
                 <Setter Property="IsColorSliderVisible" Value="False" />
@@ -73,12 +72,11 @@
             <DataTemplate x:Key="ColorTableTextBlockTemplate"
                           x:DataType="local:ColorTableEntry">
                 <TextBlock AutomationProperties.Name="{x:Bind Name}"
-                           Text="{x:Bind Name}"
-                           Foreground="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
-                           ToolTipService.ToolTip="{x:Bind Name}"
                            FontFamily="Cascadia Mono"
-                           FontSize="14">
-                </TextBlock>
+                           FontSize="14"
+                           Foreground="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
+                           Text="{x:Bind Name}"
+                           ToolTipService.ToolTip="{x:Bind Name}" />
             </DataTemplate>
 
         </ResourceDictionary>
@@ -88,8 +86,8 @@
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
 
-                <Grid Height="160"
-                      Width="350"
+                <Grid Width="350"
+                      Height="160"
                       Margin="4"
                       HorizontalAlignment="Left"
                       Background="{x:Bind local:Converters.ColorToBrush(ViewModel.CurrentScheme.BackgroundColor.Color), Mode=OneWay}"
@@ -180,17 +178,17 @@
                                     ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
 
                 </Grid>
-                
+
                 <TextBlock x:Uid="ColorSchemesDisclaimer"
-                       Style="{StaticResource DisclaimerStyle}" />
+                           Style="{StaticResource DisclaimerStyle}" />
 
                 <!--  Select a color scheme  -->
                 <local:SettingContainer x:Uid="ColorScheme_Select">
                     <ComboBox x:Name="ColorSchemeComboBox"
-                                      ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
-                                      SelectedIndex="0"
-                                      SelectionChanged="ColorSchemeSelectionChanged"
-                                      Style="{StaticResource ComboBoxSettingStyle}">
+                              ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
+                              SelectedIndex="0"
+                              SelectionChanged="ColorSchemeSelectionChanged"
+                              Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="local:ColorSchemeViewModel">
                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
@@ -202,8 +200,8 @@
                 <!--  Add new button  -->
                 <local:SettingContainer x:Uid="ColorScheme_Add">
                     <Button x:Name="AddNewButton"
-                        Click="AddNew_Click"
-                        Style="{StaticResource BrowseButtonStyle}">
+                            Click="AddNew_Click"
+                            Style="{StaticResource BrowseButtonStyle}">
                         <TextBlock x:Uid="ColorScheme_AddNewButton"
                                    Style="{StaticResource IconButtonTextBlockStyle}" />
                     </Button>
@@ -217,41 +215,41 @@
                            Style="{StaticResource DisclaimerStyle}" />
 
                 <local:SettingContainer x:Uid="ColorScheme_Rename"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}"
-                                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}">
+                                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel Orientation="Horizontal">
                         <!--  Shown when color scheme name is already in use  -->
                         <muxc:TeachingTip x:Name="RenameErrorTip"
-                                      x:Uid="ColorScheme_RenameErrorTip" />
+                                          x:Uid="ColorScheme_RenameErrorTip" />
                         <!--  Name text box  -->
                         <TextBox x:Name="NameBox"
-                             PreviewKeyDown="NameBox_PreviewKeyDown"
-                             Style="{StaticResource TextBoxSettingStyle}" />
+                                 PreviewKeyDown="NameBox_PreviewKeyDown"
+                                 Style="{StaticResource TextBoxSettingStyle}" />
                         <!--  Accept rename button  -->
                         <Button x:Name="RenameAcceptButton"
-                            x:Uid="RenameAccept"
-                            Click="RenameAccept_Click"
-                            Style="{StaticResource AccentSmallButtonStyle}">
+                                x:Uid="RenameAccept"
+                                Click="RenameAccept_Click"
+                                Style="{StaticResource AccentSmallButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE8FB;" />
+                                          Glyph="&#xE8FB;" />
                             </StackPanel>
                         </Button>
                         <!--  Cancel rename button  -->
                         <Button x:Name="RenameCancelButton"
-                            x:Uid="RenameCancel"
-                            Click="RenameCancel_Click"
-                            Style="{StaticResource SmallButtonStyle}">
+                                x:Uid="RenameCancel"
+                                Click="RenameCancel_Click"
+                                Style="{StaticResource SmallButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE711;" />
+                                          Glyph="&#xE711;" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
                 </local:SettingContainer>
 
-                <local:SettingContainer Style="{StaticResource ExpanderSettingContainerStyle}"
-                                        x:Uid="ColorScheme_TerminalColorsHeader">
+                <local:SettingContainer x:Uid="ColorScheme_TerminalColorsHeader"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <Grid x:Name="ColorTableGrid"
                           Style="{StaticResource ColorTableGridStyle}">
                         <Grid.ColumnDefinitions>
@@ -413,8 +411,8 @@
                     </Grid>
                 </local:SettingContainer>
 
-                <local:SettingContainer Style="{StaticResource ExpanderSettingContainerStyle}"
-                                        x:Uid="ColorScheme_SystemColorsHeader">
+                <local:SettingContainer x:Uid="ColorScheme_SystemColorsHeader"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <Grid Style="{StaticResource ColorTableGridStyle}">
 
                         <Grid.ColumnDefinitions>
@@ -482,7 +480,7 @@
                 <local:SettingContainer x:Uid="ColorScheme_Delete"
                                         IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}">
                     <Button x:Name="DeleteButton"
-                        Style="{StaticResource DeleteButtonStyle}">
+                            Style="{StaticResource DeleteButtonStyle}">
                         <Button.Content>
                             <TextBlock x:Uid="ColorScheme_DeleteButton"
                                        Style="{StaticResource IconButtonTextBlockStyle}" />
@@ -491,9 +489,9 @@
                             <Flyout>
                                 <StackPanel>
                                     <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
+                                               Style="{StaticResource CustomFlyoutTextStyle}" />
                                     <Button x:Uid="ColorScheme_DeleteConfirmationButton"
-                                        Click="DeleteConfirmation_Click" />
+                                            Click="DeleteConfirmation_Click" />
                                 </StackPanel>
                             </Flyout>
                         </Button.Flyout>
@@ -502,21 +500,20 @@
             </StackPanel>
 
             <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
-                    Margin="{StaticResource StandardIndentMargin}"
-                    Spacing="24">
+                        Margin="{StaticResource StandardIndentMargin}"
+                        Spacing="24">
 
                 <!--  Delete Button  -->
-                <StackPanel Style="{StaticResource PivotStackStyle}">
-                </StackPanel>
+                <StackPanel Style="{StaticResource PivotStackStyle}" />
             </StackPanel>
             <VisualStateManager.VisualStateGroups>
                 <VisualStateGroup>
                     <VisualState>
                         <VisualState.StateTriggers>
                             <!--
-                            Official guidance states that 640 is the breakpoint between small and medium devices.
-                            Since MinWindowWidth is an inclusive range, we need to add 1 to it.
-                        -->
+                                Official guidance states that 640 is the breakpoint between small and medium devices.
+                                Since MinWindowWidth is an inclusive range, we need to add 1 to it.
+                            -->
                             <AdaptiveTrigger MinWindowWidth="641" />
                         </VisualState.StateTriggers>
 
