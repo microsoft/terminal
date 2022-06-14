@@ -72,7 +72,7 @@
             <DataTemplate x:Key="ColorTableTextBlockTemplate"
                           x:DataType="local:ColorTableEntry">
                 <TextBlock AutomationProperties.Name="{x:Bind Name}"
-                           FontFamily="Cascadia Mono"
+                           FontFamily="Cascadia Code"
                            FontSize="14"
                            Foreground="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
                            Text="{x:Bind Name}"
@@ -86,6 +86,7 @@
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    <!--  Preview of the selected scheme  -->
                     <Grid Width="350"
                           Height="160"
                           MaxWidth="{StaticResource StandardControlMaxWidth}"
