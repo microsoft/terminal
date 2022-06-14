@@ -156,16 +156,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 Controls::ToolTipService::SetToolTip(base, box_value(helpText));
                 Automation::AutomationProperties::SetFullDescription(base, helpText);
             }
+            else
+            {
+                Controls::ToolTipService::SetToolTip(base, nullptr);
+                Automation::AutomationProperties::SetFullDescription(base, L"");
+            }
         }
 
-        if (HelpText().empty())
+        const auto textBlockHidden = HelpText().empty();
+        if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
         {
-            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
             {
-                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
-                {
-                    textBlock.Visibility(Visibility::Collapsed);
-                }
+                textBlockHidden ? textBlock.Visibility(Visibility::Collapsed) : textBlock.Visibility(Visibility::Visible);
             }
         }
     }

@@ -75,7 +75,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // load disclaimer for in-box profiles
                 disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
             }
-            DeleteButtonDisclaimer().Text(disclaimer);
+            RenameContainer().HelpText(disclaimer);
+            DeleteContainer().HelpText(disclaimer);
+            // we need to re-apply the template to hide/unhide the help text block
+            RenameContainer().OnApplyTemplate();
+            DeleteContainer().OnApplyTemplate();
 
             NameBox().Text(_ViewModel.CurrentScheme().Name());
         }

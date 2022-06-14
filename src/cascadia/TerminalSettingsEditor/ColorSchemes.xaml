@@ -213,10 +213,8 @@
                            Margin="0,48,0,0"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-                <TextBlock x:Name="DeleteButtonDisclaimer"
-                           Style="{StaticResource DisclaimerStyle}" />
-
-                <local:SettingContainer x:Uid="ColorScheme_Rename"
+                <local:SettingContainer x:Name="RenameContainer"
+                                        x:Uid="ColorScheme_Rename"
                                         IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel Orientation="Horizontal">
@@ -479,7 +477,8 @@
                     </Grid>
                 </local:SettingContainer>
 
-                <local:SettingContainer x:Uid="ColorScheme_Delete"
+                <local:SettingContainer x:Name="DeleteContainer"
+                                        x:Uid="ColorScheme_Delete"
                                         IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}">
                     <Button x:Name="DeleteButton"
                             Style="{StaticResource DeleteButtonStyle}">
