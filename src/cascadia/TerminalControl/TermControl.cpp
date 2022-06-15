@@ -2788,15 +2788,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_core.HasSelection() && !args.ClearMarkers())
             {
+                // retrieve all of the necessary selection marker data
+                // from the TerminalCore layer under one lock to improve performance
+                const auto markerData{ _core.SelectionMarkerInfo() };
+
                 // lambda helper function that can be used to display a selection marker
                 // - targetEnd: if true, target the "end" selection marker. Otherwise, target "start".
                 auto displayMarker = [&](bool targetEnd) {
+                    const auto flipMarker{ targetEnd ? markerData.FlipEndMarker : markerData.FlipStartMarker };
+                    const auto& marker{ targetEnd ? SelectionEndMarker() : SelectionStartMarker() };
+
+                    // Ensure the marker is oriented properly
+                    // (i.e. if start is at the beginning of the buffer, it should be flipped)
+                    auto transform{ marker.RenderTransform().as<Windows::UI::Xaml::Media::ScaleTransform>() };
+                    transform.ScaleX(std::abs(transform.ScaleX()) * (flipMarker ? -1.0 : 1.0));
+                    marker.RenderTransform(transform);
+
                     // Compute the location of the top left corner of the cell in DIPS
-                    const auto terminalPos{ targetEnd ? _core.SelectionEnd() : _core.SelectionAnchor() };
+                    auto terminalPos{ targetEnd ? markerData.EndPos : markerData.StartPos };
+                    if (flipMarker)
+                    {
+                        terminalPos.X += targetEnd ? -1 : 1;
+                    }
                     const til::point locationInDIPs{ _toPosInDips(terminalPos) };
 
                     // Move the marker to the top left corner of the cell
-                    const auto& marker{ targetEnd ? SelectionEndMarker() : SelectionStartMarker() };
                     SelectionCanvas().SetLeft(marker,
                                               (locationInDIPs.x - SwapChainPanel().ActualOffset().x));
                     SelectionCanvas().SetTop(marker,
@@ -2806,10 +2822,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                 // show/update selection markers
                 // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
-                const auto movingEnd{ _core.MovingEnd() };
-                const auto selectionAnchor{ movingEnd ? _core.SelectionEnd() : _core.SelectionAnchor() };
-                const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
-                const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
+                const auto selectionAnchor{ markerData.MovingEnd ? markerData.EndPos : markerData.StartPos };
+                const auto& marker{ markerData.MovingEnd ? SelectionEndMarker() : SelectionStartMarker() };
+                const auto& otherMarker{ markerData.MovingEnd ? SelectionStartMarker() : SelectionEndMarker() };
                 if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
                 {
                     // if the endpoint is outside of the viewport,
@@ -2818,7 +2833,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     otherMarker.Visibility(Visibility::Collapsed);
                     co_return;
                 }
-                else if (_core.MovingCursor())
+                else if (markerData.MovingCursor)
                 {
                     // display both markers
                     displayMarker(true);
@@ -2828,7 +2843,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     // display one marker,
                     // but hide the other
-                    displayMarker(movingEnd);
+                    displayMarker(markerData.MovingEnd);
                     otherMarker.Visibility(Visibility::Collapsed);
                 }
             }
@@ -2857,11 +2872,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                            const bool isInitialChange)
     {
         // scale the selection markers to be the size of a cell
-        auto scaleMarker = [fontWidth, fontHeight](Windows::UI::Xaml::Shapes::Path shape) {
+        auto scaleMarker = [fontWidth, fontHeight, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
             // The selection markers were designed to be 5x14 in size,
             // so use those dimensions below for the scaling
-            const auto scaleX = fontWidth / 5.0;
-            const auto scaleY = fontHeight / 14.0;
+            const auto scaleX = fontWidth / 5.0 / dpiScale;
+            const auto scaleY = fontHeight / 14.0 / dpiScale;
 
             Windows::UI::Xaml::Media::ScaleTransform transform;
             transform.ScaleX(scaleX);

@@ -82,6 +82,9 @@ const til::point Terminal::GetSelectionEnd() const noexcept
     return _selection->end;
 }
 
+// Method Description:
+// - Gets the viewport-relative position of where to draw the marker
+//    for the selection's start endpoint
 til::point Terminal::SelectionStartForRendering() const
 {
     auto pos{ _selection->start };
@@ -91,6 +94,9 @@ til::point Terminal::SelectionStartForRendering() const
     return til::point{ pos };
 }
 
+// Method Description:
+// - Gets the viewport-relative position of where to draw the marker
+//    for the selection's end endpoint
 til::point Terminal::SelectionEndForRendering() const
 {
     auto pos{ _selection->end };
@@ -337,8 +343,9 @@ bool Terminal::MovingEnd() const noexcept
 
 bool Terminal::MovingCursor() const noexcept
 {
-    // true --> we're moving end endpoint ("lower")
-    // false --> we're moving start endpoint ("higher")
+    // Relevant for keyboard selection:
+    // true --> the selection is just a "cursor"; we're moving everything together with arrow keys
+    // false --> otherwise
     return _selection->start == _selection->pivot && _selection->pivot == _selection->end;
 }
 

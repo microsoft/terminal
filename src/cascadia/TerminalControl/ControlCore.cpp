@@ -421,7 +421,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
-                _updateSelection(false);
+                _updateSelection();
                 return true;
             }
 
@@ -430,7 +430,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
-                _updateSelection(false);
+                _updateSelection();
                 return true;
             }
 
@@ -438,7 +438,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
-                _updateSelection(true);
+                _updateSelection();
             }
 
             // When there is a selection active, escape should clear it and NOT flow through
@@ -934,30 +934,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->SetSelectionAnchor(position);
     }
 
-    Core::Point ControlCore::SelectionAnchor() const
+    // Method Description:
+    // - Retrieves selection metadata from Terminal necessary to draw the
+    //    selection markers.
+    // - Since all of this needs to be done under lock, it is more performant
+    //    to throw it all in a struct and pass it along.
+    Control::SelectionMarkerMetadata ControlCore::SelectionMarkerInfo() const
     {
         auto lock = _terminal->LockForReading();
-        const auto start = _terminal->SelectionStartForRendering();
-        return { start.X, start.Y };
-    }
+        Control::SelectionMarkerMetadata info;
 
-    Core::Point ControlCore::SelectionEnd() const
-    {
-        auto lock = _terminal->LockForReading();
-        const auto end = _terminal->SelectionEndForRendering();
-        return { end.X, end.Y };
-    }
+        const auto start{ _terminal->SelectionStartForRendering() };
+        info.StartPos = { start.X, start.Y };
 
-    bool ControlCore::MovingEnd() const
-    {
-        auto lock = _terminal->LockForReading();
-        return _terminal->MovingEnd();
-    }
+        const auto end{ _terminal->SelectionEndForRendering() };
+        info.EndPos = { end.X, end.Y };
 
-    bool ControlCore::MovingCursor() const
-    {
-        auto lock = _terminal->LockForReading();
-        return _terminal->MovingCursor();
+        info.MovingEnd = _terminal->MovingEnd();
+        info.MovingCursor = _terminal->MovingCursor();
+
+        const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+        info.FlipStartMarker = _terminal->GetSelectionAnchor() == bufferSize.Origin();
+        info.FlipEndMarker = _terminal->GetSelectionEnd() == bufferSize.BottomRightInclusive();
+        return info;
     }
 
     // Method Description:
@@ -982,7 +981,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
-        _updateSelection(true);
+        _renderer->TriggerSelection();
+
+        // this is used for mouse dragging,
+        // so hide the markers
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
@@ -1044,7 +1047,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!_settings->CopyOnSelect())
         {
             _terminal->ClearSelection();
-            _updateSelection(true);
+            _updateSelection();
         }
 
         // send data up for clipboard
@@ -1060,7 +1063,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
-        _updateSelection(false);
+        _updateSelection();
     }
 
     bool ControlCore::ToggleBlockSelection()
@@ -1069,7 +1072,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_terminal->IsSelectionActive())
         {
             _terminal->SetBlockSelection(!_terminal->IsBlockSelection());
-            _updateSelection(false);
+            _renderer->TriggerSelection();
+            // do not update the selection markers!
+            // if we were showing them, keep it that way.
+            // otherwise, continue to not show them
             return true;
         }
         return false;
@@ -1079,7 +1085,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->ToggleMarkMode();
-        _updateSelection(false);
+        _updateSelection();
     }
 
     bool ControlCore::IsInMarkMode() const
@@ -1094,7 +1100,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
-        _updateSelection(true);
+        _updateSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -1414,7 +1420,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _terminal->SetBlockSelection(false);
             search.Select();
-            _updateSelection(true);
+            _renderer->TriggerSelection();
+
+            // this is used for search,
+            // so hide the markers
+            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }
 
         // Raise a FoundMatch event, which the control will use to notify
@@ -1615,12 +1625,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        _updateSelection(true);
+        _updateSelection();
     }
 
-    void ControlCore::_updateSelection(const bool clearMarkers)
+    void ControlCore::_updateSelection()
     {
         _renderer->TriggerSelection();
+        const bool clearMarkers{ !_terminal->IsSelectionActive() };
         _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(clearMarkers));
     }
 
