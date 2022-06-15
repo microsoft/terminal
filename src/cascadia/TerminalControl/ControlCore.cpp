@@ -954,8 +954,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         info.MovingCursor = _terminal->MovingCursor();
 
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-        info.FlipStartMarker = _terminal->GetSelectionAnchor() == bufferSize.Origin();
-        info.FlipEndMarker = _terminal->GetSelectionEnd() == bufferSize.BottomRightInclusive();
+        info.FlipStartMarker = _terminal->GetSelectionAnchor().x == bufferSize.Left();
+        info.FlipEndMarker = _terminal->GetSelectionEnd().x == bufferSize.RightInclusive();
         return info;
     }
 

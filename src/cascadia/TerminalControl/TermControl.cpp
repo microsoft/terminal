@@ -2808,7 +2808,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     auto terminalPos{ targetEnd ? markerData.EndPos : markerData.StartPos };
                     if (flipMarker)
                     {
-                        terminalPos.X += targetEnd ? -1 : 1;
+                        // When we flip the marker, a negative scaling makes us be one cell-width to the left.
+                        // Add one to the viewport pos' x-coord to fix that.
+                        terminalPos.X += 1;
                     }
                     const til::point locationInDIPs{ _toPosInDips(terminalPos) };
 

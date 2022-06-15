@@ -89,7 +89,14 @@ til::point Terminal::SelectionStartForRendering() const
 {
     auto pos{ _selection->start };
     const auto bufferSize{ GetTextBuffer().GetSize() };
-    bufferSize.DecrementInBounds(pos);
+    if (pos.x != bufferSize.Left())
+    {
+        // In general, we need to draw the marker one before the
+        // beginning of the selection.
+        // When we're at the left boundary, we want to
+        // flip the marker, so we skip this step.
+        bufferSize.DecrementInBounds(pos);
+    }
     pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
     return til::point{ pos };
 }
@@ -101,7 +108,14 @@ til::point Terminal::SelectionEndForRendering() const
 {
     auto pos{ _selection->end };
     const auto bufferSize{ GetTextBuffer().GetSize() };
-    bufferSize.IncrementInBounds(pos);
+    if (pos.x != bufferSize.RightInclusive())
+    {
+        // In general, we need to draw the marker one after the
+        // end of the selection.
+        // When we're at the right boundary, we want to
+        // flip the marker, so we skip this step.
+        bufferSize.IncrementInBounds(pos);
+    }
     pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
     return til::point{ pos };
 }
