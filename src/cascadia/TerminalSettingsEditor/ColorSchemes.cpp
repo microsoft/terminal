@@ -71,8 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             // Set the text disclaimer for the text box
             hstring disclaimer{};
-            const std::wstring schemeName{ colorScheme->Name() };
-            if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
+            if (!_ViewModel.CanDeleteCurrentScheme())
             {
                 // load disclaimer for in-box profiles
                 disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
