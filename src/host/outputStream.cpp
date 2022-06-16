@@ -287,13 +287,13 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
 
-    // GH#13301 - When we send this ShowWindow message, if we send it to it's
-    // going to need to get processed by the window message thread before
-    // returning. We're handling this message under lock. However, the first
-    // thing the conhost message thread does is lock the console. That'll
-    // deadlock us. So unlock here, first, to let the message thread deal with
-    // this message, then re-lock so later on this thread can unlock again
-    // safely.
+    // GH#13301 - When we send this ShowWindow message, if we send it to the
+    // conhost HWND, it's going to need to get processed by the window message
+    // thread before returning. We (the VT adapter) are handling this message
+    // under lock. However, the first thing the conhost message thread does is
+    // lock the console. That'll deadlock us. So unlock here, first, to let the
+    // message thread deal with this message, then re-lock so later on this
+    // thread can unlock again safely.
     gci.UnlockConsole();
     ::ShowWindow(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
     gci.LockConsole();
