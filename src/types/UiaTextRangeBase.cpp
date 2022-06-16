@@ -7,6 +7,9 @@
 #include "../buffer/out/search.h"
 #include "UiaTracing.h"
 
+#define TIL_POINT_WRAP(coord) \
+    til::point { coord.X, coord.Y }
+
 using namespace Microsoft::Console::Types;
 
 // Foreground/Background text color doesn't care about the alpha.
@@ -70,7 +73,7 @@ try
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
     // start is before/at end, so this is valid
-    if (start <= end)
+    if (TIL_POINT_WRAP(start) <= TIL_POINT_WRAP(end))
     {
         _start = start;
         _end = end;
@@ -166,7 +169,7 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     case TextPatternRangeEndpoint_End:
         _end = val;
         // if end is before start...
-        if (_end < _start)
+        if (TIL_POINT_WRAP(_end) < TIL_POINT_WRAP(_start))
         {
             // make this range degenerate at end
             _start = _end;
@@ -175,7 +178,7 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     case TextPatternRangeEndpoint_Start:
         _start = val;
         // if start is after end...
-        if (_start > _end)
+        if (TIL_POINT_WRAP(_start) > TIL_POINT_WRAP(_end))
         {
             // make this range degenerate at start
             _end = _start;
@@ -241,18 +244,20 @@ try
 
     // get endpoint value that we're comparing to
     const auto other = range->GetEndpoint(targetEndpoint);
+    const til::point otherPt{ other.X, other.Y };
 
     // get the values of our endpoint
     const auto mine = GetEndpoint(endpoint);
+    const til::point minePt{ mine.X, mine.Y };
 
     // TODO GH#5406: create a different UIA parent object for each TextBuffer
     //   We should return E_FAIL if we detect that the endpoints are from two different TextBuffer objects.
     //   For now, we're fine to not do that because we're not using any code that can FAIL_FAST anymore.
 
     // compare them
-    *pRetVal = mine < other ? -1 :
-               mine > other ? 1 :
-                              0;
+    *pRetVal = minePt < otherPt ? -1 :
+               minePt > otherPt ? 1 :
+                                  0;
 
     UiaTracing::TextRange::CompareEndpoints(*this, endpoint, *range, targetEndpoint, *pRetVal);
     return S_OK;
@@ -293,7 +298,7 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     // If we're past document end,
     // set us to ONE BEFORE the document end.
     // This allows us to expand properly.
-    if (_start >= documentEnd)
+    if (TIL_POINT_WRAP(_start) >= documentEnd)
     {
         _start = documentEnd.to_win32_coord();
         bufferSize.DecrementInBounds(_start, true);
@@ -652,8 +657,8 @@ try
         bufferSize.IncrementInBounds(end, true);
 
         // make sure what was found is within the bounds of the current range
-        if ((searchDirection == Search::Direction::Forward && end < _end) ||
-            (searchDirection == Search::Direction::Backward && start > _start))
+        if ((searchDirection == Search::Direction::Forward && TIL_POINT_WRAP(end) < TIL_POINT_WRAP(_end)) ||
+            (searchDirection == Search::Direction::Backward && TIL_POINT_WRAP(start) > TIL_POINT_WRAP(_start)))
         {
             RETURN_IF_FAILED(Clone(ppRetVal));
             auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
@@ -865,29 +870,29 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());
-        const auto viewportOrigin = viewport.Origin();
-        const auto viewportEnd = viewport.EndExclusive();
+        const til::point viewportOrigin{ viewport.Origin().X, viewport.Origin().Y };
+        const til::point viewportEnd{ viewport.EndExclusive().X, viewport.EndExclusive().Y };
 
         // startAnchor: the earliest COORD we will get a bounding rect for
         auto startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
-        if (startAnchor < viewportOrigin)
+        if (TIL_POINT_WRAP(startAnchor) < viewportOrigin)
         {
             // earliest we can be is the origin
-            startAnchor = viewportOrigin;
+            startAnchor = viewportOrigin.to_win32_coord();
         }
 
         // endAnchor: the latest COORD we will get a bounding rect for
         auto endAnchor = GetEndpoint(TextPatternRangeEndpoint_End);
-        if (endAnchor > viewportEnd)
+        if (TIL_POINT_WRAP(endAnchor) > viewportEnd)
         {
             // latest we can be is the viewport end
-            endAnchor = viewportEnd;
+            endAnchor = viewportEnd.to_win32_coord();
         }
 
         // _end is exclusive, let's be inclusive so we don't have to think about it anymore for bounding rects
         bufferSize.DecrementInBounds(endAnchor, true);
 
-        if (IsDegenerate() || _start > viewportEnd || _end < viewportOrigin)
+        if (IsDegenerate() || TIL_POINT_WRAP(_start) > viewportEnd || TIL_POINT_WRAP(_end) < viewportOrigin)
         {
             // An empty array is returned for a degenerate (empty) text range.
             // reference: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationtextrange-getboundingrectangles
@@ -1042,13 +1047,13 @@ try
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
     const auto documentEnd = _getDocumentEnd();
-    if (_start > documentEnd)
+    if (TIL_POINT_WRAP(_start) > documentEnd)
     {
-        _start = documentEnd;
+        _start = documentEnd.to_win32_coord();
     }
-    if (_end > documentEnd)
+    if (TIL_POINT_WRAP(_end) > documentEnd)
     {
-        _end = documentEnd;
+        _end = documentEnd.to_win32_coord();
     }
 
     const auto wasDegenerate = IsDegenerate();
@@ -1109,20 +1114,20 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     // If so, clamp each endpoint to the end of the document.
     const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
 
-    auto documentEnd = bufferSize.EndExclusive();
+    til::point documentEnd{ bufferSize.EndExclusive().X, bufferSize.EndExclusive().Y };
     try
     {
-        documentEnd = _getDocumentEnd().to_win32_coord();
+        documentEnd = _getDocumentEnd();
     }
     CATCH_LOG();
 
-    if (_start > documentEnd)
+    if (TIL_POINT_WRAP(_start) > documentEnd)
     {
-        _start = documentEnd;
+        _start = documentEnd.to_win32_coord();
     }
-    if (_end > documentEnd)
+    if (TIL_POINT_WRAP(_end) > documentEnd)
     {
-        _end = documentEnd;
+        _end = documentEnd.to_win32_coord();
     }
 
     try
@@ -1510,7 +1515,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (nextPos >= documentEnd)
+            if (TIL_POINT_WRAP(nextPos) >= documentEnd)
             {
                 success = false;
             }
@@ -1724,20 +1729,20 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     {
     case MovementDirection::Forward:
     {
-        auto documentEnd{ bufferSize.EndExclusive() };
+        til::point documentEnd{ bufferSize.EndExclusive().X, bufferSize.EndExclusive().Y };
         try
         {
-            documentEnd = _getDocumentEnd().to_win32_coord();
+            documentEnd = _getDocumentEnd();
         }
         CATCH_LOG();
 
-        if (preventBoundary || target >= documentEnd)
+        if (preventBoundary || TIL_POINT_WRAP(target) >= documentEnd)
         {
             return;
         }
         else
         {
-            SetEndpoint(endpoint, documentEnd);
+            SetEndpoint(endpoint, documentEnd.to_win32_coord());
             (*pAmountMoved)++;
         }
         break;
