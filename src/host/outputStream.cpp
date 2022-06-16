@@ -289,14 +289,11 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
     // conhost HWND, it's going to need to get processed by the window message
-    // thread before returning. We (the VT adapter) are handling this message
-    // under lock. However, the first thing the conhost message thread does is
-    // lock the console. That'll deadlock us. So unlock here, first, to let the
-    // message thread deal with this message, then re-lock so later on this
-    // thread can unlock again safely.
-    gci.UnlockConsole();
-    ::ShowWindow(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
-    gci.LockConsole();
+    // thread before returning.
+    // However, ShowWindowAsync doesn't have this problem. It'll post the
+    // message to the window thread, then immediately return, so we don't have
+    // to worry about deadlocking.
+    ::ShowWindowAsync(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
 }
 
 // Routine Description:
