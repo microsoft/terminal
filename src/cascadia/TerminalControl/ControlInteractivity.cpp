@@ -615,7 +615,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Get the size of the font, which is in pixels
         const til::size fontSize{ _core->GetFont().GetSize() };
         // Convert the location in pixels to characters within the current viewport.
-        return til::point{ pixelPosition / fontSize };
+        return pixelPosition / fontSize;
     }
 
     bool ControlInteractivity::_sendMouseEventHelper(const til::point terminalPosition,

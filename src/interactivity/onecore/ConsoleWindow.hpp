@@ -29,7 +29,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         bool IsInFullscreen() const noexcept override;
         void SetIsFullscreen(const bool fFullscreenEnabled) noexcept override;
-        void ChangeViewport(const SMALL_RECT NewWindow) override;
+        void ChangeViewport(const til::inclusive_rect& NewWindow) override;
 
         void CaptureMouse() noexcept override;
         BOOL ReleaseMouse() noexcept override;
@@ -38,17 +38,17 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         void SetOwner() noexcept override;
 
-        BOOL GetCursorPosition(LPPOINT lpPoint) noexcept override;
-        BOOL GetClientRectangle(LPRECT lpRect) noexcept override;
-        int MapPoints(LPPOINT lpPoints, UINT cPoints) noexcept override;
-        BOOL ConvertScreenToClient(LPPOINT lpPoint) noexcept override;
+        BOOL GetCursorPosition(til::point* lpPoint) noexcept override;
+        BOOL GetClientRectangle(til::rect* lpRect) noexcept override;
+        BOOL MapRect(_Inout_ til::rect* lpRect) noexcept override;
+        BOOL ConvertScreenToClient(til::point* lpPoint) noexcept override;
 
         BOOL SendNotifyBeep() const noexcept override;
 
         BOOL PostUpdateScrollBars() const noexcept override;
         BOOL PostUpdateWindowSize() const noexcept override;
 
-        void UpdateWindowSize(const COORD coordSizeInChars) noexcept override;
+        void UpdateWindowSize(const til::size coordSizeInChars) noexcept override;
         void UpdateWindowText() noexcept override;
 
         void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) noexcept override;
@@ -56,6 +56,6 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id) noexcept override;
         [[nodiscard]] HRESULT UiaSetTextAreaFocus() noexcept override;
-        RECT GetWindowRect() const noexcept override;
+        til::rect GetWindowRect() const noexcept override;
     };
 }

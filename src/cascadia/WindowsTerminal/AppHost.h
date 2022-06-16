@@ -40,7 +40,7 @@ private:
     void _HandleCommandlineArgs();
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
-    void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+    void _HandleCreateWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,

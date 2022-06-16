@@ -20,11 +20,11 @@ Author(s):
 #include <til/bit.h>
 #include <til/hash.h>
 
-// std::unordered_map needs help to know how to hash a COORD
+// std::unordered_map needs help to know how to hash a til::point
 namespace std
 {
     template<>
-    struct hash<COORD>
+    struct hash<til::point>
     {
         // Routine Description:
         // - hashes a coord. coord will be hashed by storing the x and y values consecutively in the lower
@@ -33,9 +33,9 @@ namespace std
         // - coord - the coord to hash
         // Return Value:
         // - the hashed coord
-        constexpr size_t operator()(const COORD& coord) const noexcept
+        constexpr size_t operator()(const til::point coord) const noexcept
         {
-            return til::hash(til::bit_cast<uint32_t>(coord));
+            return til::hash(til::bit_cast<uint64_t>(coord));
         }
     };
 }
@@ -43,7 +43,7 @@ namespace std
 class UnicodeStorage final
 {
 public:
-    using key_type = typename COORD;
+    using key_type = typename til::point;
     using mapped_type = typename std::vector<wchar_t>;
 
     UnicodeStorage() noexcept;
@@ -54,7 +54,7 @@ public:
 
     void Erase(const key_type key) noexcept;
 
-    void Remap(const std::unordered_map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width);
+    void Remap(const std::unordered_map<til::CoordType, til::CoordType>& rowMap, const std::optional<til::CoordType> width);
 
 private:
     std::unordered_map<key_type, mapped_type> _map;

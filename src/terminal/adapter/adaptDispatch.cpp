@@ -24,7 +24,6 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettin
     _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _termOutput()
 {
-    _scrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
 // Routine Description:
@@ -198,8 +197,8 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
-    int row = cursorPosition.Y;
-    int col = cursorPosition.X;
+    auto row = cursorPosition.Y;
+    auto col = cursorPosition.X;
 
     // But if the row is absolute, it will be relative to the top of the
     // viewport, or the top margin, depending on the origin mode.
@@ -218,8 +217,8 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // Adjust the base position by the given offsets and clamp the results.
     // The row is constrained within the viewport's vertical boundaries,
     // while the column is constrained by the buffer width.
-    row = std::clamp<int>(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
-    col = std::clamp<int>(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
+    row = std::clamp(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
+    col = std::clamp(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
 
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
@@ -245,8 +244,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     }
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
-    cursor.SetPosition(textBuffer.ClampPositionWithinLine(newPos));
+    cursor.SetPosition(textBuffer.ClampPositionWithinLine({ col, row }));
     _ApplyCursorMovementFlags(cursor);
 
     return true;
@@ -345,7 +343,7 @@ bool AdaptDispatch::CursorSaveState()
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    cursorPosition.Y -= gsl::narrow_cast<short>(viewport.top);
+    cursorPosition.Y -= viewport.top;
 
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
@@ -438,11 +436,11 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
         // For now we're assuming the scrollRect is always the full width of the
         // buffer, but this will likely need to be extended to support scrolling
         // of arbitrary widths at some point in the future.
-        const auto top = gsl::narrow_cast<short>(delta > 0 ? scrollRect.top : (scrollRect.top + absoluteDelta));
-        const auto height = gsl::narrow_cast<short>(scrollRect.height() - absoluteDelta);
-        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+        const auto top = delta > 0 ? scrollRect.top : scrollRect.top + absoluteDelta;
+        const auto height = scrollRect.height() - absoluteDelta;
+        const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
         textBuffer.ScrollRows(top, height, actualDelta);
-        textBuffer.TriggerRedraw(Viewport::FromInclusive(scrollRect.to_small_rect()));
+        textBuffer.TriggerRedraw(Viewport::FromExclusive(scrollRect));
     }
 
     // Rows revealed by the scroll are filled with standard erase attributes.
@@ -470,11 +468,11 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
     if (absoluteDelta < scrollRect.width())
     {
-        const auto left = gsl::narrow_cast<short>(delta > 0 ? scrollRect.left : (scrollRect.left + absoluteDelta));
-        const auto top = gsl::narrow_cast<short>(scrollRect.top);
-        const auto width = gsl::narrow_cast<short>(scrollRect.width() - absoluteDelta);
-        const auto height = gsl::narrow_cast<short>(scrollRect.height());
-        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+        const auto left = delta > 0 ? scrollRect.left : (scrollRect.left + absoluteDelta);
+        const auto top = scrollRect.top;
+        const auto width = scrollRect.width() - absoluteDelta;
+        const auto height = scrollRect.height();
+        const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
 
         const auto source = Viewport::FromDimensions({ left, top }, width, height);
         const auto target = Viewport::Offset(source, { actualDelta, 0 });
@@ -555,10 +553,10 @@ void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect,
     {
         const auto fillWidth = gsl::narrow_cast<size_t>(fillRect.right - fillRect.left);
         const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillWidth };
-        const auto col = gsl::narrow_cast<short>(fillRect.left);
-        for (auto row = gsl::narrow_cast<short>(fillRect.top); row < fillRect.bottom; row++)
+        const auto col = fillRect.left;
+        for (auto row = fillRect.top; row < fillRect.bottom; row++)
         {
-            textBuffer.WriteLine(fillData, COORD{ col, row }, false);
+            textBuffer.WriteLine(fillData, { col, row }, false);
         }
         _api.NotifyAccessibilityChange(fillRect);
     }
@@ -1298,13 +1296,11 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
     // having only a bottom param is legal      ([;3r   -> 0,3   -> 1,3  -> 1,3,true)
     // having neither uses the defaults         ([;r [r -> 0,0   -> 0,0  -> 0,0,false)
     // an illegal combo (eg, 3;2r) is ignored
-    SHORT actualTop = 0;
-    SHORT actualBottom = 0;
-    THROW_IF_FAILED(SizeTToShort(topMargin, &actualTop));
-    THROW_IF_FAILED(SizeTToShort(bottomMargin, &actualBottom));
+    til::CoordType actualTop = topMargin;
+    til::CoordType actualBottom = bottomMargin;
 
     const auto viewport = _api.GetViewport();
-    const auto screenHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
+    const auto screenHeight = viewport.bottom - viewport.top;
     // The default top margin is line 1
     if (actualTop == 0)
     {
@@ -1435,8 +1431,7 @@ bool AdaptDispatch::ReverseLineFeed()
     else if (cursorPosition.Y > viewport.top)
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
-        const COORD newCursorPosition{ cursorPosition.X, cursorPosition.Y - 1 };
-        cursor.SetPosition(textBuffer.ClampPositionWithinLine(newCursorPosition));
+        cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.X, cursorPosition.Y - 1 }));
         _ApplyCursorMovementFlags(cursor);
     }
     return true;
@@ -1940,8 +1935,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 void AdaptDispatch::_EraseScrollback()
 {
     const auto viewport = _api.GetViewport();
-    const auto top = gsl::narrow_cast<short>(viewport.top);
-    const auto height = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
+    const auto top = viewport.top;
+    const auto height = viewport.bottom - viewport.top;
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
     auto& cursor = textBuffer.GetCursor();
@@ -1975,7 +1970,7 @@ void AdaptDispatch::_EraseScrollback()
 void AdaptDispatch::_EraseAll()
 {
     const auto viewport = _api.GetViewport();
-    const auto viewportHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
+    const auto viewportHeight = viewport.bottom - viewport.top;
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize();
 
@@ -1988,7 +1983,7 @@ void AdaptDispatch::_EraseAll()
     // Calculate new viewport position. Typically we want to move one line below
     // the last non-space row, but if the last non-space character is the very
     // start of the buffer, then we shouldn't move down at all.
-    const til::point lastChar{ textBuffer.GetLastNonSpaceCharacter() };
+    const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
     auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.Y + 1;
     const auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
@@ -2471,6 +2466,100 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - Performs a iTerm2 action
+// - Ascribes to the ITermDispatch interface
+// - Currently, the actions we support are:
+//   * `OSC1337;SetMark`: mark a line as a prompt line
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"SetMark")
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.AddMark(mark);
+        return true;
+    }
+    return false;
+}
+
+// Method Description:
+// - Performs a FinalTerm action
+// - Currently, the actions we support are:
+//   * `OSC133;A`: mark a line as a prompt line
+// - Not actually used in conhost
+// - The remainder of the FTCS prompt sequences are tracked in GH#11000
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"A") // FTCS_PROMPT
+    {
+        // Simply just mark this line as a prompt line.
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.AddMark(mark);
+        return true;
+    }
+
+    // When we add the rest of the FTCS sequences (GH#11000), we should add a
+    // simple state machine here to track the most recently emitted mark from
+    // this set of sequences, and which sequence was emitted last, so we can
+    // modify the state of that mark as we go.
+    return false;
+}
+
+// Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is
 //   transmitted in sixel format via the returned StringHandler function.
@@ -2546,9 +2635,89 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
             const auto bitPattern = _fontBuffer->GetBitPattern();
             const auto cellSize = _fontBuffer->GetCellSize();
             const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _renderer.UpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
+            _renderer.UpdateSoftFont(bitPattern, cellSize, centeringHint);
         }
         return true;
+    };
+}
+
+// Method Description:
+// - DECRSTS - Restores the terminal state from a stream of data previously
+//   saved with a DECRQTSR query.
+// Arguments:
+// - format - the format of the state report being restored.
+// Return Value:
+// - a function to receive the data or nullptr if the format is unsupported.
+ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchTypes::ReportFormat format)
+{
+    switch (format)
+    {
+    case DispatchTypes::ReportFormat::ColorTableReport:
+        return _RestoreColorTable();
+    default:
+        return nullptr;
+    }
+}
+
+// Method Description:
+// - DECCTR - This is a parser for the Color Table Report received via DECRSTS.
+//   The report contains a list of color definitions separated with a slash
+//   character. Each definition consists of 5 parameters: Pc;Pu;Px;Py;Pz
+//   - Pc is the color number.
+//   - Pu is the color model (1 = HLS, 2 = RGB).
+//   - Px, Py, and Pz are component values in the color model.
+// Arguments:
+// - <none>
+// Return Value:
+// - a function to parse the report data.
+ITermDispatch::StringHandler AdaptDispatch::_RestoreColorTable()
+{
+    // If we're a conpty, we create a passthrough string handler to forward the
+    // color report to the connected terminal.
+    if (_api.IsConsolePty())
+    {
+        return _CreatePassthroughHandler();
+    }
+
+    return [this, parameter = VTInt{}, parameters = std::vector<VTParameter>{}](const auto ch) mutable {
+        if (ch >= L'0' && ch <= L'9')
+        {
+            parameter *= 10;
+            parameter += (ch - L'0');
+            parameter = std::min(parameter, MAX_PARAMETER_VALUE);
+        }
+        else if (ch == L';')
+        {
+            if (parameters.size() < 5)
+            {
+                parameters.push_back(parameter);
+            }
+            parameter = 0;
+        }
+        else if (ch == L'/' || ch == AsciiChars::ESC)
+        {
+            parameters.push_back(parameter);
+            const auto colorParameters = VTParameters{ parameters.data(), parameters.size() };
+            const auto colorNumber = colorParameters.at(0).value_or(0);
+            if (colorNumber < TextColor::TABLE_SIZE)
+            {
+                const auto colorModel = DispatchTypes::ColorModel{ colorParameters.at(1) };
+                const auto x = colorParameters.at(2).value_or(0);
+                const auto y = colorParameters.at(3).value_or(0);
+                const auto z = colorParameters.at(4).value_or(0);
+                if (colorModel == DispatchTypes::ColorModel::HLS)
+                {
+                    SetColorTableEntry(colorNumber, Utils::ColorFromHLS(x, y, z));
+                }
+                else if (colorModel == DispatchTypes::ColorModel::RGB)
+                {
+                    SetColorTableEntry(colorNumber, Utils::ColorFromRGB100(x, y, z));
+                }
+            }
+            parameters.clear();
+            parameter = 0;
+        }
+        return (ch != AsciiChars::ESC);
     };
 }
 
@@ -2685,4 +2854,84 @@ void AdaptDispatch::_ReportDECSTBMSetting()
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Routine Description:
+// - DECPS - Plays a sequence of musical notes.
+// Arguments:
+// - params - The volume, duration, and note values to play.
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PlaySounds(const VTParameters parameters)
+{
+    // If we're a conpty, we return false so the command will be passed on
+    // to the connected terminal. But we need to flush the current frame
+    // first, otherwise the visual output will lag behind the sound.
+    if (_api.IsConsolePty())
+    {
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    // First parameter is the volume, in the range 0 to 7. We multiply by
+    // 127 / 7 to obtain an equivalent MIDI velocity in the range 0 to 127.
+    const auto velocity = std::min(parameters.at(0).value_or(0), 7) * 127 / 7;
+    // Second parameter is the duration, in the range 0 to 255. Units are
+    // 1/32 of a second, so we multiply by 1000000us/32 to obtain microseconds.
+    using namespace std::chrono_literals;
+    const auto duration = std::min(parameters.at(1).value_or(0), 255) * 1000000us / 32;
+    // The subsequent parameters are notes, in the range 0 to 25.
+    return parameters.subspan(2).for_each([=](const auto param) {
+        // Values 1 to 25 represent the notes C5 to C7, so we add 71 to
+        // obtain the equivalent MIDI note numbers (72 = C5).
+        const auto noteNumber = std::min(param.value_or(0), 25) + 71;
+        // But value 0 is meant to be silent, so if the note number is 71,
+        // we set the velocity to 0 (i.e. no volume).
+        _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
+        return true;
+    });
+}
+
+// Routine Description:
+// - Helper method to create a string handler that can be used to pass through
+//   DCS sequences when in conpty mode.
+// Arguments:
+// - <none>
+// Return value:
+// - a function to receive the data or nullptr if the initial flush fails
+ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
+{
+    // Before we pass through any more data, we need to flush the current frame
+    // first, otherwise it can end up arriving out of sync.
+    _renderer.TriggerFlush(false);
+    // Then we need to flush the sequence introducer and parameters that have
+    // already been parsed by the state machine.
+    auto& stateMachine = _api.GetStateMachine();
+    if (stateMachine.FlushToTerminal())
+    {
+        // And finally we create a StringHandler to receive the rest of the
+        // sequence data, and pass it through to the connected terminal.
+        auto& engine = stateMachine.Engine();
+        return [&, buffer = std::wstring{}](const auto ch) mutable {
+            // To make things more efficient, we buffer the string data before
+            // passing it through, only flushing if the buffer gets too large,
+            // or we're dealing with the last character in the current output
+            // fragment, or we've reached the end of the string.
+            const auto endOfString = ch == AsciiChars::ESC;
+            buffer += ch;
+            if (buffer.length() >= 4096 || stateMachine.IsProcessingLastCharacter() || endOfString)
+            {
+                // The end of the string is signaled with an escape, but for it
+                // to be a valid string terminator we need to add a backslash.
+                if (endOfString)
+                {
+                    buffer += L'\\';
+                }
+                engine.ActionPassThroughString(buffer);
+                buffer.clear();
+            }
+            return !endOfString;
+        };
+    }
+    return nullptr;
 }

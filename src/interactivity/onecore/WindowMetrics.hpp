@@ -23,7 +23,7 @@ namespace Microsoft::Console::Interactivity::OneCore
     class WindowMetrics : public IWindowMetrics
     {
     public:
-        RECT GetMinClientRectInPixels() override;
-        RECT GetMaxClientRectInPixels() override;
+        til::rect GetMinClientRectInPixels() override;
+        til::rect GetMaxClientRectInPixels() override;
     };
 }

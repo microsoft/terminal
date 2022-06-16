@@ -29,27 +29,11 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 #define DELEGATION_CONSOLE_KEY_NAME L"DelegationConsole"
 #define DELEGATION_TERMINAL_KEY_NAME L"DelegationTerminal"
 
-DEFINE_GUID(CLSID_SystemDelegationConsole, 0x2eaca947, 0x7f5f, 0x4cfa, 0xba, 0x87, 0x8f, 0x7f, 0xbe, 0xef, 0xbe, 0x69);
-DEFINE_GUID(CLSID_SystemDelegationTerminal, 0xe12cff52, 0xa866, 0x4c77, 0x9a, 0x90, 0xf5, 0x70, 0xa7, 0xaa, 0x2c, 0x6b);
-
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
 
-template<typename T, typename std::enable_if<std::is_base_of<DelegationConfig::DelegationBase, T>::value>::type* = nullptr>
-HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
+static [[nodiscard]] HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<DelegationConfig::DelegationBase>& vec) noexcept
 {
-    vec.clear();
-
-    T useInbox = { 0 };
-    useInbox.clsid = { 0 };
-    // CLSID of 0 will be sentinel to say "inbox console" or something.
-    // The UI displaying this information will have to go look up appropriate strings
-    // to convey that message.
-
-    vec.push_back(useInbox);
-
-    auto coinit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
-
     ComPtr<IAppExtensionCatalogStatics> catalogStatics;
     RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_AppExtensions_AppExtensionCatalog).Get(), &catalogStatics));
 
@@ -66,7 +50,7 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
     RETURN_IF_FAILED(extensionList->get_Size(&extensionCount));
     for (UINT index = 0; index < extensionCount; index++)
     {
-        T extensionMetadata;
+        DelegationConfig::PackageInfo extensionMetadata;
 
         ComPtr<IAppExtension> extension;
         RETURN_IF_FAILED(extensionList->GetAt(index, &extension));
@@ -165,55 +149,43 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         IID iid;
         RETURN_IF_FAILED(IIDFromString(value.GetRawBuffer(nullptr), &iid));
 
-        extensionMetadata.clsid = iid;
-
-        vec.emplace_back(std::move(extensionMetadata));
+        vec.push_back({ iid, extensionMetadata });
     }
 
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetAvailableConsoles(std::vector<DelegationConsole>& consoles) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& def) noexcept
 try
 {
-    return _lookupCatalog(DELEGATION_CONSOLE_EXTENSION_NAME, consoles);
-}
-CATCH_RETURN()
+    auto coinit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetAvailableTerminals(std::vector<DelegationTerminal>& terminals) noexcept
-try
-{
-    return _lookupCatalog(DELEGATION_TERMINAL_EXTENSION_NAME, terminals);
-}
-CATCH_RETURN()
-
-[[nodiscard]] HRESULT DelegationConfig::s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& defPackage) noexcept
-try
-{
     packages.clear();
+    packages.push_back({ DefaultDelegationPair });
+    packages.push_back({ ConhostDelegationPair });
 
     // Get consoles and terminals.
     // If we fail to look up any, we should still have ONE come back to us as the hardcoded default console host.
     // The errors aren't really useful except for debugging, so log only.
-    std::vector<DelegationConsole> consoles;
-    LOG_IF_FAILED(s_GetAvailableConsoles(consoles));
+    std::vector<DelegationBase> consoles;
+    LOG_IF_FAILED(_lookupCatalog(DELEGATION_CONSOLE_EXTENSION_NAME, consoles));
 
-    std::vector<DelegationTerminal> terminals;
-    LOG_IF_FAILED(s_GetAvailableTerminals(terminals));
+    std::vector<DelegationBase> terminals;
+    LOG_IF_FAILED(_lookupCatalog(DELEGATION_TERMINAL_EXTENSION_NAME, terminals));
 
     // TODO: I hate this algorithm (it's bad performance), but I couldn't
     // find an AppModel interface that would let me look up all the extensions
     // in one package.
-    for (auto& term : terminals)
+    for (const auto& term : terminals)
     {
-        for (auto& con : consoles)
+        for (const auto& con : consoles)
         {
-            if (term.IsFromSamePackage(con))
+            if (term.info.IsFromSamePackage(con.info))
             {
-                DelegationPackage pkg;
-                pkg.terminal = term;
-                pkg.console = con;
-                packages.push_back(pkg);
+                DelegationPackage package;
+                package.pair = { DelegationPairKind::Custom, con.clsid, term.clsid };
+                package.info = term.info;
+                packages.push_back(std::move(package));
                 break;
             }
         }
@@ -222,29 +194,21 @@ try
     // We should find at least one package.
     RETURN_HR_IF(E_FAIL, packages.empty());
 
-    // We also find the default here while we have the list of available ones so
-    // we can return the opaque structure instead of the raw IID.
-    IID defCon;
-    LOG_IF_FAILED(s_GetDefaultConsoleId(defCon));
-    IID defTerm;
-    LOG_IF_FAILED(s_GetDefaultTerminalId(defTerm));
-
-    // The default one is the 0th one because that's supposed to be the inbox conhost one.
-    auto chosenPackage = packages.at(0);
-
-    // Search through and find a package that matches. If we failed to match because
-    // it's torn across multiple or something not in the catalog, we'll offer the inbox conhost one.
+    // Get the currently set default console/terminal.
+    // Then, search through and find a package that matches.
+    // If we find one, then return it.
+    const auto delegationPair = s_GetDelegationPair();
     for (auto& pkg : packages)
     {
-        if (pkg.console.clsid == defCon && pkg.terminal.clsid == defTerm)
+        if (pkg.pair == delegationPair)
         {
-            chosenPackage = pkg;
-            break;
+            def = pkg;
+            return S_OK;
         }
     }
 
-    defPackage = chosenPackage;
-
+    // The default is DefaultDelegationPair ("Let Windows decide").
+    def = packages.at(0);
     return S_OK;
 }
 CATCH_RETURN()
@@ -261,90 +225,64 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package, const bool useRegExe) noexcept
 {
-    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.console.clsid, useRegExe));
-    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.terminal.clsid, useRegExe));
+    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.pair.console, useRegExe));
+    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.pair.terminal, useRegExe));
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetDefaultConsoleId(IID& iid) noexcept
-{
-    iid = { 0 };
-
-    auto hr = s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
-
-    auto defApp = false;
-    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
-    {
-        if (FAILED(hr))
-        {
-            // If we can't find a user-defined delegation console/terminal, use the hardcoded
-            // delegation console/terminal instead.
-            iid = CLSID_SystemDelegationConsole;
-            hr = S_OK;
-        }
-    }
-
-    return hr;
-}
-
-[[nodiscard]] HRESULT DelegationConfig::s_GetDefaultTerminalId(IID& iid) noexcept
-{
-    iid = { 0 };
-
-    auto hr = s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
-
-    auto defApp = false;
-    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault(defApp)) && defApp)
-    {
-        if (FAILED(hr))
-        {
-            // If we can't find a user-defined delegation console/terminal, use the hardcoded
-            // delegation console/terminal instead.
-            iid = CLSID_SystemDelegationTerminal;
-            hr = S_OK;
-        }
-    }
-
-    return hr;
-}
-
-[[nodiscard]] HRESULT DelegationConfig::s_Get(PCWSTR value, IID& iid) noexcept
+[[nodiscard]] DelegationConfig::DelegationPair DelegationConfig::s_GetDelegationPair() noexcept
 {
     wil::unique_hkey currentUserKey;
     wil::unique_hkey consoleKey;
-
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
-
     wil::unique_hkey startupKey;
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey));
-
-    DWORD bytesNeeded = 0;
-    auto result = RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                      value,
-                                                      0,
-                                                      REG_SZ,
-                                                      nullptr,
-                                                      &bytesNeeded);
-
-    if (NTSTATUS_FROM_WIN32(ERROR_SUCCESS) != result)
+    if (FAILED_NTSTATUS_LOG(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey)) ||
+        FAILED_NTSTATUS_LOG(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey)))
     {
-        RETURN_NTSTATUS(result);
+        return DefaultDelegationPair;
     }
 
-    auto buffer = std::make_unique<wchar_t[]>(bytesNeeded / sizeof(wchar_t) + 1);
+    static constexpr const wchar_t* keys[2]{ DELEGATION_CONSOLE_KEY_NAME, DELEGATION_TERMINAL_KEY_NAME };
+    // values[0]/[1] will contain the delegation console/terminal
+    // respectively if set to a valid value within the registry.
+    IID values[2]{ CLSID_Default, CLSID_Default };
 
-    DWORD bytesUsed = 0;
+    for (size_t i = 0; i < 2; ++i)
+    {
+        // The GUID is stored as: {00000000-0000-0000-0000-000000000000}
+        // = 38 characters + trailing null terminator.
+        wchar_t buffer[39];
+        DWORD bytesUsed = 0;
+        const auto result = RegistrySerialization::s_QueryValue(startupKey.get(), keys[i], sizeof(buffer), REG_SZ, reinterpret_cast<BYTE*>(&buffer[0]), &bytesUsed);
+        if (result != S_OK)
+        {
+            // Don't log the more common key-not-found error.
+            if (result != NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+            {
+                LOG_NTSTATUS(result);
+            }
+            continue;
+        }
 
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                                  value,
-                                                                  bytesNeeded,
-                                                                  REG_SZ,
-                                                                  reinterpret_cast<BYTE*>(buffer.get()),
-                                                                  &bytesUsed));
+        if (bytesUsed == sizeof(buffer))
+        {
+            // RegQueryValueExW docs:
+            // If the data has the REG_SZ, REG_MULTI_SZ or REG_EXPAND_SZ type, the string may not have been stored with the
+            // proper terminating null characters. Therefore, even if the function returns ERROR_SUCCESS, the application
+            // should ensure that the string is properly terminated before using it; otherwise, it may overwrite a buffer.
+            buffer[std::size(buffer) - 1] = 0;
+            LOG_IF_FAILED(IIDFromString(&buffer[0], &values[i]));
+        }
+    }
 
-    RETURN_IF_FAILED(IIDFromString(buffer.get(), &iid));
-
-    return S_OK;
+    if (values[0] == CLSID_Default || values[1] == CLSID_Default)
+    {
+        return DefaultDelegationPair;
+    }
+    if (values[0] == CLSID_Conhost || values[1] == CLSID_Conhost)
+    {
+        return ConhostDelegationPair;
+    }
+    return { DelegationPairKind::Custom, values[0], values[1] };
 }
 
 [[nodiscard]] HRESULT DelegationConfig::s_Set(PCWSTR value, const CLSID clsid, const bool useRegExe) noexcept
