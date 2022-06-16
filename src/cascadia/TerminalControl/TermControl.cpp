@@ -1837,7 +1837,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newValue = args.ViewTop();
 
         _updateScrollBar->Run(update);
-        _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
+
+        // if a selection marker is already visible,
+        // update the position of those markers
+        if (SelectionStartMarker().Visibility() == Visibility::Visible || SelectionEndMarker().Visibility() == Visibility::Visible)
+        {
+            _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
+        }
     }
 
     // Method Description:
