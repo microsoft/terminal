@@ -2017,8 +2017,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         }
 
-        auto viewHeight = ViewHeight();
-        auto bufferSize = BufferHeight();
+        const auto viewHeight = ViewHeight();
+        const auto bufferSize = BufferHeight();
 
         // UserScrollViewport, to update the Terminal about where the viewport should be
         // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
