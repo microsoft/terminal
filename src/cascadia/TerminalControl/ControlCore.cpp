@@ -2017,19 +2017,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         }
 
+        const auto viewHeight = ViewHeight();
+        const auto bufferSize = BufferHeight();
+
+        // UserScrollViewport, to update the Terminal about where the viewport should be
+        // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
         if (tgt.has_value())
         {
             UserScrollViewport(tgt->start.y);
+            _terminalScrollPositionChanged(tgt->start.y, viewHeight, bufferSize);
         }
         else
         {
             if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
             {
                 UserScrollViewport(BufferHeight());
+                _terminalScrollPositionChanged(BufferHeight(), viewHeight, bufferSize);
             }
             else if (direction == ScrollToMarkDirection::First || direction == ScrollToMarkDirection::Previous)
             {
                 UserScrollViewport(0);
+                _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
         }
     }
