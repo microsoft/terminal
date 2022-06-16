@@ -41,9 +41,6 @@ GdiEngine::GdiEngine() :
     _polyWidths{ &_pool }
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
-    _rcInvalid = { 0 };
-    _szInvalidScroll = { 0 };
-    _szMemorySurface = { 0 };
 
     _hdcMemoryContext = CreateCompatibleDC(nullptr);
     THROW_HR_IF_NULL(E_FAIL, _hdcMemoryContext);
@@ -150,7 +147,7 @@ GdiEngine::~GdiEngine()
 #if DBG
     if (_debugWindow != INVALID_HANDLE_VALUE && _debugWindow != nullptr)
     {
-        RECT rc = { 0 };
+        RECT rc{};
         THROW_IF_WIN32_BOOL_FALSE(GetWindowRect(_hwndTargetWindow, &rc));
 
         THROW_IF_WIN32_BOOL_FALSE(SetWindowPos(_debugWindow, nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE));
@@ -428,7 +425,7 @@ GdiEngine::~GdiEngine()
     _fontCodepage = Font.GetCodePage();
 
     // Inform the soft font of the change in size.
-    _softFont.SetTargetSize(til::size{ _GetFontSize() });
+    _softFont.SetTargetSize(_GetFontSize());
 
     LOG_IF_FAILED(InvalidateAll());
 
@@ -444,7 +441,7 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if successful. E_FAIL if there was an error.
 [[nodiscard]] HRESULT GdiEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                                const SIZE cellSize,
+                                                const til::size cellSize,
                                                 const size_t centeringHint) noexcept
 {
     // If we previously called SelectFont(_hdcMemoryContext, _softFont), it will
@@ -457,7 +454,7 @@ GdiEngine::~GdiEngine()
     }
 
     // Create a new font resource with the updated pattern, or delete if empty.
-    _softFont = FontResource{ bitPattern, til::size{ cellSize }, til::size{ _GetFontSize() }, centeringHint };
+    _softFont = FontResource{ bitPattern, cellSize, _GetFontSize(), centeringHint };
 
     return S_OK;
 }
@@ -481,7 +478,7 @@ GdiEngine::~GdiEngine()
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT GdiEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT GdiEngine::UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
@@ -629,9 +626,9 @@ GdiEngine::~GdiEngine()
     SIZE sz;
     RETURN_HR_IF(E_FAIL, !(GetTextExtentPoint32W(hdcTemp.get(), L"0", 1, &sz)));
 
-    COORD coordFont;
-    coordFont.X = static_cast<SHORT>(sz.cx);
-    coordFont.Y = static_cast<SHORT>(sz.cy);
+    til::size coordFont;
+    coordFont.X = sz.cx;
+    coordFont.Y = sz.cy;
 
     // The extent point won't necessarily be perfect for the width, so get the ABC metrics for the 0 if possible to improve the measurement.
     // This will fail for non-TrueType fonts and we'll fall back to what GetTextExtentPoint said.
@@ -639,12 +636,12 @@ GdiEngine::~GdiEngine()
         ABC abc;
         if (0 != GetCharABCWidthsW(hdcTemp.get(), '0', '0', &abc))
         {
-            const int abcTotal = abc.abcA + abc.abcB + abc.abcC;
+            const auto abcTotal = abc.abcA + abc.abcB + abc.abcC;
 
             // No negatives or zeros or we'll have bad character-to-pixel math later.
             if (abcTotal > 0)
             {
-                coordFont.X = static_cast<SHORT>(abcTotal);
+                coordFont.X = abcTotal;
             }
         }
     }
@@ -667,7 +664,7 @@ GdiEngine::~GdiEngine()
         }
         else if (coordFontRequested.X == 0)
         {
-            coordFontRequested.X = (SHORT)s_ShrinkByDpi(coordFont.X, iDpi);
+            coordFontRequested.X = s_ShrinkByDpi(coordFont.X, iDpi);
         }
 
         Font.SetFromEngine(currentFaceName,
@@ -687,7 +684,7 @@ GdiEngine::~GdiEngine()
 // - pFontSize - receives the current X by Y size of the font.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT GdiEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT GdiEngine::GetFontSize(_Out_ til::size* pFontSize) noexcept
 {
     *pFontSize = _GetFontSize();
     return S_OK;
@@ -699,7 +696,7 @@ GdiEngine::~GdiEngine()
 // - <none>
 // Return Value:
 // - X by Y size of the font.
-COORD GdiEngine::_GetFontSize() const
+til::size GdiEngine::_GetFontSize() const
 {
     return _coordFontLast;
 }

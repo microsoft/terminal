@@ -102,7 +102,7 @@ public:
     // - an iterator on the first character after the expectedString.
     static TextBufferCellIterator VerifyExpectedString(const TextBuffer& tb,
                                                        std::wstring_view expectedString,
-                                                       const COORD pos)
+                                                       const til::point pos)
     {
         auto iter = tb.GetCellDataAt(pos);
         VerifyExpectedString(expectedString, iter);
@@ -192,7 +192,7 @@ public:
     };
 
     template<class... T>
-    static TextBufferCellIterator VerifyLineContains(const TextBuffer& tb, COORD position, T&&... expectedContent)
+    static TextBufferCellIterator VerifyLineContains(const TextBuffer& tb, til::point position, T&&... expectedContent)
     {
         auto actual = tb.GetCellLineDataAt(position);
         VerifyLineContains(actual, std::forward<T>(expectedContent)...);

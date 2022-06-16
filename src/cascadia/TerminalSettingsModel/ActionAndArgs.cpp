@@ -39,6 +39,10 @@ static constexpr std::string_view ScrollUpKey{ "scrollUp" };
 static constexpr std::string_view ScrollUpPageKey{ "scrollUpPage" };
 static constexpr std::string_view ScrollToTopKey{ "scrollToTop" };
 static constexpr std::string_view ScrollToBottomKey{ "scrollToBottom" };
+static constexpr std::string_view ScrollToMarkKey{ "scrollToMark" };
+static constexpr std::string_view AddMarkKey{ "addMark" };
+static constexpr std::string_view ClearMarkKey{ "clearMark" };
+static constexpr std::string_view ClearAllMarksKey{ "clearAllMarks" };
 static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
@@ -77,6 +81,7 @@ static constexpr std::string_view AdjustOpacityKey{ "adjustOpacity" };
 static constexpr std::string_view RestoreLastClosedKey{ "restoreLastClosed" };
 static constexpr std::string_view SelectAllKey{ "selectAll" };
 static constexpr std::string_view MarkModeKey{ "markMode" };
+static constexpr std::string_view ToggleBlockSelectionKey{ "toggleBlockSelection" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -353,6 +358,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
                 { ShortcutAction::ScrollToTop, RS_(L"ScrollToTopCommandKey") },
                 { ShortcutAction::ScrollToBottom, RS_(L"ScrollToBottomCommandKey") },
+                { ShortcutAction::ScrollToMark, RS_(L"ScrollToPreviousMarkCommandKey") },
+                { ShortcutAction::AddMark, RS_(L"AddMarkCommandKey") },
+                { ShortcutAction::ClearMark, RS_(L"ClearMarkCommandKey") },
+                { ShortcutAction::ClearAllMarks, RS_(L"ClearAllMarksCommandKey") },
                 { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
@@ -390,6 +399,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::RestoreLastClosed, RS_(L"RestoreLastClosedCommandKey") },
                 { ShortcutAction::SelectAll, RS_(L"SelectAllCommandKey") },
                 { ShortcutAction::MarkMode, RS_(L"MarkModeCommandKey") },
+                { ShortcutAction::ToggleBlockSelection, RS_(L"ToggleBlockSelectionCommandKey") },
             };
         }();
 

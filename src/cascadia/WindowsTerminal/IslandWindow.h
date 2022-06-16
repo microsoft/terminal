@@ -32,12 +32,12 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
-    virtual RECT GetNonClientFrame(const UINT dpi) const noexcept;
-    virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
+    virtual til::rect GetNonClientFrame(const UINT dpi) const noexcept;
+    virtual til::size GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
 
-    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> pfn) noexcept;
+    void SetCreateCallback(std::function<void(const HWND, const til::rect&, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
     void FocusModeChanged(const bool focusMode);
@@ -94,7 +94,7 @@ protected:
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
     wil::com_ptr<ITaskbarList3> _taskbar;
 
-    std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> _pfnCreateCallback;
+    std::function<void(const HWND, const til::rect&, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> _pfnCreateCallback;
     std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
@@ -111,8 +111,8 @@ protected:
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
-    void _RestoreFullscreenPosition(const RECT rcWork);
-    void _SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork);
+    void _RestoreFullscreenPosition(const RECT& rcWork);
+    void _SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcWork);
 
     LONG _getDesiredWindowStyle() const;
 

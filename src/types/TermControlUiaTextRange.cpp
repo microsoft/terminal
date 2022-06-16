@@ -25,8 +25,8 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 
 HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
-                                                        const COORD start,
-                                                        const COORD end,
+                                                        const til::point start,
+                                                        const til::point end,
                                                         bool blockRange,
                                                         const std::wstring_view wordDelimiters) noexcept
 {
@@ -73,7 +73,7 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
 //                (0,0) is the top-left of the app window
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
+void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
@@ -107,7 +107,7 @@ void TermControlUiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 //                (0,0) is the top-left of the screen
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
+void TermControlUiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
 
@@ -134,7 +134,7 @@ void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) con
     screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.top, scaleFactor);
 }
 
-const COORD TermControlUiaTextRange::_getScreenFontSize() const noexcept
+til::size TermControlUiaTextRange::_getScreenFontSize() const noexcept
 {
     // Do NOT get the font info from IRenderData. It is a dummy font info.
     // Instead, the font info is saved in the TermControl. So we have to

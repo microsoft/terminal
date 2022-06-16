@@ -40,8 +40,8 @@ namespace Microsoft::Console::Interactivity::Win32
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       _In_ const COORD start,
-                                       _In_ const COORD end,
+                                       _In_ const til::point start,
+                                       _In_ const til::point end,
                                        _In_ bool blockRange = false,
                                        _In_ const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
@@ -56,8 +56,8 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
-        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
-        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
+        void _TranslatePointToScreen(til::point* clientPoint) const override;
+        void _TranslatePointFromScreen(til::point* screenPoint) const override;
 
     private:
         HWND _getWindowHandle() const;

@@ -93,7 +93,7 @@
 
                                     <Grid.RowDefinitions>
                                         <!--  profile name  -->
-                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="20" />
                                         <!--  author and version  -->
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
@@ -109,20 +109,25 @@
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
+                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Text="{x:Bind Name}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
+                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
-                                               Text="{x:Bind Author}" />
+                                               Text="{x:Bind Author}"
+                                               Visibility="{x:Bind local:Converters.StringNotEmptyToVisibility(Author)}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
+                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
-                                               Text="{x:Bind Version}" />
+                                               Text="{x:Bind Version}"
+                                               Visibility="{x:Bind local:Converters.StringNotEmptyToVisibility(Version)}" />
 
                                 </Grid>
                             </DataTemplate>

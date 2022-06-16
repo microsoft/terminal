@@ -205,8 +205,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& ThemeMap{ _State.Globals().Themes() };
         for (const auto& pair : ThemeMap)
         {
-            const auto& theme{ pair.Value() };
-            _ThemeList.Append(theme);
+            _ThemeList.Append(pair.Value());
         }
     }
 
