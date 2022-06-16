@@ -127,5 +127,6 @@ Author(s):
 #define MTSM_THEME_TABROW_SETTINGS(X) \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)
 
-#define MTSM_THEME_TAB_SETTINGS(X) \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)
+#define MTSM_THEME_TAB_SETTINGS(X)                                                                \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility, ShowCloseButton, "showCloseButton", winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always)

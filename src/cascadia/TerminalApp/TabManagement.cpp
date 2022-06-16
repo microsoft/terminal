@@ -224,6 +224,34 @@ namespace winrt::TerminalApp::implementation
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
 
+        // Update the state of the close button to match the current theme
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        {
+            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+
+            // Update both the tab item's IsClosable, but also the TabView's
+            // CloseButtonOverlayMode here. Because the TabViewItem was created
+            // outside the context of the TabView, it doesn't get the
+            // CloseButtonOverlayMode assigned on creation. We have to update
+            // that property again here, when we add the tab, so that the
+            // TabView will re-apply the value.
+            switch (visibility)
+            {
+            case Settings::Model::TabCloseButtonVisibility::Never:
+                tabViewItem.IsClosable(false);
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+                break;
+            case Settings::Model::TabCloseButtonVisibility::Hover:
+                tabViewItem.IsClosable(true);
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+                break;
+            default:
+                tabViewItem.IsClosable(true);
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+                break;
+            }
+        }
+
         // Set this tab's icon to the icon from the user's profile
         if (const auto profile{ newTabImpl->GetFocusedProfile() })
         {

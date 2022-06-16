@@ -630,3 +630,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
         pair_type{ "last", ValueType::Last },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "hover", ValueType::Hover },
+        pair_type{ "never", ValueType::Never },
+    };
+};
