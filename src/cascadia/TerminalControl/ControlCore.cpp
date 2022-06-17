@@ -939,10 +939,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //    selection markers.
     // - Since all of this needs to be done under lock, it is more performant
     //    to throw it all in a struct and pass it along.
-    Control::SelectionMarkerMetadata ControlCore::SelectionMarkerInfo() const
+    Control::SelectionData ControlCore::SelectionInfo() const
     {
         auto lock = _terminal->LockForReading();
-        Control::SelectionMarkerMetadata info;
+        Control::SelectionData info;
 
         const auto start{ _terminal->SelectionStartForRendering() };
         info.StartPos = { start.X, start.Y };
@@ -954,8 +954,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         info.MovingCursor = _terminal->MovingCursor();
 
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-        info.FlipStartMarker = _terminal->GetSelectionAnchor().x == bufferSize.Left();
-        info.FlipEndMarker = _terminal->GetSelectionEnd().x == bufferSize.RightInclusive();
+        info.StartAtLeftBoundary = _terminal->GetSelectionAnchor().x == bufferSize.Left();
+        info.EndAtRightBoundary = _terminal->GetSelectionEnd().x == bufferSize.RightInclusive();
         return info;
     }
 

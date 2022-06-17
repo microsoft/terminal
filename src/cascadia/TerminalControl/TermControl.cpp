@@ -2796,12 +2796,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 // retrieve all of the necessary selection marker data
                 // from the TerminalCore layer under one lock to improve performance
-                const auto markerData{ _core.SelectionMarkerInfo() };
+                const auto markerData{ _core.SelectionInfo() };
 
                 // lambda helper function that can be used to display a selection marker
                 // - targetEnd: if true, target the "end" selection marker. Otherwise, target "start".
                 auto displayMarker = [&](bool targetEnd) {
-                    const auto flipMarker{ targetEnd ? markerData.FlipEndMarker : markerData.FlipStartMarker };
+                    const auto flipMarker{ targetEnd ? markerData.EndAtRightBoundary : markerData.StartAtLeftBoundary };
                     const auto& marker{ targetEnd ? SelectionEndMarker() : SelectionStartMarker() };
 
                     // Ensure the marker is oriented properly
