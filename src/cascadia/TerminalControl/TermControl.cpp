@@ -360,9 +360,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _changeBackgroundColor(bg);
 
         // Update selection markers
-        Windows::UI::Xaml::Media::SolidColorBrush selectionBackgroundBrush{ til::color{ newAppearance.SelectionBackground() } };
-        SelectionStartMarker().Fill(selectionBackgroundBrush);
-        SelectionEndMarker().Fill(selectionBackgroundBrush);
+        Windows::UI::Xaml::Media::SolidColorBrush cursorColorBrush{ til::color{ newAppearance.CursorColor() } };
+        SelectionStartMarker().Fill(cursorColorBrush);
+        SelectionEndMarker().Fill(cursorColorBrush);
 
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
