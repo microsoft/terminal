@@ -1650,8 +1650,8 @@ const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD startCoord, COORD e
         }
         else
         {
-            textRow.Left = (row == higherCoord.Y) ? base::ClampedNumeric<SHORT>(higherCoord.X).RawValue() : bufferSize.Left();
-            textRow.Right = (row == lowerCoord.Y) ? base::ClampedNumeric<SHORT>(lowerCoord.X).RawValue() : bufferSize.RightInclusive();
+            textRow.Left = (row == higherCoord.Y) ? base::saturated_cast<SHORT>(higherCoord.X) : bufferSize.Left();
+            textRow.Right = (row == lowerCoord.Y) ? base::saturated_cast<SHORT>(lowerCoord.X) : bufferSize.RightInclusive();
         }
 
         // If we were passed screen coordinates, convert the given range into

@@ -5,9 +5,6 @@
 #include "Terminal.hpp"
 #include "unicode.hpp"
 
-#define TIL_POINT_WRAP(coord) \
-    til::point { coord.X, coord.Y }
-
 using namespace Microsoft::Terminal::Core;
 
 /* Selection Pivot Description:
@@ -185,7 +182,7 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - the new start/end for a selection
 std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& targetStart) const
 {
-    if (targetStart = TIL_POINT_WRAP(targetPos) <= TIL_POINT_WRAP(_selection->pivot))
+    if (targetStart = til::point{ targetPos } <= til::point{ _selection->pivot })
     {
         // target is before pivot
         // treat target as start
@@ -374,7 +371,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
     {
     case SelectionDirection::Left:
         const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
-        if (TIL_POINT_WRAP(_selection->pivot) < TIL_POINT_WRAP(pos))
+        if (til::point{ _selection->pivot } < til::point{ pos })
         {
             // If we're moving towards the pivot, move one more cell
             pos = wordStartPos;
@@ -395,7 +392,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
         break;
     case SelectionDirection::Right:
         const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
-        if (TIL_POINT_WRAP(pos) < TIL_POINT_WRAP(_selection->pivot))
+        if (til::point{ pos } < til::point{ _selection->pivot })
         {
             // If we're moving towards the pivot, move one more cell
             pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);

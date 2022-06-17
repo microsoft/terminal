@@ -7,9 +7,6 @@
 #include "../buffer/out/search.h"
 #include "UiaTracing.h"
 
-#define TIL_POINT_WRAP(coord) \
-    til::point { coord.X, coord.Y }
-
 using namespace Microsoft::Console::Types;
 
 // Foreground/Background text color doesn't care about the alpha.
@@ -73,7 +70,7 @@ try
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
     // start is before/at end, so this is valid
-    if (TIL_POINT_WRAP(start) <= TIL_POINT_WRAP(end))
+    if (til::point{ start } <= til::point{ end })
     {
         _start = start;
         _end = end;
@@ -169,7 +166,7 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     case TextPatternRangeEndpoint_End:
         _end = val;
         // if end is before start...
-        if (TIL_POINT_WRAP(_end) < TIL_POINT_WRAP(_start))
+        if (til::point{ _end } < til::point{ _start })
         {
             // make this range degenerate at end
             _start = _end;
@@ -178,7 +175,7 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COOR
     case TextPatternRangeEndpoint_Start:
         _start = val;
         // if start is after end...
-        if (TIL_POINT_WRAP(_start) > TIL_POINT_WRAP(_end))
+        if (til::point{ _start } > til::point{ _end })
         {
             // make this range degenerate at start
             _end = _start;
@@ -298,7 +295,7 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     // If we're past document end,
     // set us to ONE BEFORE the document end.
     // This allows us to expand properly.
-    if (TIL_POINT_WRAP(_start) >= documentEnd)
+    if (til::point{ _start } >= documentEnd)
     {
         _start = documentEnd.to_win32_coord();
         bufferSize.DecrementInBounds(_start, true);
@@ -657,8 +654,8 @@ try
         bufferSize.IncrementInBounds(end, true);
 
         // make sure what was found is within the bounds of the current range
-        if ((searchDirection == Search::Direction::Forward && TIL_POINT_WRAP(end) < TIL_POINT_WRAP(_end)) ||
-            (searchDirection == Search::Direction::Backward && TIL_POINT_WRAP(start) > TIL_POINT_WRAP(_start)))
+        if ((searchDirection == Search::Direction::Forward && til::point{ end } < til::point{ _end }) ||
+            (searchDirection == Search::Direction::Backward && til::point{ start } > til::point{ _start }))
         {
             RETURN_IF_FAILED(Clone(ppRetVal));
             auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
@@ -875,7 +872,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // startAnchor: the earliest COORD we will get a bounding rect for
         auto startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
-        if (TIL_POINT_WRAP(startAnchor) < viewportOrigin)
+        if (til::point{ startAnchor } < viewportOrigin)
         {
             // earliest we can be is the origin
             startAnchor = viewportOrigin.to_win32_coord();
@@ -883,7 +880,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
         // endAnchor: the latest COORD we will get a bounding rect for
         auto endAnchor = GetEndpoint(TextPatternRangeEndpoint_End);
-        if (TIL_POINT_WRAP(endAnchor) > viewportEnd)
+        if (til::point{ endAnchor } > viewportEnd)
         {
             // latest we can be is the viewport end
             endAnchor = viewportEnd.to_win32_coord();
@@ -892,7 +889,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         // _end is exclusive, let's be inclusive so we don't have to think about it anymore for bounding rects
         bufferSize.DecrementInBounds(endAnchor, true);
 
-        if (IsDegenerate() || TIL_POINT_WRAP(_start) > viewportEnd || TIL_POINT_WRAP(_end) < viewportOrigin)
+        if (IsDegenerate() || til::point{ _start } > viewportEnd || til::point{ _end } < viewportOrigin)
         {
             // An empty array is returned for a degenerate (empty) text range.
             // reference: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationtextrange-getboundingrectangles
@@ -1047,11 +1044,11 @@ try
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
     const auto documentEnd = _getDocumentEnd();
-    if (TIL_POINT_WRAP(_start) > documentEnd)
+    if (til::point{ _start } > documentEnd)
     {
         _start = documentEnd.to_win32_coord();
     }
-    if (TIL_POINT_WRAP(_end) > documentEnd)
+    if (til::point{ _end } > documentEnd)
     {
         _end = documentEnd.to_win32_coord();
     }
@@ -1121,11 +1118,11 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     }
     CATCH_LOG();
 
-    if (TIL_POINT_WRAP(_start) > documentEnd)
+    if (til::point{ _start } > documentEnd)
     {
         _start = documentEnd.to_win32_coord();
     }
-    if (TIL_POINT_WRAP(_end) > documentEnd)
+    if (til::point{ _end } > documentEnd)
     {
         _end = documentEnd.to_win32_coord();
     }
@@ -1515,7 +1512,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (TIL_POINT_WRAP(nextPos) >= documentEnd)
+            if (til::point{ nextPos } >= documentEnd)
             {
                 success = false;
             }
@@ -1736,7 +1733,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         }
         CATCH_LOG();
 
-        if (preventBoundary || TIL_POINT_WRAP(target) >= documentEnd)
+        if (preventBoundary || til::point{ target } >= documentEnd)
         {
             return;
         }
