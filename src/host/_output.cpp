@@ -315,6 +315,9 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
             if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
             {
+                // It's important that we flush the renderer at this point so we don't
+                // have any pending output rendered after the scrollback is cleared.
+                ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
                 hr = gci.GetVtIo()->ManuallyClearScrollback();
             }
         }

@@ -971,6 +971,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
             if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
             {
+                // It's important that we flush the renderer at this point so we don't
+                // have any pending output rendered after the scrollback is cleared.
+                ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
                 hr = gci.GetVtIo()->ManuallyClearScrollback();
             }
         }
