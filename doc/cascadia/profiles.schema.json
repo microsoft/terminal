@@ -376,6 +376,7 @@
         "scrollToMark",
         "clearMark",
         "clearAllMarks",
+        "experimental.colorSelection",
         "unbound"
       ],
       "type": "string"
@@ -831,6 +832,39 @@
               "maximum": 1,
               "minimum": 0,
               "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "ColorSelectionAction": {
+      "description": "Arguments corresponding to a Color Selection Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "experimental.colorSelection"
+            },
+            "matchMode": {
+              "default": 0,
+              "description": "Specifies if only the selected text should be colored (0), or all instances of selected text (case-insensitive) (1).",
+              "maximum": 1,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "foreground": {
+              "type": "string",
+              "default": "",
+              "description": "The foreground color to use (either \"#RGB\" or \"#RRGGBB\" for an exact color, or \"iNN\" for an indexed color)."
+            },
+            "background": {
+              "type": "string",
+              "default": "",
+              "description": "The background color to use (either \"#RGB\" or \"#RRGGBB\" for an exact color, or \"iNN\" for an indexed color)."
             }
           }
         }
@@ -1612,6 +1646,9 @@
               "$ref": "#/$defs/AdjustOpacityAction"
             },
             {
+              "$ref": "#/$defs/ColorSelectionAction"
+            },
+            {
               "type": "null"
             }
           ]
@@ -1731,6 +1768,11 @@
         "experimental.detectURLs": {
           "default": true,
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
+          "type": "boolean"
+        },
+        "experimental.enableColorSelection": {
+          "default": false,
+          "description": "When set to true, adds 40 preset \"Color Selection\" actions (keybindings) to allow colorizing selected text via keystroke, similar to the legacy conhost EnableColorSelection feature (such as alt+6 to color the selection red).",
           "type": "boolean"
         },
         "disableAnimations": {

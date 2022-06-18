@@ -64,6 +64,27 @@ std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 }
 
 // Method Description:
+// - Identical to GetTextRects if it's a block selection, else returns a single span for the whole selection.
+// Return Value:
+// - A vector of one or more spans representing the selection. They are absolute coordinates relative to the buffer origin.
+std::vector<std::tuple<til::point, til::point>> Terminal::_GetSelectionSpans() const noexcept
+{
+    std::vector<std::tuple<til::point, til::point>> result;
+
+    if (!IsSelectionActive())
+    {
+        return result;
+    }
+
+    try
+    {
+        return _activeBuffer().GetTextSpans(_selection->start, _selection->end, _blockSelection, false);
+    }
+    CATCH_LOG();
+    return result;
+}
+
+// Method Description:
 // - Get the current anchor position relative to the whole text buffer
 // Arguments:
 // - None
@@ -841,13 +862,14 @@ void Terminal::_ScrollToPoint(const til::point pos)
 }
 
 // Method Description:
-// - This method won't be used. We just throw and do nothing. For now we
-//   need this method to implement UiaData interface
+// - apply the TextAttribute "attr" to the active buffer
 // Arguments:
-// - coordSelectionStart - Not used
-// - coordSelectionEnd - Not used
-// - attr - Not used.
-void Terminal::ColorSelection(const til::point, const til::point, const TextAttribute)
+// - coordStart - where to begin applying attr
+// - coordEnd - where to end applying attr (inclusive)
+// - attr - the text attributes to apply
+void Terminal::ColorSelection(const til::point coordStart, const til::point coordEnd, const TextAttribute attr)
 {
-    THROW_HR(E_NOTIMPL);
+    size_t spanLength = _activeBuffer().SpanLength(coordStart, coordEnd);
+
+    _activeBuffer().Write(OutputCellIterator(attr, spanLength), coordStart);
 }

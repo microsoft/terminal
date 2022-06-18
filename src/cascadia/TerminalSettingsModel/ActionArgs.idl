@@ -377,4 +377,11 @@ namespace Microsoft.Terminal.Settings.Model
         Int32 Opacity { get; };
         Boolean Relative { get; };
     };
+
+    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.SelectionColor Foreground;
+        Microsoft.Terminal.Control.SelectionColor Background;
+        UInt32 MatchMode { get; };
+    };
 }

@@ -16,6 +16,7 @@
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/dx/DxRenderer.hpp"
 
+#include "SelectionColor.g.cpp"
 #include "ControlCore.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
@@ -2133,6 +2134,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 UserScrollViewport(0);
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
+            }
+        }
+    }
+
+    void ControlCore::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, uint32_t matchMode)
+    {
+        if (HasSelection())
+        {
+            const auto pForeground = winrt::get_self<implementation::SelectionColor>(fg);
+            const auto pBackground = winrt::get_self<implementation::SelectionColor>(bg);
+
+            TextColor foregroundAsTextColor;
+            TextColor backgroundAsTextColor;
+
+            if (pForeground)
+            {
+                foregroundAsTextColor = pForeground->Color();
+            }
+
+            if (pBackground)
+            {
+                backgroundAsTextColor = pBackground->Color();
+            }
+
+            TextAttribute attr;
+            attr.SetForeground(foregroundAsTextColor);
+            attr.SetBackground(backgroundAsTextColor);
+
+            _terminal->ColorSelection(attr, matchMode);
+            _terminal->ClearSelection();
+            if (matchMode > 0)
+            {
+                // ClearSelection will invalidate the selection area... but if we are
+                // coloring other matches, then we need to make sure those get redrawn,
+                // too.
+                _renderer->TriggerRedrawAll();
             }
         }
     }

@@ -106,17 +106,14 @@ void Search::Select() const
 }
 
 // Routine Description:
-// - In console host, we take the found word and apply the given color to it in the screen buffer
-// - In Windows Terminal, we just select the found word, but we do not modify the buffer
+// - Applies the supplied TextAttribute to the current search result.
 // Arguments:
-// - ulAttr - The legacy color attribute to apply to the word
+// - attr - The attribute to apply to the result
 void Search::Color(const TextAttribute attr) const
 {
-    // Only select if we've found something.
-    if (_coordSelStart != _coordSelEnd)
-    {
-        _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
-    }
+    // Note that _coordSelStart may be equal to _coordSelEnd (but it's an inclusive
+    // selection: if they are equal, it means we are applying to a single character).
+    _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
 }
 
 // Routine Description:

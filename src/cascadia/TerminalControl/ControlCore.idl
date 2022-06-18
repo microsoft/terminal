@@ -53,6 +53,13 @@ namespace Microsoft.Terminal.Control
         Boolean EndAtRightBoundary;
     };
 
+    [default_interface] runtimeclass SelectionColor
+    {
+        SelectionColor();
+        // Will be converted to a TextColor (from buffer/out/TextColor.h)
+        UInt32 TextColor;
+    }
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -131,6 +138,8 @@ namespace Microsoft.Terminal.Control
 
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
+
+        void ColorSelection(SelectionColor fg, SelectionColor bg, UInt32 matchMode);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

@@ -15,12 +15,14 @@
 
 #pragma once
 
+#include "SelectionColor.g.h"
 #include "ControlCore.g.h"
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
+#include "../buffer/out/TextColor.h"
 
 #include <til/ticket_lock.h>
 
@@ -40,6 +42,30 @@ public:                                                           \
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    struct SelectionColor : SelectionColorT<SelectionColor>
+    {
+        SelectionColor() = default;
+        WINRT_PROPERTY(uint32_t, TextColor);
+
+    public:
+        ::TextColor Color() const
+        {
+            ::TextColor asTextColor;
+
+            // High bits set indicate an indexed color.
+            if (_TextColor & 0xff000000)
+            {
+                asTextColor.SetIndex(_TextColor & 0xff, false);
+            }
+            else
+            {
+                asTextColor.SetColor(_TextColor);
+            }
+
+            return asTextColor;
+        };
+    };
+
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
@@ -103,6 +129,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+
+        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, uint32_t matchMode);
 
         void Close();
 
@@ -337,5 +365,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
+    BASIC_FACTORY(SelectionColor);
     BASIC_FACTORY(ControlCore);
 }

@@ -196,7 +196,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Update NameMap with our parents.
         // Starting with this means we're doing a top-down approach.
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateNameMapWithSpecialCommands(nameMap);
@@ -274,7 +273,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         });
 
         // Now, add the accumulated actions from our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto parentActions{ parent->_GetCumulativeActions() };
@@ -367,7 +365,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Update keyBindingsMap and unboundKeys with our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
@@ -408,7 +405,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             actionMap->_IterableCommands.emplace_back(*winrt::get_self<Command>(cmd)->Copy());
         }
 
-        assert(_parents.size() <= 1);
         actionMap->_parents.reserve(_parents.size());
         for (const auto& parent : _parents)
         {
@@ -737,7 +733,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // the command was not bound in this layer,
         // ask my parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal(keys) };
@@ -787,7 +782,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Check our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             if (const auto& keys{ parent->GetKeyBindingForAction(myAction, myArgs) })

@@ -92,5 +92,7 @@ namespace Microsoft.Terminal.Control
         Double BackgroundOpacity { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        void ColorSelection(SelectionColor fg, SelectionColor bg, UInt32 matchMode);
     }
 }

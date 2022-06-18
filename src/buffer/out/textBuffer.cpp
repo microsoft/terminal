@@ -1611,7 +1611,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
 // - bufferCoordinates: when enabled, treat the coordinates as relative to
 //                      the buffer rather than the screen.
 // Return Value:
-// - the delimiter class for the given char
+// - One or more rects corresponding to the selection area
 const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const
 {
     std::vector<til::inclusive_rect> textRects;
@@ -1658,6 +1658,72 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
     }
 
     return textRects;
+}
+
+// Method Description:
+// - Computes the span(s) for the given selection
+// - If not a blockSelection, returns a single span (start - end)
+// - Else if a blockSelection, returns spans corresponding to each line in the block selection
+// Arguments:
+// - start: beginning of the text region of interest (inclusive)
+// - end: the other end of the text region of interest (inclusive)
+// - blockSelection: when enabled, get spans for each line covered by the block
+// - bufferCoordinates: when enabled, treat the coordinates as relative to
+//                      the buffer rather than the screen.
+// Return Value:
+// - one or more sets of start-end coordinates, representing spans of text in the buffer
+const std::vector<std::tuple<til::point, til::point>> TextBuffer::GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const
+{
+    std::vector<std::tuple<til::point, til::point>> textSpans;
+
+    if (blockSelection)
+    {
+        // If blockSelection, this is effectively the same operation as GetTextRects, but
+        // expressed in til::point coordinates.
+        auto rects = GetTextRects(start, end, /*blockSelection*/ true, bufferCoordinates);
+        textSpans.reserve(rects.size());
+
+        for (auto rect : rects)
+        {
+            til::point first = { rect.Left, rect.Top };
+            til::point second = { rect.Right, rect.Bottom };
+            auto span = std::make_tuple(first, second);
+            textSpans.emplace_back(span);
+        }
+    }
+    else
+    {
+        const auto bufferSize = GetSize();
+
+        // (0,0) is the top-left of the screen
+        // the physically "higher" coordinate is closer to the top-left
+        // the physically "lower" coordinate is closer to the bottom-right
+        auto [higherCoord, lowerCoord] = start <= end ?
+                                             std::make_tuple(start, end) :
+                                             std::make_tuple(end, start);
+
+        textSpans.reserve(1);
+
+        // If we were passed screen coordinates, convert the given range into
+        // equivalent buffer offsets, taking line rendition into account.
+        if (!bufferCoordinates)
+        {
+            higherCoord = ScreenToBufferLine(higherCoord, GetLineRendition(higherCoord.Y));
+            lowerCoord = ScreenToBufferLine(lowerCoord, GetLineRendition(lowerCoord.Y));
+        }
+
+        til::inclusive_rect asRect = { higherCoord.X, higherCoord.Y, lowerCoord.X, lowerCoord.Y };
+        _ExpandTextRow(asRect);
+        higherCoord.X = asRect.Left;
+        higherCoord.Y = asRect.Top;
+        lowerCoord.X = asRect.Right;
+        lowerCoord.Y = asRect.Bottom;
+
+        auto span = std::make_tuple(higherCoord, lowerCoord);
+        textSpans.emplace_back(span);
+    }
+
+    return textSpans;
 }
 
 // Method Description:
@@ -1830,6 +1896,77 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
     }
 
     return data;
+}
+
+size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coordEnd) const
+{
+    assert((coordEnd.Y > coordStart.Y) ||
+           ((coordEnd.Y == coordStart.Y) && (coordEnd.X >= coordStart.X)));
+
+    // Note that this could also be computed using CompareInBounds, but that function
+    // seems disfavored lately.
+    //
+    // CompareInBounds version:
+    //
+    //  const auto bufferSize = GetSize();
+    //  // Note that we negate because CompareInBounds is backwards from what we are trying to calculate.
+    //  auto length = - bufferSize.CompareInBounds(coordStart, coordEnd);
+    //  length += 1; // because we need "inclusive" behavior.
+
+    const auto rowSize = gsl::narrow<SHORT>(GetRowByOffset(0).size());
+
+    size_t length = (static_cast<size_t>(coordEnd.Y) - coordStart.Y) * rowSize;
+    length += (static_cast<size_t>(coordEnd.X) - coordStart.X) + 1; // "+1" is because we need "inclusive" behavior
+
+    return length;
+}
+
+// Routine Description:
+// - Retrieves the plain text data between the specified coordinates.
+// Arguments:
+// - trimTrailingWhitespace - remove the trailing whitespace at the end of the result.
+// - start - where to start getting text (should be at or prior to "end")
+// - end - where to end getting text
+// Return Value:
+// - Just the text.
+const std::wstring TextBuffer::GetPlainText(const bool trimTrailingWhitespace,
+                                            const til::point& start,
+                                            const til::point& end) const
+{
+    std::wstring text;
+    // TODO: should I put in protections for start coming before end?
+    auto spanLength = SpanLength(start, end);
+    text.reserve(spanLength);
+
+    auto it = GetCellDataAt(start);
+
+    // copy char data into the string buffer, skipping trailing bytes
+    // TODO: is using spanLength like this the right way to do it?
+    while (it && ((spanLength) > 0))
+    {
+        const auto& cell = *it;
+        spanLength--;
+
+        if (!cell.DbcsAttr().IsTrailing())
+        {
+            const auto chars = cell.Chars();
+            text.append(chars);
+        }
+#pragma warning(suppress : 26444)
+        // TODO GH 2675: figure out why there's custom construction/destruction happening here
+        it++;
+    }
+
+    if (trimTrailingWhitespace)
+    {
+        // remove the spaces at the end (aka trim the trailing whitespace)
+        while (!text.empty() && text.back() == UNICODE_SPACE)
+        {
+            text.pop_back();
+        }
+    }
+
+    return text;
 }
 
 // Routine Description:

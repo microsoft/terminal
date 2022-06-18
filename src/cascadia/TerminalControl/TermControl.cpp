@@ -3063,4 +3063,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollMarks();
     }
 
+    void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, uint32_t matchMode)
+    {
+        _core.ColorSelection(fg, bg, matchMode);
+    }
 }

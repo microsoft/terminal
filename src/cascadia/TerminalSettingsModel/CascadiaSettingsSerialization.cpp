@@ -22,6 +22,7 @@
 #include <LegacyProfileGeneratorNamespaces.h>
 
 #include "userDefaults.h"
+#include "enableColorSelection.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -313,6 +314,16 @@ void SettingsLoader::FinalizeLayering()
 {
     // Layer default globals -> user globals
     userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
+
+    // Actions are currently global, so if we want to conditionally light up a bunch of
+    // actions, this is the time to do it.
+    if (userSettings.globals->EnableColorSelection())
+    {
+        const auto json = _parseJson(EnableColorSelectionSettingsJson);
+        const auto globals = GlobalAppSettings::FromJson(json.root);
+        userSettings.globals->AddLeastImportantParent(globals);
+    }
+
     userSettings.globals->_FinalizeInheritance();
     // Layer default profile defaults -> user profile defaults
     userSettings.baseLayerProfile->AddLeastImportantParent(inboxSettings.baseLayerProfile);

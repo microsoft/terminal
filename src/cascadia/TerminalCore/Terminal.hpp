@@ -232,6 +232,8 @@ public:
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
+    void ColorSelection(const TextAttribute& attr, uint32_t matchMode);
+
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     enum class SelectionInteractionMode
@@ -431,6 +433,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
+    std::vector<std::tuple<til::point, til::point>> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
     til::point _ConvertToBufferCell(const til::point viewportPos) const;

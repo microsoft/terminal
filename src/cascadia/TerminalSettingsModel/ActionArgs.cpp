@@ -43,6 +43,7 @@
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 #include "AdjustOpacityArgs.g.cpp"
+#include "ColorSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -837,6 +838,172 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"AdjustOpacityCommandKey")),
                             Opacity())
+            };
+        }
+    }
+
+    winrt::hstring _FormatColorString(uint32_t color)
+    {
+        winrt::hstring colorStr;
+
+        if ((color & 0x01000000) == 0x01000000)
+        {
+            // It's an indexed color.
+            uint8_t idx = color & 0x000000ff;
+
+            switch (idx)
+            {
+            case 0:
+                colorStr = RS_(L"ColorSelection_Black"); // "black"
+                break;
+
+            case 1:
+                // AKA "dark red"
+                colorStr = RS_(L"ColorSelection_Red"); // "red"
+                break;
+
+            case 2:
+                // AKA "dark green"
+                colorStr = RS_(L"ColorSelection_Green"); // "green"
+                break;
+
+            case 3:
+                // AKA "dark yellow"
+                colorStr = RS_(L"ColorSelection_Yellow"); // "yellow"
+                break;
+
+            case 4:
+                // AKA "dark blue"
+                colorStr = RS_(L"ColorSelection_Blue"); // "blue"
+                break;
+
+            case 5:
+                // AKA "dark magenta"
+                colorStr = RS_(L"ColorSelection_Purple"); // "purple"
+                break;
+
+            case 6:
+                // AK "dark cyan"
+                colorStr = RS_(L"ColorSelection_Cyan"); // "cyan"
+                break;
+
+            case 7:
+                // AKA "gray" / "dark white"
+                colorStr = RS_(L"ColorSelection_White"); // "white"
+                break;
+
+            case 8:
+                // AKA "dark gray"
+                colorStr = RS_(L"ColorSelection_BrightBlack"); // "bright black"
+                break;
+
+            case 9:
+                // AKA "red"
+                colorStr = RS_(L"ColorSelection_BrightRed"); // "bright red"
+                break;
+
+            case 10:
+                // AKA "green"
+                colorStr = RS_(L"ColorSelection_BrightGreen"); // "bright green"
+                break;
+
+            case 11:
+                // AKA "yellow"
+                colorStr = RS_(L"ColorSelection_BrightYellow"); // "bright yellow"
+                break;
+
+            case 12:
+                // AKA "blue"
+                colorStr = RS_(L"ColorSelection_BrightBlue"); // "bright blue"
+                break;
+
+            case 13:
+                // AKA "magenta"
+                colorStr = RS_(L"ColorSelection_BrightPurple"); // "bright purple"
+                break;
+
+            case 14:
+                // AKA "cyan"
+                colorStr = RS_(L"ColorSelection_BrightCyan"); // "bright cyan"
+                break;
+
+            case 15:
+                // AKA "white"
+                colorStr = RS_(L"ColorSelection_BrightWhite"); // "bright white"
+                break;
+
+            default:
+                wchar_t tempBuf[9] = { 0 };
+                swprintf_s(tempBuf, L"i%02i", idx);
+                colorStr = tempBuf;
+            }
+        }
+        else
+        {
+            wchar_t tempBuf[9] = { 0 };
+            auto err = _itow_s(color, tempBuf, 16);
+            assert(err == 0);
+            UNREFERENCED_PARAMETER(err);
+            colorStr = tempBuf;
+        }
+
+        return colorStr;
+    }
+
+    winrt::hstring ColorSelectionArgs::GenerateName() const
+    {
+        auto matchMode = MatchMode() ? MatchMode() : 0;
+
+        auto matchModeStr = winrt::hstring{};
+        if (matchMode)
+        {
+            if (matchMode == 1)
+            {
+                matchModeStr = RS_(L"ColorSelection_allMatches"); // ", all matches"
+            }
+        }
+
+        bool hasForeground = (bool)Foreground();
+        bool hasBackground = (bool)Background();
+
+        winrt::hstring fgStr = hasForeground ? _FormatColorString(Foreground().TextColor()) : RS_(L"ColorSelection_defaultColor"); // "[default]"
+        winrt::hstring bgStr = hasBackground ? _FormatColorString(Background().TextColor()) : RS_(L"ColorSelection_defaultColor"); // "[default]"
+
+        // To try to keep things simple for the user, we'll try to show only the
+        // "interesting" color (i.e. leave off the bg or fg if it is either unspecified or
+        // black or index 0).
+        //
+        // Note that we mask off the alpha channel, which is used to indicate if it's an
+        // indexed color.
+        bool foregroundIsExplicitBlack = hasForeground && (Foreground().TextColor() & 0x00ffffff) == 0;
+        bool backgroundIsExplicitBlack = hasBackground && (Background().TextColor() & 0x00ffffff) == 0;
+
+        if (hasForeground && (!hasBackground || backgroundIsExplicitBlack))
+        {
+            auto str = RS_(L"ColorSelection_fg_action"); // "Color selection, foreground: {0}{1}"
+            return winrt::hstring{
+                fmt::format(str.c_str(), fgStr, matchModeStr)
+            };
+        }
+        else if (hasBackground && (!hasForeground || foregroundIsExplicitBlack))
+        {
+            auto str = RS_(L"ColorSelection_bg_action"); // "Color selection, background: {0}{1}"
+            return winrt::hstring{
+                fmt::format(str.c_str(), bgStr, matchModeStr)
+            };
+        }
+        else if (hasForeground && hasBackground)
+        {
+            auto str = RS_(L"ColorSelection_fg_bg_action"); // "Color selection, foreground: {0}, background: {1}{2}"
+            return winrt::hstring{
+                fmt::format(str.c_str(), fgStr, bgStr, matchModeStr)
+            };
+        }
+        else
+        {
+            auto str = RS_(L"ColorSelection_default_action"); // "Color selection, (default foreground/background){0}"
+            return winrt::hstring{
+                fmt::format(str.c_str(), matchModeStr)
             };
         }
     }

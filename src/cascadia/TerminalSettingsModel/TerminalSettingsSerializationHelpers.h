@@ -679,3 +679,70 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
         pair_type{ "last", ValueType::Last },
     };
 };
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
+{
+    ::winrt::Microsoft::Terminal::Control::SelectionColor FromJson(const Json::Value& json)
+    {
+        winrt::Microsoft::Terminal::Control::SelectionColor selection{};
+        auto str = Detail::GetStringView(json);
+
+        if ((str.size() == 3) && (str.at(0) == 'i'))
+        {
+            auto indexStr = std::string(&str.at(1));
+            // This will throw for something like "j0", but return 0 for something like
+            // "0j".
+            int idx = std::stoi(indexStr, 0, 16);
+
+            til::color rgba = til::color(gsl::narrow_cast<uint8_t>(idx), 0, 0);
+            // We need to manually convert to COLORREF up front, so that we can sneak in a
+            // special value into the "alpha" channel.
+            COLORREF cr = rgba;
+            cr |= 0x01000000;
+            selection.TextColor(cr);
+        }
+        else
+        {
+            til::color rgb = ::Microsoft::Console::Utils::ColorFromHexString(Detail::GetStringView(json));
+            uint32_t val = (rgb.r << 24) | (rgb.g << 16) | (rgb.b << 8);
+            selection.TextColor(val);
+        }
+        return selection;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (!json.isString())
+        {
+            return false;
+        }
+
+        const auto string{ Detail::GetStringView(json) };
+
+        // Looks like "#NNN" or "#NNNNNN" (RGB)
+        //         or "iNN" (index)
+        return ((string.length() == 7 || string.length() == 4) && string.front() == '#') ||
+               ((string.length() == 3) && (string.front() == 'i'));
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Control::SelectionColor& val)
+    {
+        uint32_t raw = val.TextColor();
+
+        if ((raw & 0x01000000) == 0x01000000)
+        {
+            // It's an indexed color
+            return fmt::format("i{:02x}", (raw & 0x000000ff));
+        }
+        else
+        {
+            return fmt::format("{:06x}", raw);
+        }
+    }
+
+    std::string TypeDescription() const
+    {
+        return "either a hex \"#RRGGBB\" value, or a color index (\"iNN\")";
+    }
+};
