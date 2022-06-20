@@ -100,6 +100,20 @@ Assuming that you've installed MSYS2 into `C:\\msys64`:
 
 For more details, see [this page](https://www.msys2.org/docs/terminals/#windows-terminal) on the MSYS2 documentation.
 
+
+## Puppet Shell
+
+Assuming that you've installed Puppet into `C:\Program Files\Puppet Labs`:
+
+```json
+{
+    "commandline": "cmd.exe /k \"C:\\Program Files\\Puppet Labs\\Puppet\\bin\\puppet_shell.bat\"",
+    "name": "Puppet Shell",
+    "icon": "C:\\Program Files\\Puppet Labs\\Puppet\\misc\\puppet.ico",
+    "startingDirectory": "%USERPROFILE%"
+}
+```
+
 ## Developer Command Prompt for Visual Studio
 
 Assuming that you've installed VS 2019 Professional:
@@ -108,7 +122,7 @@ Assuming that you've installed VS 2019 Professional:
 {
     "name": "Developer Command Prompt for VS 2019",
     "commandline": "cmd.exe /k \"C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/Tools/VsDevCmd.bat\"",
-    "startingDirectory": "%USERPROFILE%"
+    "startingDirectory": "C:\\ProgramData\\PuppetLabs"
 }
 ```
 
