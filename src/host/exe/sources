@@ -8,7 +8,7 @@
 # for when the Windows OS loader attempts to start a Win32 Console-type
 # application that does not already have console handles attached.
 # It will attempt to resolve the correct module for the OS platform and configuration
-# and then pass control to that module for runtime services.
+# and then pass control to that module for runtime services to be handled.
 
 # -------------------------------------
 # Program Information
