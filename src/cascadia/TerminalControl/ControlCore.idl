@@ -29,6 +29,16 @@ namespace Microsoft.Terminal.Control
         All
     };
 
+    struct SelectionData
+    {
+        Microsoft.Terminal.Core.Point StartPos;
+        Microsoft.Terminal.Core.Point EndPos;
+        Boolean MovingEnd;
+        Boolean MovingCursor;
+        Boolean StartAtLeftBoundary;
+        Boolean EndAtRightBoundary;
+    };
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -90,6 +100,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
+        SelectionData SelectionInfo { get; };
 
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
@@ -125,6 +136,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> ReceivedOutput;
         event Windows.Foundation.TypedEventHandler<Object, FoundResultsArgs> FoundMatch;
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
 
     };
 }
