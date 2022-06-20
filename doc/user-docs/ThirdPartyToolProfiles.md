@@ -16,6 +16,20 @@ Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
 }
 ```
 
+## AWS Shell
+
+Assuming that you've installed via pip to python 3.1 into `C:\Python310\Scripts`:
+
+```json
+{
+    "commandline": "cmd.exe /k \"C:\\Python310\\Scripts\\aws-shell.exe",
+    "name": "AWS Shell",
+    "icon": "C:\\Python310\\Scripts\\AWS.ico",
+    "startingDirectory": "%USERPROFILE%"
+}
+```
+
+
 ## cmder
 
 Assuming that you've installed cmder into `%CMDER_ROOT%`:
@@ -82,6 +96,19 @@ Assuming that you've installed Git Bash into `C:\\Program Files (x86)\\Git`:
     "commandline": "%ProgramFiles(x86)%\\Git\\bin\\bash.exe -li",
     "icon": "%ProgramFiles(x86)%\\Git\\mingw32\\share\\git\\git-for-windows.ico",
     "startingDirectory": "%USERPROFILE%"
+}
+```
+
+## Google Cloud SDK
+
+Assuming that you've installed Google Cloud SDK into `C:\Program Files (x86)\Google`:
+
+```json
+{
+    "commandline": "cmd.exe /k \"C:\\Program Files (x86)\\Google\\Cloud SDK\\cloud_env.bat\"",
+    "name": "Google Cloud SDK",
+    "icon": "C:\\Program Files (x86)\\Google\\Cloud SDK\\supercloud-16x16.ico",
+    "startingDirectory": "C:\\Program Files (x86)\\Google\\Cloud SDK"
 }
 ```
 
