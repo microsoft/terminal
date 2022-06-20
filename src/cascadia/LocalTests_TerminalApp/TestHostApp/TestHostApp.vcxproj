@@ -137,16 +137,16 @@
        This is part of the generic machinery that applies to every AppX. -->
   <Target Name="_OpenConsoleStripAllDependenciesFromPackageFirstManifest" BeforeTargets="_GenerateCurrentProjectAppxManifest">
     <ItemGroup>
-      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
-      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs' or '%(FrameworkSdkReference.SimpleName)'=='Microsoft.Midi.GmDls'" />
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug' or '%(FrameworkSdkPackage.Name)'=='Microsoft.Midi.GmDls'" />
     </ItemGroup>
   </Target>
 
   <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
   <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="_GenerateDesktopBridgeAppxManifest" DependsOnTargets="_ResolveVCLibDependencies">
     <ItemGroup>
-      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
-      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs' or '%(FrameworkSdkReference.SimpleName)'=='Microsoft.Midi.GmDls'" />
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug' or '%(FrameworkSdkPackage.Name)'=='Microsoft.Midi.GmDls'" />
     </ItemGroup>
   </Target>
 
