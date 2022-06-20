@@ -192,21 +192,17 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     const auto swapFgAndBg = attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed);
 
     // We want to nudge the foreground color to make it more perceivable only for the
-    // default color pairs within the color table
+    // default color pairs within the color table, and only if there's no additional text attributes
     if (Feature_AdjustIndistinguishableText::IsEnabled() &&
         GetRenderMode(Mode::DistinguishableColors) &&
         !dimFg &&
+        !brightenFg &&
+        !attr.IsInvisible() &&
         (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
         (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
     {
         const auto bgIndex = bgTextColor.IsDefault() ? AdjustedBgIndex : bgTextColor.GetIndex();
         auto fgIndex = fgTextColor.IsDefault() ? AdjustedFgIndex : fgTextColor.GetIndex();
-
-        if (fgTextColor.IsIndex16() && (fgIndex < 8) && brightenFg)
-        {
-            // There is a special case for intense here - we need to get the bright version of the foreground color
-            fgIndex += 8;
-        }
 
         if (swapFgAndBg)
         {
