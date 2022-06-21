@@ -15,6 +15,10 @@
     <ConfigurationType>Application</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
 
+     <!-- We have to use the Desktop platform for Hybrid CRT to work. -->
+    <_VC_Target_Library_Platform>Desktop</_VC_Target_Library_Platform>
+    <_NoWinAPIFamilyApp>true</_NoWinAPIFamilyApp>
+
     <!--
     These two properties are very important!
     Without them, msbuild will stomp MinVersion and MaxVersionTested in the
