@@ -83,6 +83,44 @@ const til::point Terminal::GetSelectionEnd() const noexcept
 }
 
 // Method Description:
+// - Gets the viewport-relative position of where to draw the marker
+//    for the selection's start endpoint
+til::point Terminal::SelectionStartForRendering() const
+{
+    auto pos{ _selection->start };
+    const auto bufferSize{ GetTextBuffer().GetSize() };
+    if (pos.x != bufferSize.Left())
+    {
+        // In general, we need to draw the marker one before the
+        // beginning of the selection.
+        // When we're at the left boundary, we want to
+        // flip the marker, so we skip this step.
+        bufferSize.DecrementInBounds(pos);
+    }
+    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    return til::point{ pos };
+}
+
+// Method Description:
+// - Gets the viewport-relative position of where to draw the marker
+//    for the selection's end endpoint
+til::point Terminal::SelectionEndForRendering() const
+{
+    auto pos{ _selection->end };
+    const auto bufferSize{ GetTextBuffer().GetSize() };
+    if (pos.x != bufferSize.RightInclusive())
+    {
+        // In general, we need to draw the marker one after the
+        // end of the selection.
+        // When we're at the right boundary, we want to
+        // flip the marker, so we skip this step.
+        bufferSize.IncrementInBounds(pos);
+    }
+    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    return til::point{ pos };
+}
+
+// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
@@ -310,6 +348,21 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
     return std::nullopt;
 }
 
+bool Terminal::MovingEnd() const noexcept
+{
+    // true --> we're moving end endpoint ("lower")
+    // false --> we're moving start endpoint ("higher")
+    return _selection->start == _selection->pivot;
+}
+
+bool Terminal::MovingCursor() const noexcept
+{
+    // Relevant for keyboard selection:
+    // true --> the selection is just a "cursor"; we're moving everything together with arrow keys
+    // false --> otherwise
+    return _selection->start == _selection->pivot && _selection->pivot == _selection->end;
+}
+
 // Method Description:
 // - updates the selection endpoints based on a direction and expansion mode. Primarily used for keyboard selection.
 // Arguments:
@@ -319,11 +372,9 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods)
 {
     // 1. Figure out which endpoint to update
-    // If we're in mark mode, shift dictates whether you are moving the end or not.
-    // Otherwise, we're updating an existing selection, so one of the endpoints is the pivot,
-    //   signifying that the other endpoint is the one we want to move.
-    const auto movingEnd{ _markMode ? mods.IsShiftPressed() : _selection->start == _selection->pivot };
-    auto targetPos{ movingEnd ? _selection->end : _selection->start };
+    // One of the endpoints is the pivot,
+    // signifying that the other endpoint is the one we want to move.
+    auto targetPos{ MovingEnd() ? _selection->end : _selection->start };
 
     // 2. Perform the movement
     switch (mode)
@@ -343,21 +394,17 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 3. Actually modify the selection
-    // NOTE: targetStart doesn't matter here
-    if (_markMode)
+    if (_markMode && !mods.IsShiftPressed())
     {
-        // [Mark Mode]
-        // - moveSelectionEnd  --> just move end (i.e. shift + arrow keys)
-        // - !moveSelectionEnd --> move all three (i.e. just use arrow keys)
+        // [Mark Mode] + shift unpressed --> move all three (i.e. just use arrow keys)
+        _selection->start = targetPos;
         _selection->end = targetPos;
-        if (!movingEnd)
-        {
-            _selection->start = targetPos;
-            _selection->pivot = targetPos;
-        }
+        _selection->pivot = targetPos;
     }
     else
     {
+        // [Mark Mode] + shift --> updating a standard selection
+        // NOTE: targetStart doesn't matter here
         auto targetStart = false;
         std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
     }

@@ -110,7 +110,7 @@ This takes quite some time, and only generates an `msix`. It does not install th
 
 ```powershell
 # If you haven't already:
-Import-Module tools\OpenConsole.psm1;
+Import-Module .\tools\OpenConsole.psm1;
 Set-MsBuildDevEnvironment;
 
 # The Set-MsBuildDevEnvironment call is needed for finding the path to
@@ -121,7 +121,7 @@ if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) {
 Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'
 };
 New-Item ..\loose -Type Directory -Force;
-makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\Loose\;
+makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\loose\;
 Add-AppxPackage -Path ..\loose\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown
 ```
 

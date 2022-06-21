@@ -287,6 +287,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _hoveredHyperlinkChanged(IInspectable sender, IInspectable args);
+        winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
 
         void _coreFontSizeChanged(const int fontWidth,
                                   const int fontHeight,
@@ -295,6 +296,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
         void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+
+        til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
     };
 }
