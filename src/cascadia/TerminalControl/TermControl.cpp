@@ -1852,9 +1852,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_IsClosing())
         {
-            co_await resume_background();
-
-            _core.BlinkCursor();
+            auto weakThis{ get_weak() };
+            co_await winrt::resume_background();
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                _core.BlinkCursor();
+            }
         }
     }
 
@@ -1868,9 +1871,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_IsClosing())
         {
-            co_await resume_background();
-
-            _core.BlinkAttributeTick();
+            auto weakThis{ get_weak() };
+            co_await winrt::resume_background();
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                _core.BlinkAttributeTick();
+            }
         }
     }
 
