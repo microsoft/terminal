@@ -2087,6 +2087,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
         }
->>>>>>> origin/main
     }
 }

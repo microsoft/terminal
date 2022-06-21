@@ -227,6 +227,19 @@
         <TargetPath>%(Filename)%(Extension)</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
+
+    <!-- Same thing AGAIN here, with OpenConsole.exe If you forget this, then
+    the scratch app will use the inbox conpty with a newer conpty lib, causing
+    us to send the inbox conhost messages that will make it explode. -->
+    <ItemGroup>
+      <_OpenConsoleExe Include="$(OpenConsoleCommonOutDir)\OpenConsole.exe" />
+
+      <PackagingOutputs Include="@(_OpenConsoleExe)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
   </Target>
 
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
