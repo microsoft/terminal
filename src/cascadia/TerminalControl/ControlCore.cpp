@@ -1044,7 +1044,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                     bgColor) :
                                  "";
 
-        if (!_settings->CopyOnSelect())
+        if (!_settings->CopyOnSelect() || IsInMarkMode())
         {
             _terminal->ClearSelection();
             _updateSelection();
@@ -1625,7 +1625,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        _updateSelection();
+        _renderer->TriggerSelection();
+
+        // this is used for mouse selection,
+        // so hide the markers
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
     }
 
     void ControlCore::_updateSelection()
