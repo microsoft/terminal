@@ -36,7 +36,7 @@ ConsoleShimPolicy::ConsoleShimPolicy(const HANDLE hProcess)
         // Inside Windows, we are guaranteed that we're building alongside a new (good) inbox PowerShell.
         // Therefore, we can default _requiresVtColorQuirk to false.
 #ifndef __INSIDE_WINDOWS
-        // Outside of Windows, we need to check the OS version: PowerShell eas fixed in early Iron builds.
+        // Outside of Windows, we need to check the OS version: PowerShell was fixed in early Iron builds.
         static auto _doesInboxPowershellVersionRequireQuirk = [] {
             OSVERSIONINFOEXW osver{};
             osver.dwOSVersionInfoSize = sizeof(osver);
