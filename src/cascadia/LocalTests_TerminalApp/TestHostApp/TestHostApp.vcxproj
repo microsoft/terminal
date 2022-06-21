@@ -133,6 +133,44 @@
     </Reference>
   </ItemGroup>
 
+
+  <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">
+    <MSBuild
+      Projects="@(ProjectReferenceWithConfiguration)"
+      Targets="GetPackagingOutputs"
+      BuildInParallel="$(BuildInParallel)"
+      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
+      Condition="'@(ProjectReferenceWithConfiguration)' != ''
+                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
+                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
+      ContinueOnError="$(_ContinueOnError)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
+    </MSBuild>
+
+    <ItemGroup>
+      <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
+    </ItemGroup>
+
+    <!-- **BEGIN VC LIBS HACK** -->
+    <PropertyGroup>
+      <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
+      <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <!-- Add all the CRT libs as content; these must be inside a Target as they are wildcards. -->
+      <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll" />
+
+      <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+    <!-- **END VC LIBS HACK** -->
+
+  </Target>
+
   <!--
     Some of our dependencies still require a CRT, so we're going to ship the forwarders in our package and
     depend on the desktop CRT. This lets us unify the Windows 10 and Windows 11 builds around a common CRT.
