@@ -37,7 +37,7 @@ ConsoleShimPolicy::ConsoleShimPolicy(const HANDLE hProcess)
         // Therefore, we can default _requiresVtColorQuirk to false.
 #ifndef __INSIDE_WINDOWS
         // Outside of Windows, we need to check the OS version: PowerShell was fixed in early Iron builds.
-        static auto _doesInboxPowershellVersionRequireQuirk = [] {
+        static auto doesInboxPowershellVersionRequireQuirk = [] {
             OSVERSIONINFOEXW osver{};
             osver.dwOSVersionInfoSize = sizeof(osver);
             osver.dwBuildNumber = 20348; // Windows Server 2022 RTM
@@ -47,7 +47,7 @@ ConsoleShimPolicy::ConsoleShimPolicy(const HANDLE hProcess)
 
             return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
         }();
-        _requiresVtColorQuirk = isInboxPowershell && _doesInboxPowershellVersionRequireQuirk;
+        _requiresVtColorQuirk = isInboxPowershell && doesInboxPowershellVersionRequireQuirk;
         // All modern versions of pwsh.exe have been fixed, and we can direct users to update.
 #endif
     }
