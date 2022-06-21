@@ -3251,6 +3251,9 @@ namespace winrt::TerminalApp::implementation
 
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);
+
+            const IInspectable unused{ nullptr };
+            _SetAsDefaultDismissHandler(unused, unused);
             return S_OK;
         }
         CATCH_RETURN()
