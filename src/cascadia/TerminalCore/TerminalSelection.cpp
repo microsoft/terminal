@@ -306,14 +306,13 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 2.B) Clamp the movement to the mutable viewport
-    const auto mutableViewport{ _GetMutableViewport() };
-    if (targetPos > mutableViewport.BottomRightInclusive())
+    if (const auto mutableViewport = _GetMutableViewport(); targetPos > mutableViewport.BottomRightInclusive())
     {
-        targetPos = mutableViewport.BottomRightInclusive();
+        targetPos.Y = mutableViewport.BottomInclusive();
     }
-    else if (targetPos < mutableViewport.Origin())
+    else if (const auto bufferSize = _activeBuffer().GetSize(); targetPos < bufferSize.Origin())
     {
-        targetPos = mutableViewport.Origin();
+        targetPos.Y = bufferSize.Top();
     }
 
     // 3. Actually modify the selection
