@@ -620,6 +620,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC);
         break;
+    case CsiActionCodes::DECPS_PlaySound:
+        success = _dispatch->PlaySounds(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECPS);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -662,6 +666,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(5),
                                           parameters.at(6),
                                           parameters.at(7));
+        break;
+    case DcsActionCodes::DECRSTS_RestoreTerminalState:
+        handler = _dispatch->RestoreTerminalState(parameters.at(0));
         break;
     case DcsActionCodes::DECRQSS_RequestSetting:
         handler = _dispatch->RequestSetting();
@@ -828,6 +835,16 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::ConEmuAction:
     {
         success = _dispatch->DoConEmuAction(string);
+        break;
+    }
+    case OscActionCodes::ITerm2Action:
+    {
+        success = _dispatch->DoITerm2Action(string);
+        break;
+    }
+    case OscActionCodes::FinalTermAction:
+    {
+        success = _dispatch->DoFinalTermAction(string);
         break;
     }
     default:

@@ -30,7 +30,7 @@ jobs:
         If ($Arch -Eq "x86") { $Arch = "Win32" }
 
         Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
-  - steps: restore-nuget-steps.yml
+  - template: restore-nuget-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
     inputs:

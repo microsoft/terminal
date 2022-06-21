@@ -476,7 +476,7 @@ class ApiRoutinesTests
     void ValidateScreen(SCREEN_INFORMATION& si,
                         const CHAR_INFO background,
                         const CHAR_INFO fill,
-                        const COORD delta,
+                        const til::point delta,
                         const std::optional<Viewport> clip)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -510,7 +510,7 @@ class ApiRoutinesTests
                                const CHAR_INFO fill,
                                const CHAR_INFO scroll,
                                const Viewport scrollArea,
-                               const COORD destPoint,
+                               const til::point destPoint,
                                const std::optional<Viewport> clip)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -518,7 +518,7 @@ class ApiRoutinesTests
         auto bufferSize = activeSi.GetBufferSize();
 
         // Find the delta by comparing the scroll area to the destination point
-        COORD delta;
+        til::point delta;
         delta.X = destPoint.X - scrollArea.Left();
         delta.Y = destPoint.Y - scrollArea.Top();
 
@@ -626,12 +626,12 @@ class ApiRoutinesTests
         // By default, we're going to use a nullopt clip rectangle.
         // If this instance of the test is checking clipping, we'll assign a clip value
         // prior to each call variation.
-        std::optional<SMALL_RECT> clipRectangle = std::nullopt;
+        std::optional<til::inclusive_rect> clipRectangle = std::nullopt;
         std::optional<Viewport> clipViewport = std::nullopt;
         const auto bufferSize = si.GetBufferSize();
 
         auto scroll = bufferSize.ToInclusive();
-        COORD destination{ 0, -2 }; // scroll up.
+        til::point destination{ 0, -2 }; // scroll up.
 
         Log::Comment(L"Fill screen with green Zs. Scroll all up by two, backfilling with red As. Confirm every cell.");
         si.GetActiveBuffer().ClearTextData(); // Clean out screen

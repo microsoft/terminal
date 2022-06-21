@@ -97,7 +97,7 @@ HRESULT OpenTerminalHere::GetTitle(IShellItemArray* /*psiItemArray*/,
     return SHStrDup(resource.data(), ppszName);
 }
 
-HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
+HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
                                    BOOL /*fOkToBeSlow*/,
                                    EXPCMDSTATE* pCmdState)
 {
@@ -106,10 +106,25 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
     // E_PENDING and this object will be called back on a background thread with
     // fOkToBeSlow == TRUE
 
-    // We however don't need to bother with any of that, so we'll just return
-    // ECS_ENABLED.
+    // We however don't need to bother with any of that.
 
-    *pCmdState = ECS_ENABLED;
+    // If no item was selected when the context menu was opened and Explorer
+    // is not at a valid path (e.g. This PC or Quick Access), we should hide
+    // the verb from the context menu.
+    if (psiItemArray == nullptr)
+    {
+        const auto path = this->_GetPathFromExplorer();
+        *pCmdState = path.empty() ? ECS_HIDDEN : ECS_ENABLED;
+    }
+    else
+    {
+        winrt::com_ptr<IShellItem> psi;
+        psiItemArray->GetItemAt(0, psi.put());
+        SFGAOF attributes;
+        const bool isFileSystemItem = (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
+        *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
+    }
+
     return S_OK;
 }
 

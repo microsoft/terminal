@@ -82,8 +82,8 @@ struct NullDeviceComm : public IDeviceComm
 
     CONSOLE_API_CONNECTINFO fakeConnectInfo{};
     fakeConnectInfo.ConsoleInfo.SetShowWindow(SW_NORMAL);
-    fakeConnectInfo.ConsoleInfo.SetScreenBufferSize(til::size{ 80, 25 }.to_win32_coord());
-    fakeConnectInfo.ConsoleInfo.SetWindowSize(til::size{ 80, 25 }.to_win32_coord());
+    fakeConnectInfo.ConsoleInfo.SetScreenBufferSize({ 80, 25 });
+    fakeConnectInfo.ConsoleInfo.SetWindowSize({ 80, 25 });
     fakeConnectInfo.ConsoleInfo.SetStartupFlags(STARTF_USECOUNTCHARS);
     wcscpy_s(fakeConnectInfo.Title, fakeTitle.data());
     fakeConnectInfo.TitleLength = gsl::narrow_cast<DWORD>(fakeTitle.size() * sizeof(wchar_t)); // bytes, not wchars
@@ -132,7 +132,7 @@ extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data,
     auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
 
     const auto u16String{ til::u8u16(std::string_view{ reinterpret_cast<const char*>(data), size }) };
-    SHORT scrollY{};
+    til::CoordType scrollY{};
     auto sizeInBytes{ u16String.size() * 2 };
     gci.LockConsole();
     auto u = wil::scope_exit([&]() { gci.UnlockConsole(); });

@@ -32,8 +32,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
-        uint32_t _initialRows{};
-        uint32_t _initialCols{};
+        til::CoordType _initialRows{};
+        til::CoordType _initialCols{};
 
         enum class AzureState
         {

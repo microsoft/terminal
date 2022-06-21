@@ -37,8 +37,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"qps-PLOCA",
         L"qps-PLOCM",
         L"ru",
-        L"zh-Hans-CN",
-        L"zh-Hant-TW",
+        L"zh-Hans",
+        L"zh-Hant",
     };
 
     GlobalAppearance::GlobalAppearance()

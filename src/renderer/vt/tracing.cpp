@@ -171,7 +171,7 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
                                     const til::rect& lastViewport,
                                     const til::point scrollDelt,
                                     const bool cursorMoved,
-                                    const std::optional<short>& wrappedRow) const
+                                    const std::optional<til::CoordType>& wrappedRow) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -305,7 +305,7 @@ void RenderTracing::TraceWrapped() const
 #endif UNIT_TESTING
 }
 
-void RenderTracing::TraceSetWrapped(const short wrappedRow) const
+void RenderTracing::TraceSetWrapped(const til::CoordType wrappedRow) const
 {
 #ifndef UNIT_TESTING
     if (TraceLoggingProviderEnabled(g_hConsoleVtRendererTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
