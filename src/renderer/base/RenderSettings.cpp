@@ -193,6 +193,13 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
 
     // We want to nudge the foreground color to make it more perceivable only for the
     // default color pairs within the color table, and only if there's no additional text attributes
+
+    // The reason we don't want to nudge when there's additional attributes is because of certain
+    // interactions like "bright" + "reverse". We cannot nudge after reversing because we, as of now,
+    // have no easy way to calculate what the bright background is when the background is default. We
+    // also cannot nudge before reversing because then we are reversing the resultant background rather
+    // than the resultant foreground, and this can lead to weird situations where certain regions of
+    // text have different backgrounds.
     if (Feature_AdjustIndistinguishableText::IsEnabled() &&
         GetRenderMode(Mode::DistinguishableColors) &&
         !dimFg &&
