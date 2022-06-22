@@ -311,7 +311,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     const COORD bottomRightInclusive{ mutableViewport.RightInclusive(), mutableViewport.BottomInclusive() };
     if (bufferSize.CompareInBounds(targetPos, bottomRightInclusive) > 0)
     {
-        targetPos.Y = bottomRightInclusive;
+        targetPos = bottomRightInclusive;
     }
 
     // 3. Actually modify the selection
