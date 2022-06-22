@@ -201,10 +201,10 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            _SplitPane(realArgs.SplitDirection(),
-                       // This is safe, we're already filtering so the value is (0, 1)
-                       ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       _MakePane(realArgs.TerminalArgs(), realArgs.SplitMode() == SplitType::Duplicate));
+            _SplitPaneActiveTab(realArgs.SplitDirection(),
+                                // This is safe, we're already filtering so the value is (0, 1)
+                                ::base::saturated_cast<float>(realArgs.SplitSize()),
+                                _MakePane(realArgs.TerminalArgs(), realArgs.SplitMode() == SplitType::Duplicate));
             args.Handled(true);
         }
     }

@@ -325,13 +325,13 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
 
-        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                        const float splitSize,
-                        std::shared_ptr<Pane> newPane);
-        void _SplitPane(TerminalTab& tab,
-                        const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                        const float splitSize,
-                        std::shared_ptr<Pane> newPane);
+        void _SplitPaneActiveTab(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                 const float splitSize,
+                                 std::shared_ptr<Pane> newPane);
+        void _SplitPaneOnTab(TerminalTab& tab,
+                             const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                             const float splitSize,
+                             std::shared_ptr<Pane> newPane);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void _ToggleSplitOrientation();
 

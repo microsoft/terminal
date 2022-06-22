@@ -1088,9 +1088,9 @@ namespace winrt::TerminalApp::implementation
 
                 if (altPressed && !debugTap)
                 {
-                    this->_SplitPane(SplitDirection::Automatic,
-                                     0.5f,
-                                     newPane);
+                    this->_SplitPaneActiveTab(SplitDirection::Automatic,
+                                              0.5f,
+                                              newPane);
                 }
                 else
                 {
@@ -1945,9 +1945,9 @@ namespace winrt::TerminalApp::implementation
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
-    void TerminalPage::_SplitPane(const SplitDirection splitDirection,
-                                  const float splitSize,
-                                  std::shared_ptr<Pane> newPane)
+    void TerminalPage::_SplitPaneActiveTab(const SplitDirection splitDirection,
+                                           const float splitSize,
+                                           std::shared_ptr<Pane> newPane)
     {
         const auto focusedTab{ _GetFocusedTabImpl() };
 
@@ -1980,7 +1980,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
+            _SplitPaneOnTab(*focusedTab, splitDirection, splitSize, newPane);
         }
     }
 
@@ -1993,10 +1993,10 @@ namespace winrt::TerminalApp::implementation
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
-    void TerminalPage::_SplitPane(TerminalTab& tab,
-                                  const SplitDirection splitDirection,
-                                  const float splitSize,
-                                  std::shared_ptr<Pane> newPane)
+    void TerminalPage::_SplitPaneOnTab(TerminalTab& tab,
+                                       const SplitDirection splitDirection,
+                                       const float splitSize,
+                                       std::shared_ptr<Pane> newPane)
     {
         // If the caller is calling us with the return value of _MakePane
         // directly, it's possible that nullptr was returned, if the connections
@@ -2839,7 +2839,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     ContentProcess TerminalPage::_InBackgroundMakeContent(const NewTerminalArgs& newTerminalArgs,
-                                                                   const bool duplicate)
+                                                          const bool duplicate)
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
