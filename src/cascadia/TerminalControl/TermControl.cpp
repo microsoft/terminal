@@ -1847,17 +1847,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - sender: not used
     // - e: not used
-    winrt::fire_and_forget TermControl::_CursorTimerTick(const Windows::Foundation::IInspectable& /* sender */,
-                                                         const Windows::Foundation::IInspectable& /* e */)
+    void TermControl::_CursorTimerTick(const Windows::Foundation::IInspectable& /* sender */,
+                                       const Windows::Foundation::IInspectable& /* e */)
     {
         if (!_IsClosing())
         {
-            auto weakThis{ get_weak() };
-            co_await winrt::resume_background();
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
-            {
-                _core.BlinkCursor();
-            }
+            // TODO:GH#5000 - move all the blinking inside of ControlCore.
+            // There's no reason that the timer should live in TermControl just
+            // to hop across the process boundary to toggle the content process.
+            // That can all live in the control core.
+            _core.BlinkCursor();
         }
     }
 
@@ -1866,17 +1865,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - sender: not used
     // - e: not used
-    winrt::fire_and_forget TermControl::_BlinkTimerTick(const Windows::Foundation::IInspectable& /* sender */,
-                                                        const Windows::Foundation::IInspectable& /* e */)
+    void TermControl::_BlinkTimerTick(const Windows::Foundation::IInspectable& /* sender */,
+                                      const Windows::Foundation::IInspectable& /* e */)
     {
         if (!_IsClosing())
         {
-            auto weakThis{ get_weak() };
-            co_await winrt::resume_background();
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
-            {
-                _core.BlinkAttributeTick();
-            }
+            // TODO:GH#5000 - move all the blinking inside of ControlCore.
+            // There's no reason that the timer should live in TermControl just
+            // to hop across the process boundary to toggle the content process.
+            // That can all live in the control core.
+            _core.BlinkAttributeTick();
         }
     }
 
