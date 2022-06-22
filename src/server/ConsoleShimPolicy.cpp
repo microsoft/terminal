@@ -15,9 +15,7 @@ ConsoleShimPolicy::ConsoleShimPolicy(const HANDLE hProcess)
     try
     {
         const std::filesystem::path processName = wil::GetModuleFileNameExW<std::wstring>(hProcess, nullptr);
-        auto clientName = processName.filename().native();
-        // For whatever reason, wil::GetModuleFileNameExW leaves trailing nulls, so get rid of them.
-        clientName.erase(std::find(clientName.begin(), clientName.end(), '\0'), clientName.end());
+        const auto clientName = processName.filename().native();
 
         _isCmd = til::equals_insensitive_ascii(clientName, L"cmd.exe");
 
