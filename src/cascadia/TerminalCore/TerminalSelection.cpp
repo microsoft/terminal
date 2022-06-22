@@ -288,7 +288,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     const auto movingEnd{ _selection->start == _selection->pivot };
     auto targetPos{ movingEnd ? _selection->end : _selection->start };
 
-    // 2. Perform the movement
+    // 2.A) Perform the movement
     switch (mode)
     {
     case SelectionExpansion::Char:
@@ -305,15 +305,24 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         break;
     }
 
+    // 2.B) Clamp the movement to the mutable viewport
+    const auto bufferSize = _activeBuffer().GetSize();
+    const auto mutableViewport = _GetMutableViewport();
+    const COORD bottomRightInclusive{ mutableViewport.RightInclusive(), mutableViewport.BottomInclusive() };
+    if (bufferSize.CompareInBounds(targetPos, bottomRightInclusive) > 0)
+    {
+        targetPos = bottomRightInclusive;
+    }
+
     // 3. Actually modify the selection
     // NOTE: targetStart doesn't matter here
     auto targetStart = false;
     std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
 
     // 4. Scroll (if necessary)
-    if (const auto viewport = _GetVisibleViewport(); !viewport.IsInBounds(targetPos))
+    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(targetPos))
     {
-        if (const auto amtAboveView = viewport.Top() - targetPos.Y; amtAboveView > 0)
+        if (const auto amtAboveView = visibleViewport.Top() - targetPos.Y; amtAboveView > 0)
         {
             // anchor is above visible viewport, scroll by that amount
             _scrollOffset += amtAboveView;
@@ -321,7 +330,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         else
         {
             // anchor is below visible viewport, scroll by that amount
-            const auto amtBelowView = targetPos.Y - viewport.BottomInclusive();
+            const auto amtBelowView = targetPos.Y - visibleViewport.BottomInclusive();
             _scrollOffset -= amtBelowView;
         }
         _NotifyScrollEvent();
