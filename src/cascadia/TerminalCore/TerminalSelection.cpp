@@ -343,10 +343,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 2.B) Clamp the movement to the mutable viewport
-    if (const auto mutableViewport = _GetMutableViewport(); targetPos > mutableViewport.BottomRightInclusive())
-    {
-        targetPos = mutableViewport.BottomRightInclusive();
-    }
+    targetPos = std::min(targetPos, _GetMutableViewport().BottomRightInclusive());
 
     // 3. Actually modify the selection
     // NOTE: targetStart doesn't matter here
