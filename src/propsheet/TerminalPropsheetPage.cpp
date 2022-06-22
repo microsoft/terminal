@@ -97,26 +97,27 @@ void _PrepDefAppCombo(const HWND hDlg,
     const auto hCombo = GetDlgItem(hDlg, dlgItem);
     ComboBox_ResetContent(hCombo);
 
+    DWORD i = 0;
     DWORD selectedIndex = 0;
-    for (DWORD i = 0; i < gsl::narrow<DWORD>(list.size()); ++i)
+    for (const auto& item : list)
     {
-        auto& item = list[i];
-
-        // An empty CLSID is a sentinel for the inbox console.
-        if (item.terminal.clsid == CLSID{ 0 })
+        switch (item.pair.kind)
         {
-            const auto name = GetStringResource(IDS_TERMINAL_DEF_INBOX);
-            ComboBox_AddString(hCombo, name.c_str());
-        }
-        else
-        {
-            ComboBox_AddString(hCombo, item.terminal.name.c_str());
+        case DelegationConfig::DelegationPairKind::Default:
+            ComboBox_AddString(hCombo, GetStringResource(IDS_TERMINAL_HANDOFF_DEFAULT).c_str());
+            break;
+        case DelegationConfig::DelegationPairKind::Conhost:
+            ComboBox_AddString(hCombo, GetStringResource(IDS_TERMINAL_HANDOFF_CONHOST).c_str());
+            break;
+        default:
+            ComboBox_AddString(hCombo, item.info.name.c_str());
         }
         ComboBox_SetItemData(hCombo, i, &item);
         if (selected == item)
         {
             selectedIndex = i;
         }
+        ++i;
     }
 
     ComboBox_SetCurSel(hCombo, selectedIndex);

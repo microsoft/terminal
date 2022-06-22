@@ -128,6 +128,10 @@ public:
 
     bool DoConEmuAction(const std::wstring_view /*string*/) override { return false; }
 
+    bool DoITerm2Action(const std::wstring_view /*string*/) override { return false; }
+
+    bool DoFinalTermAction(const std::wstring_view /*string*/) override { return false; }
+
     StringHandler DownloadDRCS(const VTInt /*fontNumber*/,
                                const VTParameter /*startChar*/,
                                const DispatchTypes::DrcsEraseControl /*eraseControl*/,
@@ -135,9 +139,13 @@ public:
                                const DispatchTypes::DrcsFontSet /*fontSet*/,
                                const DispatchTypes::DrcsFontUsage /*fontUsage*/,
                                const VTParameter /*cellHeight*/,
-                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; }
+                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+
+    StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat /*format*/) override { return nullptr; }; // DECRSTS
 
     StringHandler RequestSetting() override { return nullptr; }; // DECRQSS
+
+    bool PlaySounds(const VTParameters /*parameters*/) override { return false; }; // DECPS
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning

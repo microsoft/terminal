@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
 
-        if (auto control{ weakThis.get() })
+        if (auto control{ weakThis.get() }; !control->_IsClosing())
         {
             if (auto loadedUiElement{ FindName(L"ContentDiedNotice") })
             {

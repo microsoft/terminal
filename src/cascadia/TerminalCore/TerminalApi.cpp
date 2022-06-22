@@ -45,7 +45,7 @@ void Terminal::SetViewportPosition(const til::point position)
     if (!_inAltBuffer())
     {
         const auto dimensions = _GetMutableViewport().Dimensions();
-        _mutableViewport = Viewport::FromDimensions(position.to_win32_coord(), dimensions);
+        _mutableViewport = Viewport::FromDimensions(position, dimensions);
         Terminal::_NotifyScrollEvent();
     }
 }
@@ -106,7 +106,7 @@ CursorType Terminal::GetUserDefaultCursorStyle() const
     return _defaultCursorShape;
 }
 
-bool Terminal::ResizeWindow(const size_t /*width*/, const size_t /*height*/)
+bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/)
 {
     // TODO: This will be needed to support various resizing sequences. See also GH#1860.
     return false;
@@ -188,10 +188,15 @@ void Terminal::SetWorkingDirectory(std::wstring_view uri)
     _workingDirectory = uri;
 }
 
+void Terminal::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
+{
+    _pfnPlayMidiNote(noteNumber, velocity, duration);
+}
+
 void Terminal::UseAlternateScreenBuffer()
 {
     // the new alt buffer is exactly the size of the viewport.
-    _altBufferSize = til::size{ _mutableViewport.Dimensions() };
+    _altBufferSize = _mutableViewport.Dimensions();
 
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
@@ -199,7 +204,7 @@ void Terminal::UseAlternateScreenBuffer()
     _mainBuffer->ClearPatternRecognizers();
 
     // Create a new alt buffer
-    _altBuffer = std::make_unique<TextBuffer>(_altBufferSize.to_win32_coord(),
+    _altBuffer = std::make_unique<TextBuffer>(_altBufferSize,
                                               TextAttribute{},
                                               cursorSize,
                                               true,
@@ -270,7 +275,7 @@ void Terminal::UseMainScreenBuffer()
 
     if (_deferredResize.has_value())
     {
-        LOG_IF_FAILED(UserResize(_deferredResize.value().to_win32_coord()));
+        LOG_IF_FAILED(UserResize(_deferredResize.value()));
         _deferredResize = std::nullopt;
     }
 
@@ -291,6 +296,12 @@ void Terminal::UseMainScreenBuffer()
         _activeBuffer().TriggerRedrawAll();
     }
     CATCH_LOG();
+}
+
+void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+    AddMark(mark, cursorPos, cursorPos);
 }
 
 // Method Description:

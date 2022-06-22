@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // every other window process was done with us. We can die now, knowing
         // that our job is complete.
 
-        ExitProcess(0);
+        std::exit(0);
     }
 #pragma warning(pop)
 

@@ -11,21 +11,21 @@
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-short CalcWindowSizeX(const SMALL_RECT& rect) noexcept
+til::CoordType CalcWindowSizeX(const til::inclusive_rect& rect) noexcept
 {
     return rect.Right - rect.Left + 1;
 }
 
-short CalcWindowSizeY(const SMALL_RECT& rect) noexcept
+til::CoordType CalcWindowSizeY(const til::inclusive_rect& rect) noexcept
 {
     return rect.Bottom - rect.Top + 1;
 }
 
-short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize) noexcept
+til::CoordType CalcCursorYOffsetInPixels(const til::CoordType sFontSizeY, const ULONG ulSize) noexcept
 {
     // TODO: MSFT 10229700 - Note, we want to likely enforce that this isn't negative.
     // Pretty sure there's not a valid case for negative offsets here.
-    return (short)((sFontSizeY) - (ulSize));
+    return (til::CoordType)((sFontSizeY) - (ulSize));
 }
 
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwchEnd) noexcept
@@ -167,7 +167,7 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const COORD coordSecond) noexcept
+int Utils::s_CompareCoords(const til::size bufferSize, const til::point coordFirst, const til::point coordSecond) noexcept
 {
     const auto cRowWidth = bufferSize.X;
 
@@ -209,7 +209,7 @@ int Utils::s_CompareCoords(const COORD bufferSize, const COORD coordFirst, const
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noexcept
+int Utils::s_CompareCoords(const til::point coordFirst, const til::point coordSecond) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
@@ -225,7 +225,7 @@ int Utils::s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noex
 // - coordCorner - One of the corners of the given rectangle
 // Return Value:
 // - The opposite corner of the one given.
-COORD Utils::s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner) noexcept
+til::point Utils::s_GetOppositeCorner(const til::inclusive_rect& srRectangle, const til::point coordCorner) noexcept
 {
     // Assert we were given coordinates that are indeed one of the corners of the rectangle.
     FAIL_FAST_IF(!(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right));

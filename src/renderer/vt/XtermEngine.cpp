@@ -39,7 +39,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 {
     RETURN_IF_FAILED(VtEngine::StartPaint());
 
-    _trace.TraceLastText(til::point{ _lastText });
+    _trace.TraceLastText(_lastText);
 
     // Prep us to think that the cursor is not visible this frame. If it _is_
     // visible, then PaintCursor will be called, and we'll set this to true
@@ -73,12 +73,12 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
-        auto dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0).to_small_rect());
+        auto dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromExclusive(til::at(dirty, 0));
 
         // If there's more than 1, union them all up with the 1 we already have.
         for (size_t i = 1; i < dirty.size(); ++i)
         {
-            dirtyView = Viewport::Union(dirtyView, Viewport::FromInclusive(til::at(dirty, i).to_small_rect()));
+            dirtyView = Viewport::Union(dirtyView, Viewport::FromExclusive(til::at(dirty, i)));
         }
     }
 
@@ -236,11 +236,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - coord: location to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT XtermEngine::_MoveCursor(const COORD coord) noexcept
+[[nodiscard]] HRESULT XtermEngine::_MoveCursor(const til::point coord) noexcept
 {
     auto hr = S_OK;
     const auto originalPos = _lastText;
-    _trace.TraceMoveCursor(til::point{ _lastText }, til::point{ coord });
+    _trace.TraceMoveCursor(_lastText, coord);
     auto performedSoftWrap = false;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
@@ -312,7 +312,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         else if (coord.Y == _lastText.Y && coord.X > _lastText.X)
         {
             // Same line, forward some distance
-            short distance = coord.X - _lastText.X;
+            auto distance = coord.X - _lastText.X;
             hr = _CursorForward(distance);
         }
         else
@@ -362,8 +362,8 @@ try
         return S_OK;
     }
 
-    const auto dy = _scrollDelta.narrow_y<short>();
-    const auto absDy = static_cast<short>(abs(dy));
+    const auto dy = _scrollDelta.y;
+    const auto absDy = abs(dy);
 
     // Save the old wrap state here. We're going to clear it so that
     // _MoveCursor will definitely move us to the right position. We'll
@@ -414,7 +414,7 @@ try
     // position we think we left the cursor.
     //
     // See GH#5113
-    _trace.TraceLastText(til::point{ _lastText });
+    _trace.TraceLastText(_lastText);
     if (_wrappedRow.has_value())
     {
         _wrappedRow.value() += dy;
@@ -466,14 +466,14 @@ CATCH_RETURN();
 //      area. Add the top or bottom rows to the invalid region, and update the
 //      total scroll delta accumulated this frame.
 // Arguments:
-// - pcoordDelta - Pointer to character dimension (COORD) of the distance the
+// - pcoordDelta - Pointer to character dimension (til::point) of the distance the
 //      console would like us to move while scrolling.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
-[[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 try
 {
-    const til::point delta{ *pcoordDelta };
+    const auto delta{ *pcoordDelta };
 
     if (delta != til::point{ 0, 0 })
     {
@@ -505,7 +505,7 @@ CATCH_RETURN();
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT XtermEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
-                                                   const COORD coord,
+                                                   const til::point coord,
                                                    const bool /*trimLeft*/,
                                                    const bool lineWrapped) noexcept
 {

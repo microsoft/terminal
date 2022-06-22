@@ -64,8 +64,8 @@ namespace Microsoft::Console::Types
         // specific endpoint range
         virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
                                                _In_ IRawElementProviderSimple* const pProvider,
-                                               _In_ const COORD start,
-                                               _In_ const COORD end,
+                                               _In_ const til::point start,
+                                               _In_ const til::point end,
                                                _In_ bool blockRange = false,
                                                _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
@@ -77,9 +77,9 @@ namespace Microsoft::Console::Types
         UiaTextRangeBase& operator=(UiaTextRangeBase&&) = delete;
         ~UiaTextRangeBase() = default;
 
-        const COORD GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
-        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept;
-        const bool IsDegenerate() const noexcept;
+        til::point GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
+        bool SetEndpoint(TextPatternRangeEndpoint endpoint, const til::point val) noexcept;
+        bool IsDegenerate() const noexcept;
 
         // ITextRangeProvider methods
         virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
@@ -127,30 +127,30 @@ namespace Microsoft::Console::Types
 
         std::wstring _wordDelimiters{};
 
-        virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
-        virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
+        virtual void _TranslatePointToScreen(til::point* clientPoint) const = 0;
+        virtual void _TranslatePointFromScreen(til::point* screenPoint) const = 0;
 
         void Initialize(_In_ const UiaPoint point);
 
         // measure units in the form [_start, _end).
         // These are in the TextBuffer coordinate space.
         // NOTE: _start is inclusive, but _end is exclusive
-        COORD _start{};
-        COORD _end{};
+        til::point _start{};
+        til::point _end{};
         bool _blockRange{};
 
         // This is used by tracing to extract the text value
         // that the UiaTextRange currently encompasses.
         // GetText() cannot be used as it's not const
-        std::wstring _getTextValue(std::optional<unsigned int> maxLength = std::nullopt) const;
+        std::wstring _getTextValue(til::CoordType maxLength = -1) const;
 
-        RECT _getTerminalRect() const;
+        til::rect _getTerminalRect() const;
 
-        virtual const COORD _getScreenFontSize() const noexcept;
+        virtual til::size _getScreenFontSize() const noexcept;
 
-        const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
-        const Viewport _getOptimizedBufferSize() const noexcept;
-        const til::point _getDocumentEnd() const;
+        til::CoordType _getViewportHeight(const til::inclusive_rect& viewport) const noexcept;
+        Viewport _getOptimizedBufferSize() const noexcept;
+        til::point _getDocumentEnd() const;
 
         void _getBoundingRect(const til::rect& textRect, _Inout_ std::vector<double>& coords) const;
 
@@ -182,9 +182,9 @@ namespace Microsoft::Console::Types
 
         std::optional<bool> _verifyAttr(TEXTATTRIBUTEID attributeId, VARIANT val, const TextAttribute& attr) const;
         bool _initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal, const TextAttribute& attr) const;
-        bool _tryMoveToWordStart(const TextBuffer& buffer, const til::point documentEnd, COORD& resultingPos) const;
+        bool _tryMoveToWordStart(const TextBuffer& buffer, const til::point documentEnd, til::point& resultingPos) const;
 
-        COORD _getInclusiveEnd() noexcept;
+        til::point _getInclusiveEnd() const noexcept;
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;

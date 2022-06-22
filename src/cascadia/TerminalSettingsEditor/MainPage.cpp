@@ -594,7 +594,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // navigate to the profile next to this one
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
-        _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>(), BreadcrumbSubPage::None, true);
+        const auto newTag = newSelectedItem.as<MUX::Controls::NavigationViewItem>().Tag();
+        if (const auto profileViewModel = newTag.try_as<ProfileViewModel>())
+        {
+            _Navigate(*profileViewModel, BreadcrumbSubPage::None);
+        }
+        else
+        {
+            _Navigate(newTag.as<hstring>(), BreadcrumbSubPage::None);
+        }
     }
 
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept

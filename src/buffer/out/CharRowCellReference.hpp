@@ -25,7 +25,7 @@ class CharRowCellReference final
 public:
     using const_iterator = const wchar_t*;
 
-    CharRowCellReference(CharRow& parent, const size_t index) noexcept :
+    CharRowCellReference(CharRow& parent, const til::CoordType index) noexcept :
         _parent{ parent },
         _index{ index }
     {
@@ -51,7 +51,7 @@ private:
     // what char row the object belongs to
     CharRow& _parent;
     // the index of the cell in the parent char row
-    const size_t _index;
+    til::CoordType _index;
 
     CharRowCell& _cellData();
     const CharRowCell& _cellData() const;

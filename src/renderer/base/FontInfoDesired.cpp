@@ -8,7 +8,7 @@
 FontInfoDesired::FontInfoDesired(const std::wstring_view& faceName,
                                  const unsigned char family,
                                  const unsigned int weight,
-                                 const COORD coordSizeDesired,
+                                 const til::size coordSizeDesired,
                                  const unsigned int codePage) noexcept :
     FontInfoBase(faceName, family, weight, false, codePage),
     _coordSizeDesired(coordSizeDesired)
@@ -27,7 +27,7 @@ bool FontInfoDesired::operator==(const FontInfoDesired& other) noexcept
            _coordSizeDesired == other._coordSizeDesired;
 }
 
-COORD FontInfoDesired::GetEngineSize() const noexcept
+til::size FontInfoDesired::GetEngineSize() const noexcept
 {
     auto coordSize = _coordSizeDesired;
     if (IsTrueTypeFont())
@@ -46,6 +46,6 @@ bool FontInfoDesired::IsDefaultRasterFont() const noexcept
     // Either the raster was set from the engine...
     // OR the face name is empty with a size of 0x0 or 8x12.
     return WasDefaultRasterSetFromEngine() || (GetFaceName().empty() &&
-                                               (_coordSizeDesired == COORD{ 0, 0 } ||
-                                                _coordSizeDesired == COORD{ 8, 12 }));
+                                               (_coordSizeDesired == til::size{ 0, 0 } ||
+                                                _coordSizeDesired == til::size{ 8, 12 }));
 }
