@@ -241,6 +241,7 @@ public:
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode);
     void SelectAll();
+    const bool IsInQuickEditMode() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     static UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey);
@@ -313,6 +314,7 @@ private:
     bool _blockSelection;
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
+    bool _quickEditMode;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;
