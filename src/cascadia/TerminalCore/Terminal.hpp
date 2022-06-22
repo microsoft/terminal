@@ -255,7 +255,7 @@ public:
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
-    bool IsInQuickEditMode() const;
+    const bool IsInQuickEditMode() const noexcept;
     bool IsInMarkMode() const;
     void ToggleMarkMode();
 
