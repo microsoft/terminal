@@ -768,8 +768,28 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
-    const auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
-    const auto firstTimeSetup = settingsString.empty();
+    auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
+    auto firstTimeSetup = settingsString.empty();
+
+    // If it's the firstTimeSetup and a preview build, then try to
+    // read settings.json from the Release stable file path if it exists.
+    // Otherwise use default settings file provided from original settings file
+    bool releaseSettingExists = false;
+    if (firstTimeSetup)
+    {
+#if defined(WT_BRANDING_PREVIEW)
+        {
+            try
+            {
+                settingsString = ReadUTF8FileIfExists(_releaseSettingsPath()).value_or(std::string{});
+                releaseSettingExists = settingsString.empty() ? false : true;
+            }
+            catch (...)
+            {
+            }
+        }
+#endif
+    }
 
     // GH#11119: If we find that the settings file doesn't exist, or is empty,
     // then let's quick delete the state file as well. If the user does have a
@@ -782,7 +802,9 @@ try
         ApplicationState::SharedInstance().Reset();
     }
 
-    const auto settingsStringView = firstTimeSetup ? UserSettingsJson : settingsString;
+    // Only uses default settings when firstTimeSetup is true and releaseSettingExists is false
+    // Otherwise use existing settingsString
+    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? UserSettingsJson : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
     SettingsLoader loader{ settingsStringView, DefaultJson };
@@ -793,7 +815,8 @@ try
 
     // ApplyRuntimeInitialSettings depends on generated profiles.
     // --> ApplyRuntimeInitialSettings must be called after GenerateProfiles.
-    if (firstTimeSetup)
+    // Doesn't run when there is a Release settings.json that exists
+    if (firstTimeSetup && !releaseSettingExists)
     {
         loader.ApplyRuntimeInitialSettings();
     }
@@ -952,6 +975,18 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
 const std::filesystem::path& CascadiaSettings::_settingsPath()
 {
     static const auto path = GetBaseSettingsPath() / SettingsFilename;
+    return path;
+}
+
+// Method Description:
+// - Returns the path of the settings.json file from stable file path
+// Arguments:
+// - <none>
+// Return Value:
+// - Path to stable settings
+const std::filesystem::path& CascadiaSettings::_releaseSettingsPath()
+{
+    static const auto path = GetReleaseSettingsPath() / SettingsFilename;
     return path;
 }
 

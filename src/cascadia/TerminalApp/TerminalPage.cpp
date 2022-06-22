@@ -69,6 +69,29 @@ namespace winrt::TerminalApp::implementation
     //   - see GH#2988
     HRESULT TerminalPage::Initialize(HWND hwnd)
     {
+        if (!_hostingHwnd.has_value())
+        {
+            // GH#13211 - if we haven't yet set the owning hwnd, reparent all the controls now.
+            for (const auto& tab : _tabs)
+            {
+                if (auto terminalTab{ _GetTerminalTabImpl(tab) })
+                {
+                    terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                        if (const auto& term{ pane->GetTerminalControl() })
+                        {
+                            term.OwningHwnd(reinterpret_cast<uint64_t>(hwnd));
+                        }
+                    });
+                }
+                // We don't need to worry about resetting the owning hwnd for the
+                // SUI here. GH#13211 only repros for a defterm connection, where
+                // the tab is spawned before the window is created. It's not
+                // possible to make a SUI tab like that, before the window is
+                // created. The SUI could be spawned as a part of a window restore,
+                // but that would still work fine. The window would be created
+                // before restoring previous tabs in that scenario.
+            }
+        }
         _hostingHwnd = hwnd;
         return S_OK;
     }
@@ -1084,8 +1107,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  L".",
                                                                                  L"Azure",
                                                                                  nullptr,
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 settings.InitialRows(),
+                                                                                 settings.InitialCols(),
                                                                                  winrt::guid());
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
@@ -1135,8 +1158,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  newWorkingDirectory,
                                                                                  settings.StartingTitle(),
                                                                                  envMap.GetView(),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialRows()),
-                                                                                 ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                 settings.InitialRows(),
+                                                                                 settings.InitialCols(),
                                                                                  winrt::guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
@@ -3251,6 +3274,9 @@ namespace winrt::TerminalApp::implementation
 
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);
+
+            const IInspectable unused{ nullptr };
+            _SetAsDefaultDismissHandler(unused, unused);
             return S_OK;
         }
         CATCH_RETURN()

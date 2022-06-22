@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
         _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
         _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
+        _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
@@ -124,20 +125,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()](const auto& update) {
                 if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
-                    control->_isInternalScrollBarUpdate = true;
-
-                    auto scrollBar = control->ScrollBar();
-                    if (update.newValue)
-                    {
-                        scrollBar.Value(*update.newValue);
-                    }
-                    scrollBar.Maximum(update.newMaximum);
-                    scrollBar.Minimum(update.newMinimum);
-                    scrollBar.ViewportSize(update.newViewportSize);
-                    // scroll one full screen worth at a time when the scroll bar is clicked
-                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
-
-                    control->_isInternalScrollBarUpdate = false;
+                    control->_throttledUpdateScrollbar(update);
                 }
             });
 
@@ -146,6 +134,57 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
+    }
+
+    void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
+    {
+        // Assumptions:
+        // * we're already not closing
+        // * caller already checked weak ptr to make sure we're still alive
+
+        _isInternalScrollBarUpdate = true;
+
+        auto scrollBar = ScrollBar();
+        if (update.newValue)
+        {
+            scrollBar.Value(*update.newValue);
+        }
+        scrollBar.Maximum(update.newMaximum);
+        scrollBar.Minimum(update.newMinimum);
+        scrollBar.ViewportSize(update.newViewportSize);
+        // scroll one full screen worth at a time when the scroll bar is clicked
+        scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.));
+
+        _isInternalScrollBarUpdate = false;
+
+        if (_showMarksInScrollbar)
+        {
+            // Update scrollbar marks
+            ScrollBarCanvas().Children().Clear();
+            const auto marks{ _core.ScrollMarks() };
+            const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
+            const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
+
+            for (const auto m : marks)
+            {
+                Windows::UI::Xaml::Shapes::Rectangle r;
+                Media::SolidColorBrush brush{};
+                // Sneaky: technically, a mark doesn't need to have a color set,
+                // it might want to just use the color from the palette for that
+                // kind of mark. Fortunately, ControlCore is kind enough to
+                // pre-evaluate that for us, and shove the real value into the
+                // Color member, regardless if the mark has a literal value set.
+                brush.Color(static_cast<til::color>(m.Color.Color));
+                r.Fill(brush);
+                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
+                r.Height(2);
+                const auto markRow = m.Start.Y;
+                const auto fractionalHeight = markRow / totalBufferRows;
+                const auto relativePos = fractionalHeight * fullHeight;
+                ScrollBarCanvas().Children().Append(r);
+                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+            }
+        }
     }
 
     // Method Description:
@@ -320,6 +359,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // switch from a solid color brush to an acrylic one.
         _changeBackgroundColor(bg);
 
+        // Update selection markers
+        Windows::UI::Xaml::Media::SolidColorBrush cursorColorBrush{ til::color{ newAppearance.CursorColor() } };
+        SelectionStartMarker().Fill(cursorColorBrush);
+        SelectionEndMarker().Fill(cursorColorBrush);
+
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
         if (_core.Settings().UseBackgroundImageForWindow())
@@ -404,6 +448,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                              newMargin.Right,
                                                              newMargin.Bottom });
         }
+
+        _showMarksInScrollbar = settings.ShowMarks();
+        // Clear out all the current marks
+        ScrollBarCanvas().Children().Clear();
+        // When we hot reload the settings, the core will send us a scrollbar
+        // update. If we enabled scrollbar marks, then great, when we handle
+        // that message, we'll redraw them.
     }
 
     // Method Description:
@@ -637,7 +688,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // clever way around asking the core for this.
     til::point TermControl::GetFontSize() const
     {
-        return til::point{ til::math::rounding, _core.FontSize().Width, _core.FontSize().Height };
+        return { til::math::rounding, _core.FontSize().Width, _core.FontSize().Height };
     }
 
     const Windows::UI::Xaml::Thickness TermControl::GetPadding()
@@ -1786,6 +1837,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newValue = args.ViewTop();
 
         _updateScrollBar->Run(update);
+
+        // if a selection marker is already visible,
+        // update the position of those markers
+        if (SelectionStartMarker().Visibility() == Visibility::Visible || SelectionEndMarker().Visibility() == Visibility::Visible)
+        {
+            _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
+        }
     }
 
     // Method Description:
@@ -1857,6 +1915,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::SelectAll()
     {
         _core.SelectAll();
+    }
+
+    bool TermControl::ToggleBlockSelection()
+    {
+        return _core.ToggleBlockSelection();
     }
 
     void TermControl::ToggleMarkMode()
@@ -1969,7 +2032,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, gsl::narrow_cast<short>(fontSize) }, CP_UTF8, false };
+        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontSize }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
         // Create a DX engine and initialize it with our font and DPI. We'll
@@ -2685,8 +2748,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ClearHoveredCell();
     }
 
-    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,
-                                                                 IInspectable args)
+    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable /*sender*/,
+                                                                 IInspectable /*args*/)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -2713,12 +2776,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     HyperlinkTooltipBorder().BorderThickness(newThickness);
 
                     // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ lastHoveredCell.Value() };
-                    const til::size fontSize{ til::math::rounding, _core.FontSize() };
-                    const auto posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ til::math::flooring, posInPixels.x / scale, posInPixels.y / scale };
-                    const auto locationInDIPs{ posInDIPs + marginsInDips };
+                    const til::point locationInDIPs{ _toPosInDips(lastHoveredCell.Value()) };
 
                     // Move the border to the top left corner of the cell
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
@@ -2728,10 +2786,117 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    winrt::fire_and_forget TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
+    {
+        auto weakThis{ get_weak() };
+        co_await resume_foreground(Dispatcher());
+        if (weakThis.get() && args)
+        {
+            if (_core.HasSelection() && !args.ClearMarkers())
+            {
+                // retrieve all of the necessary selection marker data
+                // from the TerminalCore layer under one lock to improve performance
+                const auto markerData{ _core.SelectionInfo() };
+
+                // lambda helper function that can be used to display a selection marker
+                // - targetEnd: if true, target the "end" selection marker. Otherwise, target "start".
+                auto displayMarker = [&](bool targetEnd) {
+                    const auto flipMarker{ targetEnd ? markerData.EndAtRightBoundary : markerData.StartAtLeftBoundary };
+                    const auto& marker{ targetEnd ? SelectionEndMarker() : SelectionStartMarker() };
+
+                    // Ensure the marker is oriented properly
+                    // (i.e. if start is at the beginning of the buffer, it should be flipped)
+                    auto transform{ marker.RenderTransform().as<Windows::UI::Xaml::Media::ScaleTransform>() };
+                    transform.ScaleX(std::abs(transform.ScaleX()) * (flipMarker ? -1.0 : 1.0));
+                    marker.RenderTransform(transform);
+
+                    // Compute the location of the top left corner of the cell in DIPS
+                    auto terminalPos{ targetEnd ? markerData.EndPos : markerData.StartPos };
+                    if (flipMarker)
+                    {
+                        // When we flip the marker, a negative scaling makes us be one cell-width to the left.
+                        // Add one to the viewport pos' x-coord to fix that.
+                        terminalPos.X += 1;
+                    }
+                    const til::point locationInDIPs{ _toPosInDips(terminalPos) };
+
+                    // Move the marker to the top left corner of the cell
+                    SelectionCanvas().SetLeft(marker,
+                                              (locationInDIPs.x - SwapChainPanel().ActualOffset().x));
+                    SelectionCanvas().SetTop(marker,
+                                             (locationInDIPs.y - SwapChainPanel().ActualOffset().y));
+                    marker.Visibility(Visibility::Visible);
+                };
+
+                // show/update selection markers
+                // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
+                const auto selectionAnchor{ markerData.MovingEnd ? markerData.EndPos : markerData.StartPos };
+                const auto& marker{ markerData.MovingEnd ? SelectionEndMarker() : SelectionStartMarker() };
+                const auto& otherMarker{ markerData.MovingEnd ? SelectionStartMarker() : SelectionEndMarker() };
+                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
+                {
+                    // if the endpoint is outside of the viewport,
+                    // just hide the markers
+                    marker.Visibility(Visibility::Collapsed);
+                    otherMarker.Visibility(Visibility::Collapsed);
+                    co_return;
+                }
+                else if (markerData.MovingCursor)
+                {
+                    // display both markers
+                    displayMarker(true);
+                    displayMarker(false);
+                }
+                else
+                {
+                    // display one marker,
+                    // but hide the other
+                    displayMarker(markerData.MovingEnd);
+                    otherMarker.Visibility(Visibility::Collapsed);
+                }
+            }
+            else
+            {
+                // hide selection markers
+                SelectionStartMarker().Visibility(Visibility::Collapsed);
+                SelectionEndMarker().Visibility(Visibility::Collapsed);
+            }
+        }
+    }
+
+    til::point TermControl::_toPosInDips(const Core::Point terminalCellPos)
+    {
+        const til::point terminalPos{ terminalCellPos };
+        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+        const til::size fontSize{ til::math::rounding, _core.FontSize() };
+        const til::point posInPixels{ terminalPos * fontSize };
+        const auto scale{ SwapChainPanel().CompositionScaleX() };
+        const til::point posInDIPs{ til::math::flooring, posInPixels.x / scale, posInPixels.y / scale };
+        return posInDIPs + marginsInDips;
+    }
+
     void TermControl::_coreFontSizeChanged(const int fontWidth,
                                            const int fontHeight,
                                            const bool isInitialChange)
     {
+        // scale the selection markers to be the size of a cell
+        auto scaleMarker = [fontWidth, fontHeight, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
+            // The selection markers were designed to be 5x14 in size,
+            // so use those dimensions below for the scaling
+            const auto scaleX = fontWidth / 5.0 / dpiScale;
+            const auto scaleY = fontHeight / 14.0 / dpiScale;
+
+            Windows::UI::Xaml::Media::ScaleTransform transform;
+            transform.ScaleX(scaleX);
+            transform.ScaleY(scaleY);
+            shape.RenderTransform(transform);
+
+            // now hide the shape
+            shape.Visibility(Visibility::Collapsed);
+        };
+        scaleMarker(SelectionStartMarker());
+        scaleMarker(SelectionEndMarker());
+
         // Don't try to inspect the core here. The Core is raising this while
         // it's holding its write lock. If the handlers calls back to some
         // method on the TermControl on the same thread, and that _method_ calls
@@ -2856,6 +3021,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::OwningHwnd()
     {
         return _core.OwningHwnd();
+    }
+
+    void TermControl::AddMark(const Control::ScrollMark& mark)
+    {
+        _core.AddMark(mark);
+    }
+    void TermControl::ClearMark() { _core.ClearMark(); }
+    void TermControl::ClearAllMarks() { _core.ClearAllMarks(); }
+    void TermControl::ScrollToMark(const Control::ScrollToMarkDirection& direction) { _core.ScrollToMark(direction); }
+
+    Windows::Foundation::Collections::IVector<Control::ScrollMark> TermControl::ScrollMarks() const
+    {
+        return _core.ScrollMarks();
     }
 
 }

@@ -71,7 +71,7 @@ class SelectionTests
                 // ensure each rectangle is exactly the width requested (block selection)
                 const auto psrRect = &selectionRects[iRect];
 
-                const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
+                const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_srSelectionRect.Top;
 
                 VERIFY_ARE_EQUAL(psrRect->Top, sRectangleLineNumber);
                 VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
@@ -170,7 +170,7 @@ class SelectionTests
                     // ensure each rectangle is exactly the width requested (block selection)
                     const auto psrRect = &selectionRects[iRect];
 
-                    const short sRectangleLineNumber = (short)iRect + m_pSelection->_srSelectionRect.Top;
+                    const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_srSelectionRect.Top;
 
                     VERIFY_ARE_EQUAL(psrRect->Top, sRectangleLineNumber);
                     VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
@@ -304,15 +304,15 @@ class SelectionTests
         VerifyGetSelectionRects_LineMode();
     }
 
-    void TestBisectSelectionDelta(SHORT sTargetX, SHORT sTargetY, SHORT sLength, SHORT sDeltaLeft, SHORT sDeltaRight)
+    void TestBisectSelectionDelta(til::CoordType sTargetX, til::CoordType sTargetY, til::CoordType sLength, til::CoordType sDeltaLeft, til::CoordType sDeltaRight)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
-        short sStringLength;
-        COORD coordTargetPoint;
-        SMALL_RECT srSelection;
-        SMALL_RECT srOriginal;
+        til::CoordType sStringLength;
+        til::point coordTargetPoint;
+        til::inclusive_rect srSelection;
+        til::inclusive_rect srOriginal;
 
         sStringLength = sLength;
         coordTargetPoint.X = sTargetX;
@@ -331,8 +331,8 @@ class SelectionTests
         srOriginal.Left = srSelection.Left;
         srOriginal.Right = srSelection.Right;
 
-        COORD startPos{ sTargetX, sTargetY };
-        COORD endPos{ base::ClampAdd(sTargetX, sLength), sTargetY };
+        til::point startPos{ sTargetX, sTargetY };
+        til::point endPos{ sTargetX + sLength, sTargetY };
         const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos, false, false);
 
         VERIFY_ARE_EQUAL(static_cast<size_t>(1), selectionRects.size());
@@ -448,9 +448,9 @@ class SelectionInputTests
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // 80x80 box
-        const SHORT sRowWidth = 80;
+        const til::CoordType sRowWidth = 80;
 
-        SMALL_RECT srectEdges;
+        til::inclusive_rect srectEdges;
         srectEdges.Left = srectEdges.Top = 0;
         srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
 
@@ -472,7 +472,7 @@ class SelectionInputTests
 
         // backup text info position over remainder of text execution duration
         auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-        COORD coordOldTextInfoPos;
+        til::point coordOldTextInfoPos;
         coordOldTextInfoPos.X = textBuffer.GetCursor().GetPosition().X;
         coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;
 
@@ -490,8 +490,8 @@ class SelectionInputTests
         VERIFY_IS_TRUE(fResult);
 
         // now let's get some actual data
-        COORD coordStart;
-        COORD coordEnd;
+        til::point coordStart;
+        til::point coordEnd;
 
         fResult = Selection::s_GetInputLineBoundaries(&coordStart, &coordEnd);
         VERIFY_IS_TRUE(fResult);
@@ -502,9 +502,9 @@ class SelectionInputTests
 
         // ending position can vary. it's in one of two spots
         // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
-        COORD coordFinalPos;
+        til::point coordFinalPos;
 
-        const short cCharsToAdjust = ((short)readData.VisibleCharCount() - 1); // then -1 to be on the last piece of text, not past it
+        const auto cCharsToAdjust = ((til::CoordType)readData.VisibleCharCount() - 1); // then -1 to be on the last piece of text, not past it
 
         coordFinalPos.X = (readData.OriginalCursorPosition().X + cCharsToAdjust) % sRowWidth;
         coordFinalPos.Y = readData.OriginalCursorPosition().Y + ((readData.OriginalCursorPosition().X + cCharsToAdjust) / sRowWidth);
@@ -540,8 +540,8 @@ class SelectionInputTests
         screenInfo.Write(OutputCellIterator(text));
 
         // Get the left and right side of the text we inserted (right is one past the end)
-        const COORD left = { 0, 0 };
-        const COORD right = { gsl::narrow<SHORT>(text.length()), 0 };
+        const til::point left;
+        const til::point right{ gsl::narrow<til::CoordType>(text.length()), 0 };
 
         // Get the selection instance and buffer size
         auto& sel = Selection::Instance();
@@ -587,8 +587,8 @@ class SelectionInputTests
         screenInfo.Write(OutputCellIterator(text));
 
         // Get the left and right side of the text we inserted (right is one past the end)
-        const COORD left = { 0, 0 };
-        const COORD right = { gsl::narrow<SHORT>(text.length()), 0 };
+        const til::point left;
+        const til::point right = { gsl::narrow<til::CoordType>(text.length()), 0 };
 
         // Get the selection instance and buffer size
         auto& sel = Selection::Instance();

@@ -525,7 +525,12 @@ try
     outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"), (int64_t)signalPipeOurSide.release());
+    // GH#13211 - Make sure we request win32input mode and that the terminal
+    // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
+    // are going to have weird resizing, and aren't going to send full fidelity
+    // input messages.
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"),
+                                         (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
     RETURN_IF_FAILED(consoleArgs.ParseCommandline());
@@ -752,9 +757,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     Cac->ConsoleInfo.SetStartupFlags(Data.StartupFlags);
     Cac->ConsoleInfo.SetFillAttribute(Data.FillAttribute);
     Cac->ConsoleInfo.SetShowWindow(Data.ShowWindow);
-    Cac->ConsoleInfo.SetScreenBufferSize(Data.ScreenBufferSize);
-    Cac->ConsoleInfo.SetWindowSize(Data.WindowSize);
-    Cac->ConsoleInfo.SetWindowOrigin(Data.WindowOrigin);
+    Cac->ConsoleInfo.SetScreenBufferSize(til::wrap_coord_size(Data.ScreenBufferSize));
+    Cac->ConsoleInfo.SetWindowSize(til::wrap_coord_size(Data.WindowSize));
+    Cac->ConsoleInfo.SetWindowOrigin(til::wrap_coord_size(Data.WindowOrigin));
     Cac->ProcessGroupId = Data.ProcessGroupId;
     Cac->ConsoleApp = Data.ConsoleApp;
     Cac->WindowVisible = Data.WindowVisible;

@@ -311,7 +311,7 @@ class CommandListPopupTests
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // selection should have moved up a page
-        VERIFY_ARE_EQUAL(static_cast<short>(m_pHistory->GetNumberOfCommands()) - popup.Height() - 1, popup._currentCommand);
+        VERIFY_ARE_EQUAL(static_cast<til::CoordType>(m_pHistory->GetNumberOfCommands()) - popup.Height() - 1, popup._currentCommand);
     }
 
     TEST_METHOD(PageDownMovesSelection)

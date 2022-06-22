@@ -11,14 +11,14 @@
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
-void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
+void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ const til::rect& rectangle)
 {
     const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         CONSOLE_CARET_INFO caretInfo;
         caretInfo.hwnd = pWindow->GetWindowHandle();
-        caretInfo.rc = rectangle;
+        caretInfo.rc = rectangle.to_win32_rect();
 
         LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<ConsoleControl>()->Control(ConsoleControl::ControlType::ConsoleSetCaretInfo,
                                                                                       &caretInfo,
@@ -41,7 +41,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
     }
 
     // UIA event notification
-    static COORD previousCursorLocation = { 0, 0 };
+    static til::point previousCursorLocation;
     const auto pWindow = ServiceLocator::LocateConsoleWindow();
 
     if (pWindow != nullptr)

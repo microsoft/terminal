@@ -735,7 +735,8 @@ bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWO
 {
     INPUT_RECORD rgInput;
     rgInput.EventType = MOUSE_EVENT;
-    rgInput.Event.MouseEvent.dwMousePosition = til::unwrap_coord(uiPos);
+    rgInput.Event.MouseEvent.dwMousePosition.X = ::base::saturated_cast<short>(uiPos.x);
+    rgInput.Event.MouseEvent.dwMousePosition.Y = ::base::saturated_cast<short>(uiPos.y);
     rgInput.Event.MouseEvent.dwButtonState = buttonState;
     rgInput.Event.MouseEvent.dwControlKeyState = controlKeyState;
     rgInput.Event.MouseEvent.dwEventFlags = eventFlags;

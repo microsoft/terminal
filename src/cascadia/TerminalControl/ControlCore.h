@@ -17,6 +17,7 @@
 
 #include "ControlCore.g.h"
 #include "ControlSettings.h"
+#include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
@@ -81,6 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
+        bool ToggleBlockSelection();
         void ToggleMarkMode();
         bool IsInMarkMode() const;
 
@@ -117,6 +119,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool BracketedPasteEnabled() const noexcept;
+
+        Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
+        void AddMark(const Control::ScrollMark& mark);
+        void ClearMark();
+        void ClearAllMarks();
+        void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -150,8 +159,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool HasSelection() const;
         bool CopyOnSelect() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(const til::point& position);
-        void SetEndSelectionPoint(const til::point& position);
+        Control::SelectionData SelectionInfo() const;
+        void SetSelectionAnchor(const til::point position);
+        void SetEndSelectionPoint(const til::point position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
@@ -177,10 +187,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void WindowVisibilityChanged(const bool showOrHide);
 
-        // TODO:GH#1256 - When a tab can be torn out or otherwise reparented to
-        // another window, this value will need a custom setter, so that we can
-        // also update the connection.
-        WINRT_PROPERTY(uint64_t, OwningHwnd, 0);
+        uint64_t OwningHwnd();
+        void OwningHwnd(uint64_t owner);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
@@ -207,6 +215,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
         TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
+        TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         // clang-format on
 
     private:
@@ -250,6 +259,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _panelHeight{ 0 };
         double _compositionScale{ 0 };
 
+        uint64_t _owningHwnd{ 0 };
+
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
@@ -260,6 +271,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
+        void _updateSelection();
 
         void _sendInputToConnection(std::wstring_view wstr);
 
@@ -273,7 +285,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
         void _terminalShowWindowChanged(bool showOrHide);
+        void _terminalPlayMidiNote(const int noteNumber,
+                                   const int velocity,
+                                   const std::chrono::microseconds duration);
 #pragma endregion
+
+        std::unique_ptr<MidiAudio> _midiAudio;
+
+        MidiAudio& _getMidiAudio();
+        void _shutdownMidiAudio();
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);

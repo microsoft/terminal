@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void SelectAll();
+        bool ToggleBlockSelection();
         void ToggleMarkMode();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -66,6 +67,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
+
+        Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
+        void AddMark(const Control::ScrollMark& mark);
+        void ClearMark();
+        void ClearAllMarks();
+        void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -194,6 +202,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        bool _showMarksInScrollbar{ false };
 
         inline bool _IsClosing() const noexcept
         {
@@ -278,6 +287,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _hoveredHyperlinkChanged(IInspectable sender, IInspectable args);
+        winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
 
         void _coreFontSizeChanged(const int fontWidth,
                                   const int fontHeight,
@@ -286,6 +296,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
         void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+
+        til::point _toPosInDips(const Core::Point terminalCellPos);
+        void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
     };
 }
 

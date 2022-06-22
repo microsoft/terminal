@@ -174,18 +174,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(y);
         }
 
-#ifdef _WINCONTYPES_
-        explicit constexpr point(const COORD other) noexcept :
-            x{ other.X }, y{ other.Y }
-        {
-        }
-
-        constexpr COORD to_win32_coord() const
-        {
-            return { narrow_x<short>(), narrow_y<short>() };
-        }
-#endif
-
 #ifdef _WINDEF_
         explicit constexpr point(const POINT other) noexcept :
             x{ other.x }, y{ other.y }
@@ -257,17 +245,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     };
 
-    constexpr point wrap_coord(const COORD rect) noexcept
+    constexpr point wrap_coord(const COORD pt) noexcept
     {
-        return { rect.X, rect.Y };
+        return { pt.X, pt.Y };
     }
 
-    constexpr COORD unwrap_coord(const point rect)
+    constexpr COORD unwrap_coord(const point pt)
     {
         return {
-            gsl::narrow<short>(rect.X),
-            gsl::narrow<short>(rect.Y),
+            gsl::narrow<short>(pt.x),
+            gsl::narrow<short>(pt.y),
         };
+    }
+
+    constexpr HRESULT unwrap_coord_hr(const point pt, COORD& out) noexcept
+    {
+        short x = 0;
+        short y = 0;
+        if (narrow_maybe(pt.x, x) && narrow_maybe(pt.y, y))
+        {
+            out.X = x;
+            out.Y = y;
+            return S_OK;
+        }
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 }
 

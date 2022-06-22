@@ -305,7 +305,7 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
     {
         const auto pProcessHandle = *it;
 
-        if (pProcessHandle->_hProcess != nullptr)
+        if (pProcessHandle->_hProcess)
         {
             _ModifyProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
         }

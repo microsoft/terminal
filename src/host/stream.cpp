@@ -182,18 +182,18 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
-size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
-                                   _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
-                                   _In_ size_t ulCurrentPosition)
+til::CoordType RetrieveTotalNumberOfSpaces(const til::CoordType sOriginalCursorPositionX,
+                                           _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
+                                           _In_ size_t ulCurrentPosition)
 {
     auto XPosition = sOriginalCursorPositionX;
-    size_t NumSpaces = 0;
+    til::CoordType NumSpaces = 0;
 
     for (size_t i = 0; i < ulCurrentPosition; i++)
     {
         const auto Char = pwchBuffer[i];
 
-        size_t NumSpacesForChar;
+        til::CoordType NumSpacesForChar;
         if (Char == UNICODE_TAB)
         {
             NumSpacesForChar = NUMBER_OF_SPACES_IN_TAB(XPosition);
@@ -210,7 +210,7 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
         {
             NumSpacesForChar = 1;
         }
-        XPosition = (SHORT)(XPosition + NumSpacesForChar);
+        XPosition += NumSpacesForChar;
         NumSpaces += NumSpacesForChar;
     }
 
@@ -219,14 +219,14 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
 
 // Routine Description:
 // - This routine returns the number of screen spaces the specified character takes up.
-size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
-                              _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
-                              _In_ size_t ulCurrentPosition)
+til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositionX,
+                                      _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
+                                      _In_ size_t ulCurrentPosition)
 {
     auto Char = pwchBuffer[ulCurrentPosition];
     if (Char == UNICODE_TAB)
     {
-        size_t NumSpaces = 0;
+        til::CoordType NumSpaces = 0;
         auto XPosition = sOriginalCursorPositionX;
 
         for (size_t i = 0; i <= ulCurrentPosition; i++)
@@ -248,7 +248,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
             {
                 NumSpaces = 1;
             }
-            XPosition = (SHORT)(XPosition + NumSpaces);
+            XPosition += NumSpaces;
         }
 
         return NumSpaces;

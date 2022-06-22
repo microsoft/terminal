@@ -299,16 +299,19 @@
     <value>Next tab</value>
   </data>
   <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
-    <value>Open both settings and default settings files</value>
+    <value>Open both settings and default settings files (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenDefaultSettingsCommandKey" xml:space="preserve">
-    <value>Open default settings file</value>
+    <value>Open default settings file (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
     <value>Open new tab dropdown</value>
   </data>
   <data name="OpenSettingsCommandKey" xml:space="preserve">
-    <value>Open settings file</value>
+    <value>Open settings file (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Set the tab color...</value>
@@ -367,6 +370,31 @@
   </data>
   <data name="ScrollToBottomCommandKey" xml:space="preserve">
     <value>Scroll to the bottom of history</value>
+  </data>
+  <data name="ScrollToPreviousMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the the previous mark</value>
+  </data>
+  <data name="ScrollToNextMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the next mark</value>
+  </data>
+  <data name="ScrollToFirstMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the first mark</value>
+  </data>
+  <data name="ScrollToLastMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the last mark</value>
+  </data>
+  <data name="AddMarkCommandKey" xml:space="preserve">
+    <value>Add a scroll mark</value>
+  </data>
+  <data name="AddMarkWithColorCommandKey" xml:space="preserve">
+    <value>Add a scroll mark, color:{0}</value>
+    <comment>{Locked="color"}. "color" is a literal parameter name that shouldn't be translated. {0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
+  </data>
+  <data name="ClearMarkCommandKey" xml:space="preserve">
+    <value>Clear mark</value>
+  </data>
+  <data name="ClearAllMarksCommandKey" xml:space="preserve">
+    <value>Clear all marks</value>
   </data>
   <data name="SendInputCommandKey" xml:space="preserve">
     <value>Send Input: "{0}"</value>
@@ -532,5 +560,8 @@
   <data name="MarkModeCommandKey" xml:space="preserve">
     <value>Toggle mark mode</value>
     <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
+  </data>
+  <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
+    <value>Toggle block selection</value>
   </data>
 </root>

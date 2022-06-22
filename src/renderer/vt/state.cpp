@@ -16,7 +16,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
-const COORD VtEngine::INVALID_COORDS = { -1, -1 };
+constexpr til::point VtEngine::INVALID_COORDS = { -1, -1 };
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -32,8 +32,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
-    _invalidMap(til::size{ initialViewport.Dimensions() }, false, &_pool),
-    _lastText({ 0 }),
+    _invalidMap(initialViewport.Dimensions(), false, &_pool),
     _scrollDelta(0, 0),
     _quickReturn(false),
     _clearedAllThisFrame(false),
@@ -243,7 +242,7 @@ CATCH_RETURN();
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
     auto hr = S_OK;
     const auto newView = Viewport::FromInclusive(srNewViewport);
@@ -265,13 +264,13 @@ CATCH_RETURN();
             // buffer will have triggered it's own invalidations for what it knows is
             // invalid. Previously, we'd invalidate everything if the width changed,
             // because we couldn't be sure if lines were reflowed.
-            _invalidMap.resize(til::size{ newSize });
+            _invalidMap.resize(newSize);
         }
         else
         {
             if (SUCCEEDED(hr))
             {
-                _invalidMap.resize(til::size{ newSize }, true); // resize while filling in new space with repaint requests.
+                _invalidMap.resize(newSize, true); // resize while filling in new space with repaint requests.
 
                 // Viewport is smaller now - just update it all.
                 if (oldSize.Y > newSize.Y || oldSize.X > newSize.X)
@@ -322,9 +321,9 @@ CATCH_RETURN();
 // - pFontSize - receives the current X by Y size of the font.
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ til::size* const pFontSize) noexcept
 {
-    *pFontSize = COORD({ 1, 1 });
+    *pFontSize = { 1, 1 };
     return S_FALSE;
 }
 
@@ -382,7 +381,7 @@ bool VtEngine::_AllIsInvalid() const
 // - coordCursor: The cursor position to inherit from.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
+[[nodiscard]] HRESULT VtEngine::InheritCursor(const til::point coordCursor) noexcept
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;
@@ -491,7 +490,7 @@ void VtEngine::SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) no
     _pfnSetLookingForDSR = pfnLooking;
 }
 
-void VtEngine::SetTerminalCursorTextPosition(const COORD cursor) noexcept
+void VtEngine::SetTerminalCursorTextPosition(const til::point cursor) noexcept
 {
     _lastText = cursor;
 }

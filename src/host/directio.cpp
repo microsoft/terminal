@@ -537,9 +537,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         auto tempIter = tempBuffer.cbegin();
         auto outIter = buffer.begin();
 
-        for (auto i = 0; i < size.Y; i++)
+        for (til::CoordType i = 0; i < size.Y; i++)
         {
-            for (auto j = 0; j < size.X; j++)
+            for (til::CoordType j = 0; j < size.X; j++)
             {
                 // Any time we see the lead flag, we presume there will be a trailing one following it.
                 // Giving us two bytes of space (one per cell in the ascii part of the character union)
@@ -615,9 +615,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto size = rectangle.Dimensions();
         auto outIter = buffer.begin();
 
-        for (auto i = 0; i < size.Y; i++)
+        for (til::CoordType i = 0; i < size.Y; i++)
         {
-            for (auto j = 0; j < size.X; j++)
+            for (til::CoordType j = 0; j < size.X; j++)
             {
                 // Clear lead/trailing flags. We'll determine it for ourselves versus the given codepage.
                 WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
@@ -684,9 +684,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     const auto size = rectangle.Dimensions();
     auto bufferIter = buffer.begin();
 
-    for (SHORT i = 0; i < size.Y; i++)
+    for (til::CoordType i = 0; i < size.Y; i++)
     {
-        for (SHORT j = 0; j < size.X; j++)
+        for (til::CoordType j = 0; j < size.X; j++)
         {
             // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
             CHAR_INFO candidate;
@@ -756,8 +756,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         }
 
         // The buffer given should be big enough to hold the dimensions of the request.
-        size_t targetArea;
-        RETURN_IF_FAILED(SizeTMult(targetSize.X, targetSize.Y, &targetArea));
+        const auto targetArea = targetSize.area<size_t>();
         RETURN_HR_IF(E_INVALIDARG, targetArea < targetBuffer.size());
 
         // Clip the request rectangle to the size of the storage buffer
@@ -767,13 +766,13 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // Find the target point (where to write the user's buffer)
         // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
-        COORD targetPoint;
+        til::point targetPoint;
         targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
         targetPoint.Y = clip.Top < 0 ? -clip.Top : 0;
 
         // The clipped rect must be inside the buffer size, so it has a minimum value of 0. (max of itself and 0)
-        clip.Left = std::max(clip.Left, 0i16);
-        clip.Top = std::max(clip.Top, 0i16);
+        clip.Left = std::max(clip.Left, 0);
+        clip.Top = std::max(clip.Top, 0);
 
         // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
         const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
@@ -784,7 +783,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         // Get an iterator to the beginning of the return buffer
         // We might have to seek this forward or skip around if we clipped the request.
         auto targetIter = targetBuffer.begin();
-        COORD targetPos = { 0 };
+        til::point targetPos;
         const auto targetLimit = Viewport::FromDimensions(targetPoint, clippedRequestRectangle.Dimensions());
 
         // Get an iterator to the beginning of the request inside the screen buffer
@@ -902,7 +901,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // Do clipping according to the legacy patterns.
         auto writeRegion = requestRectangle.ToInclusive();
-        SMALL_RECT sourceRect;
+        til::inclusive_rect sourceRect;
         if (writeRegion.Right > storageSize.X - 1)
         {
             writeRegion.Right = storageSize.X - 1;
@@ -949,15 +948,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         for (; target.Y < writeRectangle.BottomExclusive(); target.Y++)
         {
             // We find the offset into the original buffer by the dimensions of the original request rectangle.
-            ptrdiff_t rowOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTSub(target.Y, requestRectangle.Top(), &rowOffset));
-            RETURN_IF_FAILED(PtrdiffTMult(rowOffset, requestRectangle.Width(), &rowOffset));
-
-            ptrdiff_t colOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTSub(target.X, requestRectangle.Left(), &colOffset));
-
-            ptrdiff_t totalOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTAdd(rowOffset, colOffset, &totalOffset));
+            const auto rowOffset = (target.Y - requestRectangle.Top()) * requestRectangle.Width();
+            const auto colOffset = target.X - requestRectangle.Left();
+            const auto totalOffset = rowOffset + colOffset;
 
             // Now we make a subspan starting from that offset for as much of the original request as would fit
             const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
@@ -1027,7 +1020,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
-                                                                  const COORD origin,
+                                                                  const til::point origin,
                                                                   gsl::span<WORD> buffer,
                                                                   size_t& written) noexcept
 {
@@ -1048,7 +1041,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
-                                                                   const COORD origin,
+                                                                   const til::point origin,
                                                                    gsl::span<char> buffer,
                                                                    size_t& written) noexcept
 {
@@ -1077,7 +1070,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
-                                                                   const COORD origin,
+                                                                   const til::point origin,
                                                                    gsl::span<wchar_t> buffer,
                                                                    size_t& written) noexcept
 {
