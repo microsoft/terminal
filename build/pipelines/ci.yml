@@ -71,6 +71,16 @@ stages:
       - template: ./templates/test-console-ci.yml
         parameters:
           platform: x64
+
+  - stage: LocalTest_x64
+    displayName: Local Test x64
+    dependsOn: [Build_x64]
+    condition: succeeded()
+    jobs:
+      - template: ./templates/localtest-console-ci.yml
+        parameters:
+          platform: x64
+
   - stage: Test_x86
     displayName: Test x86
     dependsOn: [Build_x86]
