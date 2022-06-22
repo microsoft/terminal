@@ -201,7 +201,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     // than the resultant foreground, and this can lead to weird situations where certain regions of
     // text have different backgrounds.
     if (Feature_AdjustIndistinguishableText::IsEnabled() &&
-        GetRenderMode(Mode::DistinguishableColors) &&
+        GetRenderMode(Mode::IndexedDistinguishableColors) &&
         !dimFg &&
         !brightenFg &&
         !attr.IsInvisible() &&

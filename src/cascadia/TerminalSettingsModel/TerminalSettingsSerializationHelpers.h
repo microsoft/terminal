@@ -30,6 +30,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
+{
+    static constexpr std::array<pair_type, 3> mappings = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "indexed", ValueType::Indexed },
+        pair_type{ "always", ValueType::Always }
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
 {
     static constexpr std::array<pair_type, 4> mappings = {

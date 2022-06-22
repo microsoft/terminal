@@ -165,7 +165,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
-    _renderSettings.SetRenderMode(RenderSettings::Mode::DistinguishableColors, appearance.AdjustIndistinguishableColors());
+    //_renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, appearance.AdjustIndistinguishableColors());
 
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
