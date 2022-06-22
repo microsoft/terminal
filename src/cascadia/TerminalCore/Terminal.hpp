@@ -255,6 +255,7 @@ public:
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
+    bool IsInQuickEditMode() const;
     bool IsInMarkMode() const;
     void ToggleMarkMode();
 
@@ -334,6 +335,7 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
     bool _markMode;
+    bool _quickEditMode;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;

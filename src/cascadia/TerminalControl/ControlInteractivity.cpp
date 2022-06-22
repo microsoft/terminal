@@ -142,13 +142,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
+    // - clearSelection: if true, clear the selection after copying it. Used for CopyOnSelect.
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
-                                                        const Windows::Foundation::IReference<CopyFormat>& formats)
+                                                        const Windows::Foundation::IReference<CopyFormat>& formats,
+                                                        bool clearSelection)
     {
         if (_core)
         {
@@ -164,7 +165,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Mark the current selection as copied
             _selectionNeedsToBeCopied = false;
 
-            return _core->CopySelectionToClipboard(singleLine, formats);
+            return _core->CopySelectionToClipboard(singleLine, formats, clearSelection);
         }
 
         return false;
@@ -257,14 +258,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
-            // CopyOnSelect right click always pastes
-            if (_core->CopyOnSelect() || !_core->HasSelection())
+            if (_core->CopyOnSelect())
             {
+                // CopyOnSelect:
+                // 1. keyboard selection? --> copy the new content first
+                // 2. right click always pastes!
+                if (_core->IsInQuickEditMode() || _core->IsInMarkMode())
+                {
+                    CopySelectionToClipboard(shiftEnabled, nullptr);
+                }
                 RequestPasteTextFromClipboard();
+            }
+            else if (_core->HasSelection())
+            {
+                // copy selected text
+                CopySelectionToClipboard(shiftEnabled, nullptr);
             }
             else
             {
-                CopySelectionToClipboard(shiftEnabled, nullptr);
+                // no selection --> paste
+                RequestPasteTextFromClipboard();
             }
         }
     }
@@ -383,7 +396,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             isLeftMouseRelease &&
             _selectionNeedsToBeCopied)
         {
-            CopySelectionToClipboard(false, nullptr);
+            // IMPORTANT!
+            // Set clearSelection to false here!
+            // Otherwise, the selection will be cleared immediately after you make it.
+            CopySelectionToClipboard(false, nullptr, /*clearSelection*/ false);
         }
 
         _singleClickTouchdownPos = std::nullopt;

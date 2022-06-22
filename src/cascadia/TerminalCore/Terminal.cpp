@@ -46,6 +46,7 @@ Terminal::Terminal() :
     _altGrAliasing{ true },
     _blockSelection{ false },
     _markMode{ false },
+    _quickEditMode{ false },
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },

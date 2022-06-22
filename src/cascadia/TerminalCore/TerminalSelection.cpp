@@ -273,6 +273,11 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
+bool Terminal::IsInQuickEditMode() const
+{
+    return _quickEditMode;
+}
+
 bool Terminal::IsInMarkMode() const
 {
     return _markMode;
@@ -296,6 +301,7 @@ void Terminal::ToggleMarkMode()
         _selection->end = cursorPos;
         _selection->pivot = cursorPos;
         _markMode = true;
+        _quickEditMode = false;
         _blockSelection = false;
     }
 }
@@ -393,7 +399,8 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         break;
     }
 
-    // 3. Actually modify the selection
+    // 3. Actually modify the selection state
+    _quickEditMode = !_markMode;
     if (_markMode && !mods.IsShiftPressed())
     {
         // [Mark Mode] + shift unpressed --> move all three (i.e. just use arrow keys)
@@ -404,6 +411,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     else
     {
         // [Mark Mode] + shift --> updating a standard selection
+        // This is also standard quick-edit modification
         // NOTE: targetStart doesn't matter here
         auto targetStart = false;
         std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
@@ -577,6 +585,7 @@ void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
     _markMode = false;
+    _quickEditMode = false;
 }
 
 // Method Description:
