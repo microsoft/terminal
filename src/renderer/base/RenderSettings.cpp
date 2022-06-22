@@ -242,6 +242,8 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
             fg = bg;
         }
 
+        fg = GetRenderMode(Mode::AlwaysDistinguishableColors) ? ColorFix::GetPerceivableColor(fg, bg) : fg;
+
         return { fg, bg };
     }
 }
