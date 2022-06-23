@@ -72,10 +72,10 @@ namespace winrt::TerminalApp::implementation
         {
             return S_FALSE;
         }
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+        const auto controlSettings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
         // Try to handle auto-elevation
-        if (_maybeElevate(newTerminalArgs, settings, profile))
+        if (_maybeElevate(newTerminalArgs, controlSettings, profile))
         {
             return S_OK;
         }
@@ -83,10 +83,15 @@ namespace winrt::TerminalApp::implementation
         // unfortunately. This seems to be due to Centennial quirks. It works
         // unpackaged, but not packaged.
         //
-        // This call to _MakePane won't return nullptr, we already checked that
-        // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, nullptr));
+        // // This call to _MakePane won't return nullptr, we already checked that
+        // // case above with the _maybeElevate call.
+        // _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, nullptr));
 
+        // TerminalSettingsCreateResult controlSettings{ nullptr };
+        // Profile profile{ nullptr };
+        // _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
+        auto initContentProc = _CreateNewContentProcess(profile, controlSettings);
+        _createNewTabFromContent(initContentProc, controlSettings, profile);
         // const auto tabCount = _tabs.Size();
         // const auto usedManualProfile = (newTerminalArgs != nullptr) &&
         //                                (newTerminalArgs.ProfileIndex() != nullptr ||
@@ -277,6 +282,26 @@ namespace winrt::TerminalApp::implementation
             auto newTabImpl = winrt::make_self<TerminalTab>(pane);
             _InitializeTab(newTabImpl);
         }
+    }
+
+    winrt::fire_and_forget TerminalPage::_createNewTabFromContent(Windows::Foundation::IAsyncOperation<ContentProcess> initContentProc,
+                                                                  TerminalSettingsCreateResult controlSettings,
+                                                                  Profile profile)
+    {
+        const auto initial = _startupState <= StartupState::InStartup;
+        if (!initial)
+        {
+            co_await winrt::resume_background();
+        }
+        auto content = co_await initContentProc;
+        // if (!initial)
+        // {
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+        // }
+
+        auto pane = _makePaneFromContent(content, controlSettings, profile);
+        auto newTabImpl = winrt::make_self<TerminalTab>(pane);
+        _InitializeTab(newTabImpl);
     }
 
     // Method Description:

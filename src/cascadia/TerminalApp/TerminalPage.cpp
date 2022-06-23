@@ -717,7 +717,8 @@ namespace winrt::TerminalApp::implementation
         // GH#12267: Make sure that we don't instantly close ourselves when
         // we're readying to accept a defterm connection. In that case, we don't
         // have a tab yet, but will once we're initialized.
-        if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
+        const bool startedElevated = false;
+        if ((_tabs.Size() == 0 && startedElevated) && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
             _LastTabClosedHandlers(*this, nullptr);
         }
@@ -2687,6 +2688,19 @@ namespace winrt::TerminalApp::implementation
         {
         }
         return content;
+    }
+
+    // INVARIANT: Must be called on UI thread!
+    std::shared_ptr<Pane> TerminalPage::_makePaneFromContent(ContentProcess content,
+                                                             TerminalSettingsCreateResult controlSettings,
+                                                             Profile profile)
+    {
+        // Create the XAML control that will be attached to the content process.
+        // We're not passing in a connection, because the contentGuid will be used instead
+        const auto control = _InitControl(controlSettings, content.Guid());
+        _RegisterTerminalEvents(control);
+
+        return std::make_shared<Pane>(profile, control);
     }
 
     TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)

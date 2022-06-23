@@ -449,6 +449,15 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> _CreateNewContentProcess(winrt::Microsoft::Terminal::Settings::Model::Profile profile,
                                                                                                                            winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings);
         winrt::Microsoft::Terminal::Control::ContentProcess _AttachToContentProcess(const winrt::guid contentGuid);
+
+        winrt::fire_and_forget _createNewTabFromContent(Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> initContentProc,
+                                                        winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult controlSettings,
+                                                        winrt::Microsoft::Terminal::Settings::Model::Profile profile);
+
+        std::shared_ptr<Pane> _makePaneFromContent(winrt::Microsoft::Terminal::Control::ContentProcess initContentProc,
+                                                   winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult controlSettings,
+                                                   winrt::Microsoft::Terminal::Settings::Model::Profile profile);
+
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::guid& contentGuid);
         winrt::Microsoft::Terminal::Control::ContentProcess _InBackgroundMakeContent(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
