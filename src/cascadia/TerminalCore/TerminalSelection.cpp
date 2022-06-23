@@ -424,8 +424,8 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         bool targetStart;
         std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
 
-        // IMPORTANT! Pivoting the selection here might've changed which endpoint we're targetting.
-        // So let's set the targetted endpoint again.
+        // IMPORTANT! Pivoting the selection here might have changed which endpoint we're targeting.
+        // So let's set the targeted endpoint again.
         _selectionEndpoint = static_cast<SelectionEndpoint>(0);
         WI_SetFlagIf(_selectionEndpoint, SelectionEndpoint::Start, targetStart);
         WI_SetFlagIf(_selectionEndpoint, SelectionEndpoint::End, !targetStart);
