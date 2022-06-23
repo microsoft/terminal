@@ -96,7 +96,7 @@ const bool Terminal::IsBlockSelection() const noexcept
     return _blockSelection;
 }
 
-const bool Terminal::IsInQuickEditMode() const noexcept
+bool Terminal::IsInQuickEditMode() const noexcept
 {
     return _quickEditMode;
 }
