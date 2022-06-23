@@ -950,8 +950,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto end{ _terminal->SelectionEndForRendering() };
         info.EndPos = { end.X, end.Y };
 
-        info.MovingEnd = _terminal->MovingEnd();
-        info.MovingCursor = _terminal->MovingCursor();
+        info.Endpoint = static_cast<SelectionEndpointTarget>(_terminal->SelectionEndpointTarget());
 
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
         info.StartAtLeftBoundary = _terminal->GetSelectionAnchor().x == bufferSize.Left();

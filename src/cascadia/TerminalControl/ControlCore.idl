@@ -29,12 +29,18 @@ namespace Microsoft.Terminal.Control
         All
     };
 
+    [flags]
+    enum SelectionEndpointTarget
+    {
+        Start = 0x1,
+        End = 0x2
+    };
+
     struct SelectionData
     {
         Microsoft.Terminal.Core.Point StartPos;
         Microsoft.Terminal.Core.Point EndPos;
-        Boolean MovingEnd;
-        Boolean MovingCursor;
+        SelectionEndpointTarget Endpoint;
         Boolean StartAtLeftBoundary;
         Boolean EndAtRightBoundary;
     };

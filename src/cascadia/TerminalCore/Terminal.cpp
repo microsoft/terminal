@@ -48,6 +48,7 @@ Terminal::Terminal() :
     _markMode{ false },
     _quickEditMode{ false },
     _selection{ std::nullopt },
+    _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
     _trimBlockSelection{ false },

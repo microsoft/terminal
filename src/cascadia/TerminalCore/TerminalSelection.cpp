@@ -7,6 +7,8 @@
 
 using namespace Microsoft::Terminal::Core;
 
+DEFINE_ENUM_FLAG_OPERATORS(Terminal::SelectionEndpoint);
+
 /* Selection Pivot Description:
  *   The pivot helps properly update the selection when a user moves a selection over itself
  *   See SelectionTest::DoubleClickDrag_Left for an example of the functionality mentioned here
@@ -118,6 +120,11 @@ til::point Terminal::SelectionEndForRendering() const
     }
     pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
     return til::point{ pos };
+}
+
+const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noexcept
+{
+    return _selectionEndpoint;
 }
 
 // Method Description:
@@ -303,6 +310,7 @@ void Terminal::ToggleMarkMode()
         _markMode = true;
         _quickEditMode = false;
         _blockSelection = false;
+        WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
 }
 
@@ -354,21 +362,6 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
     return std::nullopt;
 }
 
-bool Terminal::MovingEnd() const noexcept
-{
-    // true --> we're moving end endpoint ("lower")
-    // false --> we're moving start endpoint ("higher")
-    return _selection->start == _selection->pivot;
-}
-
-bool Terminal::MovingCursor() const noexcept
-{
-    // Relevant for keyboard selection:
-    // true --> the selection is just a "cursor"; we're moving everything together with arrow keys
-    // false --> otherwise
-    return _selection->start == _selection->pivot && _selection->pivot == _selection->end;
-}
-
 // Method Description:
 // - updates the selection endpoints based on a direction and expansion mode. Primarily used for keyboard selection.
 // Arguments:
@@ -378,9 +371,25 @@ bool Terminal::MovingCursor() const noexcept
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods)
 {
     // 1. Figure out which endpoint to update
-    // One of the endpoints is the pivot,
-    // signifying that the other endpoint is the one we want to move.
-    auto targetPos{ MovingEnd() ? _selection->end : _selection->start };
+    // [Mark Mode]
+    // - shift pressed --> only move "end" (or "start" if "pivot" == "end")
+    // - otherwise --> move both "start" and "end" (moving cursor)
+    // [Quick Edit]
+    // - just move "end" (or "start" if "pivot" == "end")
+    _selectionEndpoint = static_cast<SelectionEndpoint>(0);
+    if (_markMode && !mods.IsShiftPressed())
+    {
+        WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
+    }
+    else if (_selection->start == _selection->pivot)
+    {
+        WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+    }
+    else if (_selection->end == _selection->pivot)
+    {
+        WI_SetFlag(_selectionEndpoint, SelectionEndpoint::Start);
+    }
+    auto targetPos{ WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) ? _selection->start : _selection->end };
 
     // 2. Perform the movement
     switch (mode)
@@ -412,9 +421,14 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     {
         // [Mark Mode] + shift --> updating a standard selection
         // This is also standard quick-edit modification
-        // NOTE: targetStart doesn't matter here
-        auto targetStart = false;
+        bool targetStart;
         std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
+
+        // IMPORTANT! Pivoting the selection here might've changed which endpoint we're targetting.
+        // So let's set the targetted endpoint again.
+        _selectionEndpoint = static_cast<SelectionEndpoint>(0);
+        WI_SetFlagIf(_selectionEndpoint, SelectionEndpoint::Start, targetStart);
+        WI_SetFlagIf(_selectionEndpoint, SelectionEndpoint::End, !targetStart);
     }
 
     // 4. Scroll (if necessary)
@@ -586,6 +600,7 @@ void Terminal::ClearSelection()
     _selection = std::nullopt;
     _markMode = false;
     _quickEditMode = false;
+    _selectionEndpoint = static_cast<SelectionEndpoint>(0);
 }
 
 // Method Description:

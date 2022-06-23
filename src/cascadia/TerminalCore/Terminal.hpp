@@ -249,6 +249,13 @@ public:
         Viewport,
         Buffer
     };
+
+    enum class SelectionEndpoint
+    {
+        Start = 0x1,
+        End = 0x2
+    };
+
     void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const til::point position);
     void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
@@ -261,10 +268,9 @@ public:
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
-    bool MovingEnd() const noexcept;
-    bool MovingCursor() const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
+    const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -336,6 +342,7 @@ private:
     SelectionExpansion _multiClickSelectionMode;
     bool _markMode;
     bool _quickEditMode;
+    SelectionEndpoint _selectionEndpoint;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;

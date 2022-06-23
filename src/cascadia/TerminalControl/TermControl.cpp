@@ -2830,9 +2830,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                 // show/update selection markers
                 // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
-                const auto selectionAnchor{ markerData.MovingEnd ? markerData.EndPos : markerData.StartPos };
-                const auto& marker{ markerData.MovingEnd ? SelectionEndMarker() : SelectionStartMarker() };
-                const auto& otherMarker{ markerData.MovingEnd ? SelectionStartMarker() : SelectionEndMarker() };
+                const auto movingEnd{ WI_IsFlagSet(markerData.Endpoint, SelectionEndpointTarget::End) };
+                const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
+                const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
+                const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
                 if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
                 {
                     // if the endpoint is outside of the viewport,
@@ -2841,7 +2842,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     otherMarker.Visibility(Visibility::Collapsed);
                     co_return;
                 }
-                else if (markerData.MovingCursor)
+                else if (WI_AreAllFlagsSet(markerData.Endpoint, SelectionEndpointTarget::Start | SelectionEndpointTarget::End))
                 {
                     // display both markers
                     displayMarker(true);
@@ -2851,7 +2852,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     // display one marker,
                     // but hide the other
-                    displayMarker(markerData.MovingEnd);
+                    displayMarker(movingEnd);
                     otherMarker.Visibility(Visibility::Collapsed);
                 }
             }
