@@ -310,7 +310,7 @@ void Terminal::ToggleMarkMode()
 }
 
 // Method Description:
-// - switch the targetted selection endpoint with the other one (i.e. start <--> end)
+// - switch the targeted selection endpoint with the other one (i.e. start <--> end)
 void Terminal::SwitchSelectionEndpoint()
 {
     if (IsSelectionActive())
