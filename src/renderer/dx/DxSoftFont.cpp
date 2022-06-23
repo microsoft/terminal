@@ -41,6 +41,13 @@ void DxSoftFont::SetFont(const gsl::span<const uint16_t> bitPattern,
 {
     Reset();
 
+    // If the font is being reset, just free up the memory and return.
+    if (bitPattern.empty())
+    {
+        _bitmapBits.clear();
+        return;
+    }
+
     const auto maxGlyphCount = BITMAP_GRID_WIDTH * BITMAP_GRID_HEIGHT;
     _glyphCount = std::min<size_t>(bitPattern.size() / sourceSize.height, maxGlyphCount);
     _sourceSize = sourceSize;
