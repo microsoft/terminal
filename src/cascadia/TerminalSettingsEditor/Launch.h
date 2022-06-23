@@ -30,10 +30,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
 
         WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_OBSERVABLE_PROPERTY(Editor::LaunchViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 
-        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, State().Settings().GlobalSettings().FirstWindowPreference);
-        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings().LaunchMode);
-        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Settings().GlobalSettings().WindowingBehavior);
+        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, ViewModel().Settings().GlobalSettings().FirstWindowPreference);
+        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, ViewModel().Settings().GlobalSettings().LaunchMode);
+        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, ViewModel().Settings().GlobalSettings().WindowingBehavior);
     };
 }
 

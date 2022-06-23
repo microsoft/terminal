@@ -38,24 +38,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::LaunchPageNavigationState>();
+        _ViewModel = e.Parameter().as<Editor::LaunchViewModel>();
     }
 
     IInspectable Launch::CurrentDefaultProfile()
     {
-        const auto defaultProfileGuid{ _State.Settings().GlobalSettings().DefaultProfile() };
-        return winrt::box_value(_State.Settings().FindProfile(defaultProfileGuid));
+        const auto defaultProfileGuid{ _ViewModel.Settings().GlobalSettings().DefaultProfile() };
+        return winrt::box_value(_ViewModel.Settings().FindProfile(defaultProfileGuid));
     }
 
     void Launch::CurrentDefaultProfile(const IInspectable& value)
     {
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
-        _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
+        _ViewModel.Settings().GlobalSettings().DefaultProfile(profile.Guid());
     }
 
     winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultProfiles() const
     {
-        const auto allProfiles = _State.Settings().AllProfiles();
+        const auto allProfiles = _ViewModel.Settings().AllProfiles();
 
         std::vector<IInspectable> profiles;
         profiles.reserve(allProfiles.Size());
