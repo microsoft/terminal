@@ -292,6 +292,7 @@ codeproject
 coinit
 COLLECTIONURI
 colorizing
+COLORMATRIX
 colororacle
 colorref
 colorscheme
@@ -682,6 +683,7 @@ dwrite
 dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
+dxguid
 dxinterop
 dxp
 dxsm
