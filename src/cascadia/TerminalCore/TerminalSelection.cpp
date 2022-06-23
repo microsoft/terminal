@@ -391,7 +391,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
     auto targetPos{ WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) ? _selection->start : _selection->end };
 
-    // 2. Perform the movement
+    // 2.A) Perform the movement
     switch (mode)
     {
     case SelectionExpansion::Char:
@@ -407,6 +407,9 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         _MoveByBuffer(direction, targetPos);
         break;
     }
+
+    // 2.B) Clamp the movement to the mutable viewport
+    targetPos = std::min(targetPos, _GetMutableViewport().BottomRightInclusive());
 
     // 3. Actually modify the selection state
     _quickEditMode = !_markMode;
@@ -432,9 +435,9 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 4. Scroll (if necessary)
-    if (const auto viewport = _GetVisibleViewport(); !viewport.IsInBounds(targetPos))
+    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(targetPos))
     {
-        if (const auto amtAboveView = viewport.Top() - targetPos.Y; amtAboveView > 0)
+        if (const auto amtAboveView = visibleViewport.Top() - targetPos.Y; amtAboveView > 0)
         {
             // anchor is above visible viewport, scroll by that amount
             _scrollOffset += amtAboveView;
@@ -442,7 +445,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         else
         {
             // anchor is below visible viewport, scroll by that amount
-            const auto amtBelowView = targetPos.Y - viewport.BottomInclusive();
+            const auto amtBelowView = targetPos.Y - visibleViewport.BottomInclusive();
             _scrollOffset -= amtBelowView;
         }
         _NotifyScrollEvent();
