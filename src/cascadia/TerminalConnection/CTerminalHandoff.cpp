@@ -102,6 +102,8 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
     try
     {
         // Stash a local copy of _pfnHandoff before we stop listening.
+        // localPfnHandoff is tested for nullness below.
+#pragma warning(suppress : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
         auto localPfnHandoff = _pfnHandoff;
 
         // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
