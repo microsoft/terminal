@@ -47,7 +47,7 @@ namespace Microsoft::Console::Render
         D2D1_SCALE_INTERPOLATION_MODE _interpolation;
         D2D1_MATRIX_5X4_F _colorMatrix;
         D2D1_SIZE_U _bitmapSize;
-        std::vector<uint32_t> _bitmapBits;
+        std::vector<byte> _bitmapBits;
         ::Microsoft::WRL::ComPtr<ID2D1Bitmap> _bitmap;
         ::Microsoft::WRL::ComPtr<ID2D1Effect> _scaleEffect;
         ::Microsoft::WRL::ComPtr<ID2D1Effect> _colorEffect;

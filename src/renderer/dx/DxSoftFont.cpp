@@ -56,7 +56,7 @@ void DxSoftFont::SetFont(const gsl::span<const uint16_t> bitPattern,
 
     const auto bitmapWidth = BITMAP_GRID_WIDTH * (_sourceSize.width + PADDING * 2);
     const auto bitmapHeight = BITMAP_GRID_HEIGHT * (_sourceSize.height + PADDING * 2);
-    _bitmapBits = std::vector<UINT32>(bitmapWidth * bitmapHeight);
+    _bitmapBits = std::vector<byte>(bitmapWidth * bitmapHeight);
     _bitmapSize = { gsl::narrow_cast<UINT32>(bitmapWidth), gsl::narrow_cast<UINT32>(bitmapHeight) };
 
     const auto bitmapScanline = [=](const auto lineNumber) noexcept {
@@ -76,16 +76,16 @@ void DxSoftFont::SetFont(const gsl::span<const uint16_t> bitPattern,
         auto dstPointer = bitmapScanline(yOffset) + xOffset;
         for (auto y = 0; y < sourceSize.height; y++)
         {
-            // Then for each scanline in the source, we need expand the bits
-            // into 32-bit BGRA values. For every bit that is set we write out
-            // an FFFFFFFF value, and it not set, we write out 00000000. In the
-            // end, though, all we care about is the red component, since we'll
-            // later remap these values with a color matrix.
+            // Then for each scanline in the source, we need to expand the bits
+            // into 8-bit values. For every bit that is set we write out an FF
+            // value, and if not set, we write out 00. In the end, all we care
+            // about is a single red component for the R8_UNORM bitmap format,
+            // since we'll later remap that to RGBA with a color matrix.
             auto srcBits = *(srcPointer++);
             for (auto x = 0; x < sourceSize.width; x++)
             {
                 const auto srcBitIsSet = (srcBits & 0x8000) != 0;
-                *(dstPointer++) = srcBitIsSet ? 0xFFFFFFFF : 0x00000000;
+                *(dstPointer++) = srcBitIsSet ? 0xFF : 0x00;
                 srcBits <<= 1;
             }
             // When glyphs in this bitmap are output, they will typically need
@@ -197,9 +197,9 @@ HRESULT DxSoftFont::_createResources(gsl::not_null<ID2D1DeviceContext*> d2dConte
     if (!_bitmap)
     {
         D2D1_BITMAP_PROPERTIES bitmapProperties{};
-        bitmapProperties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        bitmapProperties.pixelFormat.format = DXGI_FORMAT_R8_UNORM;
         bitmapProperties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
-        const auto bitmapPitch = gsl::narrow_cast<UINT32>(_bitmapSize.width * sizeof(UINT32));
+        const auto bitmapPitch = gsl::narrow_cast<UINT32>(_bitmapSize.width);
         RETURN_IF_FAILED(d2dContext->CreateBitmap(_bitmapSize, _bitmapBits.data(), bitmapPitch, bitmapProperties, _bitmap.GetAddressOf()));
     }
 
