@@ -718,6 +718,7 @@ namespace winrt::TerminalApp::implementation
         // we're readying to accept a defterm connection. In that case, we don't
         // have a tab yet, but will once we're initialized.
         const bool startedElevated = false;
+        // TODO!
         if ((_tabs.Size() == 0 && startedElevated) && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
             _LastTabClosedHandlers(*this, nullptr);

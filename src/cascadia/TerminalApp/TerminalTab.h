@@ -36,6 +36,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> DetachRoot();
         std::shared_ptr<Pane> DetachPane();
         void AttachPane(std::shared_ptr<Pane> pane);
+        void AttachRootPane(std::shared_ptr<Pane> rootPane);
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                        const float splitSize,

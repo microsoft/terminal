@@ -27,6 +27,17 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalTab::TerminalTab(std::shared_ptr<Pane> rootPane)
     {
+        if (rootPane != nullptr)
+        {
+            AttachRootPane(rootPane);
+        }
+
+        _Setup();
+    }
+
+    void TerminalTab::AttachRootPane(std::shared_ptr<Pane> rootPane)
+    {
+        assert(_rootPane == nullptr);
         _rootPane = rootPane;
         _activePane = nullptr;
 
@@ -60,7 +71,13 @@ namespace winrt::TerminalApp::implementation
             _mruPanes.insert(_mruPanes.begin(), id.value());
         }
 
-        _Setup();
+        _rootClosedToken = _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+            _ClosedHandlers(nullptr, nullptr);
+        });
+
+        Content(_rootPane->GetRootElement());
+
+        Initialize();
     }
 
     // Method Description:
@@ -71,12 +88,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_Setup()
     {
-        _rootClosedToken = _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
-            _ClosedHandlers(nullptr, nullptr);
-        });
-
-        Content(_rootPane->GetRootElement());
-
         _MakeTabViewItem();
         _CreateContextMenu();
 
@@ -378,6 +389,10 @@ namespace winrt::TerminalApp::implementation
         if (!_runtimeTabText.empty())
         {
             return _runtimeTabText;
+        }
+        if (!_activePane)
+        {
+            return L"";
         }
         if (!_activePane->_IsLeaf())
         {
@@ -864,7 +879,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -1069,7 +1084,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)

@@ -128,7 +128,7 @@ namespace winrt::TerminalApp::implementation
     // - newTabImpl: the uninitialized tab.
     void TerminalPage::_InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl)
     {
-        newTabImpl->Initialize();
+        // newTabImpl->Initialize();
 
         // Add the new tab to the list of our tabs.
         _tabs.Append(*newTabImpl);
@@ -228,13 +228,17 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItems().Append(tabViewItem);
 
         // Set this tab's icon to the icon from the user's profile
-        if (const auto profile{ newTabImpl->GetFocusedProfile() })
-        {
-            if (!profile.Icon().empty())
-            {
-                newTabImpl->UpdateIcon(profile.Icon());
-            }
-        }
+        //
+        // TODO! This doesn't need ot live in TerminalPage like, at all. This
+        // should get moved inside TerminalTab::AttachRootPane, or
+        // TerminalTab::Initialize or something.
+        // if (const auto profile{ newTabImpl->GetFocusedProfile() })
+        // {
+        //     if (!profile.Icon().empty())
+        //     {
+        //         newTabImpl->UpdateIcon(profile.Icon());
+        //     }
+        // }
 
         tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
 
@@ -288,11 +292,15 @@ namespace winrt::TerminalApp::implementation
                                                                   TerminalSettingsCreateResult controlSettings,
                                                                   Profile profile)
     {
-        const auto initial = _startupState <= StartupState::InStartup;
-        if (!initial)
-        {
-            co_await winrt::resume_background();
-        }
+        auto newTabImpl = winrt::make_self<TerminalTab>(nullptr);
+        _InitializeTab(newTabImpl); // Adds tab to list, tabview
+
+        // const auto initial = _startupState <= StartupState::InStartup;
+        // if (!initial)
+        // {
+        // TODO! Do we need both this and the resume_background in _CreateNewContentProcess
+        co_await winrt::resume_background();
+        // }
         auto content = co_await initContentProc;
         // if (!initial)
         // {
@@ -300,8 +308,7 @@ namespace winrt::TerminalApp::implementation
         // }
 
         auto pane = _makePaneFromContent(content, controlSettings, profile);
-        auto newTabImpl = winrt::make_self<TerminalTab>(pane);
-        _InitializeTab(newTabImpl);
+        newTabImpl->AttachRootPane(pane);
     }
 
     // Method Description:
