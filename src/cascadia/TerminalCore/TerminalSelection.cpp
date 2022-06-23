@@ -280,7 +280,7 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
-bool Terminal::IsInQuickEditMode() const
+const bool Terminal::IsInQuickEditMode() const noexcept
 {
     return _quickEditMode;
 }
