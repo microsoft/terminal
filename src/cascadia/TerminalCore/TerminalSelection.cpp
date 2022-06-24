@@ -385,7 +385,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
     auto targetPos{ WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) ? _selection->start : _selection->end };
 
-    // 2.A) Perform the movement
+    // 2 Perform the movement
     switch (mode)
     {
     case SelectionExpansion::Char:
@@ -401,9 +401,6 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         _MoveByBuffer(direction, targetPos);
         break;
     }
-
-    // 2.B) Clamp the movement to the mutable viewport
-    targetPos = std::min(targetPos, _GetMutableViewport().BottomRightInclusive());
 
     // 3. Actually modify the selection state
     _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
@@ -471,13 +468,16 @@ void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Up:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
-        pos = { pos.X, std::clamp(pos.Y - 1, bufferSize.Top(), bufferSize.BottomInclusive()) };
+        const auto newY{ pos.Y - 1 };
+        pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.X, newY };
         break;
     }
     case SelectionDirection::Down:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
-        pos = { pos.X, std::clamp(pos.Y + 1, bufferSize.Top(), bufferSize.BottomInclusive()) };
+        const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
+        const auto newY{ pos.Y + 1 };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.X, newY };
         break;
     }
     }
