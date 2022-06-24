@@ -288,7 +288,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     const auto movingEnd{ _selection->start == _selection->pivot };
     auto targetPos{ movingEnd ? _selection->end : _selection->start };
 
-    // 2.A) Perform the movement
+    // 2 Perform the movement
     switch (mode)
     {
     case SelectionExpansion::Char:
@@ -303,15 +303,6 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     case SelectionExpansion::Buffer:
         _MoveByBuffer(direction, targetPos);
         break;
-    }
-
-    // 2.B) Clamp the movement to the mutable viewport
-    const auto bufferSize = _activeBuffer().GetSize();
-    const auto mutableViewport = _GetMutableViewport();
-    const COORD bottomRightInclusive{ mutableViewport.RightInclusive(), mutableViewport.BottomInclusive() };
-    if (bufferSize.CompareInBounds(targetPos, bottomRightInclusive) > 0)
-    {
-        targetPos = bottomRightInclusive;
     }
 
     // 3. Actually modify the selection
@@ -362,13 +353,16 @@ void Terminal::_MoveByChar(SelectionDirection direction, COORD& pos)
     case SelectionDirection::Up:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
-        pos = { pos.X, std::clamp(base::ClampSub<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
+        const auto newY{ base::ClampSub<short, short>(pos.Y, 1).RawValue() };
+        pos = newY < bufferSize.Top() ? bufferSize.Origin() : COORD{ pos.X, newY };
         break;
     }
     case SelectionDirection::Down:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
-        pos = { pos.X, std::clamp(base::ClampAdd<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
+        const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
+        const auto newY{ base::ClampAdd<short, short>(pos.Y, 1).RawValue() };
+        pos = newY > mutableBottom ? COORD{ bufferSize.RightInclusive(), mutableBottom } : COORD{ pos.X, newY };
         break;
     }
     }
