@@ -354,6 +354,7 @@
         "toggleFocusMode",
         "selectAll",
         "setFocusMode",
+        "switchSelectionEndpoint",
         "toggleFullscreen",
         "setFullScreen",
         "setMaximized",
