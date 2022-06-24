@@ -78,8 +78,8 @@ void RenderSettings::ResetColorTable() noexcept
 //   color pair to the adjusted foreground for that color pair
 void RenderSettings::MakeAdjustedColorArray() noexcept
 {
-    // The color table has 16 colors, but the adjusted color table needs to be 18
-    // to include the default background and default foreground colors
+    // The color table has 16 colors, but the adjusted color table needs to be 19
+    // to include the default background, default foreground and bright default foreground colors
     std::array<COLORREF, 19> colorTableWithDefaults;
     std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
     colorTableWithDefaults[AdjustedFgIndex] = GetColorAlias(ColorAlias::DefaultForeground);
