@@ -13,13 +13,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         InteractionViewModel(Model::GlobalAppSettings globalSettings);
+        Model::GlobalAppSettings GlobalSettings();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
-        WINRT_PROPERTY(Model::GlobalAppSettings, GlobalSettings, nullptr)
-
         GETSET_BINDABLE_ENUM_SETTING(TabSwitcherMode, Model::TabSwitcherMode, _GlobalSettings.TabSwitcherMode);
         GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, _GlobalSettings.CopyFormatting);
+
+    private:
+        Model::GlobalAppSettings _GlobalSettings;
     };
 };
 

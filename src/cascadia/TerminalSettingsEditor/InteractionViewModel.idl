@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass InteractionViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         InteractionViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
-        Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings;
+        Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
 
         IInspectable CurrentTabSwitcherMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabSwitcherModeList { get; };
