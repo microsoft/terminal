@@ -280,19 +280,14 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
-const bool Terminal::IsInQuickEditMode() const noexcept
+Terminal::SelectionInteractionMode Terminal::SelectionMode() const noexcept
 {
-    return _quickEditMode;
-}
-
-bool Terminal::IsInMarkMode() const
-{
-    return _markMode;
+    return _selectionMode;
 }
 
 void Terminal::ToggleMarkMode()
 {
-    if (_markMode)
+    if (_selectionMode == SelectionInteractionMode::Mark)
     {
         // Exit Mark Mode
         ClearSelection();
@@ -307,8 +302,7 @@ void Terminal::ToggleMarkMode()
         _selection->start = cursorPos;
         _selection->end = cursorPos;
         _selection->pivot = cursorPos;
-        _markMode = true;
-        _quickEditMode = false;
+        _selectionMode = SelectionInteractionMode::Mark;
         _blockSelection = false;
         WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
@@ -316,7 +310,7 @@ void Terminal::ToggleMarkMode()
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
 {
-    if ((_markMode || mods.IsShiftPressed()) && !mods.IsAltPressed())
+    if ((_selectionMode == SelectionInteractionMode::Mark || mods.IsShiftPressed()) && !mods.IsAltPressed())
     {
         if (mods.IsCtrlPressed())
         {
@@ -377,7 +371,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     // [Quick Edit]
     // - just move "end" (or "start" if "pivot" == "end")
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
-    if (_markMode && !mods.IsShiftPressed())
+    if (_selectionMode == SelectionInteractionMode::Mark && !mods.IsShiftPressed())
     {
         WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
@@ -412,8 +406,8 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     targetPos = std::min(targetPos, _GetMutableViewport().BottomRightInclusive());
 
     // 3. Actually modify the selection state
-    _quickEditMode = !_markMode;
-    if (_markMode && !mods.IsShiftPressed())
+    _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
+    if (_selectionMode == SelectionInteractionMode::Mark && !mods.IsShiftPressed())
     {
         // [Mark Mode] + shift unpressed --> move all three (i.e. just use arrow keys)
         _selection->start = targetPos;
@@ -601,8 +595,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos)
 void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
-    _markMode = false;
-    _quickEditMode = false;
+    _selectionMode = SelectionInteractionMode::Mouse;
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
 }
 

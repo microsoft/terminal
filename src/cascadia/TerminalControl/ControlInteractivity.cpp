@@ -263,7 +263,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // CopyOnSelect:
                 // 1. keyboard selection? --> copy the new content first
                 // 2. right click always pastes!
-                if (_core->IsInQuickEditMode() || _core->IsInMarkMode())
+                if (_core->SelectionMode() > SelectionInteractionMode::Keyboard)
                 {
                     CopySelectionToClipboard(shiftEnabled, nullptr);
                 }

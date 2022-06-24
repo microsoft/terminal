@@ -417,7 +417,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            if (_terminal->IsInMarkMode() && modifiers.IsCtrlPressed() && vkey == 'A')
+            const auto isInMarkMode = static_cast<Control::SelectionInteractionMode>(_terminal->SelectionMode()) == Control::SelectionInteractionMode::Mark;
+            if (isInMarkMode && modifiers.IsCtrlPressed() && vkey == 'A')
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
@@ -1088,14 +1089,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updateSelection();
     }
 
-    bool ControlCore::IsInMarkMode() const
+    Control::SelectionInteractionMode ControlCore::SelectionMode() const
     {
-        return _terminal->IsInMarkMode();
-    }
-
-    bool ControlCore::IsInQuickEditMode() const
-    {
-        return _terminal->IsInQuickEditMode();
+        return static_cast<Control::SelectionInteractionMode>(_terminal->SelectionMode());
     }
 
     // Method Description:

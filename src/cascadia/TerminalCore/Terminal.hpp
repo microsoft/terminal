@@ -233,6 +233,13 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    enum class SelectionInteractionMode
+    {
+        Mouse,
+        Keyboard,
+        Mark
+    };
+
     enum class SelectionDirection
     {
         Left,
@@ -262,8 +269,7 @@ public:
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
-    const bool IsInQuickEditMode() const noexcept;
-    bool IsInMarkMode() const;
+    SelectionInteractionMode SelectionMode() const noexcept;
     void ToggleMarkMode();
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
@@ -340,8 +346,7 @@ private:
     bool _blockSelection;
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
-    bool _markMode;
-    bool _quickEditMode;
+    SelectionInteractionMode _selectionMode;
     SelectionEndpoint _selectionEndpoint;
 #pragma endregion
 

@@ -29,6 +29,13 @@ namespace Microsoft.Terminal.Control
         All
     };
 
+    enum SelectionInteractionMode
+    {
+        Mouse,
+        Keyboard,
+        Mark
+    };
+
     [flags]
     enum SelectionEndpointTarget
     {
@@ -84,7 +91,6 @@ namespace Microsoft.Terminal.Control
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
         void ClearBuffer(ClearBufferType clearType);
-        Boolean IsInMarkMode();
 
         void SetHoveredCell(Microsoft.Terminal.Core.Point terminalPosition);
         void ClearHoveredCell();
@@ -107,6 +113,7 @@ namespace Microsoft.Terminal.Control
         Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
         SelectionData SelectionInfo { get; };
+        SelectionInteractionMode SelectionMode();
 
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };

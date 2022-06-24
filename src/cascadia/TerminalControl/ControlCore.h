@@ -84,8 +84,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SelectAll();
         bool ToggleBlockSelection();
         void ToggleMarkMode();
-        bool IsInMarkMode() const;
-        bool IsInQuickEditMode() const;
+        Control::SelectionInteractionMode SelectionMode() const;
 
         void GotFocus();
         void LostFocus();
