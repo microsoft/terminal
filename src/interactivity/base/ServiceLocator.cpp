@@ -41,6 +41,13 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 [[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
+    // MSFT:40146639
+    //   The premise of this function is that 1 thread enters and 0 threads leave alive.
+    //   We need to prevent anyone from calling us until we actually ExitProcess(),
+    //   so that we don't TriggerTeardown() twice. LockConsole() can't be used here,
+    //   because doing so would prevent the render thread from progressing.
+    AcquireSRWLockExclusive(&s_shutdownLock);
+
     // MSFT:15506250
     // In VT I/O Mode, a client application might die before we've rendered
     //      the last bit of text they've emitted. So give the VtRenderer one
@@ -72,6 +79,7 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
     delete s_globals.pRender;
+    s_globals.pRender = nullptr;
 
     if (s_oneCoreTeardownFunction)
     {
