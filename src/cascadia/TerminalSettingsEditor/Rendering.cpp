@@ -17,6 +17,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Rendering::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::RenderingPageNavigationState>();
+        _ViewModel = e.Parameter().as<Editor::RenderingViewModel>();
     }
 }

@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass RenderingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        RenderingViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+        Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
+    }
+}
