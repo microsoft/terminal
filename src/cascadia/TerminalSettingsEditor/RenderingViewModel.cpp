@@ -4,9 +4,7 @@
 #include "pch.h"
 #include "RenderingViewModel.h"
 #include "RenderingViewModel.g.cpp"
-#include "EnumEntry.h"
 
-using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
@@ -17,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
-    Model::GlobalAppSettings RenderingViewModel::GlobalSettings()
+    Model::GlobalAppSettings RenderingViewModel::GlobalSettings() const
     {
         return _GlobalSettings;
     }

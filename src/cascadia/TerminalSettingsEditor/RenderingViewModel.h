@@ -13,9 +13,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         RenderingViewModel(Model::GlobalAppSettings globalSettings);
-        Model::GlobalAppSettings GlobalSettings();
-
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        Model::GlobalAppSettings GlobalSettings() const;
 
     private:
         Model::GlobalAppSettings _GlobalSettings;
