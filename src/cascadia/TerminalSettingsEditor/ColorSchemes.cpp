@@ -30,10 +30,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        Automation::AutomationProperties::SetName(ColorSchemeComboBox(), RS_(L"ColorScheme_Name/Header"));
-        Automation::AutomationProperties::SetFullDescription(ColorSchemeComboBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-        ToolTipService::SetToolTip(ColorSchemeComboBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
-
         Automation::AutomationProperties::SetName(NameBox(), RS_(L"ColorScheme_Name/Header"));
         Automation::AutomationProperties::SetFullDescription(NameBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         ToolTipService::SetToolTip(NameBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
@@ -48,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
 
-        ColorSchemeComboBox().SelectedItem(_ViewModel.CurrentScheme());
+        ColorSchemeListView().SelectedItem(_ViewModel.CurrentScheme());
     }
 
     // Function Description:
@@ -139,17 +135,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
+        const auto removedSchemeIndex{ ColorSchemeListView().SelectedIndex() };
         _ViewModel.RequestDeleteCurrentScheme();
         if (static_cast<uint32_t>(removedSchemeIndex) < ViewModel().AllColorSchemes().Size())
         {
             // select same index
-            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex);
+            ColorSchemeListView().SelectedIndex(removedSchemeIndex);
         }
         else
         {
             // select last color scheme (avoid out of bounds error)
-            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
+            ColorSchemeListView().SelectedIndex(removedSchemeIndex - 1);
         }
         DeleteButton().Flyout().Hide();
 
@@ -164,13 +160,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // However, it seems even more useful for focus to ALWAYS land on the
         // scheme dropdown box. This forces Narrator to read the name of the
         // newly selected color scheme, which seemed more useful.
-        ColorSchemeComboBox().Focus(FocusState::Programmatic);
+        //ColorSchemeComboBox().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // Update current page
-        ColorSchemeComboBox().SelectedItem(_ViewModel.RequestAddNew());
+        ColorSchemeListView().SelectedItem(_ViewModel.RequestAddNew());
     }
 
     void ColorSchemes::RenameAccept_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
@@ -208,9 +204,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
             // We need to manually force the ComboBox to refresh itself.
-            const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-            ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
-            ColorSchemeComboBox().SelectedIndex(selectedIndex);
+            const auto selectedIndex{ ColorSchemeListView().SelectedIndex() };
+            ColorSchemeListView().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
+            ColorSchemeListView().SelectedIndex(selectedIndex);
 
             NameBox().Focus(FocusState::Programmatic);
         }
