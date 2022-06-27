@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Rendering.h"
 #include "Rendering.g.cpp"
-#include "RenderingPageNavigationState.g.cpp"
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
 
