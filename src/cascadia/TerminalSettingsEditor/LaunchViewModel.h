@@ -13,17 +13,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         LaunchViewModel(Model::CascadiaSettings settings);
+        Model::CascadiaSettings Settings() const;
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
         winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-
-        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, _Settings.GlobalSettings().LaunchMode);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
+
+    private:
+        Model::CascadiaSettings _Settings;
     };
 };
 

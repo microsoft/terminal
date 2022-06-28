@@ -25,6 +25,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
     }
 
+    Model::CascadiaSettings LaunchViewModel::Settings() const
+    {
+        return _Settings;
+    }
+
     winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultProfile()
     {
         const auto defaultProfileGuid{ _Settings.GlobalSettings().DefaultProfile() };
