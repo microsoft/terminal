@@ -1150,6 +1150,14 @@
     <value>Add new</value>
     <comment>Button label that creates a new color scheme.</comment>
   </data>
+  <data name="ColorScheme_EditButton.Text" xml:space="preserve">
+    <value>Edit</value>
+    <comment>Button label that edits the currently selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_CloneButton.Text" xml:space="preserve">
+    <value>Clone</value>
+    <comment>Button label that clones the currently selected color scheme.</comment>
+  </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>Delete</value>
     <comment>Button label that deletes the selected color scheme.</comment>
