@@ -2291,6 +2291,11 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     case DispatchTypes::ColorItem::NormalText:
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
+        if (_renderSettings.GetRenderMode(RenderSettings::Mode::DistinguishableColors))
+        {
+            // Re-calculate the adjusted colors now that these aliases have been changed
+            _renderSettings.MakeAdjustedColorArray();
+        }
         break;
     case DispatchTypes::ColorItem::WindowFrame:
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
