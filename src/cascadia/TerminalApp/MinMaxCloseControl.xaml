@@ -165,11 +165,13 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="{TemplateBinding CornerRadius}">
-                                <FontIcon x:Name="ButtonIcon"
-                                          FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                          FontSize="10"
-                                          Foreground="{ThemeResource CaptionButtonForeground}"
-                                          Glyph="{ThemeResource CaptionButtonGlyph}" />
+                                <Viewbox Width="10"
+                                         Height="10">
+                                    <FontIcon x:Name="ButtonIcon"
+                                              FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                              Foreground="{ThemeResource CaptionButtonForeground}"
+                                              Glyph="{ThemeResource CaptionButtonGlyph}" />
+                                </Viewbox>
 
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroup x:Name="CommonStates">
