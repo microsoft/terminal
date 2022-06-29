@@ -172,7 +172,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         const auto name = ColorSchemeListView().SelectedItem().as<ColorSchemeViewModel>()->Name();
-        const auto ay = 1;
     }
 
     void ColorSchemes::RenameAccept_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)

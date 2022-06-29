@@ -60,6 +60,10 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="EditColorScheme.h">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
@@ -131,6 +135,9 @@
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="EditColorScheme.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -179,6 +186,10 @@
     </ClCompile>
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="EditColorScheme.cpp">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Interaction.cpp">
@@ -254,6 +265,10 @@
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="EditColorScheme.idl">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="KeyChordListener.idl">
