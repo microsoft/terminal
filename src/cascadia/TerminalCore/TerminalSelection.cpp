@@ -319,7 +319,7 @@ void Terminal::SwitchSelectionEndpoint()
         {
             // moving cursor --> anchor start, move end
             _selectionEndpoint = SelectionEndpoint::End;
-            _anchorSelectionEndpoint = true;
+            _anchorInactiveSelectionEndpoint = true;
         }
         else if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
         {
@@ -396,7 +396,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     //   We have special functionality where if you use the "switchSelectionEndpoint" action
     //   when in mark mode (moving the cursor), we anchor an endpoint and you can use the
     //   plain arrow keys to move the endpoint. This way, you don't have to hold shift anymore!
-    const bool shouldMoveCursor = _selectionMode == SelectionInteractionMode::Mark && !_anchorSelectionEndpoint && !mods.IsShiftPressed();
+    const bool shouldMoveBothEndpoints = _selectionMode == SelectionInteractionMode::Mark && !_anchorInactiveSelectionEndpoint && !mods.IsShiftPressed();
 
     // 1. Figure out which endpoint to update
     // [Mark Mode]
@@ -405,7 +405,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     // [Quick Edit]
     // - just move "end" (or "start" if "pivot" == "end")
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
-    if (shouldMoveCursor)
+    if (shouldMoveBothEndpoints)
     {
         WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
@@ -438,7 +438,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
 
     // 3. Actually modify the selection state
     _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
-    if (shouldMoveCursor)
+    if (shouldMoveBothEndpoints)
     {
         // [Mark Mode] + shift unpressed --> move all three (i.e. just use arrow keys)
         _selection->start = targetPos;
@@ -631,7 +631,7 @@ void Terminal::ClearSelection()
     _selection = std::nullopt;
     _selectionMode = SelectionInteractionMode::None;
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
-    _anchorSelectionEndpoint = false;
+    _anchorInactiveSelectionEndpoint = false;
 }
 
 // Method Description:

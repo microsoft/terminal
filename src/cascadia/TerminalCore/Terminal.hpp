@@ -350,7 +350,7 @@ private:
     SelectionExpansion _multiClickSelectionMode;
     SelectionInteractionMode _selectionMode;
     SelectionEndpoint _selectionEndpoint;
-    bool _anchorSelectionEndpoint;
+    bool _anchorInactiveSelectionEndpoint;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;
