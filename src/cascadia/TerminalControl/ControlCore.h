@@ -271,7 +271,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
-        void _updateSelection();
+        void _updateSelectionUI();
 
         void _sendInputToConnection(std::wstring_view wstr);
 

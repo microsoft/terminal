@@ -417,12 +417,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            const auto isInMarkMode = static_cast<Control::SelectionInteractionMode>(_terminal->SelectionMode()) == Control::SelectionInteractionMode::Mark;
+            const auto isInMarkMode = _terminal->SelectionMode() == ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Mark;
             if (isInMarkMode && modifiers.IsCtrlPressed() && vkey == 'A')
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
-                _updateSelection();
+                _updateSelectionUI();
                 return true;
             }
 
@@ -431,7 +431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
-                _updateSelection();
+                _updateSelectionUI();
                 return true;
             }
 
@@ -439,7 +439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
-                _updateSelection();
+                _updateSelectionUI();
             }
 
             // When there is a selection active, escape should clear it and NOT flow through
@@ -1048,7 +1048,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (clearSelection)
         {
             _terminal->ClearSelection();
-            _updateSelection();
+            _updateSelectionUI();
         }
 
         // send data up for clipboard
@@ -1064,7 +1064,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
-        _updateSelection();
+        _updateSelectionUI();
     }
 
     bool ControlCore::ToggleBlockSelection()
@@ -1086,7 +1086,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->ToggleMarkMode();
-        _updateSelection();
+        _updateSelectionUI();
     }
 
     Control::SelectionInteractionMode ControlCore::SelectionMode() const
@@ -1101,7 +1101,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
-        _updateSelection();
+        _updateSelectionUI();
         _terminal->TrySnapOnInput();
     }
 
@@ -1633,7 +1633,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
     }
 
-    void ControlCore::_updateSelection()
+    void ControlCore::_updateSelectionUI()
     {
         _renderer->TriggerSelection();
         const bool clearMarkers{ !_terminal->IsSelectionActive() };

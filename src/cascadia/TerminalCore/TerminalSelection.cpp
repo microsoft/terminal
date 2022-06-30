@@ -415,14 +415,13 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     {
         // [Mark Mode] + shift --> updating a standard selection
         // This is also standard quick-edit modification
-        bool targetStart;
+        bool targetStart = false;
         std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
 
         // IMPORTANT! Pivoting the selection here might have changed which endpoint we're targeting.
         // So let's set the targeted endpoint again.
-        _selectionEndpoint = static_cast<SelectionEndpoint>(0);
-        WI_SetFlagIf(_selectionEndpoint, SelectionEndpoint::Start, targetStart);
-        WI_SetFlagIf(_selectionEndpoint, SelectionEndpoint::End, !targetStart);
+        WI_UpdateFlag(_selectionEndpoint, SelectionEndpoint::Start, targetStart);
+        WI_UpdateFlag(_selectionEndpoint, SelectionEndpoint::End, !targetStart);
     }
 
     // 4. Scroll (if necessary)

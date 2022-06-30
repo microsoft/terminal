@@ -235,6 +235,7 @@ public:
     // These methods are defined in TerminalSelection.cpp
     enum class SelectionInteractionMode
     {
+        None,
         Mouse,
         Keyboard,
         Mark

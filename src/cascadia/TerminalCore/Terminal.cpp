@@ -45,7 +45,7 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _altGrAliasing{ true },
     _blockSelection{ false },
-    _selectionMode{ 0 },
+    _selectionMode{ SelectionInteractionMode::None },
     _selection{ std::nullopt },
     _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
     _taskbarState{ 0 },

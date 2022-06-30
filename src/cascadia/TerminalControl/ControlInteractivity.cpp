@@ -258,25 +258,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
-            if (_core->CopyOnSelect())
-            {
-                // CopyOnSelect:
-                // 1. keyboard selection? --> copy the new content first
-                // 2. right click always pastes!
-                if (_core->SelectionMode() > SelectionInteractionMode::Keyboard)
-                {
-                    CopySelectionToClipboard(shiftEnabled, nullptr);
-                }
-                RequestPasteTextFromClipboard();
-            }
-            else if (_core->HasSelection())
+            // CopySelectionToClipboard() clears the selection.
+            // So we need to keep track of the state before copying it.
+            const auto initiallyHadSelection = _core->HasSelection();
+            if (initiallyHadSelection)
             {
                 // copy selected text
                 CopySelectionToClipboard(shiftEnabled, nullptr);
             }
-            else
+            if (_core->CopyOnSelect() || !initiallyHadSelection)
             {
-                // no selection --> paste
+                // CopyOnSelect: right click always pastes!
+                // Otherwise: no selection --> paste
                 RequestPasteTextFromClipboard();
             }
         }
