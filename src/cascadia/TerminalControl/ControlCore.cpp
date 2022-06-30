@@ -422,7 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
-                _updateSelectionUI();
+                _updateSelectionUI(true);
                 return true;
             }
 
@@ -431,7 +431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
-                _updateSelectionUI();
+                _updateSelectionUI(true);
                 return true;
             }
 
@@ -439,7 +439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
-                _updateSelectionUI();
+                _updateSelectionUI(false);
             }
 
             // When there is a selection active, escape should clear it and NOT flow through
@@ -981,11 +981,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
-        _renderer->TriggerSelection();
 
         // this is used for mouse dragging,
         // so hide the markers
-        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+        _updateSelectionUI(false);
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
@@ -1002,10 +1001,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
-    // - clearSelection: if true, clear the selection. Used for CopyOnSelect.
     bool ControlCore::CopySelectionToClipboard(bool singleLine,
-                                               const Windows::Foundation::IReference<CopyFormat>& formats,
-                                               bool clearSelection)
+                                               const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         // no selection --> nothing to copy
         if (!_terminal->IsSelectionActive())
@@ -1045,12 +1042,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                     bgColor) :
                                  "";
 
-        if (clearSelection)
-        {
-            _terminal->ClearSelection();
-            _updateSelectionUI();
-        }
-
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,
                                  winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
@@ -1064,7 +1055,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
-        _updateSelectionUI();
+        _updateSelectionUI(true);
+    }
+
+    void ControlCore::ClearSelection()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->ClearSelection();
+        _updateSelectionUI(false);
     }
 
     bool ControlCore::ToggleBlockSelection()
@@ -1086,7 +1084,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->ToggleMarkMode();
-        _updateSelectionUI();
+        _updateSelectionUI(true);
     }
 
     Control::SelectionInteractionMode ControlCore::SelectionMode() const
@@ -1101,7 +1099,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
-        _updateSelectionUI();
+        _updateSelectionUI(false);
         _terminal->TrySnapOnInput();
     }
 
@@ -1421,11 +1419,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _terminal->SetBlockSelection(false);
             search.Select();
-            _renderer->TriggerSelection();
 
             // this is used for search,
             // so hide the markers
-            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+            _updateSelectionUI(false);
         }
 
         // Raise a FoundMatch event, which the control will use to notify
@@ -1626,18 +1623,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        _renderer->TriggerSelection();
-
         // this is used for mouse selection,
         // so hide the markers
-        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+        _updateSelectionUI(false);
     }
 
-    void ControlCore::_updateSelectionUI()
+    // Method Description:
+    // - Updates the renderer's representation of the selection as well as the selection marker overlay in TermControl
+    // Arguments:
+    // - tryShowMarkers: if true, show the selection marker overlay. Otherwise hide it.
+    void ControlCore::_updateSelectionUI(bool tryShowMarkers)
     {
         _renderer->TriggerSelection();
-        const bool clearMarkers{ !_terminal->IsSelectionActive() };
-        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(clearMarkers));
+        // if show markers and there's a selection, show the markers.
+        // otherwise, hide the markers (i.e. mouse selection, search, etc...)
+        const bool showMarkers{ _terminal->IsSelectionActive() && tryShowMarkers };
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(!showMarkers));
     }
 
     void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)

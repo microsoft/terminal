@@ -89,6 +89,7 @@ namespace Microsoft.Terminal.Control
         void SendInput(String text);
         void PasteText(String text);
         void SelectAll();
+        void ClearSelection();
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
         void ClearBuffer(ClearBufferType clearType);

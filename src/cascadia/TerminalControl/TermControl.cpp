@@ -1902,7 +1902,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        return _interactivity.CopySelectionToClipboard(singleLine, formats);
+        const auto successfulCopy = _interactivity.CopySelectionToClipboard(singleLine, formats);
+        _core.ClearSelection();
+        return successfulCopy;
     }
 
     // Method Description:

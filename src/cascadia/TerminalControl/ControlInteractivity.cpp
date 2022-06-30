@@ -146,10 +146,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
-    // - clearSelection: if true, clear the selection after copying it. Used for CopyOnSelect.
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
-                                                        const Windows::Foundation::IReference<CopyFormat>& formats,
-                                                        bool clearSelection)
+                                                        const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_core)
         {
@@ -165,7 +163,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Mark the current selection as copied
             _selectionNeedsToBeCopied = false;
 
-            return _core->CopySelectionToClipboard(singleLine, formats, clearSelection);
+            return _core->CopySelectionToClipboard(singleLine, formats);
         }
 
         return false;
@@ -258,15 +256,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
-            // CopySelectionToClipboard() clears the selection.
-            // So we need to keep track of the state before copying it.
-            const auto initiallyHadSelection = _core->HasSelection();
-            if (initiallyHadSelection)
-            {
-                // copy selected text
-                CopySelectionToClipboard(shiftEnabled, nullptr);
-            }
-            if (_core->CopyOnSelect() || !initiallyHadSelection)
+            // Try to copy the text and clear the selection
+            const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
+            _core->ClearSelection();
+            if (_core->CopyOnSelect() || !successfulCopy)
             {
                 // CopyOnSelect: right click always pastes!
                 // Otherwise: no selection --> paste
@@ -390,9 +383,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _selectionNeedsToBeCopied)
         {
             // IMPORTANT!
-            // Set clearSelection to false here!
+            // DO NOT clear the selection here!
             // Otherwise, the selection will be cleared immediately after you make it.
-            CopySelectionToClipboard(false, nullptr, /*clearSelection*/ false);
+            CopySelectionToClipboard(false, nullptr);
         }
 
         _singleClickTouchdownPos = std::nullopt;
