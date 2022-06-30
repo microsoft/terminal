@@ -80,7 +80,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
         bool CopySelectionToClipboard(bool singleLine,
-                                      const Windows::Foundation::IReference<CopyFormat>& formats);
+                                      const Windows::Foundation::IReference<CopyFormat>& formats,
+                                      bool clearSelection = true);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const Core::Point pixelPosition);
         bool ManglePathsForWsl();

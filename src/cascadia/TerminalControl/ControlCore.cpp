@@ -933,13 +933,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
+    // - clearSelection: if true, clear the selection. Used for CopyOnSelect.
     bool ControlCore::CopySelectionToClipboard(bool singleLine,
-                                               const Windows::Foundation::IReference<CopyFormat>& formats)
+                                               const Windows::Foundation::IReference<CopyFormat>& formats,
+                                               bool clearSelection)
     {
         // no selection --> nothing to copy
         if (!_terminal->IsSelectionActive())
@@ -979,7 +980,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                     bgColor) :
                                  "";
 
-        if (!_settings->CopyOnSelect())
+        if (clearSelection)
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
@@ -999,6 +1000,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
         _renderer->TriggerSelection();
+    }
+
+    const bool ControlCore::IsInQuickEditMode() const noexcept
+    {
+        return _terminal->IsInQuickEditMode();
     }
 
     // Method Description:

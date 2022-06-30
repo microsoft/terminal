@@ -96,6 +96,11 @@ const bool Terminal::IsBlockSelection() const noexcept
     return _blockSelection;
 }
 
+bool Terminal::IsInQuickEditMode() const noexcept
+{
+    return _quickEditMode;
+}
+
 // Method Description:
 // - Perform a multi-click selection at viewportPos expanding according to the expansionMode
 // Arguments:
@@ -308,6 +313,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     // 3. Actually modify the selection
     // NOTE: targetStart doesn't matter here
     auto targetStart = false;
+    _quickEditMode = true;
     std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
 
     // 4. Scroll (if necessary)
@@ -476,6 +482,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
 void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
+    _quickEditMode = false;
 }
 
 // Method Description:
