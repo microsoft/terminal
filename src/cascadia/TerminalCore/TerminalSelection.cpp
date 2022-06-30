@@ -215,6 +215,7 @@ void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<Selec
         // expand both anchors
         std::tie(_selection->start, _selection->end) = expandedAnchors;
     }
+    _selectionMode = SelectionInteractionMode::Mouse;
 }
 
 // Method Description:
@@ -450,6 +451,7 @@ void Terminal::SelectAll()
     _selection->start = bufferSize.Origin();
     _selection->end = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
     _selection->pivot = _selection->end;
+    _selectionMode = SelectionInteractionMode::Keyboard;
 }
 
 void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
@@ -594,7 +596,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos)
 void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
-    _selectionMode = SelectionInteractionMode::Mouse;
+    _selectionMode = SelectionInteractionMode::None;
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
 }
 

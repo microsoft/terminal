@@ -422,7 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
-                _updateSelectionUI(true);
+                _updateSelectionUI();
                 return true;
             }
 
@@ -431,7 +431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
-                _updateSelectionUI(true);
+                _updateSelectionUI();
                 return true;
             }
 
@@ -439,7 +439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
-                _updateSelectionUI(false);
+                _updateSelectionUI();
             }
 
             // When there is a selection active, escape should clear it and NOT flow through
@@ -981,10 +981,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
-
-        // this is used for mouse dragging,
-        // so hide the markers
-        _updateSelectionUI(false);
+        _updateSelectionUI();
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
@@ -1055,14 +1052,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
-        _updateSelectionUI(true);
+        _updateSelectionUI();
     }
 
     void ControlCore::ClearSelection()
     {
         auto lock = _terminal->LockForWriting();
         _terminal->ClearSelection();
-        _updateSelectionUI(false);
+        _updateSelectionUI();
     }
 
     bool ControlCore::ToggleBlockSelection()
@@ -1084,7 +1081,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->ToggleMarkMode();
-        _updateSelectionUI(true);
+        _updateSelectionUI();
     }
 
     Control::SelectionInteractionMode ControlCore::SelectionMode() const
@@ -1099,7 +1096,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
-        _updateSelectionUI(false);
+        _updateSelectionUI();
         _terminal->TrySnapOnInput();
     }
 
@@ -1421,8 +1418,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             search.Select();
 
             // this is used for search,
-            // so hide the markers
-            _updateSelectionUI(false);
+            // DO NOT call _updateSelectionUI() here.
+            // We don't want to show the markers so manually tell it to clear it.
+            _renderer->TriggerSelection();
+            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }
 
         // Raise a FoundMatch event, which the control will use to notify
@@ -1623,21 +1622,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        // this is used for mouse selection,
-        // so hide the markers
-        _updateSelectionUI(false);
+        _updateSelectionUI();
     }
 
     // Method Description:
     // - Updates the renderer's representation of the selection as well as the selection marker overlay in TermControl
-    // Arguments:
-    // - tryShowMarkers: if true, show the selection marker overlay. Otherwise hide it.
-    void ControlCore::_updateSelectionUI(bool tryShowMarkers)
+    void ControlCore::_updateSelectionUI()
     {
         _renderer->TriggerSelection();
-        // if show markers and there's a selection, show the markers.
-        // otherwise, hide the markers (i.e. mouse selection, search, etc...)
-        const bool showMarkers{ _terminal->IsSelectionActive() && tryShowMarkers };
+        // only show the markers if we're doing a keyboard selection or in mark mode
+        const bool showMarkers{ _terminal->SelectionMode() >= ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Keyboard };
         _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(!showMarkers));
     }
 
