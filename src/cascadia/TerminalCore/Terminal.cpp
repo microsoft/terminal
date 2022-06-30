@@ -46,6 +46,7 @@ Terminal::Terminal() :
     _altGrAliasing{ true },
     _blockSelection{ false },
     _selectionMode{ SelectionInteractionMode::None },
+    _isTargetingUrl{ false },
     _selection{ std::nullopt },
     _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
     _anchorInactiveSelectionEndpoint{ false },

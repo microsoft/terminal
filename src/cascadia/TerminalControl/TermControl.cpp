@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
         _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
         _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
+        _core.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 

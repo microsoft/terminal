@@ -418,12 +418,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             keyDown)
         {
             const auto isInMarkMode = _terminal->SelectionMode() == ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Mark;
-            if (isInMarkMode && modifiers.IsCtrlPressed() && vkey == 'A')
+            if (isInMarkMode)
             {
-                auto lock = _terminal->LockForWriting();
-                _terminal->SelectAll();
-                _updateSelectionUI();
-                return true;
+                if (modifiers.IsCtrlPressed() && vkey == 'A')
+                {
+                    auto lock = _terminal->LockForWriting();
+                    _terminal->SelectAll();
+                    _updateSelectionUI();
+                    return true;
+                }
+                else if (_settings->DetectURLs() && vkey == VK_TAB)
+                {
+                    auto lock = _terminal->LockForWriting();
+                    _terminal->SelectHyperlink(!modifiers.IsShiftPressed());
+                    _updateSelectionUI();
+                    return true;
+                }
+                else if (_terminal->IsTargetingUrl() && vkey == VK_RETURN)
+                {
+                    auto lock = _terminal->LockForReading();
+                    const auto uri = _terminal->GetHyperlinkAtPosition(_terminal->GetSelectionAnchor());
+                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                    return true;
+                }
             }
 
             // try to update the selection
