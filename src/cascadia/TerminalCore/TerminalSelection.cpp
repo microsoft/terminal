@@ -310,16 +310,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         break;
     }
 
-    // 2.B) Clamp the movement to the mutable viewport
-    const auto bufferSize = _activeBuffer().GetSize();
-    const auto mutableViewport = _GetMutableViewport();
-    const COORD bottomRightInclusive{ mutableViewport.RightInclusive(), mutableViewport.BottomInclusive() };
-    if (bufferSize.CompareInBounds(targetPos, bottomRightInclusive) > 0)
-    {
-        targetPos = bottomRightInclusive;
-    }
-
-    // 3. Actually modify the selection state
+    // 3. Actually modify the selection
     // NOTE: targetStart doesn't matter here
     auto targetStart = false;
     _quickEditMode = true;
