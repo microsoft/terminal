@@ -623,11 +623,16 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         coordSize.X = cellWidth;
         coordSize.Y = cellHeight;
 
-        til::size coordSizeUnscaled;
-        coordSizeUnscaled.X = coordSize.X * USER_DEFAULT_SCREEN_DPI / _api.dpi;
-        coordSizeUnscaled.Y = coordSize.Y * USER_DEFAULT_SCREEN_DPI / _api.dpi;
+        if (requestedSize.X == 0)
+        {
+            // The coordSizeUnscaled parameter to SetFromEngine is used for API functions like GetConsoleFontSize.
+            // Since clients expect that settings the font height to Y yields back a font height of Y,
+            // we're scaling the X relative/proportional to the actual cellWidth/cellHeight ratio.
+            // The code below uses a poor form of integer rounding.
+            requestedSize.X = (requestedSize.Y * cellWidth + cellHeight / 2) / cellHeight;
+        }
 
-        fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, coordSizeUnscaled);
+        fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, requestedSize);
     }
 
     if (fontMetrics)
