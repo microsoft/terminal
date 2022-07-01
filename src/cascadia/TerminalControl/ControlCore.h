@@ -82,9 +82,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
+        void ClearSelection();
         bool ToggleBlockSelection();
         void ToggleMarkMode();
-        bool IsInMarkMode() const;
+        Control::SelectionInteractionMode SelectionMode() const;
 
         void GotFocus();
         void LostFocus();
@@ -271,7 +272,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
-        void _updateSelection();
+        void _updateSelectionUI();
 
         void _sendInputToConnection(std::wstring_view wstr);
 

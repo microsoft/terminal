@@ -350,6 +350,7 @@
         "switchToTab",
         "tabSearch",
         "toggleAlwaysOnTop",
+        "toggleBlockSelection",
         "toggleFocusMode",
         "selectAll",
         "setFocusMode",

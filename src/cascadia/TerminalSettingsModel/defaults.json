@@ -382,6 +382,7 @@
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "enter" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
         { "command": "selectAll", "keys": "ctrl+shift+a" },

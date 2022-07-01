@@ -233,6 +233,14 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    enum class SelectionInteractionMode
+    {
+        None,
+        Mouse,
+        Keyboard,
+        Mark
+    };
+
     enum class SelectionDirection
     {
         Left,
@@ -249,21 +257,27 @@ public:
         Viewport,
         Buffer
     };
+
+    enum class SelectionEndpoint
+    {
+        Start = 0x1,
+        End = 0x2
+    };
+
     void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const til::point position);
     void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
-    bool IsInMarkMode() const;
+    SelectionInteractionMode SelectionMode() const noexcept;
     void ToggleMarkMode();
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
-    bool MovingEnd() const noexcept;
-    bool MovingCursor() const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
+    const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -333,7 +347,8 @@ private:
     bool _blockSelection;
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
-    bool _markMode;
+    SelectionInteractionMode _selectionMode;
+    SelectionEndpoint _selectionEndpoint;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;

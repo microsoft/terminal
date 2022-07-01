@@ -417,11 +417,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            if (_terminal->IsInMarkMode() && modifiers.IsCtrlPressed() && vkey == 'A')
+            const auto isInMarkMode = _terminal->SelectionMode() == ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Mark;
+            if (isInMarkMode && modifiers.IsCtrlPressed() && vkey == 'A')
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
-                _updateSelection();
+                _updateSelectionUI();
                 return true;
             }
 
@@ -430,7 +431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
-                _updateSelection();
+                _updateSelectionUI();
                 return true;
             }
 
@@ -438,7 +439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
-                _updateSelection();
+                _updateSelectionUI();
             }
 
             // When there is a selection active, escape should clear it and NOT flow through
@@ -950,8 +951,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto end{ _terminal->SelectionEndForRendering() };
         info.EndPos = { end.X, end.Y };
 
-        info.MovingEnd = _terminal->MovingEnd();
-        info.MovingCursor = _terminal->MovingCursor();
+        info.Endpoint = static_cast<SelectionEndpointTarget>(_terminal->SelectionEndpointTarget());
 
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
         info.StartAtLeftBoundary = _terminal->GetSelectionAnchor().x == bufferSize.Left();
@@ -981,11 +981,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
-        _renderer->TriggerSelection();
-
-        // this is used for mouse dragging,
-        // so hide the markers
-        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+        _updateSelectionUI();
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
@@ -998,7 +994,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
@@ -1044,12 +1039,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                     bgColor) :
                                  "";
 
-        if (!_settings->CopyOnSelect())
-        {
-            _terminal->ClearSelection();
-            _updateSelection();
-        }
-
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,
                                  winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
@@ -1063,7 +1052,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
-        _updateSelection();
+        _updateSelectionUI();
+    }
+
+    void ControlCore::ClearSelection()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->ClearSelection();
+        _updateSelectionUI();
     }
 
     bool ControlCore::ToggleBlockSelection()
@@ -1085,12 +1081,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->ToggleMarkMode();
-        _updateSelection();
+        _updateSelectionUI();
     }
 
-    bool ControlCore::IsInMarkMode() const
+    Control::SelectionInteractionMode ControlCore::SelectionMode() const
     {
-        return _terminal->IsInMarkMode();
+        return static_cast<Control::SelectionInteractionMode>(_terminal->SelectionMode());
     }
 
     // Method Description:
@@ -1100,7 +1096,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
-        _updateSelection();
+        _updateSelectionUI();
         _terminal->TrySnapOnInput();
     }
 
@@ -1420,10 +1416,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _terminal->SetBlockSelection(false);
             search.Select();
-            _renderer->TriggerSelection();
 
             // this is used for search,
-            // so hide the markers
+            // DO NOT call _updateSelectionUI() here.
+            // We don't want to show the markers so manually tell it to clear it.
+            _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }
 
@@ -1625,14 +1622,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        _updateSelection();
+        _updateSelectionUI();
     }
 
-    void ControlCore::_updateSelection()
+    // Method Description:
+    // - Updates the renderer's representation of the selection as well as the selection marker overlay in TermControl
+    void ControlCore::_updateSelectionUI()
     {
         _renderer->TriggerSelection();
-        const bool clearMarkers{ !_terminal->IsSelectionActive() };
-        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(clearMarkers));
+        // only show the markers if we're doing a keyboard selection or in mark mode
+        const bool showMarkers{ _terminal->SelectionMode() >= ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Keyboard };
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(!showMarkers));
     }
 
     void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
