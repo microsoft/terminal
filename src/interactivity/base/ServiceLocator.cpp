@@ -57,9 +57,13 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
         s_globals.pRender->TriggerTeardown();
     }
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     // By locking the console, we ensure no background tasks are accessing the
     // classes we're going to destruct down below (for instance: CursorBlinker).
     s_globals.getConsoleInformation().LockConsole();
+#endif
 
     // A History Lesson from MSFT: 13576341:
     // We introduced RundownAndExit to give services that hold onto important handles
@@ -78,15 +82,23 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     delete s_globals.pRender;
     s_globals.pRender = nullptr;
+#endif
 
     if (s_oneCoreTeardownFunction)
     {
         s_oneCoreTeardownFunction();
     }
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     s_consoleWindow.reset(nullptr);
+#endif
 
     ExitProcess(hr);
 }
