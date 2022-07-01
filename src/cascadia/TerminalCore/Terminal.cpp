@@ -48,6 +48,7 @@ Terminal::Terminal() :
     _selectionMode{ SelectionInteractionMode::None },
     _selection{ std::nullopt },
     _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
+    _anchorInactiveSelectionEndpoint{ false },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
     _trimBlockSelection{ false },

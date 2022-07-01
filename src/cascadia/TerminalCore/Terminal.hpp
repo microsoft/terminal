@@ -271,6 +271,7 @@ public:
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
     SelectionInteractionMode SelectionMode() const noexcept;
+    void SwitchSelectionEndpoint();
     void ToggleMarkMode();
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
@@ -349,6 +350,7 @@ private:
     SelectionExpansion _multiClickSelectionMode;
     SelectionInteractionMode _selectionMode;
     SelectionEndpoint _selectionEndpoint;
+    bool _anchorInactiveSelectionEndpoint;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;

@@ -1089,6 +1089,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return static_cast<Control::SelectionInteractionMode>(_terminal->SelectionMode());
     }
 
+    bool ControlCore::SwitchSelectionEndpoint()
+    {
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->SwitchSelectionEndpoint();
+            return true;
+        }
+        return false;
+    }
+
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection.

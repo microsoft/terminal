@@ -309,6 +309,33 @@ void Terminal::ToggleMarkMode()
     }
 }
 
+// Method Description:
+// - switch the targeted selection endpoint with the other one (i.e. start <--> end)
+void Terminal::SwitchSelectionEndpoint()
+{
+    if (IsSelectionActive())
+    {
+        if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            // moving cursor --> anchor start, move end
+            _selectionEndpoint = SelectionEndpoint::End;
+            _anchorInactiveSelectionEndpoint = true;
+        }
+        else if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            // moving end --> now we're moving start
+            _selectionEndpoint = SelectionEndpoint::Start;
+            _selection->pivot = _selection->end;
+        }
+        else if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start))
+        {
+            // moving start --> now we're moving end
+            _selectionEndpoint = SelectionEndpoint::End;
+            _selection->pivot = _selection->start;
+        }
+    }
+}
+
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
 {
     if ((_selectionMode == SelectionInteractionMode::Mark || mods.IsShiftPressed()) && !mods.IsAltPressed())
@@ -365,6 +392,12 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
 // - mods: the key modifiers pressed when performing this update
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods)
 {
+    // This is a special variable used to track if we should move the cursor when in mark mode.
+    //   We have special functionality where if you use the "switchSelectionEndpoint" action
+    //   when in mark mode (moving the cursor), we anchor an endpoint and you can use the
+    //   plain arrow keys to move the endpoint. This way, you don't have to hold shift anymore!
+    const bool shouldMoveBothEndpoints = _selectionMode == SelectionInteractionMode::Mark && !_anchorInactiveSelectionEndpoint && !mods.IsShiftPressed();
+
     // 1. Figure out which endpoint to update
     // [Mark Mode]
     // - shift pressed --> only move "end" (or "start" if "pivot" == "end")
@@ -372,7 +405,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     // [Quick Edit]
     // - just move "end" (or "start" if "pivot" == "end")
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
-    if (_selectionMode == SelectionInteractionMode::Mark && !mods.IsShiftPressed())
+    if (shouldMoveBothEndpoints)
     {
         WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
@@ -405,7 +438,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
 
     // 3. Actually modify the selection state
     _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
-    if (_selectionMode == SelectionInteractionMode::Mark && !mods.IsShiftPressed())
+    if (shouldMoveBothEndpoints)
     {
         // [Mark Mode] + shift unpressed --> move all three (i.e. just use arrow keys)
         _selection->start = targetPos;
@@ -598,6 +631,7 @@ void Terminal::ClearSelection()
     _selection = std::nullopt;
     _selectionMode = SelectionInteractionMode::None;
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
+    _anchorInactiveSelectionEndpoint = false;
 }
 
 // Method Description:

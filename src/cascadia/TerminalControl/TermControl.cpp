@@ -1929,6 +1929,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ToggleMarkMode();
     }
 
+    bool TermControl::SwitchSelectionEndpoint()
+    {
+        return _core.SwitchSelectionEndpoint();
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())

@@ -92,6 +92,7 @@ namespace Microsoft.Terminal.Control
         void ClearSelection();
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
+        Boolean SwitchSelectionEndpoint();
         void ClearBuffer(ClearBufferType clearType);
 
         void SetHoveredCell(Microsoft.Terminal.Core.Point terminalPosition);
