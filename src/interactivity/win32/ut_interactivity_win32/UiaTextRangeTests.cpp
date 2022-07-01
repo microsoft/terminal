@@ -484,9 +484,9 @@ class UiaTextRangeTests
 
         Log::Comment(L"_start and end should be 2 units apart. Sign depends on order of comparison.");
         THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_End, utr2.Get(), TextPatternRangeEndpoint_End, &comparison));
-        VERIFY_IS_TRUE(comparison == -2);
+        VERIFY_IS_TRUE(comparison == -1);
         THROW_IF_FAILED(utr2->CompareEndpoints(TextPatternRangeEndpoint_End, utr1.Get(), TextPatternRangeEndpoint_End, &comparison));
-        VERIFY_IS_TRUE(comparison == 2);
+        VERIFY_IS_TRUE(comparison == 1);
     }
 
     TEST_METHOD(ExpandToEnclosingUnit)
