@@ -76,4 +76,56 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
     }
+
+    void EditColorScheme::RenameAccept_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        //_RenameCurrentScheme(NameBox().Text());
+    }
+
+    void EditColorScheme::RenameCancel_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        //RenameErrorTip().IsOpen(false);
+        //NameBox().Text(_ViewModel.CurrentScheme().Name());
+    }
+
+    void EditColorScheme::NameBox_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        {
+            //_RenameCurrentScheme(NameBox().Text());
+            e.Handled(true);
+        }
+        else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        {
+            //RenameErrorTip().IsOpen(false);
+            //NameBox().Text(_ViewModel.CurrentScheme().Name());
+            e.Handled(true);
+        }
+    }
+
+    void EditColorScheme::_RenameCurrentScheme(hstring newName)
+    {
+        //if (_ViewModel.RequestRenameCurrentScheme(newName))
+        //{
+        //    // update the UI
+        //    //RenameErrorTip().IsOpen(false);
+
+        //    // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
+        //    // We need to manually force the ComboBox to refresh itself.
+        //    const auto selectedIndex{ ColorSchemeListView().SelectedIndex() };
+        //    ColorSchemeListView().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
+        //    ColorSchemeListView().SelectedIndex(selectedIndex);
+
+        //    //NameBox().Focus(FocusState::Programmatic);
+        //}
+        //else
+        //{
+        //    //RenameErrorTip().Target(NameBox());
+        //    //RenameErrorTip().IsOpen(true);
+
+        //    // focus the name box
+        //    //NameBox().Focus(FocusState::Programmatic);
+        //    //NameBox().SelectAll();
+        //}
+    }
 }

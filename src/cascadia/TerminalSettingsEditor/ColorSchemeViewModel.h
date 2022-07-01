@@ -38,6 +38,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring Name();
         void Name(winrt::hstring newName);
 
+        bool IsInBoxScheme();
+
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -53,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
+        bool _isInBoxScheme;
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>

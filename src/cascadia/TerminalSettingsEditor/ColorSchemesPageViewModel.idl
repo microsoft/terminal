@@ -5,15 +5,24 @@ import "ColorSchemeViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    enum ColorSchemesSubPage
+    {
+        Base = 0,
+        EditColorScheme = 1
+    };
+
     runtimeclass ColorSchemesPageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ColorSchemesPageViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
+        ColorSchemesSubPage CurrentPage { get; };
+
         void RequestSetCurrentScheme(ColorSchemeViewModel scheme);
         Boolean RequestRenameCurrentScheme(String newName);
         void RequestDeleteCurrentScheme();
         ColorSchemeViewModel RequestAddNew();
+        void RequestSetCurrentPage(ColorSchemesSubPage subPage);
 
         ColorSchemeViewModel CurrentScheme { get; };
         Boolean CanDeleteCurrentScheme { get; };

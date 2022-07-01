@@ -55,6 +55,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
+        _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                const auto currentPage = _colorSchemesPageVM.CurrentPage();
+                const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
+                if (currentPage == ColorSchemesSubPage::EditColorScheme)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), currentScheme);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit);
+                    _breadcrumbs.Append(crumb);
+                }
+            }
+        });
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));

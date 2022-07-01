@@ -16,6 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _BrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         _Name = scheme.Name();
+        _isInBoxScheme = std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) == std::end(InBoxSchemes);
 
         const auto colorEntryChangedHandler = [&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
             if (const auto entry{ sender.try_as<ColorTableEntry>() })
@@ -82,6 +83,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::hstring ColorSchemeViewModel::Name()
     {
         return _Name;
+    }
+
+    bool ColorSchemeViewModel::IsInBoxScheme()
+    {
+        return _isInBoxScheme;
     }
 
     void ColorSchemeViewModel::Name(winrt::hstring newName)

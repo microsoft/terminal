@@ -124,12 +124,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return schemeVM;
     }
 
+    void ColorSchemesPageViewModel::RequestSetCurrentPage(ColorSchemesSubPage subPage)
+    {
+        CurrentPage(subPage);
+    }
+
     bool ColorSchemesPageViewModel::CanDeleteCurrentScheme() const
     {
         if (const auto& scheme{ CurrentScheme() })
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
-            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) == std::end(InBoxSchemes);
+            return !scheme.IsInBoxScheme();
         }
         return false;
     }
