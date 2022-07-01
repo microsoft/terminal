@@ -366,6 +366,10 @@
         "quit",
         "adjustOpacity",
         "restoreLastClosed",
+        "addMark",
+        "scrollToMark",
+        "clearMark",
+        "clearAllMarks",
         "unbound"
       ],
       "type": "string"
@@ -382,6 +386,15 @@
         "first",
         "parent",
         "child"
+      ],
+      "type": "string"
+    },
+    "ScrollToMarkDirection": {
+      "enum": [
+        "previous",
+        "next",
+        "first",
+        "last"
       ],
       "type": "string"
     },
@@ -734,6 +747,30 @@
         "direction"
       ]
     },
+    "ScrollToMarkAction": {
+      "description": "Arguments corresponding to a Scroll to Mark Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "scrollToMark"
+            },
+            "direction": {
+              "$ref": "#/$defs/ScrollToMarkDirection",
+              "default": "previous",
+              "description": "The direction to scroll to a mark."
+            }
+          }
+        }
+      ],
+      "required": [
+        "direction"
+      ]
+    },
     "SendInputAction": {
       "description": "Arguments corresponding to a Send Input Action",
       "allOf": [
@@ -836,6 +873,27 @@
               "$ref": "#/$defs/Color",
               "default": null,
               "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
+            }
+          }
+        }
+      ]
+    },
+    "AddMarkAction": {
+      "description": "Arguments corresponding to an Add Mark Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "addMark"
+            },
+            "color": {
+              "$ref": "#/$defs/Color",
+              "default": null,
+              "description": "If provided, will set the mark's color to the given value."
             }
           }
         }
@@ -1667,6 +1725,16 @@
         "experimental.detectURLs": {
           "default": true,
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
+          "type": "boolean"
+        },
+        "experimental.autoMarkPrompts": {
+          "default": false,
+          "description": "When set to true, prompts will automatically be marked.",
+          "type": "boolean"
+        },
+        "experimental.showMarksOnScrollbar": {
+          "default": false,
+          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
         "disableAnimations": {
