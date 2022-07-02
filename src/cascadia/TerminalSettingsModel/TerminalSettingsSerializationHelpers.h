@@ -209,6 +209,14 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "atTheEnd", ValueType::AtTheEnd },
+        pair_type{ "afterCurrentTab", ValueType::AfterCurrentTab },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
 {
     JSON_MAPPINGS(2) = {

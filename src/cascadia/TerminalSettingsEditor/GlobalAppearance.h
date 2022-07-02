@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals().Theme);
+        GETSET_BINDABLE_ENUM_SETTING(NewTabPosition, Model::NewTabPosition, State().Globals().NewTabPosition);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals().TabWidthMode);
 
     public:
