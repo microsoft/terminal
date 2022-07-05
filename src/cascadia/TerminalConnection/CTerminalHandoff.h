@@ -43,6 +43,9 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
 
     static HRESULT s_StartListening(NewHandoffFunction pfnHandoff);
     static HRESULT s_StopListening();
+
+private:
+    static HRESULT s_StopListeningLocked();
 };
 
 // Disable warnings from the CoCreatableClass macro as the value it provides for
