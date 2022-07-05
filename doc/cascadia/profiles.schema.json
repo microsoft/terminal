@@ -2081,6 +2081,10 @@
           "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound, flash the taskbar icon (if the terminal window is not in focus) and flash the window. An array of specific behaviors can also be used. Supported array values include `audible`, `window` and `taskbar`. When set to \"none\", nothing will happen.",
           "$ref": "#/$defs/BellStyle"
         },
+        "bellSound": {
+          "description": "Sets the sound played when the application emits a BEL. When set to an array, the terminal will pick one of those sounds at random.",
+          "$ref": "#/$defs/BellSound"
+        },
         "closeOnExit": {
           "default": "graceful",
           "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
