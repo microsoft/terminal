@@ -67,12 +67,16 @@ Window::Window() :
 
 Window::~Window()
 {
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     delete pGdiEngine;
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     delete pDxEngine;
 #endif
 #if TIL_FEATURE_ATLASENGINE_ENABLED
     delete pAtlasEngine;
+#endif
 #endif
 }
 
