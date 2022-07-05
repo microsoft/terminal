@@ -18,123 +18,24 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="ColorTableTextBlockTemplate"
-                          x:DataType="local:ColorTableEntry">
-                <TextBlock AutomationProperties.Name="{x:Bind Name}"
-                           FontFamily="Cascadia Code"
-                           FontSize="14"
-                           Foreground="{x:Bind local:Converters.ColorToBrush(Color), Mode=OneWay}"
-                           Text="{x:Bind Name}"
-                           ToolTipService.ToolTip="{x:Bind Name}" />
+            <DataTemplate x:Key="ColorPreviewChipTemplate"
+                      x:DataType="local:ColorTableEntry">
+                <Border Background="{x:Bind local:Converters.ColorToBrush(Color)}"
+                    Width="15"
+                    Height="15"
+                        Margin="2"
+                        CornerRadius="2"/>
             </DataTemplate>
-
         </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-                <!--  Preview of the selected scheme  -->
-                <Grid Width="350"
-                      Height="160"
-                      MaxWidth="{StaticResource StandardControlMaxWidth}"
-                      Margin="4"
-                      HorizontalAlignment="Left"
-                      Background="{x:Bind local:Converters.ColorToBrush(ViewModel.CurrentScheme.BackgroundColor.Color), Mode=OneWay}"
-                      BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                      BorderThickness="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ContentControl Grid.Row="0"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ForegroundColor, Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="1"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(0), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="2"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(1), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="3"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(2), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="4"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(3), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="5"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(4), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="6"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(5), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="7"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(6), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="8"
-                                    Grid.Column="0"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(7), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="1"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(8), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="2"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(9), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="3"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(10), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="4"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(11), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="5"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(12), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="6"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(13), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="7"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(14), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-                    <ContentControl Grid.Row="8"
-                                    Grid.Column="1"
-                                    Content="{x:Bind ViewModel.CurrentScheme.ColorEntryAt(15), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
-
-                </Grid>
-            </Border>
-
             <TextBlock x:Uid="ColorSchemesDisclaimer"
                        Style="{StaticResource DisclaimerStyle}" />
 
             <ListView x:Name="ColorSchemeListView"
-                      Height="240"
+                      Height="360"
                       MaxWidth="{StaticResource StandardControlMaxWidth}"
                       ItemsSource="{x:Bind ViewModel.AllColorSchemes}"
                       SelectionChanged="ColorSchemeSelectionChanged">
@@ -151,6 +52,99 @@
                                        VerticalAlignment="Center"
                                        Style="{StaticResource SettingsPageItemHeaderStyle}"
                                        Text="{x:Bind Name, Mode=OneWay}" />
+                            <Grid Grid.Column="1"
+                                  VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                                        Grid.RowSpan="2"
+                                        Grid.Column="0"
+                                        CornerRadius="2"
+                                        Width="45">
+                                    <TextBlock Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"
+                                               FontFamily="Cascadia Code"
+                                               Text="Text"/>
+                                </Border>
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="1"
+                                                Content="{x:Bind ColorEntryAt(0), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="2"
+                                                Content="{x:Bind ColorEntryAt(1), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="3"
+                                                Content="{x:Bind ColorEntryAt(2), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="4"
+                                                Content="{x:Bind ColorEntryAt(3), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="5"
+                                                Content="{x:Bind ColorEntryAt(4), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="6"
+                                                Content="{x:Bind ColorEntryAt(5), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="7"
+                                                Content="{x:Bind ColorEntryAt(6), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="8"
+                                                Content="{x:Bind ColorEntryAt(7), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="1"
+                                                Content="{x:Bind ColorEntryAt(8), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="2"
+                                                Content="{x:Bind ColorEntryAt(9), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="3"
+                                                Content="{x:Bind ColorEntryAt(10), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="4"
+                                                Content="{x:Bind ColorEntryAt(11), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="5"
+                                                Content="{x:Bind ColorEntryAt(12), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="6"
+                                                Content="{x:Bind ColorEntryAt(13), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="7"
+                                                Content="{x:Bind ColorEntryAt(14), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="8"
+                                                Content="{x:Bind ColorEntryAt(15), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                            </Grid>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
@@ -165,10 +159,10 @@
                     <TextBlock x:Uid="ColorScheme_EditButton"
                                Style="{StaticResource IconButtonTextBlockStyle}" />
                 </Button>
-                <Button x:Name="CloneButton"
-                        Click="Edit_Click"
+                <Button x:Name="AddNewButton"
+                        Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
-                    <TextBlock x:Uid="ColorScheme_CloneButton"
+                    <TextBlock x:Uid="ColorScheme_AddNewButton"
                                Style="{StaticResource IconButtonTextBlockStyle}" />
                 </Button>
                 <Button x:Name="DeleteButton"
@@ -190,15 +184,6 @@
                     </Button.Flyout>
                 </Button>
             </StackPanel>
-
-            <local:SettingContainer x:Uid="ColorScheme_Add">
-                <Button x:Name="AddNewButton"
-                        Click="AddNew_Click"
-                        Style="{StaticResource BrowseButtonStyle}">
-                    <TextBlock x:Uid="ColorScheme_AddNewButton"
-                               Style="{StaticResource IconButtonTextBlockStyle}" />
-                </Button>
-            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>

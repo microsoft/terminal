@@ -182,6 +182,7 @@
             </Border>
 
             <local:SettingContainer x:Uid="ColorScheme_TerminalColorsHeader"
+                                    x:Name="ColorChipsContainer"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <Grid x:Name="ColorTableGrid"
                       Style="{StaticResource ColorTableGridStyle}">
@@ -412,7 +413,7 @@
 
             <local:SettingContainer x:Name="RenameContainer"
                                     x:Uid="ColorScheme_Rename"
-                                    IsEnabled="{x:Bind ViewModel.IsInBoxScheme, Mode=OneWay}"
+                                    IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme), Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Horizontal">
                     <!--  Shown when color scheme name is already in use  -->

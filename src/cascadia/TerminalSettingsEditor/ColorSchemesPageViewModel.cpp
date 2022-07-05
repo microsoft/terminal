@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto& pair : colorSchemeMap)
         {
             const auto scheme = pair.Value();
-            Editor::ColorSchemeViewModel viewModel{ scheme };
+            Editor::ColorSchemeViewModel viewModel{ scheme, *this };
             allColorSchemes.emplace_back(viewModel);
 
             // We will need access to the settings model object later, but we don't
@@ -119,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings.GlobalSettings().AddColorScheme(scheme);
 
         // Construct the new color scheme VM
-        const Editor::ColorSchemeViewModel schemeVM{ scheme };
+        const Editor::ColorSchemeViewModel schemeVM{ scheme, *this };
         _AllColorSchemes.Append(schemeVM);
         return schemeVM;
     }

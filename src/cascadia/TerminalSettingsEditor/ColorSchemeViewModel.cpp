@@ -10,13 +10,14 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme) :
+    ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPage) :
         _scheme{ scheme },
         _NonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
-        _BrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
+        _BrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
+        _parentPage{ parentPage }
     {
         _Name = scheme.Name();
-        _isInBoxScheme = std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) == std::end(InBoxSchemes);
+        _isInBoxScheme = std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) != std::end(InBoxSchemes);
 
         const auto colorEntryChangedHandler = [&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
             if (const auto entry{ sender.try_as<ColorTableEntry>() })
@@ -88,6 +89,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ColorSchemeViewModel::IsInBoxScheme()
     {
         return _isInBoxScheme;
+    }
+
+    bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)
+    {
+        return _parentPage.RequestRenameCurrentScheme(newName);
     }
 
     void ColorSchemeViewModel::Name(winrt::hstring newName)

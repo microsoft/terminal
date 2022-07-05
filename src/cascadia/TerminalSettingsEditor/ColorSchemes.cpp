@@ -30,11 +30,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        //Automation::AutomationProperties::SetName(NameBox(), RS_(L"ColorScheme_Name/Header"));
-        //Automation::AutomationProperties::SetFullDescription(NameBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-        //ToolTipService::SetToolTip(NameBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
-        //Automation::AutomationProperties::SetName(RenameAcceptButton(), RS_(L"RenameAccept/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-        //Automation::AutomationProperties::SetName(RenameCancelButton(), RS_(L"RenameCancel/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"ColorScheme_AddNewButton/Text"));
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton/Text"));
     }
@@ -62,22 +57,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
             _ViewModel.RequestSetCurrentScheme(*colorScheme);
-
-            // Set the text disclaimer for the text box
-            hstring disclaimer{};
-            const std::wstring schemeName{ colorScheme->Name() };
-            if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
-            {
-                // load disclaimer for in-box profiles
-                disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
-            }
-            //RenameContainer().HelpText(disclaimer);
-            //DeleteContainer().HelpText(disclaimer);
-            // we need to re-apply the template to hide/unhide the help text block
-            //RenameContainer().OnApplyTemplate();
-            //DeleteContainer().OnApplyTemplate();
-
-            //NameBox().Text(_ViewModel.CurrentScheme().Name());
         }
     }
 

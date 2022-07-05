@@ -10,8 +10,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         ColorSchemes();
 
-        Boolean IsRenaming { get; };
-
         ColorSchemesPageViewModel ViewModel { get; };
     }
 }

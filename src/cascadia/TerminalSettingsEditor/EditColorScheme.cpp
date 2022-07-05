@@ -28,11 +28,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     EditColorScheme::EditColorScheme()
     {
         InitializeComponent();
+
+        Automation::AutomationProperties::SetName(NameBox(), RS_(L"ColorScheme_Name/Header"));
+        Automation::AutomationProperties::SetFullDescription(NameBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        ToolTipService::SetToolTip(NameBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
+        Automation::AutomationProperties::SetName(RenameAcceptButton(), RS_(L"RenameAccept/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(RenameCancelButton(), RS_(L"RenameCancel/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
     }
 
     void EditColorScheme::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemeViewModel>();
+
+        // Set the text disclaimer for the text box
+        hstring disclaimer{};
+        if (_ViewModel.IsInBoxScheme())
+        {
+            // load disclaimer for in-box profiles
+            disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
+        }
+        RenameContainer().HelpText(disclaimer);
+        // we need to re-apply the template to hide/unhide the help text block
+        RenameContainer().OnApplyTemplate();
+
+        NameBox().Text(_ViewModel.Name());
     }
 
     void EditColorScheme::ColorPickerChanged(const IInspectable& sender,
@@ -79,26 +98,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditColorScheme::RenameAccept_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        //_RenameCurrentScheme(NameBox().Text());
+        _RenameCurrentScheme(NameBox().Text());
     }
 
     void EditColorScheme::RenameCancel_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        //RenameErrorTip().IsOpen(false);
-        //NameBox().Text(_ViewModel.CurrentScheme().Name());
+        RenameErrorTip().IsOpen(false);
+        NameBox().Text(_ViewModel.Name());
     }
 
     void EditColorScheme::NameBox_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
-            //_RenameCurrentScheme(NameBox().Text());
+            _RenameCurrentScheme(NameBox().Text());
             e.Handled(true);
         }
         else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
-            //RenameErrorTip().IsOpen(false);
-            //NameBox().Text(_ViewModel.CurrentScheme().Name());
+            RenameErrorTip().IsOpen(false);
+            NameBox().Text(_ViewModel.Name());
             e.Handled(true);
         }
     }
