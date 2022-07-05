@@ -1456,16 +1456,12 @@ namespace winrt::TerminalApp::implementation
 
         // currently if a tab has a custom color, a deselected state is
         // signified by using the same color with a bit of transparency
-        auto deselectedTabColor = color;
-        deselectedTabColor.A = 64;
-        deselectedTabBrush.Color(deselectedTabColor);
+        deselectedTabBrush.Color(color);
+        deselectedTabBrush.Opacity(0.3);
 
-        deselectedTabColor.A = 128;
-        hoverTabBrush.Color(deselectedTabColor);
+        hoverTabBrush.Color(color);
+        hoverTabBrush.Opacity(0.6);
 
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit of transparency
-        //
         // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
         // use TabViewItem().Background() for that. HOWEVER,
         // TabViewItem().Background() only sets the color of the tab background
