@@ -121,6 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Construct the new color scheme VM
         const Editor::ColorSchemeViewModel schemeVM{ scheme, *this };
         _AllColorSchemes.Append(schemeVM);
+        _viewModelToSchemeMap.Insert(schemeVM, scheme);
         return schemeVM;
     }
 
