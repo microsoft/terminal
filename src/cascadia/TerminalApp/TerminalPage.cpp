@@ -13,6 +13,9 @@
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
+#include <WtExeUtils.h>
+
+#include <winrt/Windows.Services.Store.h>
 
 #include "../../types/inc/utils.hpp"
 #include "ColorHelper.h"
@@ -727,12 +730,75 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalPage::UpdatesAvailable() const
+    {
+        return _pendingUpdateVersion.size() > 0;
+    }
+
+    winrt::hstring TerminalPage::PendingUpdateVersion() const
+    {
+        return _pendingUpdateVersion;
+    }
+
+    void TerminalPage::_SetPendingUpdateVersion(const winrt::hstring& version)
+    {
+        _pendingUpdateVersion = version;
+        _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"PendingUpdateVersion" });
+        _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"UpdatesAvailable" });
+    }
+
+    winrt::fire_and_forget TerminalPage::_QueueUpdateCheck()
+    {
+        auto strongThis = get_strong();
+        auto now{ std::chrono::system_clock::now() };
+        if (now - _lastUpdateCheck < std::chrono::days{ 1 })
+        {
+            co_return;
+        }
+        _lastUpdateCheck = now;
+
+        if (!IsPackaged())
+        {
+            co_return;
+        }
+
+        co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+        _SetPendingUpdateVersion({});
+        CheckingForUpdates(true);
+
+        try
+        {
+#ifdef WT_BRANDING_DEV
+            co_await winrt::resume_after(std::chrono::seconds{ 3 });
+            co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+            _SetPendingUpdateVersion(L"X.Y.Z");
+#else // release build, likely has a store context
+            auto storeContext = winrt::Windows::Services::Store::StoreContext::GetDefault();
+            auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
+            co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+            if (updates.Size() > 0)
+            {
+                auto version = updates.GetAt(0).Package().Id().Version();
+                _SetPendingUpdateVersion(fmt::format(L"{0}.{1}.{2}", version.Major, version.Minor, version.Revision));
+            }
+#endif
+        }
+        catch (...)
+        {
+            // do nothing on failure
+        }
+
+        co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+        CheckingForUpdates(false);
+    }
+
     // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
     //   Name, version, getting started link, documentation link, release
     //   Notes link, and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
+        _QueueUpdateCheck();
         _ShowDialogHelper(L"AboutDialog");
     }
 

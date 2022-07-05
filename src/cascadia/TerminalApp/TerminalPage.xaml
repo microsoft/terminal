@@ -107,6 +107,20 @@
                     <Run x:Uid="AboutDialog_VersionLabel" />
                     <Run Text="{x:Bind ApplicationVersion}" />
                 </TextBlock>
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal" Visibility="{x:Bind CheckingForUpdates, Mode=OneWay}" Padding="0,4,0,4" VerticalAlignment="Center">
+                        <mux:ProgressRing Width="16" Height="16" IsIndeterminate="True" IsActive="True" />
+                        <TextBlock Text="Checking for updates..." Padding="4,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical" Visibility="{x:Bind UpdatesAvailable, Mode=OneWay}" Padding="0,4,0,4" VerticalAlignment="Center">
+                        <TextBlock IsTextSelectionEnabled="True">
+                            <Run Text="An update is available." /> <LineBreak />
+                            <Run x:Uid="AboutDialog_VersionLabel" />
+                            <Run Text="{x:Bind PendingUpdateVersion, Mode=OneWay}" />
+                        </TextBlock>
+                        <Button Content="Install now" Margin="0"></Button>
+                    </StackPanel>
+                </StackPanel>
                 <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
                                  NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
                 <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"

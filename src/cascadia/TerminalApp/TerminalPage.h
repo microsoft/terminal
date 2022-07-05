@@ -135,7 +135,12 @@ namespace winrt::TerminalApp::implementation
 
         void OpenSettingsUI();
 
+        bool UpdatesAvailable() const;
+        winrt::hstring PendingUpdateVersion() const;
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
+        WINRT_OBSERVABLE_PROPERTY(bool, CheckingForUpdates, _PropertyChangedHandlers, false);
 
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(TitleChanged, IInspectable, winrt::hstring);
@@ -230,6 +235,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
+
+        winrt::fire_and_forget _QueueUpdateCheck();
+        void _SetPendingUpdateVersion(const winrt::hstring& pendingUpdateVersion);
+        std::chrono::system_clock::time_point _lastUpdateCheck{};
+        winrt::hstring _pendingUpdateVersion;
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
