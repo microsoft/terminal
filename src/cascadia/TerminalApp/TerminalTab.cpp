@@ -1452,7 +1452,6 @@ namespace winrt::TerminalApp::implementation
             subtleFillColorTertiaryBrush.Color(subtleFillColorTertiary);
         }
 
-        hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
         selectedTabBrush.Color(color);
 
         // currently if a tab has a custom color, a deselected state is
@@ -1460,6 +1459,9 @@ namespace winrt::TerminalApp::implementation
         auto deselectedTabColor = color;
         deselectedTabColor.A = 64;
         deselectedTabBrush.Color(deselectedTabColor);
+
+        deselectedTabColor.A = 128;
+        hoverTabBrush.Color(deselectedTabColor);
 
         // currently if a tab has a custom color, a deselected state is
         // signified by using the same color with a bit of transparency
