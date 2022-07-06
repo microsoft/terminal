@@ -26,5 +26,6 @@ Abstract:
 
 // Windows Header Files:
 #include <windows.h>
+#include <mmeapi.h>
 
 // clang-format on

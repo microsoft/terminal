@@ -564,4 +564,7 @@
   <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
     <value>Toggle block selection</value>
   </data>
+  <data name="SwitchSelectionEndpointCommandKey" xml:space="preserve">
+    <value>Switch selection endpoint</value>
+  </data>
 </root>
