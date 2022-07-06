@@ -69,7 +69,6 @@ namespace Microsoft.Terminal.Control
         Double Opacity { get; };
     }
 
-
     runtimeclass FoundResultsArgs
     {
         Boolean FoundMatch { get; };
@@ -78,5 +77,10 @@ namespace Microsoft.Terminal.Control
     runtimeclass ShowWindowArgs
     {
         Boolean ShowOrHide { get; };
+    }
+    
+    runtimeclass UpdateSelectionMarkersEventArgs
+    {
+        Boolean ClearMarkers { get; };
     }
 }

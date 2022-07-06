@@ -1101,6 +1101,9 @@ void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    // The tests may be running somewhere that doesn't report anything for GetDoubleClickTime.
+    // Let's force it to a high value to make the double click tests pass.
+    inputEngine->_doubleClickTime = std::chrono::milliseconds(1000);
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();

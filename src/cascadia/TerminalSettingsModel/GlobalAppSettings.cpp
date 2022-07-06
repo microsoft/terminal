@@ -212,8 +212,9 @@ Json::Value GlobalAppSettings::ToJson() const
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
-    return _themes.HasKey(Theme()) ? _themes.Lookup(Theme()) : nullptr;
+    return _themes.TryLookup(Theme());
 }
+
 void GlobalAppSettings::AddTheme(const Model::Theme& theme)
 {
     _themes.Insert(theme.Name(), theme);

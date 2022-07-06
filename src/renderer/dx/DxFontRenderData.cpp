@@ -506,7 +506,7 @@ void DxFontRenderData::_SetFeatures(const std::unordered_map<std::wstring_view, 
     // Update our feature map with the provided features
     if (!features.empty())
     {
-        for (const auto [tag, param] : features)
+        for (const auto& [tag, param] : features)
         {
             if (tag.length() == TAG_LENGTH)
             {

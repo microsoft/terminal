@@ -30,11 +30,8 @@ DERR
 dlldata
 DONTADDTORECENT
 DWORDLONG
-<<<<<<< HEAD
 DWMSBT
 DWMWA
-=======
->>>>>>> origin/main
 endfor
 enumset
 environstrings
@@ -107,6 +104,7 @@ MENUCOMMAND
 MENUDATA
 MENUITEMINFOW
 MENUINFO
+mmeapi
 MOUSELEAVE
 mov
 mptt

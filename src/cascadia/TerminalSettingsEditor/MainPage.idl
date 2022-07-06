@@ -39,5 +39,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetHostingWindow(UInt64 window);
 
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
+
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }
 }

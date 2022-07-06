@@ -1138,7 +1138,7 @@ til::point TextBuffer::GetWordStart(const til::point target, const std::wstring_
         // that it actually points to a space in the buffer
         copy = bufferSize.BottomRightInclusive();
     }
-    else if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    else if (target >= limit)
     {
         // if at/past the limit --> clamp to limit
         copy = limitOptional.value_or(bufferSize.BottomRightInclusive());
@@ -1254,7 +1254,7 @@ til::point TextBuffer::GetWordEnd(const til::point target, const std::wstring_vi
     // Already at/past the limit. Can't move forward.
     const auto bufferSize{ GetSize() };
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
-    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    if (target >= limit)
     {
         return target;
     }
@@ -1282,7 +1282,7 @@ til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, cons
     const auto bufferSize{ GetSize() };
     auto result{ target };
 
-    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    if (target >= limit)
     {
         // if we're already on/past the last RegularChar,
         // clamp result to that position
@@ -1419,7 +1419,7 @@ bool TextBuffer::MoveToNextWord(til::point& pos, const std::wstring_view wordDel
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
     const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
 
-    if (bufferSize.CompareInBounds(copy, limit, true) >= 0)
+    if (copy >= limit)
     {
         return false;
     }
@@ -1466,7 +1466,7 @@ til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::po
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (resultPos > limit)
     {
         resultPos = limit;
     }
@@ -1494,7 +1494,7 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    if (resultPos > limit)
     {
         resultPos = limit;
     }
@@ -1524,9 +1524,19 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    bool pastEndInclusive;
+    til::point limit;
+    {
+        // if the limit is past the end of the buffer,
+        // 1) clamp limit to end of buffer
+        // 2) set pastEndInclusive
+        const auto endInclusive{ bufferSize.BottomRightInclusive() };
+        const auto val = limitOptional.value_or(endInclusive);
+        pastEndInclusive = val > endInclusive;
+        limit = pastEndInclusive ? endInclusive : val;
+    }
 
-    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit, true) };
+    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit) + (pastEndInclusive ? 1 : 0) };
     if (distanceToLimit >= 0)
     {
         // Corner Case: we're on/past the limit
@@ -1569,7 +1579,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
     const auto bufferSize = GetSize();
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
-    if (bufferSize.CompareInBounds(pos, limit, true) > 0)
+    if (pos > limit)
     {
         // we're past the end
         // clamp us to the limit
@@ -1611,7 +1621,7 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
     // (0,0) is the top-left of the screen
     // the physically "higher" coordinate is closer to the top-left
     // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
+    const auto [higherCoord, lowerCoord] = start <= end ?
                                                std::make_tuple(start, end) :
                                                std::make_tuple(end, start);
 
