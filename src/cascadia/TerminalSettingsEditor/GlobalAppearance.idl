@@ -21,7 +21,7 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentLanguage;
 
         IInspectable CurrentTheme;
-        static String WellKnownThemeNameConverter(Microsoft.Terminal.Settings.Model.Theme theme);
+        static String ThemeNameConverter(Microsoft.Terminal.Settings.Model.Theme theme);
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Theme> ThemeList { get; };
 
         IInspectable CurrentTabWidthMode;

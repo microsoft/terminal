@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
         _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
         _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
+        _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
@@ -358,6 +359,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // switch from a solid color brush to an acrylic one.
         _changeBackgroundColor(bg);
 
+        // Update selection markers
+        Windows::UI::Xaml::Media::SolidColorBrush cursorColorBrush{ til::color{ newAppearance.CursorColor() } };
+        SelectionStartMarker().Fill(cursorColorBrush);
+        SelectionEndMarker().Fill(cursorColorBrush);
+
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
         if (_core.Settings().UseBackgroundImageForWindow())
@@ -613,11 +619,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BackgroundBrush(RootGrid().Background());
 
         // Don't use the normal BackgroundBrush() Observable Property setter
-        // here. The one from the macro will automatically ignore changes where
-        // the value doesn't _actually_ change. In our case, most of the time
-        // when changing the colors of the background, the _Brush_ itself
-        // doesn't change, we simply change the Color() of the brush. This
-        // results in the event not getting bubbled up.
+        // here. (e.g. `BackgroundBrush()`). The one from the macro will
+        // automatically ignore changes where the value doesn't _actually_
+        // change. In our case, most of the time when changing the colors of the
+        // background, the _Brush_ itself doesn't change, we simply change the
+        // Color() of the brush. This results in the event not getting bubbled
+        // up.
         //
         // Firing it manually makes sure it does.
         _BackgroundBrush = RootGrid().Background();
@@ -1197,7 +1204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _core.CursorOn(!_core.IsInMarkMode());
+            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
             _cursorTimer->Start();
         }
 
@@ -1668,7 +1675,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_cursorTimer)
         {
             // When the terminal focuses, show the cursor immediately
-            _core.CursorOn(!_core.IsInMarkMode());
+            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
             _cursorTimer->Start();
         }
 
@@ -1846,6 +1853,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newValue = args.ViewTop();
 
         _updateScrollBar->Run(update);
+
+        // if a selection marker is already visible,
+        // update the position of those markers
+        if (SelectionStartMarker().Visibility() == Visibility::Visible || SelectionEndMarker().Visibility() == Visibility::Visible)
+        {
+            _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
+        }
     }
 
     // Method Description:
@@ -1904,7 +1918,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        return _interactivity.CopySelectionToClipboard(singleLine, formats);
+        const auto successfulCopy = _interactivity.CopySelectionToClipboard(singleLine, formats);
+        _core.ClearSelection();
+        return successfulCopy;
     }
 
     // Method Description:
@@ -1927,6 +1943,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ToggleMarkMode()
     {
         _core.ToggleMarkMode();
+    }
+
+    bool TermControl::SwitchSelectionEndpoint()
+    {
+        return _core.SwitchSelectionEndpoint();
     }
 
     void TermControl::Close()
@@ -2750,8 +2771,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ClearHoveredCell();
     }
 
-    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,
-                                                                 IInspectable args)
+    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable /*sender*/,
+                                                                 IInspectable /*args*/)
     {
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
@@ -2778,12 +2799,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     HyperlinkTooltipBorder().BorderThickness(newThickness);
 
                     // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ lastHoveredCell.Value() };
-                    const til::size fontSize{ til::math::rounding, _core.FontSize() };
-                    const auto posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ til::math::flooring, posInPixels.x / scale, posInPixels.y / scale };
-                    const auto locationInDIPs{ posInDIPs + marginsInDips };
+                    const til::point locationInDIPs{ _toPosInDips(lastHoveredCell.Value()) };
 
                     // Move the border to the top left corner of the cell
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
@@ -2793,10 +2809,118 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    winrt::fire_and_forget TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
+    {
+        auto weakThis{ get_weak() };
+        co_await resume_foreground(Dispatcher());
+        if (weakThis.get() && args)
+        {
+            if (_core.HasSelection() && !args.ClearMarkers())
+            {
+                // retrieve all of the necessary selection marker data
+                // from the TerminalCore layer under one lock to improve performance
+                const auto markerData{ _core.SelectionInfo() };
+
+                // lambda helper function that can be used to display a selection marker
+                // - targetEnd: if true, target the "end" selection marker. Otherwise, target "start".
+                auto displayMarker = [&](bool targetEnd) {
+                    const auto flipMarker{ targetEnd ? markerData.EndAtRightBoundary : markerData.StartAtLeftBoundary };
+                    const auto& marker{ targetEnd ? SelectionEndMarker() : SelectionStartMarker() };
+
+                    // Ensure the marker is oriented properly
+                    // (i.e. if start is at the beginning of the buffer, it should be flipped)
+                    auto transform{ marker.RenderTransform().as<Windows::UI::Xaml::Media::ScaleTransform>() };
+                    transform.ScaleX(std::abs(transform.ScaleX()) * (flipMarker ? -1.0 : 1.0));
+                    marker.RenderTransform(transform);
+
+                    // Compute the location of the top left corner of the cell in DIPS
+                    auto terminalPos{ targetEnd ? markerData.EndPos : markerData.StartPos };
+                    if (flipMarker)
+                    {
+                        // When we flip the marker, a negative scaling makes us be one cell-width to the left.
+                        // Add one to the viewport pos' x-coord to fix that.
+                        terminalPos.X += 1;
+                    }
+                    const til::point locationInDIPs{ _toPosInDips(terminalPos) };
+
+                    // Move the marker to the top left corner of the cell
+                    SelectionCanvas().SetLeft(marker,
+                                              (locationInDIPs.x - SwapChainPanel().ActualOffset().x));
+                    SelectionCanvas().SetTop(marker,
+                                             (locationInDIPs.y - SwapChainPanel().ActualOffset().y));
+                    marker.Visibility(Visibility::Visible);
+                };
+
+                // show/update selection markers
+                // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
+                const auto movingEnd{ WI_IsFlagSet(markerData.Endpoint, SelectionEndpointTarget::End) };
+                const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
+                const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
+                const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
+                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
+                {
+                    // if the endpoint is outside of the viewport,
+                    // just hide the markers
+                    marker.Visibility(Visibility::Collapsed);
+                    otherMarker.Visibility(Visibility::Collapsed);
+                    co_return;
+                }
+                else if (WI_AreAllFlagsSet(markerData.Endpoint, SelectionEndpointTarget::Start | SelectionEndpointTarget::End))
+                {
+                    // display both markers
+                    displayMarker(true);
+                    displayMarker(false);
+                }
+                else
+                {
+                    // display one marker,
+                    // but hide the other
+                    displayMarker(movingEnd);
+                    otherMarker.Visibility(Visibility::Collapsed);
+                }
+            }
+            else
+            {
+                // hide selection markers
+                SelectionStartMarker().Visibility(Visibility::Collapsed);
+                SelectionEndMarker().Visibility(Visibility::Collapsed);
+            }
+        }
+    }
+
+    til::point TermControl::_toPosInDips(const Core::Point terminalCellPos)
+    {
+        const til::point terminalPos{ terminalCellPos };
+        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+        const til::size fontSize{ til::math::rounding, _core.FontSize() };
+        const til::point posInPixels{ terminalPos * fontSize };
+        const auto scale{ SwapChainPanel().CompositionScaleX() };
+        const til::point posInDIPs{ til::math::flooring, posInPixels.x / scale, posInPixels.y / scale };
+        return posInDIPs + marginsInDips;
+    }
+
     void TermControl::_coreFontSizeChanged(const int fontWidth,
                                            const int fontHeight,
                                            const bool isInitialChange)
     {
+        // scale the selection markers to be the size of a cell
+        auto scaleMarker = [fontWidth, fontHeight, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
+            // The selection markers were designed to be 5x14 in size,
+            // so use those dimensions below for the scaling
+            const auto scaleX = fontWidth / 5.0 / dpiScale;
+            const auto scaleY = fontHeight / 14.0 / dpiScale;
+
+            Windows::UI::Xaml::Media::ScaleTransform transform;
+            transform.ScaleX(scaleX);
+            transform.ScaleY(scaleY);
+            shape.RenderTransform(transform);
+
+            // now hide the shape
+            shape.Visibility(Visibility::Collapsed);
+        };
+        scaleMarker(SelectionStartMarker());
+        scaleMarker(SelectionEndMarker());
+
         // Don't try to inspect the core here. The Core is raising this while
         // it's holding its write lock. If the handlers calls back to some
         // method on the TermControl on the same thread, and that _method_ calls

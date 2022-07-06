@@ -550,15 +550,17 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
         {
             try
             {
-                // Create and set the render engine.
-                _bgfxEngine = std::make_unique<BgfxEngine>(
+                // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+                // reducing the change for existing race conditions to turn into deadlocks.
+#pragma warning(suppress : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
+                _bgfxEngine = new BgfxEngine(
                     GetSharedViewBase(),
                     DisplaySize.bottom / FontSize.Height,
                     DisplaySize.right / FontSize.Width,
                     FontSize.Width,
                     FontSize.Height);
 
-                globals.pRender->AddRenderEngine(_bgfxEngine.get());
+                globals.pRender->AddRenderEngine(_bgfxEngine);
             }
             catch (...)
             {
@@ -577,8 +579,11 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
 
     try
     {
-        pWddmConEngine = std::make_unique<WddmConEngine>();
-        globals.pRender->AddRenderEngine(pWddmConEngine.get());
+        // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+        // reducing the change for existing race conditions to turn into deadlocks.
+#pragma warning(suppress : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
+        pWddmConEngine = new WddmConEngine();
+        globals.pRender->AddRenderEngine(pWddmConEngine);
     }
     catch (...)
     {

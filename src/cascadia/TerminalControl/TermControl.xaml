@@ -1213,6 +1213,16 @@
                             </ToolTipService.ToolTip>
                         </Border>
                     </Canvas>
+
+                    <Canvas x:Name="SelectionCanvas"
+                            Visibility="Visible">
+                        <Path Name="SelectionStartMarker"
+                              Data="M 0 0 L 4 5.5996094 L 4 14 L 5 14 L 5 7 L 5 4.1992188 L 5 0 L 0 0 z "
+                              Visibility="Collapsed" />
+                        <Path Name="SelectionEndMarker"
+                              Data="M 0 0 L 0 4.1992188 L 0 7 L 0 14 L 1 14 L 1 5.5996094 L 5 0 L 0 0 z "
+                              Visibility="Collapsed" />
+                    </Canvas>
                 </SwapChainPanel>
 
                 <!--

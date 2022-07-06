@@ -3201,6 +3201,9 @@ namespace winrt::TerminalApp::implementation
 
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);
+
+            const IInspectable unused{ nullptr };
+            _SetAsDefaultDismissHandler(unused, unused);
             return S_OK;
         }
         CATCH_RETURN()
@@ -4108,7 +4111,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
                 {
-                    return settingsTab.Content().try_as<Controls::Page>().Background();
+                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
                 }
                 return nullptr;
             }();

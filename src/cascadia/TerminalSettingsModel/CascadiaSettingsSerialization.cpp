@@ -540,8 +540,10 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
                 if (origin != OriginTag::InBox &&
                     (theme->Name() == L"system" || theme->Name() == L"light" || theme->Name() == L"dark"))
                 {
-                    // If the theme didn't come from the in box themes, and it's
+                    // If the theme didn't come from the in-box themes, and its
                     // name was one of the reserved names, then just ignore it.
+                    // Themes don't support layering - we don't want the user
+                    // versions of these themes overriding the built-in ones.
                     continue;
                 }
                 settings.globals->AddTheme(*theme);
