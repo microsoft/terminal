@@ -16,9 +16,6 @@ Author(s):
 --*/
 #pragma once
 
-#include "../../inc/conattrs.hpp"
-#include "DefaultSettings.h"
-#include "IInheritable.h"
 #include "MTSMSettings.h"
 
 #include "ThemeColor.g.h"

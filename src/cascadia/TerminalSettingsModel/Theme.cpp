@@ -19,6 +19,12 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI;
 
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+    namespace WUX = Windows::UI::Xaml;
+}
+
 static constexpr std::string_view NameKey{ "name" };
 
 static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
@@ -70,57 +76,47 @@ static til::color _getAccentColorForTitlebar()
     return til::color{ static_cast<COLORREF>(readDwmSubValue(openDwmRegKey(), RegKeyAccentColor)) }.with_alpha(255);
 }
 
-til::color ThemeColor::ColorFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
+til::color ThemeColor::ColorFromBrush(const winrt::WUX::Media::Brush& brush)
 {
-    if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+    if (auto acrylic = brush.try_as<winrt::WUX::Media::AcrylicBrush>())
     {
         return acrylic.TintColor();
     }
-    else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+    else if (auto solidColor = brush.try_as<winrt::WUX::Media::SolidColorBrush>())
     {
         return solidColor.Color();
     }
     return {};
 }
 
-winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows::UI::Xaml::ResourceDictionary& res,
-                                                            const winrt::Windows::UI::Xaml::Media::Brush& terminalBackground,
-                                                            const bool forTitlebar)
+winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictionary& res,
+                                              const winrt::WUX::Media::Brush& terminalBackground,
+                                              const bool forTitlebar)
 {
     static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
 
     // NOTE: Currently, the DWM titlebar is always drawn, underneath our XAML
-    // content. If the opacity is <1.0, the you'll be able to see it, including
+    // content. If the opacity is <1.0, then you'll be able to see it, including
     // the original caption buttons, which we don't want.
 
     switch (ColorType())
     {
     case ThemeColorType::Accent:
     {
-        til::color accentColor;
-        if (forTitlebar)
-        {
-            accentColor = _getAccentColorForTitlebar();
-        }
-        else
-        {
-            accentColor = winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey));
-        }
+        til::color accentColor = forTitlebar ?
+                                    _getAccentColorForTitlebar() :
+                                    til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
 
-        const auto accentBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
-        accentBrush.Color(accentColor);
-
+        const winrt::WUX::Media::SolidColorBrush accentBrush{ accentColor };
         // _getAccentColorForTitlebar should have already filled the alpha
         // channel in with 255
-
         return accentBrush;
     }
     case ThemeColorType::Color:
     {
-        const auto solidBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush();
-        solidBrush.Color(forTitlebar ? Color().with_alpha(255) : Color());
-
-        return solidBrush;
+        return winrt::WUX::Media::SolidColorBrush{ forTitlebar ?
+                                                       Color().with_alpha(255) :
+                                                       Color() };
     }
     case ThemeColorType::TerminalBackground:
     {
@@ -133,9 +129,9 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
         // set.
         if (forTitlebar)
         {
-            if (auto acrylic = terminalBackground.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+            if (auto acrylic = terminalBackground.try_as<winrt::WUX::Media::AcrylicBrush>())
             {
-                winrt::Windows::UI::Xaml::Media::AcrylicBrush newBrush{};
+                winrt::WUX::Media::AcrylicBrush newBrush{};
                 newBrush.TintColor(acrylic.TintColor());
                 newBrush.FallbackColor(acrylic.FallbackColor());
                 newBrush.TintLuminosityOpacity(acrylic.TintLuminosityOpacity());
@@ -152,12 +148,12 @@ winrt::Windows::UI::Xaml::Media::Brush ThemeColor::Evaluate(const winrt::Windows
                 // to adjust it's opacity with the mouse wheel. This seems like
                 // an acceptable tradeoff for now.
                 newBrush.TintOpacity(.5);
-                newBrush.BackgroundSource(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::HostBackdrop);
+                newBrush.BackgroundSource(winrt::WUX::Media::AcrylicBackgroundSource::HostBackdrop);
                 return newBrush;
             }
-            else if (auto solidColor = terminalBackground.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+            else if (auto solidColor = terminalBackground.try_as<winrt::WUX::Media::SolidColorBrush>())
             {
-                winrt::Windows::UI::Xaml::Media::SolidColorBrush newBrush{};
+                winrt::WUX::Media::SolidColorBrush newBrush{};
                 newBrush.Color(til::color{ solidColor.Color() }.with_alpha(255));
                 return newBrush;
             }
@@ -221,11 +217,11 @@ THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabRowTheme,
 #undef THEME_OBJECT_CONVERTER
 
 Theme::Theme() noexcept :
-    Theme{ winrt::Windows::UI::Xaml::ElementTheme::Default }
+    Theme{ winrt::WUX::ElementTheme::Default }
 {
 }
 
-Theme::Theme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept
+Theme::Theme(const winrt::WUX::ElementTheme& requestedTheme) noexcept
 {
     auto window{ winrt::make_self<implementation::WindowTheme>() };
     window->RequestedTheme(requestedTheme);
@@ -265,7 +261,7 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
         // We found a string, not an object. Just secretly promote that string
         // to a theme object with just the applicationTheme set from that value.
         JsonUtils::GetValue(json, result->_Name);
-        winrt::Windows::UI::Xaml::ElementTheme requestedTheme{ winrt::Windows::UI::Xaml::ElementTheme::Default };
+        winrt::WUX::ElementTheme requestedTheme{ winrt::WUX::ElementTheme::Default };
         JsonUtils::GetValue(json, requestedTheme);
 
         auto window{ winrt::make_self<implementation::WindowTheme>() };
@@ -329,7 +325,7 @@ winrt::hstring Theme::ToString()
 //   for this theme, this'll quickly just return `system`, to use the OS theme.
 // Return Value:
 // - the set applicationTheme for this Theme, otherwise the system theme.
-winrt::Windows::UI::Xaml::ElementTheme Theme::RequestedTheme() const noexcept
+winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
 {
-    return _Window ? _Window.RequestedTheme() : winrt::Windows::UI::Xaml::ElementTheme::Default;
+    return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;
 }

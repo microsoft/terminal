@@ -212,14 +212,12 @@ namespace SettingsModelLocalTests
         {
             auto loadError = ex.Error();
             loadError;
-            DebugBreak();
             throw ex;
         }
         catch (const SettingsTypedDeserializationException& e)
         {
             auto deserializationErrorMessage = til::u8u16(e.what());
             Log::Comment(NoThrowString().Format(deserializationErrorMessage.c_str()));
-            DebugBreak();
             throw e;
         }
     }
@@ -266,14 +264,12 @@ namespace SettingsModelLocalTests
         {
             auto loadError = ex.Error();
             loadError;
-            DebugBreak();
             throw ex;
         }
         catch (const SettingsTypedDeserializationException& e)
         {
             auto deserializationErrorMessage = til::u8u16(e.what());
             Log::Comment(NoThrowString().Format(deserializationErrorMessage.c_str()));
-            DebugBreak();
             throw e;
         }
     }

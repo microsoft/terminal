@@ -30,11 +30,8 @@ DERR
 dlldata
 DONTADDTORECENT
 DWORDLONG
-<<<<<<< HEAD
 DWMSBT
 DWMWA
-=======
->>>>>>> origin/main
 endfor
 enumset
 environstrings
