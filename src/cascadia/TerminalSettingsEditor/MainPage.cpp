@@ -403,6 +403,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesPageVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
+
+            if (subPage == BreadcrumbSubPage::ColorSchemes_Edit)
+            {
+                _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::EditColorScheme);
+            }
         }
         else if (clickedItemTag == globalAppearanceTag)
         {

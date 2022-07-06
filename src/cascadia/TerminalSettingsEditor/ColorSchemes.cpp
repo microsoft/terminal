@@ -37,8 +37,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
-
         _ViewModel.RequestSetCurrentPage(ColorSchemesSubPage::Base);
+
         ColorSchemeListView().SelectedItem(_ViewModel.CurrentScheme());
     }
 
@@ -145,7 +145,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         // Update current page
-        ColorSchemeListView().SelectedItem(_ViewModel.RequestAddNew());
+        if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
+        {
+            ColorSchemeListView().SelectedItem(newSchemeVM);
+            ColorSchemeListView().ScrollIntoView(newSchemeVM);
+        }
     }
 
     void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
