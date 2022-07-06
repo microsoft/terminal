@@ -8,7 +8,9 @@ Param(
     [switch]$recursive
 )
 
-$debugPackageVersions = "20220617.1556.0"
+$pdbStrPackage = ([xml](Get-Content "$SourceRoot\build\packages.config")).packages.package | Where-Object id -like "*PdbStr*"
+# This assumes that we rev PdbStr and SrcTool at the same time.
+$debugPackageVersions = $pdbStrPackage.version
 $srctoolExe = Join-Path $SourceRoot "packages" "Microsoft.Debugging.Tools.SrcTool.$debugPackageVersions" "content" "amd64" "srctool.exe"
 $pdbstrExe = Join-Path $SourceRoot "packages" "Microsoft.Debugging.Tools.PdbStr.$debugPackageVersions" "content" "amd64" "pdbstr.exe"
 
