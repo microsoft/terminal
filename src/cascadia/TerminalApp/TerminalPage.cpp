@@ -4099,7 +4099,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
                 {
-                    return settingsTab.Content().try_as<Controls::Page>().Background();
+                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
                 }
                 return nullptr;
             }();
