@@ -214,6 +214,7 @@ winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentThe
 {
     return _themes.HasKey(Theme()) ? _themes.Lookup(Theme()) : nullptr;
 }
+
 void GlobalAppSettings::AddTheme(const Model::Theme& theme)
 {
     _themes.Insert(theme.Name(), theme);
