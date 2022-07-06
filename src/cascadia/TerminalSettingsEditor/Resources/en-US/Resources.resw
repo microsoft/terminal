@@ -1338,6 +1338,10 @@
     <value>System colors</value>
     <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
   </data>
+  <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
+    <value>Colors</value>
+    <comment>A header for the grouping of colors in the color scheme.</comment>
+  </data>
   <data name="SettingContainer_OverrideMessageFragmentExtension" xml:space="preserve">
     <value>Reset to value from: {}</value>
     <comment>{} is replaced by the name of another profile or generator. This is a text label on a button that is dynamically generated and provides more context in the {}.</comment>
