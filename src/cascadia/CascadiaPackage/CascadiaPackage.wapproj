@@ -135,6 +135,10 @@
       <!-- 16.3.0 - remove non-resources.pri PRI files since we just forced them back in. -->
       <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
       <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
+
+      <!-- Remove all of the xaml files, because we are using embedded xbf payloads (saves about 500kb on disk!) -->
+      <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.xaml'" />
+      <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.xaml'" />
     </ItemGroup>
   </Target>
 

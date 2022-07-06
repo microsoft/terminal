@@ -53,7 +53,12 @@ CATCH_RETURN()
 HRESULT CTerminalHandoff::s_StopListening()
 {
     std::unique_lock lock{ _mtx };
+    return s_StopListeningLocked();
+}
 
+// See s_StopListening()
+HRESULT CTerminalHandoff::s_StopListeningLocked()
+{
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
     _pfnHandoff = nullptr;
@@ -101,14 +106,16 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
 {
     try
     {
-        // Stash a local copy of _pfnHandoff before we stop listening.
+        std::unique_lock lock{ _mtx };
+
+        // s_StopListeningLocked sets _pfnHandoff to nullptr.
+        // localPfnHandoff is tested for nullness below.
+#pragma warning(suppress : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
         auto localPfnHandoff = _pfnHandoff;
 
         // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
         // COM does not automatically clean that up for us. We must do it.
-        s_StopListening();
-
-        std::unique_lock lock{ _mtx };
+        LOG_IF_FAILED(s_StopListeningLocked());
 
         // Report an error if no one registered a handoff function before calling this.
         THROW_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);

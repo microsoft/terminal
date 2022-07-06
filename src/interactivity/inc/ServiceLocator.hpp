@@ -113,5 +113,7 @@ namespace Microsoft::Console::Interactivity
         static Globals s_globals;
         static bool s_pseudoWindowInitialized;
         static wil::unique_hwnd s_pseudoWindow;
+
+        static inline SRWLOCK s_shutdownLock = SRWLOCK_INIT;
     };
 }

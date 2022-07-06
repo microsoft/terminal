@@ -79,5 +79,6 @@ SUMS$
 ^src/types/ut_types/UtilsTests.cpp$
 ^tools/ReleaseEngineering/ServicingPipeline.ps1$
 ^\.github/actions/spelling/
+^\.github/fabricbot.json$
 ^\.gitignore$
 ^\XamlStyler.json$

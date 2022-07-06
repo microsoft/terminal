@@ -21,16 +21,13 @@ Author:
 class ConsoleShimPolicy
 {
 public:
-    static ConsoleShimPolicy s_CreateInstance(const HANDLE hProcess);
-
+    ConsoleShimPolicy(const HANDLE hProcess);
     bool IsCmdExe() const noexcept;
     bool IsPowershellExe() const noexcept;
     bool IsVtColorQuirkRequired() const noexcept;
 
 private:
-    ConsoleShimPolicy(const bool isCmd,
-                      const bool isPowershell);
-
-    const bool _isCmd;
-    const bool _isPowershell;
+    bool _isCmd{ false };
+    bool _isPowershell{ false };
+    bool _requiresVtColorQuirk{ false };
 };
