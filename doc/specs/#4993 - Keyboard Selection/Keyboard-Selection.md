@@ -1,7 +1,7 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2019-08-30
-last updated: 2022-06-1
+last updated: 2022-07-06
 issue id: 715
 ---
 
@@ -196,7 +196,7 @@ Invoking `copyMode()` essentially cycles between which selection point is target
 | `selectAll`                    | none | Select the entire text buffer. |
 | `markMode`                     | none | Toggle mark mode. If no selection exists, create a selection at the cursor position. Otherwise, use the existing selection as one in mark mode. |
 | `toggleBlockSelection`         | none | Transform the existing selection between a block selection and a line selection.  |
-| `switchSelectionEndpoint`      | none | If a selection is present, switch which selection endpoint is targeted when in mark mode or quick edit mode. |
+| `switchSelectionEndpoint`      | none | If a selection is present, switch which selection endpoint is targeted when in mark mode or another keyboard selection mode (i.e. modified a mouse selection using the keyboard). |
 
 By default, the following key binding will be set:
 ```JS
@@ -208,17 +208,23 @@ By default, the following key binding will be set:
 { "command": "switchSelectionEndpoint" },
 ```
 
-### Y-Beam
+### Selection Markers
 
-A y-beam will be used to identify which selection endpoint is currently being moved when in mark mode.
+A y-beam will be used to identify which selection endpoint is currently being moved when in mark mode. The y-beam will match the cursor color and the font size so that it essentially fills a cell in the buffer.
 
 When we're moving the cursor (this happens when mark mode is entered from no existing selection), a full y-beam will be displayed at the cursor position.
 
 ![Y-Beam Example][./images/Y-Beam.png]
 
-When <kbd>shift</kbd> is held, we're expanding the selection. In this case, the y-beam will be split, and the relevant half will be rendered on the active endpoint.
+When <kbd>shift</kbd> is held, we're expanding the selection. In this case, the y-beam will be split, and the relevant half will be rendered on the active endpoint functioning as a selection marker.
 
 ![Separated Y-Beam Example][./images/Half-Y-Beam.png]
+
+If the selection is up against the end (or beginning) of the line, the selection marker can't be rendered normally because ther is no space to render it off the side of the terminal. Instead, the selection marker will be horizontally flipped. Alternatively, it can be rendered on the next available cell (i.e. end of line translates to the beginning of the next line), but that would cause issues when the selection is positioned at the beginning or end of the buffer, thus the idea was abandoned.
+
+If the active endpoint crosses the inactive endpoint, the selection marker will be flipped. In a sense, the flag will always point away from the selection.
+
+The y-beam doesn't make as much sense for block selections, so instead an L-shaped marker will be placed hugging the corner of the active selection endpoint.
 
 **NOTE:** Both half y-beams could have been presented as shown in the image below. This idea was omitted because then there is no indication for which half y-beam is currently focused.
 
