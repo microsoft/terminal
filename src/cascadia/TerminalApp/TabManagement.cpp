@@ -293,6 +293,16 @@ namespace winrt::TerminalApp::implementation
                                                                   Profile profile)
     {
         auto newTabImpl = winrt::make_self<TerminalTab>(nullptr);
+        // TODO! This tab should have a Content that's initialized with a blank
+        // grid that takes up the whole space, with the BG set to the BG color
+        // of the TerminalControl. So that the tab has something to show
+        // initially.
+        //
+        // Alternatively, the Control could be initialized with a
+        // AsyncAction<ContentProcess> and then when _that_ returns, the
+        // TermControl starts to initialize itself?
+        //
+        // That's an idea. We do already have the settings for the control, just not the content. Huh.
         _InitializeTab(newTabImpl); // Adds tab to list, tabview
 
         // const auto initial = _startupState <= StartupState::InStartup;
