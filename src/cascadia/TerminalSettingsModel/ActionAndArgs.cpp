@@ -82,6 +82,7 @@ static constexpr std::string_view RestoreLastClosedKey{ "restoreLastClosed" };
 static constexpr std::string_view SelectAllKey{ "selectAll" };
 static constexpr std::string_view MarkModeKey{ "markMode" };
 static constexpr std::string_view ToggleBlockSelectionKey{ "toggleBlockSelection" };
+static constexpr std::string_view SwitchSelectionEndpointKey{ "switchSelectionEndpoint" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -400,6 +401,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::SelectAll, RS_(L"SelectAllCommandKey") },
                 { ShortcutAction::MarkMode, RS_(L"MarkModeCommandKey") },
                 { ShortcutAction::ToggleBlockSelection, RS_(L"ToggleBlockSelectionCommandKey") },
+                { ShortcutAction::SwitchSelectionEndpoint, RS_(L"SwitchSelectionEndpointCommandKey") },
             };
         }();
 

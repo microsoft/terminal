@@ -417,11 +417,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            if (_terminal->IsInMarkMode() && modifiers.IsCtrlPressed() && vkey == 'A')
+            const auto isInMarkMode = _terminal->SelectionMode() == ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Mark;
+            if (isInMarkMode && modifiers.IsCtrlPressed() && vkey == 'A')
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->SelectAll();
-                _renderer->TriggerSelection();
+                _updateSelectionUI();
                 return true;
             }
 
@@ -430,7 +431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 auto lock = _terminal->LockForWriting();
                 _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
-                _renderer->TriggerSelection();
+                _updateSelectionUI();
                 return true;
             }
 
@@ -438,7 +439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
-                _renderer->TriggerSelection();
+                _updateSelectionUI();
             }
 
             // When there is a selection active, escape should clear it and NOT flow through
@@ -935,6 +936,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Retrieves selection metadata from Terminal necessary to draw the
+    //    selection markers.
+    // - Since all of this needs to be done under lock, it is more performant
+    //    to throw it all in a struct and pass it along.
+    Control::SelectionData ControlCore::SelectionInfo() const
+    {
+        auto lock = _terminal->LockForReading();
+        Control::SelectionData info;
+
+        const auto start{ _terminal->SelectionStartForRendering() };
+        info.StartPos = { start.X, start.Y };
+
+        const auto end{ _terminal->SelectionEndForRendering() };
+        info.EndPos = { end.X, end.Y };
+
+        info.Endpoint = static_cast<SelectionEndpointTarget>(_terminal->SelectionEndpointTarget());
+
+        const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+        info.StartAtLeftBoundary = _terminal->GetSelectionAnchor().x == bufferSize.Left();
+        info.EndAtRightBoundary = _terminal->GetSelectionEnd().x == bufferSize.RightInclusive();
+        return info;
+    }
+
+    // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - position: the point in terminal coordinates (in cells, not pixels)
@@ -956,7 +981,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
-        _renderer->TriggerSelection();
+        _updateSelectionUI();
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
@@ -969,7 +994,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
@@ -1015,12 +1039,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                     bgColor) :
                                  "";
 
-        if (!_settings->CopyOnSelect())
-        {
-            _terminal->ClearSelection();
-            _renderer->TriggerSelection();
-        }
-
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,
                                  winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ textData },
@@ -1034,7 +1052,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->SelectAll();
-        _renderer->TriggerSelection();
+        _updateSelectionUI();
+    }
+
+    void ControlCore::ClearSelection()
+    {
+        auto lock = _terminal->LockForWriting();
+        _terminal->ClearSelection();
+        _updateSelectionUI();
     }
 
     bool ControlCore::ToggleBlockSelection()
@@ -1044,6 +1069,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _terminal->SetBlockSelection(!_terminal->IsBlockSelection());
             _renderer->TriggerSelection();
+            // do not update the selection markers!
+            // if we were showing them, keep it that way.
+            // otherwise, continue to not show them
             return true;
         }
         return false;
@@ -1053,12 +1081,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
         _terminal->ToggleMarkMode();
-        _renderer->TriggerSelection();
+        _updateSelectionUI();
     }
 
-    bool ControlCore::IsInMarkMode() const
+    Control::SelectionInteractionMode ControlCore::SelectionMode() const
     {
-        return _terminal->IsInMarkMode();
+        return static_cast<Control::SelectionInteractionMode>(_terminal->SelectionMode());
+    }
+
+    bool ControlCore::SwitchSelectionEndpoint()
+    {
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->SwitchSelectionEndpoint();
+            _updateSelectionUI();
+            return true;
+        }
+        return false;
     }
 
     // Method Description:
@@ -1068,7 +1107,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
-        _renderer->TriggerSelection();
+        _updateSelectionUI();
         _terminal->TrySnapOnInput();
     }
 
@@ -1388,7 +1427,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _terminal->SetBlockSelection(false);
             search.Select();
+
+            // this is used for search,
+            // DO NOT call _updateSelectionUI() here.
+            // We don't want to show the markers so manually tell it to clear it.
             _renderer->TriggerSelection();
+            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }
 
         // Raise a FoundMatch event, which the control will use to notify
@@ -1589,8 +1633,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
+        _updateSelectionUI();
+    }
 
+    // Method Description:
+    // - Updates the renderer's representation of the selection as well as the selection marker overlay in TermControl
+    void ControlCore::_updateSelectionUI()
+    {
         _renderer->TriggerSelection();
+        // only show the markers if we're doing a keyboard selection or in mark mode
+        const bool showMarkers{ _terminal->SelectionMode() >= ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Keyboard };
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(!showMarkers));
     }
 
     void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
@@ -2017,19 +2070,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         }
 
+        const auto viewHeight = ViewHeight();
+        const auto bufferSize = BufferHeight();
+
+        // UserScrollViewport, to update the Terminal about where the viewport should be
+        // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
         if (tgt.has_value())
         {
             UserScrollViewport(tgt->start.y);
+            _terminalScrollPositionChanged(tgt->start.y, viewHeight, bufferSize);
         }
         else
         {
             if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
             {
                 UserScrollViewport(BufferHeight());
+                _terminalScrollPositionChanged(BufferHeight(), viewHeight, bufferSize);
             }
             else if (direction == ScrollToMarkDirection::First || direction == ScrollToMarkDirection::Previous)
             {
                 UserScrollViewport(0);
+                _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
         }
     }

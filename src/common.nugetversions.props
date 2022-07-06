@@ -26,7 +26,7 @@
   
   <!-- NewtonsoftJSON -->
   <PropertyGroup>
-    <NewtonsoftJSONPathRoot>$(MSBuildThisFileDirectory)..\packages\Newtonsoft.Json.12.0.3</NewtonsoftJSONPathRoot>
+    <NewtonsoftJSONPathRoot>$(MSBuildThisFileDirectory)..\packages\Newtonsoft.Json.13.0.1</NewtonsoftJSONPathRoot>
   </PropertyGroup>
   
   <!-- SeleniumWebDriver -->

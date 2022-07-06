@@ -1452,18 +1452,16 @@ namespace winrt::TerminalApp::implementation
             subtleFillColorTertiaryBrush.Color(subtleFillColorTertiary);
         }
 
-        hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
         selectedTabBrush.Color(color);
 
         // currently if a tab has a custom color, a deselected state is
         // signified by using the same color with a bit of transparency
-        auto deselectedTabColor = color;
-        deselectedTabColor.A = 64;
-        deselectedTabBrush.Color(deselectedTabColor);
+        deselectedTabBrush.Color(color);
+        deselectedTabBrush.Opacity(0.3);
 
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit of transparency
-        //
+        hoverTabBrush.Color(color);
+        hoverTabBrush.Opacity(0.6);
+
         // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
         // use TabViewItem().Background() for that. HOWEVER,
         // TabViewItem().Background() only sets the color of the tab background

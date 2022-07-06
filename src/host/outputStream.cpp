@@ -286,7 +286,14 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-    ::ShowWindow(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
+
+    // GH#13301 - When we send this ShowWindow message, if we send it to the
+    // conhost HWND, it's going to need to get processed by the window message
+    // thread before returning.
+    // However, ShowWindowAsync doesn't have this problem. It'll post the
+    // message to the window thread, then immediately return, so we don't have
+    // to worry about deadlocking.
+    ::ShowWindowAsync(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
 }
 
 // Routine Description:
