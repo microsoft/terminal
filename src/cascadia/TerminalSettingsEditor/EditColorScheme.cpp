@@ -48,8 +48,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
         }
         RenameContainer().HelpText(disclaimer);
-        // we need to re-apply the template to hide/unhide the help text block
-        RenameContainer().OnApplyTemplate();
 
         NameBox().Text(_ViewModel.Name());
     }

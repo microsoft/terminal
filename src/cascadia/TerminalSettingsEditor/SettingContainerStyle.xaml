@@ -145,6 +145,7 @@
                     <muxc:Expander x:Name="Expander"
                                    Margin="0,4,0,0"
                                    HorizontalAlignment="Stretch"
+                                   IsExpanded="{TemplateBinding StartExpanded}"
                                    HorizontalContentAlignment="Stretch"
                                    Content="{TemplateBinding Content}">
                         <muxc:Expander.Header>

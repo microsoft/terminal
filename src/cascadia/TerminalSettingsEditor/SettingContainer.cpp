@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
+    DependencyProperty SettingContainer::_StartExpandedProperty{ nullptr };
 
     SettingContainer::SettingContainer()
     {
@@ -70,6 +71,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<IInspectable>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
+        }
+        if (!_StartExpandedProperty)
+        {
+            _StartExpandedProperty =
+                DependencyProperty::Register(
+                    L"StartExpanded",
+                    xaml_typename<bool>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(false) });
         }
     }
 
