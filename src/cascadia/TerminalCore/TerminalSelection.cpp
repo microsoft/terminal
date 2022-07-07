@@ -6,6 +6,7 @@
 #include "unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console::Types;
 
 DEFINE_ENUM_FLAG_OPERATORS(Terminal::SelectionEndpoint);
 
@@ -340,12 +341,12 @@ void Terminal::SwitchSelectionEndpoint()
 // Method Description:
 // - selects the next/previous hyperlink, if one is available
 // Arguments:
-// - searchForward: if true, we're scanning forward towards the end of the buffer. Otherwise, we're scanning backwards towards the top.
+// - dir: the direction we're scanning the buffer in to find the hyperlink of interest
 // Return Value:
 // - true if we found a hyperlink to select (and selected it). False otherwise.
-void Terminal::SelectHyperlink(const bool searchForward)
+void Terminal::SelectHyperlink(const SearchDirection dir)
 {
-    if (!_markMode)
+    if (_selectionMode != SelectionInteractionMode::Mark)
     {
         // This feature only works in mark mode
         _isTargetingUrl = false;
@@ -356,76 +357,64 @@ void Terminal::SelectHyperlink(const bool searchForward)
     const auto bufferSize = _activeBuffer().GetSize();
     const auto viewportHeight = _GetMutableViewport().Height();
 
+    // The patterns are stored relative to the "search area". Initially, this search area will be the viewport,
+    // but as we progressively search through more of the buffer, this will change.
+    // Keep track of the search area here, and use the lambda below to convert points to the search area coordinate space.
+    auto searchArea = _GetVisibleViewport();
+    auto convertToSearchArea = [&searchArea](const til::point pt) {
+        auto copy = pt;
+        searchArea.ConvertToOrigin(&copy);
+        return copy;
+    };
+
     // extracts the next/previous hyperlink from the list of hyperlink ranges provided
-    auto extractResultFromList = [&, onUrl = _isTargetingUrl, selectionStart = _selection->start](const std::vector<interval_tree::Interval<til::point, size_t>>& list, bool forward, bool useViewportCoords) {
-        // checks if we're already on the hyperlink and if we're trying to set it to the same one
-        auto isAlreadySelected = [onUrl, selectionStartForValidation = useViewportCoords ? _ConvertToViewportCell(selectionStart) : selectionStart](const interval_tree::Interval<til::point, size_t> range) {
-            return onUrl && selectionStartForValidation == range.start;
-        };
-
+    auto extractResultFromList = [&](std::vector<interval_tree::Interval<til::point, size_t>>& list) {
+        const auto selectionStartInSearchArea = convertToSearchArea(_selection->start);
         std::optional<std::pair<til::point, til::point>> resultFromList;
-        if (list.size() == 1)
+        for (const auto& range : list)
         {
-            if (!isAlreadySelected(list.front()))
+            if (_isTargetingUrl && selectionStartInSearchArea == range.start)
             {
-                resultFromList = std::make_pair(list.front().start, list.front().stop);
+                // if we're already on the hyperlink and we're trying to set it to the same one,
+                // skip it
+                continue;
             }
-        }
-        else if (list.size() > 1)
-        {
-            // multiple results, find the first one in the direction we're going
-            if (forward)
+            else if (!resultFromList)
             {
-                for (const auto& range : list)
-                {
-                    if (isAlreadySelected(range))
-                    {
-                        continue;
-                    }
-                    else if (!resultFromList || range.start < resultFromList->first)
-                    {
-                        resultFromList = std::make_pair(range.start, range.stop);
-                    }
-                }
+                resultFromList = std::make_pair(range.start, range.stop);
             }
-            else
+            else if (dir == SearchDirection::Forward && range.start < resultFromList->first)
             {
-                for (const auto& range : list)
-                {
-                    if (isAlreadySelected(range))
-                    {
-                        continue;
-                    }
-                    else if (!resultFromList || range.start > resultFromList->first)
-                    {
-                        resultFromList = std::make_pair(range.start, range.stop);
-                    }
-                }
+                resultFromList = std::make_pair(range.start, range.stop);
+            }
+            else if (dir == SearchDirection::Backward && range.start > resultFromList->first)
+            {
+                resultFromList = std::make_pair(range.start, range.stop);
             }
         }
 
-        // useViewportCoords --> pattern tree stores everything as viewport coords,
+        // pattern tree stores everything as viewport coords,
         // so we need to convert them on the way out
-        if (useViewportCoords && resultFromList)
+        if (resultFromList)
         {
-            resultFromList->first = _ConvertToBufferCell(resultFromList->first);
-            resultFromList->second = _ConvertToBufferCell(resultFromList->second);
+            searchArea.ConvertFromOrigin(&resultFromList->first);
+            searchArea.ConvertFromOrigin(&resultFromList->second);
         }
         return resultFromList;
     };
 
     // 1. Look for the hyperlink
-    til::point searchStart = searchForward ? _selection->start : til::point{ bufferSize.Left(), _VisibleStartIndex() };
-    til::point searchEnd = searchForward ? til::point{ bufferSize.RightInclusive(), _VisibleEndIndex() } : _selection->start;
+    til::point searchStart = dir == SearchDirection::Forward ? _selection->start : til::point{ bufferSize.Left(), _VisibleStartIndex() };
+    til::point searchEnd = dir == SearchDirection::Forward ? til::point{ bufferSize.RightInclusive(), _VisibleEndIndex() } : _selection->start;
 
     // 1.A) Try searching the current viewport (no scrolling required)
     auto patterns = _patternIntervalTree;
     auto resultList = patterns.findContained(_ConvertToViewportCell(searchStart), _ConvertToViewportCell(searchEnd));
-    std::optional<std::pair<til::point, til::point>> result = extractResultFromList(resultList, searchForward, true);
+    std::optional<std::pair<til::point, til::point>> result = extractResultFromList(resultList);
     if (!result)
     {
         // 1.B) Incrementally search through more of the space
-        if (searchForward)
+        if (dir == SearchDirection::Forward)
         {
             searchStart = { bufferSize.Left(), searchEnd.y + 1 };
             searchEnd = { bufferSize.RightInclusive(), std::min(searchStart.y + viewportHeight, ViewEndIndex()) };
@@ -435,17 +424,28 @@ void Terminal::SelectHyperlink(const bool searchForward)
             searchEnd = { bufferSize.RightInclusive(), searchStart.y - 1 };
             searchStart = { bufferSize.Left(), std::max(searchStart.y - viewportHeight, bufferSize.Top()) };
         }
+        searchArea = Viewport::FromDimensions(searchStart, searchEnd.x + 1, searchEnd.y + 1);
+
         const til::point bufferStart{ bufferSize.Origin() };
         const til::point bufferEnd{ bufferSize.RightInclusive(), ViewEndIndex() };
         while (!result && bufferSize.IsInBounds(searchStart) && bufferSize.IsInBounds(searchEnd) && searchStart <= searchEnd && bufferStart <= searchStart && searchEnd <= bufferEnd)
         {
             patterns = _activeBuffer().GetPatterns(searchStart.y, searchEnd.y);
-            resultList = patterns.findContained(searchStart, searchEnd);
-            result = extractResultFromList(resultList, searchForward, false);
+            resultList = patterns.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
+            result = extractResultFromList(resultList);
             if (!result)
             {
-                searchStart.y += 1;
-                searchEnd.y = std::min(searchStart.y + viewportHeight, ViewEndIndex());
+                if (dir == SearchDirection::Forward)
+                {
+                    searchStart.y += 1;
+                    searchEnd.y = std::min(searchStart.y + viewportHeight, ViewEndIndex());
+                }
+                else
+                {
+                    searchEnd.y -= 1;
+                    searchStart.y = std::max(searchEnd.y - viewportHeight, bufferSize.Top());
+                }
+                searchArea = Viewport::FromDimensions(searchStart, searchEnd.x + 1, searchEnd.y + 1);
             }
         }
 
@@ -462,6 +462,7 @@ void Terminal::SelectHyperlink(const bool searchForward)
     _selection->end = result->second;
     bufferSize.DecrementInBounds(_selection->end);
     _isTargetingUrl = true;
+    _selectionEndpoint = SelectionEndpoint::End;
 
     // 3. Scroll to the selected area (if necessary)
     // TODO CARLOS: I stole this from UpdateSelection(). I should probably de-duplicate it.

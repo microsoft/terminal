@@ -417,29 +417,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            const auto isInMarkMode = _terminal->SelectionMode() == ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Mark;
+            const auto isInMarkMode = _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark;
             if (isInMarkMode)
             {
                 if (modifiers.IsCtrlPressed() && vkey == 'A')
                 {
+                    // Ctrl + A --> Select all
                     auto lock = _terminal->LockForWriting();
                     _terminal->SelectAll();
                     _updateSelectionUI();
                     return true;
                 }
-                else if (_settings->DetectURLs() && vkey == VK_TAB)
+                else if (vkey == VK_TAB && _settings->DetectURLs())
                 {
+                    // [Shift +] Tab --> next/previous hyperlink
                     auto lock = _terminal->LockForWriting();
-                    _terminal->SelectHyperlink(!modifiers.IsShiftPressed());
+                    const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
+                    _terminal->SelectHyperlink(direction);
                     _updateSelectionUI();
                     return true;
                 }
-                else if (_terminal->IsTargetingUrl() && vkey == VK_RETURN)
+                else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->IsTargetingUrl())
                 {
+                    // Ctrl + Enter --> Open URL
                     auto lock = _terminal->LockForReading();
                     const auto uri = _terminal->GetHyperlinkAtPosition(_terminal->GetSelectionAnchor());
                     _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
                     return true;
+                }
+                else if (vkey == VK_RETURN)
+                {
+                    // [Shift +] Enter --> copy text
+                    auto lock = _terminal->LockForReading();
+                    CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
                 }
             }
 

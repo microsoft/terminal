@@ -249,6 +249,12 @@ public:
         Down
     };
 
+    enum class SearchDirection
+    {
+        Forward,
+        Backward
+    };
+
     enum class SelectionExpansion
     {
         Char,
@@ -273,7 +279,7 @@ public:
     SelectionInteractionMode SelectionMode() const noexcept;
     void SwitchSelectionEndpoint();
     void ToggleMarkMode();
-    void SelectHyperlink(const bool movingForward);
+    void SelectHyperlink(const SearchDirection dir);
     bool IsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
