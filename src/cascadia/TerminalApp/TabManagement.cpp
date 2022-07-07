@@ -154,7 +154,7 @@ namespace winrt::TerminalApp::implementation
                 // Possibly update the icon of the tab.
                 page->_UpdateTabIcon(*tab);
 
-                page->_updateTabRowColors();
+                page->_updateThemeColors();
 
                 // Update the taskbar progress as well. We'll raise our own
                 // SetTaskbarProgress event here, to get tell the hosting
@@ -927,7 +927,7 @@ namespace winrt::TerminalApp::implementation
                 _TitleChangedHandlers(*this, tab.Title());
             }
 
-            _updateTabRowColors();
+            _updateThemeColors();
 
             auto tab_impl = _GetTerminalTabImpl(tab);
             if (tab_impl)

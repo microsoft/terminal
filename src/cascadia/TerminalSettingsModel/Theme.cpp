@@ -12,6 +12,7 @@
 #include "ThemeColor.g.cpp"
 #include "WindowTheme.g.cpp"
 #include "TabRowTheme.g.cpp"
+#include "TabTheme.g.cpp"
 #include "Theme.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -211,6 +212,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
 
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
+THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MTSM_THEME_TAB_SETTINGS);
 
 #undef THEME_SETTINGS_FROM_JSON
 #undef THEME_SETTINGS_TO_JSON
@@ -241,6 +243,10 @@ winrt::com_ptr<Theme> Theme::Copy() const
     if (_TabRow)
     {
         theme->_TabRow = *winrt::get_self<implementation::TabRowTheme>(_TabRow)->Copy();
+    }
+    if (_Tab)
+    {
+        theme->_Tab = *winrt::get_self<implementation::TabTheme>(_Tab)->Copy();
     }
 
     return theme;

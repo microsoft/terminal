@@ -21,6 +21,7 @@ Author(s):
 #include "ThemeColor.g.h"
 #include "WindowTheme.g.h"
 #include "TabRowTheme.g.h"
+#include "TabTheme.g.h"
 #include "Theme.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -57,21 +58,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;                        \
     }
 
-    struct WindowTheme : WindowThemeT<WindowTheme>
-    {
-        MTSM_THEME_WINDOW_SETTINGS(THEME_SETTINGS_INITIALIZE);
-
-    public:
-        COPY_THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+#define THEME_OBJECT(className, macro)         \
+    struct className : className##T<className> \
+    {                                          \
+        macro(THEME_SETTINGS_INITIALIZE);      \
+                                               \
+    public:                                    \
+        COPY_THEME_OBJECT(className, macro);   \
     };
 
-    struct TabRowTheme : TabRowThemeT<TabRowTheme>
-    {
-        MTSM_THEME_TABROW_SETTINGS(THEME_SETTINGS_INITIALIZE);
-
-    public:
-        COPY_THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
-    };
+    THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+    THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
+    THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
 
     struct Theme : ThemeT<Theme>
     {
@@ -98,6 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #undef THEME_SETTINGS_INITIALIZE
 #undef THEME_SETTINGS_COPY
+#undef THEME_OBJECT
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation

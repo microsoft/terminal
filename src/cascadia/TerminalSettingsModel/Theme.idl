@@ -36,6 +36,10 @@ namespace Microsoft.Terminal.Settings.Model
         ThemeColor Background { get; };
     }
 
+    runtimeclass TabTheme {
+        ThemeColor Background { get; };
+    }
+
     [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {
         Theme();
         Theme(Windows.UI.Xaml.ElementTheme requestedTheme);
@@ -47,6 +51,9 @@ namespace Microsoft.Terminal.Settings.Model
 
         // tabRow.* Namespace
         TabRowTheme TabRow { get; };
+
+        // tab.* Namespace
+        TabTheme Tab { get; };
 
         // A helper for retrieving the RequestedTheme out of the window property
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
