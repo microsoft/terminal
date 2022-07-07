@@ -19,12 +19,12 @@
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate x:Key="ColorPreviewChipTemplate"
-                      x:DataType="local:ColorTableEntry">
-                <Border Background="{x:Bind local:Converters.ColorToBrush(Color)}"
-                    Width="15"
-                    Height="15"
+                          x:DataType="local:ColorTableEntry">
+                <Border Width="15"
+                        Height="15"
                         Margin="2"
-                        CornerRadius="2"/>
+                        Background="{x:Bind local:Converters.ColorToBrush(Color)}"
+                        CornerRadius="2" />
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -69,16 +69,16 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <Border Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
-                                        Grid.RowSpan="2"
+                                <Border Grid.RowSpan="2"
                                         Grid.Column="0"
-                                        CornerRadius="2"
-                                        Width="45">
-                                    <TextBlock Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                        Width="45"
+                                        Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                                        CornerRadius="2">
+                                    <TextBlock HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
-                                               HorizontalAlignment="Center"
                                                FontFamily="Cascadia Code"
-                                               Text="Text"/>
+                                               Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                               Text="Text" />
                                 </Border>
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="1"
@@ -167,8 +167,8 @@
                 </Button>
                 <Button x:Name="DeleteButton"
                         Margin="10,0,0,0"
-                        Style="{StaticResource DeleteButtonStyle}"
-                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}">
+                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
+                        Style="{StaticResource DeleteButtonStyle}">
                     <Button.Content>
                         <TextBlock x:Uid="ColorScheme_DeleteButton"
                                    Style="{StaticResource IconButtonTextBlockStyle}" />

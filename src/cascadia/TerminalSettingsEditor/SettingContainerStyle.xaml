@@ -145,9 +145,9 @@
                     <muxc:Expander x:Name="Expander"
                                    Margin="0,4,0,0"
                                    HorizontalAlignment="Stretch"
-                                   IsExpanded="{TemplateBinding StartExpanded}"
                                    HorizontalContentAlignment="Stretch"
-                                   Content="{TemplateBinding Content}">
+                                   Content="{TemplateBinding Content}"
+                                   IsExpanded="{TemplateBinding StartExpanded}">
                         <muxc:Expander.Header>
                             <Grid MinHeight="64">
                                 <Grid.ColumnDefinitions>
