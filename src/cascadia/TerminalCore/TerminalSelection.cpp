@@ -304,6 +304,7 @@ void Terminal::ToggleMarkMode()
         _selection->start = cursorPos;
         _selection->end = cursorPos;
         _selection->pivot = cursorPos;
+        _ScrollToPoint(cursorPos);
         _selectionMode = SelectionInteractionMode::Mark;
         _blockSelection = false;
         _isTargetingUrl = false;
@@ -409,7 +410,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
 
     // 1.A) Try searching the current viewport (no scrolling required)
     auto patterns = _patternIntervalTree;
-    auto resultList = patterns.findContained(_ConvertToViewportCell(searchStart), _ConvertToViewportCell(searchEnd));
+    auto resultList = patterns.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
     std::optional<std::pair<til::point, til::point>> result = extractResultFromList(resultList);
     if (!result)
     {
@@ -465,23 +466,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     _selectionEndpoint = SelectionEndpoint::End;
 
     // 3. Scroll to the selected area (if necessary)
-    // TODO CARLOS: I stole this from UpdateSelection(). I should probably de-duplicate it.
-    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(_selection->end))
-    {
-        if (const auto amtAboveView = visibleViewport.Top() - _selection->end.Y; amtAboveView > 0)
-        {
-            // anchor is above visible viewport, scroll by that amount
-            _scrollOffset += amtAboveView;
-        }
-        else
-        {
-            // anchor is below visible viewport, scroll by that amount
-            const auto amtBelowView = _selection->end.Y - visibleViewport.BottomInclusive();
-            _scrollOffset -= amtBelowView;
-        }
-        _NotifyScrollEvent();
-        _activeBuffer().TriggerScroll();
-    }
+    _ScrollToPoint(_selection->end);
 }
 
 bool Terminal::IsTargetingUrl() const noexcept
@@ -613,22 +598,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 4. Scroll (if necessary)
-    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(targetPos))
-    {
-        if (const auto amtAboveView = visibleViewport.Top() - targetPos.Y; amtAboveView > 0)
-        {
-            // anchor is above visible viewport, scroll by that amount
-            _scrollOffset += amtAboveView;
-        }
-        else
-        {
-            // anchor is below visible viewport, scroll by that amount
-            const auto amtBelowView = targetPos.Y - visibleViewport.BottomInclusive();
-            _scrollOffset -= amtBelowView;
-        }
-        _NotifyScrollEvent();
-        _activeBuffer().TriggerScroll();
-    }
+    _ScrollToPoint(targetPos);
 }
 
 void Terminal::SelectAll()
@@ -830,16 +800,27 @@ til::point Terminal::_ConvertToBufferCell(const til::point viewportPos) const
 }
 
 // Method Description:
-// - convert buffer position to the corresponding location on the viewport
+// - if necessary, scroll the viewport such that the given point is visible
 // Arguments:
-// - bufferPos: a coordinate on the buffer
-// Return Value:
-// - the corresponding location on the viewport
-til::point Terminal::_ConvertToViewportCell(const til::point bufferPos) const
+// - pos: a coordinate relative to the buffer (not viewport)
+void Terminal::_ScrollToPoint(const til::point pos)
 {
-    const auto yPos = bufferPos.Y - _VisibleStartIndex();
-    til::point viewportPos = { bufferPos.X, yPos };
-    return viewportPos;
+    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(pos))
+    {
+        if (const auto amtAboveView = visibleViewport.Top() - pos.Y; amtAboveView > 0)
+        {
+            // anchor is above visible viewport, scroll by that amount
+            _scrollOffset += amtAboveView;
+        }
+        else
+        {
+            // anchor is below visible viewport, scroll by that amount
+            const auto amtBelowView = pos.Y - visibleViewport.BottomInclusive();
+            _scrollOffset -= amtBelowView;
+        }
+        _NotifyScrollEvent();
+        _activeBuffer().TriggerScroll();
+    }
 }
 
 // Method Description:
