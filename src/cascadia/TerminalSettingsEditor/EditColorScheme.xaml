@@ -182,6 +182,7 @@
             </Border>
 
             <local:SettingContainer x:Uid="ColorScheme_ColorsHeader"
+                                    x:Name="ColorsContainer"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <Grid x:Name="ColorTableGrid"
                       Style="{StaticResource ColorTableGridStyle}">

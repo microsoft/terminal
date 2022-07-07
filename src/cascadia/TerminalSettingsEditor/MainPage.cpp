@@ -68,6 +68,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _breadcrumbs.Append(crumb);
                 }
             }
+            else if (settingName == L"CurrentSchemeName")
+            {
+                // this is not technically a setting, it is the ColorSchemesPageVM telling us the breadcrumb item needs to be updated because of a rename
+                _breadcrumbs.RemoveAtEnd();
+                const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), _colorSchemesPageVM.CurrentScheme().Name(), BreadcrumbSubPage::ColorSchemes_Edit);
+                _breadcrumbs.Append(crumb);
+            }
         });
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));

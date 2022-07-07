@@ -90,6 +90,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _settings.GlobalSettings().RemoveColorScheme(oldName);
             _settings.GlobalSettings().AddColorScheme(_viewModelToSchemeMap.Lookup(CurrentScheme()));
             _settings.UpdateColorSchemeReferences(oldName, newName);
+
+            // We need to let MainPage know so the BreadcrumbBarItem can be updated
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentSchemeName" });
             return true;
         }
     }
