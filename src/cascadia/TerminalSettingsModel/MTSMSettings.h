@@ -33,8 +33,8 @@ Author(s):
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                              \
+    X(hstring, Theme, "theme")                                                                                                                             \
     X(hstring, Language, "language")                                                                                                                       \
-    X(winrt::Windows::UI::Xaml::ElementTheme, Theme, "theme", winrt::Windows::UI::Xaml::ElementTheme::Default)                                             \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal) \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                               \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                \
@@ -114,3 +114,14 @@ Author(s):
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
+
+#define MTSM_THEME_SETTINGS(X)                                                             \
+    X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr)
+
+#define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
+    X(bool, UseMica, "useMica", false)
+
+#define MTSM_THEME_TABROW_SETTINGS(X) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)

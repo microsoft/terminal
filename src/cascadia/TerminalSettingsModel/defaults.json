@@ -280,6 +280,26 @@
             "brightWhite": "#EEEEEC"
         }
     ],
+    "themes": [
+        {
+            "name": "light",
+            "window":{
+                "applicationTheme": "light"
+            }
+        },
+        {
+            "name": "dark",
+            "window":{
+                "applicationTheme": "dark"
+            }
+        },
+        {
+            "name": "system",
+            "window":{
+                "applicationTheme": "system"
+            }
+        }
+    ],
     "actions":
     [
         // Application-level Keys

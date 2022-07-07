@@ -41,17 +41,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"zh-Hant",
     };
 
-    GlobalAppearance::GlobalAppearance()
+    constexpr std::wstring_view systemThemeName{ L"system" };
+    constexpr std::wstring_view darkThemeName{ L"dark" };
+    constexpr std::wstring_view lightThemeName{ L"light" };
+
+    GlobalAppearance::GlobalAppearance() :
+        _ThemeList{ single_threaded_observable_vector<Model::Theme>() }
     {
         InitializeComponent();
 
-        INITIALIZE_BINDABLE_ENUM_SETTING(Theme, ElementTheme, winrt::Windows::UI::Xaml::ElementTheme, L"Globals_Theme", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
     }
 
     void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::GlobalAppearancePageNavigationState>();
+        _UpdateThemeList();
     }
 
     winrt::hstring GlobalAppearance::LanguageDisplayConverter(const winrt::hstring& tag)
@@ -195,4 +200,61 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Function Description:
+    // - Updates the list of all themes available to choose from.
+    void GlobalAppearance::_UpdateThemeList()
+    {
+        // Surprisingly, though this is called every time we navigate to the page,
+        // the list does not keep growing on each navigation.
+        const auto& ThemeMap{ _State.Globals().Themes() };
+        for (const auto& pair : ThemeMap)
+        {
+            _ThemeList.Append(pair.Value());
+        }
+    }
+
+    winrt::Windows::Foundation::IInspectable GlobalAppearance::CurrentTheme()
+    {
+        return _State.Globals().CurrentTheme();
+    }
+
+    // Get the name out of the newly selected item, stash that as the Theme name
+    // set for the globals. That controls which theme is actually the current
+    // theme.
+    void GlobalAppearance::CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag)
+    {
+        if (const auto& theme{ tag.try_as<Model::Theme>() })
+        {
+            _State.Globals().Theme(theme.Name());
+        }
+    }
+
+    // Method Description:
+    // - Convert the names of the inbox themes to some more descriptive,
+    //   well-known values. If the passed in theme isn't an inbox one, then just
+    //   return its set Name.
+    //    - "light" becomes "Light"
+    //    - "dark" becomes "Dark"
+    //    - "system" becomes "Use Windows theme"
+    // - These values are all localized based on the app language.
+    // Arguments:
+    // - theme: the theme to get the display name for.
+    // Return Value:
+    // - the potentially localized name to use for this Theme.
+    winrt::hstring GlobalAppearance::ThemeNameConverter(const Model::Theme& theme)
+    {
+        if (theme.Name() == darkThemeName)
+        {
+            return RS_(L"Globals_ThemeDark/Content");
+        }
+        else if (theme.Name() == lightThemeName)
+        {
+            return RS_(L"Globals_ThemeLight/Content");
+        }
+        else if (theme.Name() == systemThemeName)
+        {
+            return RS_(L"Globals_ThemeSystem/Content");
+        }
+        return theme.Name();
+    }
 }

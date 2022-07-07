@@ -405,6 +405,11 @@ void AppHost::Initialize()
         }
     });
 
+    // Load bearing: make sure the PropertyChanged handler is added before we
+    // call Create, so that when the app sets up the titlebar brush, we're
+    // already prepared to listen for the change notification
+    _revokers.PropertyChanged = _logic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
+
     _logic.Create();
 
     _revokers.TitleChanged = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
@@ -698,8 +703,12 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 {
     if (_useNonClientArea)
     {
-        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
+        auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nonClientWindow->SetTitlebarContent(arg);
+        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
     }
+
+    _updateTheme();
 }
 
 // Method Description:
@@ -710,9 +719,9 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
+void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& /*arg*/)
 {
-    _window->OnApplicationThemeChanged(arg);
+    _updateTheme();
 }
 
 void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -902,8 +911,15 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
     args.ResultTargetWindowName(targetWindow.WindowName());
 }
 
-winrt::fire_and_forget AppHost::_WindowActivated()
+winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
 {
+    _logic.WindowActivated(activated);
+
+    if (!activated)
+    {
+        co_return;
+    }
+
     co_await winrt::resume_background();
 
     if (auto peasant{ _windowManager.CurrentWindow() })
@@ -1326,6 +1342,25 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
+void AppHost::_updateTheme()
+{
+    auto theme = _logic.Theme();
+
+    _window->OnApplicationThemeChanged(theme.RequestedTheme());
+
+    // This block of code enables Mica for our window. By all accounts, this
+    // version of the code will only work on Windows 11, SV2. There's a slightly
+    // different API surface for enabling Mica on Windows 11 22000.0.
+    //
+    // This code is left here, commented out, for future enablement of Mica.
+    // We'll revisit this in GH#10509. Because we can't enable transparent
+    // titlebars for showing Mica currently, we're just gonna disable it
+    // entirely while we sort that out.
+    //
+    // const int attribute = theme.Window().UseMica() ? /*DWMSBT_MAINWINDOW*/ 2 : /*DWMSBT_NONE*/ 1;
+    // DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
+}
+
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
@@ -1357,6 +1392,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
+    _updateTheme();
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -1577,4 +1613,14 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 {
     const auto pos = _GetWindowLaunchPosition();
     _logic.CloseWindow(pos);
+}
+
+void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                      const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& e)
+{
+    if (e.PropertyName() == L"TitlebarBrush")
+    {
+        auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+    }
 }

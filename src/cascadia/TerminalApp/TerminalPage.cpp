@@ -183,43 +183,6 @@ namespace winrt::TerminalApp::implementation
 
         const auto isElevated = IsElevated();
 
-        if (_settings.GlobalSettings().UseAcrylicInTabRow())
-        {
-            const auto res = Application::Current().Resources();
-            const auto lightKey = winrt::box_value(L"Light");
-            const auto darkKey = winrt::box_value(L"Dark");
-            const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-
-            for (const auto& dictionary : res.MergedDictionaries())
-            {
-                // Don't change MUX resources
-                if (dictionary.Source())
-                {
-                    continue;
-                }
-
-                for (const auto& kvPair : dictionary.ThemeDictionaries())
-                {
-                    const auto themeDictionary = kvPair.Value().as<winrt::Windows::UI::Xaml::ResourceDictionary>();
-
-                    if (themeDictionary.HasKey(tabViewBackgroundKey))
-                    {
-                        const auto backgroundSolidBrush = themeDictionary.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
-
-                        const til::color backgroundColor = backgroundSolidBrush.Color();
-
-                        const auto acrylicBrush = Media::AcrylicBrush();
-                        acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-                        acrylicBrush.FallbackColor(backgroundColor);
-                        acrylicBrush.TintColor(backgroundColor);
-                        acrylicBrush.TintOpacity(0.5);
-
-                        themeDictionary.Insert(tabViewBackgroundKey, acrylicBrush);
-                    }
-                }
-            }
-        }
-
         _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
@@ -260,6 +223,7 @@ namespace winrt::TerminalApp::implementation
             transparent.Color(Windows::UI::Colors::Transparent());
             _tabRow.Background(transparent);
         }
+        _updateTabRowColors();
 
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
@@ -1471,6 +1435,16 @@ namespace winrt::TerminalApp::implementation
 
         term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
 
+        term.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& e) {
+            if (auto page{ weakThis.get() })
+            {
+                if (e.PropertyName() == L"BackgroundBrush")
+                {
+                    page->_updateTabRowColors();
+                }
+            }
+        });
+
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
     }
 
@@ -1510,37 +1484,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // react on color changed events
-        hostingTab.ColorSelected([weakTab, weakThis](auto&& color) {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab && (tab->FocusState() != FocusState::Unfocused))
-            {
-                page->_SetNonClientAreaColors(color);
-            }
-        });
-
-        hostingTab.ColorCleared([weakTab, weakThis]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab && (tab->FocusState() != FocusState::Unfocused))
-            {
-                page->_ClearNonClientAreaColors();
-            }
-        });
-
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-
-        // TODO GH#3327: Once we support colorizing the NewTab button based on
-        // the color of the tab, we'll want to make sure to call
-        // _ClearNewTabButtonColor here, to reset it to the default (for the
-        // newly created tab).
-        // remove any colors left by other colored tabs
-        // _ClearNewTabButtonColor();
     }
 
     // Method Description:
@@ -2750,6 +2696,13 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
+
+        Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
+        _tabView.Background(transparent);
+
+        ////////////////////////////////////////////////////////////////////////
+        // Begin Theme handling
+        _updateTabRowColors();
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -3132,32 +3085,6 @@ namespace winrt::TerminalApp::implementation
 
         _newTabButton.Background(backgroundBrush);
         _newTabButton.Foreground(foregroundBrush);
-    }
-
-    // Method Description:
-    // - Sets the tab split button color when a new tab color is selected
-    // - This method could also set the color of the title bar and tab row
-    // in the future
-    // Arguments:
-    // - selectedTabColor: The color of the newly selected tab
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SetNonClientAreaColors(const Windows::UI::Color& /*selectedTabColor*/)
-    {
-        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
-    }
-
-    // Method Description:
-    // - Clears the tab split button color when the tab's color is cleared
-    // - This method could also clear the color of the title bar and tab row
-    // in the future
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_ClearNonClientAreaColors()
-    {
-        // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
     // Function Description:
@@ -3569,10 +3496,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
     {
-        auto theme{ _settings.GlobalSettings().Theme() };
+        auto theme{ _settings.GlobalSettings().CurrentTheme() };
+        auto requestedTheme{ theme.RequestedTheme() };
         while (element)
         {
-            element.RequestedTheme(theme);
+            element.RequestedTheme(requestedTheme);
             element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
         }
     }
@@ -4076,4 +4004,132 @@ namespace winrt::TerminalApp::implementation
         applicationState.DismissedMessages(std::move(messages));
     }
 
+    void TerminalPage::_updateTabRowColors()
+    {
+        if (_settings == nullptr)
+        {
+            return;
+        }
+
+        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto requestedTheme{ theme.RequestedTheme() };
+
+        const auto res = Application::Current().Resources();
+
+        // XAML Hacks:
+        //
+        // the App is always in the OS theme, so the
+        // App::Current().Resources() lookup will always get the value for the
+        // OS theme, not the requested theme.
+        //
+        // This helper allows us to instead lookup the value of a resource
+        // specified by `key` for the given `requestedTheme`, from the
+        // dictionaries in App.xaml. Make sure the value is actually there!
+        // Otherwise this'll throw like any other Lookup for a resource that
+        // isn't there.
+        static const auto lookup = [](auto& res, auto& requestedTheme, auto& key) {
+            // You want the Default version of the resource? Great, the App is
+            // always in the OS theme. Just look it up and be done.
+            if (requestedTheme == ElementTheme::Default)
+            {
+                return res.Lookup(key);
+            }
+            static const auto lightKey = winrt::box_value(L"Light");
+            static const auto darkKey = winrt::box_value(L"Dark");
+            // There isn't an ElementTheme::HighContrast.
+
+            auto requestedThemeKey = requestedTheme == ElementTheme::Dark ? darkKey : lightKey;
+            for (const auto& dictionary : res.MergedDictionaries())
+            {
+                // Don't look in the MUX resources. They come first. A person
+                // with more patience than me may find a way to look through our
+                // dictionaries first, then the MUX ones, but that's not needed
+                // currently
+                if (dictionary.Source())
+                {
+                    continue;
+                }
+                // Look through the theme dictionaries we defined:
+                for (const auto& [dictionaryKey, dict] : dictionary.ThemeDictionaries())
+                {
+                    // Does the key for this dict match the theme we're looking for?
+                    if (winrt::unbox_value<winrt::hstring>(dictionaryKey) !=
+                        winrt::unbox_value<winrt::hstring>(requestedThemeKey))
+                    {
+                        // No? skip it.
+                        continue;
+                    }
+                    // Look for the requested resource in this dict.
+                    const auto themeDictionary = dict.as<winrt::Windows::UI::Xaml::ResourceDictionary>();
+                    if (themeDictionary.HasKey(key))
+                    {
+                        return themeDictionary.Lookup(key);
+                    }
+                }
+            }
+
+            // We didn't find it in the requested dict, fall back to the default dictionary.
+            return res.Lookup(key);
+        };
+
+        // Use our helper to lookup the theme-aware version of the resource.
+        const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+        const auto backgroundSolidBrush = lookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
+
+        til::color bgColor = backgroundSolidBrush.Color();
+
+        if (_settings.GlobalSettings().UseAcrylicInTabRow())
+        {
+            const til::color backgroundColor = backgroundSolidBrush.Color();
+            const auto acrylicBrush = Media::AcrylicBrush();
+            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            acrylicBrush.FallbackColor(bgColor);
+            acrylicBrush.TintColor(bgColor);
+            acrylicBrush.TintOpacity(0.5);
+
+            TitlebarBrush(acrylicBrush);
+        }
+        else if (theme.TabRow() && theme.TabRow().Background())
+        {
+            const auto tabRowBg = theme.TabRow().Background();
+            const auto terminalBrush = [this]() -> Media::Brush {
+                if (const auto& control{ _GetActiveControl() })
+                {
+                    return control.BackgroundBrush();
+                }
+                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                {
+                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+                }
+                return nullptr;
+            }();
+
+            const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
+            bgColor = ThemeColor::ColorFromBrush(themeBrush);
+            TitlebarBrush(themeBrush);
+        }
+        else
+        {
+            // Nothing was set in the theme - fall back to our original `TabViewBackground` color.
+            TitlebarBrush(backgroundSolidBrush);
+        }
+
+        if (!_settings.GlobalSettings().ShowTabsInTitlebar())
+        {
+            _tabRow.Background(TitlebarBrush());
+        }
+
+        // Update the new tab button to have better contrast with the new color.
+        // In theory, it would be convenient to also change these for the
+        // inactive tabs as well, but we're leaving that as a follow up.
+        _SetNewTabButtonColor(bgColor, bgColor);
+    }
+
+    void TerminalPage::WindowActivated(const bool activated)
+    {
+        // Stash if we're activated. Use that when we reload
+        // the settings, change active panes, etc.
+        _activated = activated;
+        _updateTabRowColors();
+    }
 }

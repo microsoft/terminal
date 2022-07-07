@@ -134,6 +134,7 @@ namespace winrt::TerminalApp::implementation
         bool IsElevated() const noexcept;
 
         void OpenSettingsUI();
+        void WindowActivated(const bool activated);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -156,6 +157,8 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
         TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -196,6 +199,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom{};
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
+
+        bool _activated{ false };
         bool _visible{ true };
 
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
@@ -383,8 +388,6 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshUIForSettingsReload();
 
-        void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
-        void _ClearNonClientAreaColors();
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
 
@@ -442,6 +445,8 @@ namespace winrt::TerminalApp::implementation
         void _SetAsDefaultOpenSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
+
+        void _updateTabRowColors();
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 

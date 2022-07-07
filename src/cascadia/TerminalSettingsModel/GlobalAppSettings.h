@@ -22,6 +22,7 @@ Author(s):
 #include "ActionMap.h"
 #include "Command.h"
 #include "ColorScheme.h"
+#include "Theme.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -62,6 +63,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             DisableAnimations(!invertedDisableAnimationsValue);
         }
 
+        Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
+        void AddTheme(const Model::Theme& theme);
+        Model::Theme CurrentTheme() noexcept;
+
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
@@ -78,7 +83,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::guid _defaultProfile;
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
+
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
     };
 }
