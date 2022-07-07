@@ -78,7 +78,9 @@ Author(s):
     X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)                                                                                              \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
-    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)
+    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
+    X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -115,7 +117,8 @@ Author(s):
 
 #define MTSM_THEME_SETTINGS(X)                                                             \
     X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr) \
-    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr)
+    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr)
 
 #define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
@@ -124,3 +127,6 @@ Author(s):
 #define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)
+
+#define MTSM_THEME_TAB_SETTINGS(X) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)

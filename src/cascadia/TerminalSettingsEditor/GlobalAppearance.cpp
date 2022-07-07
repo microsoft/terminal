@@ -41,6 +41,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"zh-Hant",
     };
 
+    constexpr std::wstring_view systemThemeName{ L"system" };
+    constexpr std::wstring_view darkThemeName{ L"dark" };
+    constexpr std::wstring_view lightThemeName{ L"light" };
+
     GlobalAppearance::GlobalAppearance() :
         _ThemeList{ single_threaded_observable_vector<Model::Theme>() }
     {
@@ -205,8 +209,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& ThemeMap{ _State.Globals().Themes() };
         for (const auto& pair : ThemeMap)
         {
-            const auto& theme{ pair.Value() };
-            _ThemeList.Append(theme);
+            _ThemeList.Append(pair.Value());
         }
     }
 
@@ -238,17 +241,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - theme: the theme to get the display name for.
     // Return Value:
     // - the potentially localized name to use for this Theme.
-    winrt::hstring GlobalAppearance::WellKnownThemeNameConverter(const Model::Theme& theme)
+    winrt::hstring GlobalAppearance::ThemeNameConverter(const Model::Theme& theme)
     {
-        if (theme.Name() == L"dark")
+        if (theme.Name() == darkThemeName)
         {
             return RS_(L"Globals_ThemeDark/Content");
         }
-        if (theme.Name() == L"light")
+        else if (theme.Name() == lightThemeName)
         {
             return RS_(L"Globals_ThemeLight/Content");
         }
-        if (theme.Name() == L"system")
+        else if (theme.Name() == systemThemeName)
         {
             return RS_(L"Globals_ThemeSystem/Content");
         }

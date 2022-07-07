@@ -290,6 +290,17 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
     };
 
+
+    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AddMarkArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
+    };
+
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };

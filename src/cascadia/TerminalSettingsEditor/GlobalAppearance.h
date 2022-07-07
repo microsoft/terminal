@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::Windows::Foundation::IInspectable CurrentTheme();
         void CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag);
-        static winrt::hstring WellKnownThemeNameConverter(const Model::Theme& theme);
+        static winrt::hstring ThemeNameConverter(const Model::Theme& theme);
 
     private:
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;

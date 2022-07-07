@@ -287,8 +287,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     const auto viewport = bufferSize.ConvertToOrigin(_getViewport());
 
-    const COORD start{ viewport.Left(), viewport.Top() };
-    const COORD end{ viewport.Left(), viewport.BottomExclusive() };
+    const til::point start{ viewport.Left(), viewport.Top() };
+    const til::point end{ viewport.Left(), viewport.BottomExclusive() };
 
     auto hr = CreateTextRange(this, start, end, _wordDelimiters, &range);
     if (FAILED(hr))
@@ -365,7 +365,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ Suppo
 
 #pragma endregion
 
-const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const noexcept
+til::size ScreenInfoUiaProviderBase::_getScreenBufferCoords() const noexcept
 {
     return _getTextBuffer().GetSize().Dimensions();
 }
@@ -375,7 +375,7 @@ const TextBuffer& ScreenInfoUiaProviderBase::_getTextBuffer() const noexcept
     return _pData->GetTextBuffer();
 }
 
-const Viewport ScreenInfoUiaProviderBase::_getViewport() const noexcept
+Viewport ScreenInfoUiaProviderBase::_getViewport() const noexcept
 {
     return _pData->GetViewport();
 }

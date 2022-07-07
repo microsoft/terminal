@@ -179,7 +179,7 @@
             </Frame>
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"
-                  Height="80"
+                  Height="55"
                   BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                   BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>
@@ -196,14 +196,14 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
-                    <Button x:Name="ResetButton"
-                            x:Uid="Settings_ResetSettingsButton"
-                            Click="ResetButton_Click" />
                     <Button x:Name="SaveButton"
                             x:Uid="Settings_SaveSettingsButton"
-                            Margin="10,0,0,0"
                             Click="SaveButton_Click"
                             Style="{StaticResource AccentButtonStyle}" />
+                    <Button x:Name="ResetButton"
+                            x:Uid="Settings_ResetSettingsButton"
+                            Margin="10,0,0,0"
+                            Click="ResetButton_Click" />
                 </StackPanel>
             </Grid>
         </Grid>

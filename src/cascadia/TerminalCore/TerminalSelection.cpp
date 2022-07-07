@@ -7,6 +7,8 @@
 
 using namespace Microsoft::Terminal::Core;
 
+DEFINE_ENUM_FLAG_OPERATORS(Terminal::SelectionEndpoint);
+
 /* Selection Pivot Description:
  *   The pivot helps properly update the selection when a user moves a selection over itself
  *   See SelectionTest::DoubleClickDrag_Left for an example of the functionality mentioned here
@@ -43,9 +45,9 @@ using namespace Microsoft::Terminal::Core;
 // - Helper to determine the selected region of the buffer. Used for rendering.
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
-std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
+std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 {
-    std::vector<SMALL_RECT> result;
+    std::vector<til::inclusive_rect> result;
 
     if (!IsSelectionActive())
     {
@@ -66,7 +68,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 // - None
 // Return Value:
 // - None
-const COORD Terminal::GetSelectionAnchor() const noexcept
+const til::point Terminal::GetSelectionAnchor() const noexcept
 {
     return _selection->start;
 }
@@ -77,9 +79,52 @@ const COORD Terminal::GetSelectionAnchor() const noexcept
 // - None
 // Return Value:
 // - None
-const COORD Terminal::GetSelectionEnd() const noexcept
+const til::point Terminal::GetSelectionEnd() const noexcept
 {
     return _selection->end;
+}
+
+// Method Description:
+// - Gets the viewport-relative position of where to draw the marker
+//    for the selection's start endpoint
+til::point Terminal::SelectionStartForRendering() const
+{
+    auto pos{ _selection->start };
+    const auto bufferSize{ GetTextBuffer().GetSize() };
+    if (pos.x != bufferSize.Left())
+    {
+        // In general, we need to draw the marker one before the
+        // beginning of the selection.
+        // When we're at the left boundary, we want to
+        // flip the marker, so we skip this step.
+        bufferSize.DecrementInBounds(pos);
+    }
+    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    return til::point{ pos };
+}
+
+// Method Description:
+// - Gets the viewport-relative position of where to draw the marker
+//    for the selection's end endpoint
+til::point Terminal::SelectionEndForRendering() const
+{
+    auto pos{ _selection->end };
+    const auto bufferSize{ GetTextBuffer().GetSize() };
+    if (pos.x != bufferSize.RightInclusive())
+    {
+        // In general, we need to draw the marker one after the
+        // end of the selection.
+        // When we're at the right boundary, we want to
+        // flip the marker, so we skip this step.
+        bufferSize.IncrementInBounds(pos);
+    }
+    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    return til::point{ pos };
+}
+
+const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noexcept
+{
+    return _selectionEndpoint;
 }
 
 // Method Description:
@@ -101,7 +146,7 @@ const bool Terminal::IsBlockSelection() const noexcept
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
 // - expansionMode: the SelectionExpansion to dictate the boundaries of the selection anchors
-void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode)
+void Terminal::MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode)
 {
     // set the selection pivot to expand the selection using SetSelectionEnd()
     _selection = SelectionAnchors{};
@@ -119,7 +164,7 @@ void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansion e
 // - Record the position of the beginning of a selection
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
-void Terminal::SetSelectionAnchor(const COORD viewportPos)
+void Terminal::SetSelectionAnchor(const til::point viewportPos)
 {
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
@@ -136,7 +181,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
-void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansion> newExpansionMode)
+void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<SelectionExpansion> newExpansionMode)
 {
     if (!_selection.has_value())
     {
@@ -170,6 +215,7 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
         // expand both anchors
         std::tie(_selection->start, _selection->end) = expandedAnchors;
     }
+    _selectionMode = SelectionInteractionMode::Mouse;
 }
 
 // Method Description:
@@ -180,9 +226,9 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - targetStart: if true, target will be the new start. Otherwise, target will be the new end.
 // Return Value:
 // - the new start/end for a selection
-std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& targetStart) const
+std::pair<til::point, til::point> Terminal::_PivotSelection(const til::point targetPos, bool& targetStart) const
 {
-    if (targetStart = _activeBuffer().GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
+    if (targetStart = targetPos <= _selection->pivot)
     {
         // target is before pivot
         // treat target as start
@@ -202,7 +248,7 @@ std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& t
 // - anchors: a pair of selection anchors representing a desired selection
 // Return Value:
 // - the new start/end for a selection
-std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const
+std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const
 {
     auto start = anchors.first;
     auto end = anchors.second;
@@ -235,14 +281,14 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
-bool Terminal::IsInMarkMode() const
+Terminal::SelectionInteractionMode Terminal::SelectionMode() const noexcept
 {
-    return _markMode;
+    return _selectionMode;
 }
 
 void Terminal::ToggleMarkMode()
 {
-    if (_markMode)
+    if (_selectionMode == SelectionInteractionMode::Mark)
     {
         // Exit Mark Mode
         ClearSelection();
@@ -257,13 +303,42 @@ void Terminal::ToggleMarkMode()
         _selection->start = cursorPos;
         _selection->end = cursorPos;
         _selection->pivot = cursorPos;
-        _markMode = true;
+        _selectionMode = SelectionInteractionMode::Mark;
+        _blockSelection = false;
+        WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
+    }
+}
+
+// Method Description:
+// - switch the targeted selection endpoint with the other one (i.e. start <--> end)
+void Terminal::SwitchSelectionEndpoint()
+{
+    if (IsSelectionActive())
+    {
+        if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            // moving cursor --> anchor start, move end
+            _selectionEndpoint = SelectionEndpoint::End;
+            _anchorInactiveSelectionEndpoint = true;
+        }
+        else if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            // moving end --> now we're moving start
+            _selectionEndpoint = SelectionEndpoint::Start;
+            _selection->pivot = _selection->end;
+        }
+        else if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start))
+        {
+            // moving start --> now we're moving end
+            _selectionEndpoint = SelectionEndpoint::End;
+            _selection->pivot = _selection->start;
+        }
     }
 }
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
 {
-    if ((_markMode || mods.IsShiftPressed()) && !mods.IsAltPressed())
+    if ((_selectionMode == SelectionInteractionMode::Mark || mods.IsShiftPressed()) && !mods.IsAltPressed())
     {
         if (mods.IsCtrlPressed())
         {
@@ -317,14 +392,34 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
 // - mods: the key modifiers pressed when performing this update
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods)
 {
-    // 1. Figure out which endpoint to update
-    // If we're in mark mode, shift dictates whether you are moving the end or not.
-    // Otherwise, we're updating an existing selection, so one of the endpoints is the pivot,
-    //   signifying that the other endpoint is the one we want to move.
-    const auto movingEnd{ _markMode ? mods.IsShiftPressed() : _selection->start == _selection->pivot };
-    auto targetPos{ movingEnd ? _selection->end : _selection->start };
+    // This is a special variable used to track if we should move the cursor when in mark mode.
+    //   We have special functionality where if you use the "switchSelectionEndpoint" action
+    //   when in mark mode (moving the cursor), we anchor an endpoint and you can use the
+    //   plain arrow keys to move the endpoint. This way, you don't have to hold shift anymore!
+    const bool shouldMoveBothEndpoints = _selectionMode == SelectionInteractionMode::Mark && !_anchorInactiveSelectionEndpoint && !mods.IsShiftPressed();
 
-    // 2. Perform the movement
+    // 1. Figure out which endpoint to update
+    // [Mark Mode]
+    // - shift pressed --> only move "end" (or "start" if "pivot" == "end")
+    // - otherwise --> move both "start" and "end" (moving cursor)
+    // [Quick Edit]
+    // - just move "end" (or "start" if "pivot" == "end")
+    _selectionEndpoint = static_cast<SelectionEndpoint>(0);
+    if (shouldMoveBothEndpoints)
+    {
+        WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
+    }
+    else if (_selection->start == _selection->pivot)
+    {
+        WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+    }
+    else if (_selection->end == _selection->pivot)
+    {
+        WI_SetFlag(_selectionEndpoint, SelectionEndpoint::Start);
+    }
+    auto targetPos{ WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) ? _selection->start : _selection->end };
+
+    // 2 Perform the movement
     switch (mode)
     {
     case SelectionExpansion::Char:
@@ -341,30 +436,32 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         break;
     }
 
-    // 3. Actually modify the selection
-    // NOTE: targetStart doesn't matter here
-    if (_markMode)
+    // 3. Actually modify the selection state
+    _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
+    if (shouldMoveBothEndpoints)
     {
-        // [Mark Mode]
-        // - moveSelectionEnd  --> just move end (i.e. shift + arrow keys)
-        // - !moveSelectionEnd --> move all three (i.e. just use arrow keys)
+        // [Mark Mode] + shift unpressed --> move all three (i.e. just use arrow keys)
+        _selection->start = targetPos;
         _selection->end = targetPos;
-        if (!movingEnd)
-        {
-            _selection->start = targetPos;
-            _selection->pivot = targetPos;
-        }
+        _selection->pivot = targetPos;
     }
     else
     {
-        auto targetStart = false;
+        // [Mark Mode] + shift --> updating a standard selection
+        // This is also standard quick-edit modification
+        bool targetStart = false;
         std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
+
+        // IMPORTANT! Pivoting the selection here might have changed which endpoint we're targeting.
+        // So let's set the targeted endpoint again.
+        WI_UpdateFlag(_selectionEndpoint, SelectionEndpoint::Start, targetStart);
+        WI_UpdateFlag(_selectionEndpoint, SelectionEndpoint::End, !targetStart);
     }
 
     // 4. Scroll (if necessary)
-    if (const auto viewport = _GetVisibleViewport(); !viewport.IsInBounds(targetPos))
+    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(targetPos))
     {
-        if (const auto amtAboveView = viewport.Top() - targetPos.Y; amtAboveView > 0)
+        if (const auto amtAboveView = visibleViewport.Top() - targetPos.Y; amtAboveView > 0)
         {
             // anchor is above visible viewport, scroll by that amount
             _scrollOffset += amtAboveView;
@@ -372,7 +469,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
         else
         {
             // anchor is below visible viewport, scroll by that amount
-            const auto amtBelowView = targetPos.Y - viewport.BottomInclusive();
+            const auto amtBelowView = targetPos.Y - visibleViewport.BottomInclusive();
             _scrollOffset -= amtBelowView;
         }
         _NotifyScrollEvent();
@@ -387,42 +484,47 @@ void Terminal::SelectAll()
     _selection->start = bufferSize.Origin();
     _selection->end = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
     _selection->pivot = _selection->end;
+    _selectionMode = SelectionInteractionMode::Keyboard;
 }
 
-void Terminal::_MoveByChar(SelectionDirection direction, COORD& pos)
+void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
 {
     switch (direction)
     {
     case SelectionDirection::Left:
         _activeBuffer().GetSize().DecrementInBounds(pos);
-        pos = _activeBuffer().GetGlyphStart(til::point{ pos }).to_win32_coord();
+        pos = _activeBuffer().GetGlyphStart(pos);
         break;
     case SelectionDirection::Right:
         _activeBuffer().GetSize().IncrementInBounds(pos);
-        pos = _activeBuffer().GetGlyphEnd(til::point{ pos }).to_win32_coord();
+        pos = _activeBuffer().GetGlyphEnd(pos);
         break;
     case SelectionDirection::Up:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
-        pos = { pos.X, std::clamp(base::ClampSub<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
+        const auto newY{ pos.Y - 1 };
+        pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.X, newY };
         break;
     }
     case SelectionDirection::Down:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
-        pos = { pos.X, std::clamp(base::ClampAdd<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
+        const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
+        const auto newY{ pos.Y + 1 };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.X, newY };
         break;
     }
     }
 }
 
-void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
+void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
 {
     switch (direction)
     {
     case SelectionDirection::Left:
+    {
         const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
-        if (_activeBuffer().GetSize().CompareInBounds(_selection->pivot, pos) < 0)
+        if (_selection->pivot < pos)
         {
             // If we're moving towards the pivot, move one more cell
             pos = wordStartPos;
@@ -441,9 +543,11 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
             pos = wordStartPos;
         }
         break;
+    }
     case SelectionDirection::Right:
+    {
         const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
-        if (_activeBuffer().GetSize().CompareInBounds(pos, _selection->pivot) < 0)
+        if (pos < _selection->pivot)
         {
             // If we're moving towards the pivot, move one more cell
             pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
@@ -462,6 +566,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
             pos = wordEndPos;
         }
         break;
+    }
     case SelectionDirection::Up:
         _MoveByChar(direction, pos);
         pos = _activeBuffer().GetWordStart(pos, _wordDelimiters);
@@ -473,7 +578,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
     }
 }
 
-void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
+void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos)
 {
     const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
@@ -487,22 +592,22 @@ void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
     case SelectionDirection::Up:
     {
         const auto viewportHeight{ _GetMutableViewport().Height() };
-        const auto newY{ base::ClampSub<short, short>(pos.Y, viewportHeight) };
-        pos = newY < bufferSize.Top() ? bufferSize.Origin() : COORD{ pos.X, newY };
+        const auto newY{ pos.Y - viewportHeight };
+        pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.X, newY };
         break;
     }
     case SelectionDirection::Down:
     {
         const auto viewportHeight{ _GetMutableViewport().Height() };
         const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
-        const auto newY{ base::ClampAdd<short, short>(pos.Y, viewportHeight) };
-        pos = newY > mutableBottom ? COORD{ bufferSize.RightInclusive(), mutableBottom } : COORD{ pos.X, newY };
+        const auto newY{ pos.Y + viewportHeight };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.X, newY };
         break;
     }
     }
 }
 
-void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
+void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos)
 {
     const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
@@ -524,7 +629,9 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
 void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
-    _markMode = false;
+    _selectionMode = SelectionInteractionMode::None;
+    _selectionEndpoint = static_cast<SelectionEndpoint>(0);
+    _anchorInactiveSelectionEndpoint = false;
 }
 
 // Method Description:
@@ -559,10 +666,10 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool sin
 // - viewportPos: a coordinate on the viewport
 // Return Value:
 // - the corresponding location on the buffer
-COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
+til::point Terminal::_ConvertToBufferCell(const til::point viewportPos) const
 {
-    const auto yPos = base::ClampedNumeric<short>(_VisibleStartIndex()) + viewportPos.Y;
-    COORD bufferPos = { viewportPos.X, yPos };
+    const auto yPos = _VisibleStartIndex() + viewportPos.Y;
+    til::point bufferPos = { viewportPos.X, yPos };
     _activeBuffer().GetSize().Clamp(bufferPos);
     return bufferPos;
 }
@@ -574,7 +681,7 @@ COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 // - coordSelectionStart - Not used
 // - coordSelectionEnd - Not used
 // - attr - Not used.
-void Terminal::ColorSelection(const COORD, const COORD, const TextAttribute)
+void Terminal::ColorSelection(const til::point, const til::point, const TextAttribute)
 {
     THROW_HR(E_NOTIMPL);
 }

@@ -356,13 +356,13 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
                 // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
                 if (SUCCEEDED(hr))
                 {
-                    const RECT rcOld{};
+                    const til::rect rcOld;
 
                     // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
                     auto rcDisplay = pWddmConEngine->GetDisplaySize();
 
                     // Get font to adjust char to pixels.
-                    COORD coordFont{};
+                    til::size coordFont;
                     LOG_IF_FAILED(pWddmConEngine->GetFontSize(&coordFont));
 
                     rcDisplay.right *= coordFont.X;
@@ -503,11 +503,11 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestUpdateDisplay(_In_ SHORT RowIndex) const
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestUpdateDisplay(_In_ til::CoordType RowIndex) const
 {
     CIS_MSG Message{};
     Message.Type = CIS_MSG_TYPE_UPDATEDISPLAY;
-    Message.UpdateDisplayParams.RowIndex = RowIndex;
+    Message.UpdateDisplayParams.RowIndex = gsl::narrow<SHORT>(RowIndex);
 
     auto Status = SendRequestReceiveReply(&Message);
     if (NT_SUCCESS(Status))
@@ -550,15 +550,17 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
         {
             try
             {
-                // Create and set the render engine.
-                _bgfxEngine = std::make_unique<BgfxEngine>(
+                // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+                // reducing the change for existing race conditions to turn into deadlocks.
+#pragma warning(suppress : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
+                _bgfxEngine = new BgfxEngine(
                     GetSharedViewBase(),
                     DisplaySize.bottom / FontSize.Height,
                     DisplaySize.right / FontSize.Width,
                     FontSize.Width,
                     FontSize.Height);
 
-                globals.pRender->AddRenderEngine(_bgfxEngine.get());
+                globals.pRender->AddRenderEngine(_bgfxEngine);
             }
             catch (...)
             {
@@ -577,8 +579,11 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
 
     try
     {
-        pWddmConEngine = std::make_unique<WddmConEngine>();
-        globals.pRender->AddRenderEngine(pWddmConEngine.get());
+        // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+        // reducing the change for existing race conditions to turn into deadlocks.
+#pragma warning(suppress : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
+        pWddmConEngine = new WddmConEngine();
+        globals.pRender->AddRenderEngine(pWddmConEngine);
     }
     catch (...)
     {
