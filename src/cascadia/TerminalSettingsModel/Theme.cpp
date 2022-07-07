@@ -104,8 +104,8 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     case ThemeColorType::Accent:
     {
         til::color accentColor = forTitlebar ?
-                                    _getAccentColorForTitlebar() :
-                                    til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
+                                     _getAccentColorForTitlebar() :
+                                     til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
 
         const winrt::WUX::Media::SolidColorBrush accentBrush{ accentColor };
         // _getAccentColorForTitlebar should have already filled the alpha

@@ -4012,7 +4012,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto theme = _settings.GlobalSettings().CurrentTheme();
-        auto requestedTheme{ theme.RequestedTheme() };
+        const auto requestedTheme{ theme.RequestedTheme() };
 
         const auto res = Application::Current().Resources();
 
