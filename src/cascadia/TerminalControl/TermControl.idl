@@ -14,7 +14,8 @@ namespace Microsoft.Terminal.Control
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
                                                    IDirectKeyListener,
                                                    IMouseWheelListener,
-                                                   ICoreState
+                                                   ICoreState,
+                                                   Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TermControl(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
@@ -53,6 +54,7 @@ namespace Microsoft.Terminal.Control
         void SelectAll();
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
+        Boolean SwitchSelectionEndpoint();
         void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
@@ -89,5 +91,6 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }
 }

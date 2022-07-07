@@ -67,7 +67,7 @@ public:
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
     WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
-    WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
+    WINRT_CALLBACK(WindowActivated, winrt::delegate<void(bool)>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
     WINRT_CALLBACK(NotifyNotificationIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);

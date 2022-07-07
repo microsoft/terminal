@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::GlobalAppSettings GlobalSettings();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, _GlobalSettings.Theme);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::Theme>, ThemeList, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, _GlobalSettings.TabWidthMode);
 
     public:
@@ -30,10 +30,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::IInspectable CurrentLanguage();
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
 
+        winrt::Windows::Foundation::IInspectable CurrentTheme();
+        void CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag);
+        static winrt::hstring ThemeNameConverter(const Model::Theme& theme);
+
     private:
         Model::GlobalAppSettings _GlobalSettings;
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;
         winrt::Windows::Foundation::IInspectable _currentLanguage;
+        winrt::Windows::Foundation::IInspectable _currentTheme;
+
+        void _UpdateThemeList();
     };
 };
 

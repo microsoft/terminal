@@ -409,6 +409,7 @@ void CascadiaSettings::_validateSettings()
     _validateMediaResources();
     _validateKeybindings();
     _validateColorSchemesInCommands();
+    _validateThemeExists();
 }
 
 // Method Description:
@@ -1151,4 +1152,15 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
         WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
     }
     CATCH_LOG();
+}
+
+void CascadiaSettings::_validateThemeExists()
+{
+    if (!_globals->Themes().HasKey(_globals->Theme()))
+    {
+        _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+
+        // safely fall back to system as the theme.
+        _globals->Theme(L"system");
+    }
 }

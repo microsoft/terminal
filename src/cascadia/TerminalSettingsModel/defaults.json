@@ -280,6 +280,26 @@
             "brightWhite": "#EEEEEC"
         }
     ],
+    "themes": [
+        {
+            "name": "light",
+            "window":{
+                "applicationTheme": "light"
+            }
+        },
+        {
+            "name": "dark",
+            "window":{
+                "applicationTheme": "dark"
+            }
+        },
+        {
+            "name": "system",
+            "window":{
+                "applicationTheme": "system"
+            }
+        }
+    ],
     "actions":
     [
         // Application-level Keys
@@ -382,11 +402,13 @@
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "enter" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
         { "command": "selectAll", "keys": "ctrl+shift+a" },
         { "command": "markMode", "keys": "ctrl+shift+m" },
         { "command": "toggleBlockSelection" },
+        { "command": "switchSelectionEndpoint" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

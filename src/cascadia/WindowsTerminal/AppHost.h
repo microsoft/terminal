@@ -56,7 +56,7 @@ private:
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
-    winrt::fire_and_forget _WindowActivated();
+    winrt::fire_and_forget _WindowActivated(bool activated);
     void _WindowMoved();
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
@@ -122,6 +122,14 @@ private:
                                         const winrt::Windows::Foundation::IInspectable& args);
     void _HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& args);
+
+    void _updateTheme();
+
+    void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                 const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+
+    void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;
     winrt::event_token _NotificationIconPressedToken;
@@ -165,5 +173,6 @@ private:
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
+        winrt::TerminalApp::AppLogic::PropertyChanged_revoker PropertyChanged;
     } _revokers{};
 };

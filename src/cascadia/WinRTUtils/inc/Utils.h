@@ -17,6 +17,9 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> FilePicker(HWND pare
     DWORD flags{};
     THROW_IF_FAILED(fileDialog->GetOptions(&flags));
     THROW_IF_FAILED(fileDialog->SetOptions(flags | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR | FOS_DONTADDTORECENT)); // filesystem objects only; no recent places
+
+    // BODGY: The MSVC 14.31.31103 toolset seems to misdiagnose this line.
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     customize(fileDialog.get());
 
     const auto hr{ fileDialog->Show(parentHwnd) };

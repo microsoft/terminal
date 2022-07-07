@@ -610,4 +610,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _breadcrumbs;
     }
+
+    winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
+    {
+        return SettingsNav().Background();
+    }
+
 }

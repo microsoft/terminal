@@ -50,7 +50,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         [[nodiscard]] NTSTATUS InitializeBgfx();
         [[nodiscard]] NTSTATUS InitializeWddmCon();
 
-        std::unique_ptr<Render::WddmConEngine> pWddmConEngine;
+        Render::WddmConEngine* pWddmConEngine = nullptr;
 
     private:
         [[nodiscard]] NTSTATUS EnsureConnection();
@@ -58,7 +58,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         VOID HandleFocusEvent(const CIS_EVENT* const FocusEvent);
 
-        std::unique_ptr<Render::BgfxEngine> _bgfxEngine;
+        Render::BgfxEngine* _bgfxEngine = nullptr;
 
         HANDLE _inputPipeThreadHandle;
 
