@@ -104,6 +104,10 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     {
     case ThemeColorType::Accent:
     {
+        // NOTE: There is no canonical way to get the unfocused ACCENT titlebar
+        // color in Windows. Edge uses it's own heuristic, and in Windows 11,
+        // much of this logic is rapidly changing. We're not gonna mess with
+        // that, since it seems there's no good way to reverse engineer that.
         til::color accentColor = forTitlebar ?
                                      _getAccentColorForTitlebar() :
                                      til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
