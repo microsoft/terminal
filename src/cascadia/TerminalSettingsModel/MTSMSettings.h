@@ -124,8 +124,9 @@ Author(s):
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
     X(bool, UseMica, "useMica", false)
 
-#define MTSM_THEME_TABROW_SETTINGS(X) \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)
+#define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)
 
 #define MTSM_THEME_TAB_SETTINGS(X) \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)
