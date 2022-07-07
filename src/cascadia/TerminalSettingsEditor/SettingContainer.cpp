@@ -178,7 +178,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
             {
-                textBlockHidden ? textBlock.Visibility(Visibility::Collapsed) : textBlock.Visibility(Visibility::Visible);
+                textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
             }
         }
     }

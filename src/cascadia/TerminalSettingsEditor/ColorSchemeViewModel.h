@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemeViewModel : ColorSchemeViewModelT<ColorSchemeViewModel>, ViewModelHelper<ColorSchemeViewModel>
     {
     public:
-        ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPage);
+        ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM);
 
         winrt::hstring Name();
         void Name(winrt::hstring newName);
@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
         bool _isInBoxScheme;
-        Editor::ColorSchemesPageViewModel _parentPage{ nullptr };
+        Editor::ColorSchemesPageViewModel _parentPageVM{ nullptr };
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>

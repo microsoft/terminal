@@ -139,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // However, it seems even more useful for focus to ALWAYS land on the
         // scheme dropdown box. This forces Narrator to read the name of the
         // newly selected color scheme, which seemed more useful.
-        //ColorSchemeComboBox().Focus(FocusState::Programmatic);
+        ColorSchemeListView().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)

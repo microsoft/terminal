@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme, ColorSchemesPageViewModel parentPage);
+        ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme, ColorSchemesPageViewModel parentPageVM);
 
         String Name;
         Boolean IsInBoxScheme { get; };

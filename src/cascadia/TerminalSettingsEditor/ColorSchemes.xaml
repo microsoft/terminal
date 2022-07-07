@@ -167,7 +167,8 @@
                 </Button>
                 <Button x:Name="DeleteButton"
                         Margin="10,0,0,0"
-                        Style="{StaticResource DeleteButtonStyle}">
+                        Style="{StaticResource DeleteButtonStyle}"
+                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}">
                     <Button.Content>
                         <TextBlock x:Uid="ColorScheme_DeleteButton"
                                    Style="{StaticResource IconButtonTextBlockStyle}" />

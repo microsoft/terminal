@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (_AllColorSchemes.GetAt(i).Name() == name)
             {
+                _viewModelToSchemeMap.Remove(_AllColorSchemes.GetAt(i));
                 _AllColorSchemes.RemoveAt(i);
                 break;
             }

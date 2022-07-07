@@ -127,12 +127,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // update the UI
             RenameErrorTip().IsOpen(false);
 
-            // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
-            // We need to manually force the ComboBox to refresh itself.
-            //const auto selectedIndex{ ColorSchemeListView().SelectedIndex() };
-            //ColorSchemeListView().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
-            //ColorSchemeListView().SelectedIndex(selectedIndex);
-
             NameBox().Focus(FocusState::Programmatic);
         }
         else
