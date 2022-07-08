@@ -45,7 +45,7 @@
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemsSource="{x:Bind ViewModel.ThemeList, Mode=OneWay}"
                           SelectedItem="{x:Bind ViewModel.CurrentTheme, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" >
+                          Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="model:Theme">
                             <TextBlock Text="{x:Bind local:GlobalAppearanceViewModel.ThemeNameConverter((model:Theme)), Mode=OneWay}" />
