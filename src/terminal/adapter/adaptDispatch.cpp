@@ -2480,8 +2480,9 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     // This is not implemented in conhost.
     if (_api.IsConsolePty())
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        // As of GH#8698, when we return false in ConPTY mode, we'll
+        // automatically flush the currently buffered frame before passing
+        // through this sequence.
         return false;
     }
 
@@ -2524,8 +2525,9 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // This is not implemented in conhost.
     if (_api.IsConsolePty())
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        // As of GH#8698, when we return false in ConPTY mode, we'll
+        // automatically flush the currently buffered frame before passing
+        // through this sequence.
         return false;
     }
 
@@ -2869,7 +2871,9 @@ bool AdaptDispatch::PlaySounds(const VTParameters parameters)
     // first, otherwise the visual output will lag behind the sound.
     if (_api.IsConsolePty())
     {
-        _renderer.TriggerFlush(false);
+        // As of GH#8698, when we return false in ConPTY mode, we'll
+        // automatically flush the currently buffered frame before passing
+        // through this sequence.
         return false;
     }
 
