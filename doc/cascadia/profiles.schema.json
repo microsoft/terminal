@@ -1968,6 +1968,15 @@
             "useAnyExisting"
           ],
           "type": "string"
+        },
+        "newTabPosition": {
+          "default": "atTheEnd",
+          "description": "Specifies position of the new tab. Possible values are \"atTheEnd\" and \"afterCurrentTab\".",
+          "enum": [
+            "atTheEnd",
+            "afterCurrentTab"
+          ],
+          "type": "string"
         }
       },
       "required": [
