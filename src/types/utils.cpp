@@ -87,31 +87,43 @@ std::string Utils::ColorToHexString(const til::color color)
 //      the correct format, throws E_INVALIDARG
 til::color Utils::ColorFromHexString(const std::string_view str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
+    THROW_HR_IF(E_INVALIDARG, str.size() != 9 && str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
 
     std::string rStr;
     std::string gStr;
     std::string bStr;
+    std::string aStr;
 
     if (str.size() == 4)
     {
         rStr = std::string(2, str.at(1));
         gStr = std::string(2, str.at(2));
         bStr = std::string(2, str.at(3));
+        aStr = "ff";
     }
-    else
+    else if (str.size() == 7)
     {
         rStr = std::string(&str.at(1), 2);
         gStr = std::string(&str.at(3), 2);
         bStr = std::string(&str.at(5), 2);
+        aStr = "ff";
+    }
+    else if (str.size() == 9)
+    {
+        // #rrggbbaa
+        rStr = std::string(&str.at(1), 2);
+        gStr = std::string(&str.at(3), 2);
+        bStr = std::string(&str.at(5), 2);
+        aStr = std::string(&str.at(7), 2);
     }
 
     const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
     const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
     const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
 
-    return til::color{ r, g, b };
+    return til::color{ r, g, b, a };
 }
 
 // Routine Description:

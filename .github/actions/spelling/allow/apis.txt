@@ -30,6 +30,8 @@ DERR
 dlldata
 DONTADDTORECENT
 DWORDLONG
+DWMSBT
+DWMWA
 endfor
 enumset
 environstrings
@@ -95,12 +97,14 @@ lround
 Lsa
 lsass
 LSHIFT
+MAINWINDOW
 memchr
 memicmp
 MENUCOMMAND
 MENUDATA
 MENUITEMINFOW
 MENUINFO
+mmeapi
 MOUSELEAVE
 mov
 mptt
@@ -175,6 +179,8 @@ Stubless
 Subheader
 Subpage
 syscall
+SYSTEMBACKDROP
+TABROW
 TASKBARCREATED
 TBPF
 THEMECHANGED

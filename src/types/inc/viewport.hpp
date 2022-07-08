@@ -55,7 +55,7 @@ namespace Microsoft::Console::Types
         til::size Dimensions() const noexcept;
 
         bool IsInBounds(const Viewport& other) const noexcept;
-        bool IsInBounds(const til::point pos, bool allowEndExclusive = false) const noexcept;
+        bool IsInBounds(const til::point pos) const noexcept;
 
         void Clamp(til::point& pos) const;
         Viewport Clamp(const Viewport& other) const noexcept;
@@ -65,7 +65,7 @@ namespace Microsoft::Console::Types
         bool IncrementInBoundsCircular(til::point& pos) const noexcept;
         bool DecrementInBounds(til::point& pos, bool allowEndExclusive = false) const noexcept;
         bool DecrementInBoundsCircular(til::point& pos) const noexcept;
-        int CompareInBounds(const til::point first, const til::point second, bool allowEndExclusive = false) const noexcept;
+        int CompareInBounds(const til::point first, const til::point second) const noexcept;
 
         enum class XWalk
         {

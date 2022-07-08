@@ -1,15 +1,16 @@
 admins
+allcolors
 apc
 Apc
-bsd
 breadcrumb
 breadcrumbs
+bsd
 calt
-CMMI
 ccmp
 changelog
 clickable
 clig
+CMMI
 copyable
 cybersecurity
 dalet
@@ -59,7 +60,6 @@ maxed
 mkmk
 mnt
 mru
-noreply
 nje
 noreply
 ogonek
@@ -86,6 +86,7 @@ timestamped
 TLDR
 tokenizes
 tonos
+toolset
 tshe
 uiatextrange
 UIs
@@ -97,4 +98,3 @@ We'd
 wildcards
 yeru
 zhe
-allcolors
