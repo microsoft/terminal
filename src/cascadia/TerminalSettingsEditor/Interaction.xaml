@@ -28,7 +28,7 @@
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Copy On Select  -->
             <local:SettingContainer x:Uid="Globals_CopyOnSelect">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.CopyOnSelect, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
@@ -43,28 +43,28 @@
 
             <!--  Trim Block Selection  -->
             <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.TrimBlockSelection, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.TrimBlockSelection, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Trim Paste  -->
             <local:SettingContainer x:Uid="Globals_TrimPaste">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.TrimPaste, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.TrimPaste, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Word Delimiters  -->
             <local:SettingContainer x:Uid="Globals_WordDelimiters"
-                                    CurrentValue="{x:Bind ViewModel.GlobalSettings.WordDelimiters, Mode=OneWay}"
+                                    CurrentValue="{x:Bind ViewModel.WordDelimiters, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <TextBox IsSpellCheckEnabled="False"
                          Style="{StaticResource TextBoxSettingStyle}"
-                         Text="{x:Bind ViewModel.GlobalSettings.WordDelimiters, Mode=TwoWay}" />
+                         Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Snap On Resize  -->
             <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.SnapToGridOnResize, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.SnapToGridOnResize, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
@@ -79,13 +79,13 @@
 
             <!--  Focus Follow Mouse Mode  -->
             <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.FocusFollowMouse, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.FocusFollowMouse, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Detect URLs  -->
             <local:SettingContainer x:Uid="Globals_DetectURLs">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.DetectURLs, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
