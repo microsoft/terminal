@@ -7,6 +7,7 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
+#include "RenderingViewModel.h"
 #include "Actions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
@@ -352,7 +353,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == renderingTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
