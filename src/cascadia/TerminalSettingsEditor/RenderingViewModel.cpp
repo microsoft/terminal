@@ -14,9 +14,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _GlobalSettings{ globalSettings }
     {
     }
-
-    Model::GlobalAppSettings RenderingViewModel::GlobalSettings() const
-    {
-        return _GlobalSettings;
-    }
 }

@@ -13,7 +13,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         RenderingViewModel(Model::GlobalAppSettings globalSettings);
-        Model::GlobalAppSettings GlobalSettings() const;
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ForceFullRepaintRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SoftwareRendering);
 
     private:
         Model::GlobalAppSettings _GlobalSettings;
