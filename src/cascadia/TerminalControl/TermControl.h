@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SelectAll();
         bool ToggleBlockSelection();
         void ToggleMarkMode();
+        bool SwitchSelectionEndpoint();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
@@ -129,6 +130,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
@@ -151,6 +154,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
         // clang-format on
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
 
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers

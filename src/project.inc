@@ -30,6 +30,7 @@ USE_NATIVE_EH           = 1
 # Compiler Settings
 # -------------------------------------
 
+USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
 USER_C_FLAGS            = $(USER_C_FLAGS) /fp:fast /utf-8
 

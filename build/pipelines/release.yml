@@ -2,9 +2,9 @@
 trigger: none
 pr: none
 
-pool: 
+pool:
   name: WinDevPool-L
-  demands: ImageOverride -equals WinDevVS16-latest
+  demands: ImageOverride -equals WinDevVS17-latest
 
 parameters:
   - name: branding
@@ -195,7 +195,6 @@ jobs:
       condition: true
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -222,7 +221,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -231,7 +229,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for ConPTY
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\Host_EXE;Conhost\winconpty_DLL
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -327,7 +324,7 @@ jobs:
 
 - ${{ if eq(parameters.runCompliance, true) }}:
   - template: ./templates/build-console-compliance-job.yml
-  
+
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
     strategy:
@@ -546,7 +543,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for WPF Control
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalReleaseBuild=$(UseReleaseBranding);Version=$(XES_PACKAGEVERSIONNUMBER) /t:Pack
         platform: Any CPU
         configuration: $(BuildConfiguration)
