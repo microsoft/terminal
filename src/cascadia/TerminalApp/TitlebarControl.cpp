@@ -148,6 +148,7 @@ namespace winrt::TerminalApp::implementation
 
     void TitlebarControl::SetBackgroundBrush(winrt::Windows::UI::Xaml::Media::Brush brush)
     {
+        Background(brush);
         til::color c;
         if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
         {
@@ -156,6 +157,10 @@ namespace winrt::TerminalApp::implementation
         else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
         {
             c = solidColor.Color();
+        }
+        else
+        {
+            return;
         }
         const auto isBrightColor = ColorHelper::IsBrightColor(c);
         MinMaxCloseControl().RequestedTheme(isBrightColor ? winrt::Windows::UI::Xaml::ElementTheme::Light :
