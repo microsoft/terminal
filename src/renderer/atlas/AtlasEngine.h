@@ -688,7 +688,7 @@ namespace Microsoft::Console::Render
 
                 // We need to backup _pos/_size in case our resize below exceeds _maxArea.
                 // In that case we have to restore _pos/_size so that if _maxArea is increased
-                // (window resize for instance), we can pick up were we previously left off.
+                // (window resize for instance), we can pick up where we previously left off.
                 const auto pos = _pos;
 
                 _pos.x += _tileSize.x;

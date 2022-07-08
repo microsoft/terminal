@@ -139,8 +139,12 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
 
 void AtlasEngine::_adjustAtlasSize()
 {
-    const auto atlasSize = _r.tileAllocator.size();
-    if (atlasSize.y <= _r.atlasSizeInPixel.y && atlasSize.x <= _r.atlasSizeInPixel.x)
+    // Only grow the atlas texture if our tileAllocator needs it to be larger.
+    // We have no way of shrinking our tileAllocator at the moment,
+    // so technically a `requiredSize != _r.atlasSizeInPixel`
+    // comparison would be sufficient, but better safe than sorry.
+    const auto requiredSize = _r.tileAllocator.size();
+    if (requiredSize.y <= _r.atlasSizeInPixel.y && requiredSize.x <= _r.atlasSizeInPixel.x)
     {
         return;
     }
@@ -149,8 +153,8 @@ void AtlasEngine::_adjustAtlasSize()
     wil::com_ptr<ID3D11ShaderResourceView> atlasView;
     {
         D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = atlasSize.x;
-        desc.Height = atlasSize.y;
+        desc.Width = requiredSize.x;
+        desc.Height = requiredSize.y;
         desc.MipLevels = 1;
         desc.ArraySize = 1;
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -175,7 +179,7 @@ void AtlasEngine::_adjustAtlasSize()
         _r.deviceContext->CopySubresourceRegion1(atlasBuffer.get(), 0, 0, 0, 0, _r.atlasBuffer.get(), 0, &box, D3D11_COPY_NO_OVERWRITE);
     }
 
-    _r.atlasSizeInPixel = atlasSize;
+    _r.atlasSizeInPixel = requiredSize;
     _r.atlasBuffer = std::move(atlasBuffer);
     _r.atlasView = std::move(atlasView);
     _setShaderResources();
