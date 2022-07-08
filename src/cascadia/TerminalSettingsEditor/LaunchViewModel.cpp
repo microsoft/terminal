@@ -25,11 +25,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
     }
 
-    Model::CascadiaSettings LaunchViewModel::Settings() const
-    {
-        return _Settings;
-    }
-
     winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultProfile()
     {
         const auto defaultProfileGuid{ _Settings.GlobalSettings().DefaultProfile() };
@@ -61,5 +56,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         return winrt::single_threaded_observable_vector(std::move(profiles));
+    }
+
+    winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultTerminal()
+    {
+        return winrt::box_value(_Settings.CurrentDefaultTerminal());
+    }
+
+    void LaunchViewModel::CurrentDefaultTerminal(const IInspectable& value)
+    {
+        const auto defaultTerminal{ winrt::unbox_value<Model::DefaultTerminal>(value) };
+        _Settings.CurrentDefaultTerminal(defaultTerminal);
+    }
+
+    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable> LaunchViewModel::DefaultTerminals() const
+    {
+        const auto allTerminals = _Settings.DefaultTerminals();
+
+        std::vector<IInspectable> terminals;
+        terminals.reserve(allTerminals.Size());
+
+        for (const auto& terminal : allTerminals)
+        {
+            terminals.emplace_back(terminal);
+        }
+
+        return winrt::single_threaded_observable_vector(std::move(terminals));
     }
 }
