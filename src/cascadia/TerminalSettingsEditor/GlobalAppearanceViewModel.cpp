@@ -52,11 +52,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateThemeList();
     }
 
-    Model::GlobalAppSettings GlobalAppearanceViewModel::GlobalSettings()
-    {
-        return _GlobalSettings;
-    }
-
     winrt::hstring GlobalAppearanceViewModel::LanguageDisplayConverter(const winrt::hstring& tag)
     {
         if (tag == systemLanguageTag)

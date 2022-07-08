@@ -13,7 +13,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings);
-        Model::GlobalAppSettings GlobalSettings();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::Theme>, ThemeList, nullptr);
