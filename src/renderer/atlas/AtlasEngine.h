@@ -560,6 +560,7 @@ namespace Microsoft::Console::Render
                 const auto it = _map.find(key);
                 if (it != _map.end())
                 {
+                    // Move the key to the head of the LRU queue.
                     _lru.splice(_lru.begin(), _lru, *it);
                     return &(*it)->second;
                 }
@@ -568,8 +569,10 @@ namespace Microsoft::Console::Render
 
             std::list<std::pair<AtlasKey, AtlasValue>>::iterator insert(AtlasKey&& key, AtlasValue&& value)
             {
-                // && decays to & when passed as an argument to emplace().
-                // What a fantastic language.
+                // Insert the key/value right at the head of the LRU queue, just like find().
+                //
+                // && decays to & if the argument is named, because C++ is a simple language
+                // and so you have to std::move it again, because C++ is a simple language.
                 _lru.emplace_front(std::move(key), std::move(value));
                 auto it = _lru.begin();
                 _map.emplace(it);
@@ -602,6 +605,18 @@ namespace Microsoft::Console::Render
             std::unordered_set<std::list<std::pair<AtlasKey, AtlasValue>>::iterator, AtlasKeyHasher, AtlasKeyEq> _map;
         };
 
+        // TileAllocator yields `tileSize`-sized tiles for our texture atlas.
+        // While doing so it'll grow the atlas size() by a factor of 2 if needed.
+        // Once the setMaxArea() is exceeded it'll stop growing and instead
+        // snatch tiles back from the oldest TileHashMap entries.
+        //
+        // The quadratic growth works by alternating the size()
+        // between an 1:1 and 2:1 aspect ratio, like so:
+        //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
+        // These initial tile positions allocate() returns are in a Z
+        // pattern over the available space in the atlas texture.
+        // You can log the `return _pos;` in allocate() using "Tracepoint"s
+        // in Visual Studio if you'd like to understand the Z pattern better.
         struct TileAllocator
         {
             TileAllocator() = default;
@@ -624,7 +639,7 @@ namespace Microsoft::Console::Render
             {
                 // _generate() uses a quadratic growth factor for _size's area.
                 // Once it exceeds the _maxArea, it'll start snatching tiles back from the
-                // TileHashMap using it's LRU queue. Since _size will at least reach half
+                // TileHashMap using its LRU queue. Since _size will at least reach half
                 // of _maxSize (because otherwise it could still grow by a factor of 2)
                 // and by ensuring that _maxArea is at least twice the window size
                 // we make it impossible* for _generate() to return false before
@@ -659,6 +674,8 @@ namespace Microsoft::Console::Render
             }
 
         private:
+            // This method generates the Z pattern coordinates
+            // described above in the TileAllocator comment.
             bool _generate() noexcept
             {
                 if (!_canGenerate)
@@ -679,9 +696,12 @@ namespace Microsoft::Console::Render
                     return true;
                 }
 
+                // Same as for pos.
+                const auto size = _size;
+
                 // This implements a quadratic growth factor for _size, by
                 // alternating between an 1:1 and 2:1 aspect ratio, like so:
-                // (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
+                //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
                 // This behavior is strictly dependent on setMaxArea(u16x2)'s
                 // behavior. See it's comment for an explanation.
                 if (_size.x == _size.y)
@@ -721,6 +741,8 @@ namespace Microsoft::Console::Render
             // Coincidentially that's exactly what we want as the cursor texture lives at {0, 0}.
             u16x2 _pos;
             u16 _originX = 0;
+            // Indicates whether we've exhausted our Z pattern across the atlas texture.
+            // If this is false, we have to snatch tiles back from TileHashMap.
             bool _canGenerate = true;
         };
 

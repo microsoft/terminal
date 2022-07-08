@@ -1402,7 +1402,7 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
     attributes.cellCount = cellCount;
 
     AtlasKey key{ attributes, gsl::narrow<u16>(charCount), chars };
-    auto valueRef = _r.glyphs.find(key);
+    const AtlasValue* valueRef = _r.glyphs.find(key);
 
     if (!valueRef)
     {
@@ -1432,8 +1432,12 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
             WI_SetFlagIf(flags, CellFlags::ColoredGlyph, fontFace2 && fontFace2->IsColorFont());
         }
 
+        // The AtlasValue constructor fills the `coords` variable with a pointer to an array
+        // of at least `cellCount` elements. I did this so that I don't have to type out
+        // `value.data()->coords` again, despite the constructor having all the data necessary.
         u16x2* coords;
         AtlasValue value{ flags, cellCount, &coords };
+
         for (u16 i = 0; i < cellCount; ++i)
         {
             coords[i] = _r.tileAllocator.allocate(_r.glyphs);
