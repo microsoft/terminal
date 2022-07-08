@@ -56,31 +56,31 @@
 
             <!--  Always show tabs  -->
             <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.AlwaysShowTabs, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Show Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitlebar">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.ShowTabsInTitlebar, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Show Acrylic in Tab Row  -->
             <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.UseAcrylicInTabRow, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.UseAcrylicInTabRow, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Show Title in Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTitleInTitlebar, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Always on Top  -->
             <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.AlwaysOnTop, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysOnTop, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
@@ -96,19 +96,19 @@
             <!--  Disable Animations  -->
             <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
             <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
-                <ToggleSwitch IsOn="{x:Bind local:Converters.InvertBoolean(ViewModel.GlobalSettings.DisableAnimations), BindBack=ViewModel.GlobalSettings.SetInvertedDisableAnimationsValue, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.InvertedDisableAnimations, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Always Show Notification Icon  -->
             <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.AlwaysShowNotificationIcon, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysShowNotificationIcon, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Minimize To Notification Area  -->
             <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.GlobalSettings.MinimizeToNotificationArea, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.MinimizeToNotificationArea, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>

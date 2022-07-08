@@ -254,4 +254,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         return theme.Name();
     }
+
+    bool GlobalAppearanceViewModel::InvertedDisableAnimations()
+    {
+        return !_GlobalSettings.DisableAnimations();
+    }
+
+    void GlobalAppearanceViewModel::InvertedDisableAnimations(bool value)
+    {
+        _GlobalSettings.DisableAnimations(!value);
+    }
 }

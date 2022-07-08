@@ -3,6 +3,8 @@
 
 import "EnumEntry.idl";
 
+#include "ViewModelHelpers.idl.h"
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass GlobalAppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -21,5 +23,15 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentTabWidthMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModeList { get; };
+
+        Boolean InvertedDisableAnimations;
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAcrylicInTabRow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTitleInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysOnTop);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowNotificationIcon);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, MinimizeToNotificationArea);
     }
 }
