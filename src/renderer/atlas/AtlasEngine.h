@@ -652,7 +652,10 @@ namespace Microsoft::Console::Render
 
             void setMaxArea(size_t max) noexcept
             {
-                _maxArea = clamp(max, _absoluteMinArea, _absoluteMaxArea);
+                // We need to reserve at least 1 extra `tileArea`, because the tile
+                // at position {0,0} is already reserved for the cursor texture.
+                const auto tileArea = static_cast<size_t>(_tileSize.x) * static_cast<size_t>(_tileSize.y);
+                _maxArea = clamp(max + tileArea, _absoluteMinArea, _absoluteMaxArea);
                 _updateCanGenerate();
             }
 
