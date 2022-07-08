@@ -429,7 +429,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // try to update the selection
             if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
             {
-                auto lock = _terminal->LockForWriting();
+                // TODO CARLOS: don't lock because updateSelectionUI locks?
+                //auto lock = _terminal->LockForWriting();
                 _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
                 _updateSelectionUI();
                 return true;
@@ -955,7 +956,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
         info.StartAtLeftBoundary = _terminal->GetSelectionAnchor().x == bufferSize.Left();
-        info.EndAtRightBoundary = _terminal->GetSelectionEnd().x == bufferSize.RightInclusive();
+        info.EndAtRightBoundary = _terminal->GetSelectionEnd().x == bufferSize.RightExclusive();
         return info;
     }
 
@@ -975,7 +976,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         til::point terminalPosition{
-            std::clamp(position.x, 0, _terminal->GetViewport().Width() - 1),
+            std::clamp(position.x, 0, _terminal->GetViewport().Width()),
             std::clamp(position.y, 0, _terminal->GetViewport().Height() - 1)
         };
 

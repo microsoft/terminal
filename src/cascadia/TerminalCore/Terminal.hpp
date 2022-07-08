@@ -273,6 +273,7 @@ public:
     SelectionInteractionMode SelectionMode() const noexcept;
     void SwitchSelectionEndpoint();
     void ToggleMarkMode();
+    bool EmptySelection() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
@@ -424,10 +425,10 @@ private:
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
     til::point _ConvertToBufferCell(const til::point viewportPos) const;
-    void _MoveByChar(SelectionDirection direction, til::point& pos);
-    void _MoveByWord(SelectionDirection direction, til::point& pos);
-    void _MoveByViewport(SelectionDirection direction, til::point& pos);
-    void _MoveByBuffer(SelectionDirection direction, til::point& pos);
+    void _MoveByChar(SelectionDirection direction, til::point& pos) const;
+    void _MoveByWord(SelectionDirection direction, til::point& pos) const;
+    void _MoveByViewport(SelectionDirection direction, til::point& pos) const;
+    void _MoveByBuffer(SelectionDirection direction, til::point& pos) const;
 #pragma endregion
 
 #ifdef UNIT_TESTING

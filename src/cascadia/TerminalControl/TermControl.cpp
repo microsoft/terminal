@@ -2837,7 +2837,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     auto terminalPos{ targetEnd ? markerData.EndPos : markerData.StartPos };
-                    if (flipMarker)
+                    if (flipMarker && !targetEnd)
                     {
                         // When we flip the marker, a negative scaling makes us be one cell-width to the left.
                         // Add one to the viewport pos' x-coord to fix that.

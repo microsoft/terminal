@@ -41,6 +41,12 @@ DEFINE_ENUM_FLAG_OPERATORS(Terminal::SelectionEndpoint);
  *    The pivot never moves until a new selection is created. It ensures that that cell will always be selected.
  */
 
+// TODO CARLOS: we should probably do a "isSelectionActive" check. Maybe combine them into an enum?
+bool Terminal::EmptySelection() const noexcept
+{
+    return _selection->start == _selection->end;
+}
+
 // Method Description:
 // - Helper to determine the selected region of the buffer. Used for rendering.
 // Return Value:
@@ -49,14 +55,40 @@ std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 {
     std::vector<til::inclusive_rect> result;
 
-    if (!IsSelectionActive())
+    if (!IsSelectionActive() || EmptySelection())
     {
         return result;
     }
 
     try
     {
-        return _activeBuffer().GetTextRects(_selection->start, _selection->end, _blockSelection, false);
+        auto start = _selection->start;
+        auto end = _selection->end;
+        if (const auto bufferSize = _activeBuffer().GetSize(); end.x == bufferSize.RightExclusive())
+        {
+            end.x--;
+            _activeBuffer().GetSize().IncrementInBounds(start);
+        }
+        else if (_blockSelection)
+        {
+            if (_selection->start.x == _selection->end.x)
+            {
+                return result;
+            }
+            else if (_selection->start.x < _selection->end.x)
+            {
+                _activeBuffer().GetSize().DecrementInBounds(end);
+            }
+            else if (_selection->start.x > _selection->end.x)
+            {
+                _activeBuffer().GetSize().DecrementInBounds(start);
+            }
+        }
+        else
+        {
+            _activeBuffer().GetSize().DecrementInBounds(end);
+        }
+        return _activeBuffer().GetTextRects(start, end, _blockSelection, false);
     }
     CATCH_LOG();
     return result;
@@ -93,11 +125,18 @@ til::point Terminal::SelectionStartForRendering() const
     const auto bufferSize{ GetTextBuffer().GetSize() };
     if (pos.x != bufferSize.Left())
     {
-        // In general, we need to draw the marker one before the
-        // beginning of the selection.
-        // When we're at the left boundary, we want to
-        // flip the marker, so we skip this step.
-        bufferSize.DecrementInBounds(pos);
+        if (pos.x == bufferSize.RightExclusive())
+        {
+            pos.x = bufferSize.RightInclusive();
+        }
+        else
+        {
+            // In general, we need to draw the marker one before the
+            // beginning of the selection.
+            // When we're at the left boundary, we want to
+            // flip the marker, so we skip this step.
+            bufferSize.DecrementInBounds(pos);
+        }
     }
     pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
     return til::point{ pos };
@@ -109,15 +148,6 @@ til::point Terminal::SelectionStartForRendering() const
 til::point Terminal::SelectionEndForRendering() const
 {
     auto pos{ _selection->end };
-    const auto bufferSize{ GetTextBuffer().GetSize() };
-    if (pos.x != bufferSize.RightInclusive())
-    {
-        // In general, we need to draw the marker one after the
-        // end of the selection.
-        // When we're at the right boundary, we want to
-        // flip the marker, so we skip this step.
-        bufferSize.IncrementInBounds(pos);
-    }
     pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
     return til::point{ pos };
 }
@@ -190,7 +220,20 @@ void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<Selec
         return;
     }
 
-    const auto textBufferPos = _ConvertToBufferCell(viewportPos);
+    // LOAD-BEARING: <= or else shift+click won't work!
+    auto textBufferPos = _ConvertToBufferCell(viewportPos);
+    if (textBufferPos <= _selection->pivot)
+    {
+        // We know that...
+        // - "end" is exclusive, but "start" isn't.
+        // - _GetSelectionRects() handles making "end" exclusive
+        // - "start" is always before "end"
+        // Thus, when we're doing a mouse selection,
+        //  if we're moving "end", everything seems fine,
+        //  but if we're moving "start", we don't make it exclusive (when it should be).
+        // This simply makes it exclusive.
+        _activeBuffer().GetSize().IncrementInBounds(textBufferPos);
+    }
 
     // if this is a shiftClick action, we need to overwrite the _multiClickSelectionMode value (even if it's the same)
     // Otherwise, we may accidentally expand during other selection-based actions
@@ -258,11 +301,12 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
     {
     case SelectionExpansion::Line:
         start = { bufferSize.Left(), start.Y };
-        end = { bufferSize.RightInclusive(), end.Y };
+        end = { bufferSize.RightExclusive(), end.Y };
         break;
     case SelectionExpansion::Word:
         start = _activeBuffer().GetWordStart(start, _wordDelimiters);
         end = _activeBuffer().GetWordEnd(end, _wordDelimiters);
+        _MoveByChar(SelectionDirection::Right, end);
         break;
     case SelectionExpansion::Char:
     default:
@@ -487,54 +531,108 @@ void Terminal::SelectAll()
     _selectionMode = SelectionInteractionMode::Keyboard;
 }
 
-void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
+void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos) const
 {
+    const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
     {
     case SelectionDirection::Left:
-        _activeBuffer().GetSize().DecrementInBounds(pos);
+        if (pos == bufferSize.Origin())
+        {
+            // can't move!
+        }
+        else if (pos.x == bufferSize.Left())
+        {
+            // wrap to end of previous line
+            bufferSize.DecrementInBounds(pos);
+            pos.x = bufferSize.RightExclusive();
+        }
+        else if (pos.x == bufferSize.RightExclusive())
+        {
+            // move from exclusive end of line to inclusive end of line
+            pos.x = bufferSize.RightInclusive();
+        }
+        else
+        {
+            // just move by -1
+            bufferSize.DecrementInBounds(pos);
+        }
         pos = _activeBuffer().GetGlyphStart(pos);
+        // TODO CARLOS: test the glyphs
         break;
     case SelectionDirection::Right:
-        _activeBuffer().GetSize().IncrementInBounds(pos);
+        if (pos.x == bufferSize.RightExclusive() && pos.y == ViewEndIndex())
+        {
+            // can't move!
+        }
+        else if (pos.x == bufferSize.RightInclusive())
+        {
+            // move from inclusive end of line to exclusive end of line
+            pos.x = bufferSize.RightExclusive();
+        }
+        else if (pos.x == bufferSize.RightExclusive())
+        {
+            // wrap from exclusive end of line
+            // to beginning of next line
+            pos.x = bufferSize.RightInclusive();
+            bufferSize.IncrementInBounds(pos);
+        }
+        else
+        {
+            // just move by +1
+            bufferSize.IncrementInBounds(pos);
+        }
         pos = _activeBuffer().GetGlyphEnd(pos);
+
+        // TODO CARLOS: This might only work for end, not start?
+        //if (pos.x == bufferSize.RightInclusive())
+        //{
+        //    // move from inclusive end of line to exclusive end of line
+        //    pos.x = bufferSize.RightExclusive();
+        //}
+        //else
+        //{
+        //    // just move by +1
+        //    bufferSize.IncrementInBounds(pos);
+        //}
         break;
     case SelectionDirection::Up:
     {
-        const auto bufferSize{ _activeBuffer().GetSize() };
         const auto newY{ pos.Y - 1 };
         pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.X, newY };
         break;
     }
     case SelectionDirection::Down:
     {
-        const auto bufferSize{ _activeBuffer().GetSize() };
         const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
         const auto newY{ pos.Y + 1 };
-        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.X, newY };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightExclusive(), mutableBottom } : til::point{ pos.X, newY };
         break;
     }
     }
 }
 
-void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
+void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos) const
 {
+    const auto bufferSize = _activeBuffer().GetSize();
     switch (direction)
     {
     case SelectionDirection::Left:
     {
-        const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
-        if (_selection->pivot < pos)
+        if (pos.x == bufferSize.RightExclusive())
         {
-            // If we're moving towards the pivot, move one more cell
-            pos = wordStartPos;
-            _activeBuffer().GetSize().DecrementInBounds(pos);
+            pos.x = bufferSize.RightInclusive();
         }
-        else if (wordStartPos == pos)
+
+        const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
+        if (wordStartPos == pos)
         {
             // already at the beginning of the current word,
             // move to the beginning of the previous word
-            _activeBuffer().GetSize().DecrementInBounds(pos);
+            // LOAD-BEARING: use DecrementInBounds here, not MoveByChar!
+            // We already checked if we're at rightExclusive,
+            // so we can do this safely.
+            bufferSize.DecrementInBounds(pos);
             pos = _activeBuffer().GetWordStart(pos, _wordDelimiters);
         }
         else
@@ -546,39 +644,49 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     }
     case SelectionDirection::Right:
     {
+        const auto mutableBottomPoint = til::point{ bufferSize.RightExclusive(), ViewEndIndex() };
+        if (pos > mutableBottomPoint)
+        {
+            // can't move!
+        }
+        else if (pos.x == bufferSize.RightExclusive())
+        {
+            // wrap to next line, then start the process
+            _MoveByChar(direction, pos);
+        }
+
         const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
         if (pos < _selection->pivot)
         {
             // If we're moving towards the pivot, move one more cell
             pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
-            _activeBuffer().GetSize().IncrementInBounds(pos);
+            _MoveByChar(direction, pos);
         }
         else if (wordEndPos == pos)
         {
             // already at the end of the current word,
             // move to the end of the next word
-            _activeBuffer().GetSize().IncrementInBounds(pos);
-            pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
+            _MoveByChar(direction, pos);
         }
         else
         {
             // move to the end of the current word
             pos = wordEndPos;
+            _MoveByChar(direction, pos);
         }
+
+        // clamp to mutable bottom
+        pos = std::min(pos, mutableBottomPoint);
         break;
     }
     case SelectionDirection::Up:
-        _MoveByChar(direction, pos);
-        pos = _activeBuffer().GetWordStart(pos, _wordDelimiters);
-        break;
     case SelectionDirection::Down:
-        _MoveByChar(direction, pos);
-        pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
+        // not supported
         break;
     }
 }
 
-void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos)
+void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos) const
 {
     const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
@@ -587,7 +695,7 @@ void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos)
         pos = { bufferSize.Left(), pos.Y };
         break;
     case SelectionDirection::Right:
-        pos = { bufferSize.RightInclusive(), pos.Y };
+        pos = { bufferSize.RightExclusive(), pos.Y };
         break;
     case SelectionDirection::Up:
     {
@@ -601,13 +709,13 @@ void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos)
         const auto viewportHeight{ _GetMutableViewport().Height() };
         const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
         const auto newY{ pos.Y + viewportHeight };
-        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.X, newY };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightExclusive(), mutableBottom } : til::point{ pos.X, newY };
         break;
     }
     }
 }
 
-void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos)
+void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos) const
 {
     const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
@@ -618,7 +726,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos)
         break;
     case SelectionDirection::Right:
     case SelectionDirection::Down:
-        pos = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
+        pos = { bufferSize.RightExclusive(), _GetMutableViewport().BottomInclusive() };
         break;
     }
 }
@@ -670,7 +778,10 @@ til::point Terminal::_ConvertToBufferCell(const til::point viewportPos) const
 {
     const auto yPos = _VisibleStartIndex() + viewportPos.Y;
     til::point bufferPos = { viewportPos.X, yPos };
-    _activeBuffer().GetSize().Clamp(bufferPos);
+
+    const auto bufferSize = _activeBuffer().GetSize();
+    bufferPos.X = std::clamp(bufferPos.X, bufferSize.Left(), bufferSize.RightInclusive());
+    bufferPos.Y = std::clamp(bufferPos.Y, bufferSize.Top(), bufferSize.BottomInclusive());
     return bufferPos;
 }
 

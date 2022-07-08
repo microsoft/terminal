@@ -1471,9 +1471,13 @@ til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::po
         resultPos = limit;
     }
 
-    // limit is exclusive, so we need to move back to be within valid bounds
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    if (pos.x == bufferSize.RightExclusive())
     {
+        return resultPos;
+    }
+    else if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    {
+        // limit is exclusive, so we need to move back to be within valid bounds
         bufferSize.DecrementInBounds(resultPos, true);
     }
 
@@ -1499,7 +1503,11 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
         resultPos = limit;
     }
 
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    if (pos.x == bufferSize.RightExclusive())
+    {
+        return resultPos;
+    }
+    else if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
@@ -1634,7 +1642,13 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
         textRow.Top = row;
         textRow.Bottom = row;
 
-        if (blockSelection || higherCoord.Y == lowerCoord.Y)
+        if (row == higherCoord.y && higherCoord.x == bufferSize.RightExclusive())
+        {
+            // beginning of selection doesn't include anything,
+            // skip the row.
+            continue;
+        }
+        else if (blockSelection || higherCoord.Y == lowerCoord.Y)
         {
             // set the left and right margin to the left-/right-most respectively
             textRow.Left = std::min(higherCoord.X, lowerCoord.X);
