@@ -686,6 +686,11 @@ namespace Microsoft::Console::Render
                     return false;
                 }
 
+                // We need to backup _pos/_size in case our resize below exceeds _maxArea.
+                // In that case we have to restore _pos/_size so that if _maxArea is increased
+                // (window resize for instance), we can pick up were we previously left off.
+                const auto pos = _pos;
+
                 _pos.x += _tileSize.x;
                 if (_pos.x <= _limit.x)
                 {
@@ -717,10 +722,19 @@ namespace Microsoft::Console::Render
                     _size.y *= 2;
                     _pos.x = 0;
                 }
-                _limit = { gsl::narrow_cast<u16>(_size.x - _tileSize.x), gsl::narrow_cast<u16>(_size.y - _tileSize.y) };
-                _originX = _pos.x;
 
                 _updateCanGenerate();
+                if (_canGenerate)
+                {
+                    _limit = { gsl::narrow_cast<u16>(_size.x - _tileSize.x), gsl::narrow_cast<u16>(_size.y - _tileSize.y) };
+                    _originX = _pos.x;
+                }
+                else
+                {
+                    _size = size;
+                    _pos = pos;
+                }
+
                 return _canGenerate;
             }
 
