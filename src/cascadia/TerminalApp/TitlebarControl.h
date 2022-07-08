@@ -20,6 +20,8 @@ namespace winrt::TerminalApp::implementation
         IInspectable Content();
         void Content(IInspectable content);
 
+        void SetBackgroundBrush(winrt::Windows::UI::Xaml::Media::Brush brush);
+
         void SetWindowVisualState(WindowVisualState visualState);
         void Root_SizeChanged(const IInspectable& sender, const Windows::UI::Xaml::SizeChangedEventArgs& e);
 

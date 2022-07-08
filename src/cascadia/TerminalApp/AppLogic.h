@@ -132,7 +132,14 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::Theme Theme();
 
         // -------------------------------- WinRT Events ---------------------------------
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
+        // Usually we'd just do
+        //    WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        //
+        // But what we're doing here is exposing the Page's PropertyChanged _as
+        // our own event_. It's a FORWARDED_CALLBACK, essentially.
+        winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler) { return _root->PropertyChanged(handler); }
+        void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
 
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

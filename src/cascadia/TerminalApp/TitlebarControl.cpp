@@ -8,6 +8,8 @@
 
 #include "TitlebarControl.h"
 
+#include "ColorHelper.h"
+
 #include "TitlebarControl.g.cpp"
 
 namespace winrt::TerminalApp::implementation
@@ -142,6 +144,22 @@ namespace winrt::TerminalApp::implementation
     void TitlebarControl::ReleaseButtons()
     {
         MinMaxCloseControl().ReleaseButtons();
+    }
+
+    void TitlebarControl::SetBackgroundBrush(winrt::Windows::UI::Xaml::Media::Brush brush)
+    {
+        til::color c;
+        if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+        {
+            c = acrylic.TintColor();
+        }
+        else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+        {
+            c = solidColor.Color();
+        }
+        const auto isBrightColor = ColorHelper::IsBrightColor(c);
+        MinMaxCloseControl().RequestedTheme(isBrightColor ? winrt::Windows::UI::Xaml::ElementTheme::Light :
+                                                            winrt::Windows::UI::Xaml::ElementTheme::Dark);
     }
 
 }
