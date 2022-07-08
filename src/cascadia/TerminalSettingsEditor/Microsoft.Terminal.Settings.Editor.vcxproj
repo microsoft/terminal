@@ -81,6 +81,10 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="LaunchViewModel.h">
+      <DependentUpon>LaunchViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Profiles_Base.h">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -193,6 +197,10 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="LaunchViewModel.cpp">
+      <DependentUpon>LaunchViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Profiles_Base.cpp">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -263,6 +271,7 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="LaunchViewModel.idl" />
     <Midl Include="Profiles_Base.idl">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
