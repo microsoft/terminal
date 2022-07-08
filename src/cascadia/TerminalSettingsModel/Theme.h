@@ -96,6 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #undef THEME_SETTINGS_INITIALIZE
 #undef THEME_SETTINGS_COPY
+#undef COPY_THEME_OBJECT
 #undef THEME_OBJECT
 }
 

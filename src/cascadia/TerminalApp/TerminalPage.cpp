@@ -4092,7 +4092,6 @@ namespace winrt::TerminalApp::implementation
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
-            const til::color backgroundColor = backgroundSolidBrush.Color();
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
