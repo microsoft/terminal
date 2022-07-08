@@ -2349,6 +2349,15 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnecti
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     if (pTtyConnection)
     {
+        // GH#8698: When the state machine encounters a string that adapt
+        // dispatch couldn't handle, and we're in conpty, we should:
+        // - 1. Flush the current conpty frame
+        // - 2. write the unhandled sequence to the terminal side.
+        //
+        // This will make sure that anything we've currently buffered is
+        // processed by the terminal, before we pass through the thing we don't
+        // recognize. That way, the terminal will have the full state of
+        // whatever sequences came before the thing we didn't understand.
         engine.SetTerminalConnection(pTtyConnection,
                                      [this]() -> bool {
                                          ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
