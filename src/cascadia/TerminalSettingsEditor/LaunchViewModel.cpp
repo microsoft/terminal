@@ -37,11 +37,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Settings.GlobalSettings().DefaultProfile(profile.Guid());
     }
 
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable> LaunchViewModel::DefaultProfiles() const
+    winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> LaunchViewModel::DefaultProfiles() const
     {
         const auto allProfiles = _Settings.AllProfiles();
 
-        std::vector<IInspectable> profiles;
+        std::vector<Model::Profile> profiles;
         profiles.reserve(allProfiles.Size());
 
         // Remove profiles from the selection which have been explicitly deleted.
@@ -69,18 +69,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Settings.CurrentDefaultTerminal(defaultTerminal);
     }
 
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable> LaunchViewModel::DefaultTerminals() const
+    winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
     {
-        const auto allTerminals = _Settings.DefaultTerminals();
-
-        std::vector<IInspectable> terminals;
-        terminals.reserve(allTerminals.Size());
-
-        for (const auto& terminal : allTerminals)
-        {
-            terminals.emplace_back(terminal);
-        }
-
-        return winrt::single_threaded_observable_vector(std::move(terminals));
+        return _Settings.DefaultTerminals();
     }
 }

@@ -16,11 +16,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
-        winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> DefaultProfiles() const;
 
         IInspectable CurrentDefaultTerminal();
         void CurrentDefaultTerminal(const IInspectable& value);
-        winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultTerminals() const;
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const;
 
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, _Settings.GlobalSettings().LaunchMode);
