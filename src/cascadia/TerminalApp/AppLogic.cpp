@@ -293,7 +293,7 @@ namespace winrt::TerminalApp::implementation
                 _root->Maximized(true);
             }
 
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode))
+            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !IsQuakeWindow())
             {
                 _root->SetFullscreen(true);
             }
