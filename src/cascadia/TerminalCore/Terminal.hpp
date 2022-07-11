@@ -162,9 +162,10 @@ public:
 
     void FocusChanged(const bool focused) noexcept override;
 
-    std::wstring GetHyperlinkAtPosition(const til::point position);
-    uint16_t GetHyperlinkIdAtPosition(const til::point position);
-    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const til::point position);
+    std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
+    std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);
+    uint16_t GetHyperlinkIdAtViewportPosition(const til::point viewportPos);
+    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const til::point viewportPos);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)

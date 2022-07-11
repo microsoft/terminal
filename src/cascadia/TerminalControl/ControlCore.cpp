@@ -441,7 +441,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     // Ctrl + Enter --> Open URL
                     auto lock = _terminal->LockForReading();
-                    const auto uri = _terminal->GetHyperlinkAtPosition(_terminal->GetSelectionAnchor());
+                    const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
                     _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
                     return true;
                 }
@@ -622,7 +622,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
-            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
+            newId = _terminal->GetHyperlinkIdAtViewportPosition(*terminalPosition);
             newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
         }
 
@@ -653,7 +653,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }) };
+        return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(til::point{ pos }) };
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -661,7 +661,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
+            return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
         }
         return {};
     }
