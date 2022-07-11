@@ -26,8 +26,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         WINRT_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals().Theme);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals().TabWidthMode);
+
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::Theme>, ThemeList, nullptr);
 
     public:
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
@@ -40,9 +41,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::IInspectable CurrentLanguage();
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
 
+        winrt::Windows::Foundation::IInspectable CurrentTheme();
+        void CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag);
+        static winrt::hstring ThemeNameConverter(const Model::Theme& theme);
+
     private:
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;
         winrt::Windows::Foundation::IInspectable _currentLanguage;
+        winrt::Windows::Foundation::IInspectable _currentTheme;
+
+        void _UpdateThemeList();
     };
 }
 

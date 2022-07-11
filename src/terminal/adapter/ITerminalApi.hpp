@@ -70,10 +70,13 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void CopyToClipboard(const std::wstring_view content) = 0;
         virtual void SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress) = 0;
         virtual void SetWorkingDirectory(const std::wstring_view uri) = 0;
+        virtual void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) = 0;
 
-        virtual bool ResizeWindow(const size_t width, const size_t height) = 0;
+        virtual bool ResizeWindow(const til::CoordType width, const til::CoordType height) = 0;
         virtual bool IsConsolePty() const = 0;
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
+
+        virtual void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
     };
 }

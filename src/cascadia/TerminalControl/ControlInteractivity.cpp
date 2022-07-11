@@ -142,7 +142,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
-    // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
@@ -257,14 +256,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
-            // CopyOnSelect right click always pastes
-            if (_core->CopyOnSelect() || !_core->HasSelection())
+            // Try to copy the text and clear the selection
+            const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
+            _core->ClearSelection();
+            if (_core->CopyOnSelect() || !successfulCopy)
             {
+                // CopyOnSelect: right click always pastes!
+                // Otherwise: no selection --> paste
                 RequestPasteTextFromClipboard();
-            }
-            else
-            {
-                CopySelectionToClipboard(shiftEnabled, nullptr);
             }
         }
     }
@@ -383,6 +382,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             isLeftMouseRelease &&
             _selectionNeedsToBeCopied)
         {
+            // IMPORTANT!
+            // DO NOT clear the selection here!
+            // Otherwise, the selection will be cleared immediately after you make it.
             CopySelectionToClipboard(false, nullptr);
         }
 
@@ -615,7 +617,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Get the size of the font, which is in pixels
         const til::size fontSize{ _core->GetFont().GetSize() };
         // Convert the location in pixels to characters within the current viewport.
-        return til::point{ pixelPosition / fontSize };
+        return pixelPosition / fontSize;
     }
 
     bool ControlInteractivity::_sendMouseEventHelper(const til::point terminalPosition,

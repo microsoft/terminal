@@ -58,29 +58,37 @@ namespace Microsoft::Console::VirtualTerminal
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
+        bool IsProcessingLastCharacter() const noexcept;
 
         void ResetState() noexcept;
 
-        bool FlushToTerminal() noexcept;
+        bool FlushToTerminal();
 
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
 
+        class ShutdownException : public wil::ResultException
+        {
+        public:
+            ShutdownException() noexcept :
+                ResultException(E_ABORT) {}
+        };
+
     private:
-        void _ActionExecute(const wchar_t wch) noexcept;
-        void _ActionExecuteFromEscape(const wchar_t wch) noexcept;
-        void _ActionPrint(const wchar_t wch) noexcept;
+        void _ActionExecute(const wchar_t wch);
+        void _ActionExecuteFromEscape(const wchar_t wch);
+        void _ActionPrint(const wchar_t wch);
         void _ActionPrintString(const std::wstring_view string);
-        void _ActionEscDispatch(const wchar_t wch) noexcept;
-        void _ActionVt52EscDispatch(const wchar_t wch) noexcept;
+        void _ActionEscDispatch(const wchar_t wch);
+        void _ActionVt52EscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch) noexcept;
         void _ActionParam(const wchar_t wch);
-        void _ActionCsiDispatch(const wchar_t wch) noexcept;
+        void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
-        void _ActionOscDispatch(const wchar_t wch) noexcept;
-        void _ActionSs3Dispatch(const wchar_t wch) noexcept;
-        void _ActionDcsDispatch(const wchar_t wch) noexcept;
+        void _ActionOscDispatch(const wchar_t wch);
+        void _ActionSs3Dispatch(const wchar_t wch);
+        void _ActionDcsDispatch(const wchar_t wch);
 
         void _ActionClear();
         void _ActionIgnore() noexcept;
@@ -106,12 +114,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsPassThrough() noexcept;
         void _EnterSosPmApcString() noexcept;
 
-        void _EventGround(const wchar_t wch) noexcept;
+        void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
-        void _EventEscapeIntermediate(const wchar_t wch) noexcept;
+        void _EventEscapeIntermediate(const wchar_t wch);
         void _EventCsiEntry(const wchar_t wch);
-        void _EventCsiIntermediate(const wchar_t wch) noexcept;
-        void _EventCsiIgnore(const wchar_t wch) noexcept;
+        void _EventCsiIntermediate(const wchar_t wch);
+        void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
@@ -121,7 +129,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventVt52Param(const wchar_t wch);
         void _EventDcsEntry(const wchar_t wch);
         void _EventDcsIgnore() noexcept;
-        void _EventDcsIntermediate(const wchar_t wch) noexcept;
+        void _EventDcsIntermediate(const wchar_t wch);
         void _EventDcsParam(const wchar_t wch);
         void _EventDcsPassThrough(const wchar_t wch);
         void _EventSosPmApcString(const wchar_t wch) noexcept;
@@ -129,9 +137,9 @@ namespace Microsoft::Console::VirtualTerminal
         void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
 
         template<typename TLambda>
-        bool _SafeExecute(TLambda&& lambda) noexcept;
+        bool _SafeExecute(TLambda&& lambda);
         template<typename TLambda>
-        bool _SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda) noexcept;
+        bool _SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda);
 
         enum class VTStates
         {
@@ -192,5 +200,6 @@ namespace Microsoft::Console::VirtualTerminal
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
         bool _processingIndividually;
+        bool _processingLastCharacter;
     };
 }

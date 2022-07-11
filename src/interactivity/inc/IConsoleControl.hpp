@@ -23,6 +23,6 @@ namespace Microsoft::Console::Interactivity
         virtual ~IConsoleControl() = default;
         [[nodiscard]] virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
         [[nodiscard]] virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
-        [[nodiscard]] virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
+        [[nodiscard]] virtual NTSTATUS EndTask(DWORD dwProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
     };
 }

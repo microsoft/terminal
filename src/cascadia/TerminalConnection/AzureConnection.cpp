@@ -75,8 +75,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (settings)
         {
-            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
-            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
+            _initialRows = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
+            _initialCols = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
         }
     }
 

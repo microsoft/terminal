@@ -36,9 +36,9 @@ Arguments:
 Return Value:
 --*/
 [[nodiscard]] NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
-                                            _In_ COORD coordCursor,
+                                            _In_ til::point coordCursor,
                                             const BOOL fKeepCursorVisible,
-                                            _Inout_opt_ PSHORT psScrollY);
+                                            _Inout_opt_ til::CoordType* psScrollY);
 
 /*++
 Routine Description:
@@ -73,9 +73,9 @@ Note:
                                         _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                                         _Inout_ size_t* const pcb,
                                         _Out_opt_ size_t* const pcSpaces,
-                                        const SHORT sOriginalXPosition,
+                                        const til::CoordType sOriginalXPosition,
                                         const DWORD dwFlags,
-                                        _Inout_opt_ PSHORT const psScrollY);
+                                        _Inout_opt_ til::CoordType* const psScrollY);
 
 // The new entry point for WriteChars to act as an intercept in case we place a Virtual Terminal processor in the way.
 [[nodiscard]] NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
@@ -84,9 +84,9 @@ Note:
                                   _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                                   _Inout_ size_t* const pcb,
                                   _Out_opt_ size_t* const pcSpaces,
-                                  const SHORT sOriginalXPosition,
+                                  const til::CoordType sOriginalXPosition,
                                   const DWORD dwFlags,
-                                  _Inout_opt_ PSHORT const psScrollY);
+                                  _Inout_opt_ til::CoordType* const psScrollY);
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.

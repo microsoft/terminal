@@ -34,7 +34,7 @@ void ConsoleWindow::SetIsFullscreen(const bool /*fFullscreenEnabled*/) noexcept
 {
 }
 
-void ConsoleWindow::ChangeViewport(const SMALL_RECT NewWindow)
+void ConsoleWindow::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -74,22 +74,22 @@ void ConsoleWindow::SetOwner() noexcept
 {
 }
 
-BOOL ConsoleWindow::GetCursorPosition(LPPOINT /*lpPoint*/) noexcept
+BOOL ConsoleWindow::GetCursorPosition(til::point* /*lpPoint*/) noexcept
 {
     return FALSE;
 }
 
-BOOL ConsoleWindow::GetClientRectangle(LPRECT /*lpRect*/) noexcept
+BOOL ConsoleWindow::GetClientRectangle(til::rect* /*lpRect*/) noexcept
 {
     return FALSE;
 }
 
-int ConsoleWindow::MapPoints(LPPOINT /*lpPoints*/, UINT /*cPoints*/) noexcept
+BOOL ConsoleWindow::MapRect(til::rect* /*lpRect*/) noexcept
 {
     return 0;
 }
 
-BOOL ConsoleWindow::ConvertScreenToClient(LPPOINT /*lpPoint*/) noexcept
+BOOL ConsoleWindow::ConvertScreenToClient(til::point* /*lpPoint*/) noexcept
 {
     return 0;
 }
@@ -109,7 +109,7 @@ BOOL ConsoleWindow::PostUpdateWindowSize() const noexcept
     return FALSE;
 }
 
-void ConsoleWindow::UpdateWindowSize(const COORD /*coordSizeInChars*/) noexcept
+void ConsoleWindow::UpdateWindowSize(const til::size /*coordSizeInChars*/) noexcept
 {
 }
 
@@ -135,7 +135,7 @@ void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*w
     return E_NOTIMPL;
 }
 
-RECT ConsoleWindow::GetWindowRect() const noexcept
+til::rect ConsoleWindow::GetWindowRect() const noexcept
 {
     return {};
 }

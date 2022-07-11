@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         _transitionToState(ConnectionState::Connecting);
 
-        const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
+        const til::size dimensions{ gsl::narrow<til::CoordType>(_initialCols), gsl::narrow<til::CoordType>(_initialRows) };
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
@@ -309,7 +309,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, flags, &_inPipe, &_outPipe, &_hPC));
+            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), flags, &_inPipe, &_outPipe, &_hPC));
 
             if (_initialParentHwnd != 0)
             {
@@ -338,7 +338,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), til::unwrap_coord_size(dimensions)));
             THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
 
             if (_initialVisibility)

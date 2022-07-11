@@ -9,7 +9,7 @@ using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 
-static COORD GetConsoleScreenSize(HANDLE outputHandle)
+static til::point GetConsoleScreenSize(HANDLE outputHandle)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex{};
     csbiex.cbSize = sizeof(csbiex);

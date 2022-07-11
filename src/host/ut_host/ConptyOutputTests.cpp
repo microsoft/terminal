@@ -29,8 +29,8 @@ class ConptyOutputTests
     // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
     // to be 80x32. If you change these, you'll probably inadvertently break a
     // bunch of tests !!!
-    static const SHORT TerminalViewWidth = 80;
-    static const SHORT TerminalViewHeight = 32;
+    static const til::CoordType TerminalViewWidth = 80;
+    static const til::CoordType TerminalViewHeight = 32;
 
     // This test class is to write some things into the PTY and then check that
     // the rendering that is coming out of the VT-sequence generator is exactly
@@ -79,7 +79,7 @@ class ConptyOutputTests
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
-        VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
+        VERIFY_ARE_EQUAL(til::point{}, currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
         // Set up an xterm-256 renderer for conpty
         auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);

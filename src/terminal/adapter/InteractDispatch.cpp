@@ -9,6 +9,9 @@
 #pragma warning(disable : 26440)
 #pragma warning(disable : 26455)
 
+// We end up including ApiMessage.h somehow, which uses nameless unions
+#pragma warning(disable : 4201)
+
 #include "InteractDispatch.hpp"
 #include "../../host/conddkrefs.h"
 #include "../../interactivity/inc/ServiceLocator.hpp"
@@ -148,12 +151,10 @@ bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, viewport.Bottom);
     coordCursor.X = std::clamp(coordCursor.X, viewport.Left, viewport.Right);
 
-    const auto coordCursorShort = til::unwrap_coord(coordCursor);
-
     // Finally, attempt to set the adjusted cursor position back into the console.
     const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
     auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
-    return SUCCEEDED(api->SetConsoleCursorPositionImpl(info, coordCursorShort));
+    return SUCCEEDED(api->SetConsoleCursorPositionImpl(info, coordCursor));
 }
 
 // Routine Description:

@@ -70,6 +70,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         };
     }
 
+    constexpr HRESULT unwrap_small_rect_hr(const inclusive_rect& rect, SMALL_RECT& out) noexcept
+    {
+        short l = 0;
+        short t = 0;
+        short r = 0;
+        short b = 0;
+        if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
+        {
+            out.Left = l;
+            out.Top = t;
+            out.Right = r;
+            out.Bottom = b;
+            return S_OK;
+        }
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+    }
+
     namespace details
     {
         class _rectangle_const_iterator
@@ -634,29 +651,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef _WINCONTYPES_
         // NOTE: This will convert from INCLUSIVE on the way in because
         // that is generally how SMALL_RECTs are handled in console code and via the APIs.
-        explicit constexpr rect(const SMALL_RECT other) noexcept :
-            rect{ other.Left, other.Top, other.Right + 1, other.Bottom + 1 }
-        {
-        }
-
-        // NOTE: This will convert back to INCLUSIVE on the way out because
-        // that is generally how SMALL_RECTs are handled in console code and via the APIs.
-        constexpr SMALL_RECT to_small_rect() const
-        {
-            // The two -1 operations below are technically UB if they underflow.
-            // But practically speaking no hardware without two's complement for
-            // signed integers is supported by Windows. If they do underflow, they'll
-            // result in INT_MAX which will throw in gsl::narrow just like INT_MAX does.
-            return {
-                gsl::narrow<short>(left),
-                gsl::narrow<short>(top),
-                gsl::narrow<short>(right - 1),
-                gsl::narrow<short>(bottom - 1),
-            };
-        }
-
-        // NOTE: This will convert from INCLUSIVE on the way in because
-        // that is generally how SMALL_RECTs are handled in console code and via the APIs.
         explicit constexpr rect(const inclusive_rect other) noexcept :
             rect{ other.Left, other.Top, other.Right + 1, other.Bottom + 1 }
         {
@@ -781,6 +775,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             gsl::narrow<short>(rect.right),
             gsl::narrow<short>(rect.bottom),
         };
+    }
+
+    constexpr HRESULT unwrap_exclusive_small_rect_hr(const rect& rect, SMALL_RECT& out) noexcept
+    {
+        short l = 0;
+        short t = 0;
+        short r = 0;
+        short b = 0;
+        if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
+        {
+            out.Left = l;
+            out.Top = t;
+            out.Right = r;
+            out.Bottom = b;
+            return S_OK;
+        }
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 }
 
