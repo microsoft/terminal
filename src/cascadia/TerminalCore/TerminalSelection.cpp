@@ -371,26 +371,43 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     // extracts the next/previous hyperlink from the list of hyperlink ranges provided
     auto extractResultFromList = [&](std::vector<interval_tree::Interval<til::point, size_t>>& list) {
         const auto selectionStartInSearchArea = convertToSearchArea(_selection->start);
+
         std::optional<std::pair<til::point, til::point>> resultFromList;
-        for (const auto& range : list)
+        if (!list.empty())
         {
-            if (_isTargetingUrl && selectionStartInSearchArea == range.start)
+            if (dir == SearchDirection::Forward)
             {
-                // if we're already on the hyperlink and we're trying to set it to the same one,
-                // skip it
-                continue;
+                // pattern tree includes the currently selected range when going forward,
+                // so we need to check if we're pointing to that one before returning it.
+                auto range = list.front();
+                if (_isTargetingUrl && range.start == selectionStartInSearchArea)
+                {
+                    if (list.size() > 1)
+                    {
+                        // if we're pointing to the currently selected URL,
+                        // pick the next one.
+                        range = til::at(list, 1);
+                        resultFromList = { range.start, range.stop };
+                    }
+                    else
+                    {
+                        // LOAD-BEARING: the only range here is the one that's currently selected.
+                        // Make sure this is set to nullopt so that we keep searching through the buffer.
+                        resultFromList = std::nullopt;
+                    }
+                }
+                else
+                {
+                    // not on currently selected range, return the first one
+                    resultFromList = { range.start, range.stop };
+                }
             }
-            else if (!resultFromList)
+            else if (dir == SearchDirection::Backward)
             {
-                resultFromList = std::make_pair(range.start, range.stop);
-            }
-            else if (dir == SearchDirection::Forward && range.start < resultFromList->first)
-            {
-                resultFromList = std::make_pair(range.start, range.stop);
-            }
-            else if (dir == SearchDirection::Backward && range.start > resultFromList->first)
-            {
-                resultFromList = std::make_pair(range.start, range.stop);
+                // moving backwards excludes the currently selected range,
+                // simply return the last one in the list as it's ordered
+                const auto range = list.back();
+                resultFromList = { range.start, range.stop };
             }
         }
 
@@ -409,8 +426,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     til::point searchEnd = dir == SearchDirection::Forward ? til::point{ bufferSize.RightInclusive(), _VisibleEndIndex() } : _selection->start;
 
     // 1.A) Try searching the current viewport (no scrolling required)
-    auto patterns = _patternIntervalTree;
-    auto resultList = patterns.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
+    auto resultList = _patternIntervalTree.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
     std::optional<std::pair<til::point, til::point>> result = extractResultFromList(resultList);
     if (!result)
     {
@@ -431,7 +447,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
         const til::point bufferEnd{ bufferSize.RightInclusive(), ViewEndIndex() };
         while (!result && bufferSize.IsInBounds(searchStart) && bufferSize.IsInBounds(searchEnd) && searchStart <= searchEnd && bufferStart <= searchStart && searchEnd <= bufferEnd)
         {
-            patterns = _activeBuffer().GetPatterns(searchStart.y, searchEnd.y);
+            auto patterns = _activeBuffer().GetPatterns(searchStart.y, searchEnd.y);
             resultList = patterns.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
             result = extractResultFromList(resultList);
             if (!result)
