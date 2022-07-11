@@ -44,7 +44,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
-        //bool _isInBoxScheme;
         Editor::ColorSchemesPageViewModel _parentPageVM{ nullptr };
     };
 
