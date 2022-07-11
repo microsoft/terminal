@@ -1132,5 +1132,5 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
 
 void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
 {
-    _titlebar.SetBackgroundBrush(brush);
+    _titlebar.Background(brush);
 }

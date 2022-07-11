@@ -31,7 +31,5 @@ namespace TerminalApp
 
         IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };
-
-        void SetBackgroundBrush(Windows.UI.Xaml.Media.Brush brush);
     }
 }

@@ -23,6 +23,25 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().MinimizeClick({ this, &TitlebarControl::Minimize_Click });
         MinMaxCloseControl().MaximizeClick({ this, &TitlebarControl::Maximize_Click });
         MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
+
+        // Listen for changes to the Background. If the Background changes,
+        // we'll want to manually adjust the RequestedTheme of our caption
+        // buttons, so the foreground stands out against whatever BG color was
+        // selected for us.
+        //
+        // This is how you register a PropertyChanged event for the Background
+        // property of a Grid. The Background property is defined in the base
+        // class Panel.
+        const auto bgProperty{ winrt::Windows::UI::Xaml::Controls::Panel::BackgroundProperty() };
+        RegisterPropertyChangedCallback(bgProperty, [weakThis = get_weak(), bgProperty](auto& /*sender*/, auto& e) {
+            if (auto self{ weakThis.get() })
+            {
+                if (e == bgProperty)
+                {
+                    self->_backgroundChanged(self->Background());
+                }
+            }
+        });
     }
 
     double TitlebarControl::CaptionButtonWidth()
@@ -146,9 +165,9 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().ReleaseButtons();
     }
 
-    void TitlebarControl::SetBackgroundBrush(winrt::Windows::UI::Xaml::Media::Brush brush)
+    void TitlebarControl::_backgroundChanged(winrt::Windows::UI::Xaml::Media::Brush brush)
     {
-        Background(brush);
+        // Loosely cribbed from TerminalPage::_SetNewTabButtonColor
         til::color c;
         if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
         {
@@ -162,6 +181,7 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
+
         const auto isBrightColor = ColorHelper::IsBrightColor(c);
         MinMaxCloseControl().RequestedTheme(isBrightColor ? winrt::Windows::UI::Xaml::ElementTheme::Light :
                                                             winrt::Windows::UI::Xaml::ElementTheme::Dark);
