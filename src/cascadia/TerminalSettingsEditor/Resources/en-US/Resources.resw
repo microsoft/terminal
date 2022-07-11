@@ -1451,7 +1451,7 @@
   </data>
   <data name="Globals_AutoHideWindow.Header" xml:space="preserve">
     <value>Automatically hide window</value>
-    <comment>Header for a control to toggle the "Automatically hide window" setting. When checked, quake window will be hidden on focus lost.</comment>
+    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, Terminal window will be hidden as soon as it loses focus.</comment>
   </data>
   <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
     <value>If enabled, Terminal window will be hidden as soon as it loses focus.</value>
