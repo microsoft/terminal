@@ -462,12 +462,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // achieve the intended effect.
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
             ScrollBar().Visibility(Visibility::Collapsed);
+            ScrollMarksGrid().Visibility(Visibility::Collapsed);
         }
         else // (default or Visible)
         {
             // Default behavior
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
             ScrollBar().Visibility(Visibility::Visible);
+            ScrollMarksGrid().Visibility(Visibility::Visible);
         }
 
         _interactivity.UpdateSettings();
@@ -598,6 +600,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             RootGrid().Background(solidColor);
         }
+
+        BackgroundBrush(RootGrid().Background());
     }
 
     // Method Description:
@@ -643,6 +647,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             solidColor.Color(bg);
         }
+
+        BackgroundBrush(RootGrid().Background());
+
+        // Don't use the normal BackgroundBrush() Observable Property setter
+        // here. (e.g. `BackgroundBrush()`). The one from the macro will
+        // automatically ignore changes where the value doesn't _actually_
+        // change. In our case, most of the time when changing the colors of the
+        // background, the _Brush_ itself doesn't change, we simply change the
+        // Color() of the brush. This results in the event not getting bubbled
+        // up.
+        //
+        // Firing it manually makes sure it does.
+        _BackgroundBrush = RootGrid().Background();
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
     }
 
     // Method Description:

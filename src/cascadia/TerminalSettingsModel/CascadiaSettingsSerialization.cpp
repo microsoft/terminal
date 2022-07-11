@@ -39,6 +39,7 @@ static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+static constexpr std::string_view ThemesKey{ "themes" };
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -532,6 +533,25 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     }
 
     {
+        for (const auto& themeJson : json.themes)
+        {
+            if (const auto theme = Theme::FromJson(themeJson))
+            {
+                if (origin != OriginTag::InBox &&
+                    (theme->Name() == L"system" || theme->Name() == L"light" || theme->Name() == L"dark"))
+                {
+                    // If the theme didn't come from the in-box themes, and its
+                    // name was one of the reserved names, then just ignore it.
+                    // Themes don't support layering - we don't want the user
+                    // versions of these themes overriding the built-in ones.
+                    continue;
+                }
+                settings.globals->AddTheme(*theme);
+            }
+        }
+    }
+
+    {
         settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
@@ -629,10 +649,11 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
 {
     auto root = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& colorSchemes = _getJSONValue(root, SchemesKey);
+    const auto& themes = _getJSONValue(root, ThemesKey);
     const auto& profilesObject = _getJSONValue(root, ProfilesKey);
     const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
-    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList };
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes };
 }
 
 // Just a common helper function between _parse and _parseFragment.
@@ -1091,6 +1112,20 @@ Json::Value CascadiaSettings::ToJson() const
         schemes.append(scheme->ToJson());
     }
     json[JsonKey(SchemesKey)] = schemes;
+
+    Json::Value themes{ Json::ValueType::arrayValue };
+    for (const auto& entry : _globals->Themes())
+    {
+        // Ignore the built in themes, when serializing the themes back out. We
+        // don't want to re-include them in the user settings file.
+        const auto theme{ winrt::get_self<Theme>(entry.Value()) };
+        if (theme->Name() == L"system" || theme->Name() == L"light" || theme->Name() == L"dark")
+        {
+            continue;
+        }
+        themes.append(theme->ToJson());
+    }
+    json[JsonKey(ThemesKey)] = themes;
 
     return json;
 }

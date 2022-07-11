@@ -25,20 +25,6 @@
 
 using namespace Microsoft::Console::Render;
 
-#pragma warning(push)
-#pragma warning(disable : 26447) // The function is declared 'noexcept' but calls function 'operator()()' which may throw exceptions (f.6).
-__declspec(noinline) static void showOOMWarning() noexcept
-{
-    [[maybe_unused]] static const auto once = []() {
-        std::thread t{ []() noexcept {
-            MessageBoxW(nullptr, L"This application is using a highly experimental text rendering engine and has run out of memory. Text rendering will start to behave irrationally and you should restart this process.", L"Out Of Memory", MB_ICONERROR | MB_OK);
-        } };
-        t.detach();
-        return false;
-    }();
-}
-#pragma warning(pop)
-
 struct TextAnalyzer final : IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
 {
     constexpr TextAnalyzer(const std::vector<wchar_t>& text, std::vector<AtlasEngine::TextAnalyzerResult>& results) noexcept :
@@ -365,12 +351,14 @@ try
         }
     }
 
-    _api.dirtyRect = til::rect{
-        0,
-        _api.invalidatedRows.x,
-        _api.cellCount.x,
-        _api.invalidatedRows.y,
-    };
+    if constexpr (debugGlyphGenerationPerformance)
+    {
+        _api.dirtyRect = til::rect{ 0, 0, _api.cellCount.x, _api.cellCount.y };
+    }
+    else
+    {
+        _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _api.cellCount.x, _api.invalidatedRows.y };
+    }
 
     return S_OK;
 }
@@ -394,7 +382,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return continuousRedraw;
+    return debugGeneralPerformance;
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -559,9 +547,10 @@ try
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<uint16_t>(clamp<int>(point.X, 0, _r.cellCount.x - 1));
-        const auto y = gsl::narrow_cast<uint16_t>(clamp<int>(point.Y, 0, _r.cellCount.y - 1));
-        const auto right = gsl::narrow_cast<uint16_t>(x + 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar)));
+        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.X, 0, _r.cellCount.x - 1));
+        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.Y, 0, _r.cellCount.y - 1));
+        const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
+        const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
         const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
         _setCellFlags({ x, y, right, bottom }, CellFlags::Cursor, CellFlags::Cursor);
     }
@@ -775,7 +764,7 @@ void AtlasEngine::_createSwapChain()
 
     // D3D swap chain setup (the thing that allows us to present frames on the screen)
     {
-        const auto supportsFrameLatencyWaitableObject = IsWindows8Point1OrGreater();
+        const auto supportsFrameLatencyWaitableObject = !debugGeneralPerformance && IsWindows8Point1OrGreater();
 
         // With C++20 we'll finally have designated initializers.
         DXGI_SWAP_CHAIN_DESC1 desc{};
@@ -899,6 +888,7 @@ void AtlasEngine::_recreateSizeDependentResources()
         // (40x on AMD Zen1-3, which have a rep movsb performance issue. MSFT:33358259.)
         _r.cells = Buffer<Cell, 32>{ totalCellCount };
         _r.cellCount = _api.cellCount;
+        _r.tileAllocator.setMaxArea(_api.sizeInPixel);
 
         // .clear() doesn't free the memory of these buffers.
         // This code allows them to shrink again.
@@ -947,32 +937,14 @@ void AtlasEngine::_recreateFontDependentResources()
 
     // D3D
     {
-        // TODO: Consider using IDXGIAdapter3::QueryVideoMemoryInfo() and IDXGIAdapter3::RegisterVideoMemoryBudgetChangeNotificationEvent()
-        // That way we can make better to use of a user's available video memory.
-
-        static constexpr size_t sizePerPixel = 4;
-        static constexpr size_t sizeLimit = D3D10_REQ_RESOURCE_SIZE_IN_MEGABYTES * 1024 * 1024;
-        const size_t dimensionLimit = _r.device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION : D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-        const size_t csx = _api.fontMetrics.cellSize.x;
-        const size_t csy = _api.fontMetrics.cellSize.y;
-        const auto xLimit = (dimensionLimit / csx) * csx;
-        const auto pixelsPerCellRow = xLimit * csy;
-        const auto yLimitDueToDimension = (dimensionLimit / csy) * csy;
-        const auto yLimitDueToSize = ((sizeLimit / sizePerPixel) / pixelsPerCellRow) * csy;
-        const auto yLimit = std::min(yLimitDueToDimension, yLimitDueToSize);
         const auto scaling = GetScaling();
 
         _r.cellSizeDIP.x = static_cast<float>(_api.fontMetrics.cellSize.x) / scaling;
         _r.cellSizeDIP.y = static_cast<float>(_api.fontMetrics.cellSize.y) / scaling;
         _r.cellSize = _api.fontMetrics.cellSize;
         _r.cellCount = _api.cellCount;
-        // x/yLimit are strictly smaller than dimensionLimit, which is smaller than a u16.
-        _r.atlasSizeInPixelLimit = u16x2{ gsl::narrow_cast<u16>(xLimit), gsl::narrow_cast<u16>(yLimit) };
         _r.atlasSizeInPixel = { 0, 0 };
-        // The first Cell at {0, 0} is always our cursor texture.
-        // --> The first glyph starts at {1, 0}.
-        _r.atlasPosition.x = _api.fontMetrics.cellSize.x;
-        _r.atlasPosition.y = 0;
+        _r.tileAllocator = TileAllocator{ _r.cellSize, _api.sizeInPixel };
 
         _r.glyphs = {};
         _r.glyphQueue = {};
@@ -1116,26 +1088,6 @@ void AtlasEngine::_setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noe
             data->flags = (current & filter) | bits;
         }
     }
-}
-
-AtlasEngine::u16x2 AtlasEngine::_allocateAtlasTile() noexcept
-{
-    const auto ret = _r.atlasPosition;
-
-    _r.atlasPosition.x += _r.cellSize.x;
-    if (_r.atlasPosition.x >= _r.atlasSizeInPixelLimit.x)
-    {
-        _r.atlasPosition.x = 0;
-        _r.atlasPosition.y += _r.cellSize.y;
-        if (_r.atlasPosition.y >= _r.atlasSizeInPixelLimit.y)
-        {
-            _r.atlasPosition.x = _r.cellSize.x;
-            _r.atlasPosition.y = 0;
-            showOOMWarning();
-        }
-    }
-
-    return ret;
 }
 
 void AtlasEngine::_flushBufferLine()
@@ -1449,11 +1401,10 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
     auto attributes = _api.attributes;
     attributes.cellCount = cellCount;
 
-    const auto [it, inserted] = _r.glyphs.emplace(std::piecewise_construct, std::forward_as_tuple(attributes, gsl::narrow<u16>(charCount), chars), std::forward_as_tuple());
-    const auto& key = it->first;
-    auto& value = it->second;
+    AtlasKey key{ attributes, gsl::narrow<u16>(charCount), chars };
+    const AtlasValue* valueRef = _r.glyphs.find(key);
 
-    if (inserted)
+    if (!valueRef)
     {
         // Do fonts exist *in practice* which contain both colored and uncolored glyphs? I'm pretty sure...
         // However doing it properly means using either of:
@@ -1481,17 +1432,28 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
             WI_SetFlagIf(flags, CellFlags::ColoredGlyph, fontFace2 && fontFace2->IsColorFont());
         }
 
-        const auto coords = value.initialize(flags, cellCount);
+        // The AtlasValue constructor fills the `coords` variable with a pointer to an array
+        // of at least `cellCount` elements. I did this so that I don't have to type out
+        // `value.data()->coords` again, despite the constructor having all the data necessary.
+        u16x2* coords;
+        AtlasValue value{ flags, cellCount, &coords };
+
         for (u16 i = 0; i < cellCount; ++i)
         {
-            coords[i] = _allocateAtlasTile();
+            coords[i] = _r.tileAllocator.allocate(_r.glyphs);
         }
 
-        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value });
+        const auto it = _r.glyphs.insert(std::move(key), std::move(value));
+        valueRef = &it->second;
+        _r.glyphQueue.emplace_back(&it->first, &it->second);
         _r.maxEncounteredCellCount = std::max(_r.maxEncounteredCellCount, cellCount);
     }
 
-    const auto valueData = value.data();
+    // For some reason MSVC doesn't understand that valueRef is overwritten in the branch above, resulting in:
+    //   C26430: Symbol 'valueRef' is not tested for nullness on all paths (f.23).
+    __assume(valueRef != nullptr);
+
+    const auto valueData = valueRef->data();
     const auto coords = &valueData->coords[0];
     const auto data = _getCell(x1, _api.lastPaintBufferLineCoord.y);
 

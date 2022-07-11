@@ -1129,3 +1129,8 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !(_fullscreen || _borderless);
 }
+
+void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
+{
+    _titlebar.Background(brush);
+}

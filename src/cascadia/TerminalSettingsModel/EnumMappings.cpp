@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     // Global Settings
     DEFINE_ENUM_MAP(winrt::Windows::UI::Xaml::ElementTheme, ElementTheme);
+    DEFINE_ENUM_MAP(Model::NewTabPosition, NewTabPosition);
     DEFINE_ENUM_MAP(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabViewWidthMode);
     DEFINE_ENUM_MAP(Model::FirstWindowPreference, FirstWindowPreference);
     DEFINE_ENUM_MAP(Model::LaunchMode, LaunchMode);
