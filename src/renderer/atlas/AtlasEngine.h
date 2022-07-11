@@ -106,12 +106,6 @@ namespace Microsoft::Console::Render
             T y{};
 
             ATLAS_POD_OPS(vec2)
-
-            constexpr vec2 operator/(const vec2& rhs) noexcept
-            {
-                assert(rhs.x != 0 && rhs.y != 0);
-                return { gsl::narrow_cast<T>(x / rhs.x), gsl::narrow_cast<T>(y / rhs.y) };
-            }
         };
 
         template<typename T>
@@ -243,6 +237,26 @@ namespace Microsoft::Console::Render
                 return _size;
             }
 
+            T* begin() noexcept
+            {
+                return _data;
+            }
+
+            T* begin() const noexcept
+            {
+                return _data;
+            }
+
+            T* end() noexcept
+            {
+                return _data + _size;
+            }
+
+            T* end() const noexcept
+            {
+                return _data + _size;
+            }
+
         private:
             // These two functions don't need to use scoped objects or standard allocators,
             // since this class is in fact an scoped allocator object itself.
@@ -302,23 +316,8 @@ namespace Microsoft::Console::Render
 
             constexpr SmallObjectOptimizer() = default;
 
-            SmallObjectOptimizer(const SmallObjectOptimizer& other)
-            {
-                const auto otherData = other.data();
-                const auto otherSize = other.size();
-                const auto data = initialize(otherSize);
-                memcpy(data, otherData, otherSize);
-            }
-
-            SmallObjectOptimizer& operator=(const SmallObjectOptimizer& other)
-            {
-                if (this != &other)
-                {
-                    delete this;
-                    new (this) SmallObjectOptimizer(other);
-                }
-                return &this;
-            }
+            SmallObjectOptimizer(const SmallObjectOptimizer& other) = delete;
+            SmallObjectOptimizer& operator=(const SmallObjectOptimizer& other) = delete;
 
             SmallObjectOptimizer(SmallObjectOptimizer&& other) noexcept
             {
@@ -484,14 +483,6 @@ namespace Microsoft::Console::Render
             }
         };
 
-        struct AtlasKeyHasher
-        {
-            size_t operator()(const AtlasKey& key) const noexcept
-            {
-                return key.hash();
-            }
-        };
-
         struct AtlasValueData
         {
             CellFlags flags = CellFlags::None;
@@ -500,15 +491,14 @@ namespace Microsoft::Console::Render
 
         struct AtlasValue
         {
-            constexpr AtlasValue() = default;
-
-            u16x2* initialize(CellFlags flags, u16 cellCount)
+            AtlasValue(CellFlags flags, u16 cellCount, u16x2** coords)
             {
+                __assume(coords != nullptr);
                 const auto size = dataSize(cellCount);
                 const auto data = _data.initialize(size);
                 WI_SetFlagIf(flags, CellFlags::Inlined, _data.would_inline(size));
                 data->flags = flags;
-                return &data->coords[0];
+                *coords = &data->coords[0];
             }
 
             const AtlasValueData* data() const noexcept
@@ -529,6 +519,248 @@ namespace Microsoft::Console::Render
         {
             const AtlasKey* key;
             const AtlasValue* value;
+        };
+
+        struct AtlasKeyHasher
+        {
+            using is_transparent = int;
+
+            size_t operator()(const AtlasKey& v) const noexcept
+            {
+                return v.hash();
+            }
+
+            size_t operator()(const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& v) const noexcept
+            {
+                return operator()(v->first);
+            }
+        };
+
+        struct AtlasKeyEq
+        {
+            using is_transparent = int;
+
+            bool operator()(const AtlasKey& a, const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& b) const noexcept
+            {
+                return a == b->first;
+            }
+
+            bool operator()(const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& a, const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& b) const noexcept
+            {
+                return operator()(a->first, b);
+            }
+        };
+
+        struct TileHashMap
+        {
+            TileHashMap() noexcept = default;
+
+            AtlasValue* find(const AtlasKey& key)
+            {
+                const auto it = _map.find(key);
+                if (it != _map.end())
+                {
+                    // Move the key to the head of the LRU queue.
+                    _lru.splice(_lru.begin(), _lru, *it);
+                    return &(*it)->second;
+                }
+                return nullptr;
+            }
+
+            std::list<std::pair<AtlasKey, AtlasValue>>::iterator insert(AtlasKey&& key, AtlasValue&& value)
+            {
+                // Insert the key/value right at the head of the LRU queue, just like find().
+                //
+                // && decays to & if the argument is named, because C++ is a simple language
+                // and so you have to std::move it again, because C++ is a simple language.
+                _lru.emplace_front(std::move(key), std::move(value));
+                auto it = _lru.begin();
+                _map.emplace(it);
+                return it;
+            }
+
+            void popOldestTiles(std::vector<u16x2>& out) noexcept
+            {
+                Expects(!_lru.empty());
+                const auto it = --_lru.end();
+
+                const auto key = it->first.data();
+                const auto value = it->second.data();
+                const auto beg = &value->coords[0];
+                const auto cellCount = key->attributes.cellCount;
+
+                const auto offset = out.size();
+                out.resize(offset + cellCount);
+                std::copy_n(beg, cellCount, out.begin() + offset);
+
+                _map.erase(it);
+                _lru.pop_back();
+            }
+
+        private:
+            // Please don't copy this code. It's a proof-of-concept.
+            // If you need a LRU hash-map, write a custom one with an intrusive
+            // prev/next linked list (it's easier than you might think!).
+            std::list<std::pair<AtlasKey, AtlasValue>> _lru;
+            std::unordered_set<std::list<std::pair<AtlasKey, AtlasValue>>::iterator, AtlasKeyHasher, AtlasKeyEq> _map;
+        };
+
+        // TileAllocator yields `tileSize`-sized tiles for our texture atlas.
+        // While doing so it'll grow the atlas size() by a factor of 2 if needed.
+        // Once the setMaxArea() is exceeded it'll stop growing and instead
+        // snatch tiles back from the oldest TileHashMap entries.
+        //
+        // The quadratic growth works by alternating the size()
+        // between an 1:1 and 2:1 aspect ratio, like so:
+        //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
+        // These initial tile positions allocate() returns are in a Z
+        // pattern over the available space in the atlas texture.
+        // You can log the `return _pos;` in allocate() using "Tracepoint"s
+        // in Visual Studio if you'd like to understand the Z pattern better.
+        struct TileAllocator
+        {
+            TileAllocator() = default;
+
+            explicit TileAllocator(u16x2 tileSize, u16x2 windowSize) noexcept :
+                _tileSize{ tileSize }
+            {
+                const auto initialSize = std::max(u16{ _absoluteMinSize }, std::bit_ceil(std::max(tileSize.x, tileSize.y)));
+                _size = { initialSize, initialSize };
+                _limit = { gsl::narrow_cast<u16>(initialSize - _tileSize.x), gsl::narrow_cast<u16>(initialSize - _tileSize.y) };
+                setMaxArea(windowSize);
+            }
+
+            u16x2 size() const noexcept
+            {
+                return _size;
+            }
+
+            void setMaxArea(u16x2 windowSize) noexcept
+            {
+                // _generate() uses a quadratic growth factor for _size's area.
+                // Once it exceeds the _maxArea, it'll start snatching tiles back from the
+                // TileHashMap using its LRU queue. Since _size will at least reach half
+                // of _maxSize (because otherwise it could still grow by a factor of 2)
+                // and by ensuring that _maxArea is at least twice the window size
+                // we make it impossible* for _generate() to return false before
+                // TileHashMap contains at least as many tiles as the window contains.
+                // If that wasn't the case we'd snatch and reuse tiles that are still in use.
+                // * lhecker's legal department:
+                //   No responsibility is taken for the correctness of this information.
+                setMaxArea(static_cast<size_t>(windowSize.x) * static_cast<size_t>(windowSize.y) * 2);
+            }
+
+            void setMaxArea(size_t max) noexcept
+            {
+                // We need to reserve at least 1 extra `tileArea`, because the tile
+                // at position {0,0} is already reserved for the cursor texture.
+                const auto tileArea = static_cast<size_t>(_tileSize.x) * static_cast<size_t>(_tileSize.y);
+                _maxArea = clamp(max + tileArea, _absoluteMinArea, _absoluteMaxArea);
+                _updateCanGenerate();
+            }
+
+            u16x2 allocate(TileHashMap& map) noexcept
+            {
+                if (_generate())
+                {
+                    return _pos;
+                }
+
+                if (_cache.empty())
+                {
+                    map.popOldestTiles(_cache);
+                }
+
+                const auto pos = _cache.back();
+                _cache.pop_back();
+                return pos;
+            }
+
+        private:
+            // This method generates the Z pattern coordinates
+            // described above in the TileAllocator comment.
+            bool _generate() noexcept
+            {
+                if (!_canGenerate)
+                {
+                    return false;
+                }
+
+                // We need to backup _pos/_size in case our resize below exceeds _maxArea.
+                // In that case we have to restore _pos/_size so that if _maxArea is increased
+                // (window resize for instance), we can pick up where we previously left off.
+                const auto pos = _pos;
+
+                _pos.x += _tileSize.x;
+                if (_pos.x <= _limit.x)
+                {
+                    return true;
+                }
+
+                _pos.y += _tileSize.y;
+                if (_pos.y <= _limit.y)
+                {
+                    _pos.x = _originX;
+                    return true;
+                }
+
+                // Same as for pos.
+                const auto size = _size;
+
+                // This implements a quadratic growth factor for _size, by
+                // alternating between an 1:1 and 2:1 aspect ratio, like so:
+                //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
+                // This behavior is strictly dependent on setMaxArea(u16x2)'s
+                // behavior. See it's comment for an explanation.
+                if (_size.x == _size.y)
+                {
+                    _size.x *= 2;
+                    _pos.y = 0;
+                }
+                else
+                {
+                    _size.y *= 2;
+                    _pos.x = 0;
+                }
+
+                _updateCanGenerate();
+                if (_canGenerate)
+                {
+                    _limit = { gsl::narrow_cast<u16>(_size.x - _tileSize.x), gsl::narrow_cast<u16>(_size.y - _tileSize.y) };
+                    _originX = _pos.x;
+                }
+                else
+                {
+                    _size = size;
+                    _pos = pos;
+                }
+
+                return _canGenerate;
+            }
+
+            void _updateCanGenerate() noexcept
+            {
+                _canGenerate = static_cast<size_t>(_size.x) * static_cast<size_t>(_size.y) <= _maxArea;
+            }
+
+            static constexpr u16 _absoluteMinSize = 256;
+            static constexpr size_t _absoluteMinArea = _absoluteMinSize * _absoluteMinSize;
+            // TODO: Consider using IDXGIAdapter3::QueryVideoMemoryInfo() and IDXGIAdapter3::RegisterVideoMemoryBudgetChangeNotificationEvent()
+            // That way we can make better to use of a user's available video memory.
+            static constexpr size_t _absoluteMaxArea = D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION * D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+
+            std::vector<u16x2> _cache;
+            size_t _maxArea = _absoluteMaxArea;
+            u16x2 _tileSize;
+            u16x2 _size;
+            u16x2 _limit;
+            // Since _pos starts at {0, 0}, it'll result in the first allocate()d tile to be at {_tileSize.x, 0}.
+            // Coincidentially that's exactly what we want as the cursor texture lives at {0, 0}.
+            u16x2 _pos;
+            u16 _originX = 0;
+            // Indicates whether we've exhausted our Z pattern across the atlas texture.
+            // If this is false, we have to snatch tiles back from TileHashMap.
+            bool _canGenerate = true;
         };
 
         struct CachedCursorOptions
@@ -613,7 +845,6 @@ namespace Microsoft::Console::Render
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
         Cell* _getCell(u16 x, u16 y) noexcept;
         void _setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept;
-        u16x2 _allocateAtlasTile() noexcept;
         void _flushBufferLine();
         void _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
 
@@ -634,7 +865,6 @@ namespace Microsoft::Console::Render
 
         static constexpr bool debugGlyphGenerationPerformance = false;
         static constexpr bool debugGeneralPerformance = false || debugGlyphGenerationPerformance;
-        static constexpr bool continuousRedraw = false || debugGeneralPerformance;
 
         static constexpr u16 u16min = 0x0000;
         static constexpr u16 u16max = 0xffff;
@@ -693,10 +923,9 @@ namespace Microsoft::Console::Render
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
             u16 maxEncounteredCellCount = 0;
             u16 scratchpadCellWidth = 0;
-            u16x2 atlasSizeInPixelLimit; // invalidated by ApiInvalidations::Font
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
-            u16x2 atlasPosition;
-            std::unordered_map<AtlasKey, AtlasValue, AtlasKeyHasher> glyphs;
+            TileHashMap glyphs;
+            TileAllocator tileAllocator;
             std::vector<AtlasQueueItem> glyphQueue;
 
             f32 gamma = 0;

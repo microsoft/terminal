@@ -64,7 +64,7 @@ try
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
-    assert(_r.frameLatencyWaitableObjectUsed);
+    assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
 
     // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
     // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
@@ -139,65 +139,22 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
 
 void AtlasEngine::_adjustAtlasSize()
 {
-    if (_r.atlasPosition.y < _r.atlasSizeInPixel.y && _r.atlasPosition.x < _r.atlasSizeInPixel.x)
+    // Only grow the atlas texture if our tileAllocator needs it to be larger.
+    // We have no way of shrinking our tileAllocator at the moment,
+    // so technically a `requiredSize != _r.atlasSizeInPixel`
+    // comparison would be sufficient, but better safe than sorry.
+    const auto requiredSize = _r.tileAllocator.size();
+    if (requiredSize.y <= _r.atlasSizeInPixel.y && requiredSize.x <= _r.atlasSizeInPixel.x)
     {
         return;
     }
-
-    const u32 limitX = _r.atlasSizeInPixelLimit.x;
-    const u32 limitY = _r.atlasSizeInPixelLimit.y;
-    const u32 posX = _r.atlasPosition.x;
-    const u32 posY = _r.atlasPosition.y;
-    const u32 cellX = _r.cellSize.x;
-    const u32 cellY = _r.cellSize.y;
-    const auto perCellArea = cellX * cellY;
-
-    // The texture atlas is filled like this:
-    //   x →
-    // y +--------------+
-    // ↓ |XXXXXXXXXXXXXX|
-    //   |XXXXXXXXXXXXXX|
-    //   |XXXXX↖        |
-    //   |      |       |
-    //   +------|-------+
-    // This is where _r.atlasPosition points at.
-    //
-    // Each X is a glyph texture tile that's occupied.
-    // We can compute the area of pixels consumed by adding the first
-    // two lines of X (rectangular) together with the last line of X.
-    const auto currentArea = posY * limitX + posX * cellY;
-    // minArea reserves enough room for 64 cells in all cases (mainly during startup).
-    const auto minArea = 64 * perCellArea;
-    auto newArea = std::max(minArea, currentArea);
-
-    // I want the texture to grow exponentially similar to std::vector, as this
-    // ensures we don't need to resize the texture again right after having done.
-    // This rounds newArea up to the next power of 2.
-    unsigned long int index;
-    _BitScanReverse(&index, newArea); // newArea can't be 0
-    newArea = u32{ 1 } << (index + 1);
-
-    const auto pixelPerRow = limitX * cellY;
-    // newArea might be just large enough that it spans N full rows of cells and one additional row
-    // just barely. This algorithm rounds up newArea to the _next_ multiple of cellY.
-    const auto wantedHeight = (newArea + pixelPerRow - 1) / pixelPerRow * cellY;
-    // The atlas might either be a N rows of full width (xLimit) or just one
-    // row (where wantedHeight == cellY) that doesn't quite fill it's maximum width yet.
-    const auto wantedWidth = wantedHeight != cellY ? limitX : newArea / perCellArea * cellX;
-
-    // We know that limitX/limitY were u16 originally, and thus it's safe to narrow_cast it back.
-    const auto height = gsl::narrow_cast<u16>(std::min(limitY, wantedHeight));
-    const auto width = gsl::narrow_cast<u16>(std::min(limitX, wantedWidth));
-
-    assert(width != 0);
-    assert(height != 0);
 
     wil::com_ptr<ID3D11Texture2D> atlasBuffer;
     wil::com_ptr<ID3D11ShaderResourceView> atlasView;
     {
         D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = width;
-        desc.Height = height;
+        desc.Width = requiredSize.x;
+        desc.Height = requiredSize.y;
         desc.MipLevels = 1;
         desc.ArraySize = 1;
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -222,7 +179,7 @@ void AtlasEngine::_adjustAtlasSize()
         _r.deviceContext->CopySubresourceRegion1(atlasBuffer.get(), 0, 0, 0, 0, _r.atlasBuffer.get(), 0, &box, D3D11_COPY_NO_OVERWRITE);
     }
 
-    _r.atlasSizeInPixel = u16x2{ width, height };
+    _r.atlasSizeInPixel = requiredSize;
     _r.atlasBuffer = std::move(atlasBuffer);
     _r.atlasView = std::move(atlasView);
     _setShaderResources();
@@ -346,7 +303,7 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     _r.d2dRenderTarget->DrawTextLayout({}, textLayout.get(), _r.brush.get(), options);
     THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
 
-    for (uint32_t i = 0; i < cells; ++i)
+    for (u32 i = 0; i < cells; ++i)
     {
         // Specifying NO_OVERWRITE means that the system can assume that existing references to the surface that
         // may be in flight on the GPU will not be affected by the update, so the copy can proceed immediately
