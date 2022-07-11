@@ -85,16 +85,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _Name;
     }
 
-    bool ColorSchemeViewModel::IsInBoxScheme()
-    {
-        return _isInBoxScheme;
-    }
-
-    void ColorSchemeViewModel::IsInBoxScheme(bool isInBoxScheme)
-    {
-        _isInBoxScheme = isInBoxScheme;
-    }
-
     bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)
     {
         return _parentPageVM.RequestRenameCurrentScheme(newName);

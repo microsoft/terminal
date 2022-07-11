@@ -26,15 +26,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring Name();
         void Name(winrt::hstring newName);
 
-        bool IsInBoxScheme();
-        void IsInBoxScheme(bool isInBoxScheme);
-
         bool RequestRename(winrt::hstring newName);
 
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
+        WINRT_PROPERTY(bool, IsInBoxScheme);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);
 
@@ -46,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
-        bool _isInBoxScheme;
+        //bool _isInBoxScheme;
         Editor::ColorSchemesPageViewModel _parentPageVM{ nullptr };
     };
 
