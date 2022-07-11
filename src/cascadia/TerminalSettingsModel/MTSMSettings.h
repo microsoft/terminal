@@ -51,6 +51,7 @@ Author(s):
     X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                   \
     X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                   \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                             \
+    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                       \
     X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                         \
     X(bool, DisableAnimations, "disableAnimations", false)                                                                                                 \
     X(hstring, StartupActions, "startupActions", L"")                                                                                                      \

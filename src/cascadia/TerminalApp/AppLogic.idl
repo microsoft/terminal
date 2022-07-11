@@ -70,6 +70,7 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         void Maximized(Boolean newMaximized); 
         Boolean AlwaysOnTop { get; };
+        Boolean AutoHideWindow { get; };
 
         void IdentifyWindow();
         String WindowName;

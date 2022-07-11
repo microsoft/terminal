@@ -1968,6 +1968,11 @@
             "useAnyExisting"
           ],
           "type": "string"
+        },
+        "autoHideWindow": {
+          "default": false,
+          "description": "If enabled, Terminal window will be hidden as soon as it loses focus.",
+          "type": "boolean"
         }
       },
       "required": [
