@@ -7,11 +7,15 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
+#include "RenderingViewModel.h"
 #include "Actions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
+#include "GlobalAppearanceViewModel.h"
 #include "ColorSchemes.h"
 #include "AddProfile.h"
+#include "InteractionViewModel.h"
+#include "LaunchViewModel.h"
 #include "..\types\inc\utils.hpp"
 
 #include <LibraryResources.h>
@@ -337,19 +341,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (clickedItemTag == launchTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(_settingsClone));
+            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Launch/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == interactionTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == renderingTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -391,7 +395,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }

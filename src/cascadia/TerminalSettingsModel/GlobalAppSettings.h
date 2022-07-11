@@ -57,12 +57,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DefaultProfile(const guid& defaultProfile) noexcept;
         guid DefaultProfile() const;
 
-        // TODO GH#9207: Remove this once we have a GlobalAppSettingsViewModel in TerminalSettingsEditor
-        void SetInvertedDisableAnimationsValue(bool invertedDisableAnimationsValue)
-        {
-            DisableAnimations(!invertedDisableAnimationsValue);
-        }
-
         Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
         void AddTheme(const Model::Theme& theme);
         Model::Theme CurrentTheme() noexcept;
