@@ -34,7 +34,7 @@ using namespace Microsoft::Console::Types;
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn,
                            _invalidMap,
-                           til::rect{ _lastViewport.ToInclusive() },
+                           _lastViewport.ToExclusive(),
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
@@ -126,7 +126,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
-                                                const COORD coord,
+                                                const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
 {
@@ -145,7 +145,7 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
                                                      const COLORREF /*color*/,
                                                      const size_t /*cchLine*/,
-                                                     const COORD /*coordTarget*/) noexcept
+                                                     const til::point /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -158,7 +158,7 @@ using namespace Microsoft::Console::Types;
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
-    _trace.TracePaintCursor(til::point{ options.coordCursor });
+    _trace.TracePaintCursor(options.coordCursor);
 
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
@@ -176,7 +176,7 @@ using namespace Microsoft::Console::Types;
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintSelection(const til::rect& /*rect*/) noexcept
 {
     return S_OK;
 }
@@ -339,7 +339,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
-                                                      const COORD coord) noexcept
+                                                      const til::point coord) noexcept
 {
     try
     {
@@ -348,11 +348,11 @@ using namespace Microsoft::Console::Types;
         _bufferLine.clear();
         _bufferLine.reserve(clusters.size());
 
-        short totalWidth = 0;
+        til::CoordType totalWidth = 0;
         for (const auto& cluster : clusters)
         {
             _bufferLine.append(cluster.GetText());
-            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
+            totalWidth += cluster.GetColumns();
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
@@ -374,7 +374,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
-                                                     const COORD coord,
+                                                     const til::point coord,
                                                      const bool lineWrapped) noexcept
 {
     if (coord.Y < _virtualTop)
@@ -384,38 +384,29 @@ using namespace Microsoft::Console::Types;
 
     _bufferLine.clear();
     _bufferLine.reserve(clusters.size());
-    short totalWidth = 0;
+    til::CoordType totalWidth = 0;
     for (const auto& cluster : clusters)
     {
         _bufferLine.append(cluster.GetText());
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
+        totalWidth += cluster.GetColumns();
     }
     const auto cchLine = _bufferLine.size();
 
-    auto foundNonspace = false;
-    size_t lastNonSpace = 0;
-    for (size_t i = 0; i < cchLine; i++)
-    {
-        if (_bufferLine.at(i) != L'\x20')
-        {
-            lastNonSpace = i;
-            foundNonspace = true;
-        }
-    }
+    const auto spaceIndex = _bufferLine.find_last_not_of(L' ');
+    const auto foundNonspace = spaceIndex != decltype(_bufferLine)::npos;
+    const auto nonSpaceLength = foundNonspace ? spaceIndex + 1 : 0;
+
     // Examples:
     // - "  ":
-    //      cch = 2, lastNonSpace = 0, foundNonSpace = false
-    //      cch-lastNonSpace = 2 -> good
-    //      cch-lastNonSpace-(0) = 2 -> good
+    //      cch = 2, spaceIndex = 0, foundNonSpace = false
+    //      cch-nonSpaceLength = 2
     // - "A "
-    //      cch = 2, lastNonSpace = 0, foundNonSpace = true
-    //      cch-lastNonSpace = 2 -> bad
-    //      cch-lastNonSpace-(1) = 1 -> good
+    //      cch = 2, spaceIndex = 0, foundNonSpace = true
+    //      cch-nonSpaceLength = 1
     // - "AA"
-    //      cch = 2, lastNonSpace = 1, foundNonSpace = true
-    //      cch-lastNonSpace = 1 -> bad
-    //      cch-lastNonSpace-(1) = 0 -> good
-    const auto numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+    //      cch = 2, spaceIndex = 1, foundNonSpace = true
+    //      cch-nonSpaceLength = 0
+    const auto numSpaces = gsl::narrow_cast<til::CoordType>(cchLine - nonSpaceLength);
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase
@@ -460,9 +451,7 @@ using namespace Microsoft::Console::Types;
     const auto removeSpaces = !lineWrapped && (useEraseChar ||
                                                _clearedAllThisFrame ||
                                                (_newBottomLine && printingBottomLine && bgMatched));
-    const auto cchActual = removeSpaces ?
-                               (cchLine - numSpaces) :
-                               cchLine;
+    const auto cchActual = removeSpaces ? nonSpaceLength : cchLine;
 
     const auto columnsActual = removeSpaces ?
                                    (totalWidth - numSpaces) :
@@ -522,7 +511,7 @@ using namespace Microsoft::Console::Types;
     // character of the row.
     if (_lastText.X < _lastViewport.RightExclusive())
     {
-        _lastText.X += static_cast<short>(columnsActual);
+        _lastText.X += columnsActual;
     }
     // GH#1245: If we wrote the exactly last char of the row, then we're in the
     // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
@@ -535,13 +524,6 @@ using namespace Microsoft::Console::Types;
         _delayedEolWrap = true;
     }
 
-    short sNumSpaces;
-    try
-    {
-        sNumSpaces = gsl::narrow<short>(numSpaces);
-    }
-    CATCH_RETURN();
-
     if (useEraseChar)
     {
         // ECH doesn't actually move the cursor itself. However, we think that
@@ -550,11 +532,11 @@ using namespace Microsoft::Console::Types;
         //   cursor somewhere else before the end of the frame, we'll move the
         //   cursor to the deferred position at the end of the frame, or right
         //   before we need to print new text.
-        _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+        _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
 
         if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
         {
-            RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
+            RETURN_IF_FAILED(_EraseCharacter(numSpaces));
         }
         else
         {
@@ -567,7 +549,7 @@ using namespace Microsoft::Console::Types;
         //      line is already empty.
         if (optimalToUseECH)
         {
-            _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+            _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
         }
         else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
@@ -575,7 +557,7 @@ using namespace Microsoft::Console::Types;
             auto spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
-            _lastText.X += static_cast<short>(numSpaces);
+            _lastText.X += numSpaces;
         }
     }
 

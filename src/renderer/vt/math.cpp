@@ -45,7 +45,7 @@ using namespace Microsoft::Console::Types;
 // - pRectToOr - Add this rectangle to the existing one.
 // Return Value:
 // - <none>
-void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const
+void VtEngine::_OrRect(_Inout_ til::inclusive_rect* const pRectExisting, const til::inclusive_rect* const pRectToOr) const
 {
     pRectExisting->Left = std::min(pRectExisting->Left, pRectToOr->Left);
     pRectExisting->Top = std::min(pRectExisting->Top, pRectToOr->Top);
@@ -82,7 +82,7 @@ bool VtEngine::_WillWriteSingleChar() const
     // Either the next character to the right or the immediately previous
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
-    auto invalidIsNext = invalidPoint == til::point{ _lastText };
+    auto invalidIsNext = invalidPoint == _lastText;
     auto invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
 
     return invalidIsNext || invalidIsLast;

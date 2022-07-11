@@ -120,11 +120,16 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
         // If they're in the alt buffer, then when they query in that way, the
         //      value they'll get is the main buffer's size, which isn't updated
         //      until we switch back to it.
-        context.GetActiveBuffer().GetScreenBufferInformation(&data.dwSize,
-                                                             &data.dwCursorPosition,
-                                                             &data.srWindow,
+        til::size dwSize;
+        til::point dwCursorPosition;
+        til::inclusive_rect srWindow;
+        til::size dwMaximumWindowSize;
+
+        context.GetActiveBuffer().GetScreenBufferInformation(&dwSize,
+                                                             &dwCursorPosition,
+                                                             &srWindow,
                                                              &data.wAttributes,
-                                                             &data.dwMaximumWindowSize,
+                                                             &dwMaximumWindowSize,
                                                              &data.wPopupAttributes,
                                                              data.ColorTable);
 
@@ -134,8 +139,13 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
         //   to return an inclusive rect.
         // - For GetConsoleScreenBufferInfo, it will leave these values
         //   untouched, returning an exclusive rect.
-        data.srWindow.Right += 1;
-        data.srWindow.Bottom += 1;
+        srWindow.Right += 1;
+        srWindow.Bottom += 1;
+
+        data.dwSize = til::unwrap_coord_size(dwSize);
+        data.dwCursorPosition = til::unwrap_coord(dwCursorPosition);
+        data.srWindow = til::unwrap_small_rect(srWindow);
+        data.dwMaximumWindowSize = til::unwrap_coord_size(dwMaximumWindowSize);
     }
     CATCH_LOG();
 }
@@ -179,8 +189,8 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSel
 
             WI_SetFlag(consoleSelectionInfo.dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
-            consoleSelectionInfo.dwSelectionAnchor = selection.GetSelectionAnchor();
-            consoleSelectionInfo.srSelection = selection.GetSelectionRectangle();
+            consoleSelectionInfo.dwSelectionAnchor = til::unwrap_coord(selection.GetSelectionAnchor());
+            consoleSelectionInfo.srSelection = til::unwrap_small_rect(selection.GetSelectionRectangle());
         }
         else
         {
@@ -216,7 +226,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // - S_OK, E_INVALIDARG or code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
                                                           const DWORD index,
-                                                          COORD& size) noexcept
+                                                          til::size& size) noexcept
 {
     try
     {
@@ -232,7 +242,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         else
         {
             // Invalid font is 0,0 with STATUS_INVALID_PARAMETER
-            size = { 0 };
+            size = {};
             return E_INVALIDARG;
         }
     }
@@ -258,7 +268,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 
         const auto& activeScreenInfo = context.GetActiveBuffer();
 
-        COORD WindowSize;
+        til::size WindowSize;
         if (isForMaximumWindowSize)
         {
             WindowSize = activeScreenInfo.GetMaxWindowSizeInCharacters();
@@ -267,7 +277,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         {
             WindowSize = activeScreenInfo.GetCurrentFont().GetUnscaledSize();
         }
-        consoleFontInfoEx.dwFontSize = WindowSize;
+        consoleFontInfoEx.dwFontSize = til::unwrap_coord_size(WindowSize);
 
         consoleFontInfoEx.nFont = 0;
 
@@ -307,7 +317,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         FontInfo fi(FaceName,
                     gsl::narrow_cast<unsigned char>(consoleFontInfoEx.FontFamily),
                     consoleFontInfoEx.FontWeight,
-                    consoleFontInfoEx.dwFontSize,
+                    til::wrap_coord_size(consoleFontInfoEx.dwFontSize),
                     gci.OutputCP);
 
         // TODO: MSFT: 9574827 - should this have a failure case?
@@ -486,7 +496,7 @@ void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
 // - context - The output buffer concerned
 // - size - receives the size in character count (rows/columns)
 void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
-                                                  COORD& size) noexcept
+                                                  til::size& size) noexcept
 {
     try
     {
@@ -508,7 +518,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
-                                                                  const COORD size) noexcept
+                                                                  const til::size size) noexcept
 {
     try
     {
@@ -545,8 +555,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto overflow = screenInfo.GetViewport().BottomRightExclusive() - screenInfo.GetBufferSize().Dimensions();
         if (overflow.X > 0 || overflow.Y > 0)
         {
-            overflow = { std::max<SHORT>(overflow.X, 0), std::max<SHORT>(overflow.Y, 0) };
-            RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, -overflow, false));
+            overflow = { -std::max(overflow.X, 0), -std::max(overflow.Y, 0) };
+            RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, overflow, false));
         }
 
         // And also that the cursor position is clamped within the buffer boundaries.
@@ -597,27 +607,48 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
             commandLine.Hide(FALSE);
 
-            LOG_IF_FAILED(context.ResizeScreenBuffer(data.dwSize, TRUE));
+            LOG_IF_FAILED(context.ResizeScreenBuffer(til::wrap_coord_size(data.dwSize), TRUE));
 
             commandLine.Show();
         }
         const auto newBufferSize = context.GetBufferSize().Dimensions();
 
+        bool changedOneTableEntry = false;
         for (size_t i = 0; i < std::size(data.ColorTable); i++)
         {
-            gci.SetLegacyColorTableEntry(i, data.ColorTable[i]);
+            // Check if we actually changed a palette color
+            const auto& newColor{ data.ColorTable[i] };
+            changedOneTableEntry = changedOneTableEntry || (newColor != gci.GetColorTableEntry(i));
+
+            // Set the new value.
+            gci.SetLegacyColorTableEntry(i, newColor);
+        }
+
+        // GH#399: Trigger a redraw, so that updated colors are repainted, but
+        // only do this if we're not in conpty mode. ConPTY will update the
+        // colors of the palette elsewhere (after TODO GH#10639)
+        //
+        // Only do this if we actually changed the value of the palette though -
+        // this API gets called all the time to change all sorts of things, but
+        // not necessarily the palette.
+        if (changedOneTableEntry && !gci.IsInVtIoMode())
+        {
+            if (auto* pRender{ ServiceLocator::LocateGlobals().pRender })
+            {
+                pRender->TriggerRedrawAll();
+            }
         }
 
         context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
 
-        const auto requestedViewport = Viewport::FromExclusive(data.srWindow);
+        const auto requestedViewport = Viewport::FromExclusive(til::wrap_exclusive_small_rect(data.srWindow));
 
         auto NewSize = requestedViewport.Dimensions();
         // If we have a window, clamp the requested viewport to the max window size
         if (!ServiceLocator::LocateGlobals().IsHeadless())
         {
-            NewSize.X = std::min(NewSize.X, data.dwMaximumWindowSize.X);
-            NewSize.Y = std::min(NewSize.Y, data.dwMaximumWindowSize.Y);
+            NewSize.X = std::min<til::CoordType>(NewSize.X, data.dwMaximumWindowSize.X);
+            NewSize.Y = std::min<til::CoordType>(NewSize.Y, data.dwMaximumWindowSize.Y);
         }
 
         // If wrap text is on, then the window width must be the same size as the buffer width
@@ -655,8 +686,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto overflow = context.GetViewport().BottomRightExclusive() - context.GetBufferSize().Dimensions();
         if (overflow.X > 0 || overflow.Y > 0)
         {
-            overflow = { std::max<SHORT>(overflow.X, 0), std::max<SHORT>(overflow.Y, 0) };
-            RETURN_IF_NTSTATUS_FAILED(context.SetViewportOrigin(false, -overflow, false));
+            overflow = { -std::max(overflow.X, 0), -std::max(overflow.Y, 0) };
+            RETURN_IF_NTSTATUS_FAILED(context.SetViewportOrigin(false, overflow, false));
         }
 
         // And also that the cursor position is clamped within the buffer boundaries.
@@ -681,7 +712,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
-                                                                const COORD position) noexcept
+                                                                const til::point position) noexcept
 {
     try
     {
@@ -698,6 +729,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                     position.Y < 0));
         // clang-format on
 
+        // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(position));
+
         RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
 
         LOG_IF_FAILED(ConsoleImeResizeCompStrView());
@@ -708,7 +743,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // GH#1222 and GH#9754 - Use the "virtual" viewport here, so that the
         // viewport snaps back to the virtual viewport's location.
         const auto currentViewport = buffer.GetVirtualViewport().ToInclusive();
-        COORD delta{ 0 };
+        til::point delta;
         {
             // When evaluating the X offset, we must convert the buffer position to
             // equivalent screen coordinates, taking line rendition into account.
@@ -734,7 +769,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             }
         }
 
-        COORD newWindowOrigin{ 0 };
+        til::point newWindowOrigin;
         newWindowOrigin.X = currentViewport.Left + delta.X;
         newWindowOrigin.Y = currentViewport.Top + delta.Y;
         // SetViewportOrigin will worry about clamping these values to the
@@ -790,7 +825,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
                                                             const bool isAbsolute,
-                                                            const SMALL_RECT& windowRect) noexcept
+                                                            const til::inclusive_rect& windowRect) noexcept
 {
     try
     {
@@ -811,9 +846,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
 
-        COORD NewWindowSize;
-        NewWindowSize.X = (SHORT)(CalcWindowSizeX(Window));
-        NewWindowSize.Y = (SHORT)(CalcWindowSizeY(Window));
+        til::point NewWindowSize;
+        NewWindowSize.X = CalcWindowSizeX(Window);
+        NewWindowSize.Y = CalcWindowSizeY(Window);
 
         // see MSFT:17415266
         // If we have a actual head, we care about the maximum size the window can be.
@@ -864,9 +899,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
-                                                                  const SMALL_RECT& source,
-                                                                  const COORD target,
-                                                                  std::optional<SMALL_RECT> clip,
+                                                                  const til::inclusive_rect& source,
+                                                                  const til::point target,
+                                                                  std::optional<til::inclusive_rect> clip,
                                                                   const char fillCharacter,
                                                                   const WORD fillAttribute) noexcept
 {
@@ -894,9 +929,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
-                                                                  const SMALL_RECT& source,
-                                                                  const COORD target,
-                                                                  std::optional<SMALL_RECT> clip,
+                                                                  const til::inclusive_rect& source,
+                                                                  const til::point target,
+                                                                  std::optional<til::inclusive_rect> clip,
                                                                   const wchar_t fillCharacter,
                                                                   const WORD fillAttribute,
                                                                   const bool enableCmdShim) noexcept
@@ -936,6 +971,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
             if (sourceIsWholeBuffer && targetIsNegativeBufferHeight && noClipProvided && fillIsBlank)
             {
+                // It's important that we flush the renderer at this point so we don't
+                // have any pending output rendered after the scrollback is cleared.
+                ServiceLocator::LocateGlobals().pRender->TriggerFlush(false);
                 hr = gci.GetVtIo()->ManuallyClearScrollback();
             }
         }
@@ -1196,7 +1234,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
 [[nodiscard]] HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
                                                              const ULONG flags,
-                                                             COORD& newSize) noexcept
+                                                             til::size& newSize) noexcept
 {
     try
     {

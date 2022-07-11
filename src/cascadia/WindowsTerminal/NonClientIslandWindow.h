@@ -37,8 +37,8 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    virtual RECT GetNonClientFrame(UINT dpi) const noexcept override;
-    virtual SIZE GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
+    virtual til::rect GetNonClientFrame(UINT dpi) const noexcept override;
+    virtual til::size GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
 
     void Initialize() override;
 
@@ -47,8 +47,10 @@ public:
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
+    void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
+
 private:
-    std::optional<COORD> _oldIslandPos;
+    std::optional<til::point> _oldIslandPos;
 
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
@@ -70,7 +72,7 @@ private:
     void _ResizeDragBarWindow() noexcept;
 
     int _GetResizeHandleHeight() const noexcept;
-    RECT _GetDragAreaRect() const noexcept;
+    til::rect _GetDragAreaRect() const noexcept;
     int _GetTopBorderHeight() const noexcept;
     LRESULT _dragBarNcHitTest(const til::point pointer);
 

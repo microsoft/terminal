@@ -80,10 +80,10 @@ public:
 
     SCREEN_INFORMATION& ScreenInfo() noexcept;
 
-    const COORD& OriginalCursorPosition() const noexcept;
-    COORD& OriginalCursorPosition() noexcept;
+    til::point OriginalCursorPosition() const noexcept;
+    til::point& OriginalCursorPosition() noexcept;
 
-    COORD& BeforeDialogCursorPosition() noexcept;
+    til::point& BeforeDialogCursorPosition() noexcept;
 
     bool IsEchoInput() const noexcept;
     bool IsInsertMode() const noexcept;
@@ -147,8 +147,8 @@ private:
     SCREEN_INFORMATION& _screenInfo;
 
     // Note that cookedReadData's _originalCursorPosition is the position before ANY text was entered on the edit line.
-    COORD _originalCursorPosition;
-    COORD _beforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
+    til::point _originalCursorPosition;
+    til::point _beforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
 
     const bool _echoInput;
     const bool _lineInput;

@@ -9,13 +9,43 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      Background="{ThemeResource SolidBackgroundFillColorTertiary}"
       mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
+
+                <ResourceDictionary>
+                    <ResourceDictionary.ThemeDictionaries>
+
+                        <!--
+                            These two values are "SolidBackgroundFillColorTertiary".
+                            We can't just put those here though as
+                            StaticResources, because XAML will evaluate their
+                            values when the App is first loaded, and we'll
+                            always use the value from the OS theme, regardless
+                            of the requested theme. Kinda the same thing we've
+                            had to do with TabViewBackground in the past.
+                        -->
+
+                        <ResourceDictionary x:Key="Dark">
+                            <Color x:Key="SettingsPageBackground">#282828</Color>
+                        </ResourceDictionary>
+
+                        <ResourceDictionary x:Key="Light">
+                            <Color x:Key="SettingsPageBackground">#F9F9F9</Color>
+                        </ResourceDictionary>
+
+                        <ResourceDictionary x:Key="HighContrast">
+                            <!--  Define resources for HighContrast mode here  -->
+                            <StaticResource x:Key="SettingsPageBackground"
+                                            ResourceKey="SystemColorWindowColorBrush" />
+                        </ResourceDictionary>
+
+                    </ResourceDictionary.ThemeDictionaries>
+                </ResourceDictionary>
+
             </ResourceDictionary.MergedDictionaries>
 
             <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"
@@ -30,7 +60,7 @@
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
-                         Background="Transparent"
+                         Background="{ThemeResource SettingsPageBackground}"
                          IsBackButtonVisible="Collapsed"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
@@ -149,7 +179,7 @@
             </Frame>
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"
-                  Height="80"
+                  Height="55"
                   BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                   BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>
@@ -166,14 +196,14 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
-                    <Button x:Name="ResetButton"
-                            x:Uid="Settings_ResetSettingsButton"
-                            Click="ResetButton_Click" />
                     <Button x:Name="SaveButton"
                             x:Uid="Settings_SaveSettingsButton"
-                            Margin="10,0,0,0"
                             Click="SaveButton_Click"
                             Style="{StaticResource AccentButtonStyle}" />
+                    <Button x:Name="ResetButton"
+                            x:Uid="Settings_ResetSettingsButton"
+                            Margin="10,0,0,0"
+                            Click="ResetButton_Click" />
                 </StackPanel>
             </Grid>
         </Grid>

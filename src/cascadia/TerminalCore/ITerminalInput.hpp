@@ -17,10 +17,10 @@ namespace Microsoft::Terminal::Core
         ITerminalInput& operator=(ITerminalInput&&) = default;
 
         virtual bool SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states, const bool keyDown) = 0;
-        virtual bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) = 0;
+        virtual bool SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) = 0;
         virtual bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) = 0;
 
-        [[nodiscard]] virtual HRESULT UserResize(const COORD size) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UserResize(const til::size size) noexcept = 0;
         virtual void UserScrollViewport(const int viewTop) = 0;
         virtual int GetScrollOffset() = 0;
 

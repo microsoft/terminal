@@ -58,7 +58,7 @@ public:
 
     void ShowWindow(bool showOrHide) override;
 
-    bool ResizeWindow(const size_t width, const size_t height) override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
 
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
@@ -67,11 +67,14 @@ public:
     void CopyToClipboard(const std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(const std::wstring_view uri) override;
+    void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) override;
 
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
+
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

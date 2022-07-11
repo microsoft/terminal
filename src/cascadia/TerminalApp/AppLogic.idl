@@ -35,7 +35,7 @@ namespace TerminalApp
 
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
-    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
+    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         AppLogic();
 
@@ -94,6 +94,8 @@ namespace TerminalApp
         void WindowVisibilityChanged(Boolean showOrHide);
 
         TaskbarState TaskbarState{ get; };
+        Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        void WindowActivated(Boolean activated);
 
         Boolean ShouldUsePersistedLayout();
         Boolean ShouldImmediatelyHandoffToElevated();
@@ -104,6 +106,8 @@ namespace TerminalApp
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
+
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 

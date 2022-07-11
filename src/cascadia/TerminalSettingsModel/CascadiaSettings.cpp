@@ -14,6 +14,7 @@
 
 #include <shellapi.h>
 #include <shlwapi.h>
+#include <til/latch.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -408,6 +409,7 @@ void CascadiaSettings::_validateSettings()
     _validateMediaResources();
     _validateKeybindings();
     _validateColorSchemesInCommands();
+    _validateThemeExists();
 }
 
 // Method Description:
@@ -558,6 +560,13 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
             if (auto profile = GetProfileByIndex(gsl::narrow<uint32_t>(index.Value())))
             {
                 return profile;
+            }
+            else
+            {
+                // GH#11114 - Return NOTHING if they asked for a profile index
+                // outside the range of available profiles.
+                // Really, the caller should check this beforehand
+                return nullptr;
             }
         }
 
@@ -1113,12 +1122,27 @@ void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& term
 // but in the future it might be worthwhile to change the code to use list indices instead.
 void CascadiaSettings::_refreshDefaultTerminals()
 {
-    if (!_defaultTerminals)
+    if (_defaultTerminals)
     {
-        auto [defaultTerminals, defaultTerminal] = DefaultTerminal::Available();
-        _defaultTerminals = winrt::single_threaded_observable_vector(std::move(defaultTerminals));
-        _currentDefaultTerminal = std::move(defaultTerminal);
+        return;
     }
+
+    // This is an extract of extractValueFromTaskWithoutMainThreadAwait
+    // as DefaultTerminal::Available creates the exact same issue.
+    std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
+    til::latch latch{ 1 };
+
+    std::ignore = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
+        co_await winrt::resume_background();
+        result = DefaultTerminal::Available();
+    }();
+
+    latch.wait();
+    _defaultTerminals = winrt::single_threaded_observable_vector(std::move(result.first));
+    _currentDefaultTerminal = std::move(result.second);
 }
 
 void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
@@ -1128,4 +1152,15 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
         WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
     }
     CATCH_LOG();
+}
+
+void CascadiaSettings::_validateThemeExists()
+{
+    if (!_globals->Themes().HasKey(_globals->Theme()))
+    {
+        _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+
+        // safely fall back to system as the theme.
+        _globals->Theme(L"system");
+    }
 }

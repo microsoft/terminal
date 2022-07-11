@@ -142,11 +142,14 @@ namespace Microsoft::Console::VirtualTerminal
             XT_PushSgr = VTID("#{"),
             XT_PopSgr = VTID("#}"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECAC_AssignColor = VTID(",|"),
+            DECPS_PlaySound = VTID(",~")
         };
 
         enum DcsActionCodes : uint64_t
         {
             DECDLD_DownloadDRCS = VTID("{"),
+            DECRSTS_RestoreTerminalState = VTID("$p"),
             DECRQSS_RequestSetting = VTID("$q")
         };
 
@@ -184,7 +187,9 @@ namespace Microsoft::Console::VirtualTerminal
             SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
-            ResetCursorColor = 112
+            ResetCursorColor = 112,
+            FinalTermAction = 133,
+            ITerm2Action = 1337,
         };
 
         bool _GetOscTitle(const std::wstring_view string,

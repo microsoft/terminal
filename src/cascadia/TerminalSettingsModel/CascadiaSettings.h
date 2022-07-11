@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const Json::Value& colorSchemes;
             const Json::Value& profileDefaults;
             const Json::Value& profilesList;
+            const Json::Value& themes;
         };
 
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
@@ -144,6 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         static const std::filesystem::path& _settingsPath();
+        static const std::filesystem::path& _releaseSettingsPath();
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
         Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
@@ -157,6 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
+        void _validateThemeExists();
 
         // user settings
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();

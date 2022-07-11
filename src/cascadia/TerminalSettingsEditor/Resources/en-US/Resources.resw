@@ -235,6 +235,22 @@
     <value>When disabled, the tab bar will appear when a new tab is created.</value>
     <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
   </data>
+  <data name="Globals_NewTabPosition.Header" xml:space="preserve">
+    <value>Position of the new tab</value>
+    <comment>Header for a control to select position of new tab.</comment>
+  </data>
+  <data name="Globals_NewTabPosition.HelpText" xml:space="preserve">
+    <value>Specifies position of the new tab</value>
+    <comment>A description for what the "Position of the new tab" setting does.</comment>
+  </data>
+  <data name="Globals_NewTabPositionAtTheEnd.Content" xml:space="preserve">
+    <value>At the end</value>
+    <comment>An option to choose from for the "Position of the new tab" setting. When selected new tab appears at the end.</comment>
+  </data>
+  <data name="Globals_NewTabPositionAfterCurrentTab.Content" xml:space="preserve">
+    <value>After current tab</value>
+    <comment>An option to choose from for the "Position of the new tab" setting. When selected new tab appears after currently selected tab.</comment>
+  </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>

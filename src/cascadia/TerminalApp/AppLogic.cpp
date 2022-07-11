@@ -51,6 +51,7 @@ static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"InvalidSplitSize"),
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
+    USES_RESOURCE(L"UnknownTheme"),
 };
 static const std::array settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -367,11 +368,12 @@ namespace winrt::TerminalApp::implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings.GlobalSettings().Theme() };
+            auto theme{ _settings.GlobalSettings().CurrentTheme() };
+            auto requestedTheme{ theme.RequestedTheme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
             {
-                element.RequestedTheme(theme);
+                element.RequestedTheme(requestedTheme);
                 element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
             }
         } };
@@ -737,13 +739,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {
-        if (!_loadedInitialSettings)
-        {
-            // Load settings if we haven't already
-            LoadSettings();
-        }
-
-        return _settings.GlobalSettings().Theme();
+        return Theme().RequestedTheme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -964,7 +960,7 @@ namespace winrt::TerminalApp::implementation
 
     void AppLogic::_RefreshThemeRoutine()
     {
-        _ApplyTheme(_settings.GlobalSettings().Theme());
+        _ApplyTheme(GetRequestedTheme());
     }
 
     // Function Description:
@@ -1217,6 +1213,19 @@ namespace winrt::TerminalApp::implementation
             return _root->TaskbarState();
         }
         return {};
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush AppLogic::TitlebarBrush()
+    {
+        if (_root)
+        {
+            return _root->TitlebarBrush();
+        }
+        return { nullptr };
+    }
+    void AppLogic::WindowActivated(const bool activated)
+    {
+        _root->WindowActivated(activated);
     }
 
     bool AppLogic::HasCommandlineArguments() const noexcept
@@ -1645,4 +1654,15 @@ namespace winrt::TerminalApp::implementation
     {
         return _settings.GlobalSettings().ShowTitleInTitlebar();
     }
+
+    Microsoft::Terminal::Settings::Model::Theme AppLogic::Theme()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+        return _settings.GlobalSettings().CurrentTheme();
+    }
+
 }

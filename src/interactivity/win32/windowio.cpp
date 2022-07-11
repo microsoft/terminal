@@ -116,7 +116,7 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(const COORD cMousePosition,
+bool HandleTerminalMouseEvent(const til::point cMousePosition,
                               const unsigned int uiButton,
                               const short sModifierKeystate,
                               const short sWheelDelta)
@@ -141,7 +141,7 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
         auto clampedPosition{ cMousePosition };
         const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
         clampViewport.Clamp(clampedPosition);
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(til::wrap_coord(clampedPosition), uiButton, sModifierKeystate, sWheelDelta, state);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
     }
 
     return fWasHandled;
@@ -612,16 +612,16 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     //  results on systems with multiple monitors. Systems with multiple monitors
     //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the
     //  coordinates as unsigned quantities.
-    short x = GET_X_LPARAM(lParam);
-    short y = GET_Y_LPARAM(lParam);
+    const auto x = GET_X_LPARAM(lParam);
+    const auto y = GET_Y_LPARAM(lParam);
 
-    COORD MousePosition;
+    til::point MousePosition;
     // If it's a *WHEEL event, it's in screen coordinates, not window
     if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
     {
         POINT coords = { x, y };
         ScreenToClient(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &coords);
-        MousePosition = { (SHORT)coords.x, (SHORT)coords.y };
+        MousePosition = { coords.x, coords.y };
     }
     else
     {
@@ -1036,9 +1036,18 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // If we are headless (because we're a pseudo console), we
         // will still need a window handle in the win32 environment
         // in case anyone sends messages at that HWND (vim.exe is an example.)
-        // We have to CreateWindow on the same thread that will pump the messages
-        // which is this thread.
-        ServiceLocator::LocatePseudoWindow();
+        //
+        // IMPORTANT! We have to CreateWindow on the same thread that will pump
+        // the messages, which is this thread. If you DON'T, then a DPI change
+        // in the owning hwnd will cause us to get a dpi change as well, which
+        // we'll never deque and handle, effectively HANGING THE OWNER HWND.
+        // ServiceLocator::LocatePseudoWindow();
+        //
+        // Instead of just calling LocatePseudoWindow, make sure to go through
+        // VtIo's CreatePseudoWindow, which will make sure that the window is
+        // successfully created with the owner configured when the window is
+        // first created. See GH#13066 for details.
+        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
     }
 
     UnlockConsole();

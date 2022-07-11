@@ -47,6 +47,8 @@ namespace Microsoft::Console::Utils
     til::color ColorFromHexString(const std::string_view wstr);
     std::optional<til::color> ColorFromXTermColor(const std::wstring_view wstr) noexcept;
     std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
+    til::color ColorFromHLS(const int h, const int l, const int s) noexcept;
+    til::color ColorFromRGB100(const int r, const int g, const int b) noexcept;
 
     bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);

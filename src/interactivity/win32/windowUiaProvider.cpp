@@ -299,12 +299,12 @@ HWND WindowUiaProvider::GetWindowHandle() const
     return S_OK;
 }
 
-void WindowUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+void WindowUiaProvider::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     _baseWindow->ChangeViewport(NewWindow);
 }
 
-RECT WindowUiaProvider::GetWindowRect() const noexcept
+til::rect WindowUiaProvider::GetWindowRect() const noexcept
 {
     return _baseWindow->GetWindowRect();
 }

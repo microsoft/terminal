@@ -39,7 +39,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         [[nodiscard]] NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
         [[nodiscard]] NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
         [[nodiscard]] NTSTATUS RequestSetCursor(_In_ const CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
-        [[nodiscard]] NTSTATUS RequestUpdateDisplay(_In_ SHORT RowIndex) const;
+        [[nodiscard]] NTSTATUS RequestUpdateDisplay(_In_ til::CoordType RowIndex) const;
 
         [[nodiscard]] USHORT GetDisplayMode() const noexcept;
 
@@ -50,7 +50,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         [[nodiscard]] NTSTATUS InitializeBgfx();
         [[nodiscard]] NTSTATUS InitializeWddmCon();
 
-        std::unique_ptr<Render::WddmConEngine> pWddmConEngine;
+        Render::WddmConEngine* pWddmConEngine = nullptr;
 
     private:
         [[nodiscard]] NTSTATUS EnsureConnection();
@@ -58,7 +58,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         VOID HandleFocusEvent(const CIS_EVENT* const FocusEvent);
 
-        std::unique_ptr<Render::BgfxEngine> _bgfxEngine;
+        Render::BgfxEngine* _bgfxEngine = nullptr;
 
         HANDLE _inputPipeThreadHandle;
 

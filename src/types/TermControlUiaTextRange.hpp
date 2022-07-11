@@ -39,8 +39,8 @@ namespace Microsoft::Terminal
         // specific endpoint range
         HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
                                        _In_ IRawElementProviderSimple* const pProvider,
-                                       const COORD start,
-                                       const COORD end,
+                                       const til::point start,
+                                       const til::point end,
                                        bool blockRange = false,
                                        const std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept override;
 
@@ -55,8 +55,8 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
 
     protected:
-        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
-        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
-        const COORD _getScreenFontSize() const noexcept override;
+        void _TranslatePointToScreen(til::point* clientPoint) const override;
+        void _TranslatePointFromScreen(til::point* screenPoint) const override;
+        til::size _getScreenFontSize() const noexcept override;
     };
 }

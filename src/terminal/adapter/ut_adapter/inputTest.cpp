@@ -38,6 +38,7 @@ public:
     static void s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
     TEST_METHOD(TerminalInputTests);
+    TEST_METHOD(TestFocusEvents);
     TEST_METHOD(TerminalInputModifierKeyTests);
     TEST_METHOD(TerminalInputNullKeyTests);
     TEST_METHOD(DifferentModifiersTest);
@@ -300,10 +301,62 @@ void InputTest::TerminalInputTests()
     inputEvent = IInputEvent::Create(irUnhandled);
     VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify MENU_EVENT was NOT handled.");
 
-    Log::Comment(L"Testing FOCUS_EVENT");
-    irUnhandled.EventType = FOCUS_EVENT;
-    inputEvent = IInputEvent::Create(irUnhandled);
-    VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT was NOT handled.");
+    // Testing FOCUS_EVENTs is handled by TestFocusEvents
+}
+
+void InputTest::TestFocusEvents()
+{
+    // GH#12900, #13238
+    // Focus events that come in from the API should never be translated to VT sequences.
+    // We're relying on the fact that the INPUT_RECORD version of the ctor is only called by the API
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
+
+    INPUT_RECORD irTest = { 0 };
+    irTest.EventType = FOCUS_EVENT;
+
+    {
+        irTest.Event.FocusEvent.bSetFocus = false;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        irTest.Event.FocusEvent.bSetFocus = true;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        auto inputEvent = std::make_unique<FocusEvent>(false);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was NOT handled.");
+    }
+    {
+        auto inputEvent = std::make_unique<FocusEvent>(true);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was NOT handled.");
+    }
+
+    Log::Comment(L"Enable focus event handling");
+
+    pInput->SetInputMode(TerminalInput::Mode::FocusEvent, true);
+
+    {
+        irTest.Event.FocusEvent.bSetFocus = false;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        irTest.Event.FocusEvent.bSetFocus = true;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        s_expectedInput = L"\x1b[O";
+        auto inputEvent = std::make_unique<FocusEvent>(false);
+        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was handled.");
+    }
+    {
+        s_expectedInput = L"\x1b[I";
+        auto inputEvent = std::make_unique<FocusEvent>(true);
+        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was handled.");
+    }
 }
 
 void InputTest::TerminalInputModifierKeyTests()
@@ -540,7 +593,7 @@ void InputTest::TerminalInputNullKeyTests()
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
-    BYTE vkey = '2';
+    BYTE vkey = LOBYTE(VkKeyScanW(0));
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
     INPUT_RECORD irTest = { 0 };

@@ -38,7 +38,7 @@ OutputCellView::OutputCellView(const std::wstring_view view,
 // - Reports how many columns we expect the Chars() text data to consume
 // Return Value:
 // - Count of column cells on the screen
-size_t OutputCellView::Columns() const noexcept
+til::CoordType OutputCellView::Columns() const noexcept
 {
     if (DbcsAttr().IsSingle())
     {

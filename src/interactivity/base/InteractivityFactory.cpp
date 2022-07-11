@@ -320,8 +320,14 @@ using namespace Microsoft::Console::Interactivity;
                 // as far as the difference between parent/child and owner/owned
                 // windows). Evan K said we should do it this way, and he
                 // definitely knows.
-                const auto windowStyle = WS_OVERLAPPEDWINDOW;
-                const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED;
+                //
+                // GH#13066: Load-bearing: Make sure to set WS_POPUP. If you
+                // don't, then GetAncestor(GetConsoleWindow(), GA_ROOTOWNER)
+                // will return the console handle again, not the owning
+                // terminal's handle. It's not entirely clear why, but WS_POPUP
+                // is absolutely vital for this to work correctly.
+                const auto windowStyle = WS_OVERLAPPEDWINDOW | WS_POPUP;
+                const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
 
                 // Attempt to create window.
                 hwnd = CreateWindowExW(exStyles,
@@ -335,7 +341,7 @@ using namespace Microsoft::Console::Interactivity;
                                        owner,
                                        nullptr,
                                        nullptr,
-                                       nullptr);
+                                       this);
 
                 if (hwnd == nullptr)
                 {
@@ -472,7 +478,18 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
 // - <none>
 void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
 {
-    if (_pseudoWindowMessageCallback)
+    // BODGY
+    //
+    // GH#13158 - At least temporarily, only allow the PTY to HIDE the terminal
+    // window. There seem to be many issues with this so far, and the quickest
+    // route to mitigate them seems to be limiting the interaction here to
+    // allowing ConPTY to minimize the terminal only. This will still allow
+    // applications to hide the Terminal via GetConsoleWindow(), but should
+    // broadly prevent any other impact of this feature.
+    //
+    // Should we need to restore this functionality in the future, we should
+    // only do so with great caution.
+    if (_pseudoWindowMessageCallback && showOrHide == false)
     {
         _pseudoWindowMessageCallback(showOrHide);
     }
