@@ -1094,6 +1094,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_terminal->IsSelectionActive())
         {
             _terminal->SwitchSelectionEndpoint();
+            _updateSelectionUI();
             return true;
         }
         return false;
