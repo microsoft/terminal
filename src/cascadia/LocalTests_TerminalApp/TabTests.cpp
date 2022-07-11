@@ -681,6 +681,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryZoomPane()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
@@ -1312,7 +1316,8 @@ namespace TerminalAppLocalTests
         TestOnUIThread([&page]() {
             Log::Comment(L"Emulate previewing the SetColorScheme action");
             SetColorSchemeArgs args{ L"Vintage" };
-            page->_PreviewColorScheme(args);
+            ActionAndArgs actionAndArgs{ ShortcutAction::SetColorScheme, args };
+            page->_PreviewAction(actionAndArgs);
         });
 
         TestOnUIThread([&page]() {
@@ -1379,7 +1384,8 @@ namespace TerminalAppLocalTests
         TestOnUIThread([&page]() {
             Log::Comment(L"Emulate previewing the SetColorScheme action");
             SetColorSchemeArgs args{ L"Vintage" };
-            page->_PreviewColorScheme(args);
+            ActionAndArgs actionAndArgs{ ShortcutAction::SetColorScheme, args };
+            page->_PreviewAction(actionAndArgs);
         });
 
         TestOnUIThread([&page]() {

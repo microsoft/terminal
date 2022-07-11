@@ -7,6 +7,18 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    inline static constexpr std::array<std::wstring_view, 9> InBoxSchemes = {
+        L"Campbell",
+        L"Campbell Powershell",
+        L"Vintage",
+        L"One Half Dark",
+        L"One Half Light",
+        L"Solarized Dark",
+        L"Solarized Light",
+        L"Tango Dark",
+        L"Tango Light"
+    };
+
     ColorSchemesPageViewModel::ColorSchemesPageViewModel(const Model::CascadiaSettings& settings) :
         _settings{ settings },
         _viewModelToSchemeMap{ winrt::single_threaded_map<Editor::ColorSchemeViewModel, Model::ColorScheme>() }
@@ -56,6 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto scheme = pair.Value();
             Editor::ColorSchemeViewModel viewModel{ scheme, *this };
+            viewModel.IsInBoxScheme(std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) != std::end(InBoxSchemes));
             allColorSchemes.emplace_back(viewModel);
 
             // We will need access to the settings model object later, but we don't

@@ -21,16 +21,16 @@ enum class LineRendition
     DoubleHeightBottom
 };
 
-constexpr SMALL_RECT ScreenToBufferLine(const SMALL_RECT& line, const LineRendition lineRendition)
+constexpr til::inclusive_rect ScreenToBufferLine(const til::inclusive_rect& line, const LineRendition lineRendition)
 {
     // Use shift right to quickly divide the Left and Right by 2 for double width lines.
-    const SHORT scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
+    const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
     return { line.Left >> scale, line.Top, line.Right >> scale, line.Bottom };
 }
 
-constexpr SMALL_RECT BufferToScreenLine(const SMALL_RECT& line, const LineRendition lineRendition)
+constexpr til::inclusive_rect BufferToScreenLine(const til::inclusive_rect& line, const LineRendition lineRendition)
 {
     // Use shift left to quickly multiply the Left and Right by 2 for double width lines.
-    const SHORT scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
+    const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
     return { line.Left << scale, line.Top, (line.Right << scale) + scale, line.Bottom };
 }

@@ -189,6 +189,18 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = realArgs.TerminalArgs().ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
             _SplitPane(realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
@@ -266,6 +278,55 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleScrollToMark(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<ScrollToMarkArgs>())
+        {
+            _ApplyToActiveControls([&realArgs](auto& control) {
+                control.ScrollToMark(realArgs.Direction());
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleAddMark(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<AddMarkArgs>())
+        {
+            _ApplyToActiveControls([realArgs](auto& control) {
+                Control::ScrollMark mark;
+                if (realArgs.Color())
+                {
+                    mark.Color.Color = realArgs.Color().Value();
+                    mark.Color.HasValue = true;
+                }
+                else
+                {
+                    mark.Color.HasValue = false;
+                }
+                control.AddMark(mark);
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearMark(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearMark();
+        });
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearAllMarks(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearAllMarks();
+        });
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleFindMatch(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
@@ -305,6 +366,18 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = newTerminalArgs.ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
             LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
@@ -1007,6 +1080,46 @@ namespace winrt::TerminalApp::implementation
                 });
                 args.Handled(res);
             }
+        }
+    }
+
+    void TerminalPage::_HandleSelectAll(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.SelectAll();
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleMarkMode(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.ToggleMarkMode();
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleToggleBlockSelection(const IInspectable& /*sender*/,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.ToggleBlockSelection();
+            args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleSwitchSelectionEndpoint(const IInspectable& /*sender*/,
+                                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.SwitchSelectionEndpoint();
+            args.Handled(handled);
         }
     }
 }

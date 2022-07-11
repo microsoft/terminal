@@ -11,7 +11,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme, ColorSchemesPageViewModel parentPageVM);
 
         String Name;
-        Boolean IsInBoxScheme { get; };
+        Boolean IsInBoxScheme;
 
         Boolean RequestRename(String newName);
 

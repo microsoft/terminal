@@ -65,6 +65,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
+        constexpr explicit operator bool() const noexcept
+        {
+            return (x > 0) & (y > 0);
+        }
+
         constexpr bool operator<(const point other) const noexcept
         {
             return y < other.y || (y == other.y && x < other.x);
@@ -87,62 +92,61 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr point operator+(const point other) const
         {
-            return point{
-                details::extract(::base::CheckAdd(x, other.x)),
-                details::extract(::base::CheckAdd(y, other.y)),
-            };
+            auto copy = *this;
+            copy += other;
+            return copy;
         }
 
         constexpr point& operator+=(const point other)
         {
-            *this = *this + other;
+            x = details::extract(::base::CheckAdd(x, other.x));
+            y = details::extract(::base::CheckAdd(y, other.y));
             return *this;
         }
 
         constexpr point operator-(const point other) const
         {
-            return point{
-                details::extract(::base::CheckSub(x, other.x)),
-                details::extract(::base::CheckSub(y, other.y)),
-            };
+            auto copy = *this;
+            copy -= other;
+            return copy;
         }
 
         constexpr point& operator-=(const point other)
         {
-            *this = *this - other;
+            x = details::extract(::base::CheckSub(x, other.x));
+            y = details::extract(::base::CheckSub(y, other.y));
             return *this;
         }
 
         constexpr point operator*(const point other) const
         {
-            return point{
-                details::extract(::base::CheckMul(x, other.x)),
-                details::extract(::base::CheckMul(y, other.y)),
-            };
+            auto copy = *this;
+            copy *= other;
+            return copy;
         }
 
         constexpr point& operator*=(const point other)
         {
-            *this = *this * other;
+            x = details::extract(::base::CheckMul(x, other.x));
+            y = details::extract(::base::CheckMul(y, other.y));
             return *this;
         }
 
         constexpr point operator/(const point other) const
         {
-            return point{
-                details::extract(::base::CheckDiv(x, other.x)),
-                details::extract(::base::CheckDiv(y, other.y)),
-            };
+            auto copy = *this;
+            copy /= other;
+            return copy;
         }
 
         constexpr point& operator/=(const point other)
         {
-            *this = *this / other;
+            x = details::extract(::base::CheckDiv(x, other.x));
+            y = details::extract(::base::CheckDiv(y, other.y));
             return *this;
         }
 
-        template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-        constexpr point operator*(const T scale) const
+        constexpr point operator*(const til::CoordType scale) const
         {
             return point{
                 details::extract(::base::CheckMul(x, scale)),
@@ -150,8 +154,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-        constexpr point operator/(const T scale) const
+        constexpr point operator/(const til::CoordType scale) const
         {
             return point{
                 details::extract(::base::CheckDiv(x, scale)),
@@ -171,18 +174,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(y);
         }
 
-#ifdef _WINCONTYPES_
-        explicit constexpr point(const COORD other) noexcept :
-            x{ other.X }, y{ other.Y }
-        {
-        }
-
-        constexpr COORD to_win32_coord() const
-        {
-            return { narrow_x<short>(), narrow_y<short>() };
-        }
-#endif
-
 #ifdef _WINDEF_
         explicit constexpr point(const POINT other) noexcept :
             x{ other.x }, y{ other.y }
@@ -192,6 +183,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr POINT to_win32_point() const noexcept
         {
             return { x, y };
+        }
+
+        // til::point and POINT have the exact same layout at the time of writing,
+        // so this function lets you unsafely "view" this point as a POINT
+        // if you need to pass it to a Win32 function.
+        //
+        // Use as_win32_point() as sparingly as possible because it'll be a pain to hack
+        // it out of this code base once til::point and POINT aren't the same anymore.
+        // Prefer casting to POINT and back to til::point instead if possible.
+        POINT* as_win32_point() noexcept
+        {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+            return std::launder(reinterpret_cast<POINT*>(this));
         }
 #endif
 
@@ -241,17 +245,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     };
 
-    constexpr point wrap_coord(const COORD rect) noexcept
+    constexpr point wrap_coord(const COORD pt) noexcept
     {
-        return { rect.X, rect.Y };
+        return { pt.X, pt.Y };
     }
 
-    constexpr COORD unwrap_coord(const point rect)
+    constexpr COORD unwrap_coord(const point pt)
     {
         return {
-            gsl::narrow<short>(rect.X),
-            gsl::narrow<short>(rect.Y),
+            gsl::narrow<short>(pt.x),
+            gsl::narrow<short>(pt.y),
         };
+    }
+
+    constexpr HRESULT unwrap_coord_hr(const point pt, COORD& out) noexcept
+    {
+        short x = 0;
+        short y = 0;
+        if (narrow_maybe(pt.x, x) && narrow_maybe(pt.y, y))
+        {
+            out.X = x;
+            out.Y = y;
+            return S_OK;
+        }
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 }
 

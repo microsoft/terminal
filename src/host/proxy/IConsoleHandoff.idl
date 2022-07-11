@@ -31,3 +31,9 @@ typedef const CONSOLE_PORTABLE_ATTACH_MSG* PCCONSOLE_PORTABLE_ATTACH_MSG;
                              [out, system_handle(sh_process)] HANDLE* process);
 };
 
+[
+    object,
+    uuid(746E6BC0-AB05-4E38-AB14-71E86763141F)
+] interface IDefaultTerminalMarker : IUnknown
+{
+};

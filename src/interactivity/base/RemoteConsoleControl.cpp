@@ -57,19 +57,17 @@ template<typename T>
 
 [[nodiscard]] NTSTATUS RemoteConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
 {
-    HostSignalSetForegroundData data{};
-    data.sizeInBytes = sizeof(data);
-    data.processId = HandleToULong(hProcess);
-    data.isForeground = fForeground;
-
-    return _SendTypedPacket(_pipe.get(), HostSignals::SetForeground, data);
+    // GH#13211 - Apparently this API doesn't need to be forwarded to conhost at
+    // all. Instead, just perform the ConsoleControl operation here, in proc.
+    // This lets us avoid all sorts of strange handle duplicating weirdness.
+    return _control.SetForeground(hProcess, fForeground);
 }
 
-[[nodiscard]] NTSTATUS RemoteConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+[[nodiscard]] NTSTATUS RemoteConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     HostSignalEndTaskData data{};
     data.sizeInBytes = sizeof(data);
-    data.processId = HandleToULong(hProcessId);
+    data.processId = dwProcessId;
     data.eventType = dwEventType;
     data.ctrlFlags = ulCtrlFlags;
 

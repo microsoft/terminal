@@ -41,9 +41,6 @@
     <ClInclude Include="$(IntDir)\ITerminalHandoff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="nodefaultlib_shim.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl">

@@ -35,7 +35,6 @@ Abstract:
 #include <intsafe.h>
 
 // private dependencies
-#include "../inc/operators.hpp"
 #include "../inc/unicode.hpp"
 #pragma warning(pop)
 

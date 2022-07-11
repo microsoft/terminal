@@ -119,6 +119,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const DWORD color) override; // OSCColorTable
         bool SetDefaultForeground(const DWORD color) override; // OSCDefaultForeground
         bool SetDefaultBackground(const DWORD color) override; // OSCDefaultBackground
+        bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) override; // DECAC
 
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                 const VTParameter parameter1,
@@ -129,6 +130,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoConEmuAction(const std::wstring_view string) override;
 
+        bool DoITerm2Action(const std::wstring_view string) override;
+
+        bool DoFinalTermAction(const std::wstring_view string) override;
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
@@ -138,7 +143,11 @@ namespace Microsoft::Console::VirtualTerminal
                                    const VTParameter cellHeight,
                                    const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
 
+        StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) override; // DECRSTS
+
         StringHandler RequestSetting() override; // DECRQSS
+
+        bool PlaySounds(const VTParameters parameters) override; // DECPS
 
     private:
         enum class ScrollDirection
@@ -195,8 +204,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const VTInt width);
 
+        StringHandler _RestoreColorTable();
+
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
+
+        StringHandler _CreatePassthroughHandler();
 
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;

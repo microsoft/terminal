@@ -239,6 +239,18 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
+    enum class ColorItem : VTInt
+    {
+        NormalText = 1,
+        WindowFrame = 2,
+    };
+
+    enum class ColorModel : VTInt
+    {
+        HLS = 1,
+        RGB = 2,
+    };
+
     enum class EraseType : VTInt
     {
         ToEnd = 0,
@@ -475,7 +487,31 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size96 = 1
     };
 
+    enum class ReportFormat : VTInt
+    {
+        TerminalStateReport = 1,
+        ColorTableReport = 2
+    };
+
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
+    enum class MarkCategory : size_t
+    {
+        Prompt = 0,
+        Error = 1,
+        Warning = 2,
+        Success = 3,
+        Info = 4
+    };
+
+    struct ScrollMark
+    {
+        std::optional<til::color> color;
+        til::point start;
+        til::point end; // exclusive
+        MarkCategory category{ MarkCategory::Info };
+        // Other things we may want to think about in the future are listed in
+        // GH#11000
+    };
 }

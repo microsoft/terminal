@@ -30,6 +30,8 @@
 #include "CloseTabArgs.g.h"
 #include "ScrollUpArgs.g.h"
 #include "ScrollDownArgs.g.h"
+#include "ScrollToMarkArgs.g.h"
+#include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 #include "FindMatchArgs.g.h"
@@ -179,6 +181,14 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_DOWN_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SCROLL_TO_MARK_ARGS(X) \
+    X(Microsoft::Terminal::Control::ScrollToMarkDirection, Direction, "direction", false, Microsoft::Terminal::Control::ScrollToMarkDirection::Previous)
+
+////////////////////////////////////////////////////////////////////////////////
+#define ADD_MARK_ARGS(X) \
+    X(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
@@ -611,6 +621,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS);
 
     ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS);
+
+    ACTION_ARGS_STRUCT(ScrollToMarkArgs, SCROLL_TO_MARK_ARGS);
+
+    ACTION_ARGS_STRUCT(AddMarkArgs, ADD_MARK_ARGS);
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 

@@ -50,6 +50,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return { horizAlign, vertAlign };
     }
 
+    winrt::com_ptr<implementation::TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    {
+        auto settings{ winrt::make_self<TerminalSettings>() };
+
+        const auto globals = appSettings.GlobalSettings();
+        settings->_ApplyProfileSettings(profile);
+        settings->_ApplyGlobalSettings(globals);
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
+
+        return settings;
+    }
+
+    Model::TerminalSettings TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    {
+        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        settings->UseBackgroundImageForWindow(false);
+        return *settings;
+    }
+
     // Method Description:
     // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
     //   use the guid to look up the profile that should be used to
@@ -64,17 +83,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   one for when the terminal is focused and the other for when the terminal is unfocused
     Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const IKeyBindings& keybindings)
     {
-        auto settings{ winrt::make_self<TerminalSettings>() };
+        const auto settings = _CreateWithProfileCommon(appSettings, profile);
         settings->_KeyBindings = keybindings;
-
-        const auto globals = appSettings.GlobalSettings();
-        settings->_ApplyProfileSettings(profile);
-        settings->_ApplyGlobalSettings(globals);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
 
         Model::TerminalSettings child{ nullptr };
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
         {
+            const auto globals = appSettings.GlobalSettings();
             auto childImpl = settings->CreateChild();
             childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes());
             child = *childImpl;
@@ -266,6 +281,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         _Elevate = profile.Elevate();
+        _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
+        _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
     }
 
     // Method Description:

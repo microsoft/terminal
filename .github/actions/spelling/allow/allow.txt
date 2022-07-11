@@ -1,15 +1,16 @@
 admins
+allcolors
 apc
 Apc
-bsd
 breadcrumb
 breadcrumbs
+bsd
 calt
-CMMI
 ccmp
 changelog
 clickable
 clig
+CMMI
 copyable
 cybersecurity
 dalet
@@ -26,8 +27,10 @@ EDDC
 Enum'd
 Fitt
 formattings
+FTCS
 ftp
 fvar
+gantt
 gcc
 geeksforgeeks
 ghe
@@ -38,11 +41,13 @@ hostnames
 hyperlink
 hyperlinking
 hyperlinks
+iconify
 img
 inlined
 It'd
 kje
 libfuzzer
+libuv
 liga
 lje
 Llast
@@ -55,7 +60,6 @@ maxed
 mkmk
 mnt
 mru
-noreply
 nje
 noreply
 ogonek
@@ -82,6 +86,7 @@ timestamped
 TLDR
 tokenizes
 tonos
+toolset
 tshe
 uiatextrange
 UIs
@@ -93,4 +98,3 @@ We'd
 wildcards
 yeru
 zhe
-allcolors

@@ -17,7 +17,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _parentPageVM{ parentPageVM }
     {
         _Name = scheme.Name();
-        _isInBoxScheme = std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) != std::end(InBoxSchemes);
 
         const auto colorEntryChangedHandler = [&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
             if (const auto entry{ sender.try_as<ColorTableEntry>() })
@@ -89,6 +88,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ColorSchemeViewModel::IsInBoxScheme()
     {
         return _isInBoxScheme;
+    }
+
+    void ColorSchemeViewModel::IsInBoxScheme(bool isInBoxScheme)
+    {
+        _isInBoxScheme = isInBoxScheme;
     }
 
     bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)
