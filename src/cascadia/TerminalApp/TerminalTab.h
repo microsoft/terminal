@@ -72,6 +72,7 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
+        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color);
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
         void ActivateColorPicker();
@@ -114,10 +115,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
-        std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
 
         struct ControlEventTokens
         {

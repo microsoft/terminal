@@ -130,8 +130,18 @@ namespace winrt::TerminalApp::implementation
     {
         // newTabImpl->Initialize();
 
+        uint32_t insertPosition = _tabs.Size();
+        if (_settings.GlobalSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
+        {
+            auto currentTabIndex = _GetFocusedTabIndex();
+            if (currentTabIndex.has_value())
+            {
+                insertPosition = currentTabIndex.value() + 1;
+            }
+        }
+
         // Add the new tab to the list of our tabs.
-        _tabs.Append(*newTabImpl);
+        _tabs.InsertAt(insertPosition, *newTabImpl);
         _mruTabs.Append(*newTabImpl);
 
         newTabImpl->SetDispatch(*_actionDispatch);
@@ -158,6 +168,8 @@ namespace winrt::TerminalApp::implementation
             {
                 // Possibly update the icon of the tab.
                 page->_UpdateTabIcon(*tab);
+
+                page->_updateThemeColors();
 
                 // Update the taskbar progress as well. We'll raise our own
                 // SetTaskbarProgress event here, to get tell the hosting
@@ -225,7 +237,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         auto tabViewItem = newTabImpl->TabViewItem();
-        _tabView.TabItems().Append(tabViewItem);
+        _tabView.TabItems().InsertAt(insertPosition, tabViewItem);
 
         // Set this tab's icon to the icon from the user's profile
         //
@@ -966,6 +978,8 @@ namespace winrt::TerminalApp::implementation
             {
                 _TitleChangedHandlers(*this, tab.Title());
             }
+
+            _updateThemeColors();
 
             auto tab_impl = _GetTerminalTabImpl(tab);
             if (tab_impl)
