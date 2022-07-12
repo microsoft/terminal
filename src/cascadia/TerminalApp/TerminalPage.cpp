@@ -4092,7 +4092,6 @@ namespace winrt::TerminalApp::implementation
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
-            const til::color backgroundColor = backgroundSolidBrush.Color();
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
@@ -4101,9 +4100,10 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (theme.TabRow() && theme.TabRow().Background())
+        else if (const auto tabRowBg{ _activated ? theme.TabRow().Background() :
+                                                   theme.TabRow().UnfocusedBackground() };
+                 tabRowBg != nullptr && theme.TabRow() != nullptr)
         {
-            const auto tabRowBg = theme.TabRow().Background();
             const auto terminalBrush = [this]() -> Media::Brush {
                 if (const auto& control{ _GetActiveControl() })
                 {

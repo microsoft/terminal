@@ -818,18 +818,6 @@ void Alias::s_ClearCmdExeAliases()
 }
 
 // Routine Description:
-// - Trims leading spaces off of a string
-// Arguments:
-// - str - String to trim
-void Alias::s_TrimLeadingSpaces(std::wstring& str)
-{
-    // Erase from the beginning of the string up until the first
-    // character found that is not a space.
-    str.erase(str.begin(),
-              std::find_if(str.begin(), str.end(), [](wchar_t ch) { return !std::iswspace(ch); }));
-}
-
-// Routine Description:
 // - Trims trailing \r\n off of a string
 // Arguments:
 // - str - String to trim
@@ -1147,9 +1135,6 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
 
     // Trim trailing \r\n off of sourceCopy if it has one.
     s_TrimTrailingCrLf(sourceCopy);
-
-    // Trim leading spaces off of sourceCopy if it has any.
-    s_TrimLeadingSpaces(sourceCopy);
 
     // Check if we have an EXE in the list that matches the request first.
     auto exeIter = g_aliasData.find(exeName);
