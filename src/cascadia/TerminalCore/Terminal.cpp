@@ -581,7 +581,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     // also look through our known pattern locations in our pattern interval tree
     auto viewportPos = bufferPos;
     _GetVisibleViewport().ConvertToOrigin(&viewportPos);
-    const auto result = GetHyperlinkIntervalFromPosition(viewportPos);
+    const auto result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
         const auto start = result->start;
@@ -616,7 +616,7 @@ uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos
 // - The position relative to the viewport
 // Return value:
 // - The interval representing the start and end coordinates
-std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const til::point viewportPos)
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos)
 {
     const auto results = _patternIntervalTree.findOverlapping({ viewportPos.X + 1, viewportPos.Y }, viewportPos);
     if (results.size() > 0)
