@@ -275,6 +275,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
+        bool _tryHandleMarkModeKey(const WORD vkey, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void _sendInputToConnection(std::wstring_view wstr);
 

@@ -417,43 +417,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            const auto isInMarkMode = _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark;
-            if (isInMarkMode)
+            // (if applicable) handle mark mode non-configurable keybindings first
+            if(_tryHandleMarkModeKey(vkey, modifiers))
             {
-                if (modifiers.IsCtrlPressed() && vkey == 'A')
-                {
-                    // Ctrl + A --> Select all
-                    auto lock = _terminal->LockForWriting();
-                    _terminal->SelectAll();
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_TAB && _settings->DetectURLs())
-                {
-                    // [Shift +] Tab --> next/previous hyperlink
-                    auto lock = _terminal->LockForWriting();
-                    const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
-                    _terminal->SelectHyperlink(direction);
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->IsTargetingUrl())
-                {
-                    // Ctrl + Enter --> Open URL
-                    auto lock = _terminal->LockForReading();
-                    const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
-                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
-                    return true;
-                }
-                else if (vkey == VK_RETURN)
-                {
-                    // [Shift +] Enter --> copy text
-                    // Don't lock here! CopySelectionToClipboard already locks for you!
-                    CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
-                    _terminal->ClearSelection();
-                    _updateSelectionUI();
-                    return true;
-                }
+                return true;
             }
 
             // try to update the selection
@@ -489,6 +456,51 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                               modifiers,
                                               keyDown) :
                       true;
+    }
+
+    bool ControlCore::_tryHandleMarkModeKey(const WORD vkey, const ControlKeyStates modifiers)
+    {
+        if (_terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark)
+        {
+            if (modifiers.IsCtrlPressed() && vkey == 'A')
+            {
+                // Ctrl + A --> Select all
+                auto lock = _terminal->LockForWriting();
+                _terminal->SelectAll();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_TAB && _settings->DetectURLs())
+            {
+                // [Shift +] Tab --> next/previous hyperlink
+                auto lock = _terminal->LockForWriting();
+                const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
+                _terminal->SelectHyperlink(direction);
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->SelectionIsTargetingUrl())
+            {
+                // Ctrl + Enter --> Open URL
+                auto lock = _terminal->LockForReading();
+                const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
+                _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                return true;
+            }
+            else if (vkey == VK_RETURN)
+            {
+                // [Shift +] Enter --> copy text
+                // Don't lock here! CopySelectionToClipboard already locks for you!
+                CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
+
+                // We still need to lock to clear the selection though
+                auto lock = _terminal->LockForWriting();
+                _terminal->ClearSelection();
+                _updateSelectionUI();
+                return true;
+            }
+        }
+        return false;
     }
 
     bool ControlCore::SendMouseEvent(const til::point viewportPos,
