@@ -929,8 +929,7 @@ void AtlasEngine::_recreateFontDependentResources()
     {
         // We're likely resizing the atlas anyways and can
         // thus also release any of these buffers prematurely.
-        _r.d2dRenderTarget.reset(); // depends on _r.atlasScratchpad
-        _r.atlasScratchpad.reset();
+        _r.d2dRenderTarget.reset(); // depends on _r.atlasBuffer
         _r.atlasView.reset();
         _r.atlasBuffer.reset();
     }
@@ -970,8 +969,6 @@ void AtlasEngine::_recreateFontDependentResources()
         _r.strikethroughPos = _api.fontMetrics.strikethroughPos;
         _r.lineThickness = _api.fontMetrics.lineThickness;
         _r.dpi = _api.dpi;
-        _r.maxEncounteredCellCount = 0;
-        _r.scratchpadCellWidth = 0;
     }
     {
         // See AtlasEngine::UpdateFont.
@@ -1446,7 +1443,6 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
         const auto it = _r.glyphs.insert(std::move(key), std::move(value));
         valueRef = &it->second;
         _r.glyphQueue.emplace_back(&it->first, &it->second);
-        _r.maxEncounteredCellCount = std::max(_r.maxEncounteredCellCount, cellCount);
     }
 
     // For some reason MSVC doesn't understand that valueRef is overwritten in the branch above, resulting in:
