@@ -19,7 +19,7 @@ resources:
   - repository: internal
     type: git
     name: Terminal.Internal
-    ref: master
+    ref: main
 
 steps:
 
