@@ -40,7 +40,6 @@ steps:
 - task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@1
   displayName: 'Touchdown Build - 7105, PRODEXT'
   inputs:
-    isPreview: true # NFCI DO NOT SUBMIT YET
     teamId: 7105
     authId: '$(TouchdownApplicationID)'
     authKey: '$(TouchdownApplicationKey)'
