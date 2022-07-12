@@ -958,9 +958,16 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
+    // Method Description:
+    // - Update the current theme of the application. This will trigger our
+    //   RequestedThemeChanged event, to have our host change the theme of the
+    //   root of the application.
+    // Arguments:
+    // - newTheme: The ElementTheme to apply to our elements.
     void AppLogic::_RefreshThemeRoutine()
     {
-        _ApplyTheme(GetRequestedTheme());
+        // Propagate the event to the host layer, so it can update its own UI
+        _RequestedThemeChangedHandlers(*this, Theme());
     }
 
     // Function Description:
@@ -1067,18 +1074,6 @@ namespace winrt::TerminalApp::implementation
     [[nodiscard]] CascadiaSettings AppLogic::GetSettings() const noexcept
     {
         return _settings;
-    }
-
-    // Method Description:
-    // - Update the current theme of the application. This will trigger our
-    //   RequestedThemeChanged event, to have our host change the theme of the
-    //   root of the application.
-    // Arguments:
-    // - newTheme: The ElementTheme to apply to our elements.
-    void AppLogic::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
-    {
-        // Propagate the event to the host layer, so it can update its own UI
-        _RequestedThemeChangedHandlers(*this, newTheme);
     }
 
     UIElement AppLogic::GetRoot() noexcept
