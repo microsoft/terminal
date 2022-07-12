@@ -128,18 +128,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         DeleteButton().Flyout().Hide();
 
-        // GH#11971, part 2. If we delete a scheme, and the next scheme we've
-        // loaded is an inbox one that _can't_ be deleted, then we need to toss
-        // focus to something sensible, rather than letting it fall out to the
-        // tab item.
-        //
-        // When deleting a scheme and the next scheme _is_ deletable, this isn't
-        // an issue, we'll already correctly focus the Delete button.
-        //
-        // However, it seems even more useful for focus to ALWAYS land on the
-        // scheme dropdown box. This forces Narrator to read the name of the
-        // newly selected color scheme, which seemed more useful.
-        ColorSchemeListView().Focus(FocusState::Programmatic);
+        // If the newly selected scheme is not deletable (because it is an
+        // in-box scheme), focus the Add New button. Otherwise, keep focus
+        // on the delete button.
+        if (ColorSchemeListView().SelectedItem().as<Editor::ColorSchemeViewModel>().IsInBoxScheme())
+        {
+            AddNewButton().Focus(FocusState::Programmatic);
+        }
     }
 
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
@@ -155,5 +150,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _ViewModel.RequestSetCurrentPage(ColorSchemesSubPage::EditColorScheme);
+    }
+
+    void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        {
+            // Treat this as if 'edit' was clicked
+            Edit_Click(nullptr, nullptr);
+            e.Handled(true);
+        }
+        else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Delete)
+        {
+            // Treat this as if 'delete' was clicked
+            DeleteConfirmation_Click(nullptr, nullptr);
+            e.Handled(true);
+        }
     }
 }

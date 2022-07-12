@@ -112,71 +112,88 @@
                     <ContentControl Grid.Row="0"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ForegroundColor, Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="1"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(0), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="2"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(1), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="3"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(2), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="4"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(3), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="5"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(4), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="6"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(5), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="7"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(6), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="8"
                                     Grid.Column="0"
                                     Content="{x:Bind ViewModel.ColorEntryAt(7), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="1"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(8), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="2"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(9), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="3"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(10), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="4"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(11), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="5"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(12), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="6"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(13), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="7"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(14), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
                     <ContentControl Grid.Row="8"
                                     Grid.Column="1"
                                     Content="{x:Bind ViewModel.ColorEntryAt(15), Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}" />
+                                    ContentTemplate="{StaticResource ColorTableTextBlockTemplate}"
+                                    IsTabStop="False" />
 
                 </Grid>
             </Border>

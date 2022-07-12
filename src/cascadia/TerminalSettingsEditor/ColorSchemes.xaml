@@ -36,10 +36,11 @@
 
             <ListView x:Name="ColorSchemeListView"
                       Height="360"
-                      SelectionMode="Single"
                       MaxWidth="{StaticResource StandardControlMaxWidth}"
                       ItemsSource="{x:Bind ViewModel.AllColorSchemes}"
-                      SelectionChanged="ColorSchemeSelectionChanged">
+                      PreviewKeyDown="ListView_PreviewKeyDown"
+                      SelectionChanged="ColorSchemeSelectionChanged"
+                      SelectionMode="Single">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="local:ColorSchemeViewModel">
                         <Grid MaxWidth="1000"
@@ -83,84 +84,84 @@
                                 </Border>
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="1"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(0), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="2"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(1), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="3"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(2), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="4"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(3), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="5"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(4), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="6"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(5), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="7"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(6), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="8"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(7), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="1"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(8), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="2"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(9), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="3"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(10), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="4"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(11), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="5"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(12), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="6"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(13), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="7"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(14), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                                 <ContentControl Grid.Row="1"
                                                 Grid.Column="8"
-                                                IsTabStop="False"
                                                 Content="{x:Bind ColorEntryAt(15), Mode=OneWay}"
-                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}" />
+                                                ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
+                                                IsTabStop="False" />
                             </Grid>
                         </Grid>
                     </DataTemplate>
