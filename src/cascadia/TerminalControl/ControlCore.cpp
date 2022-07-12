@@ -448,8 +448,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 else if (vkey == VK_RETURN)
                 {
                     // [Shift +] Enter --> copy text
-                    auto lock = _terminal->LockForReading();
+                    // Don't lock here! CopySelectionToClipboard already locks for you!
                     CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
+                    _terminal->ClearSelection();
+                    _updateSelectionUI();
+                    return true;
                 }
             }
 
