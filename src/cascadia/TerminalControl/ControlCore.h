@@ -311,6 +311,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setOpacity(const double opacity);
 
         bool _isBackgroundTransparent();
+        void _focusChanged(bool focused);
 
         inline bool _IsClosing() const noexcept
         {
