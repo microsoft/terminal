@@ -432,12 +432,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // achieve the intended effect.
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
             ScrollBar().Visibility(Visibility::Collapsed);
+            ScrollMarksGrid().Visibility(Visibility::Collapsed);
         }
         else // (default or Visible)
         {
             // Default behavior
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
             ScrollBar().Visibility(Visibility::Visible);
+            ScrollMarksGrid().Visibility(Visibility::Visible);
         }
 
         _interactivity.UpdateSettings();

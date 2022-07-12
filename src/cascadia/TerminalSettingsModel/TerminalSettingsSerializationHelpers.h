@@ -209,6 +209,14 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "atTheEnd", ValueType::AtTheEnd },
+        pair_type{ "afterCurrentTab", ValueType::AfterCurrentTab },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
 {
     JSON_MAPPINGS(2) = {
@@ -550,6 +558,9 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemeColor>
 {
+    static constexpr std::string_view accentString{ "accent" };
+    static constexpr std::string_view terminalBackgroundString{ "terminalBackground" };
+
     winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromJson(const Json::Value& json)
     {
         if (json == Json::Value::null)
@@ -557,11 +568,11 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
             return nullptr;
         }
         const auto string{ Detail::GetStringView(json) };
-        if (string == "accent")
+        if (string == accentString)
         {
             return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromAccent();
         }
-        else if (string == "terminalBackground")
+        else if (string == terminalBackgroundString)
         {
             return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromTerminalBackground();
         }
@@ -584,8 +595,8 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
         const auto string{ Detail::GetStringView(json) };
         const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
-        const auto isAccent = string == "accent";
-        const auto isTerminalBackground = string == "terminalBackground";
+        const auto isAccent = string == accentString;
+        const auto isTerminalBackground = string == terminalBackgroundString;
         return isColorSpec || isAccent || isTerminalBackground;
     }
 
@@ -616,7 +627,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
     std::string TypeDescription() const
     {
-        return "ThemeColor (#rrggbb, #rgb, #aarrggbb, accent, terminalBackground)";
+        return "ThemeColor (#rrggbb, #rgb, #rrggbbaa, accent, terminalBackground)";
     }
 };
 
@@ -628,14 +639,5 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
         pair_type{ "next", ValueType::Next },
         pair_type{ "first", ValueType::First },
         pair_type{ "last", ValueType::Last },
-    };
-};
-
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
-{
-    JSON_MAPPINGS(3) = {
-        pair_type{ "always", ValueType::Always },
-        pair_type{ "hover", ValueType::Hover },
-        pair_type{ "never", ValueType::Never },
     };
 };

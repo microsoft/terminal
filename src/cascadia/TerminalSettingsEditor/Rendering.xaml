@@ -25,13 +25,13 @@
 
             <!--  Force Full Repaint  -->
             <local:SettingContainer x:Uid="Globals_ForceFullRepaint">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ForceFullRepaintRendering, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Software Rendering  -->
             <local:SettingContainer x:Uid="Globals_SoftwareRendering">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>

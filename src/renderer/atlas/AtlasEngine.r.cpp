@@ -31,7 +31,6 @@ using namespace Microsoft::Console::Render;
 try
 {
     _adjustAtlasSize();
-    _reserveScratchpadSize(_r.maxEncounteredCellCount);
     _processGlyphQueue();
 
     if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::Cursor))
@@ -64,7 +63,7 @@ try
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
-    assert(_r.frameLatencyWaitableObjectUsed);
+    assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
 
     // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
     // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
@@ -86,6 +85,7 @@ try
 }
 catch (const wil::ResultException& exception)
 {
+    // TODO: this writes to _api.
     return _handleException(exception);
 }
 CATCH_RETURN()
@@ -139,70 +139,27 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
 
 void AtlasEngine::_adjustAtlasSize()
 {
-    if (_r.atlasPosition.y < _r.atlasSizeInPixel.y && _r.atlasPosition.x < _r.atlasSizeInPixel.x)
+    // Only grow the atlas texture if our tileAllocator needs it to be larger.
+    // We have no way of shrinking our tileAllocator at the moment,
+    // so technically a `requiredSize != _r.atlasSizeInPixel`
+    // comparison would be sufficient, but better safe than sorry.
+    const auto requiredSize = _r.tileAllocator.size();
+    if (requiredSize.y <= _r.atlasSizeInPixel.y && requiredSize.x <= _r.atlasSizeInPixel.x)
     {
         return;
     }
-
-    const u32 limitX = _r.atlasSizeInPixelLimit.x;
-    const u32 limitY = _r.atlasSizeInPixelLimit.y;
-    const u32 posX = _r.atlasPosition.x;
-    const u32 posY = _r.atlasPosition.y;
-    const u32 cellX = _r.cellSize.x;
-    const u32 cellY = _r.cellSize.y;
-    const auto perCellArea = cellX * cellY;
-
-    // The texture atlas is filled like this:
-    //   x →
-    // y +--------------+
-    // ↓ |XXXXXXXXXXXXXX|
-    //   |XXXXXXXXXXXXXX|
-    //   |XXXXX↖        |
-    //   |      |       |
-    //   +------|-------+
-    // This is where _r.atlasPosition points at.
-    //
-    // Each X is a glyph texture tile that's occupied.
-    // We can compute the area of pixels consumed by adding the first
-    // two lines of X (rectangular) together with the last line of X.
-    const auto currentArea = posY * limitX + posX * cellY;
-    // minArea reserves enough room for 64 cells in all cases (mainly during startup).
-    const auto minArea = 64 * perCellArea;
-    auto newArea = std::max(minArea, currentArea);
-
-    // I want the texture to grow exponentially similar to std::vector, as this
-    // ensures we don't need to resize the texture again right after having done.
-    // This rounds newArea up to the next power of 2.
-    unsigned long int index;
-    _BitScanReverse(&index, newArea); // newArea can't be 0
-    newArea = u32{ 1 } << (index + 1);
-
-    const auto pixelPerRow = limitX * cellY;
-    // newArea might be just large enough that it spans N full rows of cells and one additional row
-    // just barely. This algorithm rounds up newArea to the _next_ multiple of cellY.
-    const auto wantedHeight = (newArea + pixelPerRow - 1) / pixelPerRow * cellY;
-    // The atlas might either be a N rows of full width (xLimit) or just one
-    // row (where wantedHeight == cellY) that doesn't quite fill it's maximum width yet.
-    const auto wantedWidth = wantedHeight != cellY ? limitX : newArea / perCellArea * cellX;
-
-    // We know that limitX/limitY were u16 originally, and thus it's safe to narrow_cast it back.
-    const auto height = gsl::narrow_cast<u16>(std::min(limitY, wantedHeight));
-    const auto width = gsl::narrow_cast<u16>(std::min(limitX, wantedWidth));
-
-    assert(width != 0);
-    assert(height != 0);
 
     wil::com_ptr<ID3D11Texture2D> atlasBuffer;
     wil::com_ptr<ID3D11ShaderResourceView> atlasView;
     {
         D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = width;
-        desc.Height = height;
+        desc.Width = requiredSize.x;
+        desc.Height = requiredSize.y;
         desc.MipLevels = 1;
         desc.ArraySize = 1;
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc.SampleDesc = { 1, 0 };
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
         THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, atlasBuffer.addressof()));
         THROW_IF_FAILED(_r.device->CreateShaderResourceView(atlasBuffer.get(), nullptr, atlasView.addressof()));
     }
@@ -222,43 +179,13 @@ void AtlasEngine::_adjustAtlasSize()
         _r.deviceContext->CopySubresourceRegion1(atlasBuffer.get(), 0, 0, 0, 0, _r.atlasBuffer.get(), 0, &box, D3D11_COPY_NO_OVERWRITE);
     }
 
-    _r.atlasSizeInPixel = u16x2{ width, height };
+    _r.atlasSizeInPixel = requiredSize;
     _r.atlasBuffer = std::move(atlasBuffer);
     _r.atlasView = std::move(atlasView);
     _setShaderResources();
 
-    WI_SetFlagIf(_r.invalidations, RenderInvalidations::Cursor, !copyFromExisting);
-}
-
-void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
-{
-    if (minWidth <= _r.scratchpadCellWidth)
     {
-        return;
-    }
-
-    // The new size is the greater of ... cells wide:
-    // * 2
-    // * minWidth
-    // * current size * 1.5
-    const auto newWidth = std::max<UINT>(std::max<UINT>(2, minWidth), _r.scratchpadCellWidth + (_r.scratchpadCellWidth >> 1));
-
-    _r.d2dRenderTarget.reset();
-    _r.atlasScratchpad.reset();
-
-    {
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = _r.cellSize.x * newWidth;
-        desc.Height = _r.cellSize.y;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc.SampleDesc = { 1, 0 };
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-        THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, _r.atlasScratchpad.put()));
-    }
-    {
-        const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
+        const auto surface = _r.atlasBuffer.query<IDXGISurface>();
 
         wil::com_ptr<IDWriteRenderingParams1> renderingParams;
         DWrite_GetRenderParams(_sr.dwriteFactory.get(), &_r.gamma, &_r.cleartypeEnhancedContrast, &_r.grayscaleEnhancedContrast, renderingParams.addressof());
@@ -286,8 +213,8 @@ void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
         _r.brush = brush.query<ID2D1Brush>();
     }
 
-    _r.scratchpadCellWidth = _r.maxEncounteredCellCount;
     WI_SetAllFlags(_r.invalidations, RenderInvalidations::ConstBuffer);
+    WI_SetFlagIf(_r.invalidations, RenderInvalidations::Cursor, !copyFromExisting);
 }
 
 void AtlasEngine::_processGlyphQueue()
@@ -297,10 +224,12 @@ void AtlasEngine::_processGlyphQueue()
         return;
     }
 
+    _r.d2dRenderTarget->BeginDraw();
     for (const auto& pair : _r.glyphQueue)
     {
         _drawGlyph(pair);
     }
+    THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
 
     _r.glyphQueue.clear();
 }
@@ -323,7 +252,7 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         textLayout->SetTypography(_r.typography.get(), { 0, charsLength });
     }
 
-    auto options = D2D1_DRAW_TEXT_OPTIONS_NONE;
+    auto options = D2D1_DRAW_TEXT_OPTIONS_CLIP;
     // D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT enables a bunch of internal machinery
     // which doesn't have to run if we know we can't use it anyways in the shader.
     WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, coloredGlyph);
@@ -337,31 +266,29 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         _r.d2dRenderTarget->SetTextAntialiasMode(coloredGlyph ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
     }
 
-    _r.d2dRenderTarget->BeginDraw();
-    // We could call
-    //   _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
-    // now to reduce the surface that needs to be cleared, but this decreases
-    // performance by 10% (tested using debugGlyphGenerationPerformance).
-    _r.d2dRenderTarget->Clear();
-    _r.d2dRenderTarget->DrawTextLayout({}, textLayout.get(), _r.brush.get(), options);
-    THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
-
-    for (uint32_t i = 0; i < cells; ++i)
+    for (u32 i = 0; i < cells; ++i)
     {
-        // Specifying NO_OVERWRITE means that the system can assume that existing references to the surface that
-        // may be in flight on the GPU will not be affected by the update, so the copy can proceed immediately
-        // (avoiding either a batch flush or the system maintaining multiple copies of the resource behind the scenes).
-        //
-        // Since our shader only draws whatever is in the atlas, and since we don't replace glyph tiles that are in use,
-        // we can safely (?) tell the GPU that we don't overwrite parts of our atlas that are in use.
-        _copyScratchpadTile(i, coords[i], D3D11_COPY_NO_OVERWRITE);
+        const auto coord = coords[i];
+
+        D2D1_RECT_F rect;
+        rect.left = static_cast<float>(coord.x) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi);
+        rect.top = static_cast<float>(coord.y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi);
+        rect.right = rect.left + _r.cellSizeDIP.x;
+        rect.bottom = rect.top + _r.cellSizeDIP.y;
+
+        D2D1_POINT_2F origin;
+        origin.x = rect.left - i * _r.cellSizeDIP.x;
+        origin.y = rect.top;
+
+        _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
+        _r.d2dRenderTarget->Clear();
+        _r.d2dRenderTarget->DrawTextLayout(origin, textLayout.get(), _r.brush.get(), options);
+        _r.d2dRenderTarget->PopAxisAlignedClip();
     }
 }
 
 void AtlasEngine::_drawCursor()
 {
-    _reserveScratchpadSize(1);
-
     // lineWidth is in D2D's DIPs. For instance if we have a 150-200% zoom scale we want to draw a 2px wide line.
     // At 150% scale lineWidth thus needs to be 1.33333... because at a zoom scale of 1.5 this results in a 2px wide line.
     const auto lineWidth = std::max(1.0f, static_cast<float>((_r.dpi + USER_DEFAULT_SCREEN_DPI / 2) / USER_DEFAULT_SCREEN_DPI * USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi));
@@ -420,19 +347,4 @@ void AtlasEngine::_drawCursor()
     }
 
     THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
-
-    _copyScratchpadTile(0, {});
-}
-
-void AtlasEngine::_copyScratchpadTile(uint32_t scratchpadIndex, u16x2 target, uint32_t copyFlags) const noexcept
-{
-    D3D11_BOX box;
-    box.left = scratchpadIndex * _r.cellSize.x;
-    box.top = 0;
-    box.front = 0;
-    box.right = box.left + _r.cellSize.x;
-    box.bottom = _r.cellSize.y;
-    box.back = 1;
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
-    _r.deviceContext->CopySubresourceRegion1(_r.atlasBuffer.get(), 0, target.x, target.y, 0, _r.atlasScratchpad.get(), 0, &box, copyFlags);
 }

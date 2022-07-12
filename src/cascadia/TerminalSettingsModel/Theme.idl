@@ -41,6 +41,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     runtimeclass TabRowTheme {
         ThemeColor Background { get; };
+        ThemeColor UnfocusedBackground { get; };
     }
 
     runtimeclass TabTheme {
