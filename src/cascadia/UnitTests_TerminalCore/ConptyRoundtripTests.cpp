@@ -173,6 +173,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(PassthroughClearScrollback);
 
     TEST_METHOD(PassthroughClearAll);
+    TEST_METHOD(ClearAllInTheMiddleOfAString);
 
     TEST_METHOD(PassthroughHardReset);
 
@@ -985,6 +986,8 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
     Log::Comment(NoThrowString().Format(
         L"Write more lines of output than there are lines in the viewport. Clear the scrollback with ^[[3J"));
 
+    WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
@@ -1030,11 +1033,10 @@ void ConptyRoundtripTests::PassthroughClearScrollback()
         TestUtils::VerifyExpectedString(termTb, L"X  ", { 0, y });
     }
 
-    // Write a Erase Scrollback VT sequence to the host, it should come through to the Terminal
-    expectedOutput.push_back("\x1b[3J");
-    hostSm.ProcessString(L"\x1b[3J");
-
     _checkConptyOutput = false;
+
+    // Write a Erase Scrollback VT sequence to the host, it should come through to the Terminal
+    hostSm.ProcessString(L"\x1b[3J");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
@@ -1062,6 +1064,9 @@ void ConptyRoundtripTests::PassthroughClearAll()
                  L"the viewport. 2J importantly moves the viewport, so that "
                  L"all the _current_ buffer contents are moved to scrollback. "
                  L"We shouldn't just paint over the current viewport with spaces.");
+
+    WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -1123,7 +1128,114 @@ void ConptyRoundtripTests::PassthroughClearAll()
 
     // Here, we'll emit the 2J to EraseAll, and move the viewport contents into
     // the scrollback.
+    Log::Comment(L"Send the EraseAll");
     sm.ProcessString(L"\x1b[2J");
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Make sure that the terminal's new viewport is actually just lower than it
+    // used to be.
+    const til::rect newTerminalView{ term->_mutableViewport.ToInclusive() };
+    VERIFY_ARE_EQUAL(end, newTerminalView.top);
+    VERIFY_IS_GREATER_THAN(newTerminalView.top, originalTerminalView.top);
+
+    Log::Comment(L"========== Checking the host buffer state (after) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive(), true);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+    Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
+    verifyBuffer(*termTb, newTerminalView, true);
+}
+
+void ConptyRoundtripTests::ClearAllInTheMiddleOfAString()
+{
+    // see TODO!
+    Log::Comment(L"TODO!");
+
+    WEX::TestExecution::SetVerifyOutput settings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    auto& sm = si.GetStateMachine();
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+    _logConpty = true;
+
+    const auto hostView = si.GetViewport();
+    const auto end = 2 * hostView.Height();
+    for (auto i = 0; i < end; i++)
+    {
+        if (i > 0)
+        {
+            sm.ProcessString(L"\r\n");
+        }
+
+        sm.ProcessString(L"~");
+    }
+
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool afterClear = false) {
+        const auto width = viewport.width();
+
+        // "~" rows
+        for (til::CoordType row = 0; row < viewport.bottom; row++)
+        {
+            Log::Comment(NoThrowString().Format(L"Checking row %d", row));
+            VERIFY_IS_FALSE(tb.GetRowByOffset(row).WasWrapForced());
+            auto iter = tb.GetCellDataAt({ 0, row });
+            if (afterClear && row >= viewport.top)
+            {
+                if (row == viewport.bottom - 1)
+                {
+                    TestUtils::VerifyExpectedString(L"    ", iter);
+                    TestUtils::VerifyExpectedString(L"bar", iter);
+                    TestUtils::VerifySpanOfText(L" ", iter, 0, width - 8);
+                }
+                else
+                {
+                    TestUtils::VerifySpanOfText(L" ", iter, 0, width);
+                }
+            }
+            else
+            {
+                TestUtils::VerifySpanOfText(L"~", iter, 0, 1);
+                if (afterClear && row == viewport.top - 1)
+                {
+                    TestUtils::VerifyExpectedString(L"foo", iter);
+                    TestUtils::VerifySpanOfText(L" ", iter, 0, width - 4);
+                }
+                else
+                {
+                    TestUtils::VerifySpanOfText(L" ", iter, 0, width - 1);
+                }
+            }
+        }
+    };
+
+    Log::Comment(L"========== Checking the host buffer state (before) ==========");
+    verifyBuffer(*hostTb, si.GetViewport().ToExclusive());
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Checking the terminal buffer state (before) ==========");
+    verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
+
+    const til::rect originalTerminalView{ term->_mutableViewport.ToInclusive() };
+
+    // Here, we'll emit the 2J to EraseAll, and move the viewport contents into
+    // the scrollback.
+    Log::Comment(L"Send the EraseAll between foo and bar");
+    sm.ProcessString(L"foo\x1b[2Jbar");
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
