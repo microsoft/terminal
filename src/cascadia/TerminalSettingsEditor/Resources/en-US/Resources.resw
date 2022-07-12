@@ -1451,10 +1451,10 @@
   </data>
   <data name="Globals_AutoHideWindow.Header" xml:space="preserve">
     <value>Automatically hide window</value>
-    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, Terminal window will be hidden as soon as it loses focus.</comment>
+    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the window will be hidden as soon as it loses focus.</comment>
   </data>
   <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
-    <value>If enabled, Terminal window will be hidden as soon as it loses focus.</value>
+    <value>If enabled, the window will be hidden as soon as it loses focus.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
 </root>
