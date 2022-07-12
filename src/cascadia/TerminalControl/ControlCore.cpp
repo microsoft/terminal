@@ -1912,13 +1912,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - This is related to work done for GH#2988.
     void ControlCore::GotFocus()
     {
-        _terminal->FocusChanged(true);
+        _focusChanged(true);
     }
 
     // See GotFocus.
     void ControlCore::LostFocus()
     {
-        _terminal->FocusChanged(false);
+        _focusChanged(false);
+    }
+
+    void ControlCore::_focusChanged(bool focused)
+    {
+        // GH#13461 - temporarily turn off read-only mode, send the focus event,
+        // then turn it back on. Even in focus mode, focus events are fine to
+        // send. We don't want to pop a warning every time the control is
+        // focused.
+        const auto previous = std::exchange(_isReadOnly, false);
+        const auto restore = wil::scope_exit([&]() { _isReadOnly = previous; });
+        _terminal->FocusChanged(focused);
     }
 
     bool ControlCore::_isBackgroundTransparent()
