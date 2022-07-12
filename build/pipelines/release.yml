@@ -607,6 +607,8 @@ jobs:
     - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
 
+    - template: .\templates\restore-nuget-steps.yml
+
     # Download the appx-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
     - ${{ each platform in parameters.buildPlatforms }}:
       - ${{ each windowsVersion in parameters.buildWindowsVersions }}:
