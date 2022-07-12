@@ -28,18 +28,19 @@ steps:
   submodules: false
   fetchDepth: 1 # Don't need a deep checkout for loc files!
   persistCredentials: true
-  path: $(Build.SourcesDirectory)
+  path: s # Adding a second repo made Azure DevOps change where we're checked out.
 
 - checkout: internal
   clean: true
   submodules: false
   fetchDepth: 1
   persistCredentials: true
-  path: $(Build.SourcesDirectory)/Terminal.Internal
+  path: s/Terminal.Internal
 
 - task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@1
   displayName: 'Touchdown Build - 7105, PRODEXT'
   inputs:
+    isPreview: true # NFCI DO NOT SUBMIT YET
     teamId: 7105
     authId: '$(TouchdownApplicationID)'
     authKey: '$(TouchdownApplicationKey)'
@@ -53,7 +54,7 @@ steps:
 
 # Saving one of these makes it really easy to inspect the loc output...
 - powershell: 'tar czf LocOutput.tar.gz LocOutput'
-  displayName: 'PowerShell Script'
+  displayName: 'Archive Loc Output for Submission'
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: LocOutput'
