@@ -44,7 +44,7 @@ private:
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
-                      const winrt::Windows::UI::Xaml::ElementTheme& arg);
+                      const winrt::Microsoft::Terminal::Settings::Model::Theme& arg);
     void _FocusModeChanged(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Windows::Foundation::IInspectable& arg);
     void _FullscreenChanged(const winrt::Windows::Foundation::IInspectable& sender,

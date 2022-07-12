@@ -141,7 +141,7 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler) { return _root->PropertyChanged(handler); }
         void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
 
-        TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
+        TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::Theme);
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
 
@@ -195,8 +195,6 @@ namespace winrt::TerminalApp::implementation
         fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();
         void _OpenSettingsUI();
-
-        void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
         bool _hasCommandLineArguments{ false };
         bool _hasSettingsStartupActions{ false };

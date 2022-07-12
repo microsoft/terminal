@@ -4100,27 +4100,25 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (theme.TabRow())
+        else if (const auto tabRowBg{ _activated ? theme.TabRow().Background() :
+                                                   theme.TabRow().UnfocusedBackground() };
+                 tabRowBg != nullptr && theme.TabRow() != nullptr)
         {
-            if (const auto tabRowBg{ _activated ? theme.TabRow().Background() :
-                                                  theme.TabRow().UnfocusedBackground() })
-            {
-                const auto terminalBrush = [this]() -> Media::Brush {
-                    if (const auto& control{ _GetActiveControl() })
-                    {
-                        return control.BackgroundBrush();
-                    }
-                    else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                    {
-                        return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
-                    }
-                    return nullptr;
-                }();
+            const auto terminalBrush = [this]() -> Media::Brush {
+                if (const auto& control{ _GetActiveControl() })
+                {
+                    return control.BackgroundBrush();
+                }
+                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                {
+                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+                }
+                return nullptr;
+            }();
 
-                const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
-                bgColor = ThemeColor::ColorFromBrush(themeBrush);
-                TitlebarBrush(themeBrush);
-            }
+            const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
+            bgColor = ThemeColor::ColorFromBrush(themeBrush);
+            TitlebarBrush(themeBrush);
         }
         else
         {
