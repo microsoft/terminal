@@ -1928,7 +1928,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // send. We don't want to pop a warning every time the control is
         // focused.
         const auto previous = std::exchange(_isReadOnly, false);
-        const auto restore = wil::scope_exit([&]() { _isReadOnly = tmp; });
+        const auto restore = wil::scope_exit([&]() { _isReadOnly = previous; });
         _terminal->FocusChanged(focused);
     }
 
