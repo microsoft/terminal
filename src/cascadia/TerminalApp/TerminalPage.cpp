@@ -4100,9 +4100,9 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (const auto tabRowBg{ _activated ? theme.TabRow().Background() :
-                                                   theme.TabRow().UnfocusedBackground() };
-                 tabRowBg != nullptr && theme.TabRow() != nullptr)
+        else if (auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
+                                                               theme.TabRow().UnfocusedBackground()) :
+                                                 ThemeColor{ nullptr } })
         {
             const auto terminalBrush = [this]() -> Media::Brush {
                 if (const auto& control{ _GetActiveControl() })
