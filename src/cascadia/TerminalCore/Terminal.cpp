@@ -46,6 +46,7 @@ Terminal::Terminal() :
     _altGrAliasing{ true },
     _blockSelection{ false },
     _selectionMode{ SelectionInteractionMode::None },
+    _isTargetingUrl{ false },
     _selection{ std::nullopt },
     _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
     _anchorInactiveSelectionEndpoint{ false },
@@ -563,17 +564,24 @@ bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
 // Method Description:
 // - Given a coord, get the URI at that location
 // Arguments:
-// - The position
-std::wstring Terminal::GetHyperlinkAtPosition(const til::point position)
+// - The position relative to the viewport
+std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
 {
-    auto attr = _activeBuffer().GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
+    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos));
+}
+
+std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
+{
+    auto attr = _activeBuffer().GetCellDataAt(bufferPos)->TextAttr();
     if (attr.IsHyperlink())
     {
         auto uri = _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
         return uri;
     }
     // also look through our known pattern locations in our pattern interval tree
-    const auto result = GetHyperlinkIntervalFromPosition(position);
+    auto viewportPos = bufferPos;
+    _GetVisibleViewport().ConvertToOrigin(&viewportPos);
+    const auto result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
         const auto start = result->start;
@@ -594,23 +602,23 @@ std::wstring Terminal::GetHyperlinkAtPosition(const til::point position)
 // Method Description:
 // - Gets the hyperlink ID of the text at the given terminal position
 // Arguments:
-// - The position of the text
+// - The position of the text relative to the viewport
 // Return value:
 // - The hyperlink ID
-uint16_t Terminal::GetHyperlinkIdAtPosition(const til::point position)
+uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos)
 {
-    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
+    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos))->TextAttr().GetHyperlinkId();
 }
 
 // Method description:
 // - Given a position in a URI pattern, gets the start and end coordinates of the URI
 // Arguments:
-// - The position
+// - The position relative to the viewport
 // Return value:
 // - The interval representing the start and end coordinates
-std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const til::point position)
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos)
 {
-    const auto results = _patternIntervalTree.findOverlapping({ position.X + 1, position.Y }, position);
+    const auto results = _patternIntervalTree.findOverlapping({ viewportPos.X + 1, viewportPos.Y }, viewportPos);
     if (results.size() > 0)
     {
         for (const auto& result : results)

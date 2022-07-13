@@ -719,7 +719,8 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& /*arg*/)
+void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
+                           const winrt::Microsoft::Terminal::Settings::Model::Theme& /*arg*/)
 {
     _updateTheme();
 }

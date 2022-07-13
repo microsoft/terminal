@@ -162,9 +162,10 @@ public:
 
     void FocusChanged(const bool focused) noexcept override;
 
-    std::wstring GetHyperlinkAtPosition(const til::point position);
-    uint16_t GetHyperlinkIdAtPosition(const til::point position);
-    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const til::point position);
+    std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
+    std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);
+    uint16_t GetHyperlinkIdAtViewportPosition(const til::point viewportPos);
+    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -249,6 +250,12 @@ public:
         Down
     };
 
+    enum class SearchDirection
+    {
+        Forward,
+        Backward
+    };
+
     enum class SelectionExpansion
     {
         Char,
@@ -273,6 +280,8 @@ public:
     SelectionInteractionMode SelectionMode() const noexcept;
     void SwitchSelectionEndpoint();
     void ToggleMarkMode();
+    void SelectHyperlink(const SearchDirection dir);
+    bool IsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
@@ -349,6 +358,7 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
     SelectionInteractionMode _selectionMode;
+    bool _isTargetingUrl;
     SelectionEndpoint _selectionEndpoint;
     bool _anchorInactiveSelectionEndpoint;
 #pragma endregion
@@ -424,6 +434,7 @@ private:
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
     til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    void _ScrollToPoint(const til::point pos);
     void _MoveByChar(SelectionDirection direction, til::point& pos);
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos);

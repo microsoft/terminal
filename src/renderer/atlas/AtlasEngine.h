@@ -857,11 +857,9 @@ namespace Microsoft::Console::Render
         void _setShaderResources() const;
         void _updateConstantBuffer() const noexcept;
         void _adjustAtlasSize();
-        void _reserveScratchpadSize(u16 minWidth);
         void _processGlyphQueue();
         void _drawGlyph(const AtlasQueueItem& item) const;
         void _drawCursor();
-        void _copyScratchpadTile(uint32_t scratchpadIndex, u16x2 target, uint32_t copyFlags = 0) const noexcept;
 
         static constexpr bool debugGlyphGenerationPerformance = false;
         static constexpr bool debugGeneralPerformance = false || debugGlyphGenerationPerformance;
@@ -906,7 +904,6 @@ namespace Microsoft::Console::Render
             // D2D resources
             wil::com_ptr<ID3D11Texture2D> atlasBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> atlasView;
-            wil::com_ptr<ID3D11Texture2D> atlasScratchpad;
             wil::com_ptr<ID2D1RenderTarget> d2dRenderTarget;
             wil::com_ptr<ID2D1Brush> brush;
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
@@ -921,8 +918,6 @@ namespace Microsoft::Console::Render
             u16 strikethroughPos = 0;
             u16 lineThickness = 0;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
-            u16 maxEncounteredCellCount = 0;
-            u16 scratchpadCellWidth = 0;
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
             TileHashMap glyphs;
             TileAllocator tileAllocator;

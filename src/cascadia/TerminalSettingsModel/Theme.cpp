@@ -266,21 +266,6 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
 {
     auto result = winrt::make_self<Theme>();
 
-    if (json.isString())
-    {
-        // We found a string, not an object. Just secretly promote that string
-        // to a theme object with just the applicationTheme set from that value.
-        JsonUtils::GetValue(json, result->_Name);
-        winrt::WUX::ElementTheme requestedTheme{ winrt::WUX::ElementTheme::Default };
-        JsonUtils::GetValue(json, requestedTheme);
-
-        auto window{ winrt::make_self<implementation::WindowTheme>() };
-        window->RequestedTheme(requestedTheme);
-        result->_Window = *window;
-
-        return result;
-    }
-
     JsonUtils::GetValueForKey(json, NameKey, result->_Name);
 
     // This will use each of the ConversionTrait's from above to quickly parse the sub-objects
