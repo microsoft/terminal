@@ -302,7 +302,8 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalPage::_createNewTabFromContent(Windows::Foundation::IAsyncOperation<ContentProcess> initContentProc,
                                                                   TerminalSettingsCreateResult controlSettings,
-                                                                  Profile profile)
+                                                                  Profile profile,
+                                                                  std::function<void(const winrt::com_ptr<TerminalTab>&)> postInitTab /* defaults to nullptr*/)
     {
         auto newTabImpl = winrt::make_self<TerminalTab>(nullptr);
         // TODO! This tab should have a Content that's initialized with a blank
@@ -316,6 +317,11 @@ namespace winrt::TerminalApp::implementation
         //
         // That's an idea. We do already have the settings for the control, just not the content. Huh.
         _InitializeTab(newTabImpl); // Adds tab to list, tabview
+
+        if (postInitTab)
+        {
+            postInitTab(newTabImpl);
+        }
 
         // const auto initial = _startupState <= StartupState::InStartup;
         // if (!initial)
@@ -402,16 +408,22 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
-            _CreateNewTabFromPane(_MakePane(nullptr, true, nullptr));
 
-            const auto runtimeTabText{ tab.GetTabText() };
-            if (!runtimeTabText.empty())
-            {
-                if (auto newTab{ _GetFocusedTabImpl() })
+            // _CreateNewTabFromPane(_MakePane(nullptr, true, nullptr));
+
+            auto initRuntimeTabTitle = [&tab](auto& newTab) {
+                const auto runtimeTabText{ tab.GetTabText() };
+                if (!runtimeTabText.empty())
                 {
                     newTab->SetTabText(runtimeTabText);
                 }
-            }
+            };
+
+            TerminalSettingsCreateResult controlSettings{ nullptr };
+            Profile profile{ nullptr };
+            _evaluateSettings(nullptr, true, controlSettings, profile);
+            auto initContentProc = _CreateNewContentProcess(profile, controlSettings);
+            _createNewTabFromContent(initContentProc, controlSettings, profile, initRuntimeTabTitle);
         }
         CATCH_LOG();
     }

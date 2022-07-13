@@ -457,7 +457,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _createNewTabFromContent(Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> initContentProc,
                                                         winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult controlSettings,
-                                                        winrt::Microsoft::Terminal::Settings::Model::Profile profile);
+                                                        winrt::Microsoft::Terminal::Settings::Model::Profile profile,
+                                                        std::function<void(const winrt::com_ptr<TerminalTab>&)> postInitTab = nullptr);
 
         std::shared_ptr<Pane> _makePaneFromContent(winrt::Microsoft::Terminal::Control::ContentProcess initContentProc,
                                                    winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult controlSettings,
