@@ -428,7 +428,9 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Sets the specified tab as the focused tab and splits its active pane
+    // - Sets the specified tab as the focused tab and splits its active pane.
+    //   This will duplicate the profile that's currently active in the given
+    //   tab.
     // Arguments:
     // - tab: tab to split
     void TerminalPage::_SplitTab(winrt::com_ptr<TerminalTab>& tab)
@@ -436,7 +438,8 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(*tab);
-            _SplitPaneOnTab(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, true));
+            // _SplitPaneOnTab(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, true));
+            _asyncSplitPaneOnTab(tab, SplitDirection::Automatic, 0.5f, _prepareContentProc(nullptr, true));
         }
         CATCH_LOG();
     }
