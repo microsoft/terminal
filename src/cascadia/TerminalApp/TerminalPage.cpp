@@ -1018,53 +1018,67 @@ namespace winrt::TerminalApp::implementation
         {
             auto weakThis = get_weak();
 
-            co_await winrt::resume_background();
-            // auto content{ _InBackgroundMakeContent(newTerminalArgs, false) };
-
-            // TerminalSettingsCreateResult controlSettings{ nullptr };
-            // Profile profile{ nullptr };
-            // _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
             auto preppedContent = _prepareContentProc(newTerminalArgs, false /*duplicate*/); // TODO! this might be able to go above the resume_bg
-            auto content{ preppedContent.initContentProc.get() };
-            if (!content)
+
+            if (altPressed && !debugTap)
             {
-                co_return;
+                _asyncSplitPaneActiveTab(SplitDirection::Automatic,
+                                         0.5f,
+                                         preppedContent);
             }
+            else
+            {
+                _createNewTabFromContent(preppedContent);
+            }
+            // co_await winrt::resume_background();
+            // // auto content{ _InBackgroundMakeContent(newTerminalArgs, false) };
+
+            // // TerminalSettingsCreateResult controlSettings{ nullptr };
+            // // Profile profile{ nullptr };
+            // // _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
+            // auto content{ preppedContent.initContentProc.get() };
+            // if (!content)
+            // {
+            //     co_return;
+            // }
+            // co_await resume_foreground(Dispatcher());
+
+            // // TODO! This whole block is now out of date and should use the new helpers
+            // if (auto page{ weakThis.get() })
+            // {
+            //     auto makePaneFromContent = [this](auto content, auto controlSettings, auto profile) -> std::shared_ptr<Pane> {
+            //         // Create the XAML control that will be attached to the content process.
+            //         // We're not passing in a connection, because the contentGuid will be used instead
+            //         const auto control = _InitControl(controlSettings, content.Guid());
+            //         _RegisterTerminalEvents(control);
+
+            //         auto resultPane = std::make_shared<Pane>(profile, control);
+            //         return resultPane;
+            //     };
+            //     const auto newPane = makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
+
+            //     // If the newTerminalArgs caused us to open an elevated window
+            //     // instead of creating a pane, it may have returned nullptr. Just do
+            //     // nothing then.
+            //     if (!newPane)
+            //     {
+            //         co_return;
+            //     }
+
+            //     if (altPressed && !debugTap)
+            //     {
+            //         this->_SplitPaneActiveTab(SplitDirection::Automatic,
+            //                                   0.5f,
+            //                                   newPane);
+            //     }
+            //     else
+            //     {
+            //         _CreateNewTabFromPane(newPane);
+            //     }
+            // }
+
+            // TODO! just change the signature you lazy
             co_await resume_foreground(Dispatcher());
-
-            // TODO! This whole block is now out of date and should use the new helpers
-            if (auto page{ weakThis.get() })
-            {
-                auto makePaneFromContent = [this](auto content, auto controlSettings, auto profile) -> std::shared_ptr<Pane> {
-                    // Create the XAML control that will be attached to the content process.
-                    // We're not passing in a connection, because the contentGuid will be used instead
-                    const auto control = _InitControl(controlSettings, content.Guid());
-                    _RegisterTerminalEvents(control);
-
-                    auto resultPane = std::make_shared<Pane>(profile, control);
-                    return resultPane;
-                };
-                const auto newPane = makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
-
-                // If the newTerminalArgs caused us to open an elevated window
-                // instead of creating a pane, it may have returned nullptr. Just do
-                // nothing then.
-                if (!newPane)
-                {
-                    co_return;
-                }
-
-                if (altPressed && !debugTap)
-                {
-                    this->_SplitPaneActiveTab(SplitDirection::Automatic,
-                                              0.5f,
-                                              newPane);
-                }
-                else
-                {
-                    _CreateNewTabFromPane(newPane);
-                }
-            }
         }
     }
 
