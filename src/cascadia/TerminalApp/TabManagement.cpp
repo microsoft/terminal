@@ -316,25 +316,23 @@ namespace winrt::TerminalApp::implementation
         // That's an idea. We do already have the settings for the control, just not the content. Huh.
         _InitializeTab(newTabImpl); // Adds tab to list, tabview
 
+        // If the caller requested additional setup for the tab, do that now.
+        // For example, DuplicateTab uses this to copy the runtime tab text from
+        // the old tab to the new one.
         if (postInitTab)
         {
             postInitTab(newTabImpl);
         }
 
-        // const auto initial = _startupState <= StartupState::InStartup;
-        // if (!initial)
-        // {
         // TODO! Do we need both this and the resume_background in _CreateNewContentProcess
         co_await winrt::resume_background();
-        // }
         auto content = co_await preppedContent.initContentProc;
-        // if (!initial)
-        // {
         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-        // }
 
         auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
         newTabImpl->AttachRootPane(pane);
+
+        // TODO! DebugTap
     }
 
     // Method Description:
