@@ -481,8 +481,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::guid& contentGuid);
-        winrt::Microsoft::Terminal::Control::ContentProcess _InBackgroundMakeContent(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
-                                                                                     const bool duplicate);
+
         void _evaluateSettings(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
                                const bool duplicate,
                                winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,

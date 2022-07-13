@@ -2854,40 +2854,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // TODO! unused, get rid of.
-    ContentProcess TerminalPage::_InBackgroundMakeContent(const NewTerminalArgs& newTerminalArgs,
-                                                          const bool duplicate)
-    {
-        TerminalSettingsCreateResult controlSettings{ nullptr };
-        Profile profile{ nullptr };
-        _evaluateSettings(newTerminalArgs, duplicate, controlSettings, profile);
-
-        // TODO! auto elevation
-
-        // TODO! handle "existing connections"
-        //  - [ ] DefTerm
-        //  - [ ] DebugTap
-
-        // TODO! original code had this method take an existingContentProc param. figure this out later.
-        ContentProcess existingContentProc{ nullptr };
-        // _CreateNewContentProcess will take us to a BG thread, if we started in the FG
-        auto content = existingContentProc ? existingContentProc : _CreateNewContentProcess(profile, controlSettings).get();
-
-        return content;
-        // if (!content)
-        // {
-        //     return nullptr;
-        // }
-
-        // // Create the XAML control that will be attached to the content process.
-        // // We're not passing in a connection, because the contentGuid will be used instead
-        // const auto control = _InitControl(controlSettings, content.Guid());
-        // _RegisterTerminalEvents(control);
-
-        // auto resultPane = std::make_shared<Pane>(profile, control);
-        // return resultPane;
-    }
-
     // Method Description:
     // - Sets background image and applies its settings (stretch, opacity and alignment)
     // - Checks path validity
