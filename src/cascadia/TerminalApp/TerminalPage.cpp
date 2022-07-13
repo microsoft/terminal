@@ -1021,16 +1021,18 @@ namespace winrt::TerminalApp::implementation
             co_await winrt::resume_background();
             // auto content{ _InBackgroundMakeContent(newTerminalArgs, false) };
 
-            TerminalSettingsCreateResult controlSettings{ nullptr };
-            Profile profile{ nullptr };
-            _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
-            auto content{ _CreateNewContentProcess(profile, controlSettings).get() };
+            // TerminalSettingsCreateResult controlSettings{ nullptr };
+            // Profile profile{ nullptr };
+            // _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
+            auto preppedContent = _prepareContentProc(newTerminalArgs, false /*duplicate*/); // TODO! this might be able to go above the resume_bg
+            auto content{ preppedContent.initContentProc.get() };
             if (!content)
             {
                 co_return;
             }
             co_await resume_foreground(Dispatcher());
 
+            // TODO! This whole block is now out of date and should use the new helpers
             if (auto page{ weakThis.get() })
             {
                 auto makePaneFromContent = [this](auto content, auto controlSettings, auto profile) -> std::shared_ptr<Pane> {
@@ -1042,7 +1044,7 @@ namespace winrt::TerminalApp::implementation
                     auto resultPane = std::make_shared<Pane>(profile, control);
                     return resultPane;
                 };
-                const auto newPane = makePaneFromContent(content, controlSettings, profile);
+                const auto newPane = makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
 
                 // If the newTerminalArgs caused us to open an elevated window
                 // instead of creating a pane, it may have returned nullptr. Just do
@@ -1897,7 +1899,7 @@ namespace winrt::TerminalApp::implementation
                                            const float splitSize,
                                            std::shared_ptr<Pane> newPane)
     {
-        const auto focusedTab{ _GetFocusedTabImpl() };
+        auto focusedTab{ _GetFocusedTabImpl() };
 
         // Clever hack for a crash in startup, with multiple sub-commands. Say
         // you have the following commandline:
@@ -1928,7 +1930,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            _SplitPaneOnTab(*focusedTab, splitDirection, splitSize, newPane);
+            _SplitPaneOnTab(focusedTab, splitDirection, splitSize, newPane);
         }
     }
 
@@ -1941,7 +1943,7 @@ namespace winrt::TerminalApp::implementation
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
-    void TerminalPage::_SplitPaneOnTab(TerminalTab& tab,
+    void TerminalPage::_SplitPaneOnTab(winrt::com_ptr<TerminalTab>& tab,
                                        const SplitDirection splitDirection,
                                        const float splitSize,
                                        std::shared_ptr<Pane> newPane)
@@ -1952,24 +1954,102 @@ namespace winrt::TerminalApp::implementation
         // nothing here. We don't have a pane with which to create the split.
         if (!newPane)
         {
+            // TODO! Is there an equivalent of this for OOP?
             return;
         }
         const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
         const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
         const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
-        const auto realSplitType = tab.PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
+        const auto realSplitType = tab->PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
         if (!realSplitType)
         {
             return;
         }
 
         _UnZoomIfNeeded();
-        tab.SplitPane(*realSplitType, splitSize, newPane);
+        tab->SplitPane(*realSplitType, splitSize, newPane);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
         // the control here instead.
+        if (_startupState == StartupState::Initialized)
+        {
+            if (const auto control = _GetActiveControl())
+            {
+                control.Focus(FocusState::Programmatic);
+            }
+        }
+    }
+
+    winrt::fire_and_forget TerminalPage::_asyncSplitPaneActiveTab(const SplitDirection splitDirection,
+                                                                  const float splitSize,
+                                                                  PreparedContent preppedContent)
+    {
+        auto focusedTab{ _GetFocusedTabImpl() };
+
+        // Clever hack for a crash in startup, with multiple sub-commands. Say
+        // you have the following commandline:
+        //
+        //   wtd nt -p "elevated cmd" ; sp -p "elevated cmd" ; sp -p "Command Prompt"
+        //
+        // Where "elevated cmd" is an elevated profile.
+        //
+        // In that scenario, we won't dump off the commandline immediately to an
+        // elevated window, because it's got the final unelevated split in it.
+        // However, when we get to that command, there won't be a tab yet. So
+        // we'd crash right about here.
+        //
+        // Instead, let's just promote this first split to be a tab instead.
+        // Crash avoided, and we don't need to worry about inserting a new-tab
+        // command in at the start.
+        if (!focusedTab)
+        {
+            if (_tabs.Size() == 0)
+            {
+                _createNewTabFromContent(preppedContent);
+            }
+            else
+            {
+                // The focused tab isn't a terminal tab
+                co_return;
+            }
+        }
+        else
+        {
+            _asyncSplitPaneOnTab(focusedTab, splitDirection, splitSize, preppedContent);
+        }
+    }
+    winrt::fire_and_forget TerminalPage::_asyncSplitPaneOnTab(winrt::com_ptr<TerminalTab> tab,
+                                                              const SplitDirection splitDirection,
+                                                              const float splitSize,
+                                                              PreparedContent preppedContent)
+    {
+        // calculate split type
+        const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+        const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
+
+        const auto realSplitType = tab->PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
+        if (!realSplitType)
+        {
+            co_return;
+        }
+
+        // unzoom
+        _UnZoomIfNeeded();
+
+        co_await winrt::resume_background();
+
+        auto content = co_await preppedContent.initContentProc;
+
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+
+        auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
+
+        tab->SplitPane(*realSplitType, splitSize, pane);
+
+        // Manually focus the new pane, if we've already initialized
         if (_startupState == StartupState::Initialized)
         {
             if (const auto control = _GetActiveControl())
@@ -2583,6 +2663,15 @@ namespace winrt::TerminalApp::implementation
         return std::move(piOne);
     }
 
+    PreparedContent TerminalPage::_prepareContentProc(const NewTerminalArgs& newTerminalArgs,
+                                                      const bool duplicate)
+    {
+        PreparedContent preppedContent;
+        _evaluateSettings(newTerminalArgs, duplicate, preppedContent.controlSettings, preppedContent.profile);
+        preppedContent.initContentProc = _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
+        return preppedContent;
+    }
+
     Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_CreateNewContentProcess(Profile profile,
                                                                                                 TerminalSettingsCreateResult settings)
     {
@@ -2799,6 +2888,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // TODO! unused, get rid of.
     ContentProcess TerminalPage::_InBackgroundMakeContent(const NewTerminalArgs& newTerminalArgs,
                                                           const bool duplicate)
     {

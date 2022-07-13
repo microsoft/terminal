@@ -50,6 +50,13 @@ namespace winrt::TerminalApp::implementation
             _ProposedName{ name } {};
     };
 
+    struct PreparedContent
+    {
+        Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> initContentProc{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult controlSettings{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::Profile profile{ nullptr };
+    };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -273,7 +280,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
 
-        void _SplitTab(TerminalTab& tab);
+        void _SplitTab(winrt::com_ptr<TerminalTab>& tab);
         winrt::fire_and_forget _ExportTab(const TerminalTab& tab, winrt::hstring filepath);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
@@ -333,7 +340,7 @@ namespace winrt::TerminalApp::implementation
         void _SplitPaneActiveTab(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                  const float splitSize,
                                  std::shared_ptr<Pane> newPane);
-        void _SplitPaneOnTab(TerminalTab& tab,
+        void _SplitPaneOnTab(winrt::com_ptr<TerminalTab>& tab,
                              const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                              const float splitSize,
                              std::shared_ptr<Pane> newPane);
@@ -451,14 +458,22 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
+        PreparedContent _prepareContentProc(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                                            const bool duplicate);
         Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> _CreateNewContentProcess(winrt::Microsoft::Terminal::Settings::Model::Profile profile,
                                                                                                                            winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings);
         winrt::Microsoft::Terminal::Control::ContentProcess _AttachToContentProcess(const winrt::guid contentGuid);
 
-        winrt::fire_and_forget _createNewTabFromContent(Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> initContentProc,
-                                                        winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult controlSettings,
-                                                        winrt::Microsoft::Terminal::Settings::Model::Profile profile,
+        winrt::fire_and_forget _createNewTabFromContent(PreparedContent preppedContent,
                                                         std::function<void(const winrt::com_ptr<TerminalTab>&)> postInitTab = nullptr);
+
+        winrt::fire_and_forget _asyncSplitPaneActiveTab(const Microsoft::Terminal::Settings::Model::SplitDirection splitDirection,
+                                                        const float splitSize,
+                                                        PreparedContent preppedContent);
+        winrt::fire_and_forget _asyncSplitPaneOnTab(winrt::com_ptr<TerminalTab> tab,
+                                                    const Microsoft::Terminal::Settings::Model::SplitDirection splitDirection,
+                                                    const float splitSize,
+                                                    PreparedContent preppedContent);
 
         std::shared_ptr<Pane> _makePaneFromContent(winrt::Microsoft::Terminal::Control::ContentProcess initContentProc,
                                                    winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult controlSettings,

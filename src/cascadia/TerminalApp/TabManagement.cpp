@@ -91,7 +91,7 @@ namespace winrt::TerminalApp::implementation
         // Profile profile{ nullptr };
         // _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
         auto initContentProc = _CreateNewContentProcess(profile, controlSettings);
-        _createNewTabFromContent(initContentProc, controlSettings, profile);
+        _createNewTabFromContent(PreparedContent{ initContentProc, controlSettings, profile });
         // const auto tabCount = _tabs.Size();
         // const auto usedManualProfile = (newTerminalArgs != nullptr) &&
         //                                (newTerminalArgs.ProfileIndex() != nullptr ||
@@ -210,7 +210,7 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                page->_SplitTab(*tab);
+                page->_SplitTab(tab);
             }
         });
 
@@ -300,9 +300,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_createNewTabFromContent(Windows::Foundation::IAsyncOperation<ContentProcess> initContentProc,
-                                                                  TerminalSettingsCreateResult controlSettings,
-                                                                  Profile profile,
+    winrt::fire_and_forget TerminalPage::_createNewTabFromContent(PreparedContent preppedContent,
                                                                   std::function<void(const winrt::com_ptr<TerminalTab>&)> postInitTab /* defaults to nullptr*/)
     {
         auto newTabImpl = winrt::make_self<TerminalTab>(nullptr);
@@ -329,13 +327,13 @@ namespace winrt::TerminalApp::implementation
         // TODO! Do we need both this and the resume_background in _CreateNewContentProcess
         co_await winrt::resume_background();
         // }
-        auto content = co_await initContentProc;
+        auto content = co_await preppedContent.initContentProc;
         // if (!initial)
         // {
         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
         // }
 
-        auto pane = _makePaneFromContent(content, controlSettings, profile);
+        auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
         newTabImpl->AttachRootPane(pane);
     }
 
@@ -419,11 +417,12 @@ namespace winrt::TerminalApp::implementation
                 }
             };
 
-            TerminalSettingsCreateResult controlSettings{ nullptr };
-            Profile profile{ nullptr };
-            _evaluateSettings(nullptr, true, controlSettings, profile);
-            auto initContentProc = _CreateNewContentProcess(profile, controlSettings);
-            _createNewTabFromContent(initContentProc, controlSettings, profile, initRuntimeTabTitle);
+            // TerminalSettingsCreateResult controlSettings{ nullptr };
+            // Profile profile{ nullptr };
+            // _evaluateSettings(nullptr, true, controlSettings, profile);
+            // auto initContentProc = _CreateNewContentProcess(profile, controlSettings);
+            auto preppedContent = _prepareContentProc(nullptr, true);
+            _createNewTabFromContent(preppedContent, initRuntimeTabTitle);
         }
         CATCH_LOG();
     }
@@ -432,11 +431,11 @@ namespace winrt::TerminalApp::implementation
     // - Sets the specified tab as the focused tab and splits its active pane
     // Arguments:
     // - tab: tab to split
-    void TerminalPage::_SplitTab(TerminalTab& tab)
+    void TerminalPage::_SplitTab(winrt::com_ptr<TerminalTab>& tab)
     {
         try
         {
-            _SetFocusedTab(tab);
+            _SetFocusedTab(*tab);
             _SplitPaneOnTab(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, true));
         }
         CATCH_LOG();
