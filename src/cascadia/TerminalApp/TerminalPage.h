@@ -8,7 +8,7 @@
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
-#include "RequestMovePaneArgs.g.h"
+#include "RequestMoveContentArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -51,16 +51,17 @@ namespace winrt::TerminalApp::implementation
             _ProposedName{ name } {};
     };
 
-    struct RequestMovePaneArgs : RequestMovePaneArgsT<RequestMovePaneArgs>
+    struct RequestMoveContentArgs : RequestMoveContentArgsT<RequestMoveContentArgs>
     {
-        WINRT_PROPERTY(winrt::guid, ContentGuid);
-        WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::MovePaneArgs, Args, nullptr);
+        WINRT_PROPERTY(winrt::hstring, Window);
+        WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(uint32_t, TabIndex);
 
     public:
-        RequestMovePaneArgs(const winrt::guid& g,
-                            Microsoft::Terminal::Settings::Model::MovePaneArgs args) :
-            _ContentGuid{ g },
-            _Args{ args } {};
+        RequestMoveContentArgs(const winrt::hstring window, const winrt::hstring content, uint32_t tabIndex) :
+            _Window{ window },
+            _Content{ content },
+            _TabIndex{ tabIndex } {};
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -156,9 +157,7 @@ namespace winrt::TerminalApp::implementation
         void WindowProperties(const TerminalApp::IWindowProperties& props);
         winrt::fire_and_forget WindowNameChanged();
 
-        // WINRT_PROPERTY(TerminalApp::IWindowProperties, WindowProperties, nullptr);
-
-        winrt::fire_and_forget AttachPane(winrt::guid contentGuid, uint32_t tabIndex);
+        winrt::fire_and_forget AttachContent(winrt::hstring content, uint32_t tabIndex);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -183,7 +182,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
         TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
 
-        TYPED_EVENT(RequestMovePane, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMovePaneArgs);
+        TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 

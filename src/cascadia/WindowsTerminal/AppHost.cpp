@@ -355,7 +355,7 @@ void AppHost::_HandleCommandlineArgs(/*const winrt::Microsoft::Terminal::Remotin
 
         // TODO! add revoker
         _peasant.AttachRequested([this](auto&&, Remoting::AttachRequest args) {
-            _windowLogic.AttachPane(args.ContentGuid(), args.TabIndex());
+            _windowLogic.AttachContent(args.Content(), args.TabIndex());
         });
     }
 }
@@ -461,8 +461,9 @@ void AppHost::Initialize()
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
 
     // TODO! revoker
-    _windowLogic.RequestMovePane([this](auto&&, winrt::TerminalApp::RequestMovePaneArgs args) {
-        _windowManager2.RequestMovePane(args.Args().Window(), args.ContentGuid(), args.Args().TabIndex());
+    // TODO! move to member method
+    _windowLogic.RequestMoveContent([this](auto&&, winrt::TerminalApp::RequestMoveContentArgs args) {
+        _windowManager2.RequestMoveContent(args.Window(), args.Content(), args.TabIndex());
     });
 
     // BODGY

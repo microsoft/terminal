@@ -423,4 +423,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto found = GeneratedActionNames.find(_Action);
         return found != GeneratedActionNames.end() ? found->second : L"";
     }
+
+    winrt::hstring ActionAndArgs::Serialize(winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> args)
+    {
+        Json::Value json{ Json::objectValue };
+        JsonUtils::SetValueForKey(json, "actions", args);
+        Json::StreamWriterBuilder wbuilder;
+        auto str = Json::writeString(wbuilder, json);
+        return winrt::to_hstring(str);
+    }
+
 }

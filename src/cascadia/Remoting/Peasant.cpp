@@ -276,7 +276,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
-    void Peasant::AttachPaneToWindow(Remoting::AttachRequest request)
+    void Peasant::AttachContentToWindow(Remoting::AttachRequest request)
     {
         try
         {
@@ -287,8 +287,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             LOG_CAUGHT_EXCEPTION();
         }
         TraceLoggingWrite(g_hRemotingProvider,
-                          "Peasant_AttachPaneToWindow",
-
+                          "Peasant_AttachContentToWindow",
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }

@@ -6,7 +6,7 @@
 #include "TerminalPage.h"
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
-#include "RequestMovePaneArgs.g.cpp"
+#include "RequestMoveContentArgs.g.cpp"
 
 #include <filesystem>
 
@@ -1967,13 +1967,34 @@ namespace winrt::TerminalApp::implementation
 
         if (!windowId.empty())
         {
-            if (const auto& control{ _GetActiveControl() })
+            if (const auto terminalTab{ _GetFocusedTabImpl() })
+
             {
-                const auto currentContentGuid{ control.ContentGuid() };
-                auto request = winrt::make_self<RequestMovePaneArgs>(currentContentGuid, args);
-                _RequestMovePaneHandlers(*this, *request);
-                return true;
+                if (const auto pane{ terminalTab->GetActivePane() })
+
+                {
+                    auto startupActions = pane->BuildStartupActions(0, 1, true);
+                    auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions.args)) };
+                    // Json::Value json{ Json::objectValue };
+                    // SetValueForKey(json, "content", winRtActions);
+                    // Json::StreamWriterBuilder wbuilder;
+                    // auto str = Json::writeString(wbuilder, json);
+                    auto str = ActionAndArgs::Serialize(winRtActions);
+                    auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
+                                                                            str,
+                                                                            args.TabIndex());
+                    _RequestMoveContentHandlers(*this, *request);
+                    return true;
+                }
             }
+
+            //if (const auto& control{ _GetActiveControl() })
+            //{
+            //    const auto currentContentGuid{ control.ContentGuid() };
+            //    auto request = winrt::make_self<RequestMoveCoArgs>(currentContentGuid, args);
+            //    _RequestMovePaneHandlers(*this, *request);
+            //    return true;
+            //}
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
@@ -2006,15 +2027,16 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    winrt::fire_and_forget TerminalPage::AttachPane(winrt::guid contentGuid, uint32_t tabIndex)
+    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
-        contentGuid;
+        content;
         tabIndex;
         co_await winrt::resume_background();
         // const auto contentProc = _AttachToContentProcess(contentGuid);
         // contentProc;
         co_await winrt::resume_foreground(Dispatcher());
     }
+
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given pane accordingly in the tree

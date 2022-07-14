@@ -1241,11 +1241,11 @@ namespace winrt::TerminalApp::implementation
     }
     ////////////////////////////////////////////////////////////////////////////
 
-    void TerminalWindow::AttachPane(winrt::guid contentGuid, uint32_t tabIndex)
+    void TerminalWindow::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
         if (_root)
         {
-            _root->AttachPane(contentGuid, tabIndex);
+            _root->AttachContent(content, tabIndex);
         }
     }
 };

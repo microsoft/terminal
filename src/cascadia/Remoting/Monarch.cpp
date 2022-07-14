@@ -1044,23 +1044,25 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return winrt::single_threaded_vector(std::move(vec));
     }
 
-    void Monarch::RequestMovePane(winrt::hstring window,
-                                           winrt::guid contentGuid,
-                                           uint32_t tabIndex)
+    void Monarch::RequestMoveContent(winrt::hstring window,
+                                     winrt::hstring content,
+                                     uint32_t tabIndex)
     {
         auto windowId = _lookupPeasantIdForName(window);
         if (windowId == 0)
-        { /* TODO! try the name as an integer ID */
+        {
+            /* TODO! try the name as an integer ID */
             return;
         }
 
         if (auto targetPeasant{ _getPeasant(windowId) })
         {
-            auto request = winrt::make_self<implementation::AttachRequest>(contentGuid, tabIndex);
-            targetPeasant.AttachPaneToWindow(*request);
+            auto request = winrt::make_self<implementation::AttachRequest>(content, tabIndex);
+            targetPeasant.AttachContentToWindow(*request);
         }
         else
-        { /*TODO! log */
+        {
+            /*TODO! log */
         }
     }
 }

@@ -121,7 +121,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
 
-        void AttachPane(winrt::guid contentGuid, uint32_t tabIndex);
+        void AttachContent(winrt::hstring content, uint32_t tabIndex);
 
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
@@ -193,7 +193,7 @@ namespace winrt::TerminalApp::implementation
 
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
 
-        FORWARDED_TYPED_EVENT(RequestMovePane, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMovePaneArgs, _root, RequestMovePane);
+        FORWARDED_TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs, _root, RequestMoveContent);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;
