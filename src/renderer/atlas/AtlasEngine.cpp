@@ -369,15 +369,19 @@ try
     // viewport are still retained. This bit of code "refreshes" those glyphs and
     // brings them to the front of the LRU queue to prevent them from being reused.
     {
-        std::array<til::point, 2> ranges{ {
+        const std::array<til::point, 2> ranges{ {
             { 0, _api.dirtyRect.top },
             { _api.dirtyRect.bottom, _api.cellCount.y },
         } };
         const auto stride = static_cast<size_t>(_r.cellCount.x);
+
         for (const auto& p : ranges)
         {
+            // We (ab)use the .x/.y members of the til::point as the
+            // respective [from,to) range of rows we need to makeNewest().
             const auto from = p.x;
             const auto to = p.y;
+
             for (auto y = from; y < to; ++y)
             {
                 auto it = _r.cellGlyphMapping.data() + stride * y;
