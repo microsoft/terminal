@@ -32,10 +32,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
 {
-    static constexpr std::array<pair_type, 3> mappings = {
+    static constexpr std::array<pair_type, 5> mappings = {
         pair_type{ "never", ValueType::Never },
         pair_type{ "indexed", ValueType::Indexed },
-        pair_type{ "always", ValueType::Always }
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "true", ValueType::Indexed },
+        pair_type{ "false", ValueType::Never }
     };
 };
 
