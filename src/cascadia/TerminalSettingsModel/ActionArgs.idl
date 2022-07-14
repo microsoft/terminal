@@ -132,7 +132,7 @@ namespace Microsoft.Terminal.Settings.Model
         // not modify whatever the profile's value is (either true or false)
         Windows.Foundation.IReference<Boolean> Elevate;
 
-        Guid ContentGuid{ get; };
+        Guid ContentGuid{ get; set; };
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();

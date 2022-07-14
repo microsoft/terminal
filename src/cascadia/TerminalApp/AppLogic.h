@@ -124,7 +124,7 @@ namespace winrt::TerminalApp::implementation
         bool GetAlwaysShowNotificationIcon();
         bool GetShowTitleInTitlebar();
 
-        void AttachPane(winrt::guid contentGuid, uint32_t tabIndex);
+        void AttachContent(winrt::hstring content, uint32_t tabIndex);
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
         void DismissDialog();
@@ -224,7 +224,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
         FORWARDED_TYPED_EVENT(ShowWindowChanged, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs, _root, ShowWindowChanged);
 
-        FORWARDED_TYPED_EVENT(RequestMovePane, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMovePaneArgs, _root, RequestMovePane);
+        FORWARDED_TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs, _root, RequestMoveContent);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

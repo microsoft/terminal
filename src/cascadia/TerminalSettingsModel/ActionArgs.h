@@ -281,6 +281,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
         static constexpr std::string_view ElevateKey{ "elevate" };
+        static constexpr std::string_view ContentKey{ "__content" };
 
     public:
         hstring GenerateName() const;
@@ -299,7 +300,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_Profile == _Profile &&
                        otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
                        otherAsUs->_ColorScheme == _ColorScheme &&
-                       otherAsUs->_Elevate == _Elevate;
+                       otherAsUs->_Elevate == _Elevate &&
+                       otherAsUs->_ContentGuid == _ContentGuid;
             }
             return false;
         };
@@ -316,6 +318,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::GetValueForKey(json, ContentKey, args->_ContentGuid);
             return *args;
         }
         static Json::Value ToJson(const Model::NewTerminalArgs& val)
@@ -335,6 +338,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::SetValueForKey(json, ContentKey, args->_ContentGuid);
             return json;
         }
         Model::NewTerminalArgs Copy() const
@@ -349,6 +353,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
             copy->_ColorScheme = _ColorScheme;
             copy->_Elevate = _Elevate;
+            copy->_ContentGuid = _ContentGuid;
             return *copy;
         }
         size_t Hash() const
@@ -368,6 +373,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(SuppressApplicationTitle());
             h.write(ColorScheme());
             h.write(Elevate());
+            h.write(ContentGuid());
         }
     };
 }

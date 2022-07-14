@@ -15,13 +15,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
     struct AttachRequest : public AttachRequestT<AttachRequest>
     {
-        WINRT_PROPERTY(winrt::guid, ContentGuid);
+        WINRT_PROPERTY(winrt::hstring, Content);
         WINRT_PROPERTY(uint32_t, TabIndex);
 
     public:
-        AttachRequest(winrt::guid contentGuid,
+        AttachRequest(winrt::hstring content,
                       uint32_t tabIndex) :
-            _ContentGuid{ contentGuid }, _TabIndex{ tabIndex } {};
+            _Content{ content },
+            _TabIndex{ tabIndex } {};
     };
 
     struct Peasant : public PeasantT<Peasant>
@@ -44,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void RequestQuitAll();
         void Quit();
 
-        void AttachPaneToWindow(Remoting::AttachRequest request);
+        void AttachContentToWindow(Remoting::AttachRequest request);
 
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 

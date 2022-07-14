@@ -332,7 +332,7 @@ void AppHost::_HandleCommandlineArgs()
 
         // TODO! add revoker
         peasant.AttachRequested([this](auto&&, Remoting::AttachRequest args) {
-            _logic.AttachPane(args.ContentGuid(), args.TabIndex());
+            _logic.AttachContent(args.Content(), args.TabIndex());
         });
 
         _logic.WindowName(peasant.WindowName());
@@ -430,8 +430,9 @@ void AppHost::Initialize()
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _logic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     // TODO! revoker
-    _logic.RequestMovePane([this](auto&&, winrt::TerminalApp::RequestMovePaneArgs args) {
-        _windowManager.RequestMovePane(args.Args().Window(), args.ContentGuid(), args.Args().TabIndex());
+    // TODO! move to member method
+    _logic.RequestMoveContent([this](auto&&, winrt::TerminalApp::RequestMoveContentArgs args) {
+        _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex());
     });
 
     // BODGY

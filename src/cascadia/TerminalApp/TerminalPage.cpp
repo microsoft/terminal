@@ -6,7 +6,7 @@
 #include "TerminalPage.h"
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
-#include "RequestMovePaneArgs.g.cpp"
+#include "RequestMoveContentArgs.g.cpp"
 
 #include <filesystem>
 
@@ -1829,13 +1829,34 @@ namespace winrt::TerminalApp::implementation
 
         if (!windowId.empty())
         {
-            if (const auto& control{ _GetActiveControl() })
+            if (const auto terminalTab{ _GetFocusedTabImpl() })
+
             {
-                const auto currentContentGuid{ control.ContentGuid() };
-                auto request = winrt::make_self<RequestMovePaneArgs>(currentContentGuid, args);
-                _RequestMovePaneHandlers(*this, *request);
-                return true;
+                if (const auto pane{ terminalTab->GetActivePane() })
+
+                {
+                    auto startupActions = pane->BuildStartupActions(0, 1, true);
+                    auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions.args)) };
+                    // Json::Value json{ Json::objectValue };
+                    // SetValueForKey(json, "content", winRtActions);
+                    // Json::StreamWriterBuilder wbuilder;
+                    // auto str = Json::writeString(wbuilder, json);
+                    auto str = ActionAndArgs::Serialize(winRtActions);
+                    auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
+                                                                            str,
+                                                                            args.TabIndex());
+                    _RequestMoveContentHandlers(*this, *request);
+                    return true;
+                }
             }
+
+            //if (const auto& control{ _GetActiveControl() })
+            //{
+            //    const auto currentContentGuid{ control.ContentGuid() };
+            //    auto request = winrt::make_self<RequestMoveCoArgs>(currentContentGuid, args);
+            //    _RequestMovePaneHandlers(*this, *request);
+            //    return true;
+            //}
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
@@ -1868,47 +1889,55 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    winrt::fire_and_forget TerminalPage::AttachPane(winrt::guid contentGuid, uint32_t tabIndex)
+    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
-        contentGuid;
-        tabIndex;
-        co_await winrt::resume_background();
-        const auto contentProc = _AttachToContentProcess(contentGuid);
-        contentProc;
-
-        Settings::Model::NewTerminalArgs newTerminalArgs{ nullptr };
-        auto profile = _settings.GetProfileForArgs(newTerminalArgs);
-        auto controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-
-        co_await winrt::resume_foreground(Dispatcher());
-
-        auto newControl = _InitControl(controlSettings, contentProc.Guid());
-        // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl);
-        auto resultPane = std::make_shared<Pane>(profile, newControl);
-
-        _UnZoomIfNeeded();
-
-        uint32_t realIndex = std::min(tabIndex, _tabs.Size() - 1);
-        // if (_tabs.Size() > tabIndex)
-        // {
-        auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(realIndex));
-        targetTab->SplitPane(SplitDirection::Automatic, .5f, resultPane);
-
-        // After GH#6586, the control will no longer focus itself
-        // automatically when it's finished being laid out. Manually focus
-        // the control here instead.
-        if (_startupState == StartupState::Initialized)
+        /*
         {
-            _GetActiveControl().Focus(FocusState::Programmatic);
-        }
-        // }
-        // else
-        // {
-        //         realSplitType = tab.PreCalculateAutoSplit(availableSpace);
+            contentGuid;
+            tabIndex;
+            co_await winrt::resume_background();
+            const auto contentProc = _AttachToContentProcess(contentGuid);
+            contentProc;
 
-        //     tab.SplitPane(realSplitType, splitSize, profile, newControl);
-        // }
+            Settings::Model::NewTerminalArgs newTerminalArgs{ nullptr };
+            auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+            auto controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+
+            co_await winrt::resume_foreground(Dispatcher());
+
+            auto newControl = _InitControl(controlSettings, contentProc.Guid());
+            // Hookup our event handlers to the new terminal
+            _RegisterTerminalEvents(newControl);
+            auto resultPane = std::make_shared<Pane>(profile, newControl);
+
+            _UnZoomIfNeeded();
+
+            uint32_t realIndex = std::min(tabIndex, _tabs.Size() - 1);
+            // if (_tabs.Size() > tabIndex)
+            // {
+            auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(realIndex));
+            targetTab->SplitPane(SplitDirection::Automatic, .5f, resultPane);
+
+            // After GH#6586, the control will no longer focus itself
+            // automatically when it's finished being laid out. Manually focus
+            // the control here instead.
+            if (_startupState == StartupState::Initialized)
+            {
+                _GetActiveControl().Focus(FocusState::Programmatic);
+            }
+            // }
+            // else
+            // {
+            //         realSplitType = tab.PreCalculateAutoSplit(availableSpace);
+
+            //     tab.SplitPane(realSplitType, splitSize, profile, newControl);
+            // }
+        }
+        */
+
+        content;
+        tabIndex;
+        co_await wil::resume_foreground(Dispatcher());
     }
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the

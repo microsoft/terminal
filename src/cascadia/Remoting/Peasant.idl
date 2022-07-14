@@ -53,7 +53,7 @@ namespace Microsoft.Terminal.Remoting
     }
 
     [default_interface] runtimeclass AttachRequest {
-        Guid ContentGuid { get; };
+        String Content { get; };
         UInt32 TabIndex { get; };
     }
 
@@ -82,7 +82,7 @@ namespace Microsoft.Terminal.Remoting
         void Quit();
         String GetWindowLayout();
 
-        void AttachPaneToWindow(AttachRequest request);
+        void AttachContentToWindow(AttachRequest request);
 
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;

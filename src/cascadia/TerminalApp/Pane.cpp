@@ -119,7 +119,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
 // - <none>
 // Return Value:
 // - Arguments appropriate for a SplitPane or NewTab action
-NewTerminalArgs Pane::GetTerminalArgsForPane() const
+NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
@@ -164,6 +164,11 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     // object. That would work for schemes set by the Terminal, but not ones set
     // by VT, but that seems good enough.
 
+    if (asContent)
+    {
+        args.ContentGuid(_control.ContentGuid());
+    }
+
     return args;
 }
 
@@ -175,14 +180,15 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
 // Arguments:
 // - currentId: the id to use for the current/first pane
 // - nextId: the id to use for a new pane if we split
+// - asContent: TODO!
 // Return Value:
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
 //   created.
-Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId)
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent)
 {
     // if we are a leaf then all there is to do is defer to the parent.
-    if (_IsLeaf())
+    if (!asContent && _IsLeaf())
     {
         if (_lastActive)
         {
@@ -195,7 +201,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     auto buildSplitPane = [&](auto newPane) {
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
-        const auto terminalArgs{ newPane->GetTerminalArgsForPane() };
+        const auto terminalArgs{ newPane->GetTerminalArgsForPane(asContent) };
         // When creating a pane the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
@@ -204,6 +210,11 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 
         return actionAndArgs;
     };
+
+    if (asContent && _IsLeaf())
+    {
+        return { { buildSplitPane(shared_from_this()) }, shared_from_this(), currentId, 1 };
+    }
 
     auto buildMoveFocus = [](auto direction) {
         MoveFocusArgs args{ direction };
