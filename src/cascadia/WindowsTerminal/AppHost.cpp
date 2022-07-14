@@ -103,6 +103,7 @@ AppHost::AppHost() noexcept :
     _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
 
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
 
     _window->MakeWindow();
 
@@ -1393,6 +1394,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
     _updateTheme();
 }
 

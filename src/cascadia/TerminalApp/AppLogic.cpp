@@ -1500,6 +1500,17 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
+    bool AppLogic::AutoHideWindow()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings.GlobalSettings().AutoHideWindow();
+    }
+
     Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
     {
         return _settings.GlobalSettings().ActionMap().GlobalHotkeys();

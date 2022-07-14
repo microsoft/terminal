@@ -79,6 +79,7 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         void Maximized(bool newMaximized);
         bool AlwaysOnTop() const;
+        bool AutoHideWindow();
 
         bool ShouldUsePersistedLayout();
         bool ShouldImmediatelyHandoffToElevated();
