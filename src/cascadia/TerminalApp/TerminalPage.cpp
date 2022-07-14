@@ -1889,6 +1889,42 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    bool TerminalPage::_MoveTab(MoveTabArgs args)
+    {
+        const auto windowId{ args.Window() };
+        if (!windowId.empty())
+        {
+            if (const auto terminalTab{ _GetFocusedTabImpl() })
+            {
+                auto startupActions = terminalTab->BuildStartupActions(true);
+                auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
+                // Json::Value json{ Json::objectValue };
+                // SetValueForKey(json, "content", winRtActions);
+                // Json::StreamWriterBuilder wbuilder;
+                // auto str = Json::writeString(wbuilder, json);
+                auto str = ActionAndArgs::Serialize(winRtActions);
+                auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
+                                                                        str,
+                                                                        0);
+                _RequestMoveContentHandlers(*this, *request);
+                return true;
+            }
+        }
+
+        auto direction = args.Direction();
+        if (direction != MoveTabDirection::None)
+        {
+            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                auto currentTabIndex = focusedTabIndex.value();
+                auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+            }
+        }
+
+        return true;
+    }
+
     winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
         /*
@@ -1942,6 +1978,7 @@ namespace winrt::TerminalApp::implementation
         // TODO! if the first action is a split pane and tabIndex > tabs.size,
         // then remove it and insert an equivalent newTab
 
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High); // may need to go to the top of _createNewTabFromContent
         for (const auto& action : args)
         {
             _actionDispatch->DoAction(action);

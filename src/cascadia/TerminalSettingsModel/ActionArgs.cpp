@@ -13,6 +13,7 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "MovePaneArgs.g.cpp"
+#include "MoveTabArgs.g.cpp"
 #include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
@@ -28,7 +29,6 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "CloseTabArgs.g.cpp"
-#include "MoveTabArgs.g.cpp"
 #include "ScrollToMarkArgs.g.cpp"
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
@@ -244,6 +244,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MovePaneArgs::GenerateName() const
     {
+        // TODO!
         return winrt::hstring{
             fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
         };
@@ -661,6 +662,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"MoveTabCommandKey")),
                         directionString)
         };
+
+        // TODO!
+        // return winrt::hstring{
+        //     fmt::format(L"{}, window:{}", RS_(L"MovePaneCommandKey"), Window())
     }
 
     winrt::hstring ToggleCommandPaletteArgs::GenerateName() const

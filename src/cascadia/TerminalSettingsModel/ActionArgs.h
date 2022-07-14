@@ -172,8 +172,12 @@ private:                                                                        
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_TAB_ARGS(X) \
-    X(MoveTabDirection, Direction, "direction", args->Direction() == MoveTabDirection::None, MoveTabDirection::None)
+#define MOVE_TAB_ARGS(X)                                                                                             \
+    X(MoveTabDirection, Direction, "direction", args->Direction() == MoveTabDirection::None, MoveTabDirection::None) \
+    X(winrt::hstring, Window, "window", false, L"")
+
+// Other ideas:
+//  X(uint32_t, TabIndex, "index", false, 0) \ // target? source?
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_UP_ARGS(X) \

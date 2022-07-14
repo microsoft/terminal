@@ -90,7 +90,9 @@ namespace winrt::TerminalApp::implementation
         // TerminalSettingsCreateResult controlSettings{ nullptr };
         // Profile profile{ nullptr };
         // _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
-        auto initContentProc = _CreateNewContentProcess(profile, controlSettings);
+        auto initContentProc = (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{}) ?
+                                   _AttachToContentProcess(newTerminalArgs.ContentGuid()) :
+                                   _CreateNewContentProcess(profile, controlSettings);
         _createNewTabFromContent(PreparedContent{ initContentProc, controlSettings, profile });
         // const auto tabCount = _tabs.Size();
         // const auto usedManualProfile = (newTerminalArgs != nullptr) &&

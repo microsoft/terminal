@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
-        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(const bool asContent = false) const override;
 
     private:
         void _MakeTabViewItem() override;
