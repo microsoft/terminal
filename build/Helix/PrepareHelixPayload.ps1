@@ -55,8 +55,9 @@ Copy-Item "build\helix\runtests.cmd" $payloadDir
 Copy-Item "build\helix\InstallTestAppDependencies.ps1" "$payloadDir"
 Copy-Item "build\Helix\EnsureMachineState.ps1" "$payloadDir"
 
-# Copy the APPX package from the 'drop' artifact dir
+# Copy the APPX package from the 'drop' artifact dir and Windows Kits
 Copy-Item "$repoDirectory\Artifacts\$ArtifactName\appx\CascadiaPackage_0.0.1.0_$Platform.msix" $payloadDir\CascadiaPackage.zip
+Copy-Item "C:\program files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs.Desktop\14.0\Appx\Retail\x64\Microsoft.VCLibs.x64.14.00.Desktop.appx" $payloadDir\VCLibs.zip
 
 # Rename it to extension of ZIP because Expand-Archive is real sassy on the build machines
 # and refuses to unzip it because of its file extension while on a desktop, it just
@@ -64,3 +65,4 @@ Copy-Item "$repoDirectory\Artifacts\$ArtifactName\appx\CascadiaPackage_0.0.1.0_$
 
 # Extract the APPX package
 Expand-Archive -LiteralPath $payloadDir\CascadiaPackage.zip -DestinationPath $payloadDir\appx
+Expand-Archive -LiteralPath $payloadDir\VCLibs.zip -DestinationPath $payloadDir\appx -Force

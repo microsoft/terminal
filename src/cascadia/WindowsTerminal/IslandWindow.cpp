@@ -439,9 +439,19 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_ACTIVATE:
     {
         // wparam = 0 indicates the window was deactivated
-        if (LOWORD(wparam) != 0)
+        const bool activated = LOWORD(wparam) != 0;
+        _WindowActivatedHandlers(activated);
+
+        if (_autoHideWindow && !activated)
         {
-            _WindowActivatedHandlers();
+            if (_isQuakeWindow || _minimizeToNotificationArea)
+            {
+                HideWindow();
+            }
+            else
+            {
+                ShowWindow(GetHandle(), SW_MINIMIZE);
+            }
         }
 
         break;
@@ -1626,6 +1636,11 @@ void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
             _enterQuakeMode();
         }
     }
+}
+
+void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
+{
+    _autoHideWindow = autoHideWindow;
 }
 
 // Method Description:

@@ -203,18 +203,10 @@ bool Viewport::IsInBounds(const Viewport& other) const noexcept
 // - Determines if the given coordinate position lies within this viewport.
 // Arguments:
 // - pos - Coordinate position
-// - allowEndExclusive - if true, allow the EndExclusive til::point as a valid position.
-//                        Used in accessibility to signify that the exclusive end
-//                        includes the last til::point in a given viewport.
 // Return Value:
 // - True if it lies inside the viewport. False otherwise.
-bool Viewport::IsInBounds(const til::point pos, bool allowEndExclusive) const noexcept
+bool Viewport::IsInBounds(const til::point pos) const noexcept
 {
-    if (allowEndExclusive && pos == EndExclusive())
-    {
-        return true;
-    }
-
     return pos.X >= Left() && pos.X < RightExclusive() &&
            pos.Y >= Top() && pos.Y < BottomExclusive();
 }
@@ -355,9 +347,6 @@ bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
 // Arguments:
 // - first- The first coordinate position
 // - second - The second coordinate position
-// - allowEndExclusive - if true, allow the EndExclusive til::point as a valid position.
-//                        Used in accessibility to signify that the exclusive end
-//                        includes the last til::point in a given viewport.
 // Return Value:
 // -  Negative if First is to the left of the Second.
 // -  0 if First and Second are the same coordinate.
@@ -365,12 +354,11 @@ bool Viewport::DecrementInBoundsCircular(til::point& pos) const noexcept
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
 //    (the < looks like a left arrow :D)
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
-#pragma warning(suppress : 4100)
-int Viewport::CompareInBounds(const til::point first, const til::point second, bool allowEndExclusive) const noexcept
+int Viewport::CompareInBounds(const til::point first, const til::point second) const noexcept
 {
     // Assert that our coordinates are within the expected boundaries
-    assert(IsInBounds(first, allowEndExclusive));
-    assert(IsInBounds(second, allowEndExclusive));
+    assert(IsInBounds(first));
+    assert(IsInBounds(second));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
@@ -433,7 +421,7 @@ bool Viewport::WalkInBounds(til::point& pos, const WalkDir dir, bool allowEndExc
 bool Viewport::WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool allowEndExclusive) const noexcept
 {
     // Assert that the position given fits inside this viewport.
-    assert(IsInBounds(pos, allowEndExclusive));
+    assert((allowEndExclusive && pos == EndExclusive()) || IsInBounds(pos));
 
     if (dir.x == XWalk::LeftToRight)
     {

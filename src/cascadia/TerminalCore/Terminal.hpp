@@ -162,9 +162,10 @@ public:
 
     void FocusChanged(const bool focused) noexcept override;
 
-    std::wstring GetHyperlinkAtPosition(const til::point position);
-    uint16_t GetHyperlinkIdAtPosition(const til::point position);
-    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const til::point position);
+    std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
+    std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);
+    uint16_t GetHyperlinkIdAtViewportPosition(const til::point viewportPos);
+    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -233,12 +234,26 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    enum class SelectionInteractionMode
+    {
+        None,
+        Mouse,
+        Keyboard,
+        Mark
+    };
+
     enum class SelectionDirection
     {
         Left,
         Right,
         Up,
         Down
+    };
+
+    enum class SearchDirection
+    {
+        Forward,
+        Backward
     };
 
     enum class SelectionExpansion
@@ -249,17 +264,30 @@ public:
         Viewport,
         Buffer
     };
+
+    enum class SelectionEndpoint
+    {
+        Start = 0x1,
+        End = 0x2
+    };
+
     void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const til::point position);
     void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
-    bool IsInMarkMode() const;
+    SelectionInteractionMode SelectionMode() const noexcept;
+    void SwitchSelectionEndpoint();
     void ToggleMarkMode();
+    void SelectHyperlink(const SearchDirection dir);
+    bool IsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
+    til::point SelectionStartForRendering() const;
+    til::point SelectionEndForRendering() const;
+    const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -329,7 +357,10 @@ private:
     bool _blockSelection;
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
-    bool _markMode;
+    SelectionInteractionMode _selectionMode;
+    bool _isTargetingUrl;
+    SelectionEndpoint _selectionEndpoint;
+    bool _anchorInactiveSelectionEndpoint;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;
@@ -403,6 +434,7 @@ private:
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
     til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    void _ScrollToPoint(const til::point pos);
     void _MoveByChar(SelectionDirection direction, til::point& pos);
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos);

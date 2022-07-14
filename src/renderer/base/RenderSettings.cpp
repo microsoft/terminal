@@ -13,6 +13,7 @@ using Microsoft::Console::Utils::InitializeColorTable;
 
 static constexpr size_t AdjustedFgIndex{ 16 };
 static constexpr size_t AdjustedBgIndex{ 17 };
+static constexpr size_t AdjustedBrightFgIndex{ 18 };
 
 RenderSettings::RenderSettings() noexcept
 {
@@ -77,17 +78,21 @@ void RenderSettings::ResetColorTable() noexcept
 //   color pair to the adjusted foreground for that color pair
 void RenderSettings::MakeAdjustedColorArray() noexcept
 {
-    // The color table has 16 colors, but the adjusted color table needs to be 18
-    // to include the default background and default foreground colors
-    std::array<COLORREF, 18> colorTableWithDefaults;
+    // The color table has 16 colors, but the adjusted color table needs to be 19
+    // to include the default background, default foreground and bright default foreground colors
+    std::array<COLORREF, 19> colorTableWithDefaults;
     std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
     colorTableWithDefaults[AdjustedFgIndex] = GetColorAlias(ColorAlias::DefaultForeground);
     colorTableWithDefaults[AdjustedBgIndex] = GetColorAlias(ColorAlias::DefaultBackground);
 
-    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
+    // We need to use TextColor to calculate the bright default fg
+    TextColor defaultFg;
+    colorTableWithDefaults[AdjustedBrightFgIndex] = defaultFg.GetColor(_colorTable, GetColorAliasIndex(ColorAlias::DefaultForeground), true);
+
+    for (auto fgIndex = 0; fgIndex < 19; ++fgIndex)
     {
         const auto fg = til::at(colorTableWithDefaults, fgIndex);
-        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
+        for (auto bgIndex = 0; bgIndex < 19; ++bgIndex)
         {
             if (fgIndex == bgIndex)
             {
@@ -192,18 +197,10 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     const auto swapFgAndBg = attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed);
 
     // We want to nudge the foreground color to make it more perceivable only for the
-    // default color pairs within the color table, and only if there's no additional text attributes
-
-    // The reason we don't want to nudge when there's additional attributes is because of certain
-    // interactions like "bright" + "reverse". We cannot nudge after reversing because we, as of now,
-    // have no easy way to calculate what the bright background is when the background is default. We
-    // also cannot nudge before reversing because then we are reversing the resultant background rather
-    // than the resultant foreground, and this can lead to weird situations where certain regions of
-    // text have different backgrounds.
+    // default color pairs within the color table
     if (Feature_AdjustIndistinguishableText::IsEnabled() &&
         GetRenderMode(Mode::IndexedDistinguishableColors) &&
         !dimFg &&
-        !brightenFg &&
         !attr.IsInvisible() &&
         (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
         (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
@@ -211,10 +208,23 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
         const auto bgIndex = bgTextColor.IsDefault() ? AdjustedBgIndex : bgTextColor.GetIndex();
         auto fgIndex = fgTextColor.IsDefault() ? AdjustedFgIndex : fgTextColor.GetIndex();
 
+        if (brightenFg)
+        {
+            // There is a special case for intense here - we need to get the bright version of the foreground color
+            if (fgTextColor.IsIndex16() && (fgIndex < 8))
+            {
+                fgIndex += 8;
+            }
+            else if (fgTextColor.IsDefault())
+            {
+                fgIndex = AdjustedBrightFgIndex;
+            }
+        }
+
         if (swapFgAndBg)
         {
             const auto fg = _adjustedForegroundColors[fgIndex][bgIndex];
-            const auto bg = fgTextColor.GetColor(_colorTable, defaultFgIndex);
+            const auto bg = fgTextColor.GetColor(_colorTable, defaultFgIndex, brightenFg);
             return { fg, bg };
         }
         else

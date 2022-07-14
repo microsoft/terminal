@@ -55,6 +55,7 @@ public:
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
+    void SetAutoHideWindow(bool autoHideWindow) noexcept;
 
     void HideWindow();
 
@@ -67,7 +68,7 @@ public:
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
     WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
-    WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
+    WINRT_CALLBACK(WindowActivated, winrt::delegate<void(bool)>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
     WINRT_CALLBACK(NotifyNotificationIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
@@ -135,6 +136,7 @@ protected:
     void _moveToMonitor(const MONITORINFO activeMonitor);
 
     bool _isQuakeWindow{ false };
+    bool _autoHideWindow{ false };
 
     void _enterQuakeMode();
     til::rect _getQuakeModeSize(HMONITOR hmon);

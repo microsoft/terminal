@@ -29,7 +29,10 @@ dcomp
 DERR
 dlldata
 DONTADDTORECENT
+DWMWA
 DWORDLONG
+DWMSBT
+DWMWA
 endfor
 enumset
 environstrings
@@ -70,6 +73,7 @@ IDirect
 IExplorer
 IFACEMETHOD
 IFile
+IGraphics
 IInheritable
 IMap
 IMonarch
@@ -95,12 +99,14 @@ lround
 Lsa
 lsass
 LSHIFT
+MAINWINDOW
 memchr
 memicmp
 MENUCOMMAND
 MENUDATA
 MENUITEMINFOW
 MENUINFO
+mmeapi
 MOUSELEAVE
 mov
 mptt
@@ -175,6 +181,8 @@ Stubless
 Subheader
 Subpage
 syscall
+SYSTEMBACKDROP
+TABROW
 TASKBARCREATED
 TBPF
 THEMECHANGED
@@ -194,6 +202,7 @@ UOI
 UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
+Viewbox
 wcsstr
 wcstoui
 winmain

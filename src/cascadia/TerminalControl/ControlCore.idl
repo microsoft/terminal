@@ -29,6 +29,30 @@ namespace Microsoft.Terminal.Control
         All
     };
 
+    enum SelectionInteractionMode
+    {
+        None,
+        Mouse,
+        Keyboard,
+        Mark
+    };
+
+    [flags]
+    enum SelectionEndpointTarget
+    {
+        Start = 0x1,
+        End = 0x2
+    };
+
+    struct SelectionData
+    {
+        Microsoft.Terminal.Core.Point StartPos;
+        Microsoft.Terminal.Core.Point EndPos;
+        SelectionEndpointTarget Endpoint;
+        Boolean StartAtLeftBoundary;
+        Boolean EndAtRightBoundary;
+    };
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -65,10 +89,11 @@ namespace Microsoft.Terminal.Control
         void SendInput(String text);
         void PasteText(String text);
         void SelectAll();
+        void ClearSelection();
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
+        Boolean SwitchSelectionEndpoint();
         void ClearBuffer(ClearBufferType clearType);
-        Boolean IsInMarkMode();
 
         void SetHoveredCell(Microsoft.Terminal.Core.Point terminalPosition);
         void ClearHoveredCell();
@@ -90,6 +115,8 @@ namespace Microsoft.Terminal.Control
 
         Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
+        SelectionData SelectionInfo { get; };
+        SelectionInteractionMode SelectionMode();
 
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
@@ -125,6 +152,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> ReceivedOutput;
         event Windows.Foundation.TypedEventHandler<Object, FoundResultsArgs> FoundMatch;
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
-
+        event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
+        event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
     };
 }

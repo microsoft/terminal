@@ -27,6 +27,7 @@
 #include "CustomTextLayout.h"
 #include "CustomTextRenderer.h"
 #include "DxFontRenderData.h"
+#include "DxSoftFont.h"
 
 #include "../../types/inc/Viewport.hpp"
 
@@ -90,6 +91,10 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Present() noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
+
+        [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                             const til::size cellSize,
+                                             const size_t centeringHint) noexcept override;
 
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
@@ -204,6 +209,8 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _hyperlinkStrokeStyle;
 
         std::unique_ptr<DxFontRenderData> _fontRenderData;
+        DxSoftFont _softFont;
+        bool _usingSoftFont;
 
         D2D1_STROKE_STYLE_PROPERTIES _strokeStyleProperties;
         D2D1_STROKE_STYLE_PROPERTIES _dashStrokeStyleProperties;

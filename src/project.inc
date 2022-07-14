@@ -19,6 +19,8 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D
 USE_UNICRT              = 1
 USE_MSVCRT              = 1
 NO_WCHAR_T              = 1 # use native wchar_t
+USE_CXX17_STD_BYTE      = 1 # Windows disables std::byte by default...
+
 
 USE_STL                 = 1
 STL_VER                 = STL_VER_CURRENT
@@ -28,6 +30,7 @@ USE_NATIVE_EH           = 1
 # Compiler Settings
 # -------------------------------------
 
+USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
 USER_C_FLAGS            = $(USER_C_FLAGS) /fp:fast /utf-8
 
