@@ -128,13 +128,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         DeleteButton().Flyout().Hide();
 
-        // If the newly selected scheme is not deletable (because it is an
-        // in-box scheme), focus the Add New button. Otherwise, keep focus
-        // on the delete button.
-        if (ColorSchemeListView().SelectedItem().as<Editor::ColorSchemeViewModel>().IsInBoxScheme())
-        {
-            AddNewButton().Focus(FocusState::Programmatic);
-        }
+        // GH#11971, part 2. If we delete a scheme, and the next scheme we've
+        // loaded is an inbox one that _can't_ be deleted, then we need to toss
+        // focus to something sensible, rather than letting it fall out to the
+        // tab item.
+        //
+        // When deleting a scheme and the next scheme _is_ deletable, this isn't
+        // an issue, we'll already correctly focus the Delete button.
+        //
+        // However, it seems even more useful for focus to ALWAYS land on the
+        // scheme list view. This forces Narrator to read the name of the
+        // newly selected color scheme, which seemed more useful.
+
+        // For some reason, if we just call ColorSchemeListView().Focus(FocusState::Programmatic),
+        // focus always lands on the _first_ item of the list view, regardless of what the currently
+        // selected item is. So we need to grab the item container and focus that.
+        const auto itemContainer = ColorSchemeListView().ContainerFromIndex(ColorSchemeListView().SelectedIndex());
+        itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
     }
 
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
