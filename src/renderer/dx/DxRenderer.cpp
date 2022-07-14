@@ -881,6 +881,8 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _d2dBitmap.Reset();
 
+        _softFont.Reset();
+
         if (nullptr != _d2dDeviceContext.Get() && _isPainting)
         {
             _d2dDeviceContext->EndDraw();
@@ -1689,12 +1691,22 @@ try
     // Calculate positioning of our origin.
     const auto origin = (coord * _fontRenderData->GlyphCell()).to_d2d_point();
 
-    // Create the text layout
-    RETURN_IF_FAILED(_customLayout->Reset());
-    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
+    if (_usingSoftFont)
+    {
+        // We need to reset the clipping rect applied by the CustomTextRenderer,
+        // since the soft font will want to set its own clipping rect.
+        RETURN_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+        RETURN_IF_FAILED(_softFont.Draw(*_drawingContext, clusters, origin.x, origin.y));
+    }
+    else
+    {
+        // Create the text layout
+        RETURN_IF_FAILED(_customLayout->Reset());
+        RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
-    // Layout then render the text
-    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+        // Layout then render the text
+        RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+    }
 
     return S_OK;
 }
@@ -1933,8 +1945,9 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                      const RenderSettings& renderSettings,
                                                      const gsl::not_null<IRenderData*> /*pData*/,
-                                                     const bool /*usingSoftFont*/,
+                                                     const bool usingSoftFont,
                                                      const bool isSettingDefaultBrushes) noexcept
+try
 {
     const auto [colorForeground, colorBackground] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
 
@@ -1950,6 +1963,12 @@ CATCH_RETURN()
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
+
+    _usingSoftFont = usingSoftFont;
+    if (_usingSoftFont)
+    {
+        _softFont.SetColor(_foregroundColor);
+    }
 
     // If this flag is set, then we need to update the default brushes too and the swap chain background.
     if (isSettingDefaultBrushes)
@@ -1990,6 +2009,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Updates the font used for drawing
@@ -2021,7 +2041,8 @@ try
     // Prepare the text layout.
     _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());
 
-    return S_OK;
+    // Inform the soft font of the new cell size so it can scale appropriately.
+    return _softFont.SetTargetSize(_fontRenderData->GlyphCell());
 }
 CATCH_RETURN();
 
@@ -2233,6 +2254,7 @@ try
     {
         _antialiasingMode = antialiasingMode;
         _recreateDeviceRequested = true;
+        LOG_IF_FAILED(_softFont.SetAntialiasing(antialiasingMode != D2D1_TEXT_ANTIALIAS_MODE_ALIASED));
         LOG_IF_FAILED(InvalidateAll());
     }
 }
@@ -2274,6 +2296,24 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 {
     _hyperlinkHoveredId = hoveredId;
 }
+
+// Routine Description:
+// - This method will replace the active soft font with the given bit pattern.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if successful. E_FAIL if there was an error.
+HRESULT DxEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                 const til::size cellSize,
+                                 const size_t centeringHint) noexcept
+try
+{
+    _softFont.SetFont(bitPattern, cellSize, _fontRenderData->GlyphCell(), centeringHint);
+    return S_OK;
+}
+CATCH_RETURN();
 
 // Method Description:
 // - Informs this render engine about certain state for this frame at the

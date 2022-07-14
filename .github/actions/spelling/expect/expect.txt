@@ -292,6 +292,7 @@ codeproject
 coinit
 COLLECTIONURI
 colorizing
+COLORMATRIX
 colororacle
 colorref
 colorscheme
