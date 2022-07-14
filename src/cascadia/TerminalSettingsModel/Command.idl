@@ -25,6 +25,7 @@ namespace Microsoft.Terminal.Settings.Model
         ActionAndArgs(ShortcutAction action, IActionArgs args);
 
         static String Serialize(IVector<ActionAndArgs> args);
+        static IVector<ActionAndArgs> Deserialize(String content);
 
         IActionArgs Args;
         ShortcutAction Action;

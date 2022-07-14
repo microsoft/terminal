@@ -1343,6 +1343,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - duration - How long the note should be sustained (in microseconds).
     void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
     {
+        // TODO! GH#1256 This is intentionally here to conflict with https://github.com/microsoft/terminal/pull/13471#pullrequestreview-1039353718
+        // When we do tearout, we'll need to also recreate the midi thing
+
         // We create the audio instance on demand, and lock it for the duration
         // of the note output so it can't be destroyed while in use.
         auto& midiAudio = _getMidiAudio();
@@ -1989,6 +1992,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (owner != _owningHwnd && _connection)
         {
+            // TODO GH#1256 change the midi HWND too
             if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
             {
                 conpty.ReparentWindow(owner);

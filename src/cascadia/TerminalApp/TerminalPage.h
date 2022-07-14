@@ -482,7 +482,7 @@ namespace winrt::TerminalApp::implementation
                                             const bool duplicate);
         Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> _CreateNewContentProcess(winrt::Microsoft::Terminal::Settings::Model::Profile profile,
                                                                                                                            winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings);
-        winrt::Microsoft::Terminal::Control::ContentProcess _AttachToContentProcess(const winrt::guid contentGuid);
+        Windows::Foundation::IAsyncOperation<winrt::Microsoft::Terminal::Control::ContentProcess> _AttachToContentProcess(const winrt::guid contentGuid);
 
         winrt::fire_and_forget _createNewTabFromContent(PreparedContent preppedContent,
                                                         std::function<void(const winrt::com_ptr<TerminalTab>&)> postInitTab = nullptr);

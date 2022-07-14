@@ -1937,6 +1937,15 @@ namespace winrt::TerminalApp::implementation
 
         content;
         tabIndex;
+
+        auto args = ActionAndArgs::Deserialize(content);
+        // TODO! if the first action is a split pane and tabIndex > tabs.size,
+        // then remove it and insert an equivalent newTab
+
+        for (const auto& action : args)
+        {
+            _actionDispatch->DoAction(action);
+        }
         co_await wil::resume_foreground(Dispatcher());
     }
     // Method Description:
@@ -2038,6 +2047,8 @@ namespace winrt::TerminalApp::implementation
                                                                   const float splitSize,
                                                                   PreparedContent preppedContent)
     {
+        // _GetFocusedTabImpl requires us to be on the UI thread
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         auto focusedTab{ _GetFocusedTabImpl() };
 
         // Clever hack for a crash in startup, with multiple sub-commands. Say
@@ -2720,7 +2731,9 @@ namespace winrt::TerminalApp::implementation
     {
         PreparedContent preppedContent;
         _evaluateSettings(newTerminalArgs, duplicate, preppedContent.controlSettings, preppedContent.profile);
-        preppedContent.initContentProc = _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
+        preppedContent.initContentProc = (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{}) ?
+                                             _AttachToContentProcess(newTerminalArgs.ContentGuid()) :
+                                             _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
         return preppedContent;
     }
 
@@ -2765,7 +2778,7 @@ namespace winrt::TerminalApp::implementation
         co_return content;
     }
 
-    ContentProcess TerminalPage::_AttachToContentProcess(const winrt::guid contentGuid)
+    Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_AttachToContentProcess(const winrt::guid contentGuid)
     {
         ContentProcess content{ nullptr };
         try
@@ -2775,7 +2788,7 @@ namespace winrt::TerminalApp::implementation
         catch (winrt::hresult_error hr)
         {
         }
-        return content;
+        co_return content;
     }
 
     // INVARIANT: Must be called on UI thread!

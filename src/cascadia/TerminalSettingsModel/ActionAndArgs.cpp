@@ -426,5 +426,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto str = Json::writeString(wbuilder, json);
         return winrt::to_hstring(str);
     }
+    winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> ActionAndArgs::Deserialize(winrt::hstring content)
+    {
+        auto data = winrt::to_string(content);
+
+        std::string errs;
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+
+        winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> result{ nullptr };
+        JsonUtils::GetValueForKey(root, "actions", result);
+        return result;
+    }
 
 }
