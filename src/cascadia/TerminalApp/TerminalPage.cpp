@@ -2731,6 +2731,11 @@ namespace winrt::TerminalApp::implementation
     {
         PreparedContent preppedContent;
         _evaluateSettings(newTerminalArgs, duplicate, preppedContent.controlSettings, preppedContent.profile);
+
+        // If the NewTerminalArgs had a content guid in there, then we don't
+        // have to start a new one. _AttachToContentProcess will give us an
+        // "Async" callback that will actually just immediately connect to the
+        // given content proc
         preppedContent.initContentProc = (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{}) ?
                                              _AttachToContentProcess(newTerminalArgs.ContentGuid()) :
                                              _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
