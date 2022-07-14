@@ -2221,6 +2221,11 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
+    if (_renderSettings.GetRenderMode(RenderSettings::Mode::DistinguishableColors))
+    {
+        // Re-calculate the adjusted colors now that one of the entries has been changed
+        _renderSettings.MakeAdjustedColorArray();
+    }
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2286,6 +2291,11 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     case DispatchTypes::ColorItem::NormalText:
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
+        if (_renderSettings.GetRenderMode(RenderSettings::Mode::DistinguishableColors))
+        {
+            // Re-calculate the adjusted colors now that these aliases have been changed
+            _renderSettings.MakeAdjustedColorArray();
+        }
         break;
     case DispatchTypes::ColorItem::WindowFrame:
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);

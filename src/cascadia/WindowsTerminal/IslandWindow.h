@@ -55,6 +55,7 @@ public:
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
+    void SetAutoHideWindow(bool autoHideWindow) noexcept;
 
     void HideWindow();
 
@@ -135,6 +136,7 @@ protected:
     void _moveToMonitor(const MONITORINFO activeMonitor);
 
     bool _isQuakeWindow{ false };
+    bool _autoHideWindow{ false };
 
     void _enterQuakeMode();
     til::rect _getQuakeModeSize(HMONITOR hmon);

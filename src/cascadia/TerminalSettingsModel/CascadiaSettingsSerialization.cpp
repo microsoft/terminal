@@ -41,6 +41,10 @@ static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view ThemesKey{ "themes" };
 
+constexpr std::wstring_view systemThemeName{ L"system" };
+constexpr std::wstring_view darkThemeName{ L"dark" };
+constexpr std::wstring_view lightThemeName{ L"light" };
+
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
 static constexpr std::wstring_view FragmentsPath{ L"\\Microsoft\\Windows Terminal\\Fragments" };
@@ -538,7 +542,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
             if (const auto theme = Theme::FromJson(themeJson))
             {
                 if (origin != OriginTag::InBox &&
-                    (theme->Name() == L"system" || theme->Name() == L"light" || theme->Name() == L"dark"))
+                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
                 {
                     // If the theme didn't come from the in-box themes, and its
                     // name was one of the reserved names, then just ignore it.
@@ -1119,7 +1123,7 @@ Json::Value CascadiaSettings::ToJson() const
         // Ignore the built in themes, when serializing the themes back out. We
         // don't want to re-include them in the user settings file.
         const auto theme{ winrt::get_self<Theme>(entry.Value()) };
-        if (theme->Name() == L"system" || theme->Name() == L"light" || theme->Name() == L"dark")
+        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
         {
             continue;
         }

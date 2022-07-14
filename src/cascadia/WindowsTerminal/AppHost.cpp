@@ -103,6 +103,7 @@ AppHost::AppHost() noexcept :
     _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
 
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
 
     _window->MakeWindow();
 
@@ -719,7 +720,8 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& /*arg*/)
+void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
+                           const winrt::Microsoft::Terminal::Settings::Model::Theme& /*arg*/)
 {
     _updateTheme();
 }
@@ -1392,6 +1394,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
     _updateTheme();
 }
 

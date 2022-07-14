@@ -134,8 +134,6 @@ jobs:
 
         Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
   - template: .\templates\restore-nuget-steps.yml
-  # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
-  - template: .\templates\install-winsdk-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
     inputs:
@@ -238,6 +236,7 @@ jobs:
       filePath: build\scripts\Index-Pdbs.ps1
       arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
       errorActionPreference: silentlyContinue
+      pwsh: true
   - task: PowerShell@2
     displayName: Run Unit Tests
     condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
@@ -608,6 +607,8 @@ jobs:
     - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
 
+    - template: .\templates\restore-nuget-steps.yml
+
     # Download the appx-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
     - ${{ each platform in parameters.buildPlatforms }}:
       - ${{ each windowsVersion in parameters.buildWindowsVersions }}:
@@ -630,13 +631,12 @@ jobs:
         }
       displayName: Extract symbols for public consumption
 
-    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
-    - template: .\templates\install-winsdk-steps.yml
     - task: PowerShell@2
       displayName: Source Index PDBs (the public ones)
       inputs:
         filePath: build\scripts\Index-Pdbs.ps1
         arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-temp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+        pwsh: true
 
     # Publish the app symbols to the public MSDL symbol server
     # accessible via https://msdl.microsoft.com/download/symbols

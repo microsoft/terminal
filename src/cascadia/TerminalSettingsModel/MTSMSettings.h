@@ -51,6 +51,7 @@ Author(s):
     X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                   \
     X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                   \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                             \
+    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                       \
     X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                         \
     X(bool, DisableAnimations, "disableAnimations", false)                                                                                                 \
     X(hstring, StartupActions, "startupActions", L"")                                                                                                      \
@@ -110,7 +111,7 @@ Author(s):
     X(hstring, ColorSchemeName, "colorScheme", L"Campbell")                                                                                                        \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", true)
+    X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", false)
 
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors

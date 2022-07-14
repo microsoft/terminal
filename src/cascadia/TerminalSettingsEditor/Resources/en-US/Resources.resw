@@ -317,7 +317,6 @@
   </data>
   <data name="Globals_FirstWindowPreference.HelpText" xml:space="preserve">
     <value>What should be shown when the first terminal is created.</value>
-    <comment></comment>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>Open a tab with the default profile</value>
@@ -1449,5 +1448,13 @@
   <data name="Appearance_IntenseTextStyleAll.Content" xml:space="preserve">
     <value>Bold font with bright colors</value>
     <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as both bold text and in a brighter color</comment>
+  </data>
+  <data name="Globals_AutoHideWindow.Header" xml:space="preserve">
+    <value>Automatically hide window</value>
+    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the window will be hidden as soon as it loses focus.</comment>
+  </data>
+  <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
+    <value>If enabled, the window will be hidden as soon as it loses focus.</value>
+    <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
 </root>

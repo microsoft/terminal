@@ -81,6 +81,10 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="RenderingViewModel.h">
+      <DependentUpon>RenderingViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="InteractionViewModel.h">
       <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -205,6 +209,10 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="RenderingViewModel.cpp">
+      <DependentUpon>RenderingViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="InteractionViewModel.cpp">
       <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -287,6 +295,7 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
