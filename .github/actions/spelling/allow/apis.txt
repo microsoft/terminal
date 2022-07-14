@@ -29,6 +29,7 @@ dcomp
 DERR
 dlldata
 DONTADDTORECENT
+DWMWA
 DWORDLONG
 DWMSBT
 DWMWA
@@ -72,6 +73,7 @@ IDirect
 IExplorer
 IFACEMETHOD
 IFile
+IGraphics
 IInheritable
 IMap
 IMonarch
