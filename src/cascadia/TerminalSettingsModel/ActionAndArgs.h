@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Json::Value ToJson(const Model::ActionAndArgs& val);
 
         static winrt::hstring Serialize(winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> args);
+        static winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> Deserialize(winrt::hstring content);
 
         ActionAndArgs() = default;
         ActionAndArgs(ShortcutAction action);

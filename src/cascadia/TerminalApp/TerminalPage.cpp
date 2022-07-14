@@ -2031,10 +2031,16 @@ namespace winrt::TerminalApp::implementation
     {
         content;
         tabIndex;
-        co_await winrt::resume_background();
-        // const auto contentProc = _AttachToContentProcess(contentGuid);
-        // contentProc;
-        co_await winrt::resume_foreground(Dispatcher());
+
+        auto args = ActionAndArgs::Deserialize(content);
+        // TODO! if the first action is a split pane and tabIndex > tabs.size,
+        // then remove it and insert an equivalent newTab
+
+        for (const auto& action : args)
+        {
+            _actionDispatch->DoAction(action);
+        }
+        co_await wil::resume_foreground(Dispatcher());
     }
 
     // Method Description:
@@ -2131,6 +2137,88 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // <<<<<<< HEAD
+    // =======
+    //     winrt::fire_and_forget TerminalPage::_asyncSplitPaneActiveTab(const SplitDirection splitDirection,
+    //                                                                   const float splitSize,
+    //                                                                   PreparedContent preppedContent)
+    //     {
+    //         // _GetFocusedTabImpl requires us to be on the UI thread
+    //         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+    //         auto focusedTab{ _GetFocusedTabImpl() };
+
+    //         // Clever hack for a crash in startup, with multiple sub-commands. Say
+    //         // you have the following commandline:
+    //         //
+    //         //   wtd nt -p "elevated cmd" ; sp -p "elevated cmd" ; sp -p "Command Prompt"
+    //         //
+    //         // Where "elevated cmd" is an elevated profile.
+    //         //
+    //         // In that scenario, we won't dump off the commandline immediately to an
+    //         // elevated window, because it's got the final unelevated split in it.
+    //         // However, when we get to that command, there won't be a tab yet. So
+    //         // we'd crash right about here.
+    //         //
+    //         // Instead, let's just promote this first split to be a tab instead.
+    //         // Crash avoided, and we don't need to worry about inserting a new-tab
+    //         // command in at the start.
+    //         if (!focusedTab)
+    //         {
+    //             if (_tabs.Size() == 0)
+    //             {
+    //                 _createNewTabFromContent(preppedContent);
+    //             }
+    //             else
+    //             {
+    //                 // The focused tab isn't a terminal tab
+    //                 co_return;
+    //             }
+    //         }
+    //         else
+    //         {
+    //             _asyncSplitPaneOnTab(focusedTab, splitDirection, splitSize, preppedContent);
+    //         }
+    //     }
+    //     winrt::fire_and_forget TerminalPage::_asyncSplitPaneOnTab(winrt::com_ptr<TerminalTab> tab,
+    //                                                               const SplitDirection splitDirection,
+    //                                                               const float splitSize,
+    //                                                               PreparedContent preppedContent)
+    //     {
+    //         // calculate split type
+    //         const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+    //         const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+    //         const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
+
+    //         const auto realSplitType = tab->PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
+    //         if (!realSplitType)
+    //         {
+    //             co_return;
+    //         }
+
+    //         // unzoom
+    //         _UnZoomIfNeeded();
+
+    //         co_await winrt::resume_background();
+
+    //         auto content = co_await preppedContent.initContentProc;
+
+    //         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+
+    //         auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
+
+    //         tab->SplitPane(*realSplitType, splitSize, pane);
+
+    //         // Manually focus the new pane, if we've already initialized
+    //         if (_startupState == StartupState::Initialized)
+    //         {
+    //             if (const auto control = _GetActiveControl())
+    //             {
+    //                 control.Focus(FocusState::Programmatic);
+    //             }
+    //         }
+    //     }
+
+    // >>>>>>> 1f2bb760e (Pane officially opened via the serialized actions, via across the process boundary)
     // Method Description:
     // - Switches the split orientation of the currently focused pane.
     // Arguments:
@@ -2687,6 +2775,129 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // <<<<<<< HEAD
+    // =======
+    //     static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
+    //     {
+    //         auto guidStr{ ::Microsoft::Console::Utils::GuidToString(g) };
+
+    //         // Create an event that the content process will use to signal it is
+    //         // ready to go. We won't need the event after this function, so the
+    //         // unique_event will clean up our handle when we leave this scope. The
+    //         // ContentProcess is responsible for cleaning up its own handle.
+    //         wil::unique_event ev{ CreateEvent(nullptr, true, false, nullptr /*L"contentProcessStarted"*/) };
+    //         // Make sure to mark this handle as inheritable! Even with
+    //         // bInheritHandles=true, this is only inherited when it's explicitly
+    //         // allowed to be.
+    //         SetHandleInformation(ev.get(), HANDLE_FLAG_INHERIT, 1);
+
+    //         // god bless, fmt::format will format a HANDLE like `0xa80`
+    //         std::wstring commandline{
+    //             fmt::format(L"WindowsTerminal.exe --content {} --signal {}", guidStr, ev.get())
+    //         };
+
+    //         STARTUPINFO siOne{ 0 };
+    //         siOne.cb = sizeof(STARTUPINFOW);
+    //         wil::unique_process_information piOne;
+    //         auto succeeded = CreateProcessW(
+    //             nullptr,
+    //             commandline.data(),
+    //             nullptr, // lpProcessAttributes
+    //             nullptr, // lpThreadAttributes
+    //             true, // bInheritHandles
+    //             CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
+    //             nullptr, // lpEnvironment
+    //             nullptr, // startingDirectory
+    //             &siOne, // lpStartupInfo
+    //             &piOne // lpProcessInformation
+    //         );
+    //         THROW_IF_WIN32_BOOL_FALSE(succeeded);
+
+    //         // Wait for the child process to signal that they're ready.
+    //         WaitForSingleObject(ev.get(), INFINITE);
+
+    //         return std::move(piOne);
+    //     }
+
+    //     PreparedContent TerminalPage::_prepareContentProc(const NewTerminalArgs& newTerminalArgs,
+    //                                                       const bool duplicate)
+    //     {
+    //         PreparedContent preppedContent;
+    //         _evaluateSettings(newTerminalArgs, duplicate, preppedContent.controlSettings, preppedContent.profile);
+    //         preppedContent.initContentProc = (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{}) ?
+    //                                              _AttachToContentProcess(newTerminalArgs.ContentGuid()) :
+    //                                              _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
+    //         return preppedContent;
+    //     }
+
+    //     Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_CreateNewContentProcess(Profile profile,
+    //                                                                                                 TerminalSettingsCreateResult settings)
+    //     {
+    //         co_await winrt::resume_background();
+    //         winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
+    //         // Spawn a wt.exe, with the guid on the commandline
+    //         auto piContentProcess{ _createHostClassProcess(contentGuid) };
+
+    //         // DebugBreak();
+
+    //         // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
+    //         // * If we're creating a new OOP control, _createHostClassProcess will
+    //         //   spawn the process that will actually host the ContentProcess
+    //         //   object.
+    //         // * If we're attaching, then that process already exists.
+    //         ContentProcess content{ nullptr };
+    //         try
+    //         {
+    //             content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+    //         }
+    //         catch (winrt::hresult_error hr)
+    //         {
+    //             co_return nullptr;
+    //         }
+
+    //         if (content == nullptr)
+    //         {
+    //             co_return nullptr;
+    //         }
+
+    //         TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings.DefaultSettings()) };
+
+    //         // Init the content proc with the focused/unfocused pair
+    //         if (!content.Initialize(settings.DefaultSettings(), settings.UnfocusedSettings(), connectInfo))
+    //         {
+    //             co_return nullptr;
+    //         }
+
+    //         co_return content;
+    //     }
+
+    //     Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_AttachToContentProcess(const winrt::guid contentGuid)
+    //     {
+    //         ContentProcess content{ nullptr };
+    //         try
+    //         {
+    //             content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+    //         }
+    //         catch (winrt::hresult_error hr)
+    //         {
+    //         }
+    //         co_return content;
+    //     }
+
+    //     // INVARIANT: Must be called on UI thread!
+    //     std::shared_ptr<Pane> TerminalPage::_makePaneFromContent(ContentProcess content,
+    //                                                              TerminalSettingsCreateResult controlSettings,
+    //                                                              Profile profile)
+    //     {
+    //         // Create the XAML control that will be attached to the content process.
+    //         // We're not passing in a connection, because the contentGuid will be used instead
+    //         const auto control = _InitControl(controlSettings, content.Guid());
+    //         _RegisterTerminalEvents(control);
+
+    //         return std::make_shared<Pane>(profile, control);
+    //     }
+
+    // >>>>>>> 1f2bb760e (Pane officially opened via the serialized actions, via across the process boundary)
     TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Do any initialization that needs to apply to _every_ TermControl we
