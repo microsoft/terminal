@@ -13,6 +13,7 @@ using Microsoft::Console::Utils::InitializeColorTable;
 
 static constexpr size_t AdjustedFgIndex{ 16 };
 static constexpr size_t AdjustedBgIndex{ 17 };
+static constexpr size_t AdjustedBrightFgIndex{ 18 };
 
 RenderSettings::RenderSettings() noexcept
 {
@@ -77,17 +78,21 @@ void RenderSettings::ResetColorTable() noexcept
 //   color pair to the adjusted foreground for that color pair
 void RenderSettings::MakeAdjustedColorArray() noexcept
 {
-    // The color table has 16 colors, but the adjusted color table needs to be 18
-    // to include the default background and default foreground colors
-    std::array<COLORREF, 18> colorTableWithDefaults;
+    // The color table has 16 colors, but the adjusted color table needs to be 19
+    // to include the default background, default foreground and bright default foreground colors
+    std::array<COLORREF, 19> colorTableWithDefaults;
     std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
     colorTableWithDefaults[AdjustedFgIndex] = GetColorAlias(ColorAlias::DefaultForeground);
     colorTableWithDefaults[AdjustedBgIndex] = GetColorAlias(ColorAlias::DefaultBackground);
 
-    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
+    // We need to use TextColor to calculate the bright default fg
+    TextColor defaultFg;
+    colorTableWithDefaults[AdjustedBrightFgIndex] = defaultFg.GetColor(_colorTable, GetColorAliasIndex(ColorAlias::DefaultForeground), true);
+
+    for (auto fgIndex = 0; fgIndex < 19; ++fgIndex)
     {
         const auto fg = til::at(colorTableWithDefaults, fgIndex);
-        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
+        for (auto bgIndex = 0; bgIndex < 19; ++bgIndex)
         {
             if (fgIndex == bgIndex)
             {
@@ -196,22 +201,30 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     if (Feature_AdjustIndistinguishableText::IsEnabled() &&
         GetRenderMode(Mode::DistinguishableColors) &&
         !dimFg &&
+        !attr.IsInvisible() &&
         (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
         (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
     {
         const auto bgIndex = bgTextColor.IsDefault() ? AdjustedBgIndex : bgTextColor.GetIndex();
         auto fgIndex = fgTextColor.IsDefault() ? AdjustedFgIndex : fgTextColor.GetIndex();
 
-        if (fgTextColor.IsIndex16() && (fgIndex < 8) && brightenFg)
+        if (brightenFg)
         {
             // There is a special case for intense here - we need to get the bright version of the foreground color
-            fgIndex += 8;
+            if (fgTextColor.IsIndex16() && (fgIndex < 8))
+            {
+                fgIndex += 8;
+            }
+            else if (fgTextColor.IsDefault())
+            {
+                fgIndex = AdjustedBrightFgIndex;
+            }
         }
 
         if (swapFgAndBg)
         {
             const auto fg = _adjustedForegroundColors[fgIndex][bgIndex];
-            const auto bg = fgTextColor.GetColor(_colorTable, defaultFgIndex);
+            const auto bg = fgTextColor.GetColor(_colorTable, defaultFgIndex, brightenFg);
             return { fg, bg };
         }
         else
