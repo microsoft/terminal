@@ -118,18 +118,6 @@
     </feature>
 
     <feature>
-        <name>Feature_DECPSViaMidiPlayer</name>
-        <description>Enables playing sound via DECPS using the MIDI player.</description>
-        <stage>AlwaysDisabled</stage>
-        <!-- We're disabling this for WindowsInbox and Stable because it requires an additional
-             package dependency or library dependency. -->
-        <alwaysEnabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-            <brandingToken>Preview</brandingToken>
-        </alwaysEnabledBrandingTokens>
-    </feature>
-
-    <feature>
         <name>Feature_ScrollbarMarks</name>
         <description>Enables the experimental scrollbar marks feature.</description>
         <stage>AlwaysDisabled</stage>

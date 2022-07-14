@@ -1372,7 +1372,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_midiAudio)
         {
-            _midiAudio = std::make_unique<MidiAudio>();
+            const auto windowHandle = reinterpret_cast<HWND>(_owningHwnd);
+            _midiAudio = std::make_unique<MidiAudio>(windowHandle);
             _midiAudio->Initialize();
         }
         return *_midiAudio;

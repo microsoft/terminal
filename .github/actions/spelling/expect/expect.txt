@@ -438,7 +438,9 @@ ctlseqs
 Ctlv
 ctor
 CTRLEVENT
+CTRLFREQUENCY
 CTRLKEYSHORTCUTS
+CTRLVOLUME
 Ctx
 Ctxt
 ctype
@@ -661,7 +663,14 @@ dropdown
 DROPDOWNLIST
 DROPFILES
 drv
+DSBCAPS
+DSBLOCK
+DSBPLAY
+DSBUFFERDESC
+DSBVOLUME
 dsm
+dsound
+DSSCL
 dst
 DSwap
 DTest
@@ -682,6 +691,7 @@ dwrite
 dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
+dxguid
 dxinterop
 dxp
 dxsm
@@ -718,6 +728,7 @@ endptr
 endregion
 ENQ
 enqueuing
+ENTIREBUFFER
 entrypoint
 ENU
 enum
@@ -934,6 +945,7 @@ gitfilters
 github
 gitlab
 gle
+GLOBALFOCUS
 globals
 GLYPHENTRY
 gmail
@@ -1369,6 +1381,7 @@ lpv
 LPVOID
 LPW
 LPWCH
+lpwfx
 LPWINDOWPOS
 lpwpos
 lpwstr
@@ -2678,6 +2691,7 @@ WANTARROWS
 WANTTAB
 wapproj
 wav
+WAVEFORMATEX
 wbuilder
 wch
 wchar
