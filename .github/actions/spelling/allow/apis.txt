@@ -5,6 +5,7 @@ aclapi
 alignas
 alignof
 APPLYTOSUBMENUS
+appxrecipe
 bitfield
 bitfields
 BUILDBRANCH
