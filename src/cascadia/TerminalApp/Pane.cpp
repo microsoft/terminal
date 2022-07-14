@@ -1407,9 +1407,13 @@ void Pane::UpdateVisuals()
     if (!_IsLeaf())
     {
         _UpdateBorders();
-    }
-    _borderFirst.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
-    _borderSecond.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+    };
+    // TODO!
+    // Hey remember when we made a static brush reference so we didn't have to look these up each time?
+    // well, that's on the wrong thread always now. Great work.
+    // 
+    // _borderFirst.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+    // _borderSecond.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
 }
 
 // Method Description:

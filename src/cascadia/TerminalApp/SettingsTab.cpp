@@ -50,7 +50,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The list of actions.
-    std::vector<ActionAndArgs> SettingsTab::BuildStartupActions() const
+    std::vector<ActionAndArgs> SettingsTab::BuildStartupActions(const bool /*asContent*/) const
     {
         ActionAndArgs action;
         action.Action(ShortcutAction::OpenSettings);

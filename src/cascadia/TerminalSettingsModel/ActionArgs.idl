@@ -279,8 +279,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass MoveTabArgs : IActionArgs
     {
-        MoveTabArgs(MoveTabDirection direction);
+        MoveTabArgs(MoveTabDirection direction, String window);
         MoveTabDirection Direction { get; };
+        String Window { get; };
     };
 
     [default_interface] runtimeclass ScrollUpArgs : IActionArgs
