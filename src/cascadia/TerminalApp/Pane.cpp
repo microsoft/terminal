@@ -213,6 +213,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 
     if (asContent && _IsLeaf())
     {
+        // TODO! This probably won't work. We probably do need to ask the parent
+        // of this pane to generate the action for us. Consider moving a pane
+        // that's 25% of the parent - the pane doesn't know that. Only the
+        // parent does. When we recieve it, we can determine if we're putting it
+        // into a tab or a pane, and then parse the NewTerminalArgs out of
+        // either the splitPane or the newTab action.
         return { { buildSplitPane(shared_from_this()) }, shared_from_this(), currentId, 1 };
     }
 
