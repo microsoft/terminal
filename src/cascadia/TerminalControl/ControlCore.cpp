@@ -233,6 +233,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UpdateSettings(settings, unfocusedAppearance);
     }
 
+    winrt::Windows::System::DispatcherQueue ControlCore::Dispatcher()
+    {
+        return _dispatcher;
+    }
+
     ControlCore::~ControlCore()
     {
         Close();

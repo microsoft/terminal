@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ContentProcess.h"
 #include "ContentProcess.g.cpp"
+#include "ControlCore.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -30,6 +31,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma warning(disable : 4722)
     ContentProcess::~ContentProcess()
     {
+        // if (_interactivity)
+        // {
+        //     if (_interactivity.Core())
+        //     {
+        //         // IMPORTANT!
+        //         //
+        //         // We're responsible for closing the conntection now. If we
+        //         // don't do this, the OpenConsole will leak.
+        //         _interactivity.Core().Close();
+        //     }
+        // }
+
+        // // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
+        // // get destructed. This eliminates the need to do any sort of
+        // // ref-counting weirdness. This entire process exists to host one
+        // // singular ContentProcess instance. When we're destructed, it's because
+        // // every other window process was done with us. We can die now, knowing
+        // // that our job is complete.
+
+        // std::exit(0);
+    }
+#pragma warning(pop)
+
+    winrt::fire_and_forget ContentProcess::final_release(std::unique_ptr<ContentProcess> ptr) noexcept
+    {
+        winrt::com_ptr<ControlCore> coreImpl;
+        coreImpl.copy_from(winrt::get_self<ControlCore>(ptr->_interactivity.Core()));
+        if (coreImpl)
+        {
+            co_await wil::resume_foreground(coreImpl->Dispatcher(), winrt::Windows::System::DispatcherQueuePriority::Normal);
+            coreImpl->Close();
+        }
+
         // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
         // get destructed. This eliminates the need to do any sort of
         // ref-counting weirdness. This entire process exists to host one
@@ -39,7 +73,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::exit(0);
     }
-#pragma warning(pop)
 
     Control::ControlInteractivity ContentProcess::GetInteractivity()
     {

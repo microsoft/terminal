@@ -207,6 +207,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
 
+        winrt::Windows::System::DispatcherQueue Dispatcher();
+
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
