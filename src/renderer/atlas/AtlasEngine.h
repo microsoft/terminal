@@ -166,6 +166,12 @@ namespace Microsoft::Console::Render
         };
 
     private:
+        // I wrote `Buffer` instead of using `std::vector`, because I want to convey that these things
+        // explicitly _don't_ hold resizeable contents, but rather plain content of a fixed size.
+        // For instance I didn't want a resizeable vector with a `push_back` method for my fixed-size
+        // viewport arrays - that doesn't make sense after all. `Buffer` also doesn't initialize
+        // contents to zero, allowing rapid creation/destruction and you can easily specify a custom
+        // (over-)alignment which can improve rendering perf by up to ~20% over `std::vector`.
         template<typename T, size_t Alignment = alignof(T)>
         struct Buffer
         {
@@ -175,19 +181,24 @@ namespace Microsoft::Console::Render
                 _data{ allocate(size) },
                 _size{ size }
             {
+                std::uninitialized_default_construct_n(_data, size);
             }
 
             Buffer(const T* data, size_t size) :
                 _data{ allocate(size) },
                 _size{ size }
             {
-                static_assert(std::is_trivially_copyable_v<T>);
-                memcpy(_data, data, size * sizeof(T));
+                // Changing the constructor arguments to accept std::span might
+                // be a good future extension, but not to improve security here.
+                // You can trivially construct std::span's from invalid ranges.
+                // Until then the raw-pointer style is more practical.
+#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '3' that may be unsafe [...].
+                std::uninitialized_copy_n(data, size, _data);
             }
 
             ~Buffer()
             {
-                deallocate(_data);
+                destroy();
             }
 
             Buffer(Buffer&& other) noexcept :
@@ -199,7 +210,7 @@ namespace Microsoft::Console::Render
 #pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
             Buffer& operator=(Buffer&& other) noexcept
             {
-                deallocate(_data);
+                destroy();
                 _data = std::exchange(other._data, nullptr);
                 _size = std::exchange(other._size, 0);
                 return *this;
@@ -287,6 +298,12 @@ namespace Microsoft::Console::Render
                 }
             }
 #pragma warning(pop)
+
+            void destroy() noexcept
+            {
+                std::destroy_n(_data, _size);
+                deallocate(_data);
+            }
 
             T* _data = nullptr;
             size_t _size = 0;
@@ -553,21 +570,28 @@ namespace Microsoft::Console::Render
 
         struct TileHashMap
         {
+            using iterator = std::list<std::pair<AtlasKey, AtlasValue>>::iterator;
+
             TileHashMap() noexcept = default;
 
-            AtlasValue* find(const AtlasKey& key)
+            iterator end() noexcept
+            {
+                return _lru.end();
+            }
+
+            iterator find(const AtlasKey& key)
             {
                 const auto it = _map.find(key);
                 if (it != _map.end())
                 {
                     // Move the key to the head of the LRU queue.
-                    _lru.splice(_lru.begin(), _lru, *it);
-                    return &(*it)->second;
+                    makeNewest(*it);
+                    return *it;
                 }
-                return nullptr;
+                return end();
             }
 
-            std::list<std::pair<AtlasKey, AtlasValue>>::iterator insert(AtlasKey&& key, AtlasValue&& value)
+            iterator insert(AtlasKey&& key, AtlasValue&& value)
             {
                 // Insert the key/value right at the head of the LRU queue, just like find().
                 //
@@ -577,6 +601,11 @@ namespace Microsoft::Console::Render
                 auto it = _lru.begin();
                 _map.emplace(it);
                 return it;
+            }
+
+            void makeNewest(const iterator& it)
+            {
+                _lru.splice(_lru.begin(), _lru, it);
             }
 
             void popOldestTiles(std::vector<u16x2>& out) noexcept
@@ -602,7 +631,7 @@ namespace Microsoft::Console::Render
             // If you need a LRU hash-map, write a custom one with an intrusive
             // prev/next linked list (it's easier than you might think!).
             std::list<std::pair<AtlasKey, AtlasValue>> _lru;
-            std::unordered_set<std::list<std::pair<AtlasKey, AtlasValue>>::iterator, AtlasKeyHasher, AtlasKeyEq> _map;
+            std::unordered_set<iterator, AtlasKeyHasher, AtlasKeyEq> _map;
         };
 
         // TileAllocator yields `tileSize`-sized tiles for our texture atlas.
@@ -844,6 +873,7 @@ namespace Microsoft::Console::Render
         IDWriteTextFormat* _getTextFormat(bool bold, bool italic) const noexcept;
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
         Cell* _getCell(u16 x, u16 y) noexcept;
+        TileHashMap::iterator* _getCellGlyphMapping(u16 x, u16 y) noexcept;
         void _setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept;
         void _flushBufferLine();
         void _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
@@ -911,6 +941,7 @@ namespace Microsoft::Console::Render
             wil::com_ptr<IDWriteTypography> typography;
 
             Buffer<Cell, 32> cells; // invalidated by ApiInvalidations::Size
+            Buffer<TileHashMap::iterator> cellGlyphMapping; // invalidated by ApiInvalidations::Size
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
             u16x2 cellSize; // invalidated by ApiInvalidations::Font, caches _api.cellSize
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
