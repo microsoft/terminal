@@ -1889,6 +1889,25 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // winrt::fire_and_forget _moveTabToWindow(const winrt::hstring window, winrt::com_ptr<TerminalTab> terminalTab)
+    // {
+    //     auto startupActions = terminalTab->BuildStartupActions(true);
+    //     auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
+    //     auto str = ActionAndArgs::Serialize(winRtActions);
+    //     auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
+    //                                                             str,
+    //                                                             0);
+    //     request.Completed([weakThis = get_weak(), weakTab = terminalTab.get_weak()](auto&&, auto&&){
+    //         auto self{weakThis.get()};
+    //         auto tab{weakTab.get()};
+    //         if (self && tab)
+    //         {
+    //             // remove tab
+    //         }
+    //     });
+    //     _RequestMoveContentHandlers(*this, *request);
+    // }
+
     bool TerminalPage::_MoveTab(MoveTabArgs args)
     {
         const auto windowId{ args.Window() };
@@ -1897,15 +1916,30 @@ namespace winrt::TerminalApp::implementation
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
+
+                // Collect all the content we're about to detach.
+                if (const auto rootPane = terminalTab->GetRootPane())
+                {
+                    rootPane->WalkTree([&](auto p) {
+                        if (const auto& control{ p->GetTerminalControl() })
+                        {
+                            if (auto content{ control.ContentProc() })
+                            {
+                                content.Attached({ get_weak(), &TerminalPage::_finalizeDetach });
+                                // _recentlyDetachedContent[content.Guid()] = content;
+                                _recentlyDetachedContent.insert({ content.Guid(), content });
+                            }
+                        }
+                    });
+                }
+
                 auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
-                // Json::Value json{ Json::objectValue };
-                // SetValueForKey(json, "content", winRtActions);
-                // Json::StreamWriterBuilder wbuilder;
-                // auto str = Json::writeString(wbuilder, json);
                 auto str = ActionAndArgs::Serialize(winRtActions);
                 auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
                                                                         str,
                                                                         0);
+                // co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
+                _RemoveTab(*terminalTab);
                 _RequestMoveContentHandlers(*this, *request);
                 return true;
             }
@@ -1927,51 +1961,6 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
-        /*
-        {
-            contentGuid;
-            tabIndex;
-            co_await winrt::resume_background();
-            const auto contentProc = _AttachToContentProcess(contentGuid);
-            contentProc;
-
-            Settings::Model::NewTerminalArgs newTerminalArgs{ nullptr };
-            auto profile = _settings.GetProfileForArgs(newTerminalArgs);
-            auto controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-
-            co_await winrt::resume_foreground(Dispatcher());
-
-            auto newControl = _InitControl(controlSettings, contentProc.Guid());
-            // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl);
-            auto resultPane = std::make_shared<Pane>(profile, newControl);
-
-            _UnZoomIfNeeded();
-
-            uint32_t realIndex = std::min(tabIndex, _tabs.Size() - 1);
-            // if (_tabs.Size() > tabIndex)
-            // {
-            auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(realIndex));
-            targetTab->SplitPane(SplitDirection::Automatic, .5f, resultPane);
-
-            // After GH#6586, the control will no longer focus itself
-            // automatically when it's finished being laid out. Manually focus
-            // the control here instead.
-            if (_startupState == StartupState::Initialized)
-            {
-                _GetActiveControl().Focus(FocusState::Programmatic);
-            }
-            // }
-            // else
-            // {
-            //         realSplitType = tab.PreCalculateAutoSplit(availableSpace);
-
-            //     tab.SplitPane(realSplitType, splitSize, profile, newControl);
-            // }
-        }
-        */
-
-        content;
         tabIndex;
 
         auto args = ActionAndArgs::Deserialize(content);
@@ -1984,6 +1973,14 @@ namespace winrt::TerminalApp::implementation
             _actionDispatch->DoAction(action);
         }
         co_await wil::resume_foreground(Dispatcher());
+    }
+
+    void TerminalPage::_finalizeDetach(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable e)
+    {
+        if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ContentProcess>() })
+        {
+            _recentlyDetachedContent.erase(content.Guid());
+        }
     }
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the

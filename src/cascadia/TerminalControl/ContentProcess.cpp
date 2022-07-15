@@ -116,4 +116,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _guid;
     }
+
+    void ContentProcess::Attach()
+    {
+        // TODO! This feels like a hack and I'm sure cppwinrt gives us some sort
+        // of hook for when we get an incremented refcount
+        _AttachedHandlers(*this, nullptr);
+    }
 }

@@ -7,6 +7,7 @@ import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
 import "ControlCore.idl";
+import "ContentProcess.idl";
 
 namespace Microsoft.Terminal.Control
 {
@@ -32,6 +33,7 @@ namespace Microsoft.Terminal.Control
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
 
         Guid ContentGuid{ get; };
+        ContentProcess ContentProc{ get; };
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 

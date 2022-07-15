@@ -22,6 +22,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t RequestSwapChainHandle(const uint64_t pid);
         winrt::guid Guid();
 
+        void Attach();
+        TYPED_EVENT(Attached, IInspectable, IInspectable);
+
     private:
         Control::ControlInteractivity _interactivity{ nullptr };
         uint64_t _ourPID;
