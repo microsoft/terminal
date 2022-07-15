@@ -763,7 +763,7 @@
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will never adjust the text colors.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColorsIndexed.Content" xml:space="preserve">
-    <value>Only when the colors are from the color scheme</value>
+    <value>Only for colors in the color scheme</value>
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
