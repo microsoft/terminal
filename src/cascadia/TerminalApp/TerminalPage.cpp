@@ -4554,6 +4554,38 @@ namespace winrt::TerminalApp::implementation
 
             e.Data().Properties().Insert(L"content", winrt::box_value(str));
             e.Data().RequestedOperation(DataPackageOperation::Move);
+
+            e.Data().OperationCompleted([weakThis = get_weak(), weakTab = terminalTab->get_weak()](auto&&, auto&&) -> winrt::fire_and_forget {
+                auto tab = weakTab.get();
+                auto page = weakThis.get();
+                if (tab && page)
+                {
+                    // TODO! this loop might be able to go outside the
+                    // OperationCompleted. If we put if before the
+                    // OperationCompleted, then we make sure we've got an extra
+                    // reference to the content, if the operation _is_ completed
+                    // before we hook up the Attached handlers. However,idk what
+                    // happens then if the operation never happens.
+                    //
+                    // Collect all the content we're about to detach.
+                    if (const auto rootPane = tab->GetRootPane())
+                    {
+                        rootPane->WalkTree([&](auto p) {
+                            if (const auto& control{ p->GetTerminalControl() })
+                            {
+                                if (auto content{ control.ContentProc() })
+                                {
+                                    content.Attached({ page->get_weak(), &TerminalPage::_finalizeDetach });
+                                    page->_recentlyDetachedContent.insert({ content.Guid(), content });
+                                }
+                            }
+                        });
+                    }
+                    co_await wil::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
+
+                    page->_RemoveTab(*tab);
+                }
+            });
         }
     }
     void TerminalPage::_onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender,
@@ -4575,15 +4607,7 @@ namespace winrt::TerminalApp::implementation
         auto contentString{ winrt::unbox_value<winrt::hstring>(contentObj) };
         if (!contentString.empty())
         {
-            auto args = ActionAndArgs::Deserialize(contentString);
-            // TODO! if the first action is a split pane and tabIndex > tabs.size,
-            // then remove it and insert an equivalent newTab
-
-            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
-            for (const auto& action : args)
-            {
-                _actionDispatch->DoAction(action);
-            }
+            AttachContent(contentString, 0);
         }
     }
 
