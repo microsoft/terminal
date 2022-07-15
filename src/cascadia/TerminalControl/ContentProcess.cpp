@@ -25,42 +25,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
-// C4722 - destructor never returns, potential memory leak
-// We're just exiting the whole process, so I think we're okay, thanks.
-#pragma warning(push)
-#pragma warning(disable : 4722)
     ContentProcess::~ContentProcess()
     {
-        // if (_interactivity)
-        // {
-        //     if (_interactivity.Core())
-        //     {
-        //         // IMPORTANT!
-        //         //
-        //         // We're responsible for closing the conntection now. If we
-        //         // don't do this, the OpenConsole will leak.
-        //         _interactivity.Core().Close();
-        //     }
-        // }
-
-        // // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
-        // // get destructed. This eliminates the need to do any sort of
-        // // ref-counting weirdness. This entire process exists to host one
-        // // singular ContentProcess instance. When we're destructed, it's because
-        // // every other window process was done with us. We can die now, knowing
-        // // that our job is complete.
-
-        // std::exit(0);
     }
-#pragma warning(pop)
 
+    // See https://docs.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/details-about-destructors#deferred-destruction
     winrt::fire_and_forget ContentProcess::final_release(std::unique_ptr<ContentProcess> ptr) noexcept
     {
         winrt::com_ptr<ControlCore> coreImpl;
         coreImpl.copy_from(winrt::get_self<ControlCore>(ptr->_interactivity.Core()));
         if (coreImpl)
         {
+            // Close() requires that it is called on the "main" thread. So we
+            // need to switch over to the DIspatcher thread, before calling
+            // Close.
             co_await wil::resume_foreground(coreImpl->Dispatcher(), winrt::Windows::System::DispatcherQueuePriority::Normal);
+
+            // Typically, Close() runs async, closing the connection on a BG
+            // thread, so that the UI doesn't hang while waiting for the client
+            // process to exit. When we're running as a content process, that's
+            // not relevant. In that case, we need to close the connection NOW,
+            // because we're about to exit the whole process. If we close the
+            // process asynchronously (on a bg thread), then we might
+            // accidentally leak it as we exit() before the thread gets a time
+            // slice.
             coreImpl->Close(false);
         }
 
