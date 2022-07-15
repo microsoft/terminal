@@ -255,7 +255,9 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
         // We intentionally aren't _only_ checking for attr.IsInvisible here, because we also want to
         // catch the cases where the fg was intentionally set to be the same as the bg. In either case,
         // don't adjust the foreground.
-        if (fg != bg && GetRenderMode(Mode::AlwaysDistinguishableColors))
+        if (Feature_AdjustIndistinguishableText::IsEnabled() &&
+            fg != bg &&
+            GetRenderMode(Mode::AlwaysDistinguishableColors))
         {
             fg = ColorFix::GetPerceivableColor(fg, bg);
         }
