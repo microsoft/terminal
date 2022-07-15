@@ -728,7 +728,6 @@ namespace PrepPattern
         makeCharInfo(0x306b, colored | trailing),
     };
 
-
     // Receive Output Table:
     // attr  | wchar  (char) | symbol
     // ------------------------------------
