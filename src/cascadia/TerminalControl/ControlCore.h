@@ -119,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
-        void Close();
+        void Close(const bool async = true);
 
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;

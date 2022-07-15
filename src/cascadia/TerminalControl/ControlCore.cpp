@@ -1544,7 +1544,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::Close()
+    void ControlCore::Close(const bool async)
     {
         if (!_IsClosing())
         {
@@ -1559,7 +1559,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Since TermControl::Close is only ever triggered by the UI, we
             // don't really care to wait for the connection to be completely
             // closed. We can just do it whenever.
-            _asyncCloseConnection();
+            if (async)
+            {
+                _asyncCloseConnection();
+            }
+            else
+            {
+                _connection.Close();
+            }
         }
     }
 
