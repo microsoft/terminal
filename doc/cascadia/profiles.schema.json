@@ -208,11 +208,11 @@
         },
         "adjustIndistinguishableColors": {
           "default": "Never",
-          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"Indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"Never\" and \"Always\".",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
           "enum": [
-            "Never",
-            "Indexed",
-            "Always"
+            "never",
+            "indexed",
+            "always"
           ],
           "type": "string"
         },
@@ -2283,11 +2283,11 @@
         },
         "adjustIndistinguishableColors": {
           "default": "Never",
-          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"Indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"Never\" and \"Always\".",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
           "enum": [
-            "Never",
-            "Indexed",
-            "Always"
+            "never",
+            "indexed",
+            "always"
           ],
           "type": "string"
         },
