@@ -1818,45 +1818,12 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::_MovePane(MovePaneArgs args)
     {
         const auto tabIdx{ args.TabIndex() };
-        const auto windowId{ args.Window() };
 
         auto focusedTab{ _GetFocusedTabImpl() };
 
         if (!focusedTab)
         {
             return false;
-        }
-
-        if (!windowId.empty())
-        {
-            if (const auto terminalTab{ _GetFocusedTabImpl() })
-
-            {
-                if (const auto pane{ terminalTab->GetActivePane() })
-
-                {
-                    auto startupActions = pane->BuildStartupActions(0, 1, true);
-                    auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions.args)) };
-                    // Json::Value json{ Json::objectValue };
-                    // SetValueForKey(json, "content", winRtActions);
-                    // Json::StreamWriterBuilder wbuilder;
-                    // auto str = Json::writeString(wbuilder, json);
-                    auto str = ActionAndArgs::Serialize(winRtActions);
-                    auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
-                                                                            str,
-                                                                            args.TabIndex());
-                    _RequestMoveContentHandlers(*this, *request);
-                    return true;
-                }
-            }
-
-            //if (const auto& control{ _GetActiveControl() })
-            //{
-            //    const auto currentContentGuid{ control.ContentGuid() };
-            //    auto request = winrt::make_self<RequestMoveCoArgs>(currentContentGuid, args);
-            //    _RequestMovePaneHandlers(*this, *request);
-            //    return true;
-            //}
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
@@ -1889,25 +1856,6 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    // winrt::fire_and_forget _moveTabToWindow(const winrt::hstring window, winrt::com_ptr<TerminalTab> terminalTab)
-    // {
-    //     auto startupActions = terminalTab->BuildStartupActions(true);
-    //     auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
-    //     auto str = ActionAndArgs::Serialize(winRtActions);
-    //     auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
-    //                                                             str,
-    //                                                             0);
-    //     request.Completed([weakThis = get_weak(), weakTab = terminalTab.get_weak()](auto&&, auto&&){
-    //         auto self{weakThis.get()};
-    //         auto tab{weakTab.get()};
-    //         if (self && tab)
-    //         {
-    //             // remove tab
-    //         }
-    //     });
-    //     _RequestMoveContentHandlers(*this, *request);
-    // }
-
     bool TerminalPage::_MoveTab(MoveTabArgs args)
     {
         const auto windowId{ args.Window() };
@@ -1926,7 +1874,6 @@ namespace winrt::TerminalApp::implementation
                             if (auto content{ control.ContentProc() })
                             {
                                 content.Attached({ get_weak(), &TerminalPage::_finalizeDetach });
-                                // _recentlyDetachedContent[content.Guid()] = content;
                                 _recentlyDetachedContent.insert({ content.Guid(), content });
                             }
                         }
@@ -1938,9 +1885,8 @@ namespace winrt::TerminalApp::implementation
                 auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
                                                                         str,
                                                                         0);
-                // co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
                 _RemoveTab(*terminalTab);
-                _RequestMoveContentHandlers(*this, *request);
+                _RequestMoveContentHandlers(*this, *request); // This will return on another thread.
                 return true;
             }
         }
@@ -1959,20 +1905,16 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
+    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content,
+                                                       uint32_t /*tabIndex*/)
     {
-        tabIndex;
-
         auto args = ActionAndArgs::Deserialize(content);
-        // TODO! if the first action is a split pane and tabIndex > tabs.size,
-        // then remove it and insert an equivalent newTab
 
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High); // may need to go to the top of _createNewTabFromContent
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // TODO! may need to go to the top of _createNewTabFromContent
         for (const auto& action : args)
         {
             _actionDispatch->DoAction(action);
         }
-        co_await wil::resume_foreground(Dispatcher());
     }
 
     void TerminalPage::_finalizeDetach(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable e)

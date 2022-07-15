@@ -95,9 +95,8 @@ private:                                                                        
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_PANE_ARGS(X)                    \
-    X(uint32_t, TabIndex, "index", false, 0) \
-    X(winrt::hstring, Window, "window", false, L"")
+#define MOVE_PANE_ARGS(X) \
+    X(uint32_t, TabIndex, "index", false, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWITCH_TO_TAB_ARGS(X) \
@@ -172,9 +171,9 @@ private:                                                                        
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_TAB_ARGS(X)                                                                                             \
-    X(MoveTabDirection, Direction, "direction", args->Direction() == MoveTabDirection::None, MoveTabDirection::None) \
-    X(winrt::hstring, Window, "window", false, L"")
+#define MOVE_TAB_ARGS(X)                            \
+    X(winrt::hstring, Window, "window", false, L"") \
+    X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), MoveTabDirection::None)
 
 // Other ideas:
 //  X(uint32_t, TabIndex, "index", false, 0) \ // target? source?

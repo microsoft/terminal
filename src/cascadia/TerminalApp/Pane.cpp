@@ -188,7 +188,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent)
 {
     // if we are a leaf then all there is to do is defer to the parent.
-    if (!asContent && _IsLeaf())
+    if (/*!asContent && */ _IsLeaf())
     {
         if (_lastActive)
         {
@@ -205,23 +205,24 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
         // When creating a pane the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
-        const auto splitSize = (asContent && _IsLeaf() ? .5 : 1. - _desiredSplitPosition);
+        // const auto splitSize = (asContent && _IsLeaf()) ? .5 : (1. - _desiredSplitPosition);
+        const auto splitSize = (1. - _desiredSplitPosition);
         SplitPaneArgs args{ SplitType::Manual, splitDirection, splitSize, terminalArgs };
         actionAndArgs.Args(args);
 
         return actionAndArgs;
     };
 
-    if (asContent && _IsLeaf())
-    {
-        // TODO! This probably won't work. We probably do need to ask the parent
-        // of this pane to generate the action for us. Consider moving a pane
-        // that's 25% of the parent - the pane doesn't know that. Only the
-        // parent does. When we recieve it, we can determine if we're putting it
-        // into a tab or a pane, and then parse the NewTerminalArgs out of
-        // either the splitPane or the newTab action.
-        return { { buildSplitPane(shared_from_this()) }, shared_from_this(), currentId, 1 };
-    }
+    // if (asContent && _IsLeaf())
+    // {
+    //     // TODO! This probably won't work. We probably do need to ask the parent
+    //     // of this pane to generate the action for us. Consider moving a pane
+    //     // that's 25% of the parent - the pane doesn't know that. Only the
+    //     // parent does. When we recieve it, we can determine if we're putting it
+    //     // into a tab or a pane, and then parse the NewTerminalArgs out of
+    //     // either the splitPane or the newTab action.
+    //     return { { buildSplitPane(shared_from_this()) }, shared_from_this(), currentId, 1 };
+    // }
 
     auto buildMoveFocus = [](auto direction) {
         MoveFocusArgs args{ direction };
