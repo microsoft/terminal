@@ -2043,6 +2043,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
+            // THIS IS IMPORTANT!
+            //
+            // If we're out of proc, the control can be closed, but we DON'T
+            // want that to close our content. We'll want the content proc's
+            // teardown to be responsible for closing the core.
             if (!_contentIsOutOfProc())
             {
                 _core.Close();

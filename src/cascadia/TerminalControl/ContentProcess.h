@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ContentProcess(winrt::guid g);
         ~ContentProcess();
+        static winrt::fire_and_forget final_release(std::unique_ptr<ContentProcess> ptr) noexcept;
 
         bool Initialize(Control::IControlSettings settings,
                         Control::IControlAppearance unfocusedAppearance,
