@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
-        void Close();
+        void Close(const bool async = true);
 
 #pragma region ICoreState
         const size_t TaskbarState() const noexcept;

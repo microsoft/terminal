@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (coreImpl)
         {
             co_await wil::resume_foreground(coreImpl->Dispatcher(), winrt::Windows::System::DispatcherQueuePriority::Normal);
-            coreImpl->Close();
+            coreImpl->Close(false);
         }
 
         // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
