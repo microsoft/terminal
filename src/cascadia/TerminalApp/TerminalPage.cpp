@@ -271,6 +271,10 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
+        _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
+        _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
+        _tabView.TabStripDrop({ this, &TerminalPage::_onTabStripDrop });
+
         _CreateNewTabFlyout();
 
         _UpdateTabWidthMode();
@@ -2072,7 +2076,7 @@ namespace winrt::TerminalApp::implementation
         // TODO! if the first action is a split pane and tabIndex > tabs.size,
         // then remove it and insert an equivalent newTab
 
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High); // may need to go to the top of _createNewTabFromContent
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
         for (const auto& action : args)
         {
             _actionDispatch->DoAction(action);
@@ -4739,6 +4743,50 @@ namespace winrt::TerminalApp::implementation
                 // }
             }
             // }
+        }
+    }
+
+    void TerminalPage::_onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender,
+                                          winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e)
+    {
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        {
+            auto startupActions = terminalTab->BuildStartupActions(true);
+            auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
+            auto str = ActionAndArgs::Serialize(winRtActions);
+
+            e.Data().Properties().Insert(L"content", winrt::box_value(str));
+            e.Data().RequestedOperation(DataPackageOperation::Move);
+        }
+    }
+    void TerminalPage::_onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender,
+                                           winrt::Windows::UI::Xaml::DragEventArgs e)
+    {
+        if (e.DataView().Properties().HasKey(L"content"))
+        {
+            e.AcceptedOperation(DataPackageOperation::Move);
+        }
+    }
+    winrt::fire_and_forget TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable sender,
+                                                         winrt::Windows::UI::Xaml::DragEventArgs e)
+    {
+        auto contentObj{ e.DataView().Properties().TryLookup(L"content") };
+        if (contentObj == nullptr)
+        {
+            co_return;
+        }
+        auto contentString{ winrt::unbox_value<winrt::hstring>(contentObj) };
+        if (!contentString.empty())
+        {
+            auto args = ActionAndArgs::Deserialize(contentString);
+            // TODO! if the first action is a split pane and tabIndex > tabs.size,
+            // then remove it and insert an equivalent newTab
+
+            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
+            for (const auto& action : args)
+            {
+                _actionDispatch->DoAction(action);
+            }
         }
     }
 

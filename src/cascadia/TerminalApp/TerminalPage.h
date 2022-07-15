@@ -492,6 +492,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
+        void _onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e);
+        void _onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
+        winrt::fire_and_forget _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
