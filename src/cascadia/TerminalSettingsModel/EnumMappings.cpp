@@ -45,7 +45,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::TextAntialiasingMode, TextAntialiasingMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::CursorStyle, CursorStyle);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::AdjustTextMode, AdjustTextMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::IntenseStyle, IntenseTextStyle);
 
     // FontWeight is special because the JsonUtils::ConversionTrait for it
@@ -57,6 +56,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Windows::UI::Text::FontWeight>::mappings)
             {
                 map.Insert(winrt::to_hstring(enumStr), enumVal);
+            }
+            return map;
+        }();
+        return enumMap;
+    }
+
+    // AdjustIndistinguishableColors is special because it was changed from a boolean setting to an enum
+    // setting with enum type AdjustTextMode. For legacy purposes, we still support "true"/"false" in the
+    // json (they map to Indexed/Never respectively), but we do not want these as options in the Settings UI.
+    winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Core::AdjustTextMode> EnumMappings::AdjustIndistinguishableColors()
+    {
+        static auto enumMap = []() {
+            auto map = single_threaded_map<winrt::hstring, Microsoft::Terminal::Core::AdjustTextMode>();
+            for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Microsoft::Terminal::Core::AdjustTextMode>::mappings)
+            {
+                if (enumStr != "false" && enumStr != "true")
+                {
+                    map.Insert(winrt::to_hstring(enumStr), enumVal);
+                }
             }
             return map;
         }();
