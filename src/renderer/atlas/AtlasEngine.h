@@ -166,6 +166,12 @@ namespace Microsoft::Console::Render
         };
 
     private:
+        // I wrote `Buffer` instead of using `std::vector`, because I want to convey that these things
+        // explicitly _don't_ hold resizeable contents, but rather plain content of a fixed size.
+        // For instance I didn't want a resizeable vector with a `push_back` method for my fixed-size
+        // viewport arrays - that doesn't make sense after all. `Buffer` also doesn't initialize
+        // contents to zero, allowing rapid creation/destruction and you can easily specify a custom
+        // (over-)alignment which can improve rendering perf by up to ~20% over `std::vector`.
         template<typename T, size_t Alignment = alignof(T)>
         struct Buffer
         {
