@@ -21,5 +21,8 @@ namespace Microsoft.Terminal.Control
 
         Guid Guid { get; };
 
+        void Attach();
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
     };
 }

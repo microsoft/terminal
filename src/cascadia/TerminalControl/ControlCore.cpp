@@ -218,6 +218,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UpdateSettings(settings, unfocusedAppearance);
     }
 
+    winrt::Windows::System::DispatcherQueue ControlCore::Dispatcher()
+    {
+        return _dispatcher;
+    }
+
     ControlCore::~ControlCore()
     {
         Close();
@@ -1500,7 +1505,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::Close()
+    void ControlCore::Close(const bool async)
     {
         if (!_IsClosing())
         {
@@ -1510,12 +1515,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
 
-            // GH#1996 - Close the connection asynchronously on a background
-            // thread.
-            // Since TermControl::Close is only ever triggered by the UI, we
-            // don't really care to wait for the connection to be completely
-            // closed. We can just do it whenever.
-            _asyncCloseConnection();
+            if (async)
+            {
+                // GH#1996 - Close the connection asynchronously on a background
+                // thread.
+                // Since TermControl::Close is only ever triggered by the UI, we
+                // don't really care to wait for the connection to be completely
+                // closed. We can just do it whenever.
+                _asyncCloseConnection();
+            }
+            else
+            {
+                // see notes in  ContentProcess::final_release for why there's
+                // _also_ a synchronous version of this.
+                _connection.Close();
+            }
         }
     }
 

@@ -160,9 +160,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass MovePaneArgs : IActionArgs
     {
-        MovePaneArgs(UInt32 tabIndex, String Window);
+        MovePaneArgs(UInt32 tabIndex);
         UInt32 TabIndex;
-        String Window;
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
@@ -279,7 +278,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass MoveTabArgs : IActionArgs
     {
-        MoveTabArgs(MoveTabDirection direction, String window);
+        MoveTabArgs(String window, MoveTabDirection direction);
         MoveTabDirection Direction { get; };
         String Window { get; };
     };

@@ -254,6 +254,8 @@ namespace winrt::TerminalApp::implementation
         int _renamerLayoutCount{ 0 };
         bool _renamerPressedEnter{ false };
 
+        std::unordered_map<winrt::guid, winrt::Microsoft::Terminal::Control::ContentProcess> _recentlyDetachedContent{};
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
@@ -510,6 +512,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionInformation _CreateConnectionInfoFromSettings(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                                                                                                                 const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings);
+        void _finalizeDetach(winrt::Windows::Foundation::IInspectable sender,
+                             winrt::Windows::Foundation::IInspectable e);
 
         void _onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e);
         void _onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);

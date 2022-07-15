@@ -244,7 +244,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MovePaneArgs::GenerateName() const
     {
-        // TODO!
         return winrt::hstring{
             fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
         };

@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ContentProcess(winrt::guid g);
         ~ContentProcess();
+        static winrt::fire_and_forget final_release(std::unique_ptr<ContentProcess> ptr) noexcept;
 
         bool Initialize(Control::IControlSettings settings,
                         Control::IControlAppearance unfocusedAppearance,
@@ -21,6 +22,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t GetPID();
         uint64_t RequestSwapChainHandle(const uint64_t pid);
         winrt::guid Guid();
+
+        void Attach();
+        TYPED_EVENT(Attached, IInspectable, IInspectable);
 
     private:
         Control::ControlInteractivity _interactivity{ nullptr };
