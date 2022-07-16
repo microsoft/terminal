@@ -536,7 +536,6 @@ namespace winrt::TerminalApp::implementation
                                                 const Windows::UI::Xaml::RoutedEventArgs&)
     {
         _PreviewActionHandlers(*this, nullptr);
-        _currentNestedCommands.Clear();
         _searchBox().Focus(FocusState::Programmatic);
 
         const auto previousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
@@ -549,17 +548,12 @@ namespace winrt::TerminalApp::implementation
             const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
 
             ParentCommandName(actionPaletteItem.Command().Name());
-            for (const auto& nameAndCommand : actionPaletteItem.Command().NestedCommands())
-            {
-                const auto action = nameAndCommand.Value();
-                auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-                auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
-                _currentNestedCommands.Append(nestedFilteredCommand);
-            }
+            _updateCurrentNestedCommands(actionPaletteItem.Command());
         }
         else
         {
             ParentCommandName(L"");
+            _currentNestedCommands.Clear();
         }
         _updateFilteredActions();
 
@@ -665,14 +659,7 @@ namespace winrt::TerminalApp::implementation
                     // to pick from.
                     _nestedActionStack.Append(filteredCommand);
                     ParentCommandName(actionPaletteItem.Command().Name());
-                    _currentNestedCommands.Clear();
-                    for (const auto& nameAndCommand : actionPaletteItem.Command().NestedCommands())
-                    {
-                        const auto action = nameAndCommand.Value();
-                        auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-                        auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
-                        _currentNestedCommands.Append(nestedFilteredCommand);
-                    }
+                    _updateCurrentNestedCommands(actionPaletteItem.Command());
 
                     _updateUIForStackChange();
                 }
@@ -1131,6 +1118,25 @@ namespace winrt::TerminalApp::implementation
         while (_filteredActions.Size() < actions.size())
         {
             _filteredActions.Append(actions[_filteredActions.Size()]);
+        }
+    }
+
+    // Method Description:
+    // - Update the list of current nested commands to match that of the
+    //   given parent command.
+    // Arguments:
+    // - parentCommand: the command with an optional list of nested commands.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand)
+    {
+        _currentNestedCommands.Clear();
+        for (const auto& nameAndCommand : parentCommand.NestedCommands())
+        {
+            const auto action = nameAndCommand.Value();
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
+            _currentNestedCommands.Append(nestedFilteredCommand);
         }
     }
 
