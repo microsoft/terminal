@@ -50,6 +50,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        void CopyCWDToClipboard();
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();

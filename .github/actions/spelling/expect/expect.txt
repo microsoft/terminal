@@ -460,6 +460,7 @@ cwch
 cwchar
 cwctype
 cwd
+CWDTo
 cxcy
 CXFRAME
 CXFULLSCREEN

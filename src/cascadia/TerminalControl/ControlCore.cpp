@@ -1078,6 +1078,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
+    void ControlCore::CopyCWDToClipboard()
+    {
+        const auto workingDirectory = WorkingDirectory();
+        _CopyToClipboardHandlers(*this, winrt::make<CopyToClipboardEventArgs>(winrt::hstring{ workingDirectory }));
+    }
+
     void ControlCore::SelectAll()
     {
         auto lock = _terminal->LockForWriting();

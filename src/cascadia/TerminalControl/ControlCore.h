@@ -81,6 +81,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        void CopyCWDToClipboard();
         void SelectAll();
         void ClearSelection();
         bool ToggleBlockSelection();

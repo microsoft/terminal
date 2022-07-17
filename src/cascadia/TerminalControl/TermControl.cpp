@@ -1926,6 +1926,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return successfulCopy;
     }
 
+    void TermControl::CopyCWDToClipboard()
+    {
+        if (!_IsClosing())
+        {
+            _core.CopyCWDToClipboard();
+        }
+    }
+
     // Method Description:
     // - Initiate a paste operation.
     void TermControl::PasteTextFromClipboard()

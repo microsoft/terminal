@@ -1122,4 +1122,14 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleCopyCWD(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.CopyCWDToClipboard();
+            args.Handled(true);
+        }
+    }
 }
