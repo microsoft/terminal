@@ -5,7 +5,6 @@
 #include "MyPage.h"
 #include <LibraryResources.h>
 #include "MyPage.g.cpp"
-#include "MySettings.h"
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
@@ -26,24 +25,6 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        auto settings = winrt::make_self<implementation::MySettings>();
-
-        auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
-                                                                                      winrt::hstring{},
-                                                                                      L"",
-                                                                                      nullptr,
-                                                                                      32,
-                                                                                      80,
-                                                                                      winrt::guid()) };
-
-        // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
-        winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
-        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
-
-        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
-        Control::TermControl control{ *settings, *settings, conn };
-
-        InProcContent().Children().Append(control);
     }
 
     // Method Description:
@@ -56,6 +37,11 @@ namespace winrt::SampleApp::implementation
     hstring MyPage::Title()
     {
         return { L"Sample Application" };
+    }
+
+    winrt::fire_and_forget MyPage::Create_Click(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e)
+    {
+        co_await winrt::resume_foreground(Dispatcher());
     }
 
 }

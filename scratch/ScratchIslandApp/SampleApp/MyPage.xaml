@@ -9,7 +9,6 @@
       xmlns:local="using:SampleApp"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
-      xmlns:terminal="using:Microsoft.Terminal.Control"
       mc:Ignorable="d">
 
     <Grid x:Name="Root"
@@ -23,7 +22,8 @@
             <TextBox x:Name="GuidInput"
                      Width="400"
                      PlaceholderText="{}{guid here}" />
-            <Button Grid.Row="0">
+            <Button Grid.Row="0"
+                    Click="Create_Click">
                 Create
             </Button>
 

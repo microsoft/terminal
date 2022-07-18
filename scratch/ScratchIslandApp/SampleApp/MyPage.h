@@ -17,6 +17,8 @@ namespace winrt::SampleApp::implementation
 
         hstring Title();
 
+        winrt::fire_and_forget Create_Click(const winrt::Windows::Foundation::IInspectable& s, const winrt::Windows::Foundation::IInspectable& e);
+
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
     };
