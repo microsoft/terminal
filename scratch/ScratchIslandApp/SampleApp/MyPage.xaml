@@ -22,23 +22,11 @@
         <StackPanel Orientation="Horizontal">
             <TextBox x:Name="GuidInput"
                      Width="400"
-                     PlaceholderText="{}{guid here}" />
+                     PlaceholderText="path here" />
+            <mux:NumberBox x:Name="IconIndex" />
             <Button x:Name="CreateOutOfProcControl"
-                    Grid.Row="0"
                     Tapped="CreateClicked">
                 Create
-            </Button>
-            <Button x:Name="CloseOutOfProcControl"
-                    Grid.Row="0"
-                    Margin="4,0,0,0"
-                    Tapped="CloseClicked">
-                Close
-            </Button>
-            <Button x:Name="KillOutOfProcControl"
-                    Grid.Row="0"
-                    Margin="4,0,0,0"
-                    Tapped="KillClicked">
-                Kill
             </Button>
 
         </StackPanel>
@@ -53,12 +41,13 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Grid x:Name="InProcContent"
-                  Grid.Column="0"
-                  Padding="16"
-                  HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="#ff0000" />
+            <StackPanel x:Name="InProcContent"
+                        Grid.Column="0"
+                        Padding="16"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Background="#ff0000"
+                        Orientation="Vertical" />
 
             <Grid Grid.Column="1"
                   HorizontalAlignment="Stretch"
