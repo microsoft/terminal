@@ -220,7 +220,7 @@ When <kbd>shift</kbd> is held, we're expanding the selection. In this case, the 
 
 ![Separated Y-Beam Example](./images/Half-Y-Beam.png)
 
-If the selection is up against the end (or beginning) of the line, the selection marker can't be rendered normally because ther is no space to render it off the side of the terminal. Instead, the selection marker will be horizontally flipped. Alternatively, it can be rendered on the next available cell (i.e. end of line translates to the beginning of the next line), but that would cause issues when the selection is positioned at the beginning or end of the buffer, thus the idea was abandoned.
+If the selection is up against the end (or beginning) of the line, the selection marker can't be rendered normally because there is no space to render it off the side of the terminal. Instead, the selection marker will be horizontally flipped. Alternatively, it can be rendered on the next available cell (i.e. end of line translates to the beginning of the next line), but that would cause issues when the selection is positioned at the beginning or end of the buffer, thus the idea was abandoned.
 
 If the active endpoint crosses the inactive endpoint, the selection marker will be flipped. In a sense, the flag will always point away from the selection.
 
