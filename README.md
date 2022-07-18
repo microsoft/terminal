@@ -1,5 +1,5 @@
-
-<img> <ahref> https://photos.app.goo.gl/gnnojEmwtuR7G8z86 <a>
+<img src=" alt="pic" />
+ 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 This repository contains the source code for:
