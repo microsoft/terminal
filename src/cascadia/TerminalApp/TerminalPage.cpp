@@ -693,8 +693,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
-    //   Name, version, getting started link, documentation link, release
-    //   Notes link, and privacy policy link.
+    //   Name, version, getting started link, source code link, documentation link, release
+    //   Notes link, send feedback link and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
         _ShowDialogHelper(L"AboutDialog");
@@ -708,6 +708,11 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring TerminalPage::ApplicationVersion()
     {
         return CascadiaSettings::ApplicationVersion();
+    }
+
+    void TerminalPage::_SendFeedbackOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& /*eventArgs*/)
+    {
+        ShellExecute(nullptr, nullptr, L"https://github.com/microsoft/terminal/issues", nullptr, nullptr, SW_SHOW);
     }
 
     void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
