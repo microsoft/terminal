@@ -49,7 +49,7 @@
   </ItemGroup>
 
   <ItemGroup>
-<!--     <Reference Include="Microsoft.Terminal.TerminalConnection">
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <Implementation>$(OpenConsoleCommonOutDir)TerminalConnection\TerminalConnection.dll</Implementation>
       <IsWinMDFile>true</IsWinMDFile>
@@ -62,7 +62,7 @@
       <IsWinMDFile>true</IsWinMDFile>
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
-    </Reference> -->
+    </Reference>
   </ItemGroup>
 
 

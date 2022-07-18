@@ -104,6 +104,8 @@ void SampleIslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) 
 
 void SampleIslandWindow::Initialize()
 {
+    const bool initialized = (_interopWindowHandle != nullptr);
+
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();
