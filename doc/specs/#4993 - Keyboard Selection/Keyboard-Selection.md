@@ -214,11 +214,11 @@ A y-beam will be used to identify which selection endpoint is currently being mo
 
 When we're moving the cursor (this happens when mark mode is entered from no existing selection), a full y-beam will be displayed at the cursor position.
 
-![Y-Beam Example][./images/Y-Beam.png]
+![Y-Beam Example](./images/Y-Beam.png)
 
 When <kbd>shift</kbd> is held, we're expanding the selection. In this case, the y-beam will be split, and the relevant half will be rendered on the active endpoint functioning as a selection marker.
 
-![Separated Y-Beam Example][./images/Half-Y-Beam.png]
+![Separated Y-Beam Example](./images/Half-Y-Beam.png)
 
 If the selection is up against the end (or beginning) of the line, the selection marker can't be rendered normally because ther is no space to render it off the side of the terminal. Instead, the selection marker will be horizontally flipped. Alternatively, it can be rendered on the next available cell (i.e. end of line translates to the beginning of the next line), but that would cause issues when the selection is positioned at the beginning or end of the buffer, thus the idea was abandoned.
 
@@ -228,7 +228,7 @@ The y-beam doesn't make as much sense for block selections, so instead an L-shap
 
 **NOTE:** Both half y-beams could have been presented as shown in the image below. This idea was omitted because then there is no indication for which half y-beam is currently focused.
 
-![Both Separated Y-Beams Example][./images/Split-Y-Beam.png]
+![Both Separated Y-Beams Example](./images/Split-Y-Beam.png)
 
 ### Miscellaneous
 
@@ -239,6 +239,8 @@ When mark mode is enabled, the cursor will stop blinking.
 ### Accessibility
 
 Using the keyboard is generally a more accessible experience than using the mouse. Being able to modify a selection by using the keyboard is a good first step towards making selecting text more accessible.
+
+We will be expected to send "selection changed" events via UIA every time the cursor moves or selection updates (both are considered the same event).
 
 ### Security
 
