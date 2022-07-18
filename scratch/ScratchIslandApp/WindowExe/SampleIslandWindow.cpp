@@ -57,8 +57,8 @@ void SampleIslandWindow::MakeWindow() noexcept
                                 WS_OVERLAPPEDWINDOW,
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,
-                                CW_USEDEFAULT,
-                                CW_USEDEFAULT,
+                                1024,
+                                860,
                                 nullptr,
                                 nullptr,
                                 wc.hInstance,
@@ -104,8 +104,6 @@ void SampleIslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) 
 
 void SampleIslandWindow::Initialize()
 {
-    const bool initialized = (_interopWindowHandle != nullptr);
-
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();

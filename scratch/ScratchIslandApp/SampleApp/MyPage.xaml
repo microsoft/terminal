@@ -23,8 +23,22 @@
             <TextBox x:Name="GuidInput"
                      Width="400"
                      PlaceholderText="{}{guid here}" />
-            <Button Grid.Row="0">
+            <Button x:Name="CreateOutOfProcControl"
+                    Grid.Row="0"
+                    Tapped="CreateClicked">
                 Create
+            </Button>
+            <Button x:Name="CloseOutOfProcControl"
+                    Grid.Row="0"
+                    Margin="4,0,0,0"
+                    Tapped="CloseClicked">
+                Close
+            </Button>
+            <Button x:Name="KillOutOfProcControl"
+                    Grid.Row="0"
+                    Margin="4,0,0,0"
+                    Tapped="KillClicked">
+                Kill
             </Button>
 
         </StackPanel>
@@ -46,14 +60,26 @@
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
 
-            <Grid x:Name="OutOfProcContent"
-                  Grid.Column="1"
-                  Padding="16"
+            <Grid Grid.Column="1"
                   HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="#0000ff" />
+                  VerticalAlignment="Stretch">
 
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
+                <StackPanel x:Name="Log"
+                            Grid.Row="0"
+                            Orientation="Vertical" />
+
+                <Grid x:Name="OutOfProcContent"
+                      Grid.Row="1"
+                      Padding="16"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Background="#0000ff" />
+            </Grid>
 
         </Grid>
 
