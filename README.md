@@ -1,4 +1,4 @@
-![terminal-logos] (https://photos.app.goo.gl/WFNt4YpHWnEUKTLm7)
+![terminal-logos](https://photos.app.goo.gl/WFNt4YpHWnEUKTLm7)
  
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
