@@ -148,7 +148,7 @@ jobs:
     continueOnError: true
 
   # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
-  - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”
+  - powershell: Write-Host "##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true"
     displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
 
   # https://www.osgwiki.com/wiki/Package_ES_Security_and_Compliance
