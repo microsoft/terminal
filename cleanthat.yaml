@@ -1,0 +1,31 @@
+syntax_version: "2021-08-02"
+meta:
+  labels:
+  - "cleanthat"
+  refs:
+    branches:
+    - "refs/heads/develop"
+    - "refs/heads/main"
+    - "refs/heads/master"
+source_code:
+  excludes: []
+  includes: []
+  encoding: "UTF-8"
+  line_ending: "UNKNOWN"
+languages:
+- language: "json"
+  language_version: "0"
+  skip: false
+  source_code:
+    excludes: []
+    includes: []
+    encoding: "UTF-8"
+    line_ending: "UNKNOWN"
+  processors:
+  - engine: "jackson"
+    parameters:
+      indent: -1
+      indentation: "    "
+      space_before_separator: true
+      alphabetical_order: false
+      eol_at_eof: false
