@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <featureStaging xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd">
     <!-- See doc/feature_flags.md for more info.  -->
     <feature>
@@ -81,7 +81,7 @@
         <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
         <stage>AlwaysEnabled</stage>
     </feature>
-    
+
     <feature>
         <name>Feature_VtPassthroughMode</name>
         <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
