@@ -1,4 +1,4 @@
-<img src= " https://photos.app.goo.gl/gnnojEmwtuR7G8z86 alt="pic" />
+https://photos.app.goo.gl/WFNt4YpHWnEUKTLm7
  
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
