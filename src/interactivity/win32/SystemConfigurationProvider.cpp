@@ -73,8 +73,11 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     // Did we get started from a link?
     if (pLinkSettings->GetStartupFlags() & STARTF_TITLEISLINKNAME)
     {
-        if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
+        auto initializeCom = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        // If it's RPC_E_CHANGED_MODE, that's okay, we're doing a defterm and already started COM
+        if (SUCCEEDED(initializeCom) || initializeCom == RPC_E_CHANGED_MODE)
         {
+            
             const auto cch = *pdwTitleLength / sizeof(wchar_t);
 
             gci.SetLinkTitle(std::wstring(pwszTitle, cch));
@@ -157,7 +160,8 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                 // settings based on title.
                 pLinkSettings->UnsetStartupFlag(STARTF_TITLEISLINKNAME);
             }
-            CoUninitialize();
+            if (SUCCEEDED(initializeCom)) {
+                CoUninitialize(); }
         }
     }
 

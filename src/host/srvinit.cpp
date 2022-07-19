@@ -547,6 +547,7 @@ try
     Settings settings{};
     // We need to see if we were spawned from a link. If we were, we need to
     // call back into the shell to try to get all the console information from the link.
+    settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
     ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName, &icon);
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
