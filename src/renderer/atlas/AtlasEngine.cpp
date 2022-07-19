@@ -1245,7 +1245,7 @@ void AtlasEngine::_flushBufferLine()
                 // Task: Replace all characters in this range with unicode replacement characters.
                 // Input (where "n" is a narrow and "ww" is a wide character):
                 //    _api.bufferLine       = "nwwnnw"
-                //    _api.bufferLineColumn = {0, 1, 1, 2, 3, 4, 4, 5}
+                //    _api.bufferLineColumn = {0, 1, 1, 3, 4, 5, 5, 6}
                 //                             n  w  w  n  n  w  w
                 // Solution:
                 //   Iterate through bufferLineColumn until the value changes, because this indicates we passed over a
@@ -1293,9 +1293,13 @@ void AtlasEngine::_flushBufferLine()
 
             if (isTextSimple)
             {
+                size_t beg = 0;
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
-                    _emplaceGlyph(mappedFontFace.get(), idx + i, idx + i + 1u);
+                    if (_emplaceGlyph(mappedFontFace.get(), idx + beg, idx + i + 1))
+                    {
+                        beg = i + 1;
+                    }
                 }
             }
             else
@@ -1410,8 +1414,10 @@ void AtlasEngine::_flushBufferLine()
                     {
                         if (_api.textProps[i].canBreakShapingAfter)
                         {
-                            _emplaceGlyph(mappedFontFace.get(), a.textPosition + beg, a.textPosition + i + 1);
-                            beg = i + 1;
+                            if (_emplaceGlyph(mappedFontFace.get(), a.textPosition + beg, a.textPosition + i + 1))
+                            {
+                                beg = i + 1;
+                            }
                         }
                     }
                 }
@@ -1419,23 +1425,42 @@ void AtlasEngine::_flushBufferLine()
         }
     }
 }
+// ^^^ Look at that amazing 8-fold nesting level. Lovely. <3
 
-void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2)
+bool AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2)
 {
     static constexpr auto replacement = L'\uFFFD';
 
     // This would seriously blow us up otherwise.
     Expects(bufferPos1 < bufferPos2 && bufferPos2 <= _api.bufferLine.size());
 
-    const auto chars = fontFace ? &_api.bufferLine[bufferPos1] : &replacement;
-    const auto charCount = fontFace ? bufferPos2 - bufferPos1 : 1;
-
     // _flushBufferLine() ensures that bufferLineColumn.size() > bufferLine.size().
     const auto x1 = _api.bufferLineColumn[bufferPos1];
     const auto x2 = _api.bufferLineColumn[bufferPos2];
 
-    Expects(x1 < x2 && x2 <= _api.cellCount.x);
+    // x1 == x2, if our TextBuffer and DirectWrite disagree where glyph boundaries are. Example:
+    // Our line of text contains a wide glyph consisting of 2 surrogate pairs "xx" and "yy".
+    // If DirectWrite considers the first "xx" to be separate from the second "yy", we'll get:
+    //   _api.bufferLine       = "...xxyy..."
+    //   _api.bufferLineColumn = {01233335678}
+    //                               ^ ^
+    //                              /   \
+    //                      bufferPos1  bufferPos2
+    //   x1: _api.bufferLineColumn[bufferPos1] == 3
+    //   x1: _api.bufferLineColumn[bufferPos2] == 3
+    // --> cellCount (which is x2 - x1) is now 0 (invalid).
+    //
+    // Assuming that the TextBuffer implementation doesn't have any bugs...
+    // I'm not entirely certain why this occurs, but to me, a layperson, it appears as if
+    // IDWriteFontFallback::MapCharacters() doesn't respect extended grapheme clusters.
+    // It could also possibly be due to a difference in the supported Unicode version.
+    if (x1 >= x2 || x2 > _api.cellCount.x)
+    {
+        return false;
+    }
 
+    const auto chars = fontFace ? &_api.bufferLine[bufferPos1] : &replacement;
+    const auto charCount = fontFace ? bufferPos2 - bufferPos1 : 1;
     const u16 cellCount = x2 - x1;
 
     auto attributes = _api.attributes;
@@ -1503,4 +1528,5 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
     }
 
     std::fill_n(cellGlyphMappings, cellCount, it);
+    return true;
 }
