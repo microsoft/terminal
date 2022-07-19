@@ -299,8 +299,6 @@ jobs:
       inputs:
         Contents: >-
           **/PublicTerminalCore.dll
-
-          **/api-ms-win-core-synch-l1-2-0.dll
         TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
         OverWrite: true
         flattenFolders: true
