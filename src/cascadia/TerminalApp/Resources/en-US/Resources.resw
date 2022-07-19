@@ -436,6 +436,9 @@
   <data name="AboutDialog.Title" xml:space="preserve">
     <value>About</value>
   </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Send Feedback</value>
+  </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -446,6 +449,10 @@
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
     <value>Getting Started</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Source Code</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
     <value>Documentation</value>
