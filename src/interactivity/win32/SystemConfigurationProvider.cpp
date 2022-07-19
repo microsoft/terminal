@@ -73,11 +73,21 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     // Did we get started from a link?
     if (pLinkSettings->GetStartupFlags() & STARTF_TITLEISLINKNAME)
     {
-        auto initializeCom = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-        // If it's RPC_E_CHANGED_MODE, that's okay, we're doing a defterm and already started COM
-        if (SUCCEEDED(initializeCom) || initializeCom == RPC_E_CHANGED_MODE)
+        auto initializedCom = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+        // GH#9458: If it's RPC_E_CHANGED_MODE, that's okay, we're doing a
+        // defterm and have already started COM. We can continue on here.
+        if (SUCCEEDED(initializedCom) || initializedCom == RPC_E_CHANGED_MODE)
         {
-            
+            // Don't CoUninitialize if we still need COM for defterm.
+            auto unInitCom = wil::scope_exit[initializedCom]()
+            {
+                if (SUCCEEDED(initializedCom))
+                {
+                    CoUninitialize();
+                }
+            };
+
             const auto cch = *pdwTitleLength / sizeof(wchar_t);
 
             gci.SetLinkTitle(std::wstring(pwszTitle, cch));
@@ -160,8 +170,6 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                 // settings based on title.
                 pLinkSettings->UnsetStartupFlag(STARTF_TITLEISLINKNAME);
             }
-            if (SUCCEEDED(initializeCom)) {
-                CoUninitialize(); }
         }
     }
 

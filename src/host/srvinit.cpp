@@ -199,6 +199,22 @@ static bool s_IsOnDesktop()
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
         settings.SetVirtTermLevel(1);
+
+        // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
+        // be stashed in the lnk. We want to crack that lnk open, so we can get
+        // that title from it, but we want to discard everything else. So build
+        // a dummy Settings object here, and read the link settings into it.
+        // `Title` will get filled with the title from the lnk, which we'll use
+        // below.
+
+        Settings temp;
+        // We're not gonna copy over StartupFlags to the main gci settings,
+        // because we generally don't think those are valuable in ConPTY mode.
+        // However, we do need to apply them to the temp we've created, so that
+        // GetSettingsFromLink will actually look for the link settings (it will
+        // skip that if STARTF_TITLEISLINKNAME is not set).
+        temp.SetStartupFlags(pStartupSettings->GetStartupFlags());
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&temp, Title, &TitleLength, CurDir, AppName, nullptr);
     }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
