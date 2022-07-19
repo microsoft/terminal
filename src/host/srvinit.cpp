@@ -18,6 +18,7 @@
 #include "../server/Entrypoints.h"
 #include "../server/IoSorter.h"
 
+#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
@@ -179,7 +180,7 @@ static bool s_IsOnDesktop()
 
         // We need to see if we were spawned from a link. If we were, we need to
         // call back into the shell to try to get all the console information from the link.
-        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName, nullptr);
 
         // If we weren't started from a link, this will already be set.
         // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
@@ -509,12 +510,78 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+    // DebugBreak();
+
+    g.pDeviceComm = new ConDrvDeviceComm(Server);
+    connectMessage->_pDeviceComm = g.pDeviceComm;
+
+    // TODO! Here, add the additional info we pulled out of the StartupInfo
+    // {
+    // NEW:
+    Microsoft::Console::Interactivity::IconInfo icon;
+    // Old
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_BeforeConsoleInitializeConnectInfo",
+                      TraceLoggingDescription("TODO! debugging only"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    CONSOLE_API_CONNECTINFO Cac;
+    THROW_IF_NTSTATUS_FAILED(ConsoleInitializeConnectInfo(connectMessage, &Cac));
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_GotCac",
+                      TraceLoggingDescription("TODO! debugging only"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    // BEGIN ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
+    // CALL auto Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
+    Settings* pStartupSettings = &Cac.ConsoleInfo;
+    DWORD TitleLength = Cac.TitleLength;
+    LPWSTR Title = Cac.Title;
+    LPCWSTR CurDir = Cac.CurDir;
+    LPCWSTR AppName = Cac.AppName;
+    // BEGIN  SetUpConsole(_Inout_ Settings* pStartupSettings, _In_ DWORD TitleLength, _In_reads_bytes_(TitleLength) LPWSTR Title, _In_ LPCWSTR CurDir, _In_ LPCWSTR AppName)
+    // auto& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
+    Settings settings{};
+    // We need to see if we were spawned from a link. If we were, we need to
+    // call back into the shell to try to get all the console information from the link.
+    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName, &icon);
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_LoadedFromLink",
+                      TraceLoggingDescription("TODO! debugging only"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
+    settings.ApplyStartupInfo(pStartupSettings);
+    // }
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_AppliedStartupInfo",
+                      TraceLoggingDescription("TODO! debugging only"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    TERMINAL_STARTUP_INFO myStartupInfo{ Title, icon.path.c_str(), icon.index };
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_CreatedStartupInfo",
+                      TraceLoggingDescription("TODO! debugging only"),
+                      TraceLoggingWideString(myStartupInfo.pszTitle, "Title", "The title for the connection"),
+                      TraceLoggingWideString(myStartupInfo.pszIconPath, "Icon", "The icon for the connection"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
-                                                  clientProcess.get()));
+                                                  clientProcess.get(),
+                                                  myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
@@ -734,6 +801,12 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     auto Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
     if (!NT_SUCCESS(Status))
     {
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_ConsoleInitializeConnectInfo_ReadMessageInputFailed",
+                          TraceLoggingDescription("TODO! debugging only"),
+                          TraceLoggingUInt64(Status, "Status", "something happened"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         return Status;
     }
 

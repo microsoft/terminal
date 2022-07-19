@@ -203,7 +203,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hOut,
                                        const HANDLE hRef,
                                        const HANDLE hServerProcess,
-                                       const HANDLE hClientProcess) :
+                                       const HANDLE hClientProcess,
+                                       TERMINAL_STARTUP_INFO startupInfo) :
         _initialRows{ 25 },
         _initialCols{ 80 },
         _guid{ Utils::CreateGuid() },
@@ -213,6 +214,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         _piClient.hProcess = hClientProcess;
 
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ConptyConnection_CreatedForDefTerm",
+            TraceLoggingDescription("Event emitted when ConPTY connection is started for a defterm connection"),
+            TraceLoggingGuid(_guid, "SessionGuid", "The new connection's GUID"),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle };
+        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath };
+        _startupInfo.iconIndex = startupInfo.iconIndex;
+
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ConPty_GotStartupInfoConnected",
+            TraceLoggingDescription("TODO! debugging only"),
+            TraceLoggingWideString(_startupInfo.title.c_str(), "Title", "The title from the connection"),
+            TraceLoggingWideString(_startupInfo.iconPath.c_str(), "Icon", "The icon from the connection"),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        // DebugBreak();
         try
         {
             _commandline = _commandlineFromProcess(hClientProcess);
@@ -286,6 +308,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::hstring ConptyConnection::Commandline() const
     {
         return _commandline;
+    }
+
+    winrt::hstring ConptyConnection::Title() const
+    {
+        return _startupInfo.title;
     }
 
     void ConptyConnection::Start()
@@ -667,10 +694,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::event_token ConptyConnection::NewConnection(const NewConnectionHandler& handler) { return _newConnectionHandlers.add(handler); };
     void ConptyConnection::NewConnection(const winrt::event_token& token) { _newConnectionHandlers.remove(token); };
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
+    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
     try
     {
-        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client));
+        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client, startupInfo));
 
         return S_OK;
     }

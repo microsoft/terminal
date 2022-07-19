@@ -60,7 +60,8 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
     _Inout_ PDWORD pdwTitleLength,
     _In_ PCWSTR pwszCurrDir,
-    _In_ PCWSTR pwszAppName)
+    _In_ PCWSTR pwszAppName,
+    _Inout_opt_ IconInfo* iconInfo)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wszLinkTarget[MAX_PATH] = { 0 };
@@ -191,7 +192,15 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
     if (wszIconLocation[0] != L'\0')
     {
-        LOG_IF_FAILED(Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex));
+        if (iconInfo)
+        {
+            iconInfo->path = std::wstring{ wszIconLocation };
+            iconInfo->index = iIconIndex;
+        }
+        else
+        {
+            LOG_IF_FAILED(Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex));
+        }
     }
 
     if (!IsValidCodePage(pLinkSettings->GetCodePage()))
