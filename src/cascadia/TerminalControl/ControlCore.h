@@ -270,7 +270,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
-        std::shared_ptr<ThrottledFuncTrailing<winrt::hstring>> _updateMenu;
+        std::shared_ptr<ThrottledFuncTrailing<winrt::hstring, int32_t>> _updateMenu;
 
         winrt::fire_and_forget _asyncCloseConnection();
 
@@ -296,7 +296,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
 
-        void _terminalMenuChanged(std::wstring_view menuJson);
+        void _terminalMenuChanged(std::wstring_view menuJson, int32_t replaceLength);
 
 #pragma endregion
 

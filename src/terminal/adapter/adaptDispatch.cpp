@@ -2600,7 +2600,14 @@ bool AdaptDispatch::DoXtermJsAction(const std::wstring_view string)
 
     if (action == L"Completions")
     {
-        _api.InvokeMenu(parts.size() < 4 ? L"" : til::at(parts, 3));
+        unsigned int replacementChars = 0;
+        bool succeeded = (parts.size() >= 3) &&
+                         (Utils::StringToUint(til::at(parts, 2), replacementChars));
+        if (succeeded)
+        {
+            _api.InvokeMenu(parts.size() < 4 ? L"" : til::at(parts, 3),
+                            static_cast<int32_t>(replacementChars));
+        }
 
         return true;
     }

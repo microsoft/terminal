@@ -4183,7 +4183,7 @@ namespace winrt::TerminalApp::implementation
         // TODO! parse json
 
         // auto commandsCollection = winrt::single_threaded_vector<Command>();
-        auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson());
+        auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(), args.ReplacementLength());
         //for (const auto& entry : entries)
         //{
         //    SendInputArgs args{ entry.Input };

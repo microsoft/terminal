@@ -638,7 +638,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return newCommands;
     }
 
-    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json)
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
     {
         auto data = winrt::to_string(json);
 
@@ -652,6 +652,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         auto result = winrt::single_threaded_vector<Model::Command>();
 
+        auto backspaces = std::wstring(::base::saturated_cast<size_t>(replaceLength), L'\x7f');
         for (const auto& element : root)
         {
             winrt::hstring completionText;
@@ -659,7 +660,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(element, "CompletionText", completionText);
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
 
-            Model::SendInputArgs args{ completionText };
+            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, completionText.c_str()) } };
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
             Model::Command command{};
             command.ActionAndArgs(actionAndArgs);

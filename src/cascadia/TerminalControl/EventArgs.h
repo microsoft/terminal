@@ -174,11 +174,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct MenuChangedEventArgs : public MenuChangedEventArgsT<MenuChangedEventArgs>
     {
     public:
-        MenuChangedEventArgs(const winrt::hstring menuJson) :
-            _MenuJson(menuJson)
+        MenuChangedEventArgs(const winrt::hstring menuJson, const int32_t replaceLength) :
+            _MenuJson(menuJson),
+            _ReplacementLength(replaceLength)
         {
         }
 
         WINRT_PROPERTY(winrt::hstring, MenuJson, L"");
+        WINRT_PROPERTY(int32_t, ReplacementLength, 0);
     };
 }

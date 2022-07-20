@@ -48,6 +48,6 @@ namespace Microsoft.Terminal.Settings.Model
                                    Windows.Foundation.Collections.IVectorView<ColorScheme> schemes,
                                    Windows.Foundation.Collections.IVector<SettingsLoadWarnings> warnings);
 
-        static IVector<Command> ParsePowerShellMenuComplete(String json);
+        static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
     }
 }

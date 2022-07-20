@@ -361,7 +361,7 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/)
 //     }
 //     // }
 // }
-void Terminal::InvokeMenu(std::wstring_view menuJson)
+void Terminal::InvokeMenu(std::wstring_view menuJson, int32_t replaceLength)
 {
     // menu;
     // for (const auto& entry : menu)
@@ -375,5 +375,5 @@ void Terminal::InvokeMenu(std::wstring_view menuJson)
     // }
     // DebugBreak();
     if (_pfnMenuChanged)
-        _pfnMenuChanged(menuJson);
+        _pfnMenuChanged(menuJson, replaceLength);
 }

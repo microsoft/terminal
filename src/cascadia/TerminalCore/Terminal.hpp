@@ -142,7 +142,7 @@ public:
     bool IsVtInputEnabled() const override;
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
-    void InvokeMenu(std::wstring_view menuJson) override;
+    void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) override;
     // void ClearMenu();
     // void AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& menu);
 
@@ -224,7 +224,7 @@ public:
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
 
-    void MenuChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept;
+    void MenuChangedCallback(std::function<void(std::wstring_view, int32_t)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -323,7 +323,7 @@ private:
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
 
-    std::function<void(std::wstring_view)> _pfnMenuChanged;
+    std::function<void(std::wstring_view, int32_t)> _pfnMenuChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

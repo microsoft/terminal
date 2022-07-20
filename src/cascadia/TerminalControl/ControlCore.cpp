@@ -130,7 +130,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
-        auto pfnMenuChanged = std::bind(&ControlCore::_terminalMenuChanged, this, std::placeholders::_1);
+        auto pfnMenuChanged = std::bind(&ControlCore::_terminalMenuChanged, this, std::placeholders::_1, std::placeholders::_2);
         _terminal->MenuChangedCallback(pfnMenuChanged);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
@@ -218,13 +218,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updateMenu = std::make_shared<ThrottledFuncTrailing<winrt::hstring>>(
+        _updateMenu = std::make_shared<ThrottledFuncTrailing<winrt::hstring, int32_t>>(
             _dispatcher,
             UpdatePatternLocationsInterval,
-            [weakThis = get_weak()](const auto& menuJson) {
+            [weakThis = get_weak()](const auto& menuJson, const auto& replaceLength) {
                 if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
-                    auto args = winrt::make<MenuChangedEventArgs>(menuJson);
+                    auto args = winrt::make<MenuChangedEventArgs>(menuJson, replaceLength);
                     core->_MenuChangedHandlers(*core, args);
                 }
             });
@@ -1410,9 +1410,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_terminalMenuChanged(std::wstring_view menuJson)
+    void ControlCore::_terminalMenuChanged(std::wstring_view menuJson, int32_t replaceLength)
     {
-        _updateMenu->Run(winrt::hstring{ menuJson });
+        _updateMenu->Run(winrt::hstring{ menuJson }, replaceLength);
         // _MenuChangedHandlers(*this, nullptr);
     }
 
@@ -2156,6 +2156,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
-
 
 }

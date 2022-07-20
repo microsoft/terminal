@@ -87,5 +87,6 @@ namespace Microsoft.Terminal.Control
     runtimeclass MenuChangedEventArgs
     {
         String MenuJson { get; };
+        Int32 ReplacementLength { get; };
     }
 }
