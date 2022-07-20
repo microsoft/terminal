@@ -166,6 +166,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleCloseOtherPanes(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        _CloseUnfocusedPanes();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {

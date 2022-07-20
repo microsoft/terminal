@@ -761,6 +761,53 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Removes the pane from the tab it belongs to.
+    // Arguments:
+    // - pane: the pane to close
+    // - detach: option to detach before closing the pane
+    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleClosePaneRequested(std::shared_ptr<Pane> pane, bool detach)
+    {
+        if (const auto control{ pane->GetTerminalControl() })
+        {
+            if (control.ReadOnly())
+            {
+                auto warningResult = co_await _ShowCloseReadOnlyDialog();
+
+                // If the user didn't explicitly click on close tab - leave
+                if (warningResult != ContentDialogResult::Primary)
+                {
+                    co_return;
+                }
+                control.ToggleReadOnly();
+            }
+        }
+
+        // Build the list of actions to recreate the closed pane,
+        // BuildStartupActions returns the "first" pane and the rest of
+        // its actions are assuming that first pane has been created first.
+        // This doesn't handle refocusing anything in particular, the
+        // result will be that the last pane created is focused. In the
+        // case of a single pane that is the desired behavior anyways.
+        auto state = pane->BuildStartupActions(0, 1);
+        {
+            ActionAndArgs splitPaneAction{};
+            splitPaneAction.Action(ShortcutAction::SplitPane);
+            SplitPaneArgs splitPaneArgs{ SplitDirection::Automatic, state.firstPane->GetTerminalArgsForPane() };
+            splitPaneAction.Args(splitPaneArgs);
+
+            state.args.emplace(state.args.begin(), std::move(splitPaneAction));
+        }
+        _AddPreviouslyClosedPaneOrTab(std::move(state.args));
+
+        // If specified, detach before closing to directly update the pane structure
+        if (detach)
+        {
+            _GetFocusedTabImpl()->GetRootPane()->DetachPane(pane);
+        }
+        pane->Close();
+    }
+
+    // Method Description:
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
@@ -772,46 +819,7 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto pane{ terminalTab->GetActivePane() })
             {
-                if (pane->ContainsReadOnly())
-                {
-                    auto warningResult = co_await _ShowCloseReadOnlyDialog();
-
-                    // If the user didn't explicitly click on close tab - leave
-                    if (warningResult != ContentDialogResult::Primary)
-                    {
-                        co_return;
-                    }
-
-                    // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
-                    pane->WalkTree([](auto p) {
-                        if (const auto control{ p->GetTerminalControl() })
-                        {
-                            if (control.ReadOnly())
-                            {
-                                control.ToggleReadOnly();
-                            }
-                        }
-                    });
-                }
-
-                // Build the list of actions to recreate the closed pane,
-                // BuildStartupActions returns the "first" pane and the rest of
-                // its actions are assuming that first pane has been created first.
-                // This doesn't handle refocusing anything in particular, the
-                // result will be that the last pane created is focused. In the
-                // case of a single pane that is the desired behavior anyways.
-                auto state = pane->BuildStartupActions(0, 1);
-                {
-                    ActionAndArgs splitPaneAction{};
-                    splitPaneAction.Action(ShortcutAction::SplitPane);
-                    SplitPaneArgs splitPaneArgs{ SplitDirection::Automatic, state.firstPane->GetTerminalArgsForPane() };
-                    splitPaneAction.Args(splitPaneArgs);
-
-                    state.args.emplace(state.args.begin(), std::move(splitPaneAction));
-                }
-                _AddPreviouslyClosedPaneOrTab(std::move(state.args));
-
-                pane->Close();
+                co_await _HandleClosePaneRequested(pane, false);
             }
         }
         else if (auto index{ _GetFocusedTabIndex() })
@@ -820,6 +828,37 @@ namespace winrt::TerminalApp::implementation
             if (tab.try_as<TerminalApp::SettingsTab>())
             {
                 _HandleCloseTabRequested(tab);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Close all other panes except the pane that is currently focused.
+    winrt::fire_and_forget TerminalPage::_CloseUnfocusedPanes()
+    {
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        {
+            const auto activePane = terminalTab->GetActivePane();
+            if (terminalTab->GetRootPane() != activePane)
+            {
+                // Accumulate list of all unfocused leaf panes
+                std::vector<uint32_t> unfocusedPaneIds{};
+                terminalTab->GetRootPane()->WalkTree([&](auto p) {
+                    const auto id = p->Id();
+                    if (id.has_value() && id != activePane->Id())
+                    {
+                        unfocusedPaneIds.push_back(id.value());
+                    }
+                });
+
+                // Close all unfocused panes one by one
+                for (const auto unfocusedPaneId : unfocusedPaneIds)
+                {
+                    if (const auto pane{ terminalTab->GetRootPane()->FindPane(unfocusedPaneId) })
+                    {
+                        co_await _HandleClosePaneRequested(pane, true);
+                    }
+                }
             }
         }
     }
