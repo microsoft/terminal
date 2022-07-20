@@ -4168,7 +4168,7 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
     }
-    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable& /*sender*/, const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs& args)
+    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/, const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args)
     {
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         auto control{ _GetActiveControl() };
@@ -4182,7 +4182,8 @@ namespace winrt::TerminalApp::implementation
 
         // TODO! parse json
 
-        auto commandsCollection = winrt::single_threaded_vector<Command>();
+        // auto commandsCollection = winrt::single_threaded_vector<Command>();
+        auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson());
         //for (const auto& entry : entries)
         //{
         //    SendInputArgs args{ entry.Input };

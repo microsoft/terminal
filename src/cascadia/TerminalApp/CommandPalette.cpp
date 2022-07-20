@@ -234,7 +234,7 @@ namespace winrt::TerminalApp::implementation
             _switchToTab(filteredCommand);
         }
         else if (_currentMode == CommandPaletteMode::ActionMode &&
-                 filteredCommand != nullptr && 
+                 filteredCommand != nullptr &&
                  currentlyVisible)
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
@@ -1357,10 +1357,10 @@ namespace winrt::TerminalApp::implementation
         _backdrop().HorizontalAlignment(HorizontalAlignment::Stretch);
         _backdrop().VerticalAlignment(VerticalAlignment::Stretch);
 
-        // We can fake this. We're only using this method for the autocomplete
-        // version of the cmdpal. Set the BG to acrylic.
-        const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"CommandPaletteAcrylicBackground")).as<Windows::UI::Xaml::Style>() };
-        _backdrop().Style(colorControlStyle);
+        // // We can fake this. We're only using this method for the autocomplete
+        // // version of the cmdpal. Set the BG to acrylic.
+        // const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"CommandPaletteAcrylicBackground")).as<Windows::UI::Xaml::Style>() };
+        // _backdrop().Style(colorControlStyle);
 
         Windows::UI::Xaml::Thickness margins{};
         margins.Left = origin.X;

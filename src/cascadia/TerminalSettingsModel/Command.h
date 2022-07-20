@@ -67,6 +67,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
 
+        static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json);
+
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);

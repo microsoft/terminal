@@ -269,9 +269,6 @@
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <StaticResource x:Key="CommandPaletteAcrylicBackground"
-                                    ResourceKey="CommandPaletteSolidBackground" />
-
                     <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
                     <Style x:Key="KeyChordBorderStyle"
                            TargetType="Border" />
