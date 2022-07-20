@@ -1344,6 +1344,11 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
+void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnMenuChanged.swap(pfn);
+}
+
 // Method Description:
 // - Propagates an incoming set window visibility call from the PTY up into our window control layers
 // Arguments:
@@ -1622,4 +1627,9 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
     }
+}
+
+const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& Terminal::GetMenu() const
+{
+    return _menu;
 }

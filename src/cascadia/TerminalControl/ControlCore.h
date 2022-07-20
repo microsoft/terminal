@@ -128,6 +128,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
 
+        Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
+
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -219,6 +221,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
+
+        TYPED_EVENT(MenuChanged,               IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -268,6 +272,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updateMenu;
 
         winrt::fire_and_forget _asyncCloseConnection();
 
@@ -287,10 +292,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const int bufferSize);
         void _terminalCursorPositionChanged();
         void _terminalTaskbarProgressChanged();
+
         void _terminalShowWindowChanged(bool showOrHide);
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
+
+        void _terminalMenuChanged();
+
 #pragma endregion
 
         std::unique_ptr<MidiAudio> _midiAudio;

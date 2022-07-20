@@ -195,6 +195,18 @@
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 
+        <Popup x:Name="AutoCompletePopup"
+               HorizontalOffset="200"
+               IsOpen="False"
+               ShouldConstrainToRootBounds="False"
+               VerticalOffset="200">
+            <local:CommandPalette x:Name="AutoCompleteMenu"
+                                  VerticalAlignment="Stretch"
+                                  PreviewKeyDown="_KeyDownHandler"
+                                  Visibility="Collapsed" />
+
+        </Popup>
+
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately
             dismiss itself if the window is unfocused (In Xaml Islands). This is
@@ -226,4 +238,5 @@
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
     </Grid>
+
 </Page>

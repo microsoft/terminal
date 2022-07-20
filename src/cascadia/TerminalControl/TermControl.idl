@@ -41,6 +41,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> MenuChanged;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -91,6 +92,13 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
+
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        Microsoft.Terminal.Core.Point CursorPositionInDips { get; };
+
+        void PreviewInput(String text);
+
+
     }
 }

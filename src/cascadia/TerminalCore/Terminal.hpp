@@ -101,6 +101,7 @@ public:
 
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& GetMenu() const;
 
     const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const;
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
@@ -140,6 +141,11 @@ public:
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
+
+    // void InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu) override;
+    void ClearMenu();
+    void AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& menu);
+
 #pragma endregion
 
     void ClearMark();
@@ -217,6 +223,8 @@ public:
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
+
+    void MenuChangedCallback(std::function<void()> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -315,6 +323,8 @@ private:
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
 
+    std::function<void()> _pfnMenuChanged;
+
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
@@ -401,6 +411,8 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
+
+    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry> _menu;
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

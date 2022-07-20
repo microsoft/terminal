@@ -130,6 +130,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
+        auto pfnMenuChanged = std::bind(&ControlCore::_terminalMenuChanged, this);
+        _terminal->MenuChangedCallback(pfnMenuChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -212,6 +215,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
                     core->_ScrollPositionChangedHandlers(*core, update);
+                }
+            });
+
+        _updateMenu = std::make_shared<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            UpdatePatternLocationsInterval,
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->_MenuChangedHandlers(*core, nullptr);
                 }
             });
 
@@ -1396,6 +1409,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::_terminalMenuChanged()
+    {
+        _updateMenu->Run();
+        // _MenuChangedHandlers(*this, nullptr);
+    }
+
     bool ControlCore::HasSelection() const
     {
         return _terminal->IsSelectionActive();
@@ -2136,4 +2155,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
+
+    static Windows::Foundation::Collections::IVector<Control::MenuEntry> _internalMenuToWinRT(const std::vector<DispatchTypes::MenuEntry>& menu)
+    {
+        auto v = winrt::single_threaded_observable_vector<Control::MenuEntry>();
+        for (const auto& entry : menu)
+        {
+            Control::MenuEntry e{};
+            e.Name = winrt::hstring(entry._name);
+            e.Comment = winrt::hstring(entry._comment);
+            e.Input = winrt::hstring(entry._input);
+            v.Append(e);
+        }
+
+        return v;
+    }
+
+    Windows::Foundation::Collections::IVector<Control::MenuEntry> ControlCore::MenuEntries() const
+    {
+        return _internalMenuToWinRT(_terminal->GetMenu());
+    }
+
 }

@@ -472,4 +472,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, const CoreTextFormatUpdatingEventArgs& /*args*/)
     {
     }
+
+    void TSFInputControl::ManuallyDisplayText(const winrt::hstring& text)
+    {
+        _focused = !text.empty();
+        Canvas().Visibility(text.empty() ? Visibility::Collapsed : Visibility::Visible);
+
+        _inputBuffer.clear();
+        // _editContext.NotifyFocusLeave();
+        _activeTextStart = 0;
+        _inComposition = false;
+
+        TextBlock().Text(text);
+        TextBlock().UpdateLayout();
+        TryRedrawCanvas();
+    }
 }

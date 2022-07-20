@@ -29,6 +29,13 @@ namespace Microsoft.Terminal.Control
         Last
     };
 
+    struct MenuEntry
+    {
+        String Name;
+        String Comment;
+        String Input;
+    };
+
     // These are properties of the TerminalCore that should be queryable by the
     // rest of the app.
     interface ICoreState
@@ -51,6 +58,7 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Core.Scheme ColorScheme { get; set; };
 
+
         UInt64 OwningHwnd;
 
         void AddMark(ScrollMark mark);
@@ -58,6 +66,8 @@ namespace Microsoft.Terminal.Control
         void ClearAllMarks();
         void ScrollToMark(ScrollToMarkDirection direction);
         IVector<ScrollMark> ScrollMarks { get; };
+
+        IVector<MenuEntry> MenuEntries { get; };
 
     };
 }
