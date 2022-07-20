@@ -4188,6 +4188,12 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
+        if (commandsCollection.Size() == 0)
+        {
+            AutoCompletePopup().IsOpen(false);
+            AutoCompleteMenu().Visibility(Visibility::Collapsed);
+            co_return;
+        }
         // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
         AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
 
