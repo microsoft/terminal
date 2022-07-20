@@ -67,7 +67,5 @@ namespace Microsoft.Terminal.Control
         void ScrollToMark(ScrollToMarkDirection direction);
         IVector<ScrollMark> ScrollMarks { get; };
 
-        IVector<MenuEntry> MenuEntries { get; };
-
     };
 }

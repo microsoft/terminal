@@ -1344,7 +1344,7 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
-void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void()> pfn) noexcept
+void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnMenuChanged.swap(pfn);
 }
@@ -1629,7 +1629,3 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
     }
 }
 
-const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& Terminal::GetMenu() const
-{
-    return _menu;
-}

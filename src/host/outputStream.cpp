@@ -493,3 +493,7 @@ void ConhostInternalGetSet::AddMark(const Microsoft::Console::VirtualTerminal::D
 {
     // Not implemented for conhost.
 }
+void ConhostInternalGetSet::InvokeMenu(std::wstring_view menuJson)
+{
+    // Not implemented for conhost.
+}

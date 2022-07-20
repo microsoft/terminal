@@ -333,45 +333,47 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/)
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }
 
-void Terminal::ClearMenu()
-{
-    _menu.clear();
+// void Terminal::ClearMenu()
+// {
+//     _menu.clear();
 
-    if (_pfnMenuChanged)
-    {
-        _pfnMenuChanged();
-    }
-}
-void Terminal::AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& entry)
+//     if (_pfnMenuChanged)
+//     {
+//         _pfnMenuChanged();
+//     }
+// }
+// void Terminal::AddToMenu(const Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry& entry)
+// {
+//     // entry;
+//     // for (const auto& entry : menu)
+//     // {
+//     auto n = entry._name;
+//     n;
+//     auto a = 9;
+//     a++;
+//     a;
+
+//     _menu.push_back(entry);
+
+//     if (_pfnMenuChanged)
+//     {
+//         _pfnMenuChanged();
+//     }
+//     // }
+// }
+void Terminal::InvokeMenu(std::wstring_view menuJson)
 {
-    // entry;
+    // menu;
     // for (const auto& entry : menu)
     // {
-    auto n = entry._name;
-    n;
-    auto a = 9;
-    a++;
-    a;
+    //     auto n = entry._name;
+    //     n;
+    //     auto a = 9;
+    //     a++;
+    //     a;
 
-    _menu.push_back(entry);
-
-    if (_pfnMenuChanged)
-    {
-        _pfnMenuChanged();
-    }
     // }
+    // DebugBreak();
+    if (_pfnMenuChanged)
+        _pfnMenuChanged(menuJson);
 }
-// void Terminal::InvokeMenu(const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::MenuEntry>& menu)
-// {
-//     menu;
-//     for (const auto& entry : menu)
-//     {
-//         auto n = entry._name;
-//         n;
-//         auto a = 9;
-//         a++;
-//         a;
-
-//     }
-//     // DebugBreak();
-// }

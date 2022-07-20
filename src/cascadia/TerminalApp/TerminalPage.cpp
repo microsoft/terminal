@@ -4168,7 +4168,7 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
     }
-    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable& /*sender*/, const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs& args)
     {
         co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         auto control{ _GetActiveControl() };
@@ -4178,18 +4178,21 @@ namespace winrt::TerminalApp::implementation
         // May be able to fake this by not creating whole Commands for these
         // actions, instead just binding them at the cmdpal layer (like tab item
         // vs action item)
-        auto entries = control.MenuEntries();
-        auto commandsCollection = winrt::single_threaded_vector<Command>();
-        for (const auto& entry : entries)
-        {
-            SendInputArgs args{ entry.Input };
-            ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
-            Command command{};
-            command.ActionAndArgs(actionAndArgs);
-            command.Name(entry.Name);
+        // auto entries = control.MenuEntries();
 
-            commandsCollection.Append(command);
-        }
+        // TODO! parse json
+
+        auto commandsCollection = winrt::single_threaded_vector<Command>();
+        //for (const auto& entry : entries)
+        //{
+        //    SendInputArgs args{ entry.Input };
+        //    ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+        //    Command command{};
+        //    command.ActionAndArgs(actionAndArgs);
+        //    command.Name(entry.Name);
+
+        //    commandsCollection.Append(command);
+        //}
 
         // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
         AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });

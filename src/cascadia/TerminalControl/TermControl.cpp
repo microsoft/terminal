@@ -3089,11 +3089,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return relativeToOrigin.to_core_point();
     }
 
-    Windows::Foundation::Collections::IVector<Control::MenuEntry> TermControl::MenuEntries() const
-    {
-        return _core.MenuEntries();
-    }
-
     void TermControl::PreviewInput(const winrt::hstring& text)
     {
         TSFInputControl().ManuallyDisplayText(text);

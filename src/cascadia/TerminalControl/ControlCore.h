@@ -128,8 +128,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
 
-        Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
-
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -222,7 +220,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
 
-        TYPED_EVENT(MenuChanged,               IInspectable, IInspectable);
+        TYPED_EVENT(MenuChanged,               IInspectable, Control::MenuChangedEventArgs);
         // clang-format on
 
     private:
@@ -272,7 +270,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
-        std::shared_ptr<ThrottledFuncTrailing<>> _updateMenu;
+        std::shared_ptr<ThrottledFuncTrailing<winrt::hstring>> _updateMenu;
 
         winrt::fire_and_forget _asyncCloseConnection();
 
@@ -298,7 +296,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
 
-        void _terminalMenuChanged();
+        void _terminalMenuChanged(std::wstring_view menuJson);
 
 #pragma endregion
 

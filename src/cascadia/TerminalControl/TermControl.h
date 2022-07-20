@@ -147,7 +147,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(MenuChanged           , IInspectable, IInspectable, _core, MenuChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(MenuChanged           , IInspectable, Control::MenuChangedEventArgs, _core, MenuChanged);
 
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);

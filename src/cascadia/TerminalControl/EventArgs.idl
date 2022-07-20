@@ -83,4 +83,9 @@ namespace Microsoft.Terminal.Control
     {
         Boolean ClearMarkers { get; };
     }
+
+    runtimeclass MenuChangedEventArgs
+    {
+        String MenuJson { get; };
+    }
 }
