@@ -739,4 +739,12 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="TabColorPivot_Custom.Header" xml:space="preserve">
+    <value>Custom</value>
+    <comment>Header for a set of UI controls to pick a custom color (rather than predefined).</comment>
+  </data>
+  <data name="TabColorPivot_Standard.Header" xml:space="preserve">
+    <value>Standard</value>
+    <comment>Header for a set of UI controls with standard customization of a tab color.</comment>
+  </data>
 </root>

@@ -1,10 +1,11 @@
 #include "pch.h"
 #include "ColorPickupFlyout.h"
 #include "ColorPickupFlyout.g.cpp"
-#include "winrt/Windows.UI.Xaml.Media.h"
 #include "winrt/Windows.UI.Xaml.Shapes.h"
 #include "winrt/Windows.UI.Xaml.Interop.h"
 #include <LibraryResources.h>
+
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -18,9 +19,14 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        OkButton().Content(winrt::box_value(RS_(L"Ok")));
-        CustomColorButton().Content(winrt::box_value(RS_(L"TabColorCustomButton/Content")));
-        ClearColorButton().Content(winrt::box_value(RS_(L"TabColorClearButton/Content")));
+        OkButton().Content(box_value(RS_(L"Ok")));
+    }
+
+    void ColorPickupFlyout::Flyout_Opened(const IInspectable&, const IInspectable&)
+    {
+        // Pivot retains the selected index.
+        // We want to reset it every time you open the flyout.
+        FlyoutPivot().SelectedIndex(0);
     }
 
     // Method Description:
@@ -31,10 +37,10 @@ namespace winrt::TerminalApp::implementation
     // - sender: the rectangle that got clicked
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ColorButton_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&)
+    void ColorPickupFlyout::ColorButton_Click(const IInspectable& sender, const RoutedEventArgs&)
     {
-        auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
-        auto rectClr{ button.Background().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
+        const auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
+        const auto rectClr{ button.Background().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
         _ColorSelectedHandlers(rectClr.Color());
         Hide();
     }
@@ -46,31 +52,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ClearColorButton_Click(const IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
+    void ColorPickupFlyout::ClearColorButton_Click(const IInspectable&, const RoutedEventArgs&)
     {
         _ColorClearedHandlers();
         Hide();
-    }
-
-    // Method Description:
-    // - Handler of the select custom color button. Expands or collapses the flyout
-    // to show the color picker. In order to accomplish this a FlyoutPresenterStyle is used,
-    // in which a Style is embedded, containing the desired width
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void ColorPickupFlyout::ShowColorPickerButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
-    {
-        auto visibility = customColorPanel().Visibility();
-        if (visibility == winrt::Windows::UI::Xaml::Visibility::Collapsed)
-        {
-            customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Visible);
-        }
-        else
-        {
-            customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Collapsed);
-        }
     }
 
     // Method Description:
@@ -80,9 +65,9 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::CustomColorButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
+    void ColorPickupFlyout::CustomColorButton_Click(const IInspectable&, const RoutedEventArgs&)
     {
-        auto color = customColorPicker().Color();
+        const auto color = CustomColorPicker().Color();
         _ColorSelectedHandlers(color);
         Hide();
     }
@@ -90,5 +75,21 @@ namespace winrt::TerminalApp::implementation
     void ColorPickupFlyout::ColorPicker_ColorChanged(const Microsoft::UI::Xaml::Controls::ColorPicker&, const Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args)
     {
         _ColorSelectedHandlers(args.NewColor());
+    }
+
+    void ColorPickupFlyout::Pivot_SelectionChanged(const IInspectable&, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args)
+    {
+        // Pivot likes to take up as much width as possible (as opposed to just what it needs from its children).
+        // Using trial-and-error, we've determined a reasonable width for each pivot item.
+        const auto selectedItem = args.AddedItems().GetAt(0).as<Windows::UI::Xaml::Controls::PivotItem>();
+        const auto tag = unbox_value<hstring>(selectedItem.Tag());
+        if (tag == L"Standard")
+        {
+            FlyoutPivot().Width(170);
+        }
+        else if (tag == L"Custom")
+        {
+            FlyoutPivot().Width(340);
+        }
     }
 }

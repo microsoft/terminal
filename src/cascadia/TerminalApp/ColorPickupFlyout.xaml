@@ -5,25 +5,38 @@
         xmlns:local="using:TerminalApp"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+        Opened="Flyout_Opened"
         Placement="Bottom"
         ShouldConstrainToRootBounds="False"
         mc:Ignorable="d">
-    <Flyout.FlyoutPresenterStyle>
-        <Style TargetType="FlyoutPresenter">
-            <Setter Property="MinWidth" Value="0" />
-            <Setter Property="MaxWidth" Value="9999" />
-            <Setter Property="Padding" Value="{StaticResource FlyoutContentPadding}" />
-            <Setter Property="Margin" Value="8,4,8,8" />
-            <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
-        </Style>
-    </Flyout.FlyoutPresenterStyle>
-    <StackPanel Orientation="Horizontal">
-        <StackPanel XYFocusKeyboardNavigation="Enabled">
-            <Grid Padding="-2">
-                <VariableSizedWrapGrid Margin="0"
+    <Pivot x:Name="FlyoutPivot"
+           SelectionChanged="Pivot_SelectionChanged">
+        <Pivot.HeaderTemplate>
+            <DataTemplate>
+                <TextBlock FontSize="16"
+                           Text="{Binding}" />
+            </DataTemplate>
+        </Pivot.HeaderTemplate>
+        <PivotItem x:Uid="TabColorPivot_Standard"
+                   HorizontalContentAlignment="Center"
+                   Tag="Standard">
+            <Grid x:Name="StandardColorPanel"
+                  RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <VariableSizedWrapGrid Grid.Row="0"
+                                       Grid.Column="0"
+                                       Margin="0"
                                        HorizontalAlignment="Center"
                                        MaximumRowsOrColumns="4"
-                                       Orientation="Horizontal">
+                                       Orientation="Horizontal"
+                                       TabFocusNavigation="Once"
+                                       XYFocusKeyboardNavigation="Enabled">
                     <VariableSizedWrapGrid.Resources>
                         <Style x:Name="ColorPickerColorButtonStyle"
                                BasedOn="{StaticResource ColorButtonStyle}"
@@ -99,48 +112,33 @@
                             Background="DarkGray"
                             Click="ColorButton_Click" />
                 </VariableSizedWrapGrid>
-            </Grid>
-            <StackPanel Margin="0,12,0,0"
-                        Orientation="Horizontal"
-                        Spacing="8">
                 <Button x:Name="ClearColorButton"
                         x:Uid="TabColorClearButton"
+                        Grid.Row="1"
                         Grid.Column="0"
                         HorizontalAlignment="Stretch"
-                        Click="ClearColorButton_Click"
-                        Content="Reset" />
-                <ToggleButton x:Name="CustomColorButton"
-                              x:Uid="TabColorCustomButton"
-                              Grid.Column="1"
-                              HorizontalAlignment="Stretch"
-                              Click="ShowColorPickerButton_Click"
-                              Content="Custom"
-                              IsChecked="False" />
+                        Click="ClearColorButton_Click" />
+            </Grid>
+        </PivotItem>
+        <PivotItem x:Uid="TabColorPivot_Custom"
+                   HorizontalContentAlignment="Center"
+                   Tag="Custom">
+            <StackPanel x:Name="CustomColorPanel">
+                <muxc:ColorPicker x:Name="CustomColorPicker"
+                                  ColorChanged="ColorPicker_ColorChanged"
+                                  IsAlphaEnabled="False"
+                                  IsAlphaSliderVisible="False"
+                                  IsAlphaTextInputVisible="False"
+                                  IsColorChannelTextInputVisible="True"
+                                  IsColorSliderVisible="True"
+                                  IsHexInputVisible="True"
+                                  IsMoreButtonVisible="True" />
+                <Button x:Name="OkButton"
+                        MinWidth="130"
+                        HorizontalAlignment="Right"
+                        Click="CustomColorButton_Click"
+                        Style="{ThemeResource AccentButtonStyle}" />
             </StackPanel>
-        </StackPanel>
-        <StackPanel x:Name="customColorPanel"
-                    Margin="16,0,0,0"
-                    Spacing="12"
-                    Visibility="Collapsed">
-            <muxc:ColorPicker x:Name="customColorPicker"
-                              Grid.Row="0"
-                              ColorChanged="ColorPicker_ColorChanged"
-                              FontSize="10"
-                              IsAlphaEnabled="False"
-                              IsAlphaSliderVisible="False"
-                              IsAlphaTextInputVisible="False"
-                              IsColorChannelTextInputVisible="True"
-                              IsColorSliderVisible="True"
-                              IsHexInputVisible="True"
-                              IsMoreButtonVisible="True" />
-            <Button x:Name="OkButton"
-                    x:Uid="OkButton"
-                    Grid.Row="1"
-                    MinWidth="130"
-                    HorizontalAlignment="Right"
-                    Click="CustomColorButton_Click"
-                    Content="OK"
-                    Style="{ThemeResource AccentButtonStyle}" />
-        </StackPanel>
-    </StackPanel>
+        </PivotItem>
+    </Pivot>
 </Flyout>
