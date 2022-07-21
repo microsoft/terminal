@@ -1623,7 +1623,10 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 {
     if (e.PropertyName() == L"TitlebarBrush")
     {
-        auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
-        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+        if (_useNonClientArea)
+        {
+            auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+            nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+        }
     }
 }
