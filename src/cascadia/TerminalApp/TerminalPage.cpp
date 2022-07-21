@@ -4171,7 +4171,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
                                                                     const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args)
     {
-        co_await winrt::resume_background();
+        // co_await winrt::resume_background();
 
         // May be able to fake this by not creating whole Commands for these
         // actions, instead just binding them at the cmdpal layer (like tab item
@@ -4207,10 +4207,10 @@ namespace winrt::TerminalApp::implementation
         AutoCompletePopup().VerticalOffset(cursorPos.y + characterSize.Height);
 
         AutoCompletePopup().IsOpen(true);
-        // Make visible first, then set commands. Other way around and the list
-        // doesn't actually update the first time (weird)
-        AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+        // ~Make visible first, then set commands. Other way around and the list
+        // doesn't actually update the first time (weird)~
         AutoCompleteMenu().SetCommands(commandsCollection);
+        AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
 
 }

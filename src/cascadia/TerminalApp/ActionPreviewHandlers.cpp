@@ -154,7 +154,7 @@ namespace winrt::TerminalApp::implementation
 
         case ShortcutAction::SendInput:
         {
-            _PreviewSendInput(args.Args().try_as<SendInputArgs>());
+            // _PreviewSendInput(args.Args().try_as<SendInputArgs>());
             break;
         }
         }

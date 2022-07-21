@@ -926,6 +926,15 @@ namespace winrt::TerminalApp::implementation
         {
             _updateFilteredActions();
         }
+        else if (_currentMode == CommandPaletteMode::ActionMode)
+        {
+            auto actions = _collectFilteredActions();
+            _filteredActions.Clear();
+            for (const auto& action : actions)
+            {
+                _filteredActions.Append(action);
+            }
+        }
     }
 
     // Method Description:

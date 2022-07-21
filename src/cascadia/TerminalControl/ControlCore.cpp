@@ -218,16 +218,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updateMenu = std::make_shared<ThrottledFuncTrailing<winrt::hstring, int32_t>>(
-            _dispatcher,
-            UpdatePatternLocationsInterval,
-            [weakThis = get_weak()](const auto& menuJson, const auto& replaceLength) {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
-                {
-                    auto args = winrt::make<MenuChangedEventArgs>(menuJson, replaceLength);
-                    core->_MenuChangedHandlers(*core, args);
-                }
-            });
+        // _updateMenu = std::make_shared<ThrottledFuncTrailing<winrt::hstring, int32_t>>(
+        //     _dispatcher,
+        //     UpdatePatternLocationsInterval,
+        //     [weakThis = get_weak()](const auto& menuJson, const auto& replaceLength) {
+        //         if (auto core{ weakThis.get() }; !core->_IsClosing())
+        //         {
+        //             auto args = winrt::make<MenuChangedEventArgs>(menuJson, replaceLength);
+        //             core->_MenuChangedHandlers(*core, args);
+        //         }
+        //     });
 
         UpdateSettings(settings, unfocusedAppearance);
     }
@@ -1412,8 +1412,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalMenuChanged(std::wstring_view menuJson, int32_t replaceLength)
     {
-        _updateMenu->Run(winrt::hstring{ menuJson }, replaceLength);
+        // _updateMenu->Run(winrt::hstring{ menuJson }, replaceLength);
         // _MenuChangedHandlers(*this, nullptr);
+
+        auto args = winrt::make_self<MenuChangedEventArgs>(winrt::hstring{ menuJson }, replaceLength);
+        _MenuChangedHandlers(*this, *args);
     }
 
     bool ControlCore::HasSelection() const
