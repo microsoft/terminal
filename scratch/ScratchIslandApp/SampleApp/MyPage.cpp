@@ -35,6 +35,49 @@ namespace winrt::SampleApp::implementation
     void MyPage::Create()
     {
     }
+#pragma region BitmapIconSource
+    template<typename TIconSource>
+    struct BitmapIconSource
+    {
+    };
+
+    template<>
+    struct BitmapIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Microsoft::UI::Xaml::Controls::BitmapIconSource;
+    };
+
+    template<>
+    struct BitmapIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Windows::UI::Xaml::Controls::BitmapIconSource;
+    };
+#pragma endregion
+
+    winrt::Windows::UI::Xaml::Controls::IconSource _getColoredBitmapIcon(const winrt::hstring& path)
+    {
+        if (!path.empty())
+        {
+            try
+            {
+                winrt::Windows::Foundation::Uri iconUri{ path };
+                winrt::Windows::UI::Xaml::Controls::BitmapIconSource iconSource{};
+                // Make sure to set this to false, so we keep the RGB data of the
+                // image. Otherwise, the icon will be white for all the
+                // non-transparent pixels in the image.
+                iconSource.ShowAsMonochrome(false);
+                iconSource.UriSource(iconUri);
+                return iconSource;
+            }
+            CATCH_LOG();
+        }
+
+        return nullptr;
+    }
+    winrt::Windows::UI::Xaml::Controls::IconSource IconSourceWUX(hstring path)
+    {
+        return _getColoredBitmapIcon(path);
+    }
 
     winrt::Windows::Graphics::Imaging::SoftwareBitmap MyConvertToSoftwareBitmap(HICON hicon,
                                                                                 winrt::Windows::Graphics::Imaging::BitmapPixelFormat pixelFormat,
@@ -109,11 +152,64 @@ namespace winrt::SampleApp::implementation
         icon.Width(32);
         icon.Height(32);
         InProcContent().Children().Append(icon);
+
+        //winrt::Windows::UI::Xaml::Controls::IconSourceElement ise;
+        //auto casted = imageIconSource.try_as<winrt::Windows::UI::Xaml::Controls::IconSource>();
+        //ise.IconSource(casted);
+        //icon.Width(32);
+        //icon.Height(32);
+        //InProcContent().Children().Append(icon);
+
+        /*NOT this
+
+
+
+        // WUX::Controls::MenuFlyout menu;
+        WUX::Controls::MenuFlyoutItem foo;
+        // auto toWux = icon.try_as<WUX::Controls::IconElement>();
+        WUX::Controls::IconSourceElement wuxIconSourceElem;
+        wuxIconSourceElem.IconSource(imageIconSource);
+        foo.Icon(wuxIconSourceElem); // toWux
+        foo.Text(text);
+        MyMenu().Items().Append(foo);
+
+        */
+
+        // WUX::Controls::MenuFlyout menu;
+        // WUX::Controls::MenuFlyoutItem foo;
+        // auto toWux = icon.try_as<WUX::Controls::IconElement>();
+        // wuxIconSourceElem.IconSource(imageIconSource);
+        // foo.Icon(toWux); // toWux
+        // foo.Text(text);
+        // MyMenu().Items().Append(foo);
+
+        // const auto iconSource{ IconSourceWUX(text) };
+        // WUX::Controls::IconSourceElement iconElement;
+        // iconElement.IconSource(imageIconSource);
+
+        /////////////////// Try #4
+        winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon2{};
+        icon2.Source(bitmapSource);
+        icon2.Width(32);
+        icon2.Height(32);
+        WUX::Controls::MenuFlyoutItem foo;
+        foo.Icon(icon2);
+        foo.Text(text);
+        MyMenu().Items().Append(foo);
     }
 
     void MyPage::CloseClicked(const IInspectable& /*sender*/,
                               const WUX::Input::TappedRoutedEventArgs& /*eventArgs*/)
     {
+        auto text{ GuidInput().Text() };
+        auto bitmapSource = IconSourceWUX(text);
+        // winrt::Microsoft::UI::Xaml::Controls::ImageIconSource imageIconSource{};
+        // imageIconSource.ImageSource(bitmapSource);
+        winrt::Windows::UI::Xaml::Controls::IconSourceElement icon{};
+        icon.IconSource(bitmapSource);
+        icon.Width(32);
+        icon.Height(32);
+        InProcContent().Children().Append(icon);
     }
 
     void MyPage::KillClicked(const IInspectable& /*sender*/,

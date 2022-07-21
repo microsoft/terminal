@@ -22,12 +22,31 @@
         <StackPanel Orientation="Horizontal">
             <TextBox x:Name="GuidInput"
                      Width="400"
-                     PlaceholderText="path here" />
-            <mux:NumberBox x:Name="IconIndex" />
+                     Margin="8"
+                     PlaceholderText="path here"
+                     Text="C:\Program Files\PowerShell\7\pwsh.exe" />
+            <mux:NumberBox x:Name="IconIndex"
+                           Margin="8" />
             <Button x:Name="CreateOutOfProcControl"
+                    Margin="8"
                     Tapped="CreateClicked">
-                Create
+                Load HICON
             </Button>
+            <Button x:Name="Close"
+                    Margin="8"
+                    Tapped="CloseClicked">
+                Load as image
+            </Button>
+            <SplitButton x:Name="Demo"
+                         Margin="8">
+                Lookie here
+                <SplitButton.Flyout>
+                    <MenuFlyout x:Name="MyMenu">
+                        <MenuFlyoutItem>first</MenuFlyoutItem>
+                    </MenuFlyout>
+                </SplitButton.Flyout>
+            </SplitButton>
+
 
         </StackPanel>
 

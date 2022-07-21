@@ -80,13 +80,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
         if (SUCCEEDED(initializedCom) || initializedCom == RPC_E_CHANGED_MODE)
         {
             // Don't CoUninitialize if we still need COM for defterm.
-            auto unInitCom = wil::scope_exit[initializedCom]()
-            {
-                if (SUCCEEDED(initializedCom))
-                {
-                    CoUninitialize();
-                }
-            };
+            auto unInitCom = wil::scope_exit([initializedCom]() { if (SUCCEEDED(initializedCom)){CoUninitialize();} });
 
             const auto cch = *pdwTitleLength / sizeof(wchar_t);
 
