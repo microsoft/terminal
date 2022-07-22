@@ -372,7 +372,7 @@
     <value>Scroll to the bottom of history</value>
   </data>
   <data name="ScrollToPreviousMarkCommandKey" xml:space="preserve">
-    <value>Scroll to the the previous mark</value>
+    <value>Scroll to the previous mark</value>
   </data>
   <data name="ScrollToNextMarkCommandKey" xml:space="preserve">
     <value>Scroll to the next mark</value>

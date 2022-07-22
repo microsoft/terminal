@@ -163,7 +163,7 @@ HRESULT DxSoftFont::Draw(const DrawingContext& drawingContext,
     // so we need make sure they're generated now.
     RETURN_IF_FAILED(_createResources(d2dContext.Get()));
 
-    // We use the the CustomTextRenderer to draw the first pass of the cursor.
+    // We use the CustomTextRenderer to draw the first pass of the cursor.
     RETURN_IF_FAILED(CustomTextRenderer::DrawCursor(d2dContext.Get(), rect, drawingContext, true));
 
     // Then we draw the associated glyph for each entry in the cluster list.
