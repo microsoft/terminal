@@ -2221,7 +2221,7 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
-    if (_renderSettings.GetRenderMode(RenderSettings::Mode::DistinguishableColors))
+    if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
     {
         // Re-calculate the adjusted colors now that one of the entries has been changed
         _renderSettings.MakeAdjustedColorArray();
@@ -2291,7 +2291,7 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     case DispatchTypes::ColorItem::NormalText:
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
-        if (_renderSettings.GetRenderMode(RenderSettings::Mode::DistinguishableColors))
+        if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
         {
             // Re-calculate the adjusted colors now that these aliases have been changed
             _renderSettings.MakeAdjustedColorArray();
