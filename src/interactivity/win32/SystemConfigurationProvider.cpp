@@ -198,6 +198,10 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
     if (wszIconLocation[0] != L'\0')
     {
+        // GH#9458, GH#13111 - when this is executed during defterm startup,
+        // we'll pass in an iconInfo pointer, which we should fill wiht the
+        // selected icon path and index, rather than loading the icon with our
+        // global Icon class.
         if (iconInfo)
         {
             iconInfo->path = std::wstring{ wszIconLocation };

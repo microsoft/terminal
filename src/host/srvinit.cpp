@@ -808,12 +808,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     auto Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
     if (!NT_SUCCESS(Status))
     {
-        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                          "SrvInit_ConsoleInitializeConnectInfo_ReadMessageInputFailed",
-                          TraceLoggingDescription("TODO! debugging only"),
-                          TraceLoggingUInt64(Status, "Status", "something happened"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         return Status;
     }
 
