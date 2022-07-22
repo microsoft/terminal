@@ -212,7 +212,7 @@
     <value>Custom...</value>
   </data>
   <data name="TabColorClearButton.Content" xml:space="preserve">
-    <value>Reset</value>
+    <value>Reset tab color</value>
   </data>
   <data name="RenameTabText" xml:space="preserve">
     <value>Rename Tab</value>
