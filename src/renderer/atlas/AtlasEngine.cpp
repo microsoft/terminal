@@ -621,7 +621,7 @@ try
         }
 
         const u32x2 newColors{ gsl::narrow_cast<u32>(fg), gsl::narrow_cast<u32>(bg) };
-        const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense(), textAttributes.IsItalic(), 0 };
+        const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
         {
