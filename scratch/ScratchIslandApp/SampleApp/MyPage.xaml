@@ -22,31 +22,10 @@
         <StackPanel Orientation="Horizontal">
             <TextBox x:Name="GuidInput"
                      Width="400"
-                     Margin="8"
-                     PlaceholderText="path here"
-                     Text="C:\Program Files\PowerShell\7\pwsh.exe" />
-            <mux:NumberBox x:Name="IconIndex"
-                           Margin="8" />
-            <Button x:Name="CreateOutOfProcControl"
-                    Margin="8"
-                    Tapped="CreateClicked">
-                Load HICON
+                     PlaceholderText="{}{guid here}" />
+            <Button Grid.Row="0">
+                Create
             </Button>
-            <Button x:Name="Close"
-                    Margin="8"
-                    Tapped="CloseClicked">
-                Load as image
-            </Button>
-            <SplitButton x:Name="Demo"
-                         Margin="8">
-                Lookie here
-                <SplitButton.Flyout>
-                    <MenuFlyout x:Name="MyMenu">
-                        <MenuFlyoutItem>first</MenuFlyoutItem>
-                    </MenuFlyout>
-                </SplitButton.Flyout>
-            </SplitButton>
-
 
         </StackPanel>
 
@@ -60,34 +39,21 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel x:Name="InProcContent"
-                        Grid.Column="0"
-                        Padding="16"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Background="#ff0000"
-                        Orientation="Vertical" />
-
-            <Grid Grid.Column="1"
+            <Grid x:Name="InProcContent"
+                  Grid.Column="0"
+                  Padding="16"
                   HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch">
+                  VerticalAlignment="Stretch"
+                  Background="#ff0000" />
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+            <Grid x:Name="OutOfProcContent"
+                  Grid.Column="1"
+                  Padding="16"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Background="#0000ff" />
 
-                <StackPanel x:Name="Log"
-                            Grid.Row="0"
-                            Orientation="Vertical" />
 
-                <Grid x:Name="OutOfProcContent"
-                      Grid.Row="1"
-                      Padding="16"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"
-                      Background="#0000ff" />
-            </Grid>
 
         </Grid>
 
