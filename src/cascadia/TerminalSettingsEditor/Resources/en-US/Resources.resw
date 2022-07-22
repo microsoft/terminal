@@ -235,6 +235,22 @@
     <value>When disabled, the tab bar will appear when a new tab is created.</value>
     <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
   </data>
+  <data name="Globals_NewTabPosition.Header" xml:space="preserve">
+    <value>Position of the new tab</value>
+    <comment>Header for a control to select position of new tab.</comment>
+  </data>
+  <data name="Globals_NewTabPosition.HelpText" xml:space="preserve">
+    <value>Specifies position of the new tab</value>
+    <comment>A description for what the "Position of the new tab" setting does.</comment>
+  </data>
+  <data name="Globals_NewTabPositionAtTheEnd.Content" xml:space="preserve">
+    <value>At the end</value>
+    <comment>An option to choose from for the "Position of the new tab" setting. When selected new tab appears at the end.</comment>
+  </data>
+  <data name="Globals_NewTabPositionAfterCurrentTab.Content" xml:space="preserve">
+    <value>After current tab</value>
+    <comment>An option to choose from for the "Position of the new tab" setting. When selected new tab appears after currently selected tab.</comment>
+  </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
@@ -301,7 +317,6 @@
   </data>
   <data name="Globals_FirstWindowPreference.HelpText" xml:space="preserve">
     <value>What should be shown when the first terminal is created.</value>
-    <comment></comment>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>Open a tab with the default profile</value>
@@ -742,6 +757,18 @@
   <data name="Profile_CursorShape.Header" xml:space="preserve">
     <value>Cursor shape</value>
     <comment>Header for a control to select the shape of the text cursor.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsNever.Content" xml:space="preserve">
+    <value>Never</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will never adjust the text colors.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsIndexed.Content" xml:space="preserve">
+    <value>Only for colors in the color scheme</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
+    <value>Always (More performance intensive)</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
     <value>Bar ( ┃ )</value>
@@ -1433,5 +1460,13 @@
   <data name="Appearance_IntenseTextStyleAll.Content" xml:space="preserve">
     <value>Bold font with bright colors</value>
     <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as both bold text and in a brighter color</comment>
+  </data>
+  <data name="Globals_AutoHideWindow.Header" xml:space="preserve">
+    <value>Automatically hide window</value>
+    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the window will be hidden as soon as it loses focus.</comment>
+  </data>
+  <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
+    <value>If enabled, the window will be hidden as soon as it loses focus.</value>
+    <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
 </root>

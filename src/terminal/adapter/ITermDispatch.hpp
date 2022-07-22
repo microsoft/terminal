@@ -135,6 +135,10 @@ public:
 
     virtual bool DoConEmuAction(const std::wstring_view string) = 0;
 
+    virtual bool DoITerm2Action(const std::wstring_view string) = 0;
+
+    virtual bool DoFinalTermAction(const std::wstring_view string) = 0;
+
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,
@@ -143,6 +147,8 @@ public:
                                        const DispatchTypes::DrcsFontUsage fontUsage,
                                        const VTParameter cellHeight,
                                        const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
+
+    virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 
     virtual StringHandler RequestSetting() = 0; // DECRQSS
 

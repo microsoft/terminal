@@ -157,8 +157,11 @@
                                     HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind ShowIndistinguishableColorsItem}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.AdjustIndistinguishableColors, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind AdjustIndistinguishableColorsList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentAdjustIndistinguishableColors, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
         </StackPanel>
 

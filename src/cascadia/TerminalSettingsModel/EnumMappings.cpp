@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     // Global Settings
     DEFINE_ENUM_MAP(winrt::Windows::UI::Xaml::ElementTheme, ElementTheme);
+    DEFINE_ENUM_MAP(Model::NewTabPosition, NewTabPosition);
     DEFINE_ENUM_MAP(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabViewWidthMode);
     DEFINE_ENUM_MAP(Model::FirstWindowPreference, FirstWindowPreference);
     DEFINE_ENUM_MAP(Model::LaunchMode, LaunchMode);
@@ -45,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::TextAntialiasingMode, TextAntialiasingMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::CursorStyle, CursorStyle);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::IntenseStyle, IntenseTextStyle);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors);
 
     // FontWeight is special because the JsonUtils::ConversionTrait for it
     // creates a FontWeight object, but we need to use the uint16_t value.

@@ -21,7 +21,7 @@ namespace Microsoft::Console::Interactivity
     {
     public:
         virtual ~IWindowMetrics() = default;
-        virtual RECT GetMinClientRectInPixels() = 0;
-        virtual RECT GetMaxClientRectInPixels() = 0;
+        virtual til::rect GetMinClientRectInPixels() = 0;
+        virtual til::rect GetMaxClientRectInPixels() = 0;
     };
 }

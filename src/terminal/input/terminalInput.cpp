@@ -527,6 +527,14 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     if (pInEvent->EventType() == InputEventType::FocusEvent)
     {
         const auto& focusEvent = *static_cast<const FocusEvent* const>(pInEvent);
+
+        // BODGY
+        // GH#13238 - Filter out focus events that came from the API.
+        if (focusEvent.CameFromApi())
+        {
+            return false;
+        }
+
         return HandleFocus(focusEvent.GetFocus());
     }
 

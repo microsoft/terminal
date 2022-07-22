@@ -58,7 +58,7 @@ public:
 
     void ShowWindow(bool showOrHide) override;
 
-    bool ResizeWindow(const size_t width, const size_t height) override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
 
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
@@ -73,6 +73,8 @@ public:
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
+
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

@@ -31,7 +31,7 @@ public:
                    const TextAttributeBehavior behavior) noexcept;
 
     const std::wstring_view& Chars() const noexcept;
-    size_t Columns() const noexcept;
+    til::CoordType Columns() const noexcept;
     DbcsAttribute DbcsAttr() const noexcept;
     TextAttribute TextAttr() const noexcept;
     TextAttributeBehavior TextAttrBehavior() const noexcept;

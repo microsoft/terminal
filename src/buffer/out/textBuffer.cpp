@@ -30,7 +30,7 @@ using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 // Return Value:
 // - constructed object
 // Note: may throw exception
-TextBuffer::TextBuffer(const COORD screenBufferSize,
+TextBuffer::TextBuffer(const til::size screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
@@ -47,10 +47,10 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _currentPatternId{ 0 }
 {
     // initialize ROWs
-    _storage.reserve(static_cast<size_t>(screenBufferSize.Y));
-    for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
+    _storage.reserve(gsl::narrow<size_t>(screenBufferSize.Y));
+    for (til::CoordType i = 0; i < screenBufferSize.Y; ++i)
     {
-        _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, _currentAttributes, this);
+        _storage.emplace_back(i, screenBufferSize.X, _currentAttributes, this);
     }
 
     _UpdateSize();
@@ -74,9 +74,9 @@ void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 // - <none>
 // Return Value:
 // - Total number of rows in the buffer
-UINT TextBuffer::TotalRowCount() const noexcept
+til::CoordType TextBuffer::TotalRowCount() const noexcept
 {
-    return gsl::narrow<UINT>(_storage.size());
+    return gsl::narrow_cast<til::CoordType>(_storage.size());
 }
 
 // Routine Description:
@@ -86,13 +86,11 @@ UINT TextBuffer::TotalRowCount() const noexcept
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - const reference to the requested row. Asserts if out of bounds.
-const ROW& TextBuffer::GetRowByOffset(const size_t index) const
+const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const noexcept
 {
-    const size_t totalRows = TotalRowCount();
-
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const auto offsetIndex = (_firstRow + index) % totalRows;
-    return _storage.at(offsetIndex);
+    const auto offsetIndex = gsl::narrow_cast<size_t>(_firstRow + index) % _storage.size();
+    return til::at(_storage, offsetIndex);
 }
 
 // Routine Description:
@@ -102,13 +100,11 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
 // - Number of rows down from the first row of the buffer.
 // Return Value:
 // - reference to the requested row. Asserts if out of bounds.
-ROW& TextBuffer::GetRowByOffset(const size_t index)
+ROW& TextBuffer::GetRowByOffset(const til::CoordType index) noexcept
 {
-    const size_t totalRows = TotalRowCount();
-
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const auto offsetIndex = (_firstRow + index) % totalRows;
-    return _storage.at(offsetIndex);
+    const auto offsetIndex = gsl::narrow_cast<size_t>(_firstRow + index) % _storage.size();
+    return til::at(_storage, offsetIndex);
 }
 
 // Routine Description:
@@ -117,7 +113,7 @@ ROW& TextBuffer::GetRowByOffset(const size_t index)
 // - at - X,Y position in buffer for iterator start position
 // Return Value:
 // - Read-only iterator of text data only.
-TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at) const
+TextBufferTextIterator TextBuffer::GetTextDataAt(const til::point at) const
 {
     return TextBufferTextIterator(GetCellDataAt(at));
 }
@@ -128,7 +124,7 @@ TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at) const
 // - at - X,Y position in buffer for iterator start position
 // Return Value:
 // - Read-only iterator of cell data.
-TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at) const
+TextBufferCellIterator TextBuffer::GetCellDataAt(const til::point at) const
 {
     return TextBufferCellIterator(*this, at);
 }
@@ -140,7 +136,7 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at) const
 // - at - X,Y position in buffer for iterator start position
 // Return Value:
 // - Read-only iterator of text data only.
-TextBufferTextIterator TextBuffer::GetTextLineDataAt(const COORD at) const
+TextBufferTextIterator TextBuffer::GetTextLineDataAt(const til::point at) const
 {
     return TextBufferTextIterator(GetCellLineDataAt(at));
 }
@@ -152,9 +148,9 @@ TextBufferTextIterator TextBuffer::GetTextLineDataAt(const COORD at) const
 // - at - X,Y position in buffer for iterator start position
 // Return Value:
 // - Read-only iterator of cell data.
-TextBufferCellIterator TextBuffer::GetCellLineDataAt(const COORD at) const
+TextBufferCellIterator TextBuffer::GetCellLineDataAt(const til::point at) const
 {
-    SMALL_RECT limit;
+    til::inclusive_rect limit;
     limit.Top = at.Y;
     limit.Bottom = at.Y;
     limit.Left = 0;
@@ -171,7 +167,7 @@ TextBufferCellIterator TextBuffer::GetCellLineDataAt(const COORD at) const
 // - limit - boundaries for the iterator to operate within
 // Return Value:
 // - Read-only iterator of text data only.
-TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at, const Viewport limit) const
+TextBufferTextIterator TextBuffer::GetTextDataAt(const til::point at, const Viewport limit) const
 {
     return TextBufferTextIterator(GetCellDataAt(at, limit));
 }
@@ -184,7 +180,7 @@ TextBufferTextIterator TextBuffer::GetTextDataAt(const COORD at, const Viewport 
 // - limit - boundaries for the iterator to operate within
 // Return Value:
 // - Read-only iterator of cell data.
-TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport limit) const
+TextBufferCellIterator TextBuffer::GetCellDataAt(const til::point at, const Viewport limit) const
 {
     return TextBufferCellIterator(*this, at, limit);
 }
@@ -337,7 +333,7 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
 // Return Value:
 // - The final position of the iterator
 OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
-                                     const COORD target,
+                                     const til::point target,
                                      const std::optional<bool> wrap)
 {
     // Make mutable copy so we can walk.
@@ -374,9 +370,9 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
 // Return Value:
 // - The iterator, but advanced to where we stopped writing. Use to find input consumed length or cells written length.
 OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
-                                         const COORD target,
+                                         const til::point target,
                                          const std::optional<bool> wrap,
-                                         std::optional<size_t> limitRight)
+                                         std::optional<til::CoordType> limitRight)
 {
     // If we're not in bounds, exit early.
     if (!GetSize().IsInBounds(target))
@@ -390,7 +386,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 
     // Take the cell distance written and notify that it needs to be repainted.
     const auto written = newIt.GetCellDistance(givenIt);
-    const auto paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
+    const auto paint = Viewport::FromDimensions(target, { written, 1 });
     TriggerRedraw(paint);
 
     return newIt;
@@ -467,7 +463,7 @@ bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttr
 // - <none> - Always sets to wrap
 //Return Value:
 // - <none>
-void TextBuffer::_SetWrapOnCurrentRow()
+void TextBuffer::_SetWrapOnCurrentRow() noexcept
 {
     _AdjustWrapOnCurrentRow(true);
 }
@@ -479,10 +475,10 @@ void TextBuffer::_SetWrapOnCurrentRow()
 // - fSet - True if this row has a wrap. False otherwise.
 //Return Value:
 // - <none>
-void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
+void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet) noexcept
 {
     // The vertical position of the cursor represents the current row we're manipulating.
-    const UINT uiCurrentRowOffset = GetCursor().GetPosition().Y;
+    const auto uiCurrentRowOffset = GetCursor().GetPosition().Y;
 
     // Set the wrap status as appropriate
     GetRowByOffset(uiCurrentRowOffset).SetWrapForced(fSet);
@@ -501,7 +497,7 @@ bool TextBuffer::IncrementCursor()
     // Cursor position is stored as logical array indices (starts at 0) for the window
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
-    const short iFinalColumnIndex = GetLineWidth(GetCursor().GetPosition().Y) - 1;
+    const auto iFinalColumnIndex = GetLineWidth(GetCursor().GetPosition().Y) - 1;
 
     // Move the cursor one position to the right
     GetCursor().IncrementXPosition(1);
@@ -604,17 +600,17 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 // - The viewport
 //Return value:
 // - Coordinate position (relative to the text buffer)
-COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional) const
+til::point TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional) const
 {
     const auto viewport = viewOptional.has_value() ? viewOptional.value() : GetSize();
 
-    COORD coordEndOfText = { 0 };
+    til::point coordEndOfText;
     // Search the given viewport by starting at the bottom.
     coordEndOfText.Y = viewport.BottomInclusive();
 
     const auto& currRow = GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = gsl::narrow<short>(currRow.GetCharRow().MeasureRight()) - 1;
+    coordEndOfText.X = currRow.GetCharRow().MeasureRight() - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
@@ -625,13 +621,13 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
         const auto& backupRow = GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = gsl::narrow<short>(backupRow.GetCharRow().MeasureRight()) - 1;
+        coordEndOfText.X = backupRow.GetCharRow().MeasureRight() - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop);
     }
 
     // don't allow negative results
-    coordEndOfText.Y = std::max(coordEndOfText.Y, 0i16);
-    coordEndOfText.X = std::max(coordEndOfText.X, 0i16);
+    coordEndOfText.Y = std::max(coordEndOfText.Y, 0);
+    coordEndOfText.X = std::max(coordEndOfText.X, 0);
 
     return coordEndOfText;
 }
@@ -643,7 +639,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
 // Return Value:
 // - Coordinate position in screen coordinates of the character just before the cursor.
 // - NOTE: Will return 0,0 if already in the top left corner
-COORD TextBuffer::_GetPreviousFromCursor() const
+til::point TextBuffer::_GetPreviousFromCursor() const noexcept
 {
     auto coordPosition = GetCursor().GetPosition();
 
@@ -668,7 +664,7 @@ COORD TextBuffer::_GetPreviousFromCursor() const
     return coordPosition;
 }
 
-const SHORT TextBuffer::GetFirstRowIndex() const noexcept
+const til::CoordType TextBuffer::GetFirstRowIndex() const noexcept
 {
     return _firstRow;
 }
@@ -680,15 +676,15 @@ const Viewport TextBuffer::GetSize() const noexcept
 
 void TextBuffer::_UpdateSize()
 {
-    _size = Viewport::FromDimensions({ 0, 0 }, { gsl::narrow<SHORT>(_storage.at(0).size()), gsl::narrow<SHORT>(_storage.size()) });
+    _size = Viewport::FromDimensions({ _storage.at(0).size(), gsl::narrow<til::CoordType>(_storage.size()) });
 }
 
-void TextBuffer::_SetFirstRowIndex(const SHORT FirstRowIndex) noexcept
+void TextBuffer::_SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept
 {
     _firstRow = FirstRowIndex;
 }
 
-void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta)
+void TextBuffer::ScrollRows(const til::CoordType firstRow, const til::CoordType size, const til::CoordType delta)
 {
     // If we don't have to move anything, leave early.
     if (delta == 0)
@@ -825,9 +821,9 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             const auto fillChar = L' ';
             auto fillAttrs = GetCurrentAttributes();
             fillAttrs.SetStandardErase();
-            const size_t fillOffset = GetLineWidth(rowIndex);
-            const auto fillLength = GetSize().Width() - fillOffset;
-            const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
+            const auto fillOffset = GetLineWidth(rowIndex);
+            const auto fillLength = gsl::narrow<size_t>(GetSize().Width() - fillOffset);
+            const OutputCellIterator fillData{ fillChar, fillAttrs, fillLength };
             row.WriteCells(fillData, fillOffset, false);
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
@@ -836,7 +832,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
     }
 }
 
-void TextBuffer::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
+void TextBuffer::ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow) noexcept
 {
     for (auto row = startRow; row < endRow; row++)
     {
@@ -844,40 +840,40 @@ void TextBuffer::ResetLineRenditionRange(const size_t startRow, const size_t end
     }
 }
 
-LineRendition TextBuffer::GetLineRendition(const size_t row) const
+LineRendition TextBuffer::GetLineRendition(const til::CoordType row) const noexcept
 {
     return GetRowByOffset(row).GetLineRendition();
 }
 
-bool TextBuffer::IsDoubleWidthLine(const size_t row) const
+bool TextBuffer::IsDoubleWidthLine(const til::CoordType row) const noexcept
 {
     return GetLineRendition(row) != LineRendition::SingleWidth;
 }
 
-SHORT TextBuffer::GetLineWidth(const size_t row) const
+til::CoordType TextBuffer::GetLineWidth(const til::CoordType row) const noexcept
 {
     // Use shift right to quickly divide the width by 2 for double width lines.
-    const SHORT scale = IsDoubleWidthLine(row) ? 1 : 0;
+    const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
     return GetSize().Width() >> scale;
 }
 
-COORD TextBuffer::ClampPositionWithinLine(const COORD position) const
+til::point TextBuffer::ClampPositionWithinLine(const til::point position) const noexcept
 {
-    const SHORT rightmostColumn = GetLineWidth(position.Y) - 1;
+    const auto rightmostColumn = GetLineWidth(position.Y) - 1;
     return { std::min(position.X, rightmostColumn), position.Y };
 }
 
-COORD TextBuffer::ScreenToBufferPosition(const COORD position) const
+til::point TextBuffer::ScreenToBufferPosition(const til::point position) const noexcept
 {
     // Use shift right to quickly divide the X pos by 2 for double width lines.
-    const SHORT scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X >> scale, position.Y };
 }
 
-COORD TextBuffer::BufferToScreenPosition(const COORD position) const
+til::point TextBuffer::BufferToScreenPosition(const til::point position) const noexcept
 {
     // Use shift left to quickly multiply the X pos by 2 for double width lines.
-    const SHORT scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X << scale, position.Y };
 }
 
@@ -900,7 +896,7 @@ void TextBuffer::Reset()
 // - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
+[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const til::size newSize) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
 
@@ -909,12 +905,12 @@ void TextBuffer::Reset()
         const auto currentSize = GetSize().Dimensions();
         const auto attributes = GetCurrentAttributes();
 
-        SHORT TopRow = 0; // new top row of the screen buffer
+        til::CoordType TopRow = 0; // new top row of the screen buffer
         if (newSize.Y <= GetCursor().GetPosition().Y)
         {
             TopRow = GetCursor().GetPosition().Y - newSize.Y + 1;
         }
-        const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
+        const auto TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
 
         // rotate rows until the top row is at index 0
         for (auto i = 0; i < TopRowIndex; i++)
@@ -934,7 +930,7 @@ void TextBuffer::Reset()
         // add rows if we're growing
         while (_storage.size() < static_cast<size_t>(newSize.Y))
         {
-            _storage.emplace_back(static_cast<short>(_storage.size()), newSize.X, attributes, this);
+            _storage.emplace_back(gsl::narrow_cast<til::CoordType>(_storage.size()), newSize.X, attributes, this);
         }
 
         // Now that we've tampered with the row placement, refresh all the row IDs.
@@ -983,7 +979,7 @@ void TextBuffer::TriggerRedraw(const Viewport& viewport)
     }
 }
 
-void TextBuffer::TriggerRedrawCursor(const COORD position)
+void TextBuffer::TriggerRedrawCursor(const til::point position)
 {
     if (_isActiveBuffer)
     {
@@ -1007,7 +1003,7 @@ void TextBuffer::TriggerScroll()
     }
 }
 
-void TextBuffer::TriggerScroll(const COORD delta)
+void TextBuffer::TriggerScroll(const til::point delta)
 {
     if (_isActiveBuffer)
     {
@@ -1032,10 +1028,10 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 //   any high unicode (UnicodeStorage) runs while we're already looping through the rows.
 // Arguments:
 // - newRowWidth - Optional new value for the row width.
-void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
+void TextBuffer::_RefreshRowIDs(std::optional<til::CoordType> newRowWidth)
 {
-    std::unordered_map<SHORT, SHORT> rowMap;
-    SHORT i = 0;
+    std::unordered_map<til::CoordType, til::CoordType> rowMap;
+    til::CoordType i = 0;
     for (auto& it : _storage)
     {
         // Build a map so we can update Unicode Storage
@@ -1065,7 +1061,7 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
 // - <none>
 // Return Value:
 //  - reference to the first row.
-ROW& TextBuffer::_GetFirstRow()
+ROW& TextBuffer::_GetFirstRow() noexcept
 {
     return GetRowByOffset(0);
 }
@@ -1099,23 +1095,23 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 // - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
 // Return Value:
 // - the delimiter class for the given char
-const DelimiterClass TextBuffer::_GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const
+DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const
 {
     return GetRowByOffset(pos.Y).GetCharRow().DelimiterClassAt(pos.X, wordDelimiters);
 }
 
 // Method Description:
-// - Get the COORD for the beginning of the word you are on
+// - Get the til::point for the beginning of the word you are on
 // Arguments:
-// - target - a COORD on the word you are currently on
+// - target - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // - accessibilityMode - when enabled, we continue expanding left until we are at the beginning of a readable word.
 //                        Otherwise, expand left until a character of a new delimiter class is found
 //                        (or a row boundary is encountered)
 // - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
-// - The COORD for the first character on the "word" (inclusive)
-const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
+// - The til::point for the first character on the "word" (inclusive)
+til::point TextBuffer::GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
     // Consider a buffer with this text in it:
     // "  word   other  "
@@ -1130,7 +1126,7 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
 #pragma warning(suppress : 26496)
     auto copy{ target };
     const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
     if (target == bufferSize.Origin())
     {
         // can't expand left
@@ -1140,12 +1136,12 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
     {
         // GH#7664: Treat EndExclusive as EndInclusive so
         // that it actually points to a space in the buffer
-        copy = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+        copy = bufferSize.BottomRightInclusive();
     }
-    else if (bufferSize.CompareInBounds(target, limit.to_win32_coord(), true) >= 0)
+    else if (target >= limit)
     {
         // if at/past the limit --> clamp to limit
-        copy = limitOptional->to_win32_coord();
+        copy = limitOptional.value_or(bufferSize.BottomRightInclusive());
     }
 
     if (accessibilityMode)
@@ -1159,13 +1155,13 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
 }
 
 // Method Description:
-// - Helper method for GetWordStart(). Get the COORD for the beginning of the word (accessibility definition) you are on
+// - Helper method for GetWordStart(). Get the til::point for the beginning of the word (accessibility definition) you are on
 // Arguments:
-// - target - a COORD on the word you are currently on
+// - target - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
-// - The COORD for the first character on the current/previous READABLE "word" (inclusive)
-const COORD TextBuffer::_GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const
+// - The til::point for the first character on the current/previous READABLE "word" (inclusive)
+til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const
 {
     auto result = target;
     const auto bufferSize = GetSize();
@@ -1204,13 +1200,13 @@ const COORD TextBuffer::_GetWordStartForAccessibility(const COORD target, const 
 }
 
 // Method Description:
-// - Helper method for GetWordStart(). Get the COORD for the beginning of the word (selection definition) you are on
+// - Helper method for GetWordStart(). Get the til::point for the beginning of the word (selection definition) you are on
 // Arguments:
-// - target - a COORD on the word you are currently on
+// - target - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
-// - The COORD for the first character on the current word or delimiter run (stopped by the left margin)
-const COORD TextBuffer::_GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const
+// - The til::point for the first character on the current word or delimiter run (stopped by the left margin)
+til::point TextBuffer::_GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const
 {
     auto result = target;
     const auto bufferSize = GetSize();
@@ -1233,17 +1229,17 @@ const COORD TextBuffer::_GetWordStartForSelection(const COORD target, const std:
 }
 
 // Method Description:
-// - Get the COORD for the beginning of the NEXT word
+// - Get the til::point for the beginning of the NEXT word
 // Arguments:
-// - target - a COORD on the word you are currently on
+// - target - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // - accessibilityMode - when enabled, we continue expanding right until we are at the beginning of the next READABLE word
 //                        Otherwise, expand right until a character of a new delimiter class is found
 //                        (or a row boundary is encountered)
 // - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
-// - The COORD for the last character on the "word" (inclusive)
-const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
+// - The til::point for the last character on the "word" (inclusive)
+til::point TextBuffer::GetWordEnd(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
     // Consider a buffer with this text in it:
     // "  word   other  "
@@ -1257,15 +1253,15 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 
     // Already at/past the limit. Can't move forward.
     const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
-    if (bufferSize.CompareInBounds(target, limit.to_win32_coord(), true) >= 0)
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    if (target >= limit)
     {
         return target;
     }
 
     if (accessibilityMode)
     {
-        return _GetWordEndForAccessibility(target, wordDelimiters, limit.to_win32_coord());
+        return _GetWordEndForAccessibility(target, wordDelimiters, limit);
     }
     else
     {
@@ -1274,19 +1270,19 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 }
 
 // Method Description:
-// - Helper method for GetWordEnd(). Get the COORD for the beginning of the next READABLE word
+// - Helper method for GetWordEnd(). Get the til::point for the beginning of the next READABLE word
 // Arguments:
-// - target - a COORD on the word you are currently on
+// - target - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // - limit - the last "valid" position in the text buffer (to improve performance)
 // Return Value:
-// - The COORD for the first character of the next readable "word". If no next word, return one past the end of the buffer
-const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD limit) const
+// - The til::point for the first character of the next readable "word". If no next word, return one past the end of the buffer
+til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const
 {
     const auto bufferSize{ GetSize() };
     auto result{ target };
 
-    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    if (target >= limit)
     {
         // if we're already on/past the last RegularChar,
         // clamp result to that position
@@ -1325,13 +1321,13 @@ const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const st
 }
 
 // Method Description:
-// - Helper method for GetWordEnd(). Get the COORD for the beginning of the NEXT word
+// - Helper method for GetWordEnd(). Get the til::point for the beginning of the NEXT word
 // Arguments:
-// - target - a COORD on the word you are currently on
+// - target - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
-// - The COORD for the last character of the current word or delimiter run (stopped by right margin)
-const COORD TextBuffer::_GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const
+// - The til::point for the last character of the current word or delimiter run (stopped by right margin)
+til::point TextBuffer::_GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const
 {
     const auto bufferSize = GetSize();
 
@@ -1380,7 +1376,7 @@ void TextBuffer::_PruneHyperlinks()
         // we have found all hyperlink references in the first row and put them in refs,
         // now we need to search the rest of the buffer (i.e. all the rows except the first)
         // to see if those references are anywhere else
-        for (size_t i = 1; i != total; ++i)
+        for (til::CoordType i = 1; i < total; ++i)
         {
             const auto nextRowRefs = GetRowByOffset(i).GetAttrRow().GetHyperlinks();
             for (auto id : nextRowRefs)
@@ -1408,22 +1404,22 @@ void TextBuffer::_PruneHyperlinks()
 // Method Description:
 // - Update pos to be the position of the first character of the next word. This is used for accessibility
 // Arguments:
-// - pos - a COORD on the word you are currently on
+// - pos - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
-// - pos - The COORD for the first character on the "word" (inclusive)
-bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
+// - pos - The til::point for the first character on the "word" (inclusive)
+bool TextBuffer::MoveToNextWord(til::point& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
 {
     // move to the beginning of the next word
     // NOTE: _GetWordEnd...() returns the exclusive position of the "end of the word"
     //       This is also the inclusive start of the next word.
     const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
-    const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit.to_win32_coord()) };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
 
-    if (bufferSize.CompareInBounds(copy, limit.to_win32_coord(), true) >= 0)
+    if (copy >= limit)
     {
         return false;
     }
@@ -1435,12 +1431,12 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
 // Method Description:
 // - Update pos to be the position of the first character of the previous word. This is used for accessibility
 // Arguments:
-// - pos - a COORD on the word you are currently on
+// - pos - a til::point on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
-// - pos - The COORD for the first character on the "word" (inclusive)
-bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters) const
+// - pos - The til::point for the first character on the "word" (inclusive)
+bool TextBuffer::MoveToPreviousWord(til::point& pos, std::wstring_view wordDelimiters) const
 {
     // move to the beginning of the current word
     auto copy{ GetWordStart(pos, wordDelimiters, true) };
@@ -1459,51 +1455,51 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 // Method Description:
 // - Update pos to be the beginning of the current glyph/character. This is used for accessibility
 // Arguments:
-// - pos - a COORD on the word you are currently on
+// - pos - a til::point on the word you are currently on
 // - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
-// - pos - The COORD for the first cell of the current glyph (inclusive)
-const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::point> limitOptional) const
+// - pos - The til::point for the first cell of the current glyph (inclusive)
+til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::point> limitOptional) const
 {
-    auto resultPos = pos.to_win32_coord();
+    auto resultPos = pos;
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit.to_win32_coord(), true) > 0)
+    if (resultPos > limit)
     {
-        resultPos = limit.to_win32_coord();
+        resultPos = limit;
     }
 
     // limit is exclusive, so we need to move back to be within valid bounds
-    if (resultPos != limit.to_win32_coord() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
 
-    return til::point{ resultPos };
+    return resultPos;
 }
 
 // Method Description:
 // - Update pos to be the end of the current glyph/character.
 // Arguments:
-// - pos - a COORD on the word you are currently on
+// - pos - a til::point on the word you are currently on
 // - accessibilityMode - this is being used for accessibility; make the end exclusive.
 // Return Value:
-// - pos - The COORD for the last cell of the current glyph (exclusive)
-const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode, std::optional<til::point> limitOptional) const
+// - pos - The til::point for the last cell of the current glyph (exclusive)
+til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
-    auto resultPos = pos.to_win32_coord();
+    auto resultPos = pos;
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (bufferSize.CompareInBounds(resultPos, limit.to_win32_coord(), true) > 0)
+    if (resultPos > limit)
     {
-        resultPos = limit.to_win32_coord();
+        resultPos = limit;
     }
 
-    if (resultPos != limit.to_win32_coord() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
@@ -1513,24 +1509,34 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilit
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
-    return til::point{ resultPos };
+    return resultPos;
 }
 
 // Method Description:
 // - Update pos to be the beginning of the next glyph/character. This is used for accessibility
 // Arguments:
-// - pos - a COORD on the word you are currently on
+// - pos - a til::point on the word you are currently on
 // - allowExclusiveEnd - allow result to be the exclusive limit (one past limit)
 // - limit - boundaries for the iterator to operate within
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
-// - pos - The COORD for the first cell of the current glyph (inclusive)
+// - pos - The til::point for the first cell of the current glyph (inclusive)
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    bool pastEndInclusive;
+    til::point limit;
+    {
+        // if the limit is past the end of the buffer,
+        // 1) clamp limit to end of buffer
+        // 2) set pastEndInclusive
+        const auto endInclusive{ bufferSize.BottomRightInclusive() };
+        const auto val = limitOptional.value_or(endInclusive);
+        pastEndInclusive = val > endInclusive;
+        limit = pastEndInclusive ? endInclusive : val;
+    }
 
-    const auto distanceToLimit{ bufferSize.CompareInBounds(pos.to_win32_coord(), limit.to_win32_coord(), true) };
+    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit) + (pastEndInclusive ? 1 : 0) };
     if (distanceToLimit >= 0)
     {
         // Corner Case: we're on/past the limit
@@ -1547,7 +1553,7 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
     }
 
     // Try to move forward, but if we hit the buffer boundary, we fail to move.
-    auto iter{ GetCellDataAt(pos.to_win32_coord(), bufferSize) };
+    auto iter{ GetCellDataAt(pos, bufferSize) };
     const bool success{ ++iter };
 
     // Move again if we're on a wide glyph
@@ -1556,24 +1562,24 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
         ++iter;
     }
 
-    pos = til::point{ iter.Pos() };
+    pos = iter.Pos();
     return success;
 }
 
 // Method Description:
 // - Update pos to be the beginning of the previous glyph/character. This is used for accessibility
 // Arguments:
-// - pos - a COORD on the word you are currently on
+// - pos - a til::point on the word you are currently on
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
-// - pos - The COORD for the first cell of the previous glyph (inclusive)
+// - pos - The til::point for the first cell of the previous glyph (inclusive)
 bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional) const
 {
-    auto resultPos = pos.to_win32_coord();
+    auto resultPos = pos;
     const auto bufferSize = GetSize();
-    const auto limit{ limitOptional.value_or(til::point{ bufferSize.EndExclusive() }) };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
-    if (bufferSize.CompareInBounds(pos.to_win32_coord(), limit.to_win32_coord(), true) > 0)
+    if (pos > limit)
     {
         // we're past the end
         // clamp us to the limit
@@ -1588,7 +1594,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
         bufferSize.DecrementInBounds(resultPos, true);
     }
 
-    pos = til::point{ resultPos };
+    pos = resultPos;
     return success;
 }
 
@@ -1606,24 +1612,24 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
 //                      the buffer rather than the screen.
 // Return Value:
 // - the delimiter class for the given char
-const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, bool blockSelection, bool bufferCoordinates) const
+const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const
 {
-    std::vector<SMALL_RECT> textRects;
+    std::vector<til::inclusive_rect> textRects;
 
     const auto bufferSize = GetSize();
 
     // (0,0) is the top-left of the screen
     // the physically "higher" coordinate is closer to the top-left
     // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
+    const auto [higherCoord, lowerCoord] = start <= end ?
                                                std::make_tuple(start, end) :
                                                std::make_tuple(end, start);
 
-    const auto textRectSize = base::ClampedNumeric<short>(1) + lowerCoord.Y - higherCoord.Y;
+    const auto textRectSize = 1 + lowerCoord.Y - higherCoord.Y;
     textRects.reserve(textRectSize);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
     {
-        SMALL_RECT textRow;
+        til::inclusive_rect textRow;
 
         textRow.Top = row;
         textRow.Bottom = row;
@@ -1661,12 +1667,12 @@ const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, b
 // - selectionRow: the selection row to be expanded
 // Return Value:
 // - modifies selectionRow's Left and Right values to expand properly
-void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
+void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 {
     const auto bufferSize = GetSize();
 
     // expand left side of rect
-    COORD targetPoint{ textRow.Left, textRow.Top };
+    til::point targetPoint{ textRow.Left, textRow.Top };
     if (GetCellDataAt(targetPoint)->DbcsAttr().IsTrailing())
     {
         if (targetPoint.X == bufferSize.Left())
@@ -1708,7 +1714,7 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 // - The text, background color, and foreground color data of the selected region of the text buffer.
 const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    const bool trimTrailingWhitespace,
-                                                   const std::vector<SMALL_RECT>& selectionRects,
+                                                   const std::vector<til::inclusive_rect>& selectionRects,
                                                    std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
                                                    const bool formatWrappedRows) const
 {
@@ -1725,9 +1731,9 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
     }
 
     // for each row in the selection
-    for (UINT i = 0; i < rows; i++)
+    for (size_t i = 0; i < rows; i++)
     {
-        const UINT iRow = selectionRects.at(i).Top;
+        const auto iRow = selectionRects.at(i).Top;
 
         const auto highlight = Viewport::FromInclusive(selectionRects.at(i));
 
@@ -2243,22 +2249,22 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     const auto cOldCursorPos = oldCursor.GetPosition();
     const auto cOldLastChar = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport);
 
-    const short cOldRowsTotal = cOldLastChar.Y + 1;
+    const auto cOldRowsTotal = cOldLastChar.Y + 1;
 
-    COORD cNewCursorPos = { 0 };
+    til::point cNewCursorPos;
     auto fFoundCursorPos = false;
     auto foundOldMutable = false;
     auto foundOldVisible = false;
     auto hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
-    short iOldRow = 0;
+    til::CoordType iOldRow = 0;
     for (; iOldRow < cOldRowsTotal; iOldRow++)
     {
         // Fetch the row and its "right" which is the last printable character.
         const auto& row = oldBuffer.GetRowByOffset(iOldRow);
         const auto cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
         const auto& charRow = row.GetCharRow();
-        auto iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+        auto iRight = charRow.MeasureRight();
 
         // If we're starting a new row, try and preserve the line rendition
         // from the row in the original buffer.
@@ -2296,7 +2302,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Loop through every character in the current row (up to
         // the "right" boundary, which is one past the final valid
         // character)
-        short iOldCol = 0;
+        til::CoordType iOldCol = 0;
         const auto copyRight = iRight;
         for (; iOldCol < copyRight; iOldCol++)
         {
@@ -2439,7 +2445,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                     const auto coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
-                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).WasWrapForced())
+                        if (newBuffer.GetRowByOffset(coordNewCursor.Y - 1).WasWrapForced())
                         {
                             hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
                         }
@@ -2693,17 +2699,17 @@ void TextBuffer::CopyPatterns(const TextBuffer& OtherBuffer)
 // - The lastRow to search
 // Return value:
 // - An interval tree containing the patterns found
-PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) const
+PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const
 {
     PointTree::interval_vector intervals;
 
     std::wstring concatAll;
     const auto rowSize = GetRowByOffset(0).size();
-    concatAll.reserve(rowSize * (lastRow - firstRow + 1));
+    concatAll.reserve(gsl::narrow_cast<size_t>(rowSize) * gsl::narrow_cast<size_t>(lastRow - firstRow + 1));
 
     // to deal with text that spans multiple lines, we will first concatenate
     // all the text into one string and find the patterns in that string
-    for (auto i = firstRow; i <= lastRow; ++i)
+    for (til::CoordType i = firstRow; i <= lastRow; ++i)
     {
         auto& row = GetRowByOffset(i);
         concatAll += row.GetText();
@@ -2718,21 +2724,21 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
         auto words_begin = std::wsregex_iterator(concatAll.begin(), concatAll.end(), regexObj);
         auto words_end = std::wsregex_iterator();
 
-        size_t lenUpToThis = 0;
+        til::CoordType lenUpToThis = 0;
         for (auto i = words_begin; i != words_end; ++i)
         {
             // record the locations -
             // when we find a match, the prefix is text that is between this
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
-            size_t prefixSize = 0;
+            til::CoordType prefixSize = 0;
             for (const auto parsedGlyph : Utf16Parser::Parse(i->prefix().str()))
             {
                 const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
                 prefixSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto start = lenUpToThis + prefixSize;
-            size_t matchSize = 0;
+            til::CoordType matchSize = 0;
             for (const auto parsedGlyph : Utf16Parser::Parse(i->str()))
             {
                 const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
@@ -2741,8 +2747,8 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
             const auto end = start + matchSize;
             lenUpToThis = end;
 
-            const til::point startCoord{ gsl::narrow<SHORT>(start % rowSize), gsl::narrow<SHORT>(start / rowSize) };
-            const til::point endCoord{ gsl::narrow<SHORT>(end % rowSize), gsl::narrow<SHORT>(end / rowSize) };
+            const til::point startCoord{ start % rowSize, start / rowSize };
+            const til::point endCoord{ end % rowSize, end / rowSize };
 
             // store the intervals
             // NOTE: these intervals are relative to the VIEWPORT not the buffer

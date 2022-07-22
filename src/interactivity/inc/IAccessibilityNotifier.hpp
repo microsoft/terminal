@@ -29,7 +29,7 @@ namespace Microsoft::Console::Interactivity
 
         virtual ~IAccessibilityNotifier() = default;
 
-        virtual void NotifyConsoleCaretEvent(_In_ RECT rectangle) = 0;
+        virtual void NotifyConsoleCaretEvent(_In_ const til::rect& rectangle) = 0;
         virtual void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position) = 0;
         virtual void NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y) = 0;
         virtual void NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute) = 0;

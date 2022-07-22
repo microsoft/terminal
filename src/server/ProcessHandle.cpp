@@ -27,7 +27,7 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
                                                  FALSE,
                                                  dwProcessId))),
     _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get())),
-    _shimPolicy(ConsoleShimPolicy::s_CreateInstance(_hProcess.get())),
+    _shimPolicy(_hProcess.get()),
     _processCreationTime(0)
 {
     if (nullptr != _hProcess.get())

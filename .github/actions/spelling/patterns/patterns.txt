@@ -1,11 +1,6 @@
-https://(?:(?:[-a-zA-Z0-9?&=]*\.|)microsoft\.com)/[-a-zA-Z0-9?&=_#\/.]*
-https://aka\.ms/[-a-zA-Z0-9?&=\/_]*
-https://www\.itscj\.ipsj\.or\.jp/iso-ir/[-0-9]+\.pdf
-https://www\.vt100\.net/docs/[-a-zA-Z0-9#_\/.]*
-https://www.w3.org/[-a-zA-Z0-9?&=\/_#]*
-https://(?:(?:www\.|)youtube\.com|youtu.be)/[-a-zA-Z0-9?&=]*
-https://(?:[a-z-]+\.|)github(?:usercontent|)\.com/[-a-zA-Z0-9?%&=_\/.+]*
-https://www.xfree86.org/[-a-zA-Z0-9?&=\/_#]*
+# See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-patterns
+
+https?://\S+
 [Pp]ublicKeyToken="?[0-9a-fA-F]{16}"?
 (?:[{"]|UniqueIdentifier>)[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?:[}"]|</UniqueIdentifier)
 (?:0[Xx]|\\x|U\+|#)[a-f0-9A-FGgRr]{2,}[Uu]?[Ll]{0,2}\b
@@ -28,3 +23,19 @@ vcvars\w*
 ROY\sG\.\sBIV
 !(?:(?i)ESC)!\[
 !(?:(?i)CSI)!(?:\d+(?:;\d+|)m|[ABCDF])
+
+# Python stringprefix / binaryprefix
+\b(?:B|BR|Br|F|FR|Fr|R|RB|RF|Rb|Rf|U|UR|Ur|b|bR|br|f|fR|fr|r|rB|rF|rb|rf|u|uR|ur)'
+
+# acceptable duplicates
+# ls directory listings
+[-bcdlpsw](?:[-r][-w][-sx]){3}\s+\d+\s+(\S+)\s+\g{-1}\s+\d+\s+
+# C/idl types + English ...
+\s(Guid|long|LONG|that) \g{-1}\s
+# javadoc / .net
+(?:\@(?:groupname|param)|(?:public|private)(?:\s+static|\s+readonly)*)\s+(\w+)\s+\g{-1}\s
+# vtmode
+--vtmode\s+(\w+)\s+\g{-1}\s
+
+# ignore long runs of a single character:
+\b([A-Za-z])\g{-1}{3,}\b

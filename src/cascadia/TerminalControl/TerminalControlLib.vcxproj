@@ -147,9 +147,6 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
-  <ItemGroup>
-    <SDKReference Include="Microsoft.Midi.GmDls, Version=10.0.22000.0" />
-  </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="..\..\types\lib\types.vcxproj" />

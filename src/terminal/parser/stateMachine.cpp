@@ -919,6 +919,7 @@ void StateMachine::_EnterDcsParam() noexcept
 void StateMachine::_EnterDcsIgnore() noexcept
 {
     _state = VTStates::DcsIgnore;
+    _cachedSequence.reset();
     _trace.TraceStateChange(L"DcsIgnore");
 }
 
@@ -950,6 +951,7 @@ void StateMachine::_EnterDcsIntermediate() noexcept
 void StateMachine::_EnterDcsPassThrough() noexcept
 {
     _state = VTStates::DcsPassThrough;
+    _cachedSequence.reset();
     _trace.TraceStateChange(L"DcsPassThrough");
 }
 
@@ -966,6 +968,7 @@ void StateMachine::_EnterDcsPassThrough() noexcept
 void StateMachine::_EnterSosPmApcString() noexcept
 {
     _state = VTStates::SosPmApcString;
+    _cachedSequence.reset();
     _trace.TraceStateChange(L"SosPmApcString");
 }
 
@@ -1843,6 +1846,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
         if (_processingIndividually)
         {
+            // Note whether we're dealing with the last character in the buffer.
+            _processingLastCharacter = (current + 1 >= string.size());
             // If we're processing characters individually, send it to the state machine.
             ProcessCharacter(til::at(string, current));
             ++current;
@@ -1921,6 +1926,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         {
             // Reset our state, and put all but the last char in again.
             ResetState();
+            _processingLastCharacter = false;
             // Chars to flush are [pwchSequenceStart, pwchCurr)
             auto wchIter = run.cbegin();
             while (wchIter < run.cend() - 1)
@@ -1929,6 +1935,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
                 wchIter++;
             }
             // Manually execute the last char [pwchCurr]
+            _processingLastCharacter = true;
             switch (_state)
             {
             case VTStates::Ground:
@@ -1958,11 +1965,13 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // after dispatching the characters
             _EnterGround();
         }
-        else
+        else if (_state != VTStates::SosPmApcString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIgnore)
         {
             // If the engine doesn't require flushing at the end of the string, we
             // want to cache the partial sequence in case we have to flush the whole
-            // thing to the terminal later.
+            // thing to the terminal later. There is no need to do this if we've
+            // reached one of the string processing states, though, since that data
+            // will be dealt with as soon as it is received.
             if (!_cachedSequence)
             {
                 _cachedSequence.emplace(std::wstring{});
@@ -1972,6 +1981,19 @@ void StateMachine::ProcessString(const std::wstring_view string)
             cachedSequence.append(run);
         }
     }
+}
+
+// Routine Description:
+// - Determines whether the character being processed is the last in the
+//   current output fragment, or there are more still to come. Other parts
+//   of the framework can use this information to work more efficiently.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if we're processing the last character. False if not.
+bool StateMachine::IsProcessingLastCharacter() const noexcept
+{
+    return _processingLastCharacter;
 }
 
 // Routine Description:

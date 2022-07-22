@@ -1,0 +1,3156 @@
+{
+  "version": "1.0",
+  "tasks": [
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Add needs triage label to new issue",
+        "conditions": {
+          "operator": "or",
+          "operands": [
+            {
+              "operator": "and",
+              "operands": [
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "opened"
+                  }
+                },
+                {
+                  "operator": "not",
+                  "operands": [
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "⛺ Reserved"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Triage"
+            }
+          }
+        ],
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ]
+      },
+      "id": "aZ_SNTI7W"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssueCommentResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Replace needs author feedback label with needs attention label when the author comments on an issue",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "isAction",
+              "parameters": {
+                "action": "created"
+              }
+            },
+            {
+              "name": "isActivitySender",
+              "parameters": {
+                "user": {
+                  "type": "author"
+                }
+              }
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Author-Feedback"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Attention"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ],
+        "eventType": "issue",
+        "eventNames": [
+          "issue_comment"
+        ]
+      },
+      "id": "_X5OkVx4JU"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove no recent activity label from issues",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "closed"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "No-Recent-Activity"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          }
+        ],
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ]
+      },
+      "id": "dER5Fu3ekK"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssueCommentResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove no recent activity label when an issue is commented on",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "No-Recent-Activity"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          }
+        ],
+        "eventType": "issue",
+        "eventNames": [
+          "issue_comment"
+        ]
+      },
+      "id": "cyoTuRwP9P"
+    },
+    {
+      "taskType": "scheduled",
+      "capabilityId": "ScheduledSearch",
+      "subCapability": "ScheduledSearch",
+      "version": "1.1",
+      "config": {
+        "taskName": "Close stale issues",
+        "frequency": [
+          {
+            "weekDay": 0,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 1,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 2,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 3,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 4,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 5,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 6,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          }
+        ],
+        "searchTerms": [
+          {
+            "name": "isIssue",
+            "parameters": {}
+          },
+          {
+            "name": "isOpen",
+            "parameters": {}
+          },
+          {
+            "name": "hasLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "hasLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          },
+          {
+            "name": "noActivitySince",
+            "parameters": {
+              "days": 3
+            }
+          }
+        ],
+        "actions": [
+          {
+            "name": "closeIssue",
+            "parameters": {}
+          }
+        ]
+      },
+      "id": "oc-LHz1wag"
+    },
+    {
+      "taskType": "scheduled",
+      "capabilityId": "ScheduledSearch",
+      "subCapability": "ScheduledSearch",
+      "version": "1.1",
+      "config": {
+        "taskName": "Add no recent activity label to issues",
+        "frequency": [
+          {
+            "weekDay": 0,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 1,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 2,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 3,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 4,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 5,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 6,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          }
+        ],
+        "searchTerms": [
+          {
+            "name": "isIssue",
+            "parameters": {}
+          },
+          {
+            "name": "isOpen",
+            "parameters": {}
+          },
+          {
+            "name": "hasLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "noActivitySince",
+            "parameters": {
+              "days": 4
+            }
+          },
+          {
+            "name": "noLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          }
+        ],
+        "actions": [
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          },
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "This issue has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **4 days**. It will be closed if no further activity occurs **within 3 days of this comment**."
+            }
+          }
+        ]
+      },
+      "id": "t0Eu4GMbGx"
+    },
+    {
+      "taskType": "scheduled",
+      "capabilityId": "ScheduledSearch",
+      "subCapability": "ScheduledSearch",
+      "version": "1.1",
+      "config": {
+        "taskName": "Close duplicate issues",
+        "frequency": [
+          {
+            "weekDay": 0,
+            "hours": [
+              0,
+              3,
+              6,
+              9,
+              12,
+              15,
+              18,
+              21
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 1,
+            "hours": [
+              0,
+              3,
+              6,
+              9,
+              12,
+              15,
+              18,
+              21
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 2,
+            "hours": [
+              0,
+              3,
+              6,
+              9,
+              12,
+              15,
+              18,
+              21
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 3,
+            "hours": [
+              0,
+              3,
+              6,
+              9,
+              12,
+              15,
+              18,
+              21
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 4,
+            "hours": [
+              0,
+              3,
+              6,
+              9,
+              12,
+              15,
+              18,
+              21
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 5,
+            "hours": [
+              0,
+              3,
+              6,
+              9,
+              12,
+              15,
+              18,
+              21
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 6,
+            "hours": [
+              0,
+              3,
+              6,
+              9,
+              12,
+              15,
+              18,
+              21
+            ],
+            "timezoneOffset": -8
+          }
+        ],
+        "searchTerms": [
+          {
+            "name": "isIssue",
+            "parameters": {}
+          },
+          {
+            "name": "isOpen",
+            "parameters": {}
+          },
+          {
+            "name": "hasLabel",
+            "parameters": {
+              "label": "Resolution-Duplicate"
+            }
+          },
+          {
+            "name": "noActivitySince",
+            "parameters": {
+              "days": 1
+            }
+          }
+        ],
+        "actions": [
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "This issue has been marked as duplicate and has not had any activity for **1 day**. It will be closed for housekeeping purposes."
+            }
+          },
+          {
+            "name": "closeIssue",
+            "parameters": {}
+          }
+        ]
+      },
+      "id": "CSDw0s8LGP"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "CodeFlowLink",
+      "subCapability": "CodeFlowLink",
+      "version": "1.0",
+      "config": {
+        "taskName": "Add a CodeFlow link to new pull requests"
+      },
+      "id": "w1aPb06aR",
+      "disabled": true
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestReviewResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Add needs author feedback label to pull requests when changes are requested",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "isAction",
+              "parameters": {
+                "action": "submitted"
+              }
+            },
+            {
+              "name": "isReviewState",
+              "parameters": {
+                "state": "changes_requested"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ],
+        "eventType": "pull_request",
+        "eventNames": [
+          "pull_request_review"
+        ]
+      },
+      "id": "NooCyW2RPs"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove needs author feedback label when the author responds to a pull request",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "isActivitySender",
+              "parameters": {
+                "user": {
+                  "type": "author"
+                }
+              }
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "closed"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Author-Feedback"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ],
+        "eventType": "pull_request",
+        "eventNames": [
+          "pull_request",
+          "issues",
+          "project_card"
+        ]
+      },
+      "id": "YSz7PmirbZ"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestCommentResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove needs author feedback label when the author comments on a pull request",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "isActivitySender",
+              "parameters": {
+                "user": {
+                  "type": "author"
+                }
+              }
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Author-Feedback"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ],
+        "eventType": "pull_request",
+        "eventNames": [
+          "issue_comment"
+        ]
+      },
+      "id": "JRxI_S1cjy"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestReviewResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove needs author feedback label when the author responds to a pull request review comment",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "isActivitySender",
+              "parameters": {
+                "user": {
+                  "type": "author"
+                }
+              }
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Author-Feedback"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ],
+        "eventType": "pull_request",
+        "eventNames": [
+          "pull_request_review"
+        ]
+      },
+      "id": "T8n8me4yLo"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove no recent activity label from pull requests",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "closed"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "No-Recent-Activity"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          }
+        ],
+        "eventType": "pull_request",
+        "eventNames": [
+          "pull_request",
+          "issues",
+          "project_card"
+        ]
+      },
+      "id": "nAs8e47Tod"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestCommentResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove no recent activity label when a pull request is commented on",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "No-Recent-Activity"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          }
+        ],
+        "eventType": "pull_request",
+        "eventNames": [
+          "issue_comment"
+        ]
+      },
+      "id": "BwFyZ6jhbC"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestReviewResponder",
+      "version": "1.0",
+      "config": {
+        "taskName": "Remove no recent activity label when a pull request is reviewed",
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "No-Recent-Activity"
+              }
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          }
+        ],
+        "eventType": "pull_request",
+        "eventNames": [
+          "pull_request_review"
+        ]
+      },
+      "id": "JV-Wq2rwx2"
+    },
+    {
+      "taskType": "scheduled",
+      "capabilityId": "ScheduledSearch",
+      "subCapability": "ScheduledSearch",
+      "version": "1.1",
+      "config": {
+        "taskName": "Close stale pull requests",
+        "frequency": [
+          {
+            "weekDay": 0,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 1,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 2,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 3,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 4,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 5,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 6,
+            "hours": [
+              2,
+              5,
+              8,
+              11,
+              14,
+              17,
+              20,
+              23
+            ],
+            "timezoneOffset": -8
+          }
+        ],
+        "searchTerms": [
+          {
+            "name": "isPr",
+            "parameters": {}
+          },
+          {
+            "name": "isOpen",
+            "parameters": {}
+          },
+          {
+            "name": "hasLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "hasLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          },
+          {
+            "name": "noActivitySince",
+            "parameters": {
+              "days": 7
+            }
+          }
+        ],
+        "actions": [
+          {
+            "name": "closeIssue",
+            "parameters": {}
+          }
+        ]
+      },
+      "id": "Y6XW51lcUD"
+    },
+    {
+      "taskType": "scheduled",
+      "capabilityId": "ScheduledSearch",
+      "subCapability": "ScheduledSearch",
+      "version": "1.1",
+      "config": {
+        "taskName": "Add no recent activity label to pull requests",
+        "frequency": [
+          {
+            "weekDay": 0,
+            "hours": [
+              1,
+              4,
+              7,
+              10,
+              13,
+              16,
+              19,
+              22
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 1,
+            "hours": [
+              1,
+              4,
+              7,
+              10,
+              13,
+              16,
+              19,
+              22
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 2,
+            "hours": [
+              1,
+              4,
+              7,
+              10,
+              13,
+              16,
+              19,
+              22
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 3,
+            "hours": [
+              1,
+              4,
+              7,
+              10,
+              13,
+              16,
+              19,
+              22
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 4,
+            "hours": [
+              1,
+              4,
+              7,
+              10,
+              13,
+              16,
+              19,
+              22
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 5,
+            "hours": [
+              1,
+              4,
+              7,
+              10,
+              13,
+              16,
+              19,
+              22
+            ],
+            "timezoneOffset": -8
+          },
+          {
+            "weekDay": 6,
+            "hours": [
+              1,
+              4,
+              7,
+              10,
+              13,
+              16,
+              19,
+              22
+            ],
+            "timezoneOffset": -8
+          }
+        ],
+        "searchTerms": [
+          {
+            "name": "isPr",
+            "parameters": {}
+          },
+          {
+            "name": "isOpen",
+            "parameters": {}
+          },
+          {
+            "name": "hasLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "noActivitySince",
+            "parameters": {
+              "days": 7
+            }
+          },
+          {
+            "name": "noLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          }
+        ],
+        "actions": [
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "No-Recent-Activity"
+            }
+          },
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "This pull request has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **7 days**. It will be closed if no further activity occurs **within 7 days of this comment**."
+            }
+          }
+        ]
+      },
+      "id": "I6gc1et842"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "AutoMerge",
+      "subCapability": "AutoMerge",
+      "version": "1.0",
+      "config": {
+        "taskName": "Automatically merge pull requests",
+        "label": "AutoMerge",
+        "silentMode": false,
+        "minMinutesOpen": 480,
+        "mergeType": "squash",
+        "deleteBranches": true,
+        "removeLabelOnPush": true,
+        "allowAutoMergeInstructionsWithoutLabel": true,
+        "enforceDMPAsStatus": true,
+        "usePrDescriptionAsCommitMessage": true
+      },
+      "id": "Q0_X6ws7SR"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "id": "tv-BontEW",
+      "config": {
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ],
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "operator": "and",
+                  "operands": [
+                    {
+                      "name": "isLabeled",
+                      "parameters": {}
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Mass-Chaos"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "isOpen",
+                  "parameters": {}
+                },
+                {
+                  "name": "isLabeled",
+                  "parameters": {}
+                }
+              ]
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "hasLabel",
+                  "parameters": {
+                    "label": "Needs-Tag-Fix"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "operator": "and",
+                  "operands": [
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Accessibility"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Build"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Extensibility"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Fonts"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Input"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Interaction"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Interop"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Output"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Performance"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Rendering"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Server"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Settings"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-TerminalConnection"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-TerminalControl"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-User Interface"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-VT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-CodeHealth"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Quality"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-AzureShell"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Schema"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Commandline"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-ShellExtension"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-WPFControl"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Settings UI"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-DefApp"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Remoting"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Windowing"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Theming"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Area-Localization"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "operator": "and",
+                  "operands": [
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Issue-Bug"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Issue-Docs"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Issue-Feature"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Issue-Question"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Issue-Samples"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Issue-Task"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Issue-Scenario"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "operator": "and",
+                  "operands": [
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-Cmd.exe"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-Colortool"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-Conhost"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-Conpty"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-Meta"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-Powershell"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-Terminal"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "hasLabel",
+                          "parameters": {
+                            "label": "Product-WSL"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "operator": "and",
+                  "operands": [
+                    {
+                      "operator": "not",
+                      "operands": [
+                        {
+                          "name": "isOpen",
+                          "parameters": {}
+                        }
+                      ]
+                    },
+                    {
+                      "operator": "and",
+                      "operands": [
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Answered"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-By-Design"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Duplicate"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-External"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Fix-Available"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Fix-Committed"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Won't-Fix"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "hasLabel",
+                  "parameters": {
+                    "label": "Needs-Triage"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "hasLabel",
+                  "parameters": {
+                    "label": "Resolution-Duplicate"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "hasLabel",
+                  "parameters": {
+                    "label": "⛺ Reserved"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "hasLabel",
+                  "parameters": {
+                    "label": "Tracking-External"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "actions": [
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Tag-Fix"
+            }
+          }
+        ],
+        "taskName": "Mark issues that need tagging fixed"
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "id": "L78SZN8PE",
+      "config": {
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ],
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "operator": "and",
+              "operands": [
+                {
+                  "name": "isLabeled",
+                  "parameters": {}
+                },
+                {
+                  "name": "hasLabel",
+                  "parameters": {
+                    "label": "Needs-Tag-Fix"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "and",
+              "operands": [
+                {
+                  "operator": "or",
+                  "operands": [
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Accessibility"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Build"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Extensibility"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Fonts"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Input"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Interaction"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Interop"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Output"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Performance"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Rendering"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Server"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Settings"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-TerminalConnection"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-TerminalControl"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-User Interface"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-VT"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-CodeHealth"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Quality"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Schema"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-AzureShell"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Commandline"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-ShellExtension"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-WPFControl"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Settings UI"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-DefApp"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Localization"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Windowing"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-Theming"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-AtlasEngine"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Area-CmdPal"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "operator": "or",
+                  "operands": [
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Issue-Bug"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Issue-Docs"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Issue-Feature"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Issue-Question"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Issue-Samples"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Issue-Task"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Issue-Scenario"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "operator": "or",
+                  "operands": [
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-Cmd.exe"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-Colortool"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-Conhost"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-Conpty"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-Meta"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-Powershell"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-Terminal"
+                      }
+                    },
+                    {
+                      "name": "hasLabel",
+                      "parameters": {
+                        "label": "Product-WSL"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "operator": "or",
+                  "operands": [
+                    {
+                      "name": "isOpen",
+                      "parameters": {}
+                    },
+                    {
+                      "operator": "and",
+                      "operands": [
+                        {
+                          "operator": "not",
+                          "operands": [
+                            {
+                              "name": "isOpen",
+                              "parameters": {}
+                            }
+                          ]
+                        },
+                        {
+                          "operator": "or",
+                          "operands": [
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Answered"
+                              }
+                            },
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-By-Design"
+                              }
+                            },
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Duplicate"
+                              }
+                            },
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-External"
+                              }
+                            },
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Fix-Available"
+                              }
+                            },
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Fix-Committed"
+                              }
+                            },
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Resolution-Won't-Fix"
+                              }
+                            },
+                            {
+                              "name": "hasLabel",
+                              "parameters": {
+                                "label": "Tracking-External"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "taskName": "Remove tag fix label from issues with fixed tags",
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Tag-Fix"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "InPrLabel",
+      "subCapability": "InPrLabel",
+      "version": "1.0",
+      "id": "SRYfNSWer",
+      "config": {
+        "fixedLabelEnabled": true,
+        "taskName": "Label PRs and mark fix committed automatically",
+        "label_inPr": "In-PR",
+        "label_fixed": "Resolution-Fix-Committed"
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "id": "17D1zI_5Q",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Tag-Fix"
+              }
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Resolution-Duplicate"
+              }
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ],
+        "taskName": "remove tag fix from duplicates",
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Tag-Fix"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "id": "-6xYBV_-e",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "name": "titleContains",
+                  "parameters": {
+                    "isRegex": true,
+                    "titlePattern": "^\\s*Bug Report \\(IF I DO NOT CHANGE THIS THE ISSUE WILL BE AUTO-CLOSED\\)\\s*$"
+                  }
+                },
+                {
+                  "name": "titleContains",
+                  "parameters": {
+                    "titlePattern": "^\\s*Bug Report\\s*$",
+                    "isRegex": true
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "opened"
+                  }
+                },
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "reopened"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "write"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "admin"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ],
+        "taskName": "Close issues with no title fix",
+        "actions": [
+          {
+            "name": "closeIssue",
+            "parameters": {}
+          },
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "Hi! Thanks for attempting to open an issue. Unfortunately, your title wasn't changed from the original template which makes it very hard for us to track and triage. You are welcome to fix up the title and try again with a new issue."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "id": "_Mpyf9AhA",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "opened"
+                  }
+                },
+                {
+                  "name": "isAction",
+                  "parameters": {
+                    "action": "reopened"
+                  }
+                }
+              ]
+            },
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "operator": "not",
+                  "operands": [
+                    {
+                      "name": "bodyContains",
+                      "parameters": {
+                        "bodyPattern": ".+",
+                        "isRegex": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ],
+        "taskName": "Close issues with nothing in the body",
+        "actions": [
+          {
+            "name": "closeIssue",
+            "parameters": {}
+          },
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "Hi! Thanks for attempting to open an issue. Unfortunately, you didn't write anything in the body which makes it impossible to understand your concern. You are welcome to fix up the issue and try again by opening another issue with the body filled out. "
+            }
+          }
+        ]
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestResponder",
+      "version": "1.0",
+      "id": "__Wpe__Ye",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "isLabeled",
+              "parameters": {}
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Second"
+              }
+            },
+            {
+              "name": "isOpen",
+              "parameters": {}
+            }
+          ]
+        },
+        "eventType": "pull_request",
+        "eventNames": [
+          "pull_request",
+          "issues",
+          "project_card"
+        ],
+        "taskName": "add team when a second is needed",
+        "actions": [
+          {
+            "name": "requestReviewer",
+            "parameters": {
+              "reviewer": "zadjii-msft"
+            }
+          },
+          {
+            "name": "requestReviewer",
+            "parameters": {
+              "reviewer": "PankajBhojwani"
+            }
+          },
+          {
+            "name": "requestReviewer",
+            "parameters": {
+              "reviewer": "carlos-zamora"
+            }
+          },
+          {
+            "name": "requestReviewer",
+            "parameters": {
+              "reviewer": "dhowett"
+            }
+          },
+          {
+            "name": "requestReviewer",
+            "parameters": {
+              "reviewer": "lhecker"
+            }
+          }
+        ]
+      },
+      "disabled": false
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "PullRequestReviewResponder",
+      "version": "1.0",
+      "id": "XutI7oBsy",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "isOpen",
+                  "parameters": {}
+                }
+              ]
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Second"
+              }
+            }
+          ]
+        },
+        "eventType": "pull_request",
+        "eventNames": [
+          "pull_request_review"
+        ],
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Second"
+            }
+          }
+        ],
+        "taskName": "Remove Needs-Second from closed PRs."
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "ReleaseAnnouncement",
+      "subCapability": "ReleaseAnnouncement",
+      "version": "1.0",
+      "config": {
+        "taskName": "Announce a fix has been released",
+        "prReply": ":tada:`${pkgName} ${version}` has been released which incorporates this pull request.:tada:\n\nHandy links:\n* [Release Notes](https://github.com/${owner}/${repo}/releases/tag/${version})\n* [Store Download](https://www.microsoft.com/store/apps/9n8g5rfz9xk3?cid=storebadge&ocid=badge)\n",
+        "issueReply": ":tada:This issue was addressed in #${prNumber}, which has now been successfully released as `${pkgName} ${version}`.:tada:\n\nHandy links:\n* [Release Notes](https://github.com/${owner}/${repo}/releases/tag/${version})\n* [Store Download](https://www.microsoft.com/store/apps/9n8g5rfz9xk3?cid=storebadge&ocid=badge)",
+        "referencedPrsRegex": "\\#([0-9]+)\\s*\\)"
+      },
+      "id": "jERDgOu8l"
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "id": "8rtmfy0pc",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "isLabeled",
+              "parameters": {}
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Needs-Feedback-Hub"
+              }
+            },
+            {
+              "name": "",
+              "parameters": {}
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ],
+        "taskName": "Ask for Feedback Hub link",
+        "actions": [
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "Hi there!<br><br>Can you please send us feedback with the Feedback Hub with this issue and paste the link here so we can more easily find your crash information on the back end?<br><br>Thanks!<br><br>![image](https://user-images.githubusercontent.com/18221333/62478757-b69d0d00-b760-11e9-9626-1fa33c91e7c5.png) ![image](https://user-images.githubusercontent.com/18221333/62478649-6de55400-b760-11e9-806e-5aab7e085a9f.png)"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Feedback-Hub"
+            }
+          },
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ]
+      },
+      "disabled": true
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssuesOnlyResponder",
+      "version": "1.0",
+      "id": "1DaxcVAAB",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "In-PR"
+              }
+            },
+            {
+              "name": "hasLabel",
+              "parameters": {
+                "label": "Help Wanted"
+              }
+            },
+            {
+              "name": "isLabeled",
+              "parameters": {}
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issues",
+          "project_card"
+        ],
+        "taskName": "Pull the Help-Wanted tag if something goes into PR",
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Help-Wanted"
+            }
+          }
+        ],
+        "dangerZone": {
+          "respondToBotActions": false,
+          "acceptRespondToBotActions": true
+        }
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssueCommentResponder",
+      "version": "1.0",
+      "id": "NtTsTnnPU",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "commentContains",
+              "parameters": {
+                "bodyPattern": "/dup",
+                "isRegex": true,
+                "commentPattern": "\\/dup(licate|e)?(\\s+of)?\\s+#[\\d]+"
+              }
+            },
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "admin"
+                  }
+                },
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "write"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issue_comment"
+        ],
+        "taskName": "Helper to mark as duplicate",
+        "actions": [
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "Hi! We've identified this issue as a duplicate of another one that already exists on this Issue Tracker. This specific instance is being closed in favor of tracking the concern over on the referenced thread. Thanks for your report!"
+            }
+          },
+          {
+            "name": "closeIssue",
+            "parameters": {}
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Triage"
+            }
+          },
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Resolution-Duplicate"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Tag-Fix"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Attention"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Repro"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Second"
+            }
+          }
+        ]
+      },
+      "disabled": false
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssueCommentResponder",
+      "version": "1.0",
+      "id": "P_CqIudDp",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "commentContains",
+              "parameters": {
+                "commentPattern": "\\/feedback",
+                "isRegex": true
+              }
+            },
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "admin"
+                  }
+                },
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "write"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issue_comment"
+        ],
+        "taskName": "Ask for Feedback Hub link via comment trigger",
+        "actions": [
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "\nHi there!<br><br>Can you please send us feedback with the [Feedback Hub](https://support.microsoft.com/en-us/windows/send-feedback-to-microsoft-with-the-feedback-hub-app-f59187f8-8739-22d6-ba93-f66612949332) with this issue? Make sure to click the \"Start recording\" button, then reproduce the issue before submitting the feedback. Once it's submitted, paste the link here so we can more easily find your crash information on the back end?<br><br>Thanks!<br><br>![image](https://user-images.githubusercontent.com/18356694/140811502-a068f78b-89d2-4587-925a-73e19652b830.png)<br><br>![image](https://user-images.githubusercontent.com/18356694/140811557-cdc22a0f-fa6a-4f6a-953e-73b51f5548a3.png)<br><br>![image](https://user-images.githubusercontent.com/18221333/62478649-6de55400-b760-11e9-806e-5aab7e085a9f.png)"
+            }
+          },
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "EmailCleanser",
+      "subCapability": "EmailCleanser",
+      "version": "1.0",
+      "id": "yt42fShpQ",
+      "config": {
+        "taskName": "Scrub-a-dub-dub email replies"
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "LabelSync",
+      "subCapability": "LabelSync",
+      "version": "1.0",
+      "id": "PoWEf56Be",
+      "config": {
+        "taskName": "Syncy dinky doo",
+        "labelPatterns": [
+          {
+            "pattern": "Issue-"
+          },
+          {
+            "pattern": "Area-"
+          },
+          {
+            "pattern": "Priority-"
+          },
+          {
+            "pattern": "Product-"
+          },
+          {
+            "pattern": "Severity-"
+          },
+          {
+            "pattern": "Impact-"
+          }
+        ]
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssueCommentResponder",
+      "version": "1.0",
+      "id": "y6DOsjvqw",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "commentContains",
+              "parameters": {
+                "commentPattern": "\\/dup(licate|e)?(\\s+of)?\\s+https",
+                "isRegex": true
+              }
+            },
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "admin"
+                  }
+                },
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "write"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issue_comment"
+        ],
+        "taskName": "Helper to mark as EXTERNAL duplicate",
+        "actions": [
+          {
+            "name": "addReply",
+            "parameters": {
+              "comment": "Hi! We've identified this issue as a duplicate of one that exists on somebody else's Issue Tracker. Please make sure you subscribe to the referenced external issue for future updates. Thanks for your report!"
+            }
+          },
+          {
+            "name": "closeIssue",
+            "parameters": {}
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Triage"
+            }
+          },
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Resolution-External"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Attention"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Bisect"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Repro"
+            }
+          },
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Second"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "taskType": "trigger",
+      "capabilityId": "IssueResponder",
+      "subCapability": "IssueCommentResponder",
+      "version": "1.0",
+      "id": "XENeaGGwPr8hJK0FgfzMo",
+      "config": {
+        "conditions": {
+          "operator": "and",
+          "operands": [
+            {
+              "name": "commentContains",
+              "parameters": {
+                "commentPattern": "/?"
+              }
+            },
+            {
+              "operator": "or",
+              "operands": [
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "admin"
+                  }
+                },
+                {
+                  "name": "activitySenderHasPermissions",
+                  "parameters": {
+                    "permissions": "write"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "eventType": "issue",
+        "eventNames": [
+          "issue_comment"
+        ],
+        "taskName": "Auto add feedback label",
+        "actions": [
+          {
+            "name": "removeLabel",
+            "parameters": {
+              "label": "Needs-Attention"
+            }
+          },
+          {
+            "name": "addLabel",
+            "parameters": {
+              "label": "Needs-Author-Feedback"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "userGroups": []
+}
