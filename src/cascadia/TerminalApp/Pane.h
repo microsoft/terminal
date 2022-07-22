@@ -243,7 +243,7 @@ private:
 
     bool _zoomed{ false };
 
-    bool _overrideCloseOnExit{ false };
+    bool _isDefTermSession{ false };
 
     winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
     winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;

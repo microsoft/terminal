@@ -1017,7 +1017,7 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
         return;
     }
 
-    if (_overrideCloseOnExit)
+    if (_isDefTermSession)
     {
         // We have been told to close upon process termination regardless of the value of
         // the profile's CloseOnExit, so go ahead and close
@@ -3128,7 +3128,7 @@ void Pane::FinalizeConfigurationGivenDefault()
             // Since we were launched via defterm, override this (i.e. it will
             // be treated as 'always', see _ControlConnectionStateChangedHandler
             // for where this boolean is used, and see GH #13325 for discussion)
-            _overrideCloseOnExit = true;
+            _isDefTermSession = true;
         }
     }
 }
