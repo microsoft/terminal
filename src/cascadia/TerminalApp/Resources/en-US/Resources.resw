@@ -746,4 +746,10 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="NewTabAnnouncement" xml:space="preserve">
+    <value>{} profile tab created successfully</value>
+  </data>
+  <data name="SplitPaneAnnouncement" xml:space="preserve">
+    <value>{} profile pane created successfully</value>
+  </data>
 </root>

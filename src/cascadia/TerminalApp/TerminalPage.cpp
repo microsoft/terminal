@@ -300,6 +300,12 @@ namespace winrt::TerminalApp::implementation
         ShowSetAsDefaultInfoBar();
     }
 
+    Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
+    {
+        _autoPeer = Automation::Peers::FrameworkElementAutomationPeer(*this);
+        return _autoPeer;
+    }
+
     // Method Description;
     // - Checks if the current terminal window should load or save its layout information.
     // Arguments:
@@ -1848,6 +1854,20 @@ namespace winrt::TerminalApp::implementation
 
         _UnZoomIfNeeded();
         tab.SplitPane(*realSplitType, splitSize, newPane);
+
+        if (_autoPeer)
+        {
+            // we can't check if this is a leaf pane,
+            // but getting the profile returns null if we aren't, so that works!
+            if (const auto profile{ newPane->GetProfile() })
+            {
+                _autoPeer.RaiseNotificationEvent(
+                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                    fmt::format(std::wstring_view{ RS_(L"SplitPaneAnnouncement") }, profile.Name()),
+                    L"NewSplitPane" /* unique name for this notification category */);
+            }
+        }
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus

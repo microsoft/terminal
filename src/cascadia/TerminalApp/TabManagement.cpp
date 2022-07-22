@@ -87,6 +87,15 @@ namespace winrt::TerminalApp::implementation
         // case above with the _maybeElevate call.
         _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
 
+        if (_autoPeer)
+        {
+            _autoPeer.RaiseNotificationEvent(
+                Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                fmt::format(std::wstring_view{ RS_(L"NewTabAnnouncement") }, settings.DefaultSettings().ProfileName()),
+                L"NewTab" /* unique name for this notification category */);
+        }
+
         const auto tabCount = _tabs.Size();
         const auto usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||

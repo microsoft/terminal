@@ -62,6 +62,7 @@ namespace winrt::TerminalApp::implementation
         void SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
+        Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
 
         bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         bool ShouldImmediatelyHandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
@@ -162,6 +163,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
+        Windows::UI::Xaml::Automation::Peers::AutomationPeer _autoPeer{ nullptr };
         std::optional<HWND> _hostingHwnd;
 
         // If you add controls here, but forget to null them either here or in
