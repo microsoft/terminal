@@ -361,6 +361,7 @@ conwinuserrefs
 coord
 coordnew
 COPYCOLOR
+copymode
 CORESYSTEM
 cotaskmem
 countof
