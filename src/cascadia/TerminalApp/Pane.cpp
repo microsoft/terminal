@@ -3121,18 +3121,14 @@ int Pane::GetLeafPaneCount() const noexcept
 //   created via default handoff
 void Pane::FinalizeConfigurationGivenDefault()
 {
-    if (_IsLeaf())
+    if (_IsLeaf() && _profile && _profile.CloseOnExit() == CloseOnExitMode::GracefulIfLaunchedByTerminal)
     {
-        if (_profile)
         {
-            if (_profile.CloseOnExit() == CloseOnExitMode::GracefulIfLaunchedByTerminal)
-            {
-                // We only want to close 'gracefully' if we were launched by Terminal
-                // Since we were launched via defterm, override this (i.e. it will
-                // be treated as 'always', see _ControlConnectionStateChangedHandler
-                // for where this boolean is used, and see GH #13325 for discussion)
-                _overrideCloseOnExit = true;
-            }
+            // We only want to close 'gracefully' if we were launched by Terminal
+            // Since we were launched via defterm, override this (i.e. it will
+            // be treated as 'always', see _ControlConnectionStateChangedHandler
+            // for where this boolean is used, and see GH #13325 for discussion)
+            _overrideCloseOnExit = true;
         }
     }
 }
