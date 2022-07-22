@@ -293,11 +293,16 @@ void AtlasEngine::_drawCursor()
     // At 150% scale lineWidth thus needs to be 1.33333... because at a zoom scale of 1.5 this results in a 2px wide line.
     const auto lineWidth = std::max(1.0f, static_cast<float>((_r.dpi + USER_DEFAULT_SCREEN_DPI / 2) / USER_DEFAULT_SCREEN_DPI * USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi));
     const auto cursorType = static_cast<CursorType>(_r.cursorOptions.cursorType);
-    D2D1_RECT_F rect;
-    rect.left = 0.0f;
-    rect.top = 0.0f;
-    rect.right = _r.cellSizeDIP.x;
-    rect.bottom = _r.cellSizeDIP.y;
+
+    // `clip` is the rectangle within our texture atlas that's reserved for our cursor texture, ...
+    D2D1_RECT_F clip;
+    clip.left = 0.0f;
+    clip.top = 0.0f;
+    clip.right = _r.cellSizeDIP.x;
+    clip.bottom = _r.cellSizeDIP.y;
+
+    // ... whereas `rect` is just the visible (= usually white) portion of our cursor.
+    auto rect = clip;
 
     switch (cursorType)
     {
@@ -328,6 +333,9 @@ void AtlasEngine::_drawCursor()
     }
 
     _r.d2dRenderTarget->BeginDraw();
+    // We need to clip the area we draw in to ensure we don't
+    // accidentally draw into any neighboring texture atlas tiles.
+    _r.d2dRenderTarget->PushAxisAlignedClip(&clip, D2D1_ANTIALIAS_MODE_ALIASED);
     _r.d2dRenderTarget->Clear();
 
     if (cursorType == CursorType::EmptyBox)
@@ -346,5 +354,6 @@ void AtlasEngine::_drawCursor()
         _r.d2dRenderTarget->FillRectangle(&rect, _r.brush.get());
     }
 
+    _r.d2dRenderTarget->PopAxisAlignedClip();
     THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
 }
