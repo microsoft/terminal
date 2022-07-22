@@ -88,7 +88,7 @@ try
         // has to be played to achieve the equivalent note frequency.
         const auto frequency = std::pow(2.0, (noteNumber - 69.0) / 12.0) * 440.0 * WAVE_SIZE;
         buffer->SetFrequency(gsl::narrow_cast<DWORD>(frequency));
-        // For the volume, we're using the formula defined in the the General
+        // For the volume, we're using the formula defined in the General
         // MIDI Level 2 specification: Gain in dB = 40 * log10(v/127). We need
         // to multiply by 4000, though, because the SetVolume method expects
         // the volume to be in hundredths of a decibel.

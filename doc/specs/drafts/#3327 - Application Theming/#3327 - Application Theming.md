@@ -285,8 +285,7 @@ be one of:
 * `accent` for the _titlebar_ version of the accent color. Notably, this is
   **not** just some `SystemAccentColor` value, it's apparently some other value.
   This has a different value depending on if the window is focused or not. Refer
-  to Edge the the "use accent color on titlebars" setting enabled as a
-  reference.
+  to Edge the "use accent color on titlebars" setting enabled as a reference.
 * `terminalBackground` to use the default background color of the active
   terminal instance.
 * `terminalForeground` to use the default foreground color of the active
