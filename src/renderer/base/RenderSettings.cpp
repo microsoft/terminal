@@ -199,7 +199,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     // We want to nudge the foreground color to make it more perceivable only for the
     // default color pairs within the color table
     if (Feature_AdjustIndistinguishableText::IsEnabled() &&
-        GetRenderMode(Mode::DistinguishableColors) &&
+        GetRenderMode(Mode::IndexedDistinguishableColors) &&
         !dimFg &&
         !attr.IsInvisible() &&
         (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
@@ -250,6 +250,16 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
         if (attr.IsInvisible())
         {
             fg = bg;
+        }
+
+        // We intentionally aren't _only_ checking for attr.IsInvisible here, because we also want to
+        // catch the cases where the fg was intentionally set to be the same as the bg. In either case,
+        // don't adjust the foreground.
+        if (Feature_AdjustIndistinguishableText::IsEnabled() &&
+            fg != bg &&
+            GetRenderMode(Mode::AlwaysDistinguishableColors))
+        {
+            fg = ColorFix::GetPerceivableColor(fg, bg);
         }
 
         return { fg, bg };

@@ -758,6 +758,18 @@
     <value>Cursor shape</value>
     <comment>Header for a control to select the shape of the text cursor.</comment>
   </data>
+  <data name="Profile_AdjustIndistinguishableColorsNever.Content" xml:space="preserve">
+    <value>Never</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will never adjust the text colors.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsIndexed.Content" xml:space="preserve">
+    <value>Only for colors in the color scheme</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
+    <value>Always (More performance intensive)</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
+  </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
     <value>Bar ( ┃ )</value>
     <comment>{Locked="┃"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a vertical bar. The character in the parentheses is used to show what it looks like.</comment>

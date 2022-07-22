@@ -168,7 +168,22 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
-    _renderSettings.SetRenderMode(RenderSettings::Mode::DistinguishableColors, appearance.AdjustIndistinguishableColors());
+
+    switch (appearance.AdjustIndistinguishableColors())
+    {
+    case AdjustTextMode::Always:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, true);
+        break;
+    case AdjustTextMode::Indexed:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, true);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, false);
+        break;
+    case AdjustTextMode::Never:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, false);
+        break;
+    }
 
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
