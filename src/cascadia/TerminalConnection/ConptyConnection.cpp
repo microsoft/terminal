@@ -214,27 +214,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         _piClient.hProcess = hClientProcess;
 
-#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
-        TraceLoggingWrite(
-            g_hTerminalConnectionProvider,
-            "ConptyConnection_CreatedForDefTerm",
-            TraceLoggingDescription("Event emitted when ConPTY connection is started for a defterm connection"),
-            TraceLoggingGuid(_guid, "SessionGuid", "The new connection's GUID"),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
         _startupInfo.title = winrt::hstring{ startupInfo.pszTitle };
         _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath };
         _startupInfo.iconIndex = startupInfo.iconIndex;
 
-#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
-        TraceLoggingWrite(
-            g_hTerminalConnectionProvider,
-            "ConPty_GotStartupInfoConnected",
-            TraceLoggingDescription("TODO! debugging only"),
-            TraceLoggingWideString(_startupInfo.title.c_str(), "Title", "The title from the connection"),
-            TraceLoggingWideString(_startupInfo.iconPath.c_str(), "Icon", "The icon from the connection"),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        // DebugBreak();
         try
         {
             _commandline = _commandlineFromProcess(hClientProcess);

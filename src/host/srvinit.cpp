@@ -526,71 +526,61 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    // DebugBreak();
+    // As a part of defterm handoff, we're gonna try to pull a lot of
+    // information out of the link and startup info, so we can let the terminal
+    // know these things as well.
+    //
+    // To let the terminal know these things, we have to look them up now,
+    // before we normally would.
+    //
+    // Typically, we'll just go into `ConsoleCreateIoThread` below, which will
+    // pull out the CONSOLE_API_CONNECTINFO from this connect message, and then
+    // get the liink properties out of the title later. Below are elements of
+    // ConsoleAllocateConsole and SetUpConsole that get the bits of STARTUP_INFO
+    // we care about for defterm handoffs.
 
-    g.pDeviceComm = new ConDrvDeviceComm(Server);
-    connectMessage->_pDeviceComm = g.pDeviceComm;
-
-    // TODO! Here, add the additional info we pulled out of the StartupInfo
-    // {
-    // NEW:
+    // A placeholder that we'll read icon information into, instead of setting
+    // the globals icon state.
     Microsoft::Console::Interactivity::IconInfo icon;
-    // Old
 
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_BeforeConsoleInitializeConnectInfo",
-                      TraceLoggingDescription("TODO! debugging only"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
+    // To be able to actually process this connect message into a
+    // CONSOLE_API_CONNECTINFO, we need to hook up the ConDrvDeviceComm to the
+    // message. Usually, we'd create the ConDrvDeviceComm later, in
+    // ConsoleServerInitialization, but we can set it up early here.
+    // ConsoleServerInitialization will safely no-op if it already finds one.
+    g.pDeviceComm = new ConDrvDeviceComm(Server);
+    // load bearing: if you don't set this, the ConsoleInitializeConnectInfo will fail.
+    connectMessage->_pDeviceComm = g.pDeviceComm;
     CONSOLE_API_CONNECTINFO Cac;
-    THROW_IF_NTSTATUS_FAILED(ConsoleInitializeConnectInfo(connectMessage, &Cac));
+    RETURN_IF_NTSTATUS_FAILED(ConsoleInitializeConnectInfo(connectMessage, &Cac));
 
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_GotCac",
-                      TraceLoggingDescription("TODO! debugging only"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-    // BEGIN ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
-    // CALL auto Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
-    Settings* pStartupSettings = &Cac.ConsoleInfo;
-    DWORD TitleLength = Cac.TitleLength;
-    LPWSTR Title = Cac.Title;
-    LPCWSTR CurDir = Cac.CurDir;
-    LPCWSTR AppName = Cac.AppName;
-    // BEGIN  SetUpConsole(_Inout_ Settings* pStartupSettings, _In_ DWORD TitleLength, _In_reads_bytes_(TitleLength) LPWSTR Title, _In_ LPCWSTR CurDir, _In_ LPCWSTR AppName)
-    // auto& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // BEGIN code from SetUpConsole
+    // Create a temporary Settings object to parse the settings into, rather
+    // than parsing them into the global settings object (gci).
     Settings settings{};
     // We need to see if we were spawned from a link. If we were, we need to
-    // call back into the shell to try to get all the console information from the link.
-    settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
-    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName, &icon);
-
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_LoadedFromLink",
-                      TraceLoggingDescription("TODO! debugging only"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    // call back into the OS shell to try to get all the console information from the link.
+    //
+    // load bearing: if you don't pass the StartupFlags, then
+    // GetSettingsFromLink might not even bother attempting to check the lnk.
+    settings.SetStartupFlags(Cac.ConsoleInfo.GetStartupFlags());
+    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings,
+                                                                             Cac.Title,
+                                                                             &Cac.TitleLength,
+                                                                             Cac.CurDir,
+                                                                             Cac.AppName,
+                                                                             &icon);
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
-    settings.ApplyStartupInfo(pStartupSettings);
-    // }
+    settings.ApplyStartupInfo(&Cac.ConsoleInfo);
+    // END code from SetUpConsole
 
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_AppliedStartupInfo",
-                      TraceLoggingDescription("TODO! debugging only"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-    TERMINAL_STARTUP_INFO myStartupInfo{ Title, icon.path.c_str(), icon.index };
-
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_CreatedStartupInfo",
-                      TraceLoggingDescription("TODO! debugging only"),
-                      TraceLoggingWideString(myStartupInfo.pszTitle, "Title", "The title for the connection"),
-                      TraceLoggingWideString(myStartupInfo.pszIconPath, "Icon", "The icon for the connection"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    // Take what we've collected, and bundle it up for handoff.
+    TERMINAL_STARTUP_INFO myStartupInfo{
+        Cac.Title,
+        icon.path.c_str(),
+        icon.index
+    };
 
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),

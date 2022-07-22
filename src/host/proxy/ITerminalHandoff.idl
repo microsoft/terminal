@@ -7,14 +7,14 @@ import "ocidl.idl";
 
 typedef struct _TERMINAL_STARTUP_INFO
 {
-    /*[in, string] */LPCWSTR pszTitle;
-    /*[in, string] */LPCWSTR pszIconPath;
+    LPCWSTR pszTitle;
+    LPCWSTR pszIconPath;
     LONG iconIndex;
 } TERMINAL_STARTUP_INFO;
 
 [
     object,
-    uuid(59D55CCE-FC8A-48B4-ACE8-0A9286C6557F)
+    uuid(AA6B364F-4A50-4176-9002-0AE755E7B5EF)
 ] interface ITerminalHandoff : IUnknown
 {
     HRESULT EstablishPtyHandoff([in, system_handle(sh_pipe)] HANDLE in,
