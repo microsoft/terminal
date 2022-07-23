@@ -37,8 +37,11 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_CLASS(TilWinRtHelpersTests);
     TEST_METHOD(TestPropertySimple);
     TEST_METHOD(TestPropertyHString);
+
     TEST_METHOD(TestEvent);
     TEST_METHOD(TestForwardedEvent);
+
+    TEST_METHOD(TestTypedEvent);
 };
 
 void TilWinRtHelpersTests::TestPropertySimple()
@@ -123,4 +126,23 @@ void TilWinRtHelpersTests::TestForwardedEvent()
 
     VERIFY_ARE_EQUAL(3, handledOne);
     VERIFY_ARE_EQUAL(3, handledTwo);
+}
+
+void TilWinRtHelpersTests::TestTypedEvent()
+{
+    bool handledOne = false;
+    bool handledTwo = false;
+
+    auto handler = [&](const winrt::hstring sender, const int& v) -> void {
+        VERIFY_ARE_EQUAL(L"sure", sender);
+        VERIFY_ARE_EQUAL(42, v);
+        handledOne = true;
+    };
+
+    til::typed_event<winrt::hstring, int> MyEvent;
+    MyEvent(handler);
+    MyEvent([&](winrt::hstring, int) { handledTwo = true; });
+    MyEvent.raise(L"sure", 42);
+    VERIFY_ARE_EQUAL(true, handledOne);
+    VERIFY_ARE_EQUAL(true, handledTwo);
 }
