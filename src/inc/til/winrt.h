@@ -11,11 +11,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         property<T>() = default;
         property<T>(T defaultValue) :
             _value{ defaultValue } {}
-        T& operator()()
+        // T& operator()()
+        // {
+        //     return _value;
+        // }
+        T operator()()
         {
             return _value;
         }
         void operator()(const T& value)
+        {
+            _value = value;
+        }
+        void operator()(const T&& value)
         {
             _value = value;
         }
