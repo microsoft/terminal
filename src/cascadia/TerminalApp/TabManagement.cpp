@@ -763,9 +763,8 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Removes the pane from the tab it belongs to.
     // Arguments:
-    // - pane: the pane to close
-    // - detach: option to detach before closing the pane
-    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleClosePaneRequested(std::shared_ptr<Pane> pane, bool detach)
+    // - pane: the pane to close.
+    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleClosePaneRequested(std::shared_ptr<Pane> pane)
     {
         if (const auto control{ pane->GetTerminalControl() })
         {
@@ -800,10 +799,6 @@ namespace winrt::TerminalApp::implementation
         _AddPreviouslyClosedPaneOrTab(std::move(state.args));
 
         // If specified, detach before closing to directly update the pane structure
-        if (detach)
-        {
-            _GetFocusedTabImpl()->GetRootPane()->DetachPane(pane);
-        }
         pane->Close();
     }
 
@@ -819,7 +814,7 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto pane{ terminalTab->GetActivePane() })
             {
-                co_await _HandleClosePaneRequested(pane, false);
+                co_await _HandleClosePaneRequested(pane);
             }
         }
         else if (auto index{ _GetFocusedTabIndex() })
@@ -834,30 +829,30 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Close all other panes except the pane that is currently focused.
-    winrt::fire_and_forget TerminalPage::_CloseUnfocusedPanes()
+    // Arguments:
+    // - weakTab: weak reference to the tab that the pane belongs to.
+    // - paneIds: collection of the IDs of the panes that are marked for removal.
+    winrt::fire_and_forget TerminalPage::_CloseUnfocusedPanes(weak_ref<TerminalTab> weakTab, std::deque<uint32_t> paneIds)
     {
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        if (auto strongTab{ weakTab.get() })
         {
-            const auto activePane = terminalTab->GetActivePane();
-            if (terminalTab->GetRootPane() != activePane)
+            // Close all unfocused panes one by one
+            while (!paneIds.empty())
             {
-                // Accumulate list of all unfocused leaf panes
-                std::vector<uint32_t> unfocusedPaneIds{};
-                terminalTab->GetRootPane()->WalkTree([&](auto p) {
-                    const auto id = p->Id();
-                    if (id.has_value() && id != activePane->Id())
-                    {
-                        unfocusedPaneIds.push_back(id.value());
-                    }
-                });
+                const auto id = paneIds.front();
+                paneIds.pop_front();
 
-                // Close all unfocused panes one by one
-                for (const auto unfocusedPaneId : unfocusedPaneIds)
+                if (const auto pane{ strongTab->GetRootPane()->FindPane(id) })
                 {
-                    if (const auto pane{ terminalTab->GetRootPane()->FindPane(unfocusedPaneId) })
-                    {
-                        co_await _HandleClosePaneRequested(pane, true);
-                    }
+                    pane->ClosedByParent([ids{ std::move(paneIds) }, weakThis{ get_weak() }, weakTab]() {
+                        if (auto strongThis{ weakThis.get() })
+                        {
+                            strongThis->_CloseUnfocusedPanes(weakTab, std::move(ids));
+                        }
+                    });
+
+                    // Close the pane which will eventually trigger the closed by parent event
+                    co_await _HandleClosePaneRequested(pane);
                 }
             }
         }

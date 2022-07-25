@@ -321,10 +321,10 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
         TerminalApp::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
 
-        winrt::Windows::Foundation::IAsyncAction _HandleClosePaneRequested(std::shared_ptr<Pane> pane, bool detach);
+        winrt::Windows::Foundation::IAsyncAction _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
         winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
-        winrt::fire_and_forget _CloseUnfocusedPanes();
+        winrt::fire_and_forget _CloseUnfocusedPanes(weak_ref<TerminalTab> weakTab, std::deque<uint32_t> paneIds);
         void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);

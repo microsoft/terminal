@@ -169,7 +169,28 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseOtherPanes(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
-        _CloseUnfocusedPanes();
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        {
+            const auto activePane = terminalTab->GetActivePane();
+            if (terminalTab->GetRootPane() != activePane)
+            {
+                _UnZoomIfNeeded();
+
+                // Accumulate list of all unfocused leaf panes
+                std::deque<uint32_t> unfocusedPaneIds{};
+                terminalTab->GetRootPane()->WalkTree([&](auto p) {
+                    const auto id = p->Id();
+                    if (id.has_value() && id != activePane->Id())
+                    {
+                        unfocusedPaneIds.push_back(id.value());
+                    }
+                });
+
+                // Start by removing the panes that were least recently added
+                sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::greater<uint32_t>());
+                _CloseUnfocusedPanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+            }
+        }
         args.Handled(true);
     }
 
