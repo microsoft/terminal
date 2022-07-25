@@ -761,10 +761,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Removes the pane from the tab it belongs to.
+    // - Disables read-only mode on pane if the user wishes to close it and read-only mode is enabled.
     // Arguments:
-    // - pane: the pane to close.
-    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleClosePaneRequested(std::shared_ptr<Pane> pane)
+    // - pane: the pane that is about to be closed.
+    // Return Value:
+    // - bool indicating whether the (read-only) pane can be closed.
+    winrt::Windows::Foundation::IAsyncOperation<bool> TerminalPage::_PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane)
     {
         if (const auto control{ pane->GetTerminalControl() })
         {
@@ -775,12 +777,20 @@ namespace winrt::TerminalApp::implementation
                 // If the user didn't explicitly click on close tab - leave
                 if (warningResult != ContentDialogResult::Primary)
                 {
-                    co_return;
+                    co_return false;
                 }
                 control.ToggleReadOnly();
             }
         }
+        co_return true;
+    }
 
+    // Method Description:
+    // - Removes the pane from the tab it belongs to.
+    // Arguments:
+    // - pane: the pane to close.
+    void TerminalPage::_HandleClosePaneRequested(std::shared_ptr<Pane> pane)
+    {
         // Build the list of actions to recreate the closed pane,
         // BuildStartupActions returns the "first" pane and the rest of
         // its actions are assuming that first pane has been created first.
@@ -814,7 +824,10 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto pane{ terminalTab->GetActivePane() })
             {
-                co_await _HandleClosePaneRequested(pane);
+                if (co_await _PaneConfirmCloseReadOnly(pane))
+                {
+                    _HandleClosePaneRequested(pane);
+                }
             }
         }
         else if (auto index{ _GetFocusedTabIndex() })
@@ -832,27 +845,31 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - weakTab: weak reference to the tab that the pane belongs to.
     // - paneIds: collection of the IDs of the panes that are marked for removal.
-    winrt::fire_and_forget TerminalPage::_CloseUnfocusedPanes(weak_ref<TerminalTab> weakTab, std::deque<uint32_t> paneIds)
+    winrt::fire_and_forget TerminalPage::_CloseUnfocusedPanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds)
     {
         if (auto strongTab{ weakTab.get() })
         {
             // Close all unfocused panes one by one
             while (!paneIds.empty())
             {
-                const auto id = paneIds.front();
-                paneIds.pop_front();
+                const auto id = paneIds.back();
+                paneIds.pop_back();
 
                 if (const auto pane{ strongTab->GetRootPane()->FindPane(id) })
                 {
-                    pane->ClosedByParent([ids{ std::move(paneIds) }, weakThis{ get_weak() }, weakTab]() {
-                        if (auto strongThis{ weakThis.get() })
-                        {
-                            strongThis->_CloseUnfocusedPanes(weakTab, std::move(ids));
-                        }
-                    });
+                    if (co_await _PaneConfirmCloseReadOnly(pane))
+                    {
+                        pane->ClosedByParent([ids{ std::move(paneIds) }, weakThis{ get_weak() }, weakTab]() {
+                            if (auto strongThis{ weakThis.get() })
+                            {
+                                strongThis->_CloseUnfocusedPanes(weakTab, std::move(ids));
+                            }
+                        });
 
-                    // Close the pane which will eventually trigger the closed by parent event
-                    co_await _HandleClosePaneRequested(pane);
+                        // Close the pane which will eventually trigger the closed by parent event
+                        _HandleClosePaneRequested(pane);
+                        break;
+                    }
                 }
             }
         }

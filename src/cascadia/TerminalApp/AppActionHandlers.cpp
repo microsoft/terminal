@@ -177,8 +177,8 @@ namespace winrt::TerminalApp::implementation
                 _UnZoomIfNeeded();
 
                 // Accumulate list of all unfocused leaf panes
-                std::deque<uint32_t> unfocusedPaneIds{};
-                terminalTab->GetRootPane()->WalkTree([&](auto p) {
+                std::vector<uint32_t> unfocusedPaneIds;
+                terminalTab->GetRootPane()->WalkTree([&](auto&& p) {
                     const auto id = p->Id();
                     if (id.has_value() && id != activePane->Id())
                     {
@@ -187,7 +187,7 @@ namespace winrt::TerminalApp::implementation
                 });
 
                 // Start by removing the panes that were least recently added
-                sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::greater<uint32_t>());
+                sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
                 _CloseUnfocusedPanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
             }
         }

@@ -300,7 +300,7 @@
       "enum": [
         "adjustFontSize",
         "clearBuffer",
-		"closeOtherPanes",
+        "closeOtherPanes",
         "closeOtherTabs",
         "closePane",
         "closeTab",
