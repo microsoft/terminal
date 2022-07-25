@@ -21,7 +21,8 @@ namespace Microsoft::Console::Render
         enum class Mode : size_t
         {
             BlinkAllowed,
-            DistinguishableColors,
+            IndexedDistinguishableColors,
+            AlwaysDistinguishableColors,
             IntenseIsBold,
             IntenseIsBright,
             ScreenReversed

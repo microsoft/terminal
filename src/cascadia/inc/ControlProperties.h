@@ -13,7 +13,7 @@
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
-    X(bool, AdjustIndistinguishableColors, true)
+    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Never)
 
 // --------------------------- Control Appearance ---------------------------
 //  All of these settings are defined in IControlSettings.

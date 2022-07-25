@@ -876,7 +876,7 @@ namespace Microsoft::Console::Render
         TileHashMap::iterator* _getCellGlyphMapping(u16 x, u16 y) noexcept;
         void _setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept;
         void _flushBufferLine();
-        void _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
+        bool _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
         void _resolveAntialiasingMode() noexcept;

@@ -168,7 +168,22 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
-    _renderSettings.SetRenderMode(RenderSettings::Mode::DistinguishableColors, appearance.AdjustIndistinguishableColors());
+
+    switch (appearance.AdjustIndistinguishableColors())
+    {
+    case AdjustTextMode::Always:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, true);
+        break;
+    case AdjustTextMode::Indexed:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, true);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, false);
+        break;
+    case AdjustTextMode::Never:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, false);
+        break;
+    }
 
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
@@ -995,7 +1010,7 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 }
 
 // Method Description:
-// - Get a reference to the the terminal's read/write lock.
+// - Get a reference to the terminal's read/write lock.
 // Return Value:
 // - a ticket_lock which can be used to manually lock or unlock the terminal.
 til::ticket_lock& Terminal::GetReadWriteLock() noexcept
