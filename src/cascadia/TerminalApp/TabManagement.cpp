@@ -87,15 +87,6 @@ namespace winrt::TerminalApp::implementation
         // case above with the _maybeElevate call.
         _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
 
-        if (_autoPeer)
-        {
-            _autoPeer.RaiseNotificationEvent(
-                Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"NewTabAnnouncement") }, settings.DefaultSettings().ProfileName()),
-                L"NewTab" /* unique name for this notification category */);
-        }
-
         const auto tabCount = _tabs.Size();
         const auto usedManualProfile = (newTerminalArgs != nullptr) &&
                                        (newTerminalArgs.ProfileIndex() != nullptr ||
@@ -297,6 +288,20 @@ namespace winrt::TerminalApp::implementation
         {
             auto newTabImpl = winrt::make_self<TerminalTab>(pane);
             _InitializeTab(newTabImpl);
+
+            if (_autoPeer)
+            {
+                // we can't check if this is a leaf pane,
+                // but getting the profile returns null if we aren't, so that works!
+                if (const auto profile{ pane->GetProfile() })
+                {
+                    _autoPeer.RaiseNotificationEvent(
+                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                        fmt::format(std::wstring_view{ RS_(L"NewTabAnnouncement") }, profile.Name()),
+                        L"NewTab" /* unique name for this notification category */);
+                }
+            }
         }
     }
 
