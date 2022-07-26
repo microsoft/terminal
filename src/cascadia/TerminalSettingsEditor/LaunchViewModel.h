@@ -15,6 +15,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         LaunchViewModel(Model::CascadiaSettings settings);
         Model::CascadiaSettings Settings() const;
 
+        double InitialPosX();
+        double InitialPosY();
+        void InitialPosX(double xCoord);
+        void InitialPosY(double yCoord);
+
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
         winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;

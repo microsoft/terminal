@@ -30,6 +30,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _Settings;
     }
 
+    double LaunchViewModel::InitialPosX()
+    {
+        const auto x = _Settings.GlobalSettings().InitialPosition().X;
+        // If there's no value here, return NAN - XAML will ignore it and
+        // put the placeholder text in the box instead
+        if (auto xCoord{ x.try_as<int64_t>() })
+        {
+            return xCoord.has_value() ? gsl::narrow_cast<double>(xCoord.value()) : NAN;
+        }
+        return NAN;
+    }
+
+    double LaunchViewModel::InitialPosY()
+    {
+        const auto y = _Settings.GlobalSettings().InitialPosition().Y;
+        // If there's no value here, return NAN - XAML will ignore it and
+        // put the placeholder text in the box instead
+        if (auto yCoord{ y.try_as<int64_t>() })
+        {
+            return yCoord.has_value() ? gsl::narrow_cast<double>(yCoord.value()) : NAN;
+        }
+        return NAN;
+    }
+
+    void LaunchViewModel::InitialPosX(double xCoord)
+    {
+        LaunchPosition newPos;
+        // If the value was cleared, xCoord will be NAN, so check for that
+        if (xCoord)
+        {
+            newPos = LaunchPosition{ gsl::narrow_cast<int64_t>(xCoord), _Settings.GlobalSettings().InitialPosition().Y };
+        }
+        else
+        {
+            newPos = LaunchPosition{ nullptr, _Settings.GlobalSettings().InitialPosition().Y };
+        }
+        _Settings.GlobalSettings().InitialPosition(newPos);
+    }
+
+    void LaunchViewModel::InitialPosY(double yCoord)
+    {
+        LaunchPosition newPos;
+        // If the value was cleared, yCoord will be NAN, so check for that
+        if (yCoord)
+        {
+            newPos = LaunchPosition{ _Settings.GlobalSettings().InitialPosition().X, gsl::narrow_cast<int64_t>(yCoord) };
+        }
+        else
+        {
+            newPos = LaunchPosition{ _Settings.GlobalSettings().InitialPosition().X, nullptr };
+        }
+        _Settings.GlobalSettings().InitialPosition(newPos);
+    }
+
     winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultProfile()
     {
         const auto defaultProfileGuid{ _Settings.GlobalSettings().DefaultProfile() };

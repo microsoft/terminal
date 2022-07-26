@@ -206,6 +206,43 @@
                                         Value="{x:Bind ViewModel.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
                     </Grid>
                 </local:SettingContainer>
+
+                <local:SettingContainer x:Uid="Globals_LaunchPosition"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <Grid ColumnSpacing="10"
+                          RowSpacing="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Uid="Globals_InitialPosX"
+                                   Grid.Row="0"
+                                   Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource SettingsPageItemHeaderStyle}" />
+                        <muxc:NumberBox x:Uid="Globals_InitialPosXBox"
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
+                        <TextBlock x:Uid="Globals_InitialPosY"
+                                   Grid.Row="1"
+                                   Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource SettingsPageItemHeaderStyle}" />
+                        <muxc:NumberBox x:Uid="Globals_InitialPosYBox"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
+                    </Grid>
+                </local:SettingContainer>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

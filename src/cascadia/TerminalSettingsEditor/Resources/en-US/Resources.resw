@@ -311,6 +311,30 @@
     <value>Initial Rows</value>
     <comment>Name for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
+  <data name="Globals_InitialPosX.Text" xml:space="preserve">
+    <value>X position</value>
+    <comment>Header for a control to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosY.Text" xml:space="preserve">
+    <value>Y position</value>
+    <comment>Header for a control to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>X position</value>
+    <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.PlaceholderText" xml:space="preserve">
+    <value>Undefined</value>
+    <comment>The string to be displayed when there is no current value in this number box.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Y position</value>
+    <comment>Name for a control to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.PlaceholderText" xml:space="preserve">
+    <value>Undefined</value>
+    <comment>The string to be displayed when there is no current value in this number box.</comment>
+  </data>
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
     <value>When Terminal starts</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
@@ -1141,6 +1165,14 @@
   <data name="Globals_LaunchSize.HelpText" xml:space="preserve">
     <value>The number of rows and columns displayed in the window upon first load. Measured in characters.</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
+  </data>
+  <data name="Globals_LaunchPosition.Header" xml:space="preserve">
+    <value>Launch position</value>
+    <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
+  </data>
+  <data name="Globals_LaunchPosition.HelpText" xml:space="preserve">
+    <value>The initial position of the terminal window upon startup.</value>
+    <comment>A description for what the "X position" and "Y position" settings do. Presented near "Globals_LaunchPosition.Header".</comment>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
     <value>All</value>
