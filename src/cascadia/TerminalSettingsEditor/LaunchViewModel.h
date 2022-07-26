@@ -28,6 +28,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, _Settings.GlobalSettings().LaunchMode);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
 
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), CenterOnLaunch);
+
     private:
         Model::CascadiaSettings _Settings;
     };

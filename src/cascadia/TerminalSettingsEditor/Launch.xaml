@@ -207,6 +207,7 @@
                     </Grid>
                 </local:SettingContainer>
 
+                <!--  Launch Position  -->
                 <local:SettingContainer x:Uid="Globals_LaunchPosition"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <Grid ColumnSpacing="10"
@@ -242,6 +243,12 @@
                                         Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                         Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
                     </Grid>
+                </local:SettingContainer>
+
+                <!--  Center on Launch  -->
+                <local:SettingContainer x:Uid="Globals_CenterOnLaunch">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.Settings.GlobalSettings.CenterOnLaunch, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
         </StackPanel>

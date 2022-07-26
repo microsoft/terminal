@@ -442,6 +442,14 @@
     <value>When enabled, this enables the launch of Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
+  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
+    <value>Center on launch</value>
+    <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
+  </data>
+  <data name="Globals_CenterOnLaunch.HelpText" xml:space="preserve">
+    <value>When enabled, Terminal will be placed in the center of the screen when launched.</value>
+    <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
