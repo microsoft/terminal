@@ -394,14 +394,17 @@ namespace Microsoft::Console::Render
         struct FontMetrics
         {
             wil::com_ptr<IDWriteFontCollection> fontCollection;
-            wil::unique_process_heap_string fontName;
+            std::wstring fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
             u16x2 cellSize;
             u16 fontWeight = 0;
             u16 underlinePos = 0;
+            u16 underlineWidth = 0;
             u16 strikethroughPos = 0;
-            u16 lineThickness = 0;
+            u16 strikethroughWidth = 0;
+            u16x2 doubleUnderlinePos;
+            u16 thinLineWidth = 0;
         };
 
         // These flags are shared with shader_ps.hlsl.
@@ -823,8 +826,12 @@ namespace Microsoft::Console::Render
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(u32)) u32 cellCountX = 0;
             alignas(sizeof(u32x2)) u32x2 cellSize;
-            alignas(sizeof(u32x2)) u32x2 underlinePos;
-            alignas(sizeof(u32x2)) u32x2 strikethroughPos;
+            alignas(sizeof(u32)) u32 underlinePos = 0;
+            alignas(sizeof(u32)) u32 underlineWidth = 0;
+            alignas(sizeof(u32)) u32 strikethroughPos = 0;
+            alignas(sizeof(u32)) u32 strikethroughWidth = 0;
+            alignas(sizeof(u32x2)) u32x2 doubleUnderlinePos;
+            alignas(sizeof(u32)) u32 thinLineWidth = 0;
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
@@ -943,12 +950,9 @@ namespace Microsoft::Console::Render
             Buffer<Cell, 32> cells; // invalidated by ApiInvalidations::Size
             Buffer<TileHashMap::iterator> cellGlyphMapping; // invalidated by ApiInvalidations::Size
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
-            u16x2 cellSize; // invalidated by ApiInvalidations::Font, caches _api.cellSize
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
-            u16 underlinePos = 0;
-            u16 strikethroughPos = 0;
-            u16 lineThickness = 0;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
+            FontMetrics fontMetrics; // invalidated by ApiInvalidations::Font, cached _api.fontMetrics
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
             TileHashMap glyphs;
             TileAllocator tileAllocator;

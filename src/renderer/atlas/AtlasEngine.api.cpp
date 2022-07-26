@@ -272,7 +272,7 @@ CATCH_RETURN()
     DWRITE_TEXT_METRICS metrics;
     RETURN_IF_FAILED(textLayout->GetMetrics(&metrics));
 
-    *pResult = static_cast<unsigned int>(std::ceil(metrics.width)) > _api.fontMetrics.cellSize.x;
+    *pResult = static_cast<unsigned int>(std::ceilf(metrics.width)) > _api.fontMetrics.cellSize.x;
     return S_OK;
 }
 
@@ -605,18 +605,43 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
-    const auto fontSizeInPx = std::ceil(requestedSize.Y / 72.0 * _api.dpi);
+    const auto fontSize = std::ceilf(requestedSize.Y / 72.0f * _api.dpi);
 
-    const auto designUnitsPerPx = fontSizeInPx / static_cast<double>(metrics.designUnitsPerEm);
-    const auto ascentInPx = static_cast<double>(metrics.ascent) * designUnitsPerPx;
-    const auto descentInPx = static_cast<double>(metrics.descent) * designUnitsPerPx;
-    const auto lineGapInPx = static_cast<double>(metrics.lineGap) * designUnitsPerPx;
-    const auto advanceWidthInPx = static_cast<double>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+    const auto designUnitsPerPx = fontSize / static_cast<float>(metrics.designUnitsPerEm);
+    const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
+    const auto descent = static_cast<float>(metrics.descent) * designUnitsPerPx;
+    const auto lineGap = static_cast<float>(metrics.lineGap) * designUnitsPerPx;
+    const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+    const auto underlinePosition = static_cast<float>(-metrics.underlinePosition) * designUnitsPerPx;
+    const auto underlineThickness = static_cast<float>(metrics.underlineThickness) * designUnitsPerPx;
+    const auto strikethroughPosition = static_cast<float>(-metrics.strikethroughPosition) * designUnitsPerPx;
+    const auto strikethroughThickness = static_cast<float>(metrics.strikethroughThickness) * designUnitsPerPx;
 
-    const auto halfGapInPx = lineGapInPx / 2.0;
-    const auto baseline = std::ceil(ascentInPx + halfGapInPx);
-    const auto cellWidth = gsl::narrow<u16>(std::ceil(advanceWidthInPx));
-    const auto cellHeight = gsl::narrow<u16>(std::ceil(baseline + descentInPx + halfGapInPx));
+    const auto halfGap = lineGap / 2.0f;
+    const auto baseline = std::ceilf(ascent + halfGap);
+    const auto lineHeight = std::ceilf(baseline + descent + halfGap);
+    const auto underlinePos = std::roundf(baseline + underlinePosition);
+    const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
+    const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
+    const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
+
+    // For double underlines we loosely follow what Word:
+    // 1. The lines are half the width of an underline (= thinLineWidth)
+    // 2. Ideally the bottom line is aligned with the bottom of the underline
+    // 3. The top underline is vertically in the middle between baseline and bottom underline
+    // 4. If the top line gets too close to the baseline the underlines are shifted downwards
+    // 5. The minimum gap between the two lines appears to be similar to Tex (1.2pt)
+    auto doubleUnderlinePosBottom = underlinePos + underlineWidth - thinLineWidth; // 2.
+    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f); // 3.
+    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + thinLineWidth); // 4.
+    const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * _api.dpi)); // 5.
+    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + thinLineWidth + doubleUnderlineGap); // 5.
+    // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
+    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
+
+    const auto cellWidth = gsl::narrow<u16>(std::ceilf(advanceWidth));
+    const auto cellHeight = gsl::narrow<u16>(lineHeight);
 
     {
         til::size coordSize;
@@ -637,28 +662,30 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
     if (fontMetrics)
     {
-        const auto underlineOffsetInPx = static_cast<double>(-metrics.underlinePosition) * designUnitsPerPx;
-        const auto underlineThicknessInPx = static_cast<double>(metrics.underlineThickness) * designUnitsPerPx;
-        const auto strikethroughOffsetInPx = static_cast<double>(-metrics.strikethroughPosition) * designUnitsPerPx;
-        const auto strikethroughThicknessInPx = static_cast<double>(metrics.strikethroughThickness) * designUnitsPerPx;
-        const auto lineThickness = gsl::narrow<u16>(std::round(std::min(underlineThicknessInPx, strikethroughThicknessInPx)));
-        const auto underlinePos = gsl::narrow<u16>(std::ceil(baseline + underlineOffsetInPx - lineThickness / 2.0));
-        const auto strikethroughPos = gsl::narrow<u16>(std::round(baseline + strikethroughOffsetInPx - lineThickness / 2.0));
-
-        auto fontName = wil::make_process_heap_string(requestedFaceName);
-        const auto fontWeight = gsl::narrow<u16>(requestedWeight);
+        std::wstring fontName{ requestedFaceName };
+        const auto fontWeightU16 = gsl::narrow<u16>(requestedWeight);
+        const auto underlinePosU16 = gsl::narrow<u16>(underlinePos);
+        const auto underlineWidthU16 = gsl::narrow<u16>(underlineWidth);
+        const auto strikethroughPosU16 = gsl::narrow<u16>(strikethroughPos);
+        const auto strikethroughWidthU16 = gsl::narrow<u16>(strikethroughWidth);
+        const auto doubleUnderlinePosTopU16 = gsl::narrow<u16>(doubleUnderlinePosTop);
+        const auto doubleUnderlinePosBottomU16 = gsl::narrow<u16>(doubleUnderlinePosBottom);
+        const auto thinLineWidthU16 = gsl::narrow<u16>(thinLineWidth);
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
 
         fontMetrics->fontCollection = std::move(fontCollection);
         fontMetrics->fontName = std::move(fontName);
-        fontMetrics->fontSizeInDIP = static_cast<float>(fontSizeInPx / static_cast<double>(_api.dpi) * 96.0);
-        fontMetrics->baselineInDIP = static_cast<float>(baseline / static_cast<double>(_api.dpi) * 96.0);
+        fontMetrics->fontSizeInDIP = fontSize / static_cast<float>(_api.dpi) * 96.0f;
+        fontMetrics->baselineInDIP = baseline / static_cast<float>(_api.dpi) * 96.0f;
         fontMetrics->cellSize = { cellWidth, cellHeight };
-        fontMetrics->fontWeight = fontWeight;
-        fontMetrics->underlinePos = underlinePos;
-        fontMetrics->strikethroughPos = strikethroughPos;
-        fontMetrics->lineThickness = lineThickness;
+        fontMetrics->fontWeight = fontWeightU16;
+        fontMetrics->underlinePos = underlinePosU16;
+        fontMetrics->underlineWidth = underlineWidthU16;
+        fontMetrics->strikethroughPos = strikethroughPosU16;
+        fontMetrics->strikethroughWidth = strikethroughWidthU16;
+        fontMetrics->doubleUnderlinePos = { doubleUnderlinePosTopU16, doubleUnderlinePosBottomU16 };
+        fontMetrics->thinLineWidth = thinLineWidthU16;
     }
 }
