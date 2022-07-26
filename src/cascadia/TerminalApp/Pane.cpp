@@ -2785,7 +2785,7 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 // - widthOrHeight: if true operates on width, otherwise on height
 // - dimension: a dimension (width or height) to be snapped
 // Return Value:
-// - pair of floats, where first value is the size snapped downward (not greater then
+// - pair of floats, where first value is the size snapped downward (not greater than
 //   requested size) and second is the size snapped upward (not lower than requested size).
 //   If requested size is already snapped, then both returned values equal this value.
 Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const

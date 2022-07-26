@@ -1010,7 +1010,7 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 }
 
 // Method Description:
-// - Get a reference to the the terminal's read/write lock.
+// - Get a reference to the terminal's read/write lock.
 // Return Value:
 // - a ticket_lock which can be used to manually lock or unlock the terminal.
 til::ticket_lock& Terminal::GetReadWriteLock() noexcept

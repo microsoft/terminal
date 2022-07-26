@@ -519,6 +519,49 @@ namespace PrepPattern
     // attr  | wchar  (char) | symbol
     // ------------------------------------
     // 0x029 | 0x0051 (0x51) | Q
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0055 (0x55) | U
+    // 0x029 | 0x0054 (0x54) | T
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // ...
+    // "Space Padded" means any unused data in the buffer will be filled with spaces and the default attribute.
+    // "Dedupe" means that any full-width characters in the buffer will be returned as single copies.
+    //    But due to the target being a DBCS character set that can't represent these in a single char, it's null.
+    // "A" means that we intend in-codepage (char) data to be browsed in the resulting struct
+    static constexpr CharInfoPattern SpacePaddedDedupeInvalidA{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0055, colored),
+        makeCharInfo(0x0054, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
     // 0x029 | 0x3044 (0x44) | Hiragana I
     // 0x029 | 0x304B (0x4B) | Hiragana KA
     // 0x029 | 0x306A (0x6A) | Hiragana NA
@@ -683,93 +726,6 @@ namespace PrepPattern
         makeCharInfo(0x0054, colored),
         makeCharInfo(0x306b, colored | leading),
         makeCharInfo(0x306b, colored | trailing),
-    };
-
-    // Receive Output Table:
-    // attr  | wchar  (char) | symbol
-    // ------------------------------------
-    // 0x029 | 0x0051 (0x51) | Q
-    // 0x129 | 0x3044 (0x44) | Hiragana I
-    // 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-    // 0x129 | 0x304B (0x4B) | Hiragana KA
-    // 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-    // 0x129 | 0x306A (0x6A) | Hiragana NA
-    // 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-    // 0x029 | 0x005A (0x5A) | Z
-    // 0x029 | 0x0059 (0x59) | Y
-    // 0x029 | 0x0058 (0x58) | X
-    // 0x029 | 0x0057 (0x57) | W
-    // 0x029 | 0x0056 (0x56) | V
-    // 0x029 | 0x0055 (0x55) | U
-    // 0x029 | 0x0054 (0x54) | T
-    // 0x129 | 0x306B (0x6B) | Hiragana NI
-    // 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-    // ...
-    // "Doubled" means that any full-width characters in the buffer are returned twice with a leading and trailing byte marker.
-    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-    // "NegativeOneTrailing" means that all trailing bytes have their character replaced with the value -1 or 0xFFFF
-    static constexpr CharInfoPattern DoubledWNegativeOneTrailing{
-        makeCharInfo(0x0051, colored),
-        makeCharInfo(0x3044, colored | leading),
-        makeCharInfo(0xffff, colored | trailing),
-        makeCharInfo(0x304b, colored | leading),
-        makeCharInfo(0xffff, colored | trailing),
-        makeCharInfo(0x306a, colored | leading),
-        makeCharInfo(0xffff, colored | trailing),
-        makeCharInfo(0x005a, colored),
-        makeCharInfo(0x0059, colored),
-        makeCharInfo(0x0058, colored),
-        makeCharInfo(0x0057, colored),
-        makeCharInfo(0x0056, colored),
-        makeCharInfo(0x0055, colored),
-        makeCharInfo(0x0054, colored),
-        makeCharInfo(0x306b, colored | leading),
-        makeCharInfo(0xffff, colored | trailing),
-    };
-
-    // Receive Output Table:
-    // attr  | wchar  (char) | symbol
-    // ------------------------------------
-    // 0x029 | 0x0051 (0x51) | Q
-    // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA2 (0xA2) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-    // 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA9 (0xA9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-    // 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFC8 (0xC8) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-    // 0x029 | 0x005A (0x5A) | Z
-    // 0x029 | 0x0059 (0x59) | Y
-    // 0x029 | 0x0058 (0x58) | X
-    // 0x029 | 0x0057 (0x57) | W
-    // 0x029 | 0x0056 (0x56) | V
-    // 0x007 | 0x0020 (0x20) | <space>
-    // 0x007 | 0x0020 (0x20) | <space>
-    // 0x007 | 0x0020 (0x20) | <space>
-    // 0x007 | 0x0020 (0x20) | <space>
-    // ...
-    // "AStompsW" means that the Unicode characters were fit into the result buffer first, then the Multibyte conversion
-    //     was written over the top of the lower byte. This makes an invalid Unicode character, but can be understood
-    //     as in-codepage from the char portion of the union.
-    // "NegativeOnePattern" means that every trailing byte started as -1 or 0xFFFF
-    // "TruncateSpacePadded" means that we only allowed ourselves to return as many characters as is in the unicode length
-    //     of the string and then filled the rest of the buffer after that with spaces.
-    static constexpr CharInfoPattern AStompsWNegativeOnePatternTruncateSpacePadded{
-        makeCharInfo(0x0051, colored),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa2, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa9, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffc8, colored | trailing),
-        makeCharInfo(0x005a, colored),
-        makeCharInfo(0x0059, colored),
-        makeCharInfo(0x0058, colored),
-        makeCharInfo(0x0057, colored),
-        makeCharInfo(0x0056, colored),
-        makeCharInfo(0x0020, white),
-        makeCharInfo(0x0020, white),
-        makeCharInfo(0x0020, white),
-        makeCharInfo(0x0020, white),
     };
 
     // Receive Output Table:
@@ -942,138 +898,6 @@ namespace PrepPattern
     // attr  | wchar  (char) | symbol
     // ------------------------------------
     // 0x029 | 0x0051 (0x51) | Q
-    // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA2 (0xA2) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-    // 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA9 (0xA9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-    // 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFC8 (0xC8) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-    // 0x029 | 0x005A (0x5A) | Z
-    // 0x029 | 0x0059 (0x59) | Y
-    // 0x029 | 0x0058 (0x58) | X
-    // 0x029 | 0x0057 (0x57) | W
-    // 0x029 | 0x0056 (0x56) | V
-    // 0x029 | 0x0055 (0x55) | U
-    // 0x029 | 0x0054 (0x54) | T
-    // 0x129 | 0x3082 (0x30) | Hiragana NI 0x306B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFC9 (0xC9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC9
-    // ...
-    // "AOn" means that the Unicode characters were fit into the result buffer first, then the Multibyte conversion
-    //     was written over the top of the lower byte. This makes an invalid Unicode character, but can be understood
-    //     as in-codepage from the char portion of the union.
-    // "DoubledW" means that the full-width Unicode characters were inserted twice into the buffer (and marked lead/trailing)
-    // "NegativeOneTrailing" means that every trailing byte started as -1 or 0xFFFF
-    static constexpr CharInfoPattern AOnDoubledWNegativeOneTrailing{
-        makeCharInfo(0x0051, colored),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa2, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa9, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffc8, colored | trailing),
-        makeCharInfo(0x005a, colored),
-        makeCharInfo(0x0059, colored),
-        makeCharInfo(0x0058, colored),
-        makeCharInfo(0x0057, colored),
-        makeCharInfo(0x0056, colored),
-        makeCharInfo(0x0055, colored),
-        makeCharInfo(0x0054, colored),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffc9, colored | trailing),
-    };
-
-    // Receive Output Table:
-    // attr  | wchar  (char) | symbol
-    // ------------------------------------
-    // 0x029 | 0x0051 (0x51) | Q
-    // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA2 (0xA2) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-    // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA2 (0xA2) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-    // 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA9 (0xA9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-    // 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFA9 (0xA9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-    // 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFC8 (0xC8) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-    // 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0xFFC8 (0xC8) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-    // 0x029 | 0x005A (0x5A) | Z
-    // 0x029 | 0x0059 (0x59) | Y
-    // 0x029 | 0x0058 (0x58) | X
-    // ...
-    // "AOn" means that the Unicode characters were fit into the result buffer first, then the Multibyte conversion
-    //     was written over the top of the lower byte. This makes an invalid Unicode character, but can be understood
-    //     as in-codepage from the char portion of the union.
-    // "DoubledW" means that the full-width Unicode characters were inserted twice into the buffer (and marked lead/trailing)
-    // "NegativeOneTrailing" means that every trailing byte started as -1 or 0xFFFF
-    static constexpr CharInfoPattern AOnDoubleDoubledWNegativeOneTrailing{
-        makeCharInfo(0x0051, colored),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa2, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa2, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa9, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffa9, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffc8, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0xffc8, colored | trailing),
-        makeCharInfo(0x005a, colored),
-        makeCharInfo(0x0059, colored),
-        makeCharInfo(0x0058, colored),
-    };
-
-    // Receive Output Table:
-    // attr  | wchar  (char) | symbol
-    // ------------------------------------
-    // 0x029 | 0x0051 (0x51) | Q
-    // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0x30A2 (0xA2) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-    // 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0x30A9 (0xA9) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-    // 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0x39C8 (0xC8) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-    // 0x029 | 0x005A (0x5A) | Z
-    // 0x029 | 0x0059 (0x59) | Y
-    // 0x029 | 0x0058 (0x58) | X
-    // 0x029 | 0x0057 (0x57) | W
-    // 0x029 | 0x0056 (0x56) | V
-    // 0x029 | 0x0055 (0x55) | U
-    // 0x029 | 0x0054 (0x54) | T
-    // 0x129 | 0x3082 (0x30) | Hiragana NI 0x306B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-    // 0x229 | 0x30C9 (0xC9) | Hiragana NI 0x306B with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC9
-    // ...
-    // "AOn" means that the Unicode characters were fit into the result buffer first, then the Multibyte conversion
-    //     was written over the top of the lower byte. This makes an invalid Unicode character, but can be understood
-    //     as in-codepage from the char portion of the union.
-    // "DoubledW" means that the full-width Unicode characters were inserted twice into the buffer (and marked lead/trailing)
-    // "NegativeOneTrailing" means that every trailing byte started as -1 or 0xFFFF
-    static constexpr CharInfoPattern AOnDoubledW{
-        makeCharInfo(0x0051, colored),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0x30a2, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0x30a9, colored | trailing),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0x30c8, colored | trailing),
-        makeCharInfo(0x005a, colored),
-        makeCharInfo(0x0059, colored),
-        makeCharInfo(0x0058, colored),
-        makeCharInfo(0x0057, colored),
-        makeCharInfo(0x0056, colored),
-        makeCharInfo(0x0055, colored),
-        makeCharInfo(0x0054, colored),
-        makeCharInfo(0x3082, colored | leading),
-        makeCharInfo(0x30c9, colored | trailing),
-    };
-
-    // Receive Output Table:
-    // attr  | wchar  (char) | symbol
-    // ------------------------------------
-    // 0x029 | 0x0051 (0x51) | Q
     // 0x129 | 0x3044 (0x44) | Hiragana I
     // 0x229 | 0x304B (0x4B) | Hiragana KA
     // 0x129 | 0x306A (0x6A) | Hiragana NA
@@ -1195,16 +1019,15 @@ const CharInfoPattern& DbcsWriteRead::PrepReadConsoleOutput(
             {
                 if (fIsTrueTypeFont)
                 {
-                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under TT font, we will get a deduplicated
-                    // set of Unicode characters (YES. Unicode characters despite calling the A API to read back) that is space padded out
-                    // There will be no lead/trailing markings.
-                    return PrepPattern::SpacePaddedDedupeW;
+                    // Normally this would be SpacePaddedDedupeA (analogous to the SpacePaddedDedupeW above), but since the narrow
+                    // unicode chars can't be represented as narrow DBCS (since those don't exist) we get SpacePaddedDedupeInvalidA.
+                    return PrepPattern::SpacePaddedDedupeInvalidA;
                 }
                 else
                 {
                     // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font, we will get the
                     // double-byte sequences stomped on top of a Unicode filled CHAR_INFO structure that used -1 for trailing bytes.
-                    return PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded;
+                    return PrepPattern::SpacePaddedDedupeA;
                 }
             }
             break;
@@ -1227,13 +1050,13 @@ const CharInfoPattern& DbcsWriteRead::PrepReadConsoleOutput(
                 if (fIsTrueTypeFont)
                 {
                     // In a TrueType font, we will get back Unicode characters doubled up and marked with leading and trailing bytes.
-                    return PrepPattern::AOnDoubledW;
+                    return PrepPattern::A;
                 }
                 else
                 {
-                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font, we will get the
-                    // double-byte sequences stomped on top of a Unicode filled CHAR_INFO structure that used -1 for trailing bytes.
-                    return PrepPattern::AOnDoubleDoubledWNegativeOneTrailing;
+                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font,
+                    // we will get the double-byte sequences doubled up, because each narrow cell is written as a DBCS separately.
+                    return PrepPattern::DoubledA;
                 }
             }
             break;
@@ -1242,10 +1065,9 @@ const CharInfoPattern& DbcsWriteRead::PrepReadConsoleOutput(
             {
                 if (fIsTrueTypeFont)
                 {
-                    // When written with WriteConsoleOutputA and read back with ReadConsoleOutputW when the font is TrueType,
-                    // we will get back Unicode characters doubled up and marked with leading and trailing bytes...
-                    // ... except all the trailing bytes character values will be -1.
-                    return PrepPattern::DoubledWNegativeOneTrailing;
+                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA when the font is TrueType,
+                    // we will get back Unicode characters doubled up and marked with leading and trailing bytes.
+                    return PrepPattern::DoubledW;
                 }
                 else
                 {
@@ -1258,7 +1080,7 @@ const CharInfoPattern& DbcsWriteRead::PrepReadConsoleOutput(
             {
                 // When written with WriteConsoleOutputA and read back with ReadConsoleOutputA,
                 // we will get back the double-byte sequences appropriately labeled with leading/trailing bytes.
-                return PrepPattern::AOnDoubledWNegativeOneTrailing;
+                return PrepPattern::A;
             }
             break;
         }
@@ -1285,7 +1107,7 @@ const CharInfoPattern& DbcsWriteRead::PrepReadConsoleOutput(
         {
             // If we wrote with the CRT and are reading with A functions, the font doesn't matter.
             // We will always get back the double-byte sequences appropriately labeled with leading/trailing bytes.
-            return PrepPattern::AOnDoubledW;
+            return PrepPattern::A;
         }
         break;
     default:
@@ -1911,8 +1733,7 @@ void DbcsTests::TestDbcsBisectWriteCellsBeginA()
     const auto originalReadRegion = readRegion;
     CHAR_INFO readCell;
 
-    CHAR_INFO expectedCell;
-    expectedCell.Char.UnicodeChar = L'\xffff';
+    CHAR_INFO expectedCell{};
     expectedCell.Char.AsciiChar = originalCell.Char.AsciiChar;
     expectedCell.Attributes = originalCell.Attributes;
     WI_ClearAllFlags(expectedCell.Attributes, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);
