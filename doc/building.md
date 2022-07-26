@@ -139,3 +139,18 @@ powershell -Command Set-Location -Path %OPENCON%\src\cascadia\CascadiaPackage\Ap
 (yes, the cmd version is just calling powershell to do the powershell version. Too lazy to convert the rest by hand, I'm already copying from `.vscode\tasks.json`)
 
 Building the package from VS generates the loose layout to begin with, and then registers the loose manifest, skipping the msix stop. It's a lot faster than the commandline inner loop here, unfortunately.
+
+### 2022 Update
+
+The following command can be used to build the terminal package, and then deploy it.
+
+```cmd
+pushd %OPENCON%\src\cascadia\CascadiaPackage
+bx
+"C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\DeployAppRecipe.exe" bin\%ARCH%\%_LAST_BUILD_CONF%\CascadiaPackage.build.appxrecipe
+popd
+```
+
+The `bx` will build just the Terminal package, critically, populating the `CascadiaPackage.build.appxrecipe` file. Once that's been built, then the `DeployAppRecipe.exe` command can be used to deploy a loose layout in the same way that Visual Studio does.
+
+Notably, this method of building the Terminal package can't leverage the FastUpToDate check in Visual Studio, so the builds end up being considerably slower for the whole package, as cppwinrt does a lot of work before confirming that it's up to date and doing nothing.
