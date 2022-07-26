@@ -460,7 +460,9 @@ namespace SettingsModelLocalTests
             ],
             "actions": [
                 { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "keys": "ctrl+k" }
-            ]
+            ],
+            "theme": "system",
+            "themes": []
         })" };
 
         const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsString) };
