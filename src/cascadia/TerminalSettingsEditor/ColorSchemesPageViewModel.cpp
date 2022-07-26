@@ -52,6 +52,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             it.MoveNext();
         }
+        if (!it.HasCurrent())
+        {
+            // we didn't find the previously selected scheme, just select the first one
+            CurrentScheme(_AllColorSchemes.GetAt(0));
+        }
     }
 
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
