@@ -254,7 +254,7 @@ namespace SettingsModelLocalTests
                                                 { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
                                             ])" };
         // GH#13323 - these can be fragile. In the past, the order these get
-        // reserialized as has been not entirely stable. We don't really care
+        // re-serialized as has been not entirely stable. We don't really care
         // about the order they get re-serialized in, but the tests aren't
         // clever enough to compare the structure, only the literal string
         // itself. Feel free to change as needed.
