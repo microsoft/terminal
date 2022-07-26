@@ -44,7 +44,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     enum NewTabPosition
     {
-        AtTheEnd,
+        AfterLastTab,
         AfterCurrentTab,
     };
 
