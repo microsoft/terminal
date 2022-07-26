@@ -27,7 +27,7 @@ namespace Microsoft.Terminal.Settings.Model
         Never = 0,
         Graceful,
         Always,
-        GracefulIfLaunchedByTerminal
+        Automatic
     };
 
     [flags]

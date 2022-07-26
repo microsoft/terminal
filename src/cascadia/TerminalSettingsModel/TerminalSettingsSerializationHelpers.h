@@ -112,7 +112,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
         pair_type{ "always", ValueType::Always },
         pair_type{ "graceful", ValueType::Graceful },
         pair_type{ "never", ValueType::Never },
-        pair_type{ "gracefulIfLaunchedByTerminal", ValueType::GracefulIfLaunchedByTerminal },
+        pair_type{ "automatic", ValueType::Automatic },
     };
 
     // Override mapping parser to add boolean parsing

@@ -3121,7 +3121,7 @@ int Pane::GetLeafPaneCount() const noexcept
 //   created via default handoff
 void Pane::FinalizeConfigurationGivenDefault()
 {
-    if (_IsLeaf() && _profile && _profile.CloseOnExit() == CloseOnExitMode::GracefulIfLaunchedByTerminal)
+    if (_IsLeaf() && _profile && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
     {
         {
             // We only want to close 'gracefully' if we were launched by Terminal
