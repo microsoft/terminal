@@ -626,10 +626,10 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
     const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
 
-    // For double underlines we loosely follow what Word:
+    // For double underlines we loosely follow what Word does:
     // 1. The lines are half the width of an underline (= thinLineWidth)
     // 2. Ideally the bottom line is aligned with the bottom of the underline
-    // 3. The top underline is vertically in the middle between baseline and bottom underline
+    // 3. The top underline is vertically in the middle between baseline and ideal bottom underline
     // 4. If the top line gets too close to the baseline the underlines are shifted downwards
     // 5. The minimum gap between the two lines appears to be similar to Tex (1.2pt)
     // (Additional notes below.)
@@ -644,7 +644,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // 5. The gap is only the distance _between_ the lines, but we need the distance from the
     //    top border of the top and bottom lines, which includes an additional line width.
     const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * _api.dpi));
-    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + thinLineWidth + doubleUnderlineGap);
+    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
 
