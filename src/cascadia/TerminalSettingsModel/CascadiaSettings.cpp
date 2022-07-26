@@ -1156,6 +1156,17 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
 
 void CascadiaSettings::_validateThemeExists()
 {
+    if (_globals->Themes().Size() == 0)
+    {
+        // We didn't even load the deafult themes. This should only be possible
+        // in the tests that don't even pass in defaults.json. No matter. Create
+        // a default theme under `system` and just stick it in there.
+        auto newTheme = winrt::make_self<Theme>();
+        newTheme->Name(L"system");
+        _globals->AddTheme(*newTheme);
+        _globals->Theme(L"system");
+    }
+
     if (!_globals->Themes().HasKey(_globals->Theme()))
     {
         _warnings.Append(SettingsLoadWarnings::UnknownTheme);
