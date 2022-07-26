@@ -144,7 +144,9 @@ float4 main(float4 pos: SV_Position): SV_Target
     // Step 2: Lines
     {
         // What a nice coincidence that we have exactly 8 flags to handle right now!
-        bool4x2 flags = {
+        // `mask` will mask away any positive results from checks we don't want.
+        // (I.e. even if we're in an underline, it doesn't matter if we don't want an underline.)
+        bool4x2 mask = {
             cell.flags & CellFlags_BorderLeft,
             cell.flags & CellFlags_BorderTop,
             cell.flags & CellFlags_BorderRight,
@@ -154,18 +156,21 @@ float4 main(float4 pos: SV_Position): SV_Target
             cell.flags & CellFlags_UnderlineDouble,
             cell.flags & CellFlags_Strikethrough,
         };
+        // The following <lineWidth checks rely on underflow turning the
+        // uint into a way larger number than any reasonable lineWidth.
+        // That way we don't need to write `y >= lo && y < hi`.
         bool4x2 checks = {
+            // These 2 expand to 4 bools, because cellPos is a
+            // uint2 vector which results in a bool2 result each.
             cellPos < thinLineWidth,
             (cellSize - cellPos) <= thinLineWidth,
-            // The following <lineWidth checks rely on underflow turning the
-            // uint into a way larger number than any reasonable lineWidth.
-            // That way we don't need to write `y >= lo && y < hi`.
+            // These 4 are 4 regular bools.
             (cellPos.y - underlinePos) < underlineWidth,
             (cellPos.y - underlinePos) < underlineWidth && (viewportPos.x / underlineWidth & 3) == 0,
             any((cellPos.y - doubleUnderlinePos) < thinLineWidth),
             (cellPos.y - strikethroughPos) < strikethroughWidth,
         };
-        [flatten] if (any(flags && checks))
+        [flatten] if (any(mask && checks))
         {
             color = alphaBlendPremultiplied(color, fg);
         }
