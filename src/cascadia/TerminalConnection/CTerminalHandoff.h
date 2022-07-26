@@ -29,7 +29,7 @@ Author(s):
 using NewHandoffFunction = HRESULT (*)(HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, TERMINAL_STARTUP_INFO);
 
 struct __declspec(uuid(__CLSID_CTerminalHandoff))
-    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff>
+    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff2>
 {
 #pragma region ITerminalHandoff
     STDMETHODIMP EstablishPtyHandoff(HANDLE in,

@@ -511,7 +511,7 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
@@ -535,7 +535,7 @@ try
     //
     // Typically, we'll just go into `ConsoleCreateIoThread` below, which will
     // pull out the CONSOLE_API_CONNECTINFO from this connect message, and then
-    // get the liink properties out of the title later. Below are elements of
+    // get the link properties out of the title later. Below are elements of
     // ConsoleAllocateConsole and SetUpConsole that get the bits of STARTUP_INFO
     // we care about for defterm handoffs.
 
