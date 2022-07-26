@@ -2106,14 +2106,15 @@
           "$ref": "#/$defs/BellSound"
         },
         "closeOnExit": {
-          "default": "graceful",
-          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+          "default": "automatic",
+          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"automatic\" (behave as \"graceful\" only for processes launched by terminal, behave as \"always\" otherwise)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
           "oneOf": [
             {
               "enum": [
                 "never",
                 "graceful",
-                "always"
+                "always",
+                "automatic"
               ],
               "type": "string"
             },
