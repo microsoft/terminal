@@ -1158,6 +1158,7 @@ void CascadiaSettings::_validateThemeExists()
 {
     if (_globals->Themes().Size() == 0)
     {
+        // GH #13474
         // We didn't even load the deafult themes. This should only be possible
         // in the tests that don't even pass in defaults.json. No matter. Create
         // a default theme under `system` and just stick it in there.
