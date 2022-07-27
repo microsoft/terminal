@@ -670,7 +670,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // us a small timeout (~30s) to actually shut down gracefully. After
         // that timeout, it will send us a WM_CLOSE. If we still don't close
         // after the WM_CLOSE, it'll force-kill us (causing a crash which will be
-        // bucketed to moapphang).
+        // bucketed to MoAppHang).
         if (WI_IsFlagSet(lparam, ENDSESSION_CLOSEAPP))
         {
             // Log that we were told to shutdown by the OS.
@@ -694,7 +694,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         // The OS is going to shut us down here. We will manually start a quit,
         // so that we can persist the state. If we refuse to gracefully shut
-        // down here, the OS will crash us to focefully terminate us. We choose
+        // down here, the OS will crash us to forcefully terminate us. We choose
         // to quit here, rather than just close, to skip over any warning
         // dialogs (e.g. "Are you sure you want to close all tabs?") which might
         // prevent a WM_CLOSE from cleanly closing the window.
