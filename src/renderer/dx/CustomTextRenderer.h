@@ -112,6 +112,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE EndClip(void* clientDrawingContext) noexcept;
 
+        [[nodiscard]] static HRESULT DrawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
+                                                D2D1_RECT_F textRunBounds,
+                                                const DrawingContext& drawingContext,
+                                                const bool firstPass);
+
     private:
         [[nodiscard]] HRESULT _FillRectangle(void* clientDrawingContext,
                                              IUnknown* clientDrawingEffect,

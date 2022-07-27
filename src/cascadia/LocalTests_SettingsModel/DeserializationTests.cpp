@@ -717,7 +717,7 @@ namespace SettingsModelLocalTests
     void DeserializationTests::TestInvalidColorSchemeName()
     {
         Log::Comment(NoThrowString().Format(
-            L"Ensure that setting a profile's scheme to a non-existent scheme causes a warning."));
+            L"Ensure that setting a profile's scheme to a nonexistent scheme causes a warning."));
 
         static constexpr std::string_view settings0String{ R"({
             "profiles": [
@@ -751,7 +751,7 @@ namespace SettingsModelLocalTests
     void DeserializationTests::ValidateColorSchemeInCommands()
     {
         Log::Comment(NoThrowString().Format(
-            L"Ensure that setting a command's color scheme to a non-existent scheme causes a warning."));
+            L"Ensure that setting a command's color scheme to a nonexistent scheme causes a warning."));
 
         static constexpr std::string_view settings0String{ R"(
         {

@@ -207,8 +207,14 @@
           "type": "string"
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
@@ -1968,6 +1974,20 @@
             "useAnyExisting"
           ],
           "type": "string"
+        },
+        "newTabPosition": {
+          "default": "afterLastTab",
+          "description": "Position of newly created tabs. Possible values are \"afterLastTab\" and \"afterCurrentTab\".",
+          "enum": [
+            "afterLastTab",
+            "afterCurrentTab"
+          ],
+          "type": "string"        
+        },
+        "autoHideWindow": {
+          "default": false,
+          "description": "If enabled, Terminal window will be hidden as soon as it loses focus.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -2261,8 +2281,14 @@
           ]
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "scrollbarState": {
           "default": "visible",

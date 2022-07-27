@@ -51,7 +51,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
         INHERITABLE_APPEARANCE_SETTING(String, PixelShaderPath);
         INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
-        INHERITABLE_APPEARANCE_SETTING(Boolean, AdjustIndistinguishableColors);
+        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
         INHERITABLE_APPEARANCE_SETTING(Double, Opacity);
     };
 }

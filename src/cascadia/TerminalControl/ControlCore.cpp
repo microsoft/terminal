@@ -417,13 +417,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            const auto isInMarkMode = _terminal->SelectionMode() == ::Microsoft::Terminal::Core::Terminal::SelectionInteractionMode::Mark;
-            if (isInMarkMode && modifiers.IsCtrlPressed() && vkey == 'A')
+            const auto isInMarkMode = _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark;
+            if (isInMarkMode)
             {
-                auto lock = _terminal->LockForWriting();
-                _terminal->SelectAll();
-                _updateSelectionUI();
-                return true;
+                if (modifiers.IsCtrlPressed() && vkey == 'A')
+                {
+                    // Ctrl + A --> Select all
+                    auto lock = _terminal->LockForWriting();
+                    _terminal->SelectAll();
+                    _updateSelectionUI();
+                    return true;
+                }
+                else if (vkey == VK_TAB && _settings->DetectURLs())
+                {
+                    // [Shift +] Tab --> next/previous hyperlink
+                    auto lock = _terminal->LockForWriting();
+                    const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
+                    _terminal->SelectHyperlink(direction);
+                    _updateSelectionUI();
+                    return true;
+                }
+                else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->IsTargetingUrl())
+                {
+                    // Ctrl + Enter --> Open URL
+                    auto lock = _terminal->LockForReading();
+                    const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
+                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                    return true;
+                }
+                else if (vkey == VK_RETURN)
+                {
+                    // [Shift +] Enter --> copy text
+                    // Don't lock here! CopySelectionToClipboard already locks for you!
+                    CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
+                    _terminal->ClearSelection();
+                    _updateSelectionUI();
+                    return true;
+                }
             }
 
             // try to update the selection
@@ -591,12 +621,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
-        decltype(_terminal->GetHyperlinkIntervalFromPosition({})) newInterval{ std::nullopt };
+        decltype(_terminal->GetHyperlinkIntervalFromViewportPosition({})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
-            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
-            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+            newId = _terminal->GetHyperlinkIdAtViewportPosition(*terminalPosition);
+            newInterval = _terminal->GetHyperlinkIntervalFromViewportPosition(*terminalPosition);
         }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
@@ -626,7 +656,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }) };
+        return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(til::point{ pos }) };
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -634,7 +664,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
+            return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
         }
         return {};
     }
@@ -1342,7 +1372,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_midiAudio)
         {
-            _midiAudio = std::make_unique<MidiAudio>();
+            const auto windowHandle = reinterpret_cast<HWND>(_owningHwnd);
+            _midiAudio = std::make_unique<MidiAudio>(windowHandle);
             _midiAudio->Initialize();
         }
         return *_midiAudio;
@@ -1912,13 +1943,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - This is related to work done for GH#2988.
     void ControlCore::GotFocus()
     {
-        _terminal->FocusChanged(true);
+        _focusChanged(true);
     }
 
     // See GotFocus.
     void ControlCore::LostFocus()
     {
-        _terminal->FocusChanged(false);
+        _focusChanged(false);
+    }
+
+    void ControlCore::_focusChanged(bool focused)
+    {
+        // GH#13461 - temporarily turn off read-only mode, send the focus event,
+        // then turn it back on. Even in focus mode, focus events are fine to
+        // send. We don't want to pop a warning every time the control is
+        // focused.
+        const auto previous = std::exchange(_isReadOnly, false);
+        const auto restore = wil::scope_exit([&]() { _isReadOnly = previous; });
+        _terminal->FocusChanged(focused);
     }
 
     bool ControlCore::_isBackgroundTransparent()
