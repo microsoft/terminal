@@ -73,8 +73,8 @@
                                         x:Uid="Globals_DefaultTerminal"
                                         x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
-                              ItemsSource="{x:Bind ViewModel.Settings.DefaultTerminals}"
-                              SelectedItem="{x:Bind ViewModel.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
+                              ItemsSource="{x:Bind ViewModel.DefaultTerminals}"
+                              SelectedItem="{x:Bind ViewModel.CurrentDefaultTerminal, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="SettingsModel:DefaultTerminal">
@@ -137,7 +137,7 @@
 
                 <!--  Start on User Login  -->
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
-                    <ToggleSwitch IsOn="{x:Bind ViewModel.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
@@ -192,7 +192,7 @@
                                         Grid.Column="1"
                                         VerticalAlignment="Center"
                                         Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                        Value="{x:Bind ViewModel.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
+                                        Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
                         <TextBlock x:Uid="Globals_InitialRows"
                                    Grid.Row="1"
                                    Grid.Column="0"
@@ -203,7 +203,7 @@
                                         Grid.Column="1"
                                         VerticalAlignment="Center"
                                         Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                        Value="{x:Bind ViewModel.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
+                                        Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
                     </Grid>
                 </local:SettingContainer>
             </StackPanel>
