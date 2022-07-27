@@ -669,7 +669,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // update for our app. It will then send us a WM_ENDSESSION, which gives
         // us a small timeout (~30s) to actually shut down gracefully. After
         // that timeout, it will send us a WM_CLOSE. If we still don't close
-        // after the WM_CLOSE, it'll foce-kill us (causing a crash which will be
+        // after the WM_CLOSE, it'll force-kill us (causing a crash which will be
         // bucketed to moapphang).
         if (WI_IsFlagSet(lparam, ENDSESSION_CLOSEAPP))
         {
