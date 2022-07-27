@@ -432,17 +432,10 @@ void AtlasEngine::WaitUntilCanRender() noexcept
 {
     if constexpr (!debugGeneralPerformance)
     {
-        if (_r.frameLatencyWaitableObject)
-        {
-            WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
+        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
 #ifndef NDEBUG
-            _r.frameLatencyWaitableObjectUsed = true;
+        _r.frameLatencyWaitableObjectUsed = true;
 #endif
-        }
-        else
-        {
-            Sleep(8);
-        }
     }
 }
 
@@ -807,8 +800,6 @@ void AtlasEngine::_createSwapChain()
 
     // D3D swap chain setup (the thing that allows us to present frames on the screen)
     {
-        const auto supportsFrameLatencyWaitableObject = !debugGeneralPerformance && IsWindows8Point1OrGreater();
-
         // With C++20 we'll finally have designated initializers.
         DXGI_SWAP_CHAIN_DESC1 desc{};
         desc.Width = _api.sizeInPixel.x;
@@ -823,25 +814,17 @@ void AtlasEngine::_createSwapChain()
         // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
         //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
         desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
-        desc.Flags = supportsFrameLatencyWaitableObject ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
+        desc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
         THROW_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.addressof())));
 
         if (_api.hwnd)
         {
-            if (FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put())))
-            {
-                // Platform Update for Windows 7:
-                // DXGI_SCALING_NONE is not supported on Windows 7 or Windows Server 2008 R2 with the Platform Update for
-                // Windows 7 installed and causes CreateSwapChainForHwnd to return DXGI_ERROR_INVALID_CALL when called.
-                desc.Scaling = DXGI_SCALING_STRETCH;
-                THROW_IF_FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
-            }
+            THROW_IF_FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
         }
         else
         {
-            // We can't link with dcomp.lib as dcomp.dll doesn't exist on Windows 7.
             const wil::unique_hmodule module{ LoadLibraryExW(L"dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
             THROW_LAST_ERROR_IF(!module);
             const auto DCompositionCreateSurfaceHandle = GetProcAddressByFunctionDeclaration(module.get(), DCompositionCreateSurfaceHandle);
@@ -853,10 +836,8 @@ void AtlasEngine::_createSwapChain()
             THROW_IF_FAILED(dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_r.device.get(), _api.swapChainHandle.get(), &desc, nullptr, _r.swapChain.put()));
         }
 
-        if (supportsFrameLatencyWaitableObject)
         {
             const auto swapChain2 = _r.swapChain.query<IDXGISwapChain2>();
-            THROW_IF_FAILED(swapChain2->SetMaximumFrameLatency(1)); // TODO: 2?
             _r.frameLatencyWaitableObject.reset(swapChain2->GetFrameLatencyWaitableObject());
             THROW_LAST_ERROR_IF(!_r.frameLatencyWaitableObject);
         }
