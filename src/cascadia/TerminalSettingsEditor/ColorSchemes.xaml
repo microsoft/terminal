@@ -63,9 +63,8 @@
                         ToolTipService.ToolTip="{x:Bind Name}">
                     <Button.Flyout>
                         <Flyout>
-                            <muxc:ColorPicker ColorChanged="ColorPickerChanged"
-                                              Tag="{x:Bind Tag, Mode=OneWay}"
-                                              Color="{x:Bind Color, Mode=OneWay}" />
+                            <muxc:ColorPicker Tag="{x:Bind Tag, Mode=OneWay}"
+                                              Color="{x:Bind Color, Mode=TwoWay}" />
                         </Flyout>
                     </Button.Flyout>
                 </Button>

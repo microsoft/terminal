@@ -17,47 +17,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _Name = scheme.Name();
 
-        const auto colorEntryChangedHandler = [&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
-            if (const auto entry{ sender.try_as<ColorTableEntry>() })
-            {
-                if (args.PropertyName() == L"Color")
-                {
-                    const til::color newColor{ entry->Color() };
-                    if (const auto& tag{ entry->Tag() })
-                    {
-                        if (const auto index{ tag.try_as<uint8_t>() })
-                        {
-                            _scheme.SetColorTableEntry(*index, newColor);
-                        }
-                        else if (const auto stringTag{ tag.try_as<hstring>() })
-                        {
-                            if (stringTag == ForegroundColorTag)
-                            {
-                                _scheme.Foreground(newColor);
-                            }
-                            else if (stringTag == BackgroundColorTag)
-                            {
-                                _scheme.Background(newColor);
-                            }
-                            else if (stringTag == CursorColorTag)
-                            {
-                                _scheme.CursorColor(newColor);
-                            }
-                            else if (stringTag == SelectionBackgroundColorTag)
-                            {
-                                _scheme.SelectionBackground(newColor);
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
         for (uint8_t i = 0; i < ColorTableSize; ++i)
         {
             til::color currentColor{ scheme.Table()[i] };
             const auto& entry{ winrt::make<ColorTableEntry>(i, currentColor) };
-            entry.PropertyChanged(colorEntryChangedHandler);
+            entry.PropertyChanged({ get_weak(), &ColorSchemeViewModel::_ColorEntryChangedHandler });
             if (i < ColorTableDivider)
             {
                 _NonBrightColorTable.Append(entry);
@@ -73,10 +37,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CursorColor = winrt::make<ColorTableEntry>(CursorColorTag, til::color(scheme.CursorColor()));
         _SelectionBackgroundColor = winrt::make<ColorTableEntry>(SelectionBackgroundColorTag, til::color(scheme.SelectionBackground()));
 
-        _ForegroundColor.PropertyChanged(colorEntryChangedHandler);
-        _BackgroundColor.PropertyChanged(colorEntryChangedHandler);
-        _CursorColor.PropertyChanged(colorEntryChangedHandler);
-        _SelectionBackgroundColor.PropertyChanged(colorEntryChangedHandler);
+        _ForegroundColor.PropertyChanged({ get_weak(), &ColorSchemeViewModel::_ColorEntryChangedHandler });
+        _BackgroundColor.PropertyChanged({ get_weak(), &ColorSchemeViewModel::_ColorEntryChangedHandler });
+        _CursorColor.PropertyChanged({ get_weak(), &ColorSchemeViewModel::_ColorEntryChangedHandler });
+        _SelectionBackgroundColor.PropertyChanged({ get_weak(), &ColorSchemeViewModel::_ColorEntryChangedHandler });
     }
 
     winrt::hstring ColorSchemeViewModel::Name()
@@ -88,6 +52,43 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _scheme.Name(newName);
         _Name = newName;
+    }
+
+    void ColorSchemeViewModel::_ColorEntryChangedHandler(const IInspectable& sender, const PropertyChangedEventArgs& args)
+    {
+        if (const auto entry{ sender.try_as<ColorTableEntry>() })
+        {
+            if (args.PropertyName() == L"Color")
+            {
+                const til::color newColor{ entry->Color() };
+                if (const auto& tag{ entry->Tag() })
+                {
+                    if (const auto index{ tag.try_as<uint8_t>() })
+                    {
+                        _scheme.SetColorTableEntry(*index, newColor);
+                    }
+                    else if (const auto stringTag{ tag.try_as<hstring>() })
+                    {
+                        if (stringTag == ForegroundColorTag)
+                        {
+                            _scheme.Foreground(newColor);
+                        }
+                        else if (stringTag == BackgroundColorTag)
+                        {
+                            _scheme.Background(newColor);
+                        }
+                        else if (stringTag == CursorColorTag)
+                        {
+                            _scheme.CursorColor(newColor);
+                        }
+                        else if (stringTag == SelectionBackgroundColorTag)
+                        {
+                            _scheme.SelectionBackground(newColor);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Editor::ColorTableEntry ColorSchemeViewModel::ColorEntryAt(uint32_t index)

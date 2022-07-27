@@ -80,58 +80,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    // Function Description:
-    // - Called when a ColorPicker control has selected a new color. This is specifically
-    //   called by color pickers assigned to a color table entry. It takes the index
-    //   that's been stuffed in the Tag property of the color picker and uses it
-    //   to update the color table accordingly.
-    // Arguments:
-    // - sender: the color picker that raised this event.
-    // - args: the args that contains the new color that was picked.
-    // Return Value:
-    // - <none>
-    void ColorSchemes::ColorPickerChanged(const IInspectable& sender,
-                                          const MUX::Controls::ColorChangedEventArgs& args)
-    {
-        const til::color newColor{ args.NewColor() };
-        if (const auto& picker{ sender.try_as<MUX::Controls::ColorPicker>() })
-        {
-            if (const auto& tag{ picker.Tag() })
-            {
-                if (const auto index{ tag.try_as<uint8_t>() })
-                {
-                    if (index < ColorTableDivider)
-                    {
-                        _ViewModel.CurrentScheme().NonBrightColorTable().GetAt(*index).Color(newColor);
-                    }
-                    else
-                    {
-                        _ViewModel.CurrentScheme().BrightColorTable().GetAt(*index - ColorTableDivider).Color(newColor);
-                    }
-                }
-                else if (const auto stringTag{ tag.try_as<hstring>() })
-                {
-                    if (stringTag == ForegroundColorTag)
-                    {
-                        _ViewModel.CurrentScheme().ForegroundColor().Color(newColor);
-                    }
-                    else if (stringTag == BackgroundColorTag)
-                    {
-                        _ViewModel.CurrentScheme().BackgroundColor().Color(newColor);
-                    }
-                    else if (stringTag == CursorColorTag)
-                    {
-                        _ViewModel.CurrentScheme().CursorColor().Color(newColor);
-                    }
-                    else if (stringTag == SelectionBackgroundColorTag)
-                    {
-                        _ViewModel.CurrentScheme().SelectionBackgroundColor().Color(newColor);
-                    }
-                }
-            }
-        }
-    }
-
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
