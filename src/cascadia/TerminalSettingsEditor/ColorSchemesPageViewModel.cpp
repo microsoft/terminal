@@ -59,6 +59,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Function Description:
+    // - Called when a different color scheme is selected. Updates our current
+    //   color scheme and updates our currently modifiable color table.
+    // Arguments:
+    // - args: The selection changed args that tells us what's the new color scheme selected.
+    // Return Value:
+    // - <none>
+    void ColorSchemesPageViewModel::ColorSchemeSelectionChanged(const IInspectable& /*sender*/,
+                                                                const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args)
+    {
+        //  Update the color scheme this page is modifying
+        if (args.AddedItems().Size() > 0)
+        {
+            const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
+
+            CurrentScheme(*colorScheme);
+
+            // Update the state of the page
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
+        }
+    }
+
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
     {
         std::vector<Editor::ColorSchemeViewModel> allColorSchemes;

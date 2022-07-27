@@ -92,7 +92,7 @@
                     <ComboBox x:Name="ColorSchemeComboBox"
                               ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
                               SelectedIndex="0"
-                              SelectionChanged="ColorSchemeSelectionChanged"
+                              SelectionChanged="{x:Bind ViewModel.ColorSchemeSelectionChanged}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="local:ColorSchemeViewModel">
@@ -414,7 +414,8 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <TextBlock x:Name="DeleteButtonDisclaimer"
+                <TextBlock x:Uid="ColorScheme_DeleteButtonDisclaimerInBox"
+                           Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.CanDeleteCurrentScheme), Mode=OneWay}"
                            VerticalAlignment="Center"
                            Style="{StaticResource DisclaimerStyle}" />
             </StackPanel>

@@ -17,6 +17,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemesPageViewModel(const Model::CascadiaSettings& settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
+        void ColorSchemeSelectionChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args);
+
         void RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme);
         void RequestEnterRename();
         bool RequestExitRename(bool saveChanges, winrt::hstring newName);

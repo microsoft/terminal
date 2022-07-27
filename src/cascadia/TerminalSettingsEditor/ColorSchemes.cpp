@@ -53,33 +53,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemeComboBox().SelectedItem(_ViewModel.CurrentScheme());
     }
 
-    // Function Description:
-    // - Called when a different color scheme is selected. Updates our current
-    //   color scheme and updates our currently modifiable color table.
-    // Arguments:
-    // - args: The selection changed args that tells us what's the new color scheme selected.
-    // Return Value:
-    // - <none>
-    void ColorSchemes::ColorSchemeSelectionChanged(const IInspectable& /*sender*/,
-                                                   const SelectionChangedEventArgs& args)
-    {
-        //  Update the color scheme this page is modifying
-        if (args.AddedItems().Size() > 0)
-        {
-            const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
-            _ViewModel.RequestSetCurrentScheme(*colorScheme);
-
-            // Set the text disclaimer for the text box
-            hstring disclaimer{};
-            if (!_ViewModel.CanDeleteCurrentScheme())
-            {
-                // load disclaimer for in-box profiles
-                disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
-            }
-            DeleteButtonDisclaimer().Text(disclaimer);
-        }
-    }
-
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
