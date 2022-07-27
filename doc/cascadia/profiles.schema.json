@@ -1976,15 +1976,14 @@
           "type": "string"
         },
         "newTabPosition": {
-          "default": "atTheEnd",
-          "description": "Specifies position of the new tab. Possible values are \"atTheEnd\" and \"afterCurrentTab\".",
+          "default": "afterLastTab",
+          "description": "Position of newly created tabs. Possible values are \"afterLastTab\" and \"afterCurrentTab\".",
           "enum": [
-            "atTheEnd",
+            "afterLastTab",
             "afterCurrentTab"
           ],
-          "type": "string"
-        }
-      },
+          "type": "string"        
+        },
         "autoHideWindow": {
           "default": false,
           "description": "If enabled, Terminal window will be hidden as soon as it loses focus.",
