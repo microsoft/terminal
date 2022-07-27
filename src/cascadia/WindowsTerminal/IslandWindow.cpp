@@ -671,15 +671,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // that timeout, it will send us a WM_CLOSE. If we still don't close
         // after the WM_CLOSE, it'll force-kill us (causing a crash which will be
         // bucketed to MoAppHang).
-        if (WI_IsFlagSet(lparam, ENDSESSION_CLOSEAPP))
-        {
-            // Log that we were told to shutdown by the OS.
-            //
-            // If we need to do anything to prepare for being told to shutdown,
-            // start it here.
-            //
-            // If (in the future) we need to prevent logoff, we can return false here.
-        }
+
+        // If we need to do anything to prepare for being told to shutdown,
+        // start it here.
+        //
+        // If (in the future) we need to prevent logoff, we can return false here.
 
         TraceLoggingWrite(
             g_hWindowsTerminalProvider,
