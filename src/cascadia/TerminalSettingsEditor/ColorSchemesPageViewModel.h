@@ -19,7 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void ColorSchemeSelectionChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args);
 
-        void RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme);
         void RequestEnterRename();
         bool RequestExitRename(bool saveChanges, winrt::hstring newName);
         void RequestDeleteCurrentScheme();

@@ -12,7 +12,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void ColorSchemeSelectionChanged(IInspectable sender, Windows.UI.Xaml.Controls.SelectionChangedEventArgs args);
 
-        void RequestSetCurrentScheme(ColorSchemeViewModel scheme);
         void RequestEnterRename();
         Boolean RequestExitRename(Boolean saveChanges, String newName);
         void RequestDeleteCurrentScheme();

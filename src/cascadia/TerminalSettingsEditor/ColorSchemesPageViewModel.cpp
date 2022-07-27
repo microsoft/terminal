@@ -101,14 +101,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
     }
 
-    void ColorSchemesPageViewModel::RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme)
-    {
-        CurrentScheme(scheme);
-
-        // Update the state of the page
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
-    }
-
     void ColorSchemesPageViewModel::RequestEnterRename()
     {
         InRenameMode(true);
