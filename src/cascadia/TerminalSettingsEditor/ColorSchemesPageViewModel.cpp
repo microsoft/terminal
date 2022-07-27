@@ -125,6 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (_AllColorSchemes.GetAt(i).Name() == name)
             {
+                _viewModelToSchemeMap.Remove(_AllColorSchemes.GetAt(i));
                 _AllColorSchemes.RemoveAt(i);
                 break;
             }
@@ -148,6 +149,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Construct the new color scheme VM
         const Editor::ColorSchemeViewModel schemeVM{ scheme };
         _AllColorSchemes.Append(schemeVM);
+        _viewModelToSchemeMap.Insert(schemeVM, scheme);
         return schemeVM;
     }
 
