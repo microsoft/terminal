@@ -1158,10 +1158,12 @@ void CascadiaSettings::_validateThemeExists()
 {
     if (_globals->Themes().Size() == 0)
     {
-        // GH #13474
         // We didn't even load the default themes. This should only be possible
-        // in the tests that don't even pass in defaults.json. No matter. Create
+        // if the defaults.json didn't include any themes, or if no
+        // defaults.json was loaded at all. The second case is especially common
+        // in tests (that don't bother with a defaults.json). No matter. Create
         // a default theme under `system` and just stick it in there.
+
         auto newTheme = winrt::make_self<Theme>();
         newTheme->Name(L"system");
         _globals->AddTheme(*newTheme);
