@@ -20,6 +20,7 @@
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
@@ -318,18 +319,15 @@ try
         {
             const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
             const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
-            const auto data = _r.cells.data();
             auto count = _r.cells.size();
-#pragma warning(suppress : 26494) // Variable 'dst' is uninitialized. Always initialize an object (type.5).
-            Cell* dst;
-#pragma warning(suppress : 26494) // Variable 'src' is uninitialized. Always initialize an object (type.5).
-            Cell* src;
+            ptrdiff_t srcOffset = 0;
+            ptrdiff_t dstOffset = 0;
 
             if (_api.scrollOffset < 0)
             {
                 // Scroll up (for instance when new text is being written at the end of the buffer).
-                dst = data;
-                src = data - offset;
+                srcOffset = -offset;
+                dstOffset = 0;
                 count += offset;
 
                 const u16 endRow = _api.cellCount.y + _api.scrollOffset;
@@ -339,15 +337,26 @@ try
             else
             {
                 // Scroll down.
-                dst = data + offset;
-                src = data;
+                srcOffset = 0;
+                dstOffset = offset;
                 count -= offset;
 
                 _api.invalidatedRows.x = 0;
                 _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
             }
 
-            memmove(dst, src, count * sizeof(Cell));
+            {
+                const auto beg = _r.cells.begin();
+                const auto src = beg + srcOffset;
+                const auto dst = beg + dstOffset;
+                std::move(src, src + count, dst);
+            }
+            {
+                const auto beg = _r.cellGlyphMapping.begin();
+                const auto src = beg + srcOffset;
+                const auto dst = beg + dstOffset;
+                std::move(src, src + count, dst);
+            }
         }
     }
 
