@@ -302,8 +302,7 @@ namespace winrt::TerminalApp::implementation
 
     Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
     {
-        _autoPeer = Automation::Peers::FrameworkElementAutomationPeer(*this);
-        return _autoPeer;
+        return Automation::Peers::FrameworkElementAutomationPeer(*this);
     }
 
     // Method Description;
@@ -636,6 +635,11 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
+            page->_processingCommandlineArgs = true;
+            auto finishProcessing = wil::scope_exit([&page]() {
+                page->_processingCommandlineArgs = false;
+            });
+
             for (const auto& action : actions)
             {
                 if (auto page{ weakThis.get() })
@@ -1038,10 +1042,29 @@ namespace winrt::TerminalApp::implementation
                 this->_SplitPane(SplitDirection::Automatic,
                                  0.5f,
                                  newPane);
+
+                if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+                {
+                    autoPeer.RaiseNotificationEvent(
+                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                        fmt::format(std::wstring_view{ RS_(L"SplitPaneAnnouncement") }, _settings.GetProfileForArgs(newTerminalArgs).Name()),
+                        L"NewSplitPane" /* unique name for this notification category */);
+                }
             }
             else
             {
                 _CreateNewTabFromPane(newPane);
+                if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+                {
+                    // we can't check if this is a leaf pane,
+                    // but getting the profile returns null if we aren't, so that works!
+                    autoPeer.RaiseNotificationEvent(
+                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                        fmt::format(std::wstring_view{ RS_(L"NewTabAnnouncement") }, _settings.GetProfileForArgs(newTerminalArgs).Name()),
+                        L"NewTab" /* unique name for this notification category */);
+                }
             }
         }
     }
@@ -1854,20 +1877,6 @@ namespace winrt::TerminalApp::implementation
 
         _UnZoomIfNeeded();
         tab.SplitPane(*realSplitType, splitSize, newPane);
-
-        if (_autoPeer)
-        {
-            // we can't check if this is a leaf pane,
-            // but getting the profile returns null if we aren't, so that works!
-            if (const auto profile{ newPane->GetProfile() })
-            {
-                _autoPeer.RaiseNotificationEvent(
-                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                    fmt::format(std::wstring_view{ RS_(L"SplitPaneAnnouncement") }, profile.Name()),
-                    L"NewSplitPane" /* unique name for this notification category */);
-            }
-        }
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus

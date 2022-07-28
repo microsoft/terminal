@@ -163,7 +163,6 @@ namespace winrt::TerminalApp::implementation
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
-        Windows::UI::Xaml::Automation::Peers::AutomationPeer _autoPeer{ nullptr };
         std::optional<HWND> _hostingHwnd;
 
         // If you add controls here, but forget to null them either here or in
@@ -204,6 +203,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _activated{ false };
         bool _visible{ true };
+        bool _processingCommandlineArgs{ false };
 
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
