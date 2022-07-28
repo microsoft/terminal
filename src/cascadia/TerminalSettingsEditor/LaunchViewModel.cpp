@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (!isnan(xCoord)) {
             xCoordRef = gsl::narrow_cast<int64_t>(xCoord);
         }
-        LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
+        const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
         _Settings.GlobalSettings().InitialPosition(newPos);
     }
 
@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             yCoordRef = gsl::narrow_cast<int64_t>(yCoord);
         }
-        LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
+        const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);
     }
 
