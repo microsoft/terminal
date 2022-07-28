@@ -10,14 +10,12 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemesPageViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
-        void ColorSchemeSelectionChanged(IInspectable sender, Windows.UI.Xaml.Controls.SelectionChangedEventArgs args);
-
         void RequestEnterRename();
         Boolean RequestExitRename(Boolean saveChanges, String newName);
         void RequestDeleteCurrentScheme();
         ColorSchemeViewModel RequestAddNew();
 
-        ColorSchemeViewModel CurrentScheme { get; };
+        ColorSchemeViewModel CurrentScheme;
         Boolean CanDeleteCurrentScheme { get; };
         Boolean InRenameMode { get; };
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };

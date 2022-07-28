@@ -92,7 +92,7 @@
                     <ComboBox x:Name="ColorSchemeComboBox"
                               ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
                               SelectedIndex="0"
-                              SelectionChanged="{x:Bind ViewModel.ColorSchemeSelectionChanged}"
+                              SelectedItem="{x:Bind ViewModel.CurrentScheme, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="local:ColorSchemeViewModel">

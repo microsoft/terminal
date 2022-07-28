@@ -17,7 +17,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemesPageViewModel(const Model::CascadiaSettings& settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
-        void ColorSchemeSelectionChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args);
+        void CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme);
+        Editor::ColorSchemeViewModel CurrentScheme();
 
         void RequestEnterRename();
         bool RequestExitRename(bool saveChanges, winrt::hstring newName);
@@ -29,10 +30,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         WINRT_OBSERVABLE_PROPERTY(bool, InRenameMode, _PropertyChangedHandlers, false);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemeViewModel, CurrentScheme, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _PropertyChangedHandlers, nullptr);
 
     private:
+        Editor::ColorSchemeViewModel _CurrentScheme{ nullptr };
         Model::CascadiaSettings _settings;
         Windows::Foundation::Collections::IMap<Editor::ColorSchemeViewModel, Model::ColorScheme> _viewModelToSchemeMap;
 

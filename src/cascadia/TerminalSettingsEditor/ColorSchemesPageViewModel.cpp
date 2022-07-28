@@ -59,26 +59,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    // Function Description:
-    // - Called when a different color scheme is selected. Updates our current
-    //   color scheme and updates our currently modifiable color table.
-    // Arguments:
-    // - args: The selection changed args that tells us what's the new color scheme selected.
-    // Return Value:
-    // - <none>
-    void ColorSchemesPageViewModel::ColorSchemeSelectionChanged(const IInspectable& /*sender*/,
-                                                                const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& args)
+    void ColorSchemesPageViewModel::CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme)
     {
-        //  Update the color scheme this page is modifying
-        if (args.AddedItems().Size() > 0)
+        if (_CurrentScheme != newSelectedScheme)
         {
-            const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
-
-            CurrentScheme(*colorScheme);
-
-            // Update the state of the page
+            _CurrentScheme = newSelectedScheme;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentScheme" });
             _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
         }
+    }
+
+    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::CurrentScheme()
+    {
+        return _CurrentScheme;
     }
 
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
@@ -169,10 +162,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ColorSchemesPageViewModel::CanDeleteCurrentScheme() const
     {
-        if (const auto& scheme{ CurrentScheme() })
+        if (_CurrentScheme)
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
-            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) == std::end(InBoxSchemes);
+            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), _CurrentScheme.Name()) == std::end(InBoxSchemes);
         }
         return false;
     }
