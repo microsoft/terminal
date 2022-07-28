@@ -83,8 +83,7 @@
 
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
-    <PlatformToolset Condition="$(MSBuildVersion) &lt; '17.0.0'">v142</PlatformToolset>
-    <PlatformToolset Condition="$(MSBuildVersion) &gt;= '17.0.0'">v143</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
@@ -110,8 +109,12 @@
         C26813: Use 'bitwise and' to check if a flag is set.
           The MSVC v19.31 toolset has a bug where a pointer to an enum is incorrectly flagged with C26813.
           It's supposed to be fixed with VS 17.2.1 and 17.3.0 and later respectively.
+        C26493: Don't use C-style casts (type.4).
+          The MSVC 14.33.31629 toolset (VS 17.3 Preview 5) has a bug
+          where brace initializations are treated as C-style casts.
       -->
-      <DisableSpecificWarnings>4201;4312;4467;5105;26445;26813;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(VCToolsVersion)' != '14.33.31629'">4201;4312;4467;5105;26445;26813;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(VCToolsVersion)' == '14.33.31629'">4201;4312;4467;5105;26445;26813;26493;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
