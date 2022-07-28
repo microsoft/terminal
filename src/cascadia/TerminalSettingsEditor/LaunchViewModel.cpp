@@ -25,11 +25,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
     }
 
-    Model::CascadiaSettings LaunchViewModel::Settings() const
-    {
-        return _Settings;
-    }
-
     double LaunchViewModel::InitialPosX()
     {
         const auto x = _Settings.GlobalSettings().InitialPosition().X;
@@ -96,11 +91,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Settings.GlobalSettings().DefaultProfile(profile.Guid());
     }
 
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable> LaunchViewModel::DefaultProfiles() const
+    winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> LaunchViewModel::DefaultProfiles() const
     {
         const auto allProfiles = _Settings.AllProfiles();
 
-        std::vector<IInspectable> profiles;
+        std::vector<Model::Profile> profiles;
         profiles.reserve(allProfiles.Size());
 
         // Remove profiles from the selection which have been explicitly deleted.
@@ -115,5 +110,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         return winrt::single_threaded_observable_vector(std::move(profiles));
+    }
+
+    winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultTerminal()
+    {
+        return winrt::box_value(_Settings.CurrentDefaultTerminal());
+    }
+
+    void LaunchViewModel::CurrentDefaultTerminal(const IInspectable& value)
+    {
+        const auto defaultTerminal{ winrt::unbox_value<Model::DefaultTerminal>(value) };
+        _Settings.CurrentDefaultTerminal(defaultTerminal);
+    }
+
+    winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
+    {
+        return _Settings.DefaultTerminals();
     }
 }

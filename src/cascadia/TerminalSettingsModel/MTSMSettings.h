@@ -31,7 +31,7 @@ Author(s):
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
-    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AtTheEnd)                                                            \
+    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                              \
     X(hstring, Theme, "theme")                                                                                                                             \
