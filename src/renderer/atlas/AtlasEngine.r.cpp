@@ -18,6 +18,7 @@
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
@@ -118,17 +119,21 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
     ConstBuffer data;
     data.viewport.x = 0;
     data.viewport.y = 0;
-    data.viewport.z = static_cast<float>(_r.cellCount.x * _r.cellSize.x);
-    data.viewport.w = static_cast<float>(_r.cellCount.y * _r.cellSize.y);
+    data.viewport.z = static_cast<float>(_r.cellCount.x * _r.fontMetrics.cellSize.x);
+    data.viewport.w = static_cast<float>(_r.cellCount.y * _r.fontMetrics.cellSize.y);
     DWrite_GetGammaRatios(_r.gamma, data.gammaRatios);
     data.enhancedContrast = useClearType ? _r.cleartypeEnhancedContrast : _r.grayscaleEnhancedContrast;
     data.cellCountX = _r.cellCount.x;
-    data.cellSize.x = _r.cellSize.x;
-    data.cellSize.y = _r.cellSize.y;
-    data.underlinePos.x = _r.underlinePos;
-    data.underlinePos.y = _r.underlinePos + _r.lineThickness;
-    data.strikethroughPos.x = _r.strikethroughPos;
-    data.strikethroughPos.y = _r.strikethroughPos + _r.lineThickness;
+    data.cellSize.x = _r.fontMetrics.cellSize.x;
+    data.cellSize.y = _r.fontMetrics.cellSize.y;
+
+    data.underlinePos = _r.fontMetrics.underlinePos;
+    data.underlineWidth = _r.fontMetrics.underlineWidth;
+    data.strikethroughPos = _r.fontMetrics.strikethroughPos;
+    data.strikethroughWidth = _r.fontMetrics.strikethroughWidth;
+    data.doubleUnderlinePos.x = _r.fontMetrics.doubleUnderlinePos.x;
+    data.doubleUnderlinePos.y = _r.fontMetrics.doubleUnderlinePos.y;
+    data.thinLineWidth = _r.fontMetrics.thinLineWidth;
     data.backgroundColor = _r.backgroundColor;
     data.cursorColor = _r.cursorOptions.cursorColor;
     data.selectionColor = _r.selectionColor;
