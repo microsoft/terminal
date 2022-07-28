@@ -47,7 +47,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         winrt::Windows::Foundation::IReference<int64_t> xCoordRef;
         // If the value was cleared, xCoord will be NAN, so check for that
-        if (!isnan(xCoord)) {
+        if (!isnan(xCoord))
+        {
             xCoordRef = gsl::narrow_cast<int64_t>(xCoord);
         }
         const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };

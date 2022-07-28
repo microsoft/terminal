@@ -447,7 +447,7 @@
     <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
   </data>
   <data name="Globals_CenterOnLaunch.HelpText" xml:space="preserve">
-    <value>When enabled, Terminal will be placed in the center of the screen when launched.</value>
+    <value>When enabled, the window will be placed in the center of the screen when launched.</value>
     <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
@@ -1179,7 +1179,7 @@
     <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
   </data>
   <data name="Globals_LaunchPosition.HelpText" xml:space="preserve">
-    <value>The initial position of the terminal window upon startup.</value>
+    <value>The initial position of the terminal window upon startup. When launching as maximized, full screen, or with "Center on launch" enabled, this is used to target the monitor of interest.</value>
     <comment>A description for what the "X position" and "Y position" settings do. Presented near "Globals_LaunchPosition.Header".</comment>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
