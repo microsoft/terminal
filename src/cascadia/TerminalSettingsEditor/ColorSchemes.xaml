@@ -151,7 +151,7 @@
 
                 <!--  Add new button  -->
                 <Button x:Name="AddNewButton"
-                        Click="AddNew_Click"
+                        Click="{x:Bind ViewModel.AddNew_Click}"
                         Style="{StaticResource BrowseButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"

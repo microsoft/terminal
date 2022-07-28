@@ -74,6 +74,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentScheme;
     }
 
+    void ColorSchemesPageViewModel::AddNew_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        CurrentScheme(_AddNewScheme());
+    }
+
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
     {
         std::vector<Editor::ColorSchemeViewModel> allColorSchemes;
@@ -145,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings.UpdateColorSchemeReferences(name, L"Campbell");
     }
 
-    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
+    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::_AddNewScheme()
     {
         const hstring schemeName{ fmt::format(L"Color Scheme {}", _settings.GlobalSettings().ColorSchemes().Size() + 1) };
         Model::ColorScheme scheme{ schemeName };

@@ -83,12 +83,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemeComboBox().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        // Update current page
-        ColorSchemeComboBox().SelectedItem(_ViewModel.RequestAddNew());
-    }
-
     // Function Description:
     // - Pre-populates/focuses the name TextBox, updates the UI
     // Arguments:
