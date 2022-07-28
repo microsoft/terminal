@@ -178,9 +178,10 @@ namespace winrt::TerminalApp::implementation
 
                 // Accumulate list of all unfocused leaf panes
                 std::vector<uint32_t> unfocusedPaneIds;
+                const auto activePaneId = activePane->Id();
                 terminalTab->GetRootPane()->WalkTree([&](auto&& p) {
                     const auto id = p->Id();
-                    if (id.has_value() && id != activePane->Id())
+                    if (id.has_value() && id != activePaneId)
                     {
                         unfocusedPaneIds.push_back(id.value());
                     }
@@ -188,10 +189,14 @@ namespace winrt::TerminalApp::implementation
 
                 // Start by removing the panes that were least recently added
                 sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
-                _CloseUnfocusedPanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+                _ClosePanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+                args.Handled(true);
+            }
+            else
+            {
+                args.Handled(false);
             }
         }
-        args.Handled(true);
     }
 
     void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,

@@ -841,11 +841,11 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close all other panes except the pane that is currently focused.
+    // - Close all panes with the given IDs sequentially.
     // Arguments:
     // - weakTab: weak reference to the tab that the pane belongs to.
     // - paneIds: collection of the IDs of the panes that are marked for removal.
-    winrt::fire_and_forget TerminalPage::_CloseUnfocusedPanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds)
+    winrt::fire_and_forget TerminalPage::_ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds)
     {
         if (auto strongTab{ weakTab.get() })
         {
@@ -862,7 +862,7 @@ namespace winrt::TerminalApp::implementation
                         pane->ClosedByParent([ids{ std::move(paneIds) }, weakThis{ get_weak() }, weakTab]() {
                             if (auto strongThis{ weakThis.get() })
                             {
-                                strongThis->_CloseUnfocusedPanes(weakTab, std::move(ids));
+                                strongThis->_ClosePanes(weakTab, std::move(ids));
                             }
                         });
 
