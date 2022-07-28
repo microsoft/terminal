@@ -671,14 +671,14 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     if (fontMetrics)
     {
         std::wstring fontName{ requestedFaceName };
-        const auto fontWeightU16 = gsl::narrow<u16>(requestedWeight);
-        const auto underlinePosU16 = gsl::narrow<u16>(underlinePos);
-        const auto underlineWidthU16 = gsl::narrow<u16>(underlineWidth);
-        const auto strikethroughPosU16 = gsl::narrow<u16>(strikethroughPos);
-        const auto strikethroughWidthU16 = gsl::narrow<u16>(strikethroughWidth);
-        const auto doubleUnderlinePosTopU16 = gsl::narrow<u16>(doubleUnderlinePosTop);
-        const auto doubleUnderlinePosBottomU16 = gsl::narrow<u16>(doubleUnderlinePosBottom);
-        const auto thinLineWidthU16 = gsl::narrow<u16>(thinLineWidth);
+        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
+        const auto underlinePosU16 = gsl::narrow_cast<u16>(underlinePos);
+        const auto underlineWidthU16 = gsl::narrow_cast<u16>(underlineWidth);
+        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(strikethroughPos);
+        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(strikethroughWidth);
+        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(doubleUnderlinePosTop);
+        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(doubleUnderlinePosBottom);
+        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(thinLineWidth);
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
