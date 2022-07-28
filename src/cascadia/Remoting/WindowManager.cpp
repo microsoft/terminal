@@ -147,7 +147,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     // time. Since we have no idea why, we're guessing that in
                     // this case, there's just a Monarch registered that's
                     // misbehaving. In this case, just fall back to
-                    // "solatedMonarchMode" - we can't trust the currently
+                    // "IsolatedMonarchMode" - we can't trust the currently
                     // registered one.
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_TooManyAttempts_NullMonarchIsolateMode",
