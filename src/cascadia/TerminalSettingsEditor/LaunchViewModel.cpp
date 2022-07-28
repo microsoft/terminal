@@ -30,11 +30,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto x = _Settings.GlobalSettings().InitialPosition().X;
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
-        if (auto xCoord{ x.try_as<int64_t>() })
-        {
-            return xCoord.has_value() ? gsl::narrow_cast<double>(xCoord.value()) : NAN;
-        }
-        return NAN;
+        auto xCoord = x.try_as<int64_t>();
+        return xCoord.has_value() ? gsl::narrow_cast<double>(xCoord.value()) : NAN;
     }
 
     double LaunchViewModel::InitialPosY()
@@ -42,40 +39,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto y = _Settings.GlobalSettings().InitialPosition().Y;
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
-        if (auto yCoord{ y.try_as<int64_t>() })
-        {
-            return yCoord.has_value() ? gsl::narrow_cast<double>(yCoord.value()) : NAN;
-        }
-        return NAN;
+        auto yCoord = y.try_as<int64_t>();
+        return yCoord.has_value() ? gsl::narrow_cast<double>(yCoord.value()) : NAN;
     }
 
     void LaunchViewModel::InitialPosX(double xCoord)
     {
-        LaunchPosition newPos;
+        winrt::Windows::Foundation::IReference<int64_t> xCoordRef;
         // If the value was cleared, xCoord will be NAN, so check for that
-        if (xCoord)
-        {
-            newPos = LaunchPosition{ gsl::narrow_cast<int64_t>(xCoord), _Settings.GlobalSettings().InitialPosition().Y };
+        if (!isnan(xCoord)) {
+            xCoordRef = gsl::narrow_cast<int64_t>(xCoord);
         }
-        else
-        {
-            newPos = LaunchPosition{ nullptr, _Settings.GlobalSettings().InitialPosition().Y };
-        }
+        LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
         _Settings.GlobalSettings().InitialPosition(newPos);
     }
 
     void LaunchViewModel::InitialPosY(double yCoord)
     {
-        LaunchPosition newPos;
+        winrt::Windows::Foundation::IReference<int64_t> yCoordRef;
         // If the value was cleared, yCoord will be NAN, so check for that
-        if (yCoord)
+        if (!isnan(yCoord))
         {
-            newPos = LaunchPosition{ _Settings.GlobalSettings().InitialPosition().X, gsl::narrow_cast<int64_t>(yCoord) };
+            yCoordRef = gsl::narrow_cast<int64_t>(yCoord);
         }
-        else
-        {
-            newPos = LaunchPosition{ _Settings.GlobalSettings().InitialPosition().X, nullptr };
-        }
+        LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);
     }
 
