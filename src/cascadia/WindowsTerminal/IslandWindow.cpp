@@ -658,8 +658,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
-
-    case WM_QUERYENDSESSION:
+    case WM_ENDSESSION:
     {
         // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:
         //
@@ -671,23 +670,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // that timeout, it will send us a WM_CLOSE. If we still don't close
         // after the WM_CLOSE, it'll force-kill us (causing a crash which will be
         // bucketed to MoAppHang).
-
-        // If we need to do anything to prepare for being told to shutdown,
-        // start it here.
         //
-        // If (in the future) we need to prevent logoff, we can return false here.
-
-        TraceLoggingWrite(
-            g_hWindowsTerminalProvider,
-            "QueryEndSession",
-            TraceLoggingDescription("Emitted when the OS has begun the process of updating the Terminal"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-        return true;
-    }
-    case WM_ENDSESSION:
-    {
+        // If we need to do anything to prepare for being told to shutdown,
+        // start it in WM_QUERYENDSESSION. If (in the future) we need to prevent
+        // logoff, we can return false there. (DefWindowProc returns true)
+        //
         // The OS is going to shut us down here. We will manually start a quit,
         // so that we can persist the state. If we refuse to gracefully shut
         // down here, the OS will crash us to forcefully terminate us. We choose
