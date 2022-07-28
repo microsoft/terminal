@@ -109,10 +109,6 @@
        Since PRI file generation is _before_ manifest generation (for possibly obvious or
        important reasons), that doesn't work for us.
   -->
-  <PropertyGroup>
-    <!-- Only for MSBuild versions < 16.3.0 -->
-    <_GenerateProjectPriFileDependsOn Condition="$(MSBuildVersion) &lt; '16.3.0'">OpenConsoleLiftDesktopBridgePriFiles;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
-  </PropertyGroup>
   <Target Name="OpenConsoleLiftDesktopBridgePriFiles" DependsOnTargets="_ConvertItems">
     <ItemGroup>
       <_PriFile Include="@(_NonWapProjProjectOutput)" Condition="'%(Extension)' == '.pri'" />
