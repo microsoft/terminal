@@ -49,8 +49,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
-
-        ColorSchemeComboBox().SelectedItem(_ViewModel.CurrentScheme());
     }
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
