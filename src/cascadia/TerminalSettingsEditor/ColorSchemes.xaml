@@ -415,9 +415,9 @@
                     </Button.Flyout>
                 </Button>
                 <TextBlock x:Uid="ColorScheme_DeleteButtonDisclaimerInBox"
-                           Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.CanDeleteCurrentScheme), Mode=OneWay}"
                            VerticalAlignment="Center"
-                           Style="{StaticResource DisclaimerStyle}" />
+                           Style="{StaticResource DisclaimerStyle}"
+                           Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.CanDeleteCurrentScheme), Mode=OneWay}" />
             </StackPanel>
         </StackPanel>
         <VisualStateManager.VisualStateGroups>
