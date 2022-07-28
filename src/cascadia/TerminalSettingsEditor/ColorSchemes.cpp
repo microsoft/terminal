@@ -55,18 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
         _ViewModel.RequestDeleteCurrentScheme();
-        if (static_cast<uint32_t>(removedSchemeIndex) < ViewModel().AllColorSchemes().Size())
-        {
-            // select same index
-            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex);
-        }
-        else
-        {
-            // select last color scheme (avoid out of bounds error)
-            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
-        }
         DeleteButton().Flyout().Hide();
 
         // GH#11971, part 2. If we delete a scheme, and the next scheme we've

@@ -139,6 +139,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _viewModelToSchemeMap.Remove(_AllColorSchemes.GetAt(i));
                 _AllColorSchemes.RemoveAt(i);
+
+                if (i < _AllColorSchemes.Size())
+                {
+                    // select same index
+                    CurrentScheme(_AllColorSchemes.GetAt(i));
+                }
+                else
+                {
+                    // select last color scheme (avoid out of bounds error)
+                    CurrentScheme(_AllColorSchemes.GetAt(i - 1));
+                }
                 break;
             }
         }
