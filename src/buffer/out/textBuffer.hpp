@@ -54,7 +54,6 @@ filling in the last row, and updating the screen.
 #include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
-#include "UnicodeStorage.hpp"
 #include "../types/inc/Viewport.hpp"
 
 #include "../buffer/out/textBufferCellIterator.hpp"
@@ -140,9 +139,6 @@ public:
 
     [[nodiscard]] HRESULT ResizeTraditional(const til::size newSize) noexcept;
 
-    const UnicodeStorage& GetUnicodeStorage() const noexcept;
-    UnicodeStorage& GetUnicodeStorage() noexcept;
-
     void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
     bool IsActiveBuffer() const noexcept;
 
@@ -216,54 +212,42 @@ public:
 
 private:
     void _UpdateSize();
-    Microsoft::Console::Types::Viewport _size;
-    std::vector<ROW> _storage;
-    Cursor _cursor;
-
-    til::CoordType _firstRow; // indexes top row (not necessarily 0)
-
-    TextAttribute _currentAttributes;
-
-    // storage location for glyphs that can't fit into the buffer normally
-    UnicodeStorage _unicodeStorage;
-
-    bool _isActiveBuffer;
-    Microsoft::Console::Render::Renderer& _renderer;
-
-    std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
-    std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
-    uint16_t _currentHyperlinkId;
-
-    void _RefreshRowIDs(std::optional<til::CoordType> newRowWidth);
-
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
-
     til::point _GetPreviousFromCursor() const noexcept;
-
     void _SetWrapOnCurrentRow() noexcept;
     void _AdjustWrapOnCurrentRow(const bool fSet) noexcept;
-
     // Assist with maintaining proper buffer state for Double Byte character sequences
     bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     bool _AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
-
     ROW& _GetFirstRow() noexcept;
-    ROW& _GetPrevRowNoWrap(const ROW& row);
-
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
-
-    DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;
-    til::point _GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const;
-    til::point _GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
+    DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const noexcept;
+    til::point _GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const noexcept;
+    til::point _GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const noexcept;
     til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;
-    til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
-
+    til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const noexcept;
     void _PruneHyperlinks();
 
     static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
 
+    Microsoft::Console::Render::Renderer& _renderer;
+
+    std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
+    std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
+    uint16_t _currentHyperlinkId = 1;
+
     std::unordered_map<size_t, std::wstring> _idsAndPatterns;
-    size_t _currentPatternId;
+    size_t _currentPatternId = 0;
+
+    wil::unique_virtualalloc_ptr<std::byte> _charBuffer;
+    std::vector<ROW> _storage;
+    TextAttribute _currentAttributes;
+    til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)
+
+    Cursor _cursor;
+    Microsoft::Console::Types::Viewport _size;
+
+    bool _isActiveBuffer = false;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

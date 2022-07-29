@@ -848,7 +848,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
-                if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
+                if (_clusterBuffer.empty() && it->DbcsAttr() == DbcsAttribute::Trailing)
                 {
                     // Move left to the one so the whole character can be struck correctly.
                     --screenPoint.X;

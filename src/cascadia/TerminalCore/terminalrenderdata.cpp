@@ -72,9 +72,9 @@ CursorType Terminal::GetCursorStyle() const noexcept
 
 bool Terminal::IsCursorDoubleWidth() const
 {
-    const auto position = _activeBuffer().GetCursor().GetPosition();
-    TextBufferTextIterator it(TextBufferCellIterator(_activeBuffer(), position));
-    return IsGlyphFullWidth(*it);
+    const auto& buffer = _activeBuffer();
+    const auto position = buffer.GetCursor().GetPosition();
+    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept

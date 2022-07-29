@@ -360,18 +360,13 @@ class UiaTextRangeTests
         // fill first half of text buffer with text
         for (auto i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
         {
+            const std::wstring_view glyph{ i % 2 == 0 ? L" " : L"X" };
             auto& row = _pTextBuffer->GetRowByOffset(i);
-            auto& charRow = row.GetCharRow();
-            for (auto& cell : charRow)
+            auto width = row.size();
+
+            for (decltype(width) x = 0; x < width; ++x)
             {
-                if (i % 2 == 0)
-                {
-                    cell.Char() = L' ';
-                }
-                else
-                {
-                    cell.Char() = L'X';
-                }
+                row.ReplaceCharacters(x, 1, glyph);
             }
         }
 
@@ -495,20 +490,12 @@ class UiaTextRangeTests
         for (auto i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
             auto& row = _pTextBuffer->GetRowByOffset(i);
-            auto& charRow = row.GetCharRow();
-            for (auto j = 0; j < charRow.size(); ++j)
+            auto width = row.size();
+
+            for (decltype(width) x = 0; x < width; ++x)
             {
-                // every 5th cell is a space, otherwise a letter
-                // this is used to simulate words
-                auto cell = charRow.GlyphAt(j);
-                if (j % 5 == 0)
-                {
-                    cell = L" ";
-                }
-                else
-                {
-                    cell = L"x";
-                }
+                const std::wstring_view glyph{ x % 5 == 0 ? L" " : L"x" };
+                row.ReplaceCharacters(x, 1, glyph);
             }
         }
 

@@ -424,6 +424,6 @@ CHAR_INFO CONSOLE_INFORMATION::AsCharInfo(const OutputCellView& cell) const noex
     //    (for mapping RGB values to the nearest table value)
     const auto& attr = cell.TextAttr();
     ci.Attributes = attr.GetLegacyAttributes();
-    ci.Attributes |= cell.DbcsAttr().GeneratePublicApiAttributeFormat();
+    ci.Attributes |= GeneratePublicApiAttributeFormat(cell.DbcsAttr());
     return ci;
 }
