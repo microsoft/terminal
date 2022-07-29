@@ -838,7 +838,6 @@ void AtlasEngine::_recreateFontDependentResources()
 
         _r.cellSizeDIP.x = static_cast<float>(_api.fontMetrics.cellSize.x) / scaling;
         _r.cellSizeDIP.y = static_cast<float>(_api.fontMetrics.cellSize.y) / scaling;
-        _r.fontMetrics = _api.fontMetrics;
         _r.cellCount = _api.cellCount;
         _r.dpi = _api.dpi;
         _r.fontMetrics = _api.fontMetrics;

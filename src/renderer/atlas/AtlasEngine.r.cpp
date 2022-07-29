@@ -271,6 +271,7 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         _r.d2dRenderTarget->SetTextAntialiasMode(coloredGlyph ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
     }
 
+    const f32x2 halfSize{ layoutBox.x * 0.5f, layoutBox.y * 0.5f };
     bool scalingRequired = false;
     f32x2 offset{ 0, 0 };
     f32x2 scale{ 1, 1 };
@@ -343,10 +344,6 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
             std::max(0.0f, overhang.right),
             std::max(0.0f, overhang.bottom),
         };
-        f32x2 targetSize{
-            layoutBox.x - _r.dipPerPixel,
-            layoutBox.y - _r.dipPerPixel,
-        };
         f32x2 actualSize{
             layoutBox.x + overhang.left + overhang.right,
             layoutBox.y + overhang.top + overhang.bottom,
@@ -408,28 +405,34 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         offset.x = clampedOverhang.left - clampedOverhang.right;
         offset.y = clampedOverhang.top - clampedOverhang.bottom;
 
-        if (actualSize.x > targetSize.x)
+        if (actualSize.x > layoutBox.x)
         {
             scalingRequired = true;
             offset.x = (overhang.left - overhang.right) * 0.5f;
-            scale.x = targetSize.x / actualSize.x;
+            scale.x = (layoutBox.x - _r.dipPerPixel) / actualSize.x;
             scale.y = scale.x;
         }
-        if (actualSize.y > targetSize.y)
+        if (actualSize.y > layoutBox.y)
         {
             scalingRequired = true;
             offset.y = (overhang.top - overhang.bottom) * 0.5f;
-            scale.x = std::min(scale.x, targetSize.y / actualSize.y);
+            scale.x = std::min(scale.x, (layoutBox.y - _r.dipPerPixel) / actualSize.y);
             scale.y = scale.x;
         }
 
         offset.x *= scale.x;
         offset.y *= scale.y;
 
-        // Due to D2D1_DRAW_TEXT_OPTIONS_NO_SNAP our baseline won't get
-        // pixel aligned anymore and so we have to do it ourselves here.
-        offset.x = roundf(offset.x * _r.pixelPerDIP) * _r.dipPerPixel;
-        offset.y = roundf(offset.y * _r.pixelPerDIP) * _r.dipPerPixel;
+        // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
+        // But we do want it technically, so this re-implements baseline snapping... I think?
+        // It calculates the new `baseline` height after transformation by `scale.y` relative to the center point `halfSize.y`.
+        //
+        // This works even if `scale.y == 1`, because then `baseline == baselineInDIP + offset.y` and `baselineInDIP`
+        // is always measured in full pixels. So rounding it will be equivalent to just rounding `offset.y` itself.
+        const auto baseline = halfSize.y + (_r.fontMetrics.baselineInDIP + offset.y - halfSize.y) * scale.y;
+        // This rounds to the nearest multiple of _r.dipPerPixel.
+        const auto baselineFixed = roundf(baseline * _r.pixelPerDIP) * _r.dipPerPixel;
+        offset.y += (baselineFixed - baseline) / scale.y;
     }
 
     // !!! IMPORTANT !!!
@@ -444,7 +447,6 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP, scalingRequired);
 
     const f32x2 inverseScale{ 1.0f - scale.x, 1.0f - scale.y };
-    const f32x2 halfSize{ layoutBox.x * 0.5f, layoutBox.y * 0.5f };
 
     for (u32 i = 0; i < cellCount; ++i)
     {
@@ -457,17 +459,15 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         rect.bottom = rect.top + _r.cellSizeDIP.y;
 
         D2D1_POINT_2F origin;
-        origin.x = rect.left - i * _r.cellSizeDIP.x + offset.x;
-        origin.y = rect.top + offset.y;
+        origin.x = rect.left - i * _r.cellSizeDIP.x;
+        origin.y = rect.top;
 
-        _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
-        _r.d2dRenderTarget->Clear();
+        {
+            _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _r.d2dRenderTarget->Clear();
+        }
         if (scalingRequired)
         {
-            // TODO: dx/dy should technically be pixel snapped
-            // Due to D2D1_DRAW_TEXT_OPTIONS_NO_SNAP our baseline isn't getting pixel aligned anymore
-            // and we should align do it here. We'd have to offset dx/dy in the matrix below in
-            // such a way that our baseline is on a whole pixel _after_ the scaling operation.
             const D2D1_MATRIX_3X2_F transform{
                 scale.x,
                 0,
@@ -478,13 +478,19 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
             };
             _r.d2dRenderTarget->SetTransform(&transform);
         }
-        _r.d2dRenderTarget->DrawTextLayout(origin, textLayout.get(), _r.brush.get(), options);
+        {
+            origin.x += offset.x;
+            origin.y += offset.y;
+            _r.d2dRenderTarget->DrawTextLayout(origin, textLayout.get(), _r.brush.get(), options);
+        }
         if (scalingRequired)
         {
             static constexpr D2D1_MATRIX_3X2_F identity{ 1, 0, 0, 1, 0, 0 };
             _r.d2dRenderTarget->SetTransform(&identity);
         }
-        _r.d2dRenderTarget->PopAxisAlignedClip();
+        {
+            _r.d2dRenderTarget->PopAxisAlignedClip();
+        }
     }
 }
 

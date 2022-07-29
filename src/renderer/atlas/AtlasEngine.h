@@ -998,7 +998,7 @@ namespace Microsoft::Console::Render
             Buffer<DWRITE_GLYPH_OFFSET> glyphOffsets;
             std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as ApiInvalidations::Font|Size
             std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
-            FontMetrics fontMetrics; // changes are flagged as ApiInvalidations::Font
+            FontMetrics fontMetrics; // changes are flagged as ApiInvalidations::Font|Size
 
             u16x2 cellCount; // caches `sizeInPixel / cellSize`
             u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
