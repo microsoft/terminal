@@ -420,9 +420,6 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
             scale.y = scale.x;
         }
 
-        offset.x *= scale.x;
-        offset.y *= scale.y;
-
         // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
         // But we do want it technically, so this re-implements baseline snapping... I think?
         // It calculates the new `baseline` height after transformation by `scale.y` relative to the center point `halfSize.y`.
@@ -479,6 +476,8 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
             _r.d2dRenderTarget->SetTransform(&transform);
         }
         {
+            // Now that we're done using origin to calculate the center point for our transformation
+            // we can use it for its intended purpose to slightly shift the glyph around.
             origin.x += offset.x;
             origin.y += offset.y;
             _r.d2dRenderTarget->DrawTextLayout(origin, textLayout.get(), _r.brush.get(), options);
