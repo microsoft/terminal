@@ -17,12 +17,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemesPageViewModel(const Model::CascadiaSettings& settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
-        bool RequestRenameCurrentScheme(winrt::hstring newName);
-        void RequestDeleteCurrentScheme();
         void CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme);
         Editor::ColorSchemeViewModel CurrentScheme();
 
-        void AddNew_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        Editor::ColorSchemeViewModel RequestAddNew();
+        bool RequestRenameCurrentScheme(winrt::hstring newName);
+        void RequestDeleteCurrentScheme();
+
+        void Edit_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         bool CanDeleteCurrentScheme() const;
 
@@ -37,7 +39,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMap<Editor::ColorSchemeViewModel, Model::ColorScheme> _viewModelToSchemeMap;
 
         void _MakeColorSchemeVMsHelper();
-        Editor::ColorSchemeViewModel _AddNewScheme();
     };
 };
 

@@ -74,9 +74,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentScheme;
     }
 
-    void ColorSchemesPageViewModel::AddNew_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void ColorSchemesPageViewModel::Edit_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
     {
-        CurrentScheme(_AddNewScheme());
+        CurrentPage(ColorSchemesSubPage::EditColorScheme);
     }
 
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
@@ -98,6 +98,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
+    }
+
+    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
+    {
+        const hstring schemeName{ fmt::format(L"Color Scheme {}", _settings.GlobalSettings().ColorSchemes().Size() + 1) };
+        Model::ColorScheme scheme{ schemeName };
+
+        // Add the new color scheme
+        _settings.GlobalSettings().AddColorScheme(scheme);
+
+        // Construct the new color scheme VM
+        const Editor::ColorSchemeViewModel schemeVM{ scheme, *this };
+        _AllColorSchemes.Append(schemeVM);
+        _viewModelToSchemeMap.Insert(schemeVM, scheme);
+        return schemeVM;
     }
 
     bool ColorSchemesPageViewModel::RequestRenameCurrentScheme(hstring newName)
@@ -152,21 +167,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
         _settings.UpdateColorSchemeReferences(name, L"Campbell");
-    }
-
-    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::_AddNewScheme()
-    {
-        const hstring schemeName{ fmt::format(L"Color Scheme {}", _settings.GlobalSettings().ColorSchemes().Size() + 1) };
-        Model::ColorScheme scheme{ schemeName };
-
-        // Add the new color scheme
-        _settings.GlobalSettings().AddColorScheme(scheme);
-
-        // Construct the new color scheme VM
-        const Editor::ColorSchemeViewModel schemeVM{ scheme, *this };
-        _AllColorSchemes.Append(schemeVM);
-        _viewModelToSchemeMap.Insert(schemeVM, scheme);
-        return schemeVM;
     }
 
     bool ColorSchemesPageViewModel::CanDeleteCurrentScheme() const

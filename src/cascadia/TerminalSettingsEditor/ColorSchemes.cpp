@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
+        _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
     }
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
@@ -63,10 +64,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
     {
-        // todo: transfer this to VM
-        //_ViewModel.RequestSetCurrentPage(ColorSchemesSubPage::EditColorScheme);
+        if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
+        {
+            ColorSchemeListView().SelectedItem(newSchemeVM);
+            ColorSchemeListView().ScrollIntoView(newSchemeVM);
+        }
     }
 
     void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
@@ -74,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
             // Treat this as if 'edit' was clicked
-            Edit_Click(nullptr, nullptr);
+            _ViewModel.Edit_Click(nullptr, nullptr);
             e.Handled(true);
         }
         else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Delete)

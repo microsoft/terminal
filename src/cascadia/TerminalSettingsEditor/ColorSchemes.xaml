@@ -172,14 +172,14 @@
                         Margin="0,8,0,0"
                         Orientation="Horizontal">
                 <Button x:Name="EditButton"
-                        Click="Edit_Click"
+                        Click="{x:Bind ViewModel.Edit_Click}"
                         Style="{StaticResource BrowseButtonStyle}">
                     <TextBlock x:Uid="ColorScheme_EditButton"
                                Style="{StaticResource IconButtonTextBlockStyle}" />
                 </Button>
 
                 <Button x:Name="AddNewButton"
-                        Click="{x:Bind ViewModel.AddNew_Click}"
+                        Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
                     <TextBlock x:Uid="ColorScheme_AddNewButton"
                                Style="{StaticResource IconButtonTextBlockStyle}" />
