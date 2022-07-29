@@ -21,12 +21,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct BitmapIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
     {
         using type = winrt::Microsoft::UI::Xaml::Controls::BitmapIconSource;
+        using elementType = winrt::Windows::UI::Xaml::Controls::IconSourceElement; // this should explode if compiled
+
+        winrt::Windows::UI::Xaml::Controls::IconElement elementFromSource(type source)
+        {
+            elementType elem;
+            elem.IconSource(source);
+            return elem;
+        }
     };
 
     template<>
     struct BitmapIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
     {
         using type = winrt::Windows::UI::Xaml::Controls::BitmapIconSource;
+        using elementType = winrt::Windows::UI::Xaml::Controls::IconSourceElement;
+
+        winrt::Windows::UI::Xaml::Controls::IconElement elementFromSource(type source)
+        {
+            elementType elem;
+            elem.IconSource(source);
+            return elem;
+        }
     };
 #pragma endregion
 
@@ -40,12 +56,63 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct FontIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
     {
         using type = winrt::Microsoft::UI::Xaml::Controls::FontIconSource;
+        using elementType = winrt::Windows::UI::Xaml::Controls::IconSourceElement; // this should explode if compiled
+
+        winrt::Windows::UI::Xaml::Controls::IconElement elementFromSource(type source)
+        {
+            elementType elem;
+            elem.IconSource(source);
+            return elem;
+        }
     };
 
     template<>
     struct FontIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
     {
         using type = winrt::Windows::UI::Xaml::Controls::FontIconSource;
+        using elementType = winrt::Windows::UI::Xaml::Controls::IconSourceElement;
+
+        winrt::Windows::UI::Xaml::Controls::IconElement elementFromSource(type source)
+        {
+            elementType elem;
+            elem.IconSource(source);
+            return elem;
+        }
+    };
+#pragma endregion
+
+#pragma region ImageIconSource
+    template<typename TIconSource>
+    struct ImageIconSource
+    {
+    };
+
+    template<>
+    struct ImageIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Microsoft::UI::Xaml::Controls::ImageIconSource;
+        using elementType = winrt::Microsoft::UI::Xaml::Controls::ImageIcon;
+
+        winrt::Windows::UI::Xaml::Controls::IconElement elementFromSource(type source)
+        {
+            elementType elem;
+            elem.Source(source.ImageSource());
+            return elem;
+        }
+    };
+
+    template<>
+    struct ImageIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Microsoft::UI::Xaml::Controls::ImageIconSource;
+        using elementType = winrt::Microsoft::UI::Xaml::Controls::ImageIcon;
+
+        winrt::Windows::UI::Xaml::Controls::IconElement elementFromSource(type source)
+        {
+            elementType elem;
+            elem.Source(source.ImageSource());
+            return elem;
+        }
     };
 #pragma endregion
 
@@ -154,6 +221,64 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return iconSource;
     }
 
+    template<typename TIconElement>
+    TIconElement _getIconSource(const winrt::hstring& iconPath)
+    {
+        TIconElement iconSource{ nullptr };
+
+        if (iconPath.size() != 0)
+        {
+            const auto expandedIconPath{ _expandIconPath(iconPath) };
+            iconSource = _getColoredBitmapIcon<TIconElement>(expandedIconPath);
+
+            // If we fail to set the icon source using the "icon" as a path,
+            // let's try it as a symbol/emoji.
+            //
+            // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so
+            // don't do this if it's just an invalid path.
+            if (!iconSource && iconPath.size() <= 2)
+            {
+                try
+                {
+                    FontIconSource<TIconElement>::type icon;
+                    const auto ch = iconPath[0];
+
+                    // The range of MDL2 Icons isn't explicitly defined, but
+                    // we're using this based off the table on:
+                    // https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
+                    const auto isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
+                    if (isMDL2Icon)
+                    {
+                        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+                    }
+                    else
+                    {
+                        // Note: you _do_ need to manually set the font here.
+                        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe UI" });
+                    }
+                    icon.FontSize(12);
+                    icon.Glyph(iconPath);
+                    iconSource = icon;
+                }
+                CATCH_LOG();
+            }
+        }
+        if (!iconSource)
+        {
+            // Set the default IconSource to a BitmapIconSource with a null source
+            // (instead of just nullptr) because there's a really weird crash when swapping
+            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
+            // Swapping between nullptr IconSources and non-null IconSources causes a crash
+            // to occur, but swapping between IconSources with a null source and non-null IconSources
+            // work perfectly fine :shrug:.
+            BitmapIconSource<TIconElement>::type icon;
+            icon.UriSource(nullptr);
+            iconSource = icon;
+        }
+
+        return iconSource;
+    }
+
     static winrt::hstring _expandIconPath(hstring iconPath)
     {
         if (iconPath.empty())
@@ -204,4 +329,145 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
     }
+
+    Windows::UI::Xaml::Controls::IconElement IconPathConverter::IconElement(hstring path)
+    {
+        auto source = _getIconSource(path);
+        Windows::UI::Xaml::Controls::IconSourceElement iconElement;
+    }
+
+    // Windows::UI::Xaml::Controls::IconElement IconPathConverter::IconElementMUX(hstring path)
+    // {
+    //     auto source = _getIconElement<Microsoft::UI::Xaml::Controls::IconSource>(path);
+    //     Windows::UI::Xaml::Controls::IconSourceElement iconElement;
+    // }
+
+    Windows::UI::Xaml::Controls::IconElement IconPathConverter::IconFromPath(hstring iconPath)
+    {
+        // Windows::UI::Xaml::Controls::IconSource iconSource{ nullptr };
+        // if (iconPath.size() != 0)
+        // {
+        //     const auto expandedIconPath{ _expandIconPath(iconPath) };
+        //     iconSource = _getColoredBitmapIcon<Windows::UI::Xaml::Controls::IconSource>(expandedIconPath);
+
+        //     // If we fail to set the icon source using the "icon" as a path,
+        //     // let's try it as a symbol/emoji.
+        //     //
+        //     // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so
+        //     // don't do this if it's just an invalid path.
+        //     if (!iconSource && iconPath.size() <= 2)
+        //     {
+        //         try
+        //         {
+        //             Windows::UI::Xaml::Controls::FontIconSource icon;
+        //             const auto ch = iconPath[0];
+
+        //             // The range of MDL2 Icons isn't explicitly defined, but
+        //             // we're using this based off the table on:
+        //             // https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
+        //             const auto isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
+        //             if (isMDL2Icon)
+        //             {
+        //                 icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+        //             }
+        //             else
+        //             {
+        //                 // Note: you _do_ need to manually set the font here.
+        //                 icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe UI" });
+        //             }
+        //             icon.FontSize(12);
+        //             icon.Glyph(iconPath);
+        //             iconSource = icon;
+        //         }
+        //         CATCH_LOG();
+        //     }
+        // }
+
+        // if (!iconSource)
+        // {
+        //     // Set the default IconSource to a BitmapIconSource with a null source
+        //     // (instead of just nullptr) because there's a really weird crash when swapping
+        //     // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
+        //     // Swapping between nullptr IconSources and non-null IconSources causes a crash
+        //     // to occur, but swapping between IconSources with a null source and non-null IconSources
+        //     // work perfectly fine :shrug:.
+        //     Windows::UI::Xaml::Controls::BitmapIconSource icon;
+        //     icon.UriSource(nullptr);
+        //     iconSource = icon;
+        // }
+
+        // // First, is this a exe, dll, whatever.
+        // if (isAnExe)
+        //     return getExeIcon(); // -> WUX::IconElement(MUX::ImageIcon)
+        // else
+        // {
+
+        // }
+        auto iconSource = IconSourceMUX(iconPath);
+        // Microsoft::UI::Xaml::Controls::
+        Windows::UI::Xaml::Controls::IconSourceElement iconElement;
+        iconElement.IconSource(iconSource);
+        return iconElement;
+    }
+
+    // //
+    // //
+    // MUXSource _getIconSource(const winrt::hstring& iconPath)
+    // {
+    //     MUXSource iconSource{ nullptr };
+
+    //     if (iconPath.size() != 0)
+    //     {
+    //         if (isAnExe) return MUXImageIconSource();
+
+    //         const auto expandedIconPath{ _expandIconPath(iconPath) };
+    //         iconSource = _getColoredBitmapIcon<MUXSource>(expandedIconPath);
+
+    //         // If we fail to set the icon source using the "icon" as a path,
+    //         // let's try it as a symbol/emoji.
+    //         //
+    //         // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so
+    //         // don't do this if it's just an invalid path.
+    //         if (!iconSource && iconPath.size() <= 2)
+    //         {
+    //             try
+    //             {
+    //                 FontIconSource<MUXSource>::type icon;
+    //                 const auto ch = iconPath[0];
+
+    //                 // The range of MDL2 Icons isn't explicitly defined, but
+    //                 // we're using this based off the table on:
+    //                 // https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
+    //                 const auto isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
+    //                 if (isMDL2Icon)
+    //                 {
+    //                     icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+    //                 }
+    //                 else
+    //                 {
+    //                     // Note: you _do_ need to manually set the font here.
+    //                     icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe UI" });
+    //                 }
+    //                 icon.FontSize(12);
+    //                 icon.Glyph(iconPath);
+    //                 iconSource = icon;
+    //             }
+    //             CATCH_LOG();
+    //         }
+    //     }
+    //     if (!iconSource)
+    //     {
+    //         // Set the default IconSource to a BitmapIconSource with a null source
+    //         // (instead of just nullptr) because there's a really weird crash when swapping
+    //         // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
+    //         // Swapping between nullptr IconSources and non-null IconSources causes a crash
+    //         // to occur, but swapping between IconSources with a null source and non-null IconSources
+    //         // work perfectly fine :shrug:.
+    //         BitmapIconSource<MUXSource>::type icon;
+    //         icon.UriSource(nullptr);
+    //         iconSource = icon;
+    //     }
+
+    //     return iconSource;
+    // }
 }
