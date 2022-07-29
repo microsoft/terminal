@@ -1,5 +1,5 @@
-<?xml version="1.0"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <None Condition="'$(ConptyRequiresx86Host)'=='true'" Include="$(MSBuildThisFileDirectory)\native\runtimes\x86\OpenConsole.exe">
       <Link>x86\OpenConsole.exe</Link>

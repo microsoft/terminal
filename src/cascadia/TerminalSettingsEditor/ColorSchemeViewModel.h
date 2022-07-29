@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
         Editor::ColorSchemesPageViewModel _parentPageVM{ nullptr };
+
+        void _ColorEntryChangedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>

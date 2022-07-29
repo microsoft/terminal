@@ -31,7 +31,7 @@ Author(s):
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
-    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AtTheEnd)                                                            \
+    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                              \
     X(hstring, Theme, "theme")                                                                                                                             \
@@ -51,6 +51,7 @@ Author(s):
     X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                   \
     X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                   \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                             \
+    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                       \
     X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                         \
     X(bool, DisableAnimations, "disableAnimations", false)                                                                                                 \
     X(hstring, StartupActions, "startupActions", L"")                                                                                                      \
@@ -110,7 +111,7 @@ Author(s):
     X(hstring, ColorSchemeName, "colorScheme", L"Campbell")                                                                                                        \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", true)
+    X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never)
 
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors

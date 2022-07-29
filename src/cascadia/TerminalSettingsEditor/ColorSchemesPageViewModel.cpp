@@ -59,6 +59,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ColorSchemesPageViewModel::CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme)
+    {
+        if (_CurrentScheme != newSelectedScheme)
+        {
+            _CurrentScheme = newSelectedScheme;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentScheme" });
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
+        }
+    }
+
+    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::CurrentScheme()
+    {
+        return _CurrentScheme;
+    }
+
+    void ColorSchemesPageViewModel::AddNew_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        CurrentScheme(_AddNewScheme());
+    }
+
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
     {
         std::vector<Editor::ColorSchemeViewModel> allColorSchemes;
@@ -78,14 +98,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
-    }
-
-    void ColorSchemesPageViewModel::RequestSetCurrentScheme(Editor::ColorSchemeViewModel scheme)
-    {
-        CurrentScheme(scheme);
-
-        // Update the state of the page
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
     }
 
     bool ColorSchemesPageViewModel::RequestRenameCurrentScheme(hstring newName)
@@ -121,6 +133,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _viewModelToSchemeMap.Remove(_AllColorSchemes.GetAt(i));
                 _AllColorSchemes.RemoveAt(i);
+                if (i < _AllColorSchemes.Size())
+                {
+                    // select same index
+                    CurrentScheme(_AllColorSchemes.GetAt(i));
+                }
+                else
+                {
+                    // select last color scheme (avoid out of bounds error)
+                    CurrentScheme(_AllColorSchemes.GetAt(i - 1));
+                }
                 break;
             }
         }
@@ -132,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings.UpdateColorSchemeReferences(name, L"Campbell");
     }
 
-    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
+    Editor::ColorSchemeViewModel ColorSchemesPageViewModel::_AddNewScheme()
     {
         const hstring schemeName{ fmt::format(L"Color Scheme {}", _settings.GlobalSettings().ColorSchemes().Size() + 1) };
         Model::ColorScheme scheme{ schemeName };
@@ -147,17 +169,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return schemeVM;
     }
 
-    void ColorSchemesPageViewModel::RequestSetCurrentPage(ColorSchemesSubPage subPage)
-    {
-        CurrentPage(subPage);
-    }
-
     bool ColorSchemesPageViewModel::CanDeleteCurrentScheme() const
     {
-        if (const auto& scheme{ CurrentScheme() })
+        if (_CurrentScheme)
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
-            return !scheme.IsInBoxScheme();
+            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), _CurrentScheme.Name()) == std::end(InBoxSchemes);
         }
         return false;
     }

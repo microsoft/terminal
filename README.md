@@ -21,7 +21,7 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> 🔴 Note: Windows Terminal requires Windows 10 2004 (build 19041) or later
+> **Note**: Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
 
@@ -52,7 +52,7 @@ fails for any reason, you can try the following command at a PowerShell prompt:
 Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 ```
 
-> 🔴 Note: If you install Terminal manually:
+> **Note**: If you install Terminal manually:
 >
 > * Terminal will not auto-update when new builds are released so you will need
 >   to regularly install the latest Terminal release to receive all the latest
@@ -233,7 +233,7 @@ Cause: You're launching the incorrect solution in Visual Studio.
 Solution: Make sure you're building & deploying the `CascadiaPackage` project in
 Visual Studio.
 
-> ⚠ Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
+> **Note**: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
 > Windows Console that hosts Windows' command-line infrastructure. OpenConsole
 > is used by Windows Terminal to connect to and communicate with command-line
 > applications (via
@@ -264,7 +264,7 @@ help avoid any wasted or duplicate effort.
 The easiest way to communicate with the team is via GitHub issues.
 
 Please file new issues, feature requests and suggestions, but **DO search for
-similar open/closed pre-existing issues before creating a new issue.**
+similar open/closed preexisting issues before creating a new issue.**
 
 If you would like to ask a question that you feel doesn't warrant an issue
 (yet), please reach out to us via Twitter:

@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import "ColorSchemes.idl";
-import "ColorSchemesPageViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {

@@ -39,7 +39,7 @@
                       MaxWidth="{StaticResource StandardControlMaxWidth}"
                       ItemsSource="{x:Bind ViewModel.AllColorSchemes}"
                       PreviewKeyDown="ListView_PreviewKeyDown"
-                      SelectionChanged="ColorSchemeSelectionChanged"
+                      SelectedItem="{x:Bind ViewModel.CurrentScheme, Mode=TwoWay}"
                       SelectionMode="Single">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="local:ColorSchemeViewModel">
@@ -177,12 +177,14 @@
                     <TextBlock x:Uid="ColorScheme_EditButton"
                                Style="{StaticResource IconButtonTextBlockStyle}" />
                 </Button>
+
                 <Button x:Name="AddNewButton"
-                        Click="AddNew_Click"
+                        Click="{x:Bind ViewModel.AddNew_Click}"
                         Style="{StaticResource BrowseButtonStyle}">
                     <TextBlock x:Uid="ColorScheme_AddNewButton"
                                Style="{StaticResource IconButtonTextBlockStyle}" />
                 </Button>
+
                 <Button x:Name="DeleteButton"
                         Margin="10,0,0,0"
                         IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"

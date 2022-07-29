@@ -111,7 +111,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
     void DebugTapConnection::_OutputHandler(const hstring str)
     {
-        _TerminalOutputHandlers(til::visualize_control_codes(str));
+        auto output = til::visualize_control_codes(str);
+        // To make the output easier to read, we introduce a line break whenever
+        // an LF control is encountered. But at this point, the LF would have
+        // been converted to U+240A (␊), so that's what we need to search for.
+        for (size_t lfPos = 0; (lfPos = output.find(L'\u240A', lfPos)) != std::wstring::npos;)
+        {
+            output.insert(++lfPos, L"\r\n");
+        }
+        _TerminalOutputHandlers(output);
     }
 
     // Called by the DebugInputTapConnection to print user input

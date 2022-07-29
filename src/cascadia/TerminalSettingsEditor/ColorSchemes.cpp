@@ -37,95 +37,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
-        _ViewModel.RequestSetCurrentPage(ColorSchemesSubPage::Base);
-
-        ColorSchemeListView().SelectedItem(_ViewModel.CurrentScheme());
-    }
-
-    // Function Description:
-    // - Called when a different color scheme is selected. Updates our current
-    //   color scheme and updates our currently modifiable color table.
-    // Arguments:
-    // - args: The selection changed args that tells us what's the new color scheme selected.
-    // Return Value:
-    // - <none>
-    void ColorSchemes::ColorSchemeSelectionChanged(const IInspectable& /*sender*/,
-                                                   const SelectionChangedEventArgs& args)
-    {
-        //  Update the color scheme this page is modifying
-        if (args.AddedItems().Size() > 0)
-        {
-            const auto colorScheme{ args.AddedItems().GetAt(0).try_as<ColorSchemeViewModel>() };
-            _ViewModel.RequestSetCurrentScheme(*colorScheme);
-        }
-    }
-
-    // Function Description:
-    // - Called when a ColorPicker control has selected a new color. This is specifically
-    //   called by color pickers assigned to a color table entry. It takes the index
-    //   that's been stuffed in the Tag property of the color picker and uses it
-    //   to update the color table accordingly.
-    // Arguments:
-    // - sender: the color picker that raised this event.
-    // - args: the args that contains the new color that was picked.
-    // Return Value:
-    // - <none>
-    void ColorSchemes::ColorPickerChanged(const IInspectable& sender,
-                                          const MUX::Controls::ColorChangedEventArgs& args)
-    {
-        const til::color newColor{ args.NewColor() };
-        if (const auto& picker{ sender.try_as<MUX::Controls::ColorPicker>() })
-        {
-            if (const auto& tag{ picker.Tag() })
-            {
-                if (const auto index{ tag.try_as<uint8_t>() })
-                {
-                    if (index < ColorTableDivider)
-                    {
-                        _ViewModel.CurrentScheme().NonBrightColorTable().GetAt(*index).Color(newColor);
-                    }
-                    else
-                    {
-                        _ViewModel.CurrentScheme().BrightColorTable().GetAt(*index - ColorTableDivider).Color(newColor);
-                    }
-                }
-                else if (const auto stringTag{ tag.try_as<hstring>() })
-                {
-                    if (stringTag == ForegroundColorTag)
-                    {
-                        _ViewModel.CurrentScheme().ForegroundColor().Color(newColor);
-                    }
-                    else if (stringTag == BackgroundColorTag)
-                    {
-                        _ViewModel.CurrentScheme().BackgroundColor().Color(newColor);
-                    }
-                    else if (stringTag == CursorColorTag)
-                    {
-                        _ViewModel.CurrentScheme().CursorColor().Color(newColor);
-                    }
-                    else if (stringTag == SelectionBackgroundColorTag)
-                    {
-                        _ViewModel.CurrentScheme().SelectionBackgroundColor().Color(newColor);
-                    }
-                }
-            }
-        }
     }
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        const auto removedSchemeIndex{ ColorSchemeListView().SelectedIndex() };
         _ViewModel.RequestDeleteCurrentScheme();
-        if (static_cast<uint32_t>(removedSchemeIndex) < ViewModel().AllColorSchemes().Size())
-        {
-            // select same index
-            ColorSchemeListView().SelectedIndex(removedSchemeIndex);
-        }
-        else
-        {
-            // select last color scheme (avoid out of bounds error)
-            ColorSchemeListView().SelectedIndex(removedSchemeIndex - 1);
-        }
         DeleteButton().Flyout().Hide();
 
         // GH#11971, part 2. If we delete a scheme, and the next scheme we've
@@ -147,19 +63,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        // Update current page
-        if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
-        {
-            ColorSchemeListView().SelectedItem(newSchemeVM);
-            ColorSchemeListView().ScrollIntoView(newSchemeVM);
-        }
-    }
-
     void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _ViewModel.RequestSetCurrentPage(ColorSchemesSubPage::EditColorScheme);
+        // todo: transfer this to VM
+        //_ViewModel.RequestSetCurrentPage(ColorSchemesSubPage::EditColorScheme);
     }
 
     void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
