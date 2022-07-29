@@ -405,6 +405,12 @@ void AppHost::Initialize()
         }
     });
 
+    _window->AutomaticShutdownRequested([this]() {
+        // Raised when the OS is beginning an update of the app. We will quit,
+        // to save our state, before the OS manually kills us.
+        _windowManager.RequestQuitAll();
+    });
+
     _logic.Create();
 
     _revokers.TitleChanged = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
