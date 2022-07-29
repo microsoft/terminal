@@ -29,6 +29,7 @@ dataobject
 dcomp
 DERR
 dlldata
+DNE
 DONTADDTORECENT
 DWORDLONG
 endfor
