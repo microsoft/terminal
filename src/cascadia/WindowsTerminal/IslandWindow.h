@@ -77,6 +77,7 @@ public:
     WINRT_CALLBACK(NotifyReAddNotificationIcon, winrt::delegate<void()>);
     WINRT_CALLBACK(ShouldExitFullscreen, winrt::delegate<void()>);
     WINRT_CALLBACK(MaximizeChanged, winrt::delegate<void(bool)>);
+    WINRT_CALLBACK(AutomaticShutdownRequested, winrt::delegate<void(void)>);
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
     WINRT_CALLBACK(WindowVisibilityChanged, winrt::delegate<void(bool)>);
