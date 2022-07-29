@@ -30,6 +30,7 @@ dataobject
 dcomp
 DERR
 dlldata
+DNE
 DONTADDTORECENT
 DWMWA
 DWORDLONG
