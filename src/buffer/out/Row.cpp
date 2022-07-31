@@ -291,30 +291,36 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
             case DbcsAttribute::Leading:
                 if (fillingLastColumn)
                 {
-                    // If we're trying to fill the last cell with a leading byte, pad it out instead by clearing it.
-                    // Don't increment iterator. We'll exit because we couldn't write a lead at the end of a line.
+                    // The wide char doesn't fit. Pad with whitespace.
+                    // Don't increment the iterator. Instead we'll return from this function and the
+                    // caller can call WriteCells() again on the next row with the same iterator position.
                     ClearCell(currentIndex);
                     SetDoubleBytePadded(true);
                 }
                 else
                 {
                     ReplaceCharacters(currentIndex, 2, chars);
+                    ++it;
                 }
                 break;
             case DbcsAttribute::Trailing:
+                // Handling the trailing half of wide chars ensures that we correctly restore
+                // wide characters when a user backs up and restores the viewport via CHAR_INFOs.
                 if (fillingFirstColumn)
                 {
+                    // The wide char doesn't fit. Pad with whitespace.
+                    // Ignore the character. There's no correct alternative way to handle this situation.
                     ClearCell(currentIndex);
                 }
                 else
                 {
                     ReplaceCharacters(currentIndex - 1, 2, chars);
                 }
-                break;
-            case DbcsAttribute::Single:
-                ReplaceCharacters(currentIndex, 1, chars);
+                ++it;
                 break;
             default:
+                ReplaceCharacters(currentIndex, 1, chars);
+                ++it;
                 break;
             }
 
@@ -331,7 +337,6 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
         }
 
         // Move to the next cell for the next time through the loop.
-        ++it;
         ++currentIndex;
     }
 
