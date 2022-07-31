@@ -131,6 +131,10 @@ class DbcsTests
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
 
+    BEGIN_TEST_METHOD(TestDbcsBisectWriteCells)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
     BEGIN_TEST_METHOD(TestDbcsBisectWriteCellsEndW)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
@@ -1575,6 +1579,47 @@ void DbcsTests::TestDbcsBisect()
             }
         }
     }
+}
+
+// Read/WriteConsoleOutput allow a user to implement a restricted form of buffer "backup" and "restore".
+// But what if the saved region clips ("bisects") a wide character? This test ensures that we restore proper
+// wide characters when given an unpaired trailing/leading CHAR_INFO in the first/last column of the given region.
+void DbcsTests::TestDbcsBisectWriteCells()
+{
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    std::array<CHAR_INFO, 16> expected = PrepPattern::DoubledW;
+    PrepPattern::replaceColorPlaceholders(expected, FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN);
+
+    // Write DoubledW to the viewport.
+    {
+        SMALL_RECT region{ .Left = 0, .Right = 15 };
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, expected.data(), { 16, 1 }, {}, &region));
+    }
+
+    // Make a "backup" of the viewport.
+    // The twist is that our backup region only copies the trailing/leading half of the first/last glyph respectively.
+    std::array<CHAR_INFO, 13> backup{};
+    constexpr COORD backupSize{ 13, 1 };
+    SMALL_RECT backupRegion{ .Left = 2, .Right = 14 };
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, backup.data(), backupSize, {}, &backupRegion));
+
+    // Overwrite the DoubledW string except the first glyph.
+    // This produces "Qxxxxxx...". We leave the "Q" so that after our restore all 16 original CHAR_INFOs are present.
+    {
+        DWORD ignored;
+        VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterW(out, L'x', 15, { 1, 0 }, &ignored));
+    }
+
+    // Restore our "backup".
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, backup.data(), backupSize, {}, &backupRegion));
+
+    std::array<CHAR_INFO, 16> infos{};
+    {
+        SMALL_RECT region{ .Left = 0, .Right = 15 };
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, infos.data(), { 16, 1 }, {}, &region));
+    }
+    DbcsWriteRead::Verify(expected, infos);
 }
 
 // The following W versions of the tests check that we can't insert a bisecting cell even
