@@ -42,7 +42,6 @@ antialias
 antialiasing
 ANull
 anycpu
-AOn
 APARTMENTTHREADED
 APCs
 api
@@ -80,7 +79,6 @@ ASingle
 asm
 asmv
 asmx
-AStomps
 ASYNCWINDOWPOS
 atch
 ATest
@@ -1877,6 +1875,7 @@ QUESTIONMARK
 quickedit
 QUZ
 QWER
+Qxxxxxx
 qzmp
 RAII
 RALT
