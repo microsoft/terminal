@@ -31,6 +31,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _settings = settings;
 
+        // Exit rename mode if we're in it
+        if (_InRenameMode)
+        {
+            InRenameMode(false);
+        }
+
         // We want to re-initialize our AllColorSchemes list, but we want to make sure
         // we still have the same CurrentScheme as before (if that scheme still exists)
 
