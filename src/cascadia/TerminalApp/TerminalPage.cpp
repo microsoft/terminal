@@ -225,7 +225,7 @@ namespace winrt::TerminalApp::implementation
         }
         _updateThemeColors();
 
-        // Initialize the state of the the CloseButtonOverlayMode property of
+        // Initialize the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme())
         {
@@ -2729,7 +2729,7 @@ namespace winrt::TerminalApp::implementation
         // Begin Theme handling
         _updateThemeColors();
 
-        // Update the state of the the CloseButtonOverlayMode property of
+        // Update the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
         // Also update every tab's individual IsClosable to match.
