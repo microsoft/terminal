@@ -21,7 +21,7 @@ See the `README.md` in each directory for more information.
 :microscope: You can test your commits **without** *appending* to a PR by creating a new branch with that extra change and pushing it to your fork. The [check-spelling](https://github.com/marketplace/actions/check-spelling) action will run in response to your **push** -- it doesn't require an open pull request. By using such a branch, you can limit the number of typos your peers see you make. :wink:
 
 
-<details><summary>:clamp: If the flagged items are false positives</summary>
+<details><summary>If the flagged items are :exploding_head: false positives</summary>
 
 If items relate to a ...
 * binary file (or some other file you wouldn't want to check at all).
