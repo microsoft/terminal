@@ -47,7 +47,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto CreateInformation = &pMessage->CreateObject;
 
-    LockConsole();
+    const auto lock = LockConsole();
 
     // If a generic object was requested, use the desired access to determine which type of object the caller is expecting.
     if (CreateInformation->ObjectType == CD_IO_OBJECT_TYPE_GENERIC)
@@ -92,7 +92,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     if (!NT_SUCCESS(Status))
     {
-        UnlockConsole();
         pMessage->SetReplyStatus(Status);
         return pMessage;
     }
@@ -109,8 +108,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
         handle.release();
     }
 
-    UnlockConsole();
-
     return nullptr;
 }
 
@@ -122,12 +119,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 // - A pointer to the reply message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessage)
 {
-    LockConsole();
+    const auto lock = LockConsole();
 
     delete pMessage->GetObjectHandle();
     pMessage->SetReplyStatus(STATUS_SUCCESS);
 
-    UnlockConsole();
     return pMessage;
 }
 
@@ -401,8 +397,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     ConsoleProcessHandle* ProcessData = nullptr;
     NTSTATUS Status;
 
-    LockConsole();
-
+    const auto lock = LockConsole();
     const auto cleanup = wil::scope_exit([&]() noexcept {
         if (!NT_SUCCESS(Status))
         {
@@ -413,9 +408,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                 gci.ProcessHandleList.FreeProcessData(ProcessData);
             }
         }
-
-        // FreeProcessData() above requires the console to be locked.
-        UnlockConsole();
     });
 
     const auto dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;

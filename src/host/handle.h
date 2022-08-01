@@ -17,5 +17,15 @@ Revision History:
 
 #pragma once
 
-void LockConsole();
-void UnlockConsole();
+#include <til/ticket_lock.h>
+
+struct LockConsoleGuard
+{
+    explicit LockConsoleGuard(std::unique_lock<til::recursive_ticket_lock>&& guard) noexcept;
+    ~LockConsoleGuard();
+
+private:
+    std::unique_lock<til::recursive_ticket_lock> _guard;
+};
+
+LockConsoleGuard LockConsole();

@@ -588,8 +588,7 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(const std::string_view ex
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(const std::wstring_view exeName) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -636,8 +635,7 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(const std::string_view exeN
 HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(const std::wstring_view exeName,
                                                      const size_t numberOfCommands) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -668,8 +666,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(const std::wstring_view exeName
     // Ensure output variables are initialized
     historyLength = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     const auto pCommandHistory = CommandHistory::s_FindByExe(exeName);
     if (nullptr != pCommandHistory)
@@ -721,8 +718,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(const std::string_view 
     // Ensure output variables are initialized
     length = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -742,8 +738,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(const std::string_view 
 HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(const std::wstring_view exeName,
                                                          size_t& length) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -853,8 +848,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
             til::at(commandHistory, 0) = ANSI_NULL;
         }
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // Convert our input parameters to Unicode.
         const auto exeNameW = ConvertToW(codepage, exeName);
@@ -904,8 +898,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(const std::wstring_view exeNa
                                                    gsl::span<wchar_t> commandHistory,
                                                    size_t& written) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {

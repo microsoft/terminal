@@ -35,8 +35,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
     a->dwProcessCount = BufferSize / sizeof(ULONG);
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     /*
     * If there's not enough space in the array to hold all the pids, we'll
@@ -73,8 +72,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
     const auto a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GenerateConsoleCtrlEvent);
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     // Make sure the process group id is valid.
     if (a->ProcessGroupId != 0)

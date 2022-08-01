@@ -282,12 +282,9 @@ public:
         return std::vector<Microsoft::Console::Types::Viewport>{};
     }
 
-    void LockConsole() noexcept override
+    std::unique_lock<til::ticket_lock> LockConsole() noexcept override
     {
-    }
-
-    void UnlockConsole() noexcept override
-    {
+        return {};
     }
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& /*attr*/) const noexcept override

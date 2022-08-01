@@ -340,8 +340,7 @@ class ApiRoutinesTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& si = gci.GetActiveOutputBuffer();
 
-        gci.LockConsole();
-        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        const auto lock = gci.LockConsole();
 
         // Ensure global state is updated for our codepage.
         gci.OutputCP = dwCodePage;
@@ -430,8 +429,7 @@ class ApiRoutinesTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& si = gci.GetActiveOutputBuffer();
 
-        gci.LockConsole();
-        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        const auto lock = gci.LockConsole();
 
         const std::wstring testText(L"Test text");
 
@@ -616,8 +614,7 @@ class ApiRoutinesTests
         // Make sure we clear the margins on exit so they can't break other tests.
         auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
-        gci.LockConsole();
-        auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        const auto lock = gci.LockConsole();
 
         CHAR_INFO fill;
         fill.Char.UnicodeChar = L'A';

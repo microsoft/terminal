@@ -1137,8 +1137,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             return S_OK;
         }
 
-        LockConsole();
-        auto unlock{ wil::scope_exit([&] { UnlockConsole(); }) };
+        const auto lock = LockConsole();
 
         auto& screenInfo{ context.GetActiveBuffer() };
         const auto& consoleInfo{ ServiceLocator::LocateGlobals().getConsoleInformation() };
@@ -1318,8 +1317,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 {
     try
     {
-        LockConsole();
-        auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         std::unique_ptr<WriteData> writeDataWaiter;
         RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));

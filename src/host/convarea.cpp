@@ -89,8 +89,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 [[nodiscard]] HRESULT ImeStartComposition()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole();
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
 
     // MSFT:29219348 Some IME implementations do not produce composition strings, and
     // their users have come to rely on the cursor that conhost traditionally left on
@@ -105,8 +104,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 [[nodiscard]] HRESULT ImeEndComposition()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole();
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
 
     const auto pIme = &gci.ConsoleIme;
     pIme->RestoreCursorVisibility();
@@ -122,8 +120,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.LockConsole();
-        auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        const auto lock = gci.LockConsole();
 
         const auto pIme = &gci.ConsoleIme;
         pIme->WriteCompMessage(text, attributes, colorArray);
@@ -137,8 +134,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.LockConsole();
-        auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        const auto lock = gci.LockConsole();
 
         const auto pIme = &gci.ConsoleIme;
         pIme->ClearAllAreas();
@@ -152,8 +148,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.LockConsole();
-        auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+        const auto lock = gci.LockConsole();
 
         const auto pIme = &gci.ConsoleIme;
         pIme->WriteResultMessage(text);

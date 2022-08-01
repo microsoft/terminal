@@ -249,7 +249,7 @@ static bool s_IsOnDesktop()
 [[nodiscard]] NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    LockConsole();
+    const auto guard = LockConsole();
     auto Status = STATUS_SUCCESS;
 
     CommandHistory::s_Free((HANDLE)ProcessData);
@@ -265,8 +265,6 @@ static bool s_IsOnDesktop()
             pWindow->SetOwner();
         }
     }
-
-    UnlockConsole();
 
     return Status;
 }
@@ -708,8 +706,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     try
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // This fails a lot and it's totally expected. It only works for a few East Asian code pages.
         // As such, just return it. Do NOT use a wil macro here. It is very noisy.

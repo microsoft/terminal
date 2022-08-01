@@ -67,9 +67,8 @@ using namespace Microsoft::Console::Types;
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     LRESULT Status = 0;
-    auto Unlock = TRUE;
 
-    LockConsole();
+    const auto lock = LockConsole();
 
     auto& ScreenInfo = GetScreenInfo();
     if (hWnd == nullptr) // TODO: this might not be possible anymore
@@ -84,7 +83,6 @@ using namespace Microsoft::Console::Types;
             Status = DefWindowProcW(hWnd, Message, wParam, lParam);
         }
 
-        UnlockConsole();
         return Status;
     }
 
@@ -214,7 +212,6 @@ using namespace Microsoft::Console::Types;
         pSuggestionSize->cy = rectProposed.height();
 
         // Format our final suggestion for consumption.
-        UnlockConsole();
         return TRUE;
     }
 
@@ -476,9 +473,6 @@ using namespace Microsoft::Console::Types;
         {
             auto hHeirMenu = Menu::s_GetHeirMenuHandle();
 
-            Unlock = FALSE;
-            UnlockConsole();
-
             TrackPopupMenuEx(hHeirMenu,
                              TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
                              GET_X_LPARAM(lParam),
@@ -499,8 +493,6 @@ using namespace Microsoft::Console::Types;
         switch (wParam & 0x00FF)
         {
         case HTCAPTION:
-            UnlockConsole();
-            Unlock = FALSE;
             SetActiveWindow(hWnd);
             SendMessageTimeoutW(hWnd, WM_SYSCOMMAND, SC_MOVE | wParam, lParam, SMTO_NORMAL, INFINITE, nullptr);
             break;
@@ -560,7 +552,6 @@ using namespace Microsoft::Console::Types;
         else if (wParam == ID_CONSOLE_FIND)
         {
             DoFind();
-            Unlock = FALSE;
         }
         else if (wParam == ID_CONSOLE_SELECTALL)
         {
@@ -670,9 +661,6 @@ using namespace Microsoft::Console::Types;
 
     case CM_BEEP:
     {
-        UnlockConsole();
-        Unlock = FALSE;
-
         // Don't fall back to Beep() on win32 systems -- if the user configures their system for no sound, we should
         // respect that.
         PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
@@ -752,19 +740,9 @@ using namespace Microsoft::Console::Types;
     default:
     CallDefWin:
     {
-        if (Unlock)
-        {
-            UnlockConsole();
-            Unlock = FALSE;
-        }
         Status = DefWindowProcW(hWnd, Message, wParam, lParam);
         break;
     }
-    }
-
-    if (Unlock)
-    {
-        UnlockConsole();
     }
 
     return Status;

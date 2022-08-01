@@ -694,8 +694,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         waiter.reset();
 

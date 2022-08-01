@@ -69,7 +69,7 @@ struct NullDeviceComm : public IDeviceComm
     auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // Process handle list manipulation must be done under lock
-    gci.LockConsole();
+    const auto guard = gci.LockConsole();
     ConsoleProcessHandle* pProcessHandle{ nullptr };
     RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(GetCurrentProcessId(),
                                                             GetCurrentThreadId(),
@@ -94,8 +94,6 @@ struct NullDeviceComm : public IDeviceComm
     RETURN_IF_NTSTATUS_FAILED(ConsoleAllocateConsole(&fakeConnectInfo));
 
     CommandHistory::s_Allocate(fakeTitle, (HANDLE)pProcessHandle);
-
-    gci.UnlockConsole();
 
     return S_OK;
 }
@@ -134,8 +132,7 @@ extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data,
     const auto u16String{ til::u8u16(std::string_view{ reinterpret_cast<const char*>(data), size }) };
     til::CoordType scrollY{};
     auto sizeInBytes{ u16String.size() * 2 };
-    gci.LockConsole();
-    auto u = wil::scope_exit([&]() { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
     (void)WriteCharsLegacy(gci.GetActiveOutputBuffer(),
                            u16String.data(),
                            u16String.data(),

@@ -86,16 +86,11 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 //      operation.
 //   Callers should make sure to also call RenderData::UnlockConsole once
 //      they're done with any querying they need to do.
-void RenderData::LockConsole() noexcept
+std::unique_lock<til::ticket_lock> RenderData::LockConsole() noexcept
 {
     ::LockConsole();
-}
-
-// Method Description:
-// - Unlocks the console after a call to RenderData::LockConsole.
-void RenderData::UnlockConsole() noexcept
-{
-    ::UnlockConsole();
+    __debugbreak();
+    return {};
 }
 
 #pragma endregion

@@ -53,8 +53,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
 
             std::wstring wstr(szBuf, StringLength);
             lastFindString = wstr;
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+            const auto lock = LockConsole();
 
             Search search(gci.renderData,
                           wstr,
@@ -92,7 +91,6 @@ void DoFind()
     auto& g = ServiceLocator::LocateGlobals();
     const auto pWindow = ServiceLocator::LocateConsoleWindow();
 
-    UnlockConsole();
     if (pWindow != nullptr)
     {
         const auto hwnd = pWindow->GetWindowHandle();

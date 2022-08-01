@@ -203,21 +203,15 @@ catch (...)
 // - Lock the terminal for reading the contents of the buffer. Ensures that the
 //      contents of the terminal won't be changed in the middle of a paint
 //      operation.
-//   Callers should make sure to also call Terminal::UnlockConsole once
-//      they're done with any querying they need to do.
-void Terminal::LockConsole() noexcept
+std::unique_lock<til::ticket_lock> Terminal::LockConsole() noexcept
 {
-    _readWriteLock.lock();
-#ifndef NDEBUG
+#ifdef NDEBUG
+    return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
     _lastLocker = GetCurrentThreadId();
+    return lock;
 #endif
-}
-
-// Method Description:
-// - Unlocks the terminal after a call to Terminal::LockConsole.
-void Terminal::UnlockConsole() noexcept
-{
-    _readWriteLock.unlock();
 }
 
 const bool Terminal::IsUiaDataInitialized() const noexcept

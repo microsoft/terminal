@@ -108,8 +108,7 @@ void PtySignalInputThread::CreatePseudoWindow()
             ShowHideData msg = { 0 };
             _GetData(&msg, sizeof(msg));
 
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+            const auto lock = LockConsole();
 
             // If the client app hasn't yet connected, stash our initial
             // visibility for when we do. We default to not being visible - if a
@@ -132,8 +131,7 @@ void PtySignalInputThread::CreatePseudoWindow()
         }
         case PtySignal::ClearBuffer:
         {
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+            const auto lock = LockConsole();
 
             // If the client app hasn't yet connected, stash the new size in the launchArgs.
             // We'll later use the value in launchArgs to set up the console buffer
@@ -150,8 +148,7 @@ void PtySignalInputThread::CreatePseudoWindow()
             ResizeWindowData resizeMsg = { 0 };
             _GetData(&resizeMsg, sizeof(resizeMsg));
 
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+            const auto lock = LockConsole();
 
             // If the client app hasn't yet connected, stash the new size in the launchArgs.
             // We'll later use the value in launchArgs to set up the console buffer
@@ -173,8 +170,7 @@ void PtySignalInputThread::CreatePseudoWindow()
             SetParentData reparentMessage = { 0 };
             _GetData(&reparentMessage, sizeof(reparentMessage));
 
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+            const auto lock = LockConsole();
 
             // If the client app hasn't yet connected, stash the new owner.
             // We'll later (PtySignalInputThread::ConnectConsole) use the value

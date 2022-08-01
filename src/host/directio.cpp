@@ -166,8 +166,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             return STATUS_SUCCESS;
         }
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         std::deque<std::unique_ptr<IInputEvent>> partialEvents;
         if (!IsUnicode)
@@ -458,8 +457,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -502,8 +500,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -816,8 +813,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -838,8 +834,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -962,8 +957,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -983,8 +977,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -1012,8 +1005,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -1033,8 +1025,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -1062,8 +1053,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     written = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {

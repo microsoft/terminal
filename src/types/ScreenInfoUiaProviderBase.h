@@ -126,7 +126,5 @@ namespace Microsoft::Console::Types
         til::size _getScreenBufferCoords() const noexcept;
         const TextBuffer& _getTextBuffer() const noexcept;
         Viewport _getViewport() const noexcept;
-        void _LockConsole() noexcept;
-        void _UnlockConsole() noexcept;
     };
 }

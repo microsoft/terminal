@@ -10,21 +10,22 @@
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-void LockConsole()
+LockConsoleGuard::LockConsoleGuard(std::unique_lock<til::recursive_ticket_lock>&& guard) noexcept :
+    _guard{ std::move(guard) }
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole();
 }
 
-void UnlockConsole()
+LockConsoleGuard::~LockConsoleGuard()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetCSRecursionCount() == 1)
     {
         ProcessCtrlEvents();
     }
-    else
-    {
-        gci.UnlockConsole();
-    }
+}
+
+LockConsoleGuard LockConsole()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return LockConsoleGuard{ gci.LockConsole() };
 }

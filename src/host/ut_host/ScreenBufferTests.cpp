@@ -251,8 +251,7 @@ class ScreenBufferTests
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     Log::Comment(L"Testing creating one alternate buffer, then returning to the main buffer.");
     const auto psiOriginal = &gci.GetActiveOutputBuffer();
@@ -283,8 +282,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     Log::Comment(
         L"Testing creating one alternate buffer, then creating another "
@@ -330,8 +328,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     Log::Comment(
         L"Testing creating one alternate buffer, then creating another"
@@ -375,8 +372,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     auto& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
@@ -872,8 +868,7 @@ void ScreenBufferTests::TestGetReverseTab()
 void ScreenBufferTests::TestAltBufferTabStops()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to swap buffers.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to swap buffers.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     // Make sure we're in VT mode
@@ -2029,8 +2024,7 @@ void ScreenBufferTests::ResizeCursorUnchanged()
 void ScreenBufferTests::ResizeAltBuffer()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto& stateMachine = si.GetStateMachine();
@@ -2084,8 +2078,7 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto& stateMachine = mainBuffer.GetStateMachine();
@@ -2352,8 +2345,7 @@ void ScreenBufferTests::GetWordBoundaryTrimZerosOff()
 void ScreenBufferTests::TestAltBufferCursorState()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     Log::Comment(L"Creating one alternate buffer");
     auto& original = gci.GetActiveOutputBuffer();
@@ -2392,8 +2384,7 @@ void ScreenBufferTests::TestAltBufferCursorState()
 void ScreenBufferTests::TestAltBufferVtDispatching()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
     Log::Comment(L"Creating one alternate buffer");
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     // Make sure we're in VT mode
@@ -2484,8 +2475,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
 void ScreenBufferTests::TestAltBufferRIS()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
@@ -2963,8 +2953,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     //      tested.
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to swap buffers.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to swap buffers.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
@@ -3070,8 +3059,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     // Changing the value of the color table above index 99 should work
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to swap buffers.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to swap buffers.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
@@ -3154,8 +3142,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     // Setting the default foreground color should work
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to swap buffers.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to swap buffers.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
@@ -3199,8 +3186,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     // Setting the default Background color should work
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to swap buffers.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to swap buffers.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
@@ -5143,8 +5129,7 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetTerminalScrolling(true);
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& siMain = gci.GetActiveOutputBuffer();
     auto coordFontSize = siMain.GetScreenFontSize();
@@ -5210,8 +5195,7 @@ void ScreenBufferTests::SnapCursorWithTerminalScrolling()
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     gci.SetTerminalScrolling(true);
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& si = gci.GetActiveOutputBuffer();
     auto& cursor = si.GetTextBuffer().GetCursor();
@@ -5284,8 +5268,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& g = ServiceLocator::LocateGlobals();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& siMain = gci.GetActiveOutputBuffer();
     auto WriteText = [&](TextBuffer& tbi) {
@@ -6766,8 +6749,7 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"useQuirk", useQuirk), L"whether to enable the quirk");
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     auto& mainBuffer = gci.GetActiveOutputBuffer();
     auto& cursor = mainBuffer.GetTextBuffer().GetCursor();
@@ -7134,8 +7116,7 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
                  L"main buffer till we swap back to it, for performance.");
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.LockConsole(); // Lock must be taken to manipulate buffer.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole(); // Lock must be taken to manipulate buffer.
 
     // HUGELY cribbed from ConptyRoundtripTests::MethodSetup. This fakes the
     // console into thinking that it's in ConPTY mode. Yes, we need all this

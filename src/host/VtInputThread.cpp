@@ -66,8 +66,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     //      gci's unlock, when you press C-c, it won't be dispatched until the
     //      next console API call. For something like `powershell sleep 60`,
     //      that won't happen for 60s
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {

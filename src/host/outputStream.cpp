@@ -375,19 +375,22 @@ void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocit
 {
     // We create the audio instance on demand, and lock it for the duration
     // of the note output so it can't be destroyed while in use.
-    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
     midiAudio.Lock();
 
-    // We then unlock the console, so the UI doesn't hang while we're busy.
-    UnlockConsole();
+    {
+        // We then unlock the console, so the UI doesn't hang while we're busy.
+        const auto guard = gci.SuspendConsoleLock();
 
-    // This call will block for the duration, unless shutdown early.
-    midiAudio.PlayNote(noteNumber, velocity, duration);
+        // This call will block for the duration, unless shutdown early.
+        midiAudio.PlayNote(noteNumber, velocity, duration);
 
-    // Once complete, we reacquire the console lock and unlock the audio.
+        // Once complete, we reacquire the console lock and unlock the audio.
+    }
+
     // If the console has shutdown in the meantime, the Unlock call
     // will throw an exception, forcing the thread to exit ASAP.
-    LockConsole();
     midiAudio.Unlock();
 }
 

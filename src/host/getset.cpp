@@ -43,8 +43,7 @@ void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noe
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         mode = context.InputMode;
 
@@ -68,8 +67,7 @@ void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& m
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         mode = context.GetActiveBuffer().OutputMode;
     }
@@ -87,8 +85,7 @@ void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& m
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         const auto readyEventCount = context.GetNumberOfReadyEvents();
         RETURN_IF_FAILED(SizeTToULong(readyEventCount, &events));
@@ -108,8 +105,7 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         data.bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
         // see MSFT: 19918103
@@ -162,8 +158,7 @@ void ApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         size = context.GetActiveBuffer().GetTextBuffer().GetCursor().GetSize();
         isVisible = context.GetTextBuffer().GetCursor().IsVisible();
@@ -179,8 +174,7 @@ void ApiRoutines::GetConsoleSelectionInfoImpl(CONSOLE_SELECTION_INFO& consoleSel
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         const auto& selection = Selection::Instance();
         if (selection.IsInSelectingState())
@@ -208,8 +202,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         buttons = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfMouseButtons();
     }
@@ -230,8 +223,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         if (index == 0)
         {
@@ -263,8 +255,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         const auto& activeScreenInfo = context.GetActiveBuffer();
 
@@ -306,8 +297,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
     try
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         auto& activeScreenInfo = context.GetActiveBuffer();
 
@@ -340,8 +330,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         const auto oldQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
 
@@ -416,8 +405,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // Flags we don't understand are invalid.
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(mode, ~OUTPUT_MODES));
@@ -466,8 +454,7 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         SetActiveScreenBuffer(newContext.GetActiveBuffer());
     }
@@ -482,8 +469,7 @@ void ApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         context.Flush();
     }
@@ -500,8 +486,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         const auto& screenInfo = context.GetActiveBuffer();
 
@@ -522,8 +507,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         auto& screenInfo = context.GetActiveBuffer();
 
@@ -592,8 +576,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                     data.dwSize.Y == SHRT_MAX));
         // clang-format on
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
@@ -716,8 +699,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         auto& buffer = context.GetActiveBuffer();
 
@@ -801,8 +783,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // If more than 100% or less than 0% cursor height, reject it.
         RETURN_HR_IF(E_INVALIDARG, (size > 100 || size == 0));
@@ -829,8 +810,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         auto& g = ServiceLocator::LocateGlobals();
         auto Window = windowRect;
@@ -938,8 +918,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         auto& buffer = context.GetActiveBuffer();
 
@@ -996,8 +975,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(attribute, ~VALID_TEXT_ATTRIBUTES));
 
@@ -1040,8 +1018,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
         return DoSrvSetConsoleOutputCodePage(codepage);
     }
     CATCH_RETURN();
@@ -1058,8 +1035,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     try
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // Return if it's not known as a valid codepage ID.
         RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
@@ -1087,8 +1063,7 @@ void ApiRoutines::GetConsoleInputCodePageImpl(ULONG& codepage) noexcept
     try
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         codepage = gci.CP;
     }
@@ -1103,8 +1078,7 @@ void ApiRoutines::GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         codepage = gci.OutputCP;
     }
@@ -1122,8 +1096,7 @@ void ApiRoutines::GetConsoleWindowImpl(HWND& hwnd) noexcept
         // Set return to null before we do anything in case of failures/errors.
         hwnd = nullptr;
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
         const IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         if (pWindow != nullptr)
@@ -1155,8 +1128,7 @@ void ApiRoutines::GetConsoleHistoryInfoImpl(CONSOLE_HISTORY_INFO& consoleHistory
     try
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         consoleHistoryInfo.HistoryBufferSize = gci.GetHistoryBufferSize();
         consoleHistoryInfo.NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
@@ -1180,8 +1152,7 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(const CONSOLE_HISTORY_INFO& conso
         RETURN_HR_IF(E_INVALIDARG, consoleHistoryInfo.NumberOfHistoryBuffers > SHORT_MAX);
         RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(consoleHistoryInfo.dwFlags, ~CHI_VALID_FLAGS));
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         CommandHistory::s_ResizeAll(consoleHistoryInfo.HistoryBufferSize);
         gci.SetNumberOfHistoryBuffers(consoleHistoryInfo.NumberOfHistoryBuffers);
@@ -1202,8 +1173,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // Initialize flags portion of structure
         flags = 0;
@@ -1241,9 +1211,8 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
         // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
         // the console lock, we'll deadlock since ConsoleWindowProc takes the lock before processing messages. Instead,
         // we'll release early.
-        LockConsole();
         {
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
             auto& screenInfo = context.GetActiveBuffer();
 
@@ -1431,8 +1400,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         return GetConsoleTitleAImplHelper(title, written, needed, false);
     }
@@ -1454,8 +1422,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         return GetConsoleTitleWImplHelper(title, written, needed, false);
     }
@@ -1477,8 +1444,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         return GetConsoleTitleAImplHelper(title, written, needed, true);
     }
@@ -1500,8 +1466,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
     try
     {
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         return GetConsoleTitleWImplHelper(title, written, needed, true);
     }
@@ -1535,8 +1500,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 [[nodiscard]] HRESULT ApiRoutines::SetConsoleTitleWImpl(const std::wstring_view title) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
     return S_OK;

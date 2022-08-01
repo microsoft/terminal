@@ -174,8 +174,7 @@ public:
     const TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
 
-    void LockConsole() noexcept override;
-    void UnlockConsole() noexcept override;
+    [[nodiscard]] std::unique_lock<til::ticket_lock> LockConsole() noexcept override;
 #pragma endregion
 
 #pragma region IRenderData

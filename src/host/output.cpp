@@ -521,6 +521,5 @@ void CloseConsoleProcessState()
     //      not running under lock (eg PtySignalInputThread::_GetData), then the
     //      ctrl event will never actually get dispatched.
     // So, lock and unlock here, to make sure the ctrl event gets handled.
-    LockConsole();
-    UnlockConsole();
+    std::ignore = LockConsole();
 }

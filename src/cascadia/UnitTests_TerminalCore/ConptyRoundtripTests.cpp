@@ -1912,8 +1912,7 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     // We're _not_ checking the conpty output during this test, only the side effects.
     _checkConptyOutput = false;
 
-    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
 
     Log::Comment(L"Setting up the host buffer...");
     hostSm.ProcessString(L"AAAAA");
@@ -2404,8 +2403,7 @@ void ConptyRoundtripTests::BreakLinesOnCursorMovement()
     _checkConptyOutput = false;
 
     // Lock must be taken to manipulate alt/main buffer state.
-    gci.LockConsole();
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
 
     // Use DECALN to fill the buffer with 'E's.
     hostSm.ProcessString(L"\x1b#8");
@@ -3895,8 +3893,7 @@ void ConptyRoundtripTests::SimpleAltBufferTest()
 
     Log::Comment(L"========== Switch to the alt buffer ==========");
 
-    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
     sm.ProcessString(L"\x1b[?1049h");
     // Don't leave ourselves in the alt buffer - that'll pollute other tests.
     auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
@@ -4056,8 +4053,7 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
     Log::Comment(L"========== Switch to the alt buffer ==========");
 
-    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
     sm.ProcessString(L"\x1b[?1049h");
     // Don't leave ourselves in the alt buffer - that'll pollute other tests.
     auto leaveAltBuffer = wil::scope_exit([&] { sm.ProcessString(L"\x1b[?1049l"); });
@@ -4120,8 +4116,7 @@ void ConptyRoundtripTests::AltBufferResizeCrash()
     auto& si = gci.GetActiveOutputBuffer();
     auto& sm = si.GetStateMachine();
 
-    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+    const auto lock = gci.LockConsole();
 
     _flushFirstFrame();
 

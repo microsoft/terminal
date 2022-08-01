@@ -109,70 +109,68 @@ try
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
-    _pData->LockConsole();
-    auto unlock = wil::scope_exit([&]() {
-        _pData->UnlockConsole();
-    });
-
-    // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
-    _CheckViewportAndScroll();
-
-    // Try to start painting a frame
-    const auto hr = pEngine->StartPaint();
-    RETURN_IF_FAILED(hr);
-
-    // Return early if there's nothing to paint.
-    // The renderer itself tracks if there's something to do with the title, the
-    //      engine won't know that.
-    if (S_FALSE == hr)
     {
-        return S_OK;
-    }
+        const auto lock = _pData->LockConsole();
 
-    auto endPaint = wil::scope_exit([&]() {
-        LOG_IF_FAILED(pEngine->EndPaint());
+        // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+        _CheckViewportAndScroll();
 
-        // If the engine tells us it really wants to redraw immediately,
-        // tell the thread so it doesn't go to sleep and ticks again
-        // at the next opportunity.
-        if (pEngine->RequiresContinuousRedraw())
+        // Try to start painting a frame
+        const auto hr = pEngine->StartPaint();
+        RETURN_IF_FAILED(hr);
+
+        // Return early if there's nothing to paint.
+        // The renderer itself tracks if there's something to do with the title, the
+        //      engine won't know that.
+        if (S_FALSE == hr)
         {
-            NotifyPaintFrame();
+            return S_OK;
         }
-    });
 
-    // A. Prep Colors
-    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, {}, false, true));
+        auto endPaint = wil::scope_exit([&]() {
+            LOG_IF_FAILED(pEngine->EndPaint());
 
-    // B. Perform Scroll Operations
-    RETURN_IF_FAILED(_PerformScrolling(pEngine));
+            // If the engine tells us it really wants to redraw immediately,
+            // tell the thread so it doesn't go to sleep and ticks again
+            // at the next opportunity.
+            if (pEngine->RequiresContinuousRedraw())
+            {
+                NotifyPaintFrame();
+            }
+        });
 
-    // C. Prepare the engine with additional information before we start drawing.
-    RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
+        // A. Prep Colors
+        RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, {}, false, true));
 
-    // 1. Paint Background
-    RETURN_IF_FAILED(_PaintBackground(pEngine));
+        // B. Perform Scroll Operations
+        RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
-    // 2. Paint Rows of Text
-    _PaintBufferOutput(pEngine);
+        // C. Prepare the engine with additional information before we start drawing.
+        RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
 
-    // 3. Paint overlays that reside above the text buffer
-    _PaintOverlays(pEngine);
+        // 1. Paint Background
+        RETURN_IF_FAILED(_PaintBackground(pEngine));
 
-    // 4. Paint Selection
-    _PaintSelection(pEngine);
+        // 2. Paint Rows of Text
+        _PaintBufferOutput(pEngine);
 
-    // 5. Paint Cursor
-    _PaintCursor(pEngine);
+        // 3. Paint overlays that reside above the text buffer
+        _PaintOverlays(pEngine);
 
-    // 6. Paint window title
-    RETURN_IF_FAILED(_PaintTitle(pEngine));
+        // 4. Paint Selection
+        _PaintSelection(pEngine);
 
-    // Force scope exit end paint to finish up collecting information and possibly painting
-    endPaint.reset();
+        // 5. Paint Cursor
+        _PaintCursor(pEngine);
 
-    // Force scope exit unlock to let go of global lock so other threads can run
-    unlock.reset();
+        // 6. Paint window title
+        RETURN_IF_FAILED(_PaintTitle(pEngine));
+
+        // Force scope exit end paint to finish up collecting information and possibly painting
+        endPaint.reset();
+
+        // Force scope exit unlock to let go of global lock so other threads can run
+    }
 
     // Trigger out-of-lock presentation for renderers that can support it
     RETURN_IF_FAILED(pEngine->Present());

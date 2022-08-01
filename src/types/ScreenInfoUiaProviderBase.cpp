@@ -223,10 +223,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
-    _LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // make a safe array
@@ -273,10 +270,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
-    _LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // make a safe array
@@ -378,16 +372,4 @@ const TextBuffer& ScreenInfoUiaProviderBase::_getTextBuffer() const noexcept
 Viewport ScreenInfoUiaProviderBase::_getViewport() const noexcept
 {
     return _pData->GetViewport();
-}
-
-void ScreenInfoUiaProviderBase::_LockConsole() noexcept
-{
-    // TODO GitHub #2141: Lock and Unlock in conhost should decouple Ctrl+C dispatch and use smarter handling
-    _pData->LockConsole();
-}
-
-void ScreenInfoUiaProviderBase::_UnlockConsole() noexcept
-{
-    // TODO GitHub #2141: Lock and Unlock in conhost should decouple Ctrl+C dispatch and use smarter handling
-    _pData->UnlockConsole();
 }

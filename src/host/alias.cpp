@@ -88,8 +88,7 @@ std::unordered_map<std::wstring,
                                                         const std::wstring_view target,
                                                         const std::wstring_view exeName) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     RETURN_HR_IF(E_INVALIDARG, source.size() == 0);
 
@@ -211,8 +210,7 @@ std::unordered_map<std::wstring,
             til::at(target, 0) = ANSI_NULL;
         }
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // Convert our input parameters to Unicode.
         const auto sourceW = ConvertToW(codepage, source);
@@ -272,8 +270,7 @@ std::unordered_map<std::wstring,
                                                         size_t& written,
                                                         const std::wstring_view exeName) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -379,8 +376,7 @@ static std::wstring aliasesSeparator(L"=");
     // Ensure output variables are initialized
     bufferRequired = 0;
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     // Convert our input parameters to Unicode
     try
@@ -403,8 +399,7 @@ static std::wstring aliasesSeparator(L"=");
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(const std::wstring_view exeName,
                                                                 size_t& bufferRequired) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -543,8 +538,7 @@ void Alias::s_ClearCmdExeAliases()
             til::at(alias, 0) = '\0';
         }
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // Convert our input parameters to Unicode.
         const auto exeNameW = ConvertToW(codepage, exeName);
@@ -594,8 +588,7 @@ void Alias::s_ClearCmdExeAliases()
                                                           gsl::span<wchar_t> alias,
                                                           size_t& written) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {
@@ -653,9 +646,8 @@ void Alias::s_ClearCmdExeAliases()
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept
 {
-    LockConsole();
+    const auto lock = LockConsole();
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
     return GetConsoleAliasExesLengthImplHelper(false, gci.CP, bufferRequired);
 }
@@ -668,8 +660,7 @@ void Alias::s_ClearCmdExeAliases()
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     return GetConsoleAliasExesLengthImplHelper(true, 0, bufferRequired);
 }
@@ -761,8 +752,7 @@ void Alias::s_ClearCmdExeAliases()
             til::at(aliasExes, 0) = '\0';
         }
 
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        const auto lock = LockConsole();
 
         // Figure our how big our temporary Unicode buffer must be to retrieve output
         size_t bufferNeeded;
@@ -807,8 +797,7 @@ void Alias::s_ClearCmdExeAliases()
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
                                                             size_t& written) noexcept
 {
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     try
     {

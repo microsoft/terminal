@@ -202,10 +202,7 @@ bool UiaTextRangeBase::IsDegenerate() const noexcept
 
 IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
 
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = FALSE;
@@ -229,10 +226,7 @@ try
     RETURN_HR_IF_NULL(E_INVALIDARG, pRetVal);
     *pRetVal = 0;
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // get the text range that we're comparing to
@@ -261,10 +255,7 @@ CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexcept
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     try
@@ -451,10 +442,7 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // AttributeIDs that require special handling
@@ -619,10 +607,7 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const std::wstring queryText{ text, SysStringLen(text) };
@@ -750,10 +735,7 @@ try
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     VariantInit(pRetVal);
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // AttributeIDs that require special handling
@@ -847,10 +829,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     try
@@ -958,14 +937,12 @@ try
     RETURN_HR_IF(E_INVALIDARG, maxLength < -1);
     *pRetVal = nullptr;
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
-    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
-
-    const auto text = _getTextValue(maxLength);
-    Unlock.reset();
+    std::wstring text;
+    {
+        const auto lock = _pData->LockConsole();
+        RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+        text = _getTextValue(maxLength);
+    }
 
     *pRetVal = SysAllocString(text.c_str());
     RETURN_HR_IF_NULL(E_OUTOFMEMORY, *pRetVal);
@@ -1030,10 +1007,7 @@ try
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // We can abstract this movement by moving _start
@@ -1098,10 +1072,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
 
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
     RETURN_HR_IF(S_OK, count == 0);
 
@@ -1155,10 +1126,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
                                                      _In_ TextPatternRangeEndpoint targetEndpoint) noexcept
 try
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
 
     const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
     RETURN_HR_IF_NULL(E_INVALIDARG, range);
@@ -1182,10 +1150,7 @@ CATCH_RETURN();
 IFACEMETHODIMP UiaTextRangeBase::Select() noexcept
 try
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
+    const auto lock = _pData->LockConsole();
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     if (IsDegenerate())
@@ -1224,70 +1189,69 @@ IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection() noexcept
 IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop) noexcept
 try
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
-    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+    const auto lock = _pData->LockConsole();
 
-    const auto oldViewport = _pData->GetViewport().ToInclusive();
-    const auto viewportHeight = _getViewportHeight(oldViewport);
-    // range rows
-    const auto startScreenInfoRow = _start.Y;
-    const auto endScreenInfoRow = _end.Y;
-    // screen buffer rows
-    const til::CoordType topRow = 0;
-    const auto bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
-
-    auto newViewport = oldViewport;
-
-    // there's a bunch of +1/-1s here for setting the viewport. These
-    // are to account for the inclusivity of the viewport boundaries.
-    if (alignToTop)
+    til::inclusive_rect newViewport;
     {
-        // determine if we can align the start row to the top
-        if (startScreenInfoRow + viewportHeight <= bottomRow)
+        RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+
+        const auto oldViewport = _pData->GetViewport().ToInclusive();
+        const auto viewportHeight = _getViewportHeight(oldViewport);
+        // range rows
+        const auto startScreenInfoRow = _start.Y;
+        const auto endScreenInfoRow = _end.Y;
+        // screen buffer rows
+        const til::CoordType topRow = 0;
+        const auto bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
+
+        newViewport = oldViewport;
+
+        // there's a bunch of +1/-1s here for setting the viewport. These
+        // are to account for the inclusivity of the viewport boundaries.
+        if (alignToTop)
         {
-            // we can align to the top
-            newViewport.Top = startScreenInfoRow;
-            newViewport.Bottom = startScreenInfoRow + viewportHeight - 1;
+            // determine if we can align the start row to the top
+            if (startScreenInfoRow + viewportHeight <= bottomRow)
+            {
+                // we can align to the top
+                newViewport.Top = startScreenInfoRow;
+                newViewport.Bottom = startScreenInfoRow + viewportHeight - 1;
+            }
+            else
+            {
+                // we can't align to the top so we'll just move the viewport
+                // to the bottom of the screen buffer
+                newViewport.Bottom = bottomRow;
+                newViewport.Top = bottomRow - viewportHeight + 1;
+            }
         }
         else
         {
-            // we can't align to the top so we'll just move the viewport
-            // to the bottom of the screen buffer
-            newViewport.Bottom = bottomRow;
-            newViewport.Top = bottomRow - viewportHeight + 1;
+            // we need to align to the bottom
+            // check if we can align to the bottom
+            if (endScreenInfoRow >= viewportHeight)
+            {
+                // GH#7839: endScreenInfoRow may be ExclusiveEnd
+                //          ExclusiveEnd is past the bottomRow
+                //          so we need to clamp to the bottom row to stay in bounds
+
+                // we can align to bottom
+                newViewport.Bottom = std::min(endScreenInfoRow, bottomRow);
+                newViewport.Top = newViewport.Bottom - viewportHeight + 1;
+            }
+            else
+            {
+                // we can't align to bottom so we'll move the viewport to
+                // the top of the screen buffer
+                newViewport.Top = topRow;
+                newViewport.Bottom = topRow + viewportHeight - 1;
+            }
         }
+
+        assert(newViewport.Top >= topRow);
+        assert(newViewport.Bottom <= bottomRow);
+        assert(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport));
     }
-    else
-    {
-        // we need to align to the bottom
-        // check if we can align to the bottom
-        if (endScreenInfoRow >= viewportHeight)
-        {
-            // GH#7839: endScreenInfoRow may be ExclusiveEnd
-            //          ExclusiveEnd is past the bottomRow
-            //          so we need to clamp to the bottom row to stay in bounds
-
-            // we can align to bottom
-            newViewport.Bottom = std::min(endScreenInfoRow, bottomRow);
-            newViewport.Top = newViewport.Bottom - viewportHeight + 1;
-        }
-        else
-        {
-            // we can't align to bottom so we'll move the viewport to
-            // the top of the screen buffer
-            newViewport.Top = topRow;
-            newViewport.Bottom = topRow + viewportHeight - 1;
-        }
-    }
-
-    assert(newViewport.Top >= topRow);
-    assert(newViewport.Bottom <= bottomRow);
-    assert(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport));
-
-    Unlock.reset();
 
     const gsl::not_null<ScreenInfoUiaProviderBase*> provider = static_cast<ScreenInfoUiaProviderBase*>(_pProvider);
     provider->ChangeViewport(newViewport);

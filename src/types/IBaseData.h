@@ -14,8 +14,9 @@ Author(s):
 
 #pragma once
 
-#include "inc/viewport.hpp"
+#include <til/ticket_lock.h>
 #include "../renderer/inc/FontInfo.hpp"
+#include "inc/viewport.hpp"
 
 class TextBuffer;
 
@@ -41,8 +42,7 @@ namespace Microsoft::Console::Types
 
         virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
 
-        virtual void LockConsole() noexcept = 0;
-        virtual void UnlockConsole() noexcept = 0;
+        virtual [[nodiscard]] std::unique_lock<til::ticket_lock> LockConsole() noexcept = 0;
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.

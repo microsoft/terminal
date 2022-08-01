@@ -31,8 +31,7 @@ public:
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
 
-    void LockConsole() noexcept override;
-    void UnlockConsole() noexcept override;
+    [[nodiscard]] std::unique_lock<til::ticket_lock> LockConsole() noexcept override;
 #pragma endregion
 
 #pragma region IRenderData

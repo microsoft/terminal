@@ -81,8 +81,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     auto& screenInfo = OutContext.GetActiveBuffer();
     const auto bufferSize = screenInfo.GetBufferSize();
@@ -121,8 +120,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     auto& screenInfo = OutContext.GetActiveBuffer();
     const auto bufferSize = screenInfo.GetBufferSize();
@@ -206,8 +204,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     auto& screenBuffer = OutContext.GetActiveBuffer();
     const auto bufferSize = screenBuffer.GetBufferSize();
@@ -266,8 +263,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return S_OK;
     }
 
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+    const auto lock = LockConsole();
 
     // TODO: does this even need to be here or will it exit quickly?
     auto& screenInfo = OutContext.GetActiveBuffer();

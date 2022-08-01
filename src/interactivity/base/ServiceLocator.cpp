@@ -62,7 +62,7 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 #ifndef NDEBUG
     // By locking the console, we ensure no background tasks are accessing the
     // classes we're going to destruct down below (for instance: CursorBlinker).
-    s_globals.getConsoleInformation().LockConsole();
+    const auto guard = s_globals.getConsoleInformation().LockConsole();
 #endif
 
     // A History Lesson from MSFT: 13576341:

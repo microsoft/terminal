@@ -1022,35 +1022,36 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
 {
     InitEnvironmentVariables();
 
-    LockConsole();
     HHOOK hhook = nullptr;
     auto Status = STATUS_SUCCESS;
-
-    if (!ServiceLocator::LocateGlobals().launchArgs.IsHeadless())
     {
-        // If we're not headless, set up the main conhost window.
-        Status = InitWindowsSubsystem(&hhook);
-    }
-    else
-    {
-        // If we are headless (because we're a pseudo console), we
-        // will still need a window handle in the win32 environment
-        // in case anyone sends messages at that HWND (vim.exe is an example.)
-        //
-        // IMPORTANT! We have to CreateWindow on the same thread that will pump
-        // the messages, which is this thread. If you DON'T, then a DPI change
-        // in the owning hwnd will cause us to get a dpi change as well, which
-        // we'll never deque and handle, effectively HANGING THE OWNER HWND.
-        // ServiceLocator::LocatePseudoWindow();
-        //
-        // Instead of just calling LocatePseudoWindow, make sure to go through
-        // VtIo's CreatePseudoWindow, which will make sure that the window is
-        // successfully created with the owner configured when the window is
-        // first created. See GH#13066 for details.
-        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
+        const auto lock = LockConsole();
+
+        if (!ServiceLocator::LocateGlobals().launchArgs.IsHeadless())
+        {
+            // If we're not headless, set up the main conhost window.
+            Status = InitWindowsSubsystem(&hhook);
+        }
+        else
+        {
+            // If we are headless (because we're a pseudo console), we
+            // will still need a window handle in the win32 environment
+            // in case anyone sends messages at that HWND (vim.exe is an example.)
+            //
+            // IMPORTANT! We have to CreateWindow on the same thread that will pump
+            // the messages, which is this thread. If you DON'T, then a DPI change
+            // in the owning hwnd will cause us to get a dpi change as well, which
+            // we'll never deque and handle, effectively HANGING THE OWNER HWND.
+            // ServiceLocator::LocatePseudoWindow();
+            //
+            // Instead of just calling LocatePseudoWindow, make sure to go through
+            // VtIo's CreatePseudoWindow, which will make sure that the window is
+            // successfully created with the owner configured when the window is
+            // first created. See GH#13066 for details.
+            ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
+        }
     }
 
-    UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
         ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
