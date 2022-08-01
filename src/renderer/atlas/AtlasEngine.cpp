@@ -26,134 +26,6 @@
 
 using namespace Microsoft::Console::Render;
 
-struct TextAnalyzer final : IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
-{
-    constexpr TextAnalyzer(const std::vector<wchar_t>& text, std::vector<AtlasEngine::TextAnalyzerResult>& results) noexcept :
-        _text{ text }, _results{ results }
-    {
-        Ensures(_text.size() <= UINT32_MAX);
-    }
-
-    // TextAnalyzer will be allocated on the stack and reference counting is pointless because of that.
-    // The debug version will assert that we don't leak any references though.
-#ifdef NDEBUG
-    ULONG __stdcall AddRef() noexcept override
-    {
-        return 1;
-    }
-
-    ULONG __stdcall Release() noexcept override
-    {
-        return 1;
-    }
-#else
-    ULONG _refCount = 1;
-
-    ~TextAnalyzer()
-    {
-        assert(_refCount == 1);
-    }
-
-    ULONG __stdcall AddRef() noexcept override
-    {
-        return ++_refCount;
-    }
-
-    ULONG __stdcall Release() noexcept override
-    {
-        return --_refCount;
-    }
-#endif
-
-    HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObject) noexcept override
-    {
-        __assume(ppvObject != nullptr);
-
-        if (IsEqualGUID(riid, __uuidof(IDWriteTextAnalysisSource)) || IsEqualGUID(riid, __uuidof(IDWriteTextAnalysisSink)))
-        {
-            *ppvObject = this;
-            return S_OK;
-        }
-
-        *ppvObject = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    HRESULT __stdcall GetTextAtPosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textString != nullptr);
-        __assume(textLength != nullptr);
-
-        const auto size = gsl::narrow_cast<UINT32>(_text.size());
-        textPosition = std::min(textPosition, size);
-        *textString = _text.data() + textPosition;
-        *textLength = size - textPosition;
-        return S_OK;
-    }
-
-    HRESULT __stdcall GetTextBeforePosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textString != nullptr);
-        __assume(textLength != nullptr);
-
-        const auto size = gsl::narrow_cast<UINT32>(_text.size());
-        textPosition = std::min(textPosition, size);
-        *textString = _text.data();
-        *textLength = textPosition;
-        return S_OK;
-    }
-
-    DWRITE_READING_DIRECTION __stdcall GetParagraphReadingDirection() noexcept override
-    {
-        return DWRITE_READING_DIRECTION_LEFT_TO_RIGHT;
-    }
-
-    HRESULT __stdcall GetLocaleName(UINT32 textPosition, UINT32* textLength, const WCHAR** localeName) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textLength != nullptr);
-        __assume(localeName != nullptr);
-
-        *textLength = gsl::narrow_cast<UINT32>(_text.size()) - textPosition;
-        *localeName = nullptr;
-        return S_OK;
-    }
-
-    HRESULT __stdcall GetNumberSubstitution(UINT32 textPosition, UINT32* textLength, IDWriteNumberSubstitution** numberSubstitution) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetScriptAnalysis(UINT32 textPosition, UINT32 textLength, const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis) noexcept override
-    try
-    {
-        _results.emplace_back(AtlasEngine::TextAnalyzerResult{ textPosition, textLength, scriptAnalysis->script, static_cast<UINT8>(scriptAnalysis->shapes), 0 });
-        return S_OK;
-    }
-    CATCH_RETURN()
-
-    HRESULT __stdcall SetLineBreakpoints(UINT32 textPosition, UINT32 textLength, const DWRITE_LINE_BREAKPOINT* lineBreakpoints) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetBidiLevel(UINT32 textPosition, UINT32 textLength, UINT8 explicitLevel, UINT8 resolvedLevel) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetNumberSubstitution(UINT32 textPosition, UINT32 textLength, IDWriteNumberSubstitution* numberSubstitution) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-private:
-    const std::vector<wchar_t>& _text;
-    std::vector<AtlasEngine::TextAnalyzerResult>& _results;
-};
-
 #pragma warning(suppress : 26455) // Default constructor may not throw. Declare it 'noexcept' (f.6).
 AtlasEngine::AtlasEngine()
 {
@@ -969,6 +841,8 @@ void AtlasEngine::_recreateFontDependentResources()
         _r.cellCount = _api.cellCount;
         _r.dpi = _api.dpi;
         _r.fontMetrics = _api.fontMetrics;
+        _r.dipPerPixel = static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi);
+        _r.pixelPerDIP = static_cast<float>(_r.dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         _r.atlasSizeInPixel = { 0, 0 };
         _r.tileAllocator = TileAllocator{ _api.fontMetrics.cellSize, _api.sizeInPixel };
 
@@ -1022,8 +896,8 @@ void AtlasEngine::_recreateFontDependentResources()
                 auto& textFormat = _r.textFormats[italic][bold];
 
                 THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.c_str(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
-                textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-                textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+                THROW_IF_FAILED(textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER));
+                THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
                 // DWRITE_LINE_SPACING_METHOD_UNIFORM:
                 // > Lines are explicitly set to uniform spacing, regardless of contained font sizes.
@@ -1031,9 +905,11 @@ void AtlasEngine::_recreateFontDependentResources()
                 // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
                 THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
 
-                if (!_api.fontAxisValues.empty())
+                if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
                 {
-                    if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
+                    THROW_IF_FAILED(textFormat3->SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE));
+
+                    if (!_api.fontAxisValues.empty())
                     {
                         // The wght axis defaults to the font weight.
                         _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
@@ -1166,7 +1042,8 @@ void AtlasEngine::_flushBufferLine()
     const auto textFormat = _getTextFormat(_api.attributes.bold, _api.attributes.italic);
     const auto& textFormatAxis = _getTextFormatAxis(_api.attributes.bold, _api.attributes.italic);
 
-    TextAnalyzer atlasAnalyzer{ _api.bufferLine, _api.analysisResults };
+    TextAnalysisSource analysisSource{ _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSink analysisSink{ _api.analysisResults };
 
     wil::com_ptr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
@@ -1185,7 +1062,7 @@ void AtlasEngine::_flushBufferLine()
             {
                 wil::com_ptr<IDWriteFontFace5> fontFace5;
                 THROW_IF_FAILED(_sr.systemFontFallback.query<IDWriteFontFallback1>()->MapCharacters(
-                    /* analysisSource */ &atlasAnalyzer,
+                    /* analysisSource */ &analysisSource,
                     /* textPosition */ idx,
                     /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
@@ -1204,7 +1081,7 @@ void AtlasEngine::_flushBufferLine()
                 wil::com_ptr<IDWriteFont> font;
 
                 THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
-                    /* analysisSource     */ &atlasAnalyzer,
+                    /* analysisSource     */ &analysisSource,
                     /* textPosition       */ idx,
                     /* textLength         */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
@@ -1290,7 +1167,7 @@ void AtlasEngine::_flushBufferLine()
             else
             {
                 _api.analysisResults.clear();
-                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer));
+                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&analysisSource, idx, complexityLength, &analysisSink));
                 //_sr.textAnalyzer->AnalyzeBidi(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer);
 
                 for (const auto& a : _api.analysisResults)

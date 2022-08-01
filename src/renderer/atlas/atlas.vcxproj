@@ -14,6 +14,7 @@
     <ClCompile Include="AtlasEngine.api.cpp" />
     <ClCompile Include="AtlasEngine.r.cpp" />
     <ClCompile Include="dwrite.cpp" />
+    <ClCompile Include="DWriteTextAnalysis.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -21,6 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dwrite.h" />
+    <ClInclude Include="DWriteTextAnalysis.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="AtlasEngine.h" />
   </ItemGroup>

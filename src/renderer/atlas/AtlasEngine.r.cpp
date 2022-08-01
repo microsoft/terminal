@@ -126,7 +126,6 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
     data.cellCountX = _r.cellCount.x;
     data.cellSize.x = _r.fontMetrics.cellSize.x;
     data.cellSize.y = _r.fontMetrics.cellSize.y;
-
     data.underlinePos = _r.fontMetrics.underlinePos;
     data.underlineWidth = _r.fontMetrics.underlineWidth;
     data.strikethroughPos = _r.fontMetrics.strikethroughPos;
@@ -245,19 +244,20 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     const auto value = item.value->data();
     const auto coords = &value->coords[0];
     const auto charsLength = key->charCount;
-    const auto cells = static_cast<u32>(key->attributes.cellCount);
+    const auto cellCount = static_cast<u32>(key->attributes.cellCount);
     const auto textFormat = _getTextFormat(key->attributes.bold, key->attributes.italic);
     const auto coloredGlyph = WI_IsFlagSet(value->flags, CellFlags::ColoredGlyph);
+    const f32x2 layoutBox{ cellCount * _r.cellSizeDIP.x, _r.cellSizeDIP.y };
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
-    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key->chars[0], charsLength, textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
+    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key->chars[0], charsLength, textFormat, layoutBox.x, layoutBox.y, textLayout.addressof()));
     if (_r.typography)
     {
         textLayout->SetTypography(_r.typography.get(), { 0, charsLength });
     }
 
-    auto options = D2D1_DRAW_TEXT_OPTIONS_CLIP;
+    auto options = D2D1_DRAW_TEXT_OPTIONS_NONE;
     // D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT enables a bunch of internal machinery
     // which doesn't have to run if we know we can't use it anyways in the shader.
     WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, coloredGlyph);
@@ -271,13 +271,187 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         _r.d2dRenderTarget->SetTextAntialiasMode(coloredGlyph ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
     }
 
-    for (u32 i = 0; i < cells; ++i)
+    const f32x2 halfSize{ layoutBox.x * 0.5f, layoutBox.y * 0.5f };
+    bool scalingRequired = false;
+    f32x2 offset{ 0, 0 };
+    f32x2 scale{ 1, 1 };
+
+    // Block Element and Box Drawing characters need to be handled separately from
+    // others, because unlike them they're supposed to fill the entire layout box.
+    // Or in other words: If they overflow the layout box, that's actually great!
+    // To be on the safe side measure this code however will always adjust
+    // their scale to result in an exact size match of the layoutBox.
+    if (charsLength == 1 && key->chars[0] >= 0x2500 && key->chars[0] <= 0x259F)
+    {
+        wil::com_ptr<IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
+        const auto baseWeight = textFormat->GetFontWeight();
+        const auto baseStyle = textFormat->GetFontStyle();
+
+        TextAnalysisSource analysisSource{ &key->chars[0], 1 };
+        UINT32 mappedLength = 0;
+        wil::com_ptr<IDWriteFont> mappedFont;
+        FLOAT mappedScale = 0;
+        THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
+            /* analysisSource     */ &analysisSource,
+            /* textPosition       */ 0,
+            /* textLength         */ 1,
+            /* baseFontCollection */ fontCollection.get(),
+            /* baseFamilyName     */ _r.fontMetrics.fontName.data(),
+            /* baseWeight         */ baseWeight,
+            /* baseStyle          */ baseStyle,
+            /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
+            /* mappedLength       */ &mappedLength,
+            /* mappedFont         */ mappedFont.addressof(),
+            /* scale              */ &mappedScale));
+
+        if (mappedFont)
+        {
+            wil::com_ptr<IDWriteFontFace> fontFace;
+            THROW_IF_FAILED(mappedFont->CreateFontFace(fontFace.addressof()));
+
+            DWRITE_FONT_METRICS metrics;
+            fontFace->GetMetrics(&metrics);
+
+            const u32 codePoint = key->chars[0];
+            u16 glyphIndex;
+            THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+
+            DWRITE_GLYPH_METRICS glyphMetrics;
+            THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+
+            const f32x2 boxSize{
+                static_cast<f32>(glyphMetrics.advanceWidth) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
+                static_cast<f32>(glyphMetrics.advanceHeight) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
+            };
+
+            // We always want box drawing glyphs to exactly match the size of a terminal cell.
+            // So for safe measure we'll always scale them to the exact size.
+            // But add 1px to the destination size, so that we don't end up with fractional pixels.
+            scalingRequired = true;
+            scale.x = (layoutBox.x + _r.dipPerPixel) / boxSize.x;
+            scale.y = (layoutBox.y + _r.dipPerPixel) / boxSize.y;
+        }
+    }
+    else
+    {
+        DWRITE_OVERHANG_METRICS overhang;
+        THROW_IF_FAILED(textLayout->GetOverhangMetrics(&overhang));
+
+        const DWRITE_OVERHANG_METRICS clampedOverhang{
+            std::max(0.0f, overhang.left),
+            std::max(0.0f, overhang.top),
+            std::max(0.0f, overhang.right),
+            std::max(0.0f, overhang.bottom),
+        };
+        f32x2 actualSize{
+            layoutBox.x + overhang.left + overhang.right,
+            layoutBox.y + overhang.top + overhang.bottom,
+        };
+
+        // Long glyphs should be drawn with their proper design size, even if that makes them a bit blurry,
+        // because otherwise we fail to support "pseudo" block characters like the "===" ligature in Cascadia Code.
+        // If we didn't force upscale that ligatures it would seemingly shrink shorter and shorter, as its
+        // glyph advance is often slightly shorter by a fractional pixel or two compared to our terminal's cells.
+        // It's a trade off that keeps most glyphs "crisp" while retaining support for things like "===".
+        // At least I can't think of any better heuristic for this at the moment...
+        if (cellCount > 2)
+        {
+            const auto advanceScale = _r.fontMetrics.advanceScale;
+            scalingRequired = true;
+            scale = { advanceScale, advanceScale };
+            actualSize.x *= advanceScale;
+            actualSize.y *= advanceScale;
+        }
+
+        // We need to offset glyphs that are simply outside of our layout box (layoutBox.x/.y)
+        // and additionally downsize glyphs that are entirely too large to fit in.
+        // The DWRITE_OVERHANG_METRICS will tell us how many DIPs the layout box is too large/small.
+        // It contains a positive number if the glyph is outside and a negative one if it's inside
+        // the layout box. For example, given a layoutBox.x/.y (and cell size) of 20/30:
+        // * "M" is the "largest" ASCII character and might be:
+        //     left:    -0.6f
+        //     right:   -0.6f
+        //     top:     -7.6f
+        //     bottom:  -7.4f
+        //   "M" doesn't fill the layout box at all!
+        //   This is because we've rounded up the Terminal's cell size to whole pixels in
+        //   _resolveFontMetrics. top/bottom margins are fairly large because we added the
+        //   chosen font's ascender, descender and line gap metrics to get our line height.
+        //   --> offsetX = 0
+        //   --> offsetY = 0
+        //   --> scale   = 1
+        // * The bar diacritic (U+0336 combining long stroke overlay)
+        //     left:    -9.0f
+        //     top:    -16.3f
+        //     right:    5.6f
+        //     bottom: -11.7f
+        //   right is positive! Our glyph is 5.6 DIPs outside of the layout box and would
+        //   appear cut off during rendering. left is negative at -9, which indicates that
+        //   we can simply shift the glyph by 5.6 DIPs to the left to fit it into our bounds.
+        //   --> offsetX = -5.6f
+        //   --> offsetY = 0
+        //   --> scale   = 1
+        // * Any wide emoji in a narrow cell (U+26A0 warning sign)
+        //     left:     6.7f
+        //     top:     -4.1f
+        //     right:    6.7f
+        //     bottom:  -3.0f
+        //   Our emoji is outside the bounds on both the left and right side and we need to shrink it.
+        //   --> offsetX = 0
+        //   --> offsetY = 0
+        //   --> scale   = layoutBox.y / (layoutBox.y + left + right)
+        //               = 0.69f
+        offset.x = clampedOverhang.left - clampedOverhang.right;
+        offset.y = clampedOverhang.top - clampedOverhang.bottom;
+
+        if (actualSize.x > layoutBox.x)
+        {
+            scalingRequired = true;
+            offset.x = (overhang.left - overhang.right) * 0.5f;
+            scale.x = (layoutBox.x - _r.dipPerPixel) / actualSize.x;
+            scale.y = scale.x;
+        }
+        if (actualSize.y > layoutBox.y)
+        {
+            scalingRequired = true;
+            offset.y = (overhang.top - overhang.bottom) * 0.5f;
+            scale.x = std::min(scale.x, (layoutBox.y - _r.dipPerPixel) / actualSize.y);
+            scale.y = scale.x;
+        }
+
+        // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
+        // But we do want it technically, so this re-implements baseline snapping... I think?
+        // It calculates the new `baseline` height after transformation by `scale.y` relative to the center point `halfSize.y`.
+        //
+        // This works even if `scale.y == 1`, because then `baseline == baselineInDIP + offset.y` and `baselineInDIP`
+        // is always measured in full pixels. So rounding it will be equivalent to just rounding `offset.y` itself.
+        const auto baseline = halfSize.y + (_r.fontMetrics.baselineInDIP + offset.y - halfSize.y) * scale.y;
+        // This rounds to the nearest multiple of _r.dipPerPixel.
+        const auto baselineFixed = roundf(baseline * _r.pixelPerDIP) * _r.dipPerPixel;
+        offset.y += (baselineFixed - baseline) / scale.y;
+    }
+
+    // !!! IMPORTANT !!!
+    // DirectWrite/2D snaps the baseline to whole pixels, which is something we technically
+    // want (it makes text look crisp), but fails in weird ways if `scalingRequired` is true.
+    // As our scaling matrix's dx/dy (center point) is based on the `origin` coordinates
+    // each cell we draw gets a unique, fractional baseline which gets rounded differently.
+    // I'm not 100% sure why that happens, since `origin` is always in full pixels...
+    // But this causes wide glyphs to draw as tiles that are potentially misaligned vertically by a pixel.
+    // The resulting text rendering looks especially bad for ligatures like "====" in Cascadia Code,
+    // where every single "=" might be blatantly misaligned vertically (same for any box drawings).
+    WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP, scalingRequired);
+
+    const f32x2 inverseScale{ 1.0f - scale.x, 1.0f - scale.y };
+
+    for (u32 i = 0; i < cellCount; ++i)
     {
         const auto coord = coords[i];
 
         D2D1_RECT_F rect;
-        rect.left = static_cast<float>(coord.x) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi);
-        rect.top = static_cast<float>(coord.y) * static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi);
+        rect.left = static_cast<float>(coord.x) * _r.dipPerPixel;
+        rect.top = static_cast<float>(coord.y) * _r.dipPerPixel;
         rect.right = rect.left + _r.cellSizeDIP.x;
         rect.bottom = rect.top + _r.cellSizeDIP.y;
 
@@ -285,10 +459,37 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         origin.x = rect.left - i * _r.cellSizeDIP.x;
         origin.y = rect.top;
 
-        _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
-        _r.d2dRenderTarget->Clear();
-        _r.d2dRenderTarget->DrawTextLayout(origin, textLayout.get(), _r.brush.get(), options);
-        _r.d2dRenderTarget->PopAxisAlignedClip();
+        {
+            _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _r.d2dRenderTarget->Clear();
+        }
+        if (scalingRequired)
+        {
+            const D2D1_MATRIX_3X2_F transform{
+                scale.x,
+                0,
+                0,
+                scale.y,
+                (origin.x + halfSize.x) * inverseScale.x,
+                (origin.y + halfSize.y) * inverseScale.y,
+            };
+            _r.d2dRenderTarget->SetTransform(&transform);
+        }
+        {
+            // Now that we're done using origin to calculate the center point for our transformation
+            // we can use it for its intended purpose to slightly shift the glyph around.
+            origin.x += offset.x;
+            origin.y += offset.y;
+            _r.d2dRenderTarget->DrawTextLayout(origin, textLayout.get(), _r.brush.get(), options);
+        }
+        if (scalingRequired)
+        {
+            static constexpr D2D1_MATRIX_3X2_F identity{ 1, 0, 0, 1, 0, 0 };
+            _r.d2dRenderTarget->SetTransform(&identity);
+        }
+        {
+            _r.d2dRenderTarget->PopAxisAlignedClip();
+        }
     }
 }
 
