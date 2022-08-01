@@ -1017,18 +1017,19 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
         return;
     }
 
-    if (_isDefTermSession)
-    {
-        // We have been told to close upon process termination regardless of the value of
-        // the profile's CloseOnExit, so go ahead and close
-        Close();
-    }
-
     if (_profile)
     {
+        if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
+        {
+            // For 'automatic', we only care about the connection state if we were launched by Terminal
+            // Since we were launched via defterm, ignore the connection state (i.e. we treat the
+            // close on exit mode as 'always', see GH #13325 for discussion)
+            Close();
+        }
+
         const auto mode = _profile.CloseOnExit();
         if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+            ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
         {
             Close();
         }
@@ -3121,16 +3122,7 @@ int Pane::GetLeafPaneCount() const noexcept
 //   created via default handoff
 void Pane::FinalizeConfigurationGivenDefault()
 {
-    if (_IsLeaf() && _profile && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
-    {
-        {
-            // We only want to close 'gracefully' if we were launched by Terminal
-            // Since we were launched via defterm, override this (i.e. it will
-            // be treated as 'always', see _ControlConnectionStateChangedHandler
-            // for where this boolean is used, and see GH #13325 for discussion)
-            _isDefTermSession = true;
-        }
-    }
+    _isDefTermSession = true;
 }
 
 // Method Description:
