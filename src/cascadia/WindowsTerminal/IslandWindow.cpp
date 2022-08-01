@@ -881,10 +881,20 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
 // - <none>
 void IslandWindow::ShowWindowChanged(const bool showOrHide)
 {
-    const auto hwnd = GetHandle();
-    if (hwnd)
+    if (const auto hwnd = GetHandle())
     {
-        PostMessage(hwnd, WM_SYSCOMMAND, showOrHide ? SC_RESTORE : SC_MINIMIZE, 0);
+        // IMPORTANT!
+        //
+        // ONLY "restore" if already minimized. If the window is maximized or
+        // snapped, a restore will restore-down the window instead.
+        if (showOrHide == true && ::IsIconic(hwnd))
+        {
+            ::PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+        }
+        else if (showOrHide == false)
+        {
+            ::PostMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+        }
     }
 }
 
