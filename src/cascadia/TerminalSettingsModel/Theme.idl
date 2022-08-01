@@ -11,6 +11,13 @@ namespace Microsoft.Terminal.Settings.Model
         TerminalBackground
     };
 
+    enum TabCloseButtonVisibility
+    {
+        Always,
+        Hover,
+        Never
+    };
+
     runtimeclass ThemeColor
     {
         ThemeColor();
@@ -39,6 +46,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     runtimeclass TabTheme {
         ThemeColor Background { get; };
+        TabCloseButtonVisibility ShowCloseButton { get; };
     }
 
     [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {
