@@ -2510,6 +2510,10 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     // Clear out our ID, only leaves should have IDs
     _id = {};
 
+    // Make sure to propagate our _isDefTermSession value
+    _firstChild->_isDefTermSession = _isDefTermSession;
+    _secondChild->_isDefTermSession = _isDefTermSession;
+
     // Regardless of which child the new child is, we want to return the
     // original one first.
     if (splitType == SplitDirection::Up || splitType == SplitDirection::Left)
