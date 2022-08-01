@@ -3264,7 +3264,11 @@ namespace winrt::TerminalApp::implementation
             // elevated version of the Terminal with that profile... that's a
             // recipe for disaster. We won't ever open up a tab in this window.
             newTerminalArgs.Elevate(false);
-            _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, connection));
+            const auto newPane = _MakePane(newTerminalArgs, false, connection);
+            newPane->WalkTree([](auto pane) {
+                pane->FinalizeConfigurationGivenDefault();
+            });
+            _CreateNewTabFromPane(newPane);
 
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);

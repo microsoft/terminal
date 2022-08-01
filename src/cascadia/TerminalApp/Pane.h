@@ -132,6 +132,8 @@ public:
     bool FocusPane(const std::shared_ptr<Pane> pane);
     std::shared_ptr<Pane> FindPane(const uint32_t id);
 
+    void FinalizeConfigurationGivenDefault();
+
     bool ContainsReadOnly() const;
 
     // Method Description:
@@ -240,6 +242,8 @@ private:
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
+
+    bool _isDefTermSession{ false };
 
     winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
     winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
