@@ -240,7 +240,7 @@ private:                                                                        
 #define COLOR_SELECTION_ARGS(X)                                                                      \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, nullptr) \
     X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, nullptr) \
-    X(uint32_t, MatchMode, "matchMode", false, 0u)
+    X(winrt::Microsoft::Terminal::Control::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Control::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 

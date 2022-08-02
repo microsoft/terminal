@@ -58,7 +58,13 @@ namespace Microsoft.Terminal.Control
         SelectionColor();
         // Will be converted to a TextColor (from buffer/out/TextColor.h)
         UInt32 TextColor;
-    }
+    };
+
+    enum MatchMode
+    {
+        None,
+        All
+    };
 
     [default_interface] runtimeclass ControlCore : ICoreState
     {
@@ -139,7 +145,7 @@ namespace Microsoft.Terminal.Control
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
 
-        void ColorSelection(SelectionColor fg, SelectionColor bg, UInt32 matchMode);
+        void ColorSelection(SelectionColor fg, SelectionColor bg, MatchMode matchMode);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

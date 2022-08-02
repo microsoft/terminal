@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void WindowVisibilityChanged(const bool showOrHide);
 
-        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, uint32_t matchMode);
+        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Control::MatchMode matchMode);
 
 #pragma region ICoreState
         const uint64_t TaskbarState() const noexcept;

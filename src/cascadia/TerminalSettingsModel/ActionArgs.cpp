@@ -952,15 +952,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring ColorSelectionArgs::GenerateName() const
     {
-        auto matchMode = MatchMode() ? MatchMode() : 0;
+        auto matchMode = this->MatchMode();
 
         auto matchModeStr = winrt::hstring{};
-        if (matchMode)
+        if (matchMode == MatchMode::All)
         {
-            if (matchMode == 1)
-            {
-                matchModeStr = RS_(L"ColorSelection_allMatches"); // ", all matches"
-            }
+            matchModeStr = RS_(L"ColorSelection_allMatches"); // ", all matches"
         }
 
         bool hasForeground = (bool)Foreground();

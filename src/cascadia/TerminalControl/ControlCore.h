@@ -130,7 +130,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
-        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, uint32_t matchMode);
+        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Control::MatchMode matchMode);
 
         void Close();
 

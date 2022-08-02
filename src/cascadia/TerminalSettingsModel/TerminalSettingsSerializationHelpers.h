@@ -76,6 +76,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::MatchMode)
+{
+    static constexpr std::array<pair_type, 2> mappings = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "all", ValueType::All }
+    };
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
     static constexpr std::array<pair_type, 6> mappings = {
