@@ -217,7 +217,7 @@ private:
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
-    // <--- SECTION FOR PROPERTIES THAT NEED TO BE TRANSFERRED BETWEEN CHILD/PARENT PANES UPON SPLITTING/CLOSING -->
+#pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
@@ -226,7 +226,7 @@ private:
     winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
     bool _isDefTermSession{ false };
-    // <--- END SECTION -->
+#pragma endregion
 
     std::optional<uint32_t> _id;
     std::weak_ptr<Pane> _parentChildPath{};
