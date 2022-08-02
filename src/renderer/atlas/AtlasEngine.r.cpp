@@ -22,6 +22,28 @@
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
+// https://en.wikipedia.org/wiki/Inversion_list
+template<size_t N>
+constexpr bool isInInversionList(const std::array<wchar_t, N>& ranges, wchar_t needle)
+{
+    const auto beg = ranges.begin();
+    const auto end = ranges.end();
+    decltype(ranges.begin()) it;
+
+    // Linear search is faster than binary search for short inputs.
+    if constexpr (N < 16)
+    {
+        it = std::find_if(beg, end, [=](wchar_t v) { return needle < v; });
+    }
+    else
+    {
+        it = std::upper_bound(beg, end, needle);
+    }
+
+    const auto idx = it - beg;
+    return (idx & 1) != 0;
+}
+
 using namespace Microsoft::Console::Render;
 
 #pragma region IRenderEngine
@@ -276,12 +298,28 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     f32x2 offset{ 0, 0 };
     f32x2 scale{ 1, 1 };
 
-    // Block Element and Box Drawing characters need to be handled separately from
-    // others, because unlike them they're supposed to fill the entire layout box.
-    // Or in other words: If they overflow the layout box, that's actually great!
-    // To be on the safe side measure this code however will always adjust
-    // their scale to result in an exact size match of the layoutBox.
-    if (charsLength == 1 && key->chars[0] >= 0x2500 && key->chars[0] <= 0x259F)
+    // Block Element and Box Drawing characters need to be handled separately,
+    // because unlike regular ones they're supposed to fill the entire layout box.
+    //
+    // Ranges:
+    // * 0x2500-0x257F: Box Drawing
+    // * 0x2580-0x259F: Block Elements
+    // * 0xE0A0-0xE0A3,0xE0B0-0xE0C8,0xE0CA-0xE0CA,0xE0CC-0xE0D4: PowerLine
+    //   (https://github.com/ryanoasis/nerd-fonts/wiki/Glyph-Sets-and-Code-Points#powerline-symbols)
+    //
+    // The following `blockCharacters` forms a so called "inversion list".
+    static constexpr std::array blockCharacters{
+        // clang-format off
+        L'\u2500', L'\u2580',
+        L'\u2580', L'\u25A0',
+        L'\uE0A0', L'\uE0A4',
+        L'\uE0B0', L'\uE0C9',
+        L'\uE0CA', L'\uE0CB',
+        L'\uE0CC', L'\uE0D5',
+        // clang-format on
+    };
+
+    if (charsLength == 1 && isInInversionList(blockCharacters, key->chars[0]))
     {
         wil::com_ptr<IDWriteFontCollection> fontCollection;
         THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
@@ -329,8 +367,8 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
             // So for safe measure we'll always scale them to the exact size.
             // But add 1px to the destination size, so that we don't end up with fractional pixels.
             scalingRequired = true;
-            scale.x = (layoutBox.x + _r.dipPerPixel) / boxSize.x;
-            scale.y = (layoutBox.y + _r.dipPerPixel) / boxSize.y;
+            scale.x = layoutBox.x / boxSize.x;
+            scale.y = layoutBox.y / boxSize.y;
         }
     }
     else
@@ -409,14 +447,14 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         {
             scalingRequired = true;
             offset.x = (overhang.left - overhang.right) * 0.5f;
-            scale.x = (layoutBox.x - _r.dipPerPixel) / actualSize.x;
+            scale.x = layoutBox.x / actualSize.x;
             scale.y = scale.x;
         }
         if (actualSize.y > layoutBox.y)
         {
             scalingRequired = true;
             offset.y = (overhang.top - overhang.bottom) * 0.5f;
-            scale.x = std::min(scale.x, (layoutBox.y - _r.dipPerPixel) / actualSize.y);
+            scale.x = std::min(scale.x, layoutBox.y / actualSize.y);
             scale.y = scale.x;
         }
 
