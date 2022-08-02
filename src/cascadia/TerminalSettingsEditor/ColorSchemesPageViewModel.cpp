@@ -98,6 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"AllColorSchemes" });
     }
 
     Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
