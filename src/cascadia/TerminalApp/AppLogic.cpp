@@ -782,32 +782,31 @@ namespace winrt::TerminalApp::implementation
         try
         {
             auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
-            _settings = newSettings;
 
-            if (_settings.GetLoadingError())
+            if (newSettings.GetLoadingError())
             {
-                _settingsLoadExceptionText = _GetErrorText(_settings.GetLoadingError().Value());
+                _settingsLoadExceptionText = _GetErrorText(newSettings.GetLoadingError().Value());
                 return E_INVALIDARG;
             }
-            else if (!_settings.GetSerializationErrorMessage().empty())
+            else if (!newSettings.GetSerializationErrorMessage().empty())
             {
-                _settingsLoadExceptionText = _settings.GetSerializationErrorMessage();
+                _settingsLoadExceptionText = newSettings.GetSerializationErrorMessage();
                 return E_INVALIDARG;
             }
 
             _warnings.clear();
-            for (uint32_t i = 0; i < _settings.Warnings().Size(); i++)
+            for (uint32_t i = 0; i < newSettings.Warnings().Size(); i++)
             {
-                _warnings.push_back(_settings.Warnings().GetAt(i));
+                _warnings.push_back(newSettings.Warnings().GetAt(i));
             }
 
             _hasSettingsStartupActions = false;
-            const auto startupActions = _settings.GlobalSettings().StartupActions();
+            const auto startupActions = newSettings.GlobalSettings().StartupActions();
             if (!startupActions.empty())
             {
                 _settingsAppArgs.FullResetState();
 
-                ExecuteCommandlineArgs args{ _settings.GlobalSettings().StartupActions() };
+                ExecuteCommandlineArgs args{ newSettings.GlobalSettings().StartupActions() };
                 auto result = _settingsAppArgs.ParseArgs(args);
                 if (result == 0)
                 {
@@ -822,6 +821,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            _settings = std::move(newSettings);
             hr = _warnings.empty() ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
