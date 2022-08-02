@@ -1733,16 +1733,6 @@
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
           "type": "boolean"
         },
-        "experimental.autoMarkPrompts": {
-          "default": false,
-          "description": "When set to true, prompts will automatically be marked.",
-          "type": "boolean"
-        },
-        "experimental.showMarksOnScrollbar": {
-          "default": false,
-          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
-          "type": "boolean"
-        },
         "disableAnimations": {
           "default": false,
           "description": "When set to `true`, visual animations will be disabled across the application.",
@@ -2171,12 +2161,22 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "experimental.autoMarkPrompts": {
+          "default": false,
+          "description": "When set to true, prompts will automatically be marked.",
+          "type": "boolean"
+        },
         "experimental.connection.passthroughMode": {
           "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
+        "experimental.showMarksOnScrollbar": {
+          "default": false,
+          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
         "experimental.pixelShaderPath": {
