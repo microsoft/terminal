@@ -424,6 +424,7 @@ private:
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
     til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    void _ScrollToPoint(const til::point pos);
     void _MoveByChar(SelectionDirection direction, til::point& pos);
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos);

@@ -303,6 +303,7 @@ void Terminal::ToggleMarkMode()
         _selection->start = cursorPos;
         _selection->end = cursorPos;
         _selection->pivot = cursorPos;
+        _ScrollToPoint(cursorPos);
         _selectionMode = SelectionInteractionMode::Mark;
         _blockSelection = false;
         WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
@@ -459,22 +460,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 4. Scroll (if necessary)
-    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(targetPos))
-    {
-        if (const auto amtAboveView = visibleViewport.Top() - targetPos.Y; amtAboveView > 0)
-        {
-            // anchor is above visible viewport, scroll by that amount
-            _scrollOffset += amtAboveView;
-        }
-        else
-        {
-            // anchor is below visible viewport, scroll by that amount
-            const auto amtBelowView = targetPos.Y - visibleViewport.BottomInclusive();
-            _scrollOffset -= amtBelowView;
-        }
-        _NotifyScrollEvent();
-        _activeBuffer().TriggerScroll();
-    }
+    _ScrollToPoint(targetPos);
 }
 
 void Terminal::SelectAll()
@@ -485,6 +471,7 @@ void Terminal::SelectAll()
     _selection->end = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
     _selection->pivot = _selection->end;
     _selectionMode = SelectionInteractionMode::Keyboard;
+    _ScrollToPoint(_selection->start);
 }
 
 void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
@@ -684,4 +671,28 @@ til::point Terminal::_ConvertToBufferCell(const til::point viewportPos) const
 void Terminal::ColorSelection(const til::point, const til::point, const TextAttribute)
 {
     THROW_HR(E_NOTIMPL);
+}
+
+// Method Description:
+// - if necessary, scroll the viewport such that the given point is visible
+// Arguments:
+// - pos: a coordinate relative to the buffer (not viewport)
+void Terminal::_ScrollToPoint(const til::point pos)
+{
+    if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(pos))
+    {
+        if (const auto amtAboveView = visibleViewport.Top() - pos.Y; amtAboveView > 0)
+        {
+            // anchor is above visible viewport, scroll by that amount
+            _scrollOffset += amtAboveView;
+        }
+        else
+        {
+            // anchor is below visible viewport, scroll by that amount
+            const auto amtBelowView = pos.Y - visibleViewport.BottomInclusive();
+            _scrollOffset -= amtBelowView;
+        }
+        _NotifyScrollEvent();
+        _activeBuffer().TriggerScroll();
+    }
 }
