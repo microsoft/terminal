@@ -427,7 +427,8 @@ using namespace Microsoft::Console::Types;
     const auto optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
     const auto useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
-                              (!_clearedAllThisFrame);
+                              (!_clearedAllThisFrame) &&
+                              (_lastTextAttributes.GetExtendedAttributes() == ExtendedAttributes::Normal && !_lastTextAttributes.IsAnyGridLineEnabled() && _lastTextAttributes.GetHyperlinkId() == 0 && !_lastTextAttributes.IsReverseVideo());
     const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
