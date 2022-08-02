@@ -180,8 +180,8 @@ HRESULT GdiEngine::_InvalidRestrict() noexcept
     // Do restriction only if retrieving the client rect was successful.
     RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, rcClient.as_win32_rect())));
 
-    _rcInvalid.left = std::clamp(_rcInvalid.left, rcClient.left, rcClient.right);
-    _rcInvalid.right = std::clamp(_rcInvalid.right, rcClient.left, rcClient.right);
+    _rcInvalid.left = rcClient.left;
+    _rcInvalid.right = rcClient.right;
     _rcInvalid.top = std::clamp(_rcInvalid.top, rcClient.top, rcClient.bottom);
     _rcInvalid.bottom = std::clamp(_rcInvalid.bottom, rcClient.top, rcClient.bottom);
 
