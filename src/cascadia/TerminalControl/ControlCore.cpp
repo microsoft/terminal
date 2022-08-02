@@ -389,6 +389,60 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
 
+    bool ControlCore::TryMarkModeKeybinding(const WORD vkey,
+                                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    {
+        if (HasSelection() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark)
+        {
+            if (modifiers.IsCtrlPressed() && vkey == 'A')
+            {
+                // Ctrl + A --> Select all
+                auto lock = _terminal->LockForWriting();
+                _terminal->SelectAll();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_TAB && _settings->DetectURLs())
+            {
+                // [Shift +] Tab --> next/previous hyperlink
+                auto lock = _terminal->LockForWriting();
+                const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
+                _terminal->SelectHyperlink(direction);
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->IsTargetingUrl())
+            {
+                // Ctrl + Enter --> Open URL
+                auto lock = _terminal->LockForReading();
+                const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
+                _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                return true;
+            }
+            else if (vkey == VK_RETURN)
+            {
+                // [Shift +] Enter --> copy text
+                // Don't lock here! CopySelectionToClipboard already locks for you!
+                CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
+                _terminal->ClearSelection();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                // try to update the selection
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, modifiers);
+                _updateSelectionUI();
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
@@ -417,45 +471,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
-            const auto isInMarkMode = _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark;
-            if (isInMarkMode)
-            {
-                if (modifiers.IsCtrlPressed() && vkey == 'A')
-                {
-                    // Ctrl + A --> Select all
-                    auto lock = _terminal->LockForWriting();
-                    _terminal->SelectAll();
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_TAB && _settings->DetectURLs())
-                {
-                    // [Shift +] Tab --> next/previous hyperlink
-                    auto lock = _terminal->LockForWriting();
-                    const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
-                    _terminal->SelectHyperlink(direction);
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->IsTargetingUrl())
-                {
-                    // Ctrl + Enter --> Open URL
-                    auto lock = _terminal->LockForReading();
-                    const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
-                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
-                    return true;
-                }
-                else if (vkey == VK_RETURN)
-                {
-                    // [Shift +] Enter --> copy text
-                    // Don't lock here! CopySelectionToClipboard already locks for you!
-                    CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
-                    _terminal->ClearSelection();
-                    _updateSelectionUI();
-                    return true;
-                }
-            }
-
             // try to update the selection
             if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
             {

@@ -1085,7 +1085,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // keybindings on the keyUp, then we'll still send the keydown to the
         // connected terminal application, and something like ctrl+shift+T will
         // emit a ^T to the pipe.
-        if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, scanCode, modifiers))
+        if (!modifiers.IsAltGrPressed() &&
+            keyDown &&
+            (_core.TryMarkModeKeybinding(vkey, modifiers) ||
+             _TryHandleKeyBinding(vkey, scanCode, modifiers)))
         {
             e.Handled(true);
             return;
