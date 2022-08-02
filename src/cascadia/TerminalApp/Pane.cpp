@@ -1576,11 +1576,12 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Find what borders need to persist after we close the child
         _borders = _GetCommonBorders();
 
-        // take the control, profile and id of the pane that _wasn't_ closed.
+        // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _connectionState = remainingChild->_connectionState;
         _profile = remainingChild->_profile;
         _id = remainingChild->Id();
+        _isDefTermSession = remainingChild->_isDefTermSession;
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
@@ -2472,11 +2473,12 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     }
     else
     {
-        //   Move our control, guid into the first one.
+        //   Move our control, guid, isDefTermSession into the first one.
         _firstChild = std::make_shared<Pane>(_profile, _control);
         _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
         _profile = nullptr;
         _control = { nullptr };
+        _firstChild->_isDefTermSession = _isDefTermSession;
     }
 
     _splitState = actualSplitType;
@@ -2509,11 +2511,6 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 
     // Clear out our ID, only leaves should have IDs
     _id = {};
-
-    // Make sure to propagate our _isDefTermSession value
-    WalkTree([&](auto p) {
-        p->_isDefTermSession = _isDefTermSession;
-    });
 
     // Regardless of which child the new child is, we want to return the
     // original one first.
