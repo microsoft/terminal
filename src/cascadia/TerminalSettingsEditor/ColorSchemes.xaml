@@ -37,7 +37,7 @@
             <ListView x:Name="ColorSchemeListView"
                       Height="360"
                       MaxWidth="{StaticResource StandardControlMaxWidth}"
-                      ItemsSource="{x:Bind ViewModel.AllColorSchemes}"
+                      ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
                       PreviewKeyDown="ListView_PreviewKeyDown"
                       SelectedItem="{x:Bind ViewModel.CurrentScheme, Mode=TwoWay}"
                       SelectionMode="Single">
