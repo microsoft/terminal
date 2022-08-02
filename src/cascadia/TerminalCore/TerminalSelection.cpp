@@ -625,6 +625,7 @@ void Terminal::SelectAll()
     _selection->end = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
     _selection->pivot = _selection->end;
     _selectionMode = SelectionInteractionMode::Keyboard;
+    _ScrollToPoint(_selection->start);
 }
 
 void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
