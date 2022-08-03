@@ -1087,8 +1087,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // emit a ^T to the pipe.
         if (!modifiers.IsAltGrPressed() &&
             keyDown &&
-            (_core.TryMarkModeKeybinding(vkey, modifiers) ||
-             _TryHandleKeyBinding(vkey, scanCode, modifiers)))
+            _TryHandleKeyBinding(vkey, scanCode, modifiers))
         {
             e.Handled(true);
             return;
@@ -1114,6 +1113,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The ControlKeyStates representing the modifier key states.
     bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
+        // Mark mode has a specific set of pre-defined key bindings.
+        // If we're in mark mode, we should be prioritizing those over
+        // the custom defined key bindings.
+        if (_core.TryMarkModeKeybinding(vkey, modifiers))
+        {
+            return true;
+        }
+
         // TODO: GH#5000
         // The Core owning the keybindings is weird. That's for sure. In the
         // future, we may want to pass the keybindings into the control
