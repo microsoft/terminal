@@ -8,9 +8,12 @@
 #include <dwrite_3.h>
 
 #include "../../renderer/inc/IRenderEngine.hpp"
+#include "DWriteTextAnalysis.h"
 
 namespace Microsoft::Console::Render
 {
+    struct TextAnalysisSinkResult;
+
     class AtlasEngine final : public IRenderEngine
     {
     public:
@@ -397,6 +400,7 @@ namespace Microsoft::Console::Render
             std::wstring fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
+            f32 advanceScale = 0;
             u16x2 cellSize;
             u16 fontWeight = 0;
             u16 underlinePos = 0;
@@ -953,6 +957,8 @@ namespace Microsoft::Console::Render
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
             FontMetrics fontMetrics; // invalidated by ApiInvalidations::Font, cached _api.fontMetrics
+            f32 dipPerPixel = 1.0f; // invalidated by ApiInvalidations::Font, caches USER_DEFAULT_SCREEN_DPI / _api.dpi
+            f32 pixelPerDIP = 1.0f; // invalidated by ApiInvalidations::Font, caches _api.dpi / USER_DEFAULT_SCREEN_DPI
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
             TileHashMap glyphs;
             TileAllocator tileAllocator;
@@ -983,7 +989,7 @@ namespace Microsoft::Console::Render
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
             Buffer<BufferLineMetadata> bufferLineMetadata;
-            std::vector<TextAnalyzerResult> analysisResults;
+            std::vector<TextAnalysisSinkResult> analysisResults;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             Buffer<u16> glyphIndices;
