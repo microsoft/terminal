@@ -164,7 +164,7 @@ public:
     {
         return WI_IsAnyFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE);
     }
-    constexpr bool HasAnyExtentedAttributes() const noexcept
+    constexpr bool HasAnyExtendedAttributes() const noexcept
     {
         return GetExtendedAttributes() != ExtendedAttributes::Normal ||
                !IsAnyGridLineEnabled() ||
