@@ -4112,7 +4112,8 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
 void ConptyRoundtripTests::TestPowerLineFirstFrame()
 {
-    Log::Comment(L"TODO!");
+    Log::Comment(L"This is a test for GH#8341. If we recieved colored spaces "
+                 L"BEFORE the first frame, we should still emit them!");
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
@@ -4143,6 +4144,15 @@ void ConptyRoundtripTests::TestPowerLineFirstFrame()
     TextAttribute defaultOnDefault{};
 
     Log::Comment(L"========== Fill test content ==========");
+
+    // As a pwsh one-liner:
+    //
+    //  "`e[37m`e[102m foo\bar `e[92m`e[100m▶ `e[37mbaz `e[90m`e[49m▶ `e[m"
+    //
+    // Generally taken from
+    // https://github.com/microsoft/terminal/issues/8341#issuecomment-731310022,
+    // but minimized for easier testing.
+
     sm.ProcessString(L"\x1b[37m\x1b[102m" // dark white on bright green
                      L" foo\\bar ");
     sm.ProcessString(L"\x1b[92m\x1b[100m" // bright green on bright black
