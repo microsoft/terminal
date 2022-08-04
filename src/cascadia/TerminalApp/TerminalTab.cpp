@@ -678,7 +678,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        ActivateColorPicker();
+        _tabColorPickup.ShowAt(TabViewItem());
     }
 
     // Method Description:
@@ -1217,7 +1217,7 @@ namespace winrt::TerminalApp::implementation
         chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_ColorPickerRequestedHandlers();
+                tab->RequestColorPicker();
             }
         });
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
@@ -1615,14 +1615,15 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Display the tab color picker at the location of the TabViewItem for this tab.
+    // - Send an event to request for the color picker
+    // - The listener should attach the color picker via AttachColorPicker()
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalTab::ActivateColorPicker()
+    void TerminalTab::RequestColorPicker()
     {
-        _tabColorPickup.ShowAt(TabViewItem());
+        _ColorPickerRequestedHandlers();
     }
 
     // Method Description:

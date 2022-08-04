@@ -76,7 +76,7 @@ namespace winrt::TerminalApp::implementation
         void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color);
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
-        void ActivateColorPicker();
+        void RequestColorPicker();
 
         void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
