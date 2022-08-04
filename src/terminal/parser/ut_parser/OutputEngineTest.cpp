@@ -1589,7 +1589,7 @@ class StateMachineExternalTest final
         }
         else if (uiGiven > MAX_PARAMETER_VALUE)
         {
-            *uiExpected = MAX_PARAMETER_VALUE; // 32767 is our max value.
+            *uiExpected = MAX_PARAMETER_VALUE;
         }
     }
 
