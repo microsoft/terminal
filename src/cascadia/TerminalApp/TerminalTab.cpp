@@ -648,6 +648,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Attaches the given color picker to ourselves
+    // - Typically will be called after we have sent a request for the color picker
+    // Arguments:
+    // - colorPicker: The color picker that we should attach to ourselves
+    // Return Value:
+    // - <none>
     void TerminalTab::AttachColorPicker(TerminalApp::ColorPickupFlyout& colorPicker)
     {
         auto weakThis{ get_weak() };
