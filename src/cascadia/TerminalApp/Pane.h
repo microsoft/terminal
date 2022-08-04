@@ -214,21 +214,24 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
-    winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
-    winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
+#pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
     float _desiredSplitPosition;
+    winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
+    winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
+    winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
+    bool _isDefTermSession{ false };
+#pragma endregion
 
     std::optional<uint32_t> _id;
     std::weak_ptr<Pane> _parentChildPath{};
 
     bool _lastActive{ false };
-    winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
     winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
@@ -242,8 +245,6 @@ private:
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
-
-    bool _isDefTermSession{ false };
 
     winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
     winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
