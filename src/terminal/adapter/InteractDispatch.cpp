@@ -9,6 +9,9 @@
 #pragma warning(disable : 26440)
 #pragma warning(disable : 26455)
 
+// We end up including ApiMessage.h somehow, which uses nameless unions
+#pragma warning(disable : 4201)
+
 #include "InteractDispatch.hpp"
 #include "../../host/conddkrefs.h"
 #include "../../interactivity/inc/ServiceLocator.hpp"

@@ -39,6 +39,11 @@ static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+static constexpr std::string_view ThemesKey{ "themes" };
+
+constexpr std::wstring_view systemThemeName{ L"system" };
+constexpr std::wstring_view darkThemeName{ L"dark" };
+constexpr std::wstring_view lightThemeName{ L"light" };
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -61,9 +66,11 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     til::latch latch{ 1 };
 
     const auto _ = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
         co_await winrt::resume_background();
         finalVal.emplace(co_await task);
-        latch.count_down();
     }();
 
     latch.wait();
@@ -530,6 +537,25 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     }
 
     {
+        for (const auto& themeJson : json.themes)
+        {
+            if (const auto theme = Theme::FromJson(themeJson))
+            {
+                if (origin != OriginTag::InBox &&
+                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
+                {
+                    // If the theme didn't come from the in-box themes, and its
+                    // name was one of the reserved names, then just ignore it.
+                    // Themes don't support layering - we don't want the user
+                    // versions of these themes overriding the built-in ones.
+                    continue;
+                }
+                settings.globals->AddTheme(*theme);
+            }
+        }
+    }
+
+    {
         settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
@@ -627,10 +653,11 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
 {
     auto root = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& colorSchemes = _getJSONValue(root, SchemesKey);
+    const auto& themes = _getJSONValue(root, ThemesKey);
     const auto& profilesObject = _getJSONValue(root, ProfilesKey);
     const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
-    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList };
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes };
 }
 
 // Just a common helper function between _parse and _parseFragment.
@@ -766,8 +793,28 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
-    const auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
-    const auto firstTimeSetup = settingsString.empty();
+    auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
+    auto firstTimeSetup = settingsString.empty();
+
+    // If it's the firstTimeSetup and a preview build, then try to
+    // read settings.json from the Release stable file path if it exists.
+    // Otherwise use default settings file provided from original settings file
+    bool releaseSettingExists = false;
+    if (firstTimeSetup)
+    {
+#if defined(WT_BRANDING_PREVIEW)
+        {
+            try
+            {
+                settingsString = ReadUTF8FileIfExists(_releaseSettingsPath()).value_or(std::string{});
+                releaseSettingExists = settingsString.empty() ? false : true;
+            }
+            catch (...)
+            {
+            }
+        }
+#endif
+    }
 
     // GH#11119: If we find that the settings file doesn't exist, or is empty,
     // then let's quick delete the state file as well. If the user does have a
@@ -780,7 +827,9 @@ try
         ApplicationState::SharedInstance().Reset();
     }
 
-    const auto settingsStringView = firstTimeSetup ? UserSettingsJson : settingsString;
+    // Only uses default settings when firstTimeSetup is true and releaseSettingExists is false
+    // Otherwise use existing settingsString
+    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? UserSettingsJson : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
     SettingsLoader loader{ settingsStringView, DefaultJson };
@@ -791,7 +840,8 @@ try
 
     // ApplyRuntimeInitialSettings depends on generated profiles.
     // --> ApplyRuntimeInitialSettings must be called after GenerateProfiles.
-    if (firstTimeSetup)
+    // Doesn't run when there is a Release settings.json that exists
+    if (firstTimeSetup && !releaseSettingExists)
     {
         loader.ApplyRuntimeInitialSettings();
     }
@@ -953,6 +1003,18 @@ const std::filesystem::path& CascadiaSettings::_settingsPath()
     return path;
 }
 
+// Method Description:
+// - Returns the path of the settings.json file from stable file path
+// Arguments:
+// - <none>
+// Return Value:
+// - Path to stable settings
+const std::filesystem::path& CascadiaSettings::_releaseSettingsPath()
+{
+    static const auto path = GetReleaseSettingsPath() / SettingsFilename;
+    return path;
+}
+
 // function Description:
 // - Returns the full path to the settings file, either within the application
 //   package, or in its unpackaged location. This path is under the "Local
@@ -1054,6 +1116,20 @@ Json::Value CascadiaSettings::ToJson() const
         schemes.append(scheme->ToJson());
     }
     json[JsonKey(SchemesKey)] = schemes;
+
+    Json::Value themes{ Json::ValueType::arrayValue };
+    for (const auto& entry : _globals->Themes())
+    {
+        // Ignore the built in themes, when serializing the themes back out. We
+        // don't want to re-include them in the user settings file.
+        const auto theme{ winrt::get_self<Theme>(entry.Value()) };
+        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
+        {
+            continue;
+        }
+        themes.append(theme->ToJson());
+    }
+    json[JsonKey(ThemesKey)] = themes;
 
     return json;
 }

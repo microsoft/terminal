@@ -74,6 +74,8 @@ public:
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

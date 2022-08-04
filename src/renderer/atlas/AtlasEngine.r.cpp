@@ -18,8 +18,31 @@
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
+
+// https://en.wikipedia.org/wiki/Inversion_list
+template<size_t N>
+constexpr bool isInInversionList(const std::array<wchar_t, N>& ranges, wchar_t needle)
+{
+    const auto beg = ranges.begin();
+    const auto end = ranges.end();
+    decltype(ranges.begin()) it;
+
+    // Linear search is faster than binary search for short inputs.
+    if constexpr (N < 16)
+    {
+        it = std::find_if(beg, end, [=](wchar_t v) { return needle < v; });
+    }
+    else
+    {
+        it = std::upper_bound(beg, end, needle);
+    }
+
+    const auto idx = it - beg;
+    return (idx & 1) != 0;
+}
 
 using namespace Microsoft::Console::Render;
 
@@ -31,7 +54,6 @@ using namespace Microsoft::Console::Render;
 try
 {
     _adjustAtlasSize();
-    _reserveScratchpadSize(_r.maxEncounteredCellCount);
     _processGlyphQueue();
 
     if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::Cursor))
@@ -64,7 +86,7 @@ try
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
-    assert(_r.frameLatencyWaitableObjectUsed);
+    assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
 
     // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
     // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
@@ -86,6 +108,7 @@ try
 }
 catch (const wil::ResultException& exception)
 {
+    // TODO: this writes to _api.
     return _handleException(exception);
 }
 CATCH_RETURN()
@@ -118,17 +141,20 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
     ConstBuffer data;
     data.viewport.x = 0;
     data.viewport.y = 0;
-    data.viewport.z = static_cast<float>(_r.cellCount.x * _r.cellSize.x);
-    data.viewport.w = static_cast<float>(_r.cellCount.y * _r.cellSize.y);
+    data.viewport.z = static_cast<float>(_r.cellCount.x * _r.fontMetrics.cellSize.x);
+    data.viewport.w = static_cast<float>(_r.cellCount.y * _r.fontMetrics.cellSize.y);
     DWrite_GetGammaRatios(_r.gamma, data.gammaRatios);
     data.enhancedContrast = useClearType ? _r.cleartypeEnhancedContrast : _r.grayscaleEnhancedContrast;
     data.cellCountX = _r.cellCount.x;
-    data.cellSize.x = _r.cellSize.x;
-    data.cellSize.y = _r.cellSize.y;
-    data.underlinePos.x = _r.underlinePos;
-    data.underlinePos.y = _r.underlinePos + _r.lineThickness;
-    data.strikethroughPos.x = _r.strikethroughPos;
-    data.strikethroughPos.y = _r.strikethroughPos + _r.lineThickness;
+    data.cellSize.x = _r.fontMetrics.cellSize.x;
+    data.cellSize.y = _r.fontMetrics.cellSize.y;
+    data.underlinePos = _r.fontMetrics.underlinePos;
+    data.underlineWidth = _r.fontMetrics.underlineWidth;
+    data.strikethroughPos = _r.fontMetrics.strikethroughPos;
+    data.strikethroughWidth = _r.fontMetrics.strikethroughWidth;
+    data.doubleUnderlinePos.x = _r.fontMetrics.doubleUnderlinePos.x;
+    data.doubleUnderlinePos.y = _r.fontMetrics.doubleUnderlinePos.y;
+    data.thinLineWidth = _r.fontMetrics.thinLineWidth;
     data.backgroundColor = _r.backgroundColor;
     data.cursorColor = _r.cursorOptions.cursorColor;
     data.selectionColor = _r.selectionColor;
@@ -139,70 +165,27 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
 
 void AtlasEngine::_adjustAtlasSize()
 {
-    if (_r.atlasPosition.y < _r.atlasSizeInPixel.y && _r.atlasPosition.x < _r.atlasSizeInPixel.x)
+    // Only grow the atlas texture if our tileAllocator needs it to be larger.
+    // We have no way of shrinking our tileAllocator at the moment,
+    // so technically a `requiredSize != _r.atlasSizeInPixel`
+    // comparison would be sufficient, but better safe than sorry.
+    const auto requiredSize = _r.tileAllocator.size();
+    if (requiredSize.y <= _r.atlasSizeInPixel.y && requiredSize.x <= _r.atlasSizeInPixel.x)
     {
         return;
     }
-
-    const u32 limitX = _r.atlasSizeInPixelLimit.x;
-    const u32 limitY = _r.atlasSizeInPixelLimit.y;
-    const u32 posX = _r.atlasPosition.x;
-    const u32 posY = _r.atlasPosition.y;
-    const u32 cellX = _r.cellSize.x;
-    const u32 cellY = _r.cellSize.y;
-    const auto perCellArea = cellX * cellY;
-
-    // The texture atlas is filled like this:
-    //   x →
-    // y +--------------+
-    // ↓ |XXXXXXXXXXXXXX|
-    //   |XXXXXXXXXXXXXX|
-    //   |XXXXX↖        |
-    //   |      |       |
-    //   +------|-------+
-    // This is where _r.atlasPosition points at.
-    //
-    // Each X is a glyph texture tile that's occupied.
-    // We can compute the area of pixels consumed by adding the first
-    // two lines of X (rectangular) together with the last line of X.
-    const auto currentArea = posY * limitX + posX * cellY;
-    // minArea reserves enough room for 64 cells in all cases (mainly during startup).
-    const auto minArea = 64 * perCellArea;
-    auto newArea = std::max(minArea, currentArea);
-
-    // I want the texture to grow exponentially similar to std::vector, as this
-    // ensures we don't need to resize the texture again right after having done.
-    // This rounds newArea up to the next power of 2.
-    unsigned long int index;
-    _BitScanReverse(&index, newArea); // newArea can't be 0
-    newArea = u32{ 1 } << (index + 1);
-
-    const auto pixelPerRow = limitX * cellY;
-    // newArea might be just large enough that it spans N full rows of cells and one additional row
-    // just barely. This algorithm rounds up newArea to the _next_ multiple of cellY.
-    const auto wantedHeight = (newArea + pixelPerRow - 1) / pixelPerRow * cellY;
-    // The atlas might either be a N rows of full width (xLimit) or just one
-    // row (where wantedHeight == cellY) that doesn't quite fill it's maximum width yet.
-    const auto wantedWidth = wantedHeight != cellY ? limitX : newArea / perCellArea * cellX;
-
-    // We know that limitX/limitY were u16 originally, and thus it's safe to narrow_cast it back.
-    const auto height = gsl::narrow_cast<u16>(std::min(limitY, wantedHeight));
-    const auto width = gsl::narrow_cast<u16>(std::min(limitX, wantedWidth));
-
-    assert(width != 0);
-    assert(height != 0);
 
     wil::com_ptr<ID3D11Texture2D> atlasBuffer;
     wil::com_ptr<ID3D11ShaderResourceView> atlasView;
     {
         D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = width;
-        desc.Height = height;
+        desc.Width = requiredSize.x;
+        desc.Height = requiredSize.y;
         desc.MipLevels = 1;
         desc.ArraySize = 1;
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc.SampleDesc = { 1, 0 };
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
         THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, atlasBuffer.addressof()));
         THROW_IF_FAILED(_r.device->CreateShaderResourceView(atlasBuffer.get(), nullptr, atlasView.addressof()));
     }
@@ -222,43 +205,13 @@ void AtlasEngine::_adjustAtlasSize()
         _r.deviceContext->CopySubresourceRegion1(atlasBuffer.get(), 0, 0, 0, 0, _r.atlasBuffer.get(), 0, &box, D3D11_COPY_NO_OVERWRITE);
     }
 
-    _r.atlasSizeInPixel = u16x2{ width, height };
+    _r.atlasSizeInPixel = requiredSize;
     _r.atlasBuffer = std::move(atlasBuffer);
     _r.atlasView = std::move(atlasView);
     _setShaderResources();
 
-    WI_SetFlagIf(_r.invalidations, RenderInvalidations::Cursor, !copyFromExisting);
-}
-
-void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
-{
-    if (minWidth <= _r.scratchpadCellWidth)
     {
-        return;
-    }
-
-    // The new size is the greater of ... cells wide:
-    // * 2
-    // * minWidth
-    // * current size * 1.5
-    const auto newWidth = std::max<UINT>(std::max<UINT>(2, minWidth), _r.scratchpadCellWidth + (_r.scratchpadCellWidth >> 1));
-
-    _r.d2dRenderTarget.reset();
-    _r.atlasScratchpad.reset();
-
-    {
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = _r.cellSize.x * newWidth;
-        desc.Height = _r.cellSize.y;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc.SampleDesc = { 1, 0 };
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-        THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, _r.atlasScratchpad.put()));
-    }
-    {
-        const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
+        const auto surface = _r.atlasBuffer.query<IDXGISurface>();
 
         wil::com_ptr<IDWriteRenderingParams1> renderingParams;
         DWrite_GetRenderParams(_sr.dwriteFactory.get(), &_r.gamma, &_r.cleartypeEnhancedContrast, &_r.grayscaleEnhancedContrast, renderingParams.addressof());
@@ -286,8 +239,8 @@ void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
         _r.brush = brush.query<ID2D1Brush>();
     }
 
-    _r.scratchpadCellWidth = _r.maxEncounteredCellCount;
     WI_SetAllFlags(_r.invalidations, RenderInvalidations::ConstBuffer);
+    WI_SetFlagIf(_r.invalidations, RenderInvalidations::Cursor, !copyFromExisting);
 }
 
 void AtlasEngine::_processGlyphQueue()
@@ -297,10 +250,12 @@ void AtlasEngine::_processGlyphQueue()
         return;
     }
 
+    _r.d2dRenderTarget->BeginDraw();
     for (const auto& pair : _r.glyphQueue)
     {
         _drawGlyph(pair);
     }
+    THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
 
     _r.glyphQueue.clear();
 }
@@ -311,13 +266,14 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     const auto value = item.value->data();
     const auto coords = &value->coords[0];
     const auto charsLength = key->charCount;
-    const auto cells = static_cast<u32>(key->attributes.cellCount);
+    const auto cellCount = static_cast<u32>(key->attributes.cellCount);
     const auto textFormat = _getTextFormat(key->attributes.bold, key->attributes.italic);
     const auto coloredGlyph = WI_IsFlagSet(value->flags, CellFlags::ColoredGlyph);
+    const f32x2 layoutBox{ cellCount * _r.cellSizeDIP.x, _r.cellSizeDIP.y };
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
-    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key->chars[0], charsLength, textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
+    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key->chars[0], charsLength, textFormat, layoutBox.x, layoutBox.y, textLayout.addressof()));
     if (_r.typography)
     {
         textLayout->SetTypography(_r.typography.get(), { 0, charsLength });
@@ -337,40 +293,260 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         _r.d2dRenderTarget->SetTextAntialiasMode(coloredGlyph ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
     }
 
-    _r.d2dRenderTarget->BeginDraw();
-    // We could call
-    //   _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
-    // now to reduce the surface that needs to be cleared, but this decreases
-    // performance by 10% (tested using debugGlyphGenerationPerformance).
-    _r.d2dRenderTarget->Clear();
-    _r.d2dRenderTarget->DrawTextLayout({}, textLayout.get(), _r.brush.get(), options);
-    THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
+    const f32x2 halfSize{ layoutBox.x * 0.5f, layoutBox.y * 0.5f };
+    bool scalingRequired = false;
+    f32x2 offset{ 0, 0 };
+    f32x2 scale{ 1, 1 };
 
-    for (uint32_t i = 0; i < cells; ++i)
+    // Block Element and Box Drawing characters need to be handled separately,
+    // because unlike regular ones they're supposed to fill the entire layout box.
+    //
+    // Ranges:
+    // * 0x2500-0x257F: Box Drawing
+    // * 0x2580-0x259F: Block Elements
+    // * 0xE0A0-0xE0A3,0xE0B0-0xE0C8,0xE0CA-0xE0CA,0xE0CC-0xE0D4: PowerLine
+    //   (https://github.com/ryanoasis/nerd-fonts/wiki/Glyph-Sets-and-Code-Points#powerline-symbols)
+    //
+    // The following `blockCharacters` forms a so called "inversion list".
+    static constexpr std::array blockCharacters{
+        // clang-format off
+        L'\u2500', L'\u2580',
+        L'\u2580', L'\u25A0',
+        L'\uE0A0', L'\uE0A4',
+        L'\uE0B0', L'\uE0C9',
+        L'\uE0CA', L'\uE0CB',
+        L'\uE0CC', L'\uE0D5',
+        // clang-format on
+    };
+
+    if (charsLength == 1 && isInInversionList(blockCharacters, key->chars[0]))
     {
-        // Specifying NO_OVERWRITE means that the system can assume that existing references to the surface that
-        // may be in flight on the GPU will not be affected by the update, so the copy can proceed immediately
-        // (avoiding either a batch flush or the system maintaining multiple copies of the resource behind the scenes).
+        wil::com_ptr<IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
+        const auto baseWeight = textFormat->GetFontWeight();
+        const auto baseStyle = textFormat->GetFontStyle();
+
+        TextAnalysisSource analysisSource{ &key->chars[0], 1 };
+        UINT32 mappedLength = 0;
+        wil::com_ptr<IDWriteFont> mappedFont;
+        FLOAT mappedScale = 0;
+        THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
+            /* analysisSource     */ &analysisSource,
+            /* textPosition       */ 0,
+            /* textLength         */ 1,
+            /* baseFontCollection */ fontCollection.get(),
+            /* baseFamilyName     */ _r.fontMetrics.fontName.data(),
+            /* baseWeight         */ baseWeight,
+            /* baseStyle          */ baseStyle,
+            /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
+            /* mappedLength       */ &mappedLength,
+            /* mappedFont         */ mappedFont.addressof(),
+            /* scale              */ &mappedScale));
+
+        if (mappedFont)
+        {
+            wil::com_ptr<IDWriteFontFace> fontFace;
+            THROW_IF_FAILED(mappedFont->CreateFontFace(fontFace.addressof()));
+
+            DWRITE_FONT_METRICS metrics;
+            fontFace->GetMetrics(&metrics);
+
+            const u32 codePoint = key->chars[0];
+            u16 glyphIndex;
+            THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+
+            DWRITE_GLYPH_METRICS glyphMetrics;
+            THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+
+            const f32x2 boxSize{
+                static_cast<f32>(glyphMetrics.advanceWidth) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
+                static_cast<f32>(glyphMetrics.advanceHeight) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
+            };
+
+            // We always want box drawing glyphs to exactly match the size of a terminal cell.
+            // So for safe measure we'll always scale them to the exact size.
+            // But add 1px to the destination size, so that we don't end up with fractional pixels.
+            scalingRequired = true;
+            scale.x = layoutBox.x / boxSize.x;
+            scale.y = layoutBox.y / boxSize.y;
+        }
+    }
+    else
+    {
+        DWRITE_OVERHANG_METRICS overhang;
+        THROW_IF_FAILED(textLayout->GetOverhangMetrics(&overhang));
+
+        const DWRITE_OVERHANG_METRICS clampedOverhang{
+            std::max(0.0f, overhang.left),
+            std::max(0.0f, overhang.top),
+            std::max(0.0f, overhang.right),
+            std::max(0.0f, overhang.bottom),
+        };
+        f32x2 actualSize{
+            layoutBox.x + overhang.left + overhang.right,
+            layoutBox.y + overhang.top + overhang.bottom,
+        };
+
+        // Long glyphs should be drawn with their proper design size, even if that makes them a bit blurry,
+        // because otherwise we fail to support "pseudo" block characters like the "===" ligature in Cascadia Code.
+        // If we didn't force upscale that ligatures it would seemingly shrink shorter and shorter, as its
+        // glyph advance is often slightly shorter by a fractional pixel or two compared to our terminal's cells.
+        // It's a trade off that keeps most glyphs "crisp" while retaining support for things like "===".
+        // At least I can't think of any better heuristic for this at the moment...
+        if (cellCount > 2)
+        {
+            const auto advanceScale = _r.fontMetrics.advanceScale;
+            scalingRequired = true;
+            scale = { advanceScale, advanceScale };
+            actualSize.x *= advanceScale;
+            actualSize.y *= advanceScale;
+        }
+
+        // We need to offset glyphs that are simply outside of our layout box (layoutBox.x/.y)
+        // and additionally downsize glyphs that are entirely too large to fit in.
+        // The DWRITE_OVERHANG_METRICS will tell us how many DIPs the layout box is too large/small.
+        // It contains a positive number if the glyph is outside and a negative one if it's inside
+        // the layout box. For example, given a layoutBox.x/.y (and cell size) of 20/30:
+        // * "M" is the "largest" ASCII character and might be:
+        //     left:    -0.6f
+        //     right:   -0.6f
+        //     top:     -7.6f
+        //     bottom:  -7.4f
+        //   "M" doesn't fill the layout box at all!
+        //   This is because we've rounded up the Terminal's cell size to whole pixels in
+        //   _resolveFontMetrics. top/bottom margins are fairly large because we added the
+        //   chosen font's ascender, descender and line gap metrics to get our line height.
+        //   --> offsetX = 0
+        //   --> offsetY = 0
+        //   --> scale   = 1
+        // * The bar diacritic (U+0336 combining long stroke overlay)
+        //     left:    -9.0f
+        //     top:    -16.3f
+        //     right:    5.6f
+        //     bottom: -11.7f
+        //   right is positive! Our glyph is 5.6 DIPs outside of the layout box and would
+        //   appear cut off during rendering. left is negative at -9, which indicates that
+        //   we can simply shift the glyph by 5.6 DIPs to the left to fit it into our bounds.
+        //   --> offsetX = -5.6f
+        //   --> offsetY = 0
+        //   --> scale   = 1
+        // * Any wide emoji in a narrow cell (U+26A0 warning sign)
+        //     left:     6.7f
+        //     top:     -4.1f
+        //     right:    6.7f
+        //     bottom:  -3.0f
+        //   Our emoji is outside the bounds on both the left and right side and we need to shrink it.
+        //   --> offsetX = 0
+        //   --> offsetY = 0
+        //   --> scale   = layoutBox.y / (layoutBox.y + left + right)
+        //               = 0.69f
+        offset.x = clampedOverhang.left - clampedOverhang.right;
+        offset.y = clampedOverhang.top - clampedOverhang.bottom;
+
+        if (actualSize.x > layoutBox.x)
+        {
+            scalingRequired = true;
+            offset.x = (overhang.left - overhang.right) * 0.5f;
+            scale.x = layoutBox.x / actualSize.x;
+            scale.y = scale.x;
+        }
+        if (actualSize.y > layoutBox.y)
+        {
+            scalingRequired = true;
+            offset.y = (overhang.top - overhang.bottom) * 0.5f;
+            scale.x = std::min(scale.x, layoutBox.y / actualSize.y);
+            scale.y = scale.x;
+        }
+
+        // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
+        // But we do want it technically, so this re-implements baseline snapping... I think?
+        // It calculates the new `baseline` height after transformation by `scale.y` relative to the center point `halfSize.y`.
         //
-        // Since our shader only draws whatever is in the atlas, and since we don't replace glyph tiles that are in use,
-        // we can safely (?) tell the GPU that we don't overwrite parts of our atlas that are in use.
-        _copyScratchpadTile(i, coords[i], D3D11_COPY_NO_OVERWRITE);
+        // This works even if `scale.y == 1`, because then `baseline == baselineInDIP + offset.y` and `baselineInDIP`
+        // is always measured in full pixels. So rounding it will be equivalent to just rounding `offset.y` itself.
+        const auto baseline = halfSize.y + (_r.fontMetrics.baselineInDIP + offset.y - halfSize.y) * scale.y;
+        // This rounds to the nearest multiple of _r.dipPerPixel.
+        const auto baselineFixed = roundf(baseline * _r.pixelPerDIP) * _r.dipPerPixel;
+        offset.y += (baselineFixed - baseline) / scale.y;
+    }
+
+    // !!! IMPORTANT !!!
+    // DirectWrite/2D snaps the baseline to whole pixels, which is something we technically
+    // want (it makes text look crisp), but fails in weird ways if `scalingRequired` is true.
+    // As our scaling matrix's dx/dy (center point) is based on the `origin` coordinates
+    // each cell we draw gets a unique, fractional baseline which gets rounded differently.
+    // I'm not 100% sure why that happens, since `origin` is always in full pixels...
+    // But this causes wide glyphs to draw as tiles that are potentially misaligned vertically by a pixel.
+    // The resulting text rendering looks especially bad for ligatures like "====" in Cascadia Code,
+    // where every single "=" might be blatantly misaligned vertically (same for any box drawings).
+    WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP, scalingRequired);
+
+    const f32x2 inverseScale{ 1.0f - scale.x, 1.0f - scale.y };
+
+    for (u32 i = 0; i < cellCount; ++i)
+    {
+        const auto coord = coords[i];
+
+        D2D1_RECT_F rect;
+        rect.left = static_cast<float>(coord.x) * _r.dipPerPixel;
+        rect.top = static_cast<float>(coord.y) * _r.dipPerPixel;
+        rect.right = rect.left + _r.cellSizeDIP.x;
+        rect.bottom = rect.top + _r.cellSizeDIP.y;
+
+        D2D1_POINT_2F origin;
+        origin.x = rect.left - i * _r.cellSizeDIP.x;
+        origin.y = rect.top;
+
+        {
+            _r.d2dRenderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _r.d2dRenderTarget->Clear();
+        }
+        if (scalingRequired)
+        {
+            const D2D1_MATRIX_3X2_F transform{
+                scale.x,
+                0,
+                0,
+                scale.y,
+                (origin.x + halfSize.x) * inverseScale.x,
+                (origin.y + halfSize.y) * inverseScale.y,
+            };
+            _r.d2dRenderTarget->SetTransform(&transform);
+        }
+        {
+            // Now that we're done using origin to calculate the center point for our transformation
+            // we can use it for its intended purpose to slightly shift the glyph around.
+            origin.x += offset.x;
+            origin.y += offset.y;
+            _r.d2dRenderTarget->DrawTextLayout(origin, textLayout.get(), _r.brush.get(), options);
+        }
+        if (scalingRequired)
+        {
+            static constexpr D2D1_MATRIX_3X2_F identity{ 1, 0, 0, 1, 0, 0 };
+            _r.d2dRenderTarget->SetTransform(&identity);
+        }
+        {
+            _r.d2dRenderTarget->PopAxisAlignedClip();
+        }
     }
 }
 
 void AtlasEngine::_drawCursor()
 {
-    _reserveScratchpadSize(1);
-
     // lineWidth is in D2D's DIPs. For instance if we have a 150-200% zoom scale we want to draw a 2px wide line.
     // At 150% scale lineWidth thus needs to be 1.33333... because at a zoom scale of 1.5 this results in a 2px wide line.
     const auto lineWidth = std::max(1.0f, static_cast<float>((_r.dpi + USER_DEFAULT_SCREEN_DPI / 2) / USER_DEFAULT_SCREEN_DPI * USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi));
     const auto cursorType = static_cast<CursorType>(_r.cursorOptions.cursorType);
-    D2D1_RECT_F rect;
-    rect.left = 0.0f;
-    rect.top = 0.0f;
-    rect.right = _r.cellSizeDIP.x;
-    rect.bottom = _r.cellSizeDIP.y;
+
+    // `clip` is the rectangle within our texture atlas that's reserved for our cursor texture, ...
+    D2D1_RECT_F clip;
+    clip.left = 0.0f;
+    clip.top = 0.0f;
+    clip.right = _r.cellSizeDIP.x;
+    clip.bottom = _r.cellSizeDIP.y;
+
+    // ... whereas `rect` is just the visible (= usually white) portion of our cursor.
+    auto rect = clip;
 
     switch (cursorType)
     {
@@ -401,6 +577,9 @@ void AtlasEngine::_drawCursor()
     }
 
     _r.d2dRenderTarget->BeginDraw();
+    // We need to clip the area we draw in to ensure we don't
+    // accidentally draw into any neighboring texture atlas tiles.
+    _r.d2dRenderTarget->PushAxisAlignedClip(&clip, D2D1_ANTIALIAS_MODE_ALIASED);
     _r.d2dRenderTarget->Clear();
 
     if (cursorType == CursorType::EmptyBox)
@@ -419,20 +598,6 @@ void AtlasEngine::_drawCursor()
         _r.d2dRenderTarget->FillRectangle(&rect, _r.brush.get());
     }
 
+    _r.d2dRenderTarget->PopAxisAlignedClip();
     THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
-
-    _copyScratchpadTile(0, {});
-}
-
-void AtlasEngine::_copyScratchpadTile(uint32_t scratchpadIndex, u16x2 target, uint32_t copyFlags) const noexcept
-{
-    D3D11_BOX box;
-    box.left = scratchpadIndex * _r.cellSize.x;
-    box.top = 0;
-    box.front = 0;
-    box.right = box.left + _r.cellSize.x;
-    box.bottom = _r.cellSize.y;
-    box.back = 1;
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
-    _r.deviceContext->CopySubresourceRegion1(_r.atlasBuffer.get(), 0, target.x, target.y, 0, _r.atlasScratchpad.get(), 0, &box, copyFlags);
 }

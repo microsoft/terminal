@@ -3,6 +3,7 @@
 
 #include "IInheritable.idl.h"
 
+import "Theme.idl";
 import "ColorScheme.idl";
 import "ActionMap.idl";
 
@@ -41,20 +42,24 @@ namespace Microsoft.Terminal.Settings.Model
         PersistedWindowLayout,
     };
 
+    enum NewTabPosition
+    {
+        AfterLastTab,
+        AfterCurrentTab,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
-
-        void SetInvertedDisableAnimationsValue(Boolean invertedDisableAnimationsValue);
 
         INHERITABLE_SETTING(String, UnparsedDefaultProfile);
 
         INHERITABLE_SETTING(Int32, InitialRows);
         INHERITABLE_SETTING(Int32, InitialCols);
         INHERITABLE_SETTING(Boolean, AlwaysShowTabs);
+        INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
         INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
         INHERITABLE_SETTING(String, Language);
-        INHERITABLE_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
         INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
@@ -77,6 +82,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, StartOnUserLogin);
         INHERITABLE_SETTING(Boolean, AlwaysOnTop);
+        INHERITABLE_SETTING(Boolean, AutoHideWindow);
         INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
@@ -94,5 +100,10 @@ namespace Microsoft.Terminal.Settings.Model
         void RemoveColorScheme(String schemeName);
 
         ActionMap ActionMap { get; };
+
+        Windows.Foundation.Collections.IMapView<String, Theme> Themes();
+        void AddTheme(Theme theme);
+        INHERITABLE_SETTING(String, Theme);
+        Theme CurrentTheme { get; };
     }
 }

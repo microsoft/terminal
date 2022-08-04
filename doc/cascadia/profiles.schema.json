@@ -207,8 +207,14 @@
           "type": "string"
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
@@ -350,9 +356,11 @@
         "switchToTab",
         "tabSearch",
         "toggleAlwaysOnTop",
+        "toggleBlockSelection",
         "toggleFocusMode",
         "selectAll",
         "setFocusMode",
+        "switchSelectionEndpoint",
         "toggleFullscreen",
         "setFullScreen",
         "setMaximized",
@@ -364,6 +372,10 @@
         "quit",
         "adjustOpacity",
         "restoreLastClosed",
+        "addMark",
+        "scrollToMark",
+        "clearMark",
+        "clearAllMarks",
         "unbound"
       ],
       "type": "string"
@@ -380,6 +392,15 @@
         "first",
         "parent",
         "child"
+      ],
+      "type": "string"
+    },
+    "ScrollToMarkDirection": {
+      "enum": [
+        "previous",
+        "next",
+        "first",
+        "last"
       ],
       "type": "string"
     },
@@ -732,6 +753,30 @@
         "direction"
       ]
     },
+    "ScrollToMarkAction": {
+      "description": "Arguments corresponding to a Scroll to Mark Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "scrollToMark"
+            },
+            "direction": {
+              "$ref": "#/$defs/ScrollToMarkDirection",
+              "default": "previous",
+              "description": "The direction to scroll to a mark."
+            }
+          }
+        }
+      ],
+      "required": [
+        "direction"
+      ]
+    },
     "SendInputAction": {
       "description": "Arguments corresponding to a Send Input Action",
       "allOf": [
@@ -834,6 +879,27 @@
               "$ref": "#/$defs/Color",
               "default": null,
               "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
+            }
+          }
+        }
+      ]
+    },
+    "AddMarkAction": {
+      "description": "Arguments corresponding to an Add Mark Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "addMark"
+            },
+            "color": {
+              "$ref": "#/$defs/Color",
+              "default": null,
+              "description": "If provided, will set the mark's color to the given value."
             }
           }
         }
@@ -1898,6 +1964,20 @@
             "useAnyExisting"
           ],
           "type": "string"
+        },
+        "newTabPosition": {
+          "default": "afterLastTab",
+          "description": "Position of newly created tabs. Possible values are \"afterLastTab\" and \"afterCurrentTab\".",
+          "enum": [
+            "afterLastTab",
+            "afterCurrentTab"
+          ],
+          "type": "string"        
+        },
+        "autoHideWindow": {
+          "default": false,
+          "description": "If enabled, Terminal window will be hidden as soon as it loses focus.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -2011,15 +2091,20 @@
           "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound, flash the taskbar icon (if the terminal window is not in focus) and flash the window. An array of specific behaviors can also be used. Supported array values include `audible`, `window` and `taskbar`. When set to \"none\", nothing will happen.",
           "$ref": "#/$defs/BellStyle"
         },
+        "bellSound": {
+          "description": "Sets the sound played when the application emits a BEL. When set to an array, the terminal will pick one of those sounds at random.",
+          "$ref": "#/$defs/BellSound"
+        },
         "closeOnExit": {
-          "default": "graceful",
-          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+          "default": "automatic",
+          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"automatic\" (behave as \"graceful\" only for processes launched by terminal, behave as \"always\" otherwise)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
           "oneOf": [
             {
               "enum": [
                 "never",
                 "graceful",
-                "always"
+                "always",
+                "automatic"
               ],
               "type": "string"
             },
@@ -2076,12 +2161,22 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "experimental.autoMarkPrompts": {
+          "default": false,
+          "description": "When set to true, prompts will automatically be marked.",
+          "type": "boolean"
+        },
         "experimental.connection.passthroughMode": {
           "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
+        "experimental.showMarksOnScrollbar": {
+          "default": false,
+          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
         "experimental.pixelShaderPath": {
@@ -2187,8 +2282,14 @@
           ]
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "scrollbarState": {
           "default": "visible",

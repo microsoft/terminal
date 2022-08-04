@@ -9,7 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)src\api-ms-win-core-synch-l1-2-0\api-ms-win-core-synch-l1-2-0.vcxproj" />
     <ProjectReference Include="$(SolutionDir)src\cascadia\PublicTerminalCore\PublicTerminalCore.vcxproj" />
     <ProjectReference Include="$(SolutionDir)src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj" />
   </ItemGroup>
@@ -21,9 +20,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="$(SolutionDir)bin\$(UnreasonablePlatform)\$(Configuration)\PublicTerminalCore.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(SolutionDir)bin\$(UnreasonablePlatform)\$(Configuration)\api-ms-win-core-synch-l1-2-0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

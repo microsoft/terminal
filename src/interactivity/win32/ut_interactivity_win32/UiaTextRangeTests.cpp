@@ -484,9 +484,9 @@ class UiaTextRangeTests
 
         Log::Comment(L"_start and end should be 2 units apart. Sign depends on order of comparison.");
         THROW_IF_FAILED(utr1->CompareEndpoints(TextPatternRangeEndpoint_End, utr2.Get(), TextPatternRangeEndpoint_End, &comparison));
-        VERIFY_IS_TRUE(comparison == -2);
+        VERIFY_IS_TRUE(comparison == -1);
         THROW_IF_FAILED(utr2->CompareEndpoints(TextPatternRangeEndpoint_End, utr1.Get(), TextPatternRangeEndpoint_End, &comparison));
-        VERIFY_IS_TRUE(comparison == 2);
+        VERIFY_IS_TRUE(comparison == 1);
     }
 
     TEST_METHOD(ExpandToEnclosingUnit)
@@ -1511,7 +1511,7 @@ class UiaTextRangeTests
             { L"ViewportHeight From Bottom", bufferSize.bottom - viewportSize.Height() - 1 },
             { L"ViewportHeight From Bottom + 1", bufferSize.bottom - viewportSize.Height() + 1 },
 
-            // GH#7839: ExclusiveEnd is a non-existent space,
+            // GH#7839: ExclusiveEnd is a nonexistent space,
             // so scrolling to it when !alignToTop used to crash
             { L"Exclusive End", bufferSize.bottom }
         };

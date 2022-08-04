@@ -30,6 +30,34 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
     };
 };
 
+// Type Description:
+// - Helper for converting a user-specified adjustTextMode value to its corresponding enum
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "indexed", ValueType::Indexed },
+        pair_type{ "always", ValueType::Always },
+    };
+
+    // Override mapping parser to add boolean parsing
+    ::winrt::Microsoft::Terminal::Core::AdjustTextMode FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Indexed : ValueType::Never;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+
+    using EnumMapper::TypeDescription;
+};
+
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
 {
     static constexpr std::array<pair_type, 4> mappings = {
@@ -108,10 +136,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "always", ValueType::Always },
         pair_type{ "graceful", ValueType::Graceful },
         pair_type{ "never", ValueType::Never },
+        pair_type{ "automatic", ValueType::Automatic },
     };
 
     // Override mapping parser to add boolean parsing
@@ -206,6 +235,14 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
         pair_type{ "system", ValueType::Default },
         pair_type{ "light", ValueType::Light },
         pair_type{ "dark", ValueType::Dark },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "afterLastTab", ValueType::AfterLastTab },
+        pair_type{ "afterCurrentTab", ValueType::AfterCurrentTab },
     };
 };
 
@@ -544,5 +581,101 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
         pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
         pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
         pair_type{ "setAsDefault", ValueType::SetAsDefault },
+    };
+};
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemeColor>
+{
+    static constexpr std::string_view accentString{ "accent" };
+    static constexpr std::string_view terminalBackgroundString{ "terminalBackground" };
+
+    winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromJson(const Json::Value& json)
+    {
+        if (json == Json::Value::null)
+        {
+            return nullptr;
+        }
+        const auto string{ Detail::GetStringView(json) };
+        if (string == accentString)
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromAccent();
+        }
+        else if (string == terminalBackgroundString)
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromTerminalBackground();
+        }
+        else
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromColor(::Microsoft::Console::Utils::ColorFromHexString(string));
+        }
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (json == Json::Value::null)
+        {
+            return true;
+        }
+        if (!json.isString())
+        {
+            return false;
+        }
+
+        const auto string{ Detail::GetStringView(json) };
+        const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
+        const auto isAccent = string == accentString;
+        const auto isTerminalBackground = string == terminalBackgroundString;
+        return isColorSpec || isAccent || isTerminalBackground;
+    }
+
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
+    {
+        if (val == nullptr)
+        {
+            return Json::Value::null;
+        }
+
+        switch (val.ColorType())
+        {
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::Accent:
+        {
+            return "accent";
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::Color:
+        {
+            return til::u16u8(til::color{ val.Color() }.ToHexString(false));
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::TerminalBackground:
+        {
+            return "terminalBackground";
+        }
+        }
+        return til::u16u8(til::color{ val.Color() }.ToHexString(false));
+    }
+
+    std::string TypeDescription() const
+    {
+        return "ThemeColor (#rrggbb, #rgb, #rrggbbaa, accent, terminalBackground)";
+    }
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "hover", ValueType::Hover },
+        pair_type{ "never", ValueType::Never },
+    };
+};
+
+// Possible ScrollToMarkDirection values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
+{
+    JSON_MAPPINGS(4) = {
+        pair_type{ "previous", ValueType::Previous },
+        pair_type{ "next", ValueType::Next },
+        pair_type{ "first", ValueType::First },
+        pair_type{ "last", ValueType::Last },
     };
 };

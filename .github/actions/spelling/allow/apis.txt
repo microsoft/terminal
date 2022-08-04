@@ -5,6 +5,7 @@ aclapi
 alignas
 alignof
 APPLYTOSUBMENUS
+appxrecipe
 bitfield
 bitfields
 BUILDBRANCH
@@ -14,6 +15,7 @@ BYCOMMAND
 BYPOSITION
 charconv
 CLASSNOTAVAILABLE
+CLOSEAPP
 cmdletbinding
 COLORPROPERTY
 colspan
@@ -28,9 +30,14 @@ dataobject
 dcomp
 DERR
 dlldata
+DNE
 DONTADDTORECENT
+DWMWA
 DWORDLONG
+DWMSBT
+DWMWA
 endfor
+ENDSESSION
 enumset
 environstrings
 EXPCMDFLAGS
@@ -70,6 +77,7 @@ IDirect
 IExplorer
 IFACEMETHOD
 IFile
+IGraphics
 IInheritable
 IMap
 IMonarch
@@ -95,12 +103,14 @@ lround
 Lsa
 lsass
 LSHIFT
+MAINWINDOW
 memchr
 memicmp
 MENUCOMMAND
 MENUDATA
 MENUITEMINFOW
 MENUINFO
+mmeapi
 MOUSELEAVE
 mov
 mptt
@@ -140,6 +150,7 @@ PEXPLICIT
 PICKFOLDERS
 pmr
 ptstr
+QUERYENDSESSION
 rcx
 REGCLS
 RETURNCMD
@@ -175,6 +186,8 @@ Stubless
 Subheader
 Subpage
 syscall
+SYSTEMBACKDROP
+TABROW
 TASKBARCREATED
 TBPF
 THEMECHANGED
@@ -194,6 +207,7 @@ UOI
 UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
+Viewbox
 wcsstr
 wcstoui
 winmain

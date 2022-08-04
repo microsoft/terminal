@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Global Settings
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Windows::UI::Xaml::ElementTheme> ElementTheme();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, NewTabPosition> NewTabPosition();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode> TabViewWidthMode();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, FirstWindowPreference> FirstWindowPreference();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, LaunchMode> LaunchMode();
@@ -42,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Core::CursorStyle> CursorStyle();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> FontWeight();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle> IntenseTextStyle();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Core::AdjustTextMode> AdjustIndistinguishableColors();
     };
 }
 

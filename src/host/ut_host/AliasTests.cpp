@@ -340,10 +340,10 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
         size_t cbTargetUsed = 0;
-        const auto cbTargetUsedExpected = cbTarget;
+        const auto cbTargetUsedBefore = cbTargetUsed;
 
         DWORD dwLines = 0;
-        const auto dwLinesExpected = dwLines + 1;
+        const auto dwLinesBefore = dwLines;
 
         // Register the correct alias name before we try.
         std::wstring exe(L"exe.exe");
@@ -351,9 +351,7 @@ class AliasTests
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, source, target);
 
-        auto targetExpected = target + L"\r\n";
-
-        // We should be able to match through the leading spaces. They should be stripped.
+        // Leading spaces should bypass the alias. This should not match anything.
         Alias::s_MatchAndCopyAliasLegacy(pwszSource,
                                          cbSource,
                                          rgwchTarget.get(),
@@ -362,9 +360,9 @@ class AliasTests
                                          exe,
                                          dwLines);
 
-        VERIFY_ARE_EQUAL(cbTargetUsedExpected, cbTargetUsed, L"No target bytes should be used.");
-        VERIFY_ARE_EQUAL(String(targetExpected.data(), gsl::narrow<int>(targetExpected.size())), String(rgwchTarget.get(), cchTarget), L"Target string should match expected.");
-        VERIFY_ARE_EQUAL(dwLinesExpected, dwLines, L"Line count be updated to 1.");
+        VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"No bytes should be used if nothing was found.");
+        VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string should be unmodified.");
+        VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count should pass through.");
     }
 
     TEST_METHOD(TrimTrailing)

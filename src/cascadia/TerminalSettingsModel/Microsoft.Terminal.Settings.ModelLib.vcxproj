@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0"
-  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-d7ec-4107-b7c6-79cb77ae2907}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -47,6 +46,9 @@
     </ClInclude>
     <ClInclude Include="ColorScheme.h">
       <DependentUpon>ColorScheme.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Theme.h">
+      <DependentUpon>Theme.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Command.h">
       <DependentUpon>Command.idl</DependentUpon>
@@ -128,6 +130,9 @@
     <ClCompile Include="ColorScheme.cpp">
       <DependentUpon>ColorScheme.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="Theme.cpp">
+      <DependentUpon>Theme.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Command.cpp">
       <DependentUpon>Command.idl</DependentUpon>
     </ClCompile>
@@ -173,6 +178,7 @@
     <Midl Include="ApplicationState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
+    <Midl Include="Theme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="GlobalAppSettings.idl" />

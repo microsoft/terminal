@@ -237,6 +237,11 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
+    {
+        Log::Comment(L"AddMark MOCK called...");
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.
@@ -1922,7 +1927,7 @@ public:
 
         Log::Comment(L"Test 5: Change Foreground to Legacy Attr while BG is RGB color");
         // Unfortunately this test isn't all that good, because the adapterTest adapter isn't smart enough
-        //   to have its own color table and translate the pre-existing RGB BG into a legacy BG.
+        //   to have its own color table and translate the preexisting RGB BG into a legacy BG.
         // Fortunately, the ft_api:RgbColorTests IS smart enough to test that.
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;

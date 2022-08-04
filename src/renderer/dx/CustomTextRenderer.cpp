@@ -238,10 +238,10 @@ using namespace Microsoft::Console::Render;
 // - firstPass - true if we're being called before the text is drawn, false afterwards.
 // Return Value:
 // - S_FALSE if we did nothing, S_OK if we successfully painted, otherwise an appropriate HRESULT
-[[nodiscard]] HRESULT _drawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
-                                  D2D1_RECT_F textRunBounds,
-                                  const DrawingContext& drawingContext,
-                                  const bool firstPass)
+[[nodiscard]] HRESULT CustomTextRenderer::DrawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
+                                                     D2D1_RECT_F textRunBounds,
+                                                     const DrawingContext& drawingContext,
+                                                     const bool firstPass)
 try
 {
     if (!drawingContext.cursorInfo.has_value())
@@ -374,7 +374,7 @@ try
         // =   =      =====
         // =====      =====
         //
-        // Then, outside of _drawCursor, the glyph is drawn:
+        // Then, outside of DrawCursor, the glyph is drawn:
         //
         // EMPTY BOX  FILLED BOX
         // ==A==      ==A==
@@ -556,7 +556,7 @@ CATCH_RETURN()
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
-    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, true));
+    RETURN_IF_FAILED(DrawCursor(d2dContext.Get(), rect, *drawingContext, true));
 
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background _isn't_ opaque, then we need
@@ -746,7 +746,7 @@ CATCH_RETURN()
                                             clientDrawingEffect));
     }
 
-    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, false));
+    RETURN_IF_FAILED(DrawCursor(d2dContext.Get(), rect, *drawingContext, false));
 
     return S_OK;
 }

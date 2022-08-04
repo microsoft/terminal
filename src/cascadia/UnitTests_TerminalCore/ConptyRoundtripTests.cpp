@@ -178,6 +178,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(PassthroughCursorShapeImmediately);
 
+    TEST_METHOD(PassthroughDECCTR);
+
     TEST_METHOD(TestWrappingALongString);
     TEST_METHOD(TestAdvancedWrapping);
     TEST_METHOD(TestExactWrappingWithoutSpaces);
@@ -1204,6 +1206,42 @@ void ConptyRoundtripTests::PassthroughHardReset()
     {
         TestUtils::VerifyExpectedString(termTb, std::wstring(TerminalViewWidth, L' '), { 0, y });
     }
+}
+
+void ConptyRoundtripTests::PassthroughDECCTR()
+{
+    Log::Comment(L"Update the color table with DECCTR. This should immediately be flushed to the Terminal.");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& termRenderSettings = term->GetRenderSettings();
+
+    _flushFirstFrame();
+
+    _logConpty = true;
+
+    // We're going to update color table entries 101 through 103, so we start by
+    // initializing those entries to black in the Terminal render settings.
+    termRenderSettings.SetColorTableEntry(101, RGB(0, 0, 0));
+    termRenderSettings.SetColorTableEntry(102, RGB(0, 0, 0));
+    termRenderSettings.SetColorTableEntry(103, RGB(0, 0, 0));
+
+    // DECCTR is expected to arrive in two parts. The control sequence comes
+    // first, and the string content follows in the second packet.
+    expectedOutput.push_back("\x1bP2$p");
+    expectedOutput.push_back("101;2;100;0;0/102;2;0;100;0/103;2;0;0;100\x1b\\");
+
+    // Send the control sequence to the host.
+    hostSm.ProcessString(L"\x1bP2$p101;2;100;0;0/102;2;0;100;0/103;2;0;0;100\x1b\\");
+
+    // Verify that the color table entries have been updated in the Terminal.
+    VERIFY_ARE_EQUAL(RGB(255, 0, 0), termRenderSettings.GetColorTableEntry(101));
+    VERIFY_ARE_EQUAL(RGB(0, 255, 0), termRenderSettings.GetColorTableEntry(102));
+    VERIFY_ARE_EQUAL(RGB(0, 0, 255), termRenderSettings.GetColorTableEntry(103));
+
+    termRenderSettings.ResetColorTable();
 }
 
 void ConptyRoundtripTests::OutputWrappedLinesAtTopOfBuffer()

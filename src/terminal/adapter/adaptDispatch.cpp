@@ -2221,6 +2221,11 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
+    if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
+    {
+        // Re-calculate the adjusted colors now that one of the entries has been changed
+        _renderSettings.MakeAdjustedColorArray();
+    }
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2286,6 +2291,11 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     case DispatchTypes::ColorItem::NormalText:
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
+        if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
+        {
+            // Re-calculate the adjusted colors now that these aliases have been changed
+            _renderSettings.MakeAdjustedColorArray();
+        }
         break;
     case DispatchTypes::ColorItem::WindowFrame:
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
@@ -2466,6 +2476,100 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - Performs a iTerm2 action
+// - Ascribes to the ITermDispatch interface
+// - Currently, the actions we support are:
+//   * `OSC1337;SetMark`: mark a line as a prompt line
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"SetMark")
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.AddMark(mark);
+        return true;
+    }
+    return false;
+}
+
+// Method Description:
+// - Performs a FinalTerm action
+// - Currently, the actions we support are:
+//   * `OSC133;A`: mark a line as a prompt line
+// - Not actually used in conhost
+// - The remainder of the FTCS prompt sequences are tracked in GH#11000
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"A") // FTCS_PROMPT
+    {
+        // Simply just mark this line as a prompt line.
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.AddMark(mark);
+        return true;
+    }
+
+    // When we add the rest of the FTCS sequences (GH#11000), we should add a
+    // simple state machine here to track the most recently emitted mark from
+    // this set of sequences, and which sequence was emitted last, so we can
+    // modify the state of that mark as we go.
+    return false;
+}
+
+// Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is
 //   transmitted in sixel format via the returned StringHandler function.
@@ -2578,6 +2682,13 @@ ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchT
 // - a function to parse the report data.
 ITermDispatch::StringHandler AdaptDispatch::_RestoreColorTable()
 {
+    // If we're a conpty, we create a passthrough string handler to forward the
+    // color report to the connected terminal.
+    if (_api.IsConsolePty())
+    {
+        return _CreatePassthroughHandler();
+    }
+
     return [this, parameter = VTInt{}, parameters = std::vector<VTParameter>{}](const auto ch) mutable {
         if (ch >= L'0' && ch <= L'9')
         {
@@ -2789,4 +2900,48 @@ bool AdaptDispatch::PlaySounds(const VTParameters parameters)
         _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
         return true;
     });
+}
+
+// Routine Description:
+// - Helper method to create a string handler that can be used to pass through
+//   DCS sequences when in conpty mode.
+// Arguments:
+// - <none>
+// Return value:
+// - a function to receive the data or nullptr if the initial flush fails
+ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
+{
+    // Before we pass through any more data, we need to flush the current frame
+    // first, otherwise it can end up arriving out of sync.
+    _renderer.TriggerFlush(false);
+    // Then we need to flush the sequence introducer and parameters that have
+    // already been parsed by the state machine.
+    auto& stateMachine = _api.GetStateMachine();
+    if (stateMachine.FlushToTerminal())
+    {
+        // And finally we create a StringHandler to receive the rest of the
+        // sequence data, and pass it through to the connected terminal.
+        auto& engine = stateMachine.Engine();
+        return [&, buffer = std::wstring{}](const auto ch) mutable {
+            // To make things more efficient, we buffer the string data before
+            // passing it through, only flushing if the buffer gets too large,
+            // or we're dealing with the last character in the current output
+            // fragment, or we've reached the end of the string.
+            const auto endOfString = ch == AsciiChars::ESC;
+            buffer += ch;
+            if (buffer.length() >= 4096 || stateMachine.IsProcessingLastCharacter() || endOfString)
+            {
+                // The end of the string is signaled with an escape, but for it
+                // to be a valid string terminator we need to add a backslash.
+                if (endOfString)
+                {
+                    buffer += L'\\';
+                }
+                engine.ActionPassThroughString(buffer);
+                buffer.clear();
+            }
+            return !endOfString;
+        };
+    }
+    return nullptr;
 }
