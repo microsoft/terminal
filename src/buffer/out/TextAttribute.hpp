@@ -167,7 +167,7 @@ public:
     constexpr bool HasAnyExtendedAttributes() const noexcept
     {
         return GetExtendedAttributes() != ExtendedAttributes::Normal ||
-               !IsAnyGridLineEnabled() ||
+               IsAnyGridLineEnabled() ||
                GetHyperlinkId() != 0 ||
                IsReverseVideo();
     }
