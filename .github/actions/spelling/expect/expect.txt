@@ -42,7 +42,6 @@ antialias
 antialiasing
 ANull
 anycpu
-AOn
 APARTMENTTHREADED
 APCs
 api
@@ -80,7 +79,6 @@ ASingle
 asm
 asmv
 asmx
-AStomps
 ASYNCWINDOWPOS
 atch
 ATest
@@ -225,6 +223,7 @@ CFuzz
 cgscrn
 chafa
 changelist
+chaof
 charinfo
 charset
 CHARSETINFO
@@ -232,7 +231,6 @@ chcp
 checkbox
 checkboxes
 chh
-Childitem
 chk
 chrono
 CHT
@@ -2756,6 +2754,9 @@ xes
 xff
 XFile
 XFORM
+xin
+xinchaof
+xinxinchaof
 XManifest
 XMath
 XMFLOAT
