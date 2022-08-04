@@ -4116,6 +4116,11 @@ void ConptyRoundtripTests::AltBufferResizeCrash()
                  L"particular combination of resizing could crash the terminal."
                  L" This test makes sure we don't.");
 
+    // Anything that resizes the buffer needs IsolationLevel:Method
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
