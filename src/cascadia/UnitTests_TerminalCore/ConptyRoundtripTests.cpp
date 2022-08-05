@@ -229,6 +229,9 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
     TEST_METHOD(AltBufferResizeCrash);
 
+    TEST_METHOD(TestNoExtendedAttrsOptimization);
+    TEST_METHOD(TestNoBackgroundAttrsOptimization);
+
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
@@ -4114,6 +4117,11 @@ void ConptyRoundtripTests::AltBufferResizeCrash()
                  L"particular combination of resizing could crash the terminal."
                  L" This test makes sure we don't.");
 
+    // Anything that resizes the buffer needs IsolationLevel:Method
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& renderer = *g.pRender;
     auto& gci = g.getConsoleInformation();
@@ -4153,4 +4161,100 @@ void ConptyRoundtripTests::AltBufferResizeCrash()
     sm.ProcessString(L"\x1b[8;10;80t");
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyRoundtripTests::TestNoExtendedAttrsOptimization()
+{
+    Log::Comment(L"We don't want conpty to optimize out runs of spaces that DO "
+                 L"have extended attrs, because EL / ECH don't fill space with "
+                 L"those attributes");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    TextAttribute reverseAttrs{};
+    reverseAttrs.SetReverseVideo(true);
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L' ', reverseAttrs, 9u);
+        TestUtils::VerifyExpectedString(L"test", iter0);
+        TestUtils::VerifyLineContains(iter0, L' ', reverseAttrs, 9u);
+
+        TestUtils::VerifyLineContains(tb, { 0, 1 }, L' ', reverseAttrs, static_cast<uint32_t>(TerminalViewWidth));
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+    sm.ProcessString(L"\x1b[7m         test         \x1b[m\n");
+    sm.ProcessString(L"\x1b[7m");
+    sm.ProcessString(std::wstring(TerminalViewWidth, L' '));
+    sm.ProcessString(L"\x1b[m\n");
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void ConptyRoundtripTests::TestNoBackgroundAttrsOptimization()
+{
+    Log::Comment(L"Same as above, with BG attrs");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    gci.LockConsole(); // Lock must be taken to manipulate alt/main buffer state.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    _flushFirstFrame();
+
+    _checkConptyOutput = false;
+
+    TextAttribute bgAttrs{};
+    bgAttrs.SetIndexedBackground(TextColor::DARK_WHITE);
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, L' ', bgAttrs, 9u);
+        TestUtils::VerifyExpectedString(L"test", iter0);
+        TestUtils::VerifyLineContains(iter0, L' ', bgAttrs, 9u);
+
+        TestUtils::VerifyLineContains(tb, { 0, 1 }, L' ', bgAttrs, static_cast<uint32_t>(TerminalViewWidth));
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+    sm.ProcessString(L"\x1b[47m         test         \x1b[m\n");
+    sm.ProcessString(L"\x1b[47m");
+    sm.ProcessString(std::wstring(TerminalViewWidth, L' '));
+    sm.ProcessString(L"\x1b[m\n");
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
 }
