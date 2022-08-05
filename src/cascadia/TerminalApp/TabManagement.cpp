@@ -433,7 +433,13 @@ namespace winrt::TerminalApp::implementation
                         THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
 
                         // Default to using the tab title as the file name
-                        THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
+                        auto filename = { control.Title() };
+                        char unallowed_chars[] = "<>:\\/\"|?*";
+                        for (unsigned int i = 0; i < strlen(unallowed_chars); ++i)
+                        {
+                            filename.erase(std::remove(filename.begin(), filename.end(), unallowed_chars[i]), filename.end());
+                        }
+                        THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
                     });
                 }
                 else
