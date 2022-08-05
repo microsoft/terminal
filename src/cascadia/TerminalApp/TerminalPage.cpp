@@ -1509,6 +1509,20 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        hostingTab.ColorPickerRequested([weakTab, weakThis]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+            if (page && tab)
+            {
+                if (!page->_tabColorPicker)
+                {
+                    page->_tabColorPicker = winrt::make<ColorPickupFlyout>();
+                }
+
+                tab->AttachColorPicker(page->_tabColorPicker);
+            }
+        });
+
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
