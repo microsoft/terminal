@@ -424,10 +424,15 @@ using namespace Microsoft::Console::Types;
     // the inbox telnet client doesn't understand the Erase Character sequence,
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
+    //
+    // GH#13229: ECH and EL don't fill the space with "meta" attributes like
+    // underline, reverse video, hyperlinks, etc. If these spaces had those
+    // attrs, then don't try and optimize them out.
     const auto optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
     const auto useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
-                              (!_clearedAllThisFrame);
+                              (!_clearedAllThisFrame) &&
+                              (!_lastTextAttributes.HasAnyExtendedAttributes());
     const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
