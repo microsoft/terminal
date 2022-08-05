@@ -4112,7 +4112,7 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
 void ConptyRoundtripTests::TestPowerLineFirstFrame()
 {
-    Log::Comment(L"This is a test for GH#8341. If we recieved colored spaces "
+    Log::Comment(L"This is a test for GH#8341. If we received colored spaces "
                  L"BEFORE the first frame, we should still emit them!");
 
     auto& g = ServiceLocator::LocateGlobals();
@@ -4147,7 +4147,7 @@ void ConptyRoundtripTests::TestPowerLineFirstFrame()
 
     // As a pwsh one-liner:
     //
-    //  "`e[37m`e[102m foo\bar `e[92m`e[100m▶ `e[37mbaz `e[90m`e[49m▶ `e[m"
+    //  "`e[37m`e[102m foo\bar `e[92m`e[100m▶ `e[37mBar `e[90m`e[49m▶ `e[m"
     //
     // Generally taken from
     // https://github.com/microsoft/terminal/issues/8341#issuecomment-731310022,
@@ -4158,13 +4158,13 @@ void ConptyRoundtripTests::TestPowerLineFirstFrame()
     sm.ProcessString(L"\x1b[92m\x1b[100m" // bright green on bright black
                      L"▶ ");
     sm.ProcessString(L"\x1b[37m" // dark white on bright black
-                     L"baz ");
+                     L"Bar ");
     sm.ProcessString(L"\x1b[90m\x1b[49m" // bright black on default
                      L"▶ ");
     sm.ProcessString(L"\x1b[m\n"); // default on default
 
     auto verifyBuffer = [&](const TextBuffer& tb) {
-        // If this test fails on charater 8, then it's because we didn't emit the space, we just moved ahead.
+        // If this test fails on character 8, then it's because we didn't emit the space, we just moved ahead.
         auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, whiteOnGreen, 9u);
         TestUtils::VerifyLineContains(iter0, OutputCellIterator{ greenOnBlack, 2u });
         TestUtils::VerifyLineContains(iter0, OutputCellIterator{ whiteOnBlack, 4u });
