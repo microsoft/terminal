@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.UI.Xaml.Media.Brush Evaluate(Windows.UI.Xaml.ResourceDictionary res,
                                              Windows.UI.Xaml.Media.Brush terminalBackground,
                                              Boolean forTitlebar);
+        UInt8 UnfocusedTabOpacity { get; };
     }
 
     runtimeclass WindowTheme {
@@ -46,6 +47,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     runtimeclass TabTheme {
         ThemeColor Background { get; };
+        ThemeColor UnfocusedBackground { get; };
         TabCloseButtonVisibility ShowCloseButton { get; };
     }
 

@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::UI::Xaml::Media::Brush Evaluate(const winrt::Windows::UI::Xaml::ResourceDictionary& res,
                                                         const winrt::Windows::UI::Xaml::Media::Brush& terminalBackground,
                                                         const bool forTitlebar);
+        uint8_t UnfocusedTabOpacity() const noexcept;
 
         WINRT_PROPERTY(til::color, Color);
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ThemeColorType, ColorType);

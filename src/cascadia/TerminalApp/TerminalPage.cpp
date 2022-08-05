@@ -4091,11 +4091,12 @@ namespace winrt::TerminalApp::implementation
         // First: Update the colors of our individual TabViewItems. This applies tab.background to the tabs via TerminalTab::ThemeColor
         {
             auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
+            auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
             for (const auto& tab : _tabs)
             {
                 if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
                 {
-                    terminalTabImpl->ThemeColor(tabBackground);
+                    terminalTabImpl->ThemeColor(tabBackground, tabUnfocusedBackground);
                 }
             }
         }

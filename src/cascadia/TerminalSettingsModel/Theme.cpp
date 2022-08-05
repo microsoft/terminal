@@ -170,6 +170,19 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     return nullptr;
 }
 
+uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
+{
+    switch (ColorType())
+    {
+    case ThemeColorType::Accent:
+    case ThemeColorType::TerminalBackground:
+        return 77;
+    case ThemeColorType::Color:
+        return _Color.a;
+    }
+    return 0;
+}
+
 #define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...)                    \
     {                                                                         \
         std::optional<type> _val;                                             \

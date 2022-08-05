@@ -864,7 +864,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -1069,7 +1069,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
@@ -1369,9 +1369,10 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    void TerminalTab::ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color)
+    void TerminalTab::ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused, const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused)
     {
-        _themeColor = color;
+        _themeColor = focused;
+        _unfocusedThemeColor = unfocused;
         _RecalculateAndApplyTabColor();
     }
 
@@ -1406,7 +1407,7 @@ namespace winrt::TerminalApp::implementation
             }
             else if (tab->_themeColor != nullptr)
             {
-                // One-liner to safely get the active control's brush.
+                // Safely get the active control's brush.
                 Media::Brush terminalBrush{ nullptr };
                 if (const auto& c{ tab->GetActiveTerminalControl() })
                 {
@@ -1485,10 +1486,35 @@ namespace winrt::TerminalApp::implementation
 
         selectedTabBrush.Color(color);
 
+        // Start with the current tab color, set to Opacity=.3
+        til::color deselectedTabColor{ color };
+        deselectedTabColor = deselectedTabColor.with_alpha(77); // 255 * .3 = 77
+        // If we have a unfocused color in the theme:
+        if (_unfocusedThemeColor != nullptr)
+        {
+            // Safely get the active control's brush.
+            Media::Brush terminalBrush{ nullptr };
+            if (const auto& c{ GetActiveTerminalControl() })
+            {
+                terminalBrush = c.BackgroundBrush();
+            }
+            // Get the color of the brush.
+            if (const auto themeBrush{ _unfocusedThemeColor.Evaluate(Application::Current().Resources(), terminalBrush, false) })
+            {
+                // We did figure out the brush. Get the color out of it. If it
+                // was "accent" or "terminalBackground", then we're gonna set
+                // the alpha to .3 manually here.
+                // (ThemeColor::UnfocusedTabOpacity will do this for us). If the
+                // user sets both unfocused and focused tab.background to
+                // terminalBackground, this will allow for some differentiation
+                // (and is generally just sensible).
+                deselectedTabColor = til::color{ ThemeColor::ColorFromBrush(themeBrush) }.with_alpha(_unfocusedThemeColor.UnfocusedTabOpacity());
+            }
+        }
         // currently if a tab has a custom color, a deselected state is
         // signified by using the same color with a bit of transparency
-        deselectedTabBrush.Color(color);
-        deselectedTabBrush.Opacity(0.3);
+        deselectedTabBrush.Color(deselectedTabColor.with_alpha(255));
+        deselectedTabBrush.Opacity(deselectedTabColor.a / 255.f);
 
         hoverTabBrush.Color(color);
         hoverTabBrush.Opacity(0.6);
