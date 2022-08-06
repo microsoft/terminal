@@ -68,7 +68,7 @@
                 <ToggleSwitch x:Name="ShowTitlebarToggleSwitch"
                               IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                              Toggled="ShowTitleBarToggled"/>
+                              Toggled="ShowTitleBarToggled" />
             </local:SettingContainer>
 
             <!--  Always show tabs  -->
