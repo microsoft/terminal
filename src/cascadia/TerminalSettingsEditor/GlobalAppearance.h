@@ -15,6 +15,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
+        void ShowTitleBarToggled(const winrt::Windows::Foundation::IInspectable& /* sender */, const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(Editor::GlobalAppearanceViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
     };

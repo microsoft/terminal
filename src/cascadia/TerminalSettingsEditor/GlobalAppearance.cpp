@@ -25,5 +25,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::GlobalAppearanceViewModel>();
+        AlwaysShowTabsToggleSwitch().IsEnabled(!_ViewModel.ShowTabsInTitlebar());
+    }
+
+    void GlobalAppearance::ShowTitleBarToggled(const IInspectable& /* sender */, const RoutedEventArgs& /* args */)
+    {
+        AlwaysShowTabsToggleSwitch().IsEnabled(!ShowTitlebarToggleSwitch().IsOn());
+
+        if (ShowTitlebarToggleSwitch().IsOn())
+        {
+            AlwaysShowTabsToggleSwitch().IsOn(true);
+        }
     }
 }
