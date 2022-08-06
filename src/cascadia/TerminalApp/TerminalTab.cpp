@@ -649,6 +649,46 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Attaches the given color picker to ourselves
+    // - Typically will be called after we have sent a request for the color picker
+    // Arguments:
+    // - colorPicker: The color picker that we should attach to ourselves
+    // Return Value:
+    // - <none>
+    void TerminalTab::AttachColorPicker(TerminalApp::ColorPickupFlyout& colorPicker)
+    {
+        auto weakThis{ get_weak() };
+
+        _tabColorPickup = colorPicker;
+
+        _colorSelectedToken = _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->SetRuntimeTabColor(newTabColor);
+            }
+        });
+
+        _colorClearedToken = _tabColorPickup.ColorCleared([weakThis]() {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->ResetRuntimeTabColor();
+            }
+        });
+
+        _pickerClosedToken = _tabColorPickup.Closed([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_tabColorPickup.ColorSelected(tab->_colorSelectedToken);
+                tab->_tabColorPickup.ColorCleared(tab->_colorClearedToken);
+                tab->_tabColorPickup.Closed(tab->_pickerClosedToken);
+                tab->_tabColorPickup = nullptr;
+            }
+        });
+
+        _tabColorPickup.ShowAt(TabViewItem());
+    }
+
+    // Method Description:
     // - Find the currently active pane, and then switch the split direction of
     //   its parent. E.g. switch from Horizontal to Vertical.
     // Return Value:
@@ -1184,26 +1224,11 @@ namespace winrt::TerminalApp::implementation
         chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->ActivateColorPicker();
+                tab->RequestColorPicker();
             }
         });
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
         chooseColorMenuItem.Icon(colorPickSymbol);
-
-        // Color Picker (it's convenient to have it here)
-        _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->SetRuntimeTabColor(newTabColor);
-            }
-        });
-
-        _tabColorPickup.ColorCleared([weakThis]() {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->ResetRuntimeTabColor();
-            }
-        });
 
         Controls::MenuFlyoutItem renameTabMenuItem;
         {
@@ -1597,14 +1622,15 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Display the tab color picker at the location of the TabViewItem for this tab.
+    // - Send an event to request for the color picker
+    // - The listener should attach the color picker via AttachColorPicker()
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalTab::ActivateColorPicker()
+    void TerminalTab::RequestColorPicker()
     {
-        _tabColorPickup.ShowAt(TabViewItem());
+        _ColorPickerRequestedHandlers();
     }
 
     // Method Description:
