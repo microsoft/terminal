@@ -525,9 +525,9 @@ void UtilsTests::TestTrimTrailingWhitespace()
     VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t"), L"Trim when there is a tab at the end.");
     VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\t"), L"Trim when there are tabs at the end.");
     VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\n"), L"Trim when there are tabs at the start of the whitespace at the end.");
-    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tbar\t\n"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
-    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tbar\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
-    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tbar\t\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\t\n"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\t\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
 }
 void UtilsTests::TestDontTrimTrailingWhitespace()
 {
