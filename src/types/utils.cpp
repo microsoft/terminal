@@ -773,7 +773,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
     };
 }
 
-std::wstring_view Utils::TrimPaste(std::wstring_view textView)
+std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
 {
     const auto lastNonSpace = textView.find_last_not_of(L"\t\n\v\f\r ");
     const auto firstNewline = textView.find_first_of(L"\n\v\f\r");
