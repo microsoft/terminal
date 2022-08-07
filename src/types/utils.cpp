@@ -780,7 +780,7 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView)
 
     const bool isOnlyWhitespace = lastNonSpace == textView.npos;
     const bool isMultiline = firstNewline < lastNonSpace;
-    
+
     if (isOnlyWhitespace)
     {
         // Text is all white space, nothing to paste
