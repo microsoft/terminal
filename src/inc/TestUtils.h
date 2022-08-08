@@ -168,15 +168,19 @@ public:
             auto actualAttrs = actual->TextAttr();
             auto expectedAttrs = expected->TextAttr();
 
-            auto mismatched = (actualChars != expectedChars || actualAttrs != expectedAttrs);
+            auto mismatched = ((!expectedChars.empty() && actualChars != expectedChars) || actualAttrs != expectedAttrs);
             if (mismatched)
             {
                 WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
                     L"Character or attribute at index %d was mismatched", charsProcessed));
             }
 
-            VERIFY_ARE_EQUAL(expectedChars, actualChars);
+            if (!expectedChars.empty())
+            {
+                VERIFY_ARE_EQUAL(expectedChars, actualChars);
+            }
             VERIFY_ARE_EQUAL(expectedAttrs, actualAttrs);
+
             if (mismatched)
             {
                 return false;
