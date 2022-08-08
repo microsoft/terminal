@@ -58,6 +58,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _textUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs& args);
         void _formatUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs& args);
 
+        void _SendAndClearText();
+        void _RedrawCanvas();
+
         winrt::Windows::UI::Text::Core::CoreTextEditContext::TextRequested_revoker _textRequestedRevoker;
         winrt::Windows::UI::Text::Core::CoreTextEditContext::SelectionRequested_revoker _selectionRequestedRevoker;
         winrt::Windows::UI::Text::Core::CoreTextEditContext::FocusRemoved_revoker _focusRemovedRevoker;
@@ -68,22 +71,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Text::Core::CoreTextEditContext::CompositionStarted_revoker _compositionStartedRevoker;
         winrt::Windows::UI::Text::Core::CoreTextEditContext::CompositionCompleted_revoker _compositionCompletedRevoker;
 
-        Windows::UI::Text::Core::CoreTextEditContext _editContext;
-
+        Windows::UI::Text::Core::CoreTextEditContext _editContext{ nullptr };
         std::wstring _inputBuffer;
+        winrt::Windows::UI::Text::Core::CoreTextRange _selection{};
+        size_t _activeTextStart = 0;
+        bool _inComposition = false;
+        bool _focused = false;
 
-        bool _inComposition;
-        size_t _activeTextStart;
-        void _SendAndClearText();
-        void _RedrawCanvas();
-        bool _focused;
-
-        til::point _currentTerminalCursorPos;
-        double _currentCanvasWidth;
-        double _currentTextBlockHeight;
-        winrt::Windows::Foundation::Rect _currentControlBounds;
-        winrt::Windows::Foundation::Rect _currentTextBounds;
-        winrt::Windows::Foundation::Rect _currentWindowBounds;
+        til::point _currentTerminalCursorPos{};
+        double _currentCanvasWidth = 0.0;
+        double _currentTextBlockHeight = 0.0;
+        winrt::Windows::Foundation::Rect _currentControlBounds{};
+        winrt::Windows::Foundation::Rect _currentTextBounds{};
+        winrt::Windows::Foundation::Rect _currentWindowBounds{};
     };
 }
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
