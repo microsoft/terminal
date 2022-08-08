@@ -227,6 +227,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(SimpleAltBufferTest);
     TEST_METHOD(AltBufferToAltBufferTest);
 
+    TEST_METHOD(TestPowerLineFirstFrame);
+
     TEST_METHOD(AltBufferResizeCrash);
 
     TEST_METHOD(TestNoExtendedAttrsOptimization);
@@ -4109,6 +4111,77 @@ void ConptyRoundtripTests::AltBufferToAltBufferTest()
 
     Log::Comment(L"========== Checking the terminal buffer state (StillInAltBuffer) ==========");
     verifyBuffer(*termAltTb, term->_GetMutableViewport().ToExclusive(), Frame::StillInAltBuffer);
+}
+
+void ConptyRoundtripTests::TestPowerLineFirstFrame()
+{
+    Log::Comment(L"This is a test for GH#8341. If we received colored spaces "
+                 L"BEFORE the first frame, we should still emit them!");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _checkConptyOutput = false;
+
+    TextAttribute whiteOnGreen{};
+    whiteOnGreen.SetIndexedForeground(TextColor::DARK_WHITE);
+    whiteOnGreen.SetIndexedBackground(TextColor::BRIGHT_GREEN);
+
+    TextAttribute greenOnBlack{};
+    greenOnBlack.SetIndexedForeground(TextColor::BRIGHT_GREEN);
+    greenOnBlack.SetIndexedBackground(TextColor::BRIGHT_BLACK);
+
+    TextAttribute whiteOnBlack{};
+    whiteOnBlack.SetIndexedForeground(TextColor::DARK_WHITE);
+    whiteOnBlack.SetIndexedBackground(TextColor::BRIGHT_BLACK);
+
+    TextAttribute blackOnDefault{};
+    blackOnDefault.SetIndexedForeground(TextColor::BRIGHT_BLACK);
+
+    TextAttribute defaultOnDefault{};
+
+    Log::Comment(L"========== Fill test content ==========");
+
+    // As a pwsh one-liner:
+    //
+    //  "`e[37m`e[102m foo\bar `e[92m`e[100m▶ `e[37mBar `e[90m`e[49m▶ `e[m"
+    //
+    // Generally taken from
+    // https://github.com/microsoft/terminal/issues/8341#issuecomment-731310022,
+    // but minimized for easier testing.
+
+    sm.ProcessString(L"\x1b[37m\x1b[102m" // dark white on bright green
+                     L" foo\\bar ");
+    sm.ProcessString(L"\x1b[92m\x1b[100m" // bright green on bright black
+                     L"▶ ");
+    sm.ProcessString(L"\x1b[37m" // dark white on bright black
+                     L"Bar ");
+    sm.ProcessString(L"\x1b[90m\x1b[49m" // bright black on default
+                     L"▶ ");
+    sm.ProcessString(L"\x1b[m\n"); // default on default
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        // If this test fails on character 8, then it's because we didn't emit the space, we just moved ahead.
+        auto iter0 = TestUtils::VerifyLineContains(tb, { 0, 0 }, whiteOnGreen, 9u);
+        TestUtils::VerifyLineContains(iter0, OutputCellIterator{ greenOnBlack, 2u });
+        TestUtils::VerifyLineContains(iter0, OutputCellIterator{ whiteOnBlack, 4u });
+        TestUtils::VerifyLineContains(iter0, OutputCellIterator{ blackOnDefault, 2u });
+    };
+
+    Log::Comment(L"========== Check host buffer ==========");
+    verifyBuffer(*hostTb);
+
+    Log::Comment(L"========== Paint first frame ==========");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
 }
 
 void ConptyRoundtripTests::AltBufferResizeCrash()

@@ -453,10 +453,13 @@ using namespace Microsoft::Console::Types;
     // the lines _wrapped_. It doesn't care to manually break the lines, but if
     // we trimmed the spaces off here, we'd print all the "~"s one after another
     // on the same line.
-    const auto removeSpaces = !lineWrapped && (useEraseChar ||
-                                               _clearedAllThisFrame ||
-                                               (_newBottomLine && printingBottomLine && bgMatched));
-    const auto cchActual = removeSpaces ? nonSpaceLength : cchLine;
+    static const TextAttribute defaultAttrs{};
+    const bool removeSpaces = !lineWrapped && (useEraseChar // we determined earlier that ECH is optimal
+                                               || (_clearedAllThisFrame && _lastTextAttributes == defaultAttrs) // OR we cleared the last frame to the default attributes (specifically)
+                                               || (_newBottomLine && printingBottomLine && bgMatched)); // OR we just scrolled a new line onto the bottom of the screen with the correct attributes
+    const size_t cchActual = removeSpaces ?
+                                 (cchLine - numSpaces) :
+                                 cchLine;
 
     const auto columnsActual = removeSpaces ?
                                    (totalWidth - numSpaces) :
