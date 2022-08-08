@@ -795,10 +795,5 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
         return textView;
     }
 
-    if (const auto toRemove = textView.size() - 1 - lastNonSpace; toRemove > 0)
-    {
-        textView.remove_suffix(toRemove);
-    }
-
-    return textView;
+    return textView.substr(0, lastNonSpace + 1);
 }
