@@ -54,6 +54,8 @@ Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 
 > **Note**: If you install Terminal manually:
 >
+> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).  
+>   This should only be necessary on older builds of Windows 10 and only if you get an error about missing framework packages.
 > * Terminal will not auto-update when new builds are released so you will need
 >   to regularly install the latest Terminal release to receive all the latest
 >   fixes and improvements!
