@@ -48,7 +48,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         std::erase_if(str, [](auto ch) {
             // This lookup is branchless: It always checks the filter, but throws
             // away the result if ch >= 128. This is faster than using `&&` (branchy).
-            return filter[ch & 127] & (ch < 128);
+            return til::at(filter, ch & 127) & (ch < 128);
         });
         return str;
     }
