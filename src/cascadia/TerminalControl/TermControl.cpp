@@ -640,7 +640,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // GH#13450 function to check if the current background color is light
         // enough to need a dark version of the visual bell indicator
-        return 127.f < (bg.r + bg.g + bg.b) / 3;
+        return 127 < (bg.r + bg.g + bg.b) / 3;
     }
 
     // Method Description:
