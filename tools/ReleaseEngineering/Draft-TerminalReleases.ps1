@@ -105,7 +105,7 @@ Class Asset {
 	}
 
 	[string]IdealFilename() {
-		$local:windowsVersionMoniker = Switch($this.WindowsVersion.Minor) {
+		$local:windowsVersionMoniker = Switch($this.WindowsVersion.Build) {
 			{ $_ -Lt 22000 } { "Win10" }
 			{ $_ -Ge 22000 } { "Win11" }
 		}
@@ -175,9 +175,9 @@ class ReleaseConfig {
 
 Function Read-ReleaseConfigFromHost([Release]$Release) {
 	$choices = @(
-		[Host.ChoiceDescription]::new("No New &Tag", "Tag already exists, do not create a new tag"),
-		[Host.ChoiceDescription]::new("Tag &Branch"),
-		[Host.ChoiceDescription]::new("Tag &Commit")
+		[System.Management.Automation.Host.ChoiceDescription]::new("No New &Tag", "Tag already exists, do not create a new tag"),
+		[System.Management.Automation.Host.ChoiceDescription]::new("Tag &Branch"),
+		[System.Management.Automation.Host.ChoiceDescription]::new("Tag &Commit")
 	)
 	
 	$existingTagSha1 = & git rev-parse --verify $Release.TagName() 2>$null
