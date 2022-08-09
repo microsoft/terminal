@@ -233,7 +233,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
         void _changeBackgroundColor(til::color bg);
-        bool _isColorLight(til::color bg);
+        static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
         bool _InitializeTerminal();
