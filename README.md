@@ -177,7 +177,7 @@ While overhauling Windows Console, we modernized its codebase considerably,
 cleanly separating logical entities into modules and classes, introduced some
 key extensibility points, replaced several old, home-grown collections and
 containers with safer, more efficient [STL
-containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019),
+containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2022),
 and made the code simpler and safer by using Microsoft's [Windows Implementation
 Libraries - WIL](https://github.com/Microsoft/wil).
 
@@ -293,14 +293,14 @@ If you would like to ask a question that you feel doesn't warrant an issue
   SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
   installed
 * You must have at least [VS
-  2019](https://visualstudio.microsoft.com/downloads/) installed
+  2022](https://visualstudio.microsoft.com/downloads/) installed
 * You must install the following Workloads via the VS Installer. Note: Opening
-  the solution in VS 2019 will [prompt you to install missing components
+  the solution in VS 2022 will [prompt you to install missing components
   automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
   * Desktop Development with C++
   * Universal Windows Platform Development
   * **The following Individual Components**
-    * C++ (v142) Universal Windows Platform Tools
+    * C++ (v143) Universal Windows Platform Tools
 * You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
