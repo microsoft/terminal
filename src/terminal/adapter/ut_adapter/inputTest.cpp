@@ -9,6 +9,8 @@
 
 #include "../../input/terminalInput.hpp"
 
+#include "../../../interactivity/inc/VtApiRedirection.hpp"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -109,7 +111,7 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
         irExpected.EventType = KEY_EVENT;
         irExpected.Event.KeyEvent.bKeyDown = TRUE;
         irExpected.Event.KeyEvent.wRepeatCount = 1;
-        irExpected.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScanW(0));
+        irExpected.Event.KeyEvent.wVirtualKeyCode = LOBYTE(OneCoreSafeVkKeyScanW(0));
         irExpected.Event.KeyEvent.dwControlKeyState = LEFT_CTRL_PRESSED;
         irExpected.Event.KeyEvent.wVirtualScanCode = 0;
         irExpected.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
@@ -165,7 +167,7 @@ void InputTest::TerminalInputTests()
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
+        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
 
         // Set up expected result
         switch (vkey)
@@ -376,8 +378,8 @@ void InputTest::TerminalInputModifierKeyTests()
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiKeystate));
 
     const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
-    const auto slashVkey = LOBYTE(VkKeyScanW(L'/'));
-    const auto nullVkey = LOBYTE(VkKeyScanW(0));
+    const auto slashVkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
+    const auto nullVkey = LOBYTE(OneCoreSafeVkKeyScanW(0));
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
@@ -392,7 +394,7 @@ void InputTest::TerminalInputModifierKeyTests()
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
+        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
 
         if (ControlPressed(uiKeystate))
         {
@@ -593,7 +595,7 @@ void InputTest::TerminalInputNullKeyTests()
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
-    BYTE vkey = LOBYTE(VkKeyScanW(0));
+    BYTE vkey = LOBYTE(OneCoreSafeVkKeyScanW(0));
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
     INPUT_RECORD irTest = { 0 };
@@ -699,7 +701,7 @@ void InputTest::DifferentModifiersTest()
 
     // C-/ -> C-_ -> 0x1f
     uiKeystate = LEFT_CTRL_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'/'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
     s_expectedInput = L"\x1f";
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_CTRL_PRESSED;
@@ -707,7 +709,7 @@ void InputTest::DifferentModifiersTest()
 
     // M-/ -> ESC /
     uiKeystate = LEFT_ALT_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'/'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
     s_expectedInput = L"\x1b/";
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_ALT_PRESSED;
@@ -717,7 +719,7 @@ void InputTest::DifferentModifiersTest()
     // C-? -> DEL -> 0x7f
     Log::Comment(NoThrowString().Format(L"Checking C-?"));
     // Use SHIFT_PRESSED to force us into differentiating between '/' and '?'
-    vkey = LOBYTE(VkKeyScan(L'?'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'?'));
     s_expectedInput = L"\x7f";
     TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED, vkey, L'?');
     TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED, vkey, L'?');
@@ -725,7 +727,7 @@ void InputTest::DifferentModifiersTest()
     // C-M-/ -> 0x1b0x1f
     Log::Comment(NoThrowString().Format(L"Checking C-M-/"));
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'/'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
     s_expectedInput = L"\x1b\x1f";
     TestKey(pInput, LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
     TestKey(pInput, RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
@@ -735,7 +737,7 @@ void InputTest::DifferentModifiersTest()
     // C-M-? -> 0x1b0x7f
     Log::Comment(NoThrowString().Format(L"Checking C-M-?"));
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'?'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'?'));
     s_expectedInput = L"\x1b\x7f";
     TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');
     TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');

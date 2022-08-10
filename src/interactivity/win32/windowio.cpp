@@ -129,9 +129,9 @@ bool HandleTerminalMouseEvent(const til::point cMousePosition,
     if (IsInVirtualTerminalInputMode())
     {
         const TerminalInput::MouseButtonState state{
-            WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
-            WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
-            WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
         };
 
         // GH#6401: VT applications should be able to receive mouse events from outside the
@@ -394,7 +394,7 @@ void HandleKeyEvent(const HWND hWnd,
         if (handlingResult == Selection::KeySelectionEventResult::CopyToClipboard)
         {
             // If the ALT key is held, also select HTML as well as plain text.
-            const auto fAlsoSelectHtml = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+            const auto fAlsoSelectHtml = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MENU), KEY_PRESSED);
             Clipboard::Instance().Copy(fAlsoSelectHtml);
             return;
         }
@@ -476,7 +476,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
 
     if (Message == WM_SYSCHAR || Message == WM_SYSDEADCHAR)
     {
-        VirtualKeyCode = (WORD)MapVirtualKeyW(LOBYTE(HIWORD(lParam)), MAPVK_VSC_TO_VK_EX);
+        VirtualKeyCode = (WORD)OneCoreSafeMapVirtualKeyW(LOBYTE(HIWORD(lParam)), MAPVK_VSC_TO_VK_EX);
     }
     else
     {
@@ -487,16 +487,16 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     Telemetry::Instance().SetUserInteractive();
 
     // check for ctrl-esc
-    const auto bCtrlDown = GetKeyState(VK_CONTROL) & KEY_PRESSED;
+    const auto bCtrlDown = OneCoreSafeGetKeyState(VK_CONTROL) & KEY_PRESSED;
 
     if (VirtualKeyCode == VK_ESCAPE &&
-        bCtrlDown && !(GetKeyState(VK_MENU) & KEY_PRESSED) && !(GetKeyState(VK_SHIFT) & KEY_PRESSED))
+        bCtrlDown && !(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED) && !(OneCoreSafeGetKeyState(VK_SHIFT) & KEY_PRESSED))
     {
         return TRUE; // call DefWindowProc
     }
 
     // check for alt-f4
-    if (VirtualKeyCode == VK_F4 && (GetKeyState(VK_MENU) & KEY_PRESSED) && IsInProcessedInputMode() && gci.IsAltF4CloseAllowed())
+    if (VirtualKeyCode == VK_F4 && (OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED) && IsInProcessedInputMode() && gci.IsAltF4CloseAllowed())
     {
         return TRUE; // let DefWindowProc generate WM_CLOSE
     }
@@ -527,7 +527,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     }
 
     // make sure alt-space gets translated so that the system menu is displayed.
-    if (!(GetKeyState(VK_CONTROL) & KEY_PRESSED))
+    if (!(OneCoreSafeGetKeyState(VK_CONTROL) & KEY_PRESSED))
     {
         if (VirtualKeyCode == VK_SPACE)
         {
@@ -633,7 +633,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     MousePosition.X /= ScreenFontSize.X;
     MousePosition.Y /= ScreenFontSize.Y;
 
-    const auto fShiftPressed = WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
+    const auto fShiftPressed = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED);
 
     // We need to try and have the virtual terminal handle the mouse's position in viewport coordinates,
     //   not in screen buffer coordinates. It expects the top left to always be 0,0
@@ -731,7 +731,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         if (Message == WM_LBUTTONDOWN)
         {
             // make sure message matches button state
-            if (!(GetKeyState(VK_LBUTTON) & KEY_PRESSED))
+            if (!(OneCoreSafeGetKeyState(VK_LBUTTON) & KEY_PRESSED))
             {
                 return FALSE;
             }
@@ -828,7 +828,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                         Telemetry::Instance().LogQuickEditCopyRawUsed();
                     }
                     // If the ALT key is held, also select HTML as well as plain text.
-                    const auto fAlsoCopyFormatting = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+                    const auto fAlsoCopyFormatting = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MENU), KEY_PRESSED);
                     Clipboard::Instance().Copy(fAlsoCopyFormatting);
                 }
                 else if (gci.Flags & CONSOLE_QUICK_EDIT_MODE)
