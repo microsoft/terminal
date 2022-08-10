@@ -105,12 +105,12 @@
         <DisplayString>{{run of {_it->first,d} for {_it->second,d} at {_usage,d}}}</DisplayString>
     </Type>
 
-    <Type Name="boost::container::small_vector&lt;*&gt;">
+    <Type Name="til::small_vector&lt;*&gt;">
         <Expand>
-            <Item Name="[size]">m_holder.m_size</Item>
+            <Item Name="[size]">_size</Item>
             <ArrayItems>
-                <Size>m_holder.m_size</Size>
-                <ValuePointer>m_holder.m_start</ValuePointer>
+                <Size>_size</Size>
+                <ValuePointer>_data</ValuePointer>
             </ArrayItems>
         </Expand>
     </Type>
