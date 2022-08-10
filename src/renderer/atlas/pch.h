@@ -48,5 +48,11 @@
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
 
+#define USE_INTERVAL_TREE_NAMESPACE
+#include <IntervalTree.h>
+
+// Boost
+#include <boost/container/small_vector.hpp>
+
 #include <til.h>
 #include <til/bit.h>

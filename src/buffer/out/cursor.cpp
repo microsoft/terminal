@@ -12,20 +12,8 @@
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
 Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
-    _parentBuffer{ parentBuffer },
-    _fHasMoved(false),
-    _fIsVisible(true),
-    _fIsOn(true),
-    _fIsDouble(false),
-    _fBlinkingAllowed(true),
-    _fDelay(false),
-    _fIsConversionArea(false),
-    _fIsPopupShown(false),
-    _fDelayedEolWrap(false),
-    _fDeferCursorRedraw(false),
-    _fHaveDeferredCursorRedraw(false),
-    _ulSize(ulSize),
-    _cursorType(CursorType::Legacy)
+    _parentBuffer{ &parentBuffer },
+    _ulSize(ulSize)
 {
 }
 
@@ -185,7 +173,7 @@ void Cursor::_RedrawCursorAlways() noexcept
 {
     try
     {
-        _parentBuffer.TriggerRedrawCursor(_cPosition);
+        _parentBuffer->TriggerRedrawCursor(_cPosition);
     }
     CATCH_LOG();
 }

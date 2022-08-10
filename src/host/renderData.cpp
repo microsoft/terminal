@@ -234,7 +234,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
                 // (e.g. 0,0 is the origin of the text buffer above, not the placement within the visible viewport)
                 const auto used = Viewport::FromInclusive(composition.GetAreaBufferInfo().rcViewCaWindow);
 
-                overlays.emplace_back(Microsoft::Console::Render::RenderOverlay{ textBuffer, origin, used });
+                overlays.emplace_back(Microsoft::Console::Render::RenderOverlay{ &textBuffer, origin, used });
             }
         }
     }

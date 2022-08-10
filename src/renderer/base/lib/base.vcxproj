@@ -15,6 +15,7 @@
     <ClCompile Include="..\FontInfoBase.cpp" />
     <ClCompile Include="..\FontInfoDesired.cpp" />
     <ClCompile Include="..\FontResource.cpp" />
+    <ClCompile Include="..\IRenderData.cpp" />
     <ClCompile Include="..\RenderEngineBase.cpp" />
     <ClCompile Include="..\RenderSettings.cpp" />
     <ClCompile Include="..\renderer.cpp" />

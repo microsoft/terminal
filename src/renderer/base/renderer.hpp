@@ -34,7 +34,55 @@ namespace TerminalCoreUnitTests
 
 namespace Microsoft::Console::Render
 {
-    class Renderer
+    class BaseRenderer
+    {
+    public:
+        BaseRenderer(const RenderSettings& renderSettings, std::unique_ptr<RenderThread> thread) noexcept;
+        ~BaseRenderer();
+
+        void NotifyPaintFrame() const noexcept;
+
+    protected:
+        static IRenderEngine::GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
+        static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
+
+        [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine, IRenderData* _pData) noexcept;
+        bool _CheckViewportAndScroll(IRenderData* _pData);
+        [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
+        void _PaintBufferOutput(_In_ IRenderEngine* const pEngine, IRenderData* _pData);
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, IRenderData* _pData, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, IRenderData* _pData, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
+        void _PaintSelection(_In_ IRenderEngine* const pEngine, IRenderData* _pData);
+        void _PaintCursor(_In_ IRenderEngine* const pEngine, IRenderData* _pData);
+        void _PaintOverlays(_In_ IRenderEngine* const pEngine, IRenderData* _pData);
+        void _PaintOverlay(IRenderEngine& engine, IRenderData* _pData, const RenderOverlay& overlay);
+        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, IRenderData* _pData, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
+        [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
+        std::vector<til::rect> _GetSelectionRects(IRenderData* _pData) const;
+        void _ScrollPreviousSelection(const til::point delta);
+        [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine, IRenderData* _pData);
+        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo(IRenderData* _pData);
+        [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine, IRenderData* _pData);
+
+        const RenderSettings& _renderSettings;
+        boost::container::small_vector<IRenderEngine*, 2> _engines;
+        std::unique_ptr<RenderThread> _pThread;
+        static constexpr size_t _firstSoftFontChar = 0xEF20;
+        size_t _lastSoftFontChar = 0;
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
+        Microsoft::Console::Types::Viewport _viewport;
+        std::vector<Cluster> _clusterBuffer;
+        std::vector<til::rect> _previousSelection;
+        std::function<void()> _pfnBackgroundColorChanged;
+        std::function<void()> _pfnFrameColorChanged;
+        std::function<void()> _pfnRendererEnteredErrorState;
+        bool _destructing = false;
+        bool _forceUpdateViewport = true;
+        
+        IRenderData* _pDataRef = nullptr; // Non-ownership pointer
+    };
+
+    class Renderer : public BaseRenderer
     {
     public:
         Renderer(const RenderSettings& renderSettings,
@@ -43,11 +91,8 @@ namespace Microsoft::Console::Render
                  const size_t cEngines,
                  std::unique_ptr<RenderThread> thread);
 
-        ~Renderer();
-
         [[nodiscard]] HRESULT PaintFrame();
 
-        void NotifyPaintFrame() noexcept;
         void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
@@ -92,42 +137,8 @@ namespace Microsoft::Console::Render
         void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
 
     private:
-        static IRenderEngine::GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
-        static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
-
-        [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
-        bool _CheckViewportAndScroll();
-        [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
-        void _PaintSelection(_In_ IRenderEngine* const pEngine);
-        void _PaintCursor(_In_ IRenderEngine* const pEngine);
-        void _PaintOverlays(_In_ IRenderEngine* const pEngine);
-        void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
-        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
-        [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-        std::vector<til::rect> _GetSelectionRects() const;
-        void _ScrollPreviousSelection(const til::point delta);
-        [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
-        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
-        [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
-
-        const RenderSettings& _renderSettings;
-        std::array<IRenderEngine*, 2> _engines{};
         IRenderData* _pData = nullptr; // Non-ownership pointer
-        std::unique_ptr<RenderThread> _pThread;
-        static constexpr size_t _firstSoftFontChar = 0xEF20;
-        size_t _lastSoftFontChar = 0;
-        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
-        Microsoft::Console::Types::Viewport _viewport;
-        std::vector<Cluster> _clusterBuffer;
-        std::vector<til::rect> _previousSelection;
-        std::function<void()> _pfnBackgroundColorChanged;
-        std::function<void()> _pfnFrameColorChanged;
-        std::function<void()> _pfnRendererEnteredErrorState;
-        bool _destructing = false;
-        bool _forceUpdateViewport = true;
+        RenderData _snapshot;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;

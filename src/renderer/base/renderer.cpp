@@ -15,11 +15,14 @@ static constexpr auto maxRetriesForRenderEngine = 3;
 // The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
 static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 
-#define FOREACH_ENGINE(var)   \
-    for (auto var : _engines) \
-        if (!var)             \
-            break;            \
-        else
+#define FOREACH_ENGINE(var) for (auto var : _engines)
+
+// See Renderer::Renderer
+BaseRenderer::BaseRenderer(const RenderSettings& renderSettings, std::unique_ptr<RenderThread> thread) noexcept :
+    _renderSettings(renderSettings),
+    _pThread{ std::move(thread) }
+{
+}
 
 // Routine Description:
 // - Creates a new renderer controller for a console.
@@ -33,9 +36,8 @@ Renderer::Renderer(const RenderSettings& renderSettings,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
                    std::unique_ptr<RenderThread> thread) :
-    _renderSettings(renderSettings),
-    _pData(pData),
-    _pThread{ std::move(thread) }
+    BaseRenderer{ renderSettings, std::move(thread) },
+    _pData(pData)
 {
     for (size_t i = 0; i < cEngines; i++)
     {
@@ -49,7 +51,7 @@ Renderer::Renderer(const RenderSettings& renderSettings,
 // - <none>
 // Return Value:
 // - <none>
-Renderer::~Renderer()
+BaseRenderer::~BaseRenderer()
 {
     // RenderThread blocks until it has shut down.
     _destructing = true;
@@ -64,6 +66,23 @@ Renderer::~Renderer()
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
+    if (_destructing || _engines.empty())
+    {
+        return S_FALSE;
+    }
+
+    try
+    {
+        _pData->LockConsole();
+        auto unlock = wil::scope_exit([&]() {
+            _pData->UnlockConsole();
+        });
+        _snapshot.Snapshot(_pData);
+    }
+    CATCH_RETURN()
+
+    _pDataRef = _pData;
+
     FOREACH_ENGINE(pEngine)
     {
         auto tries = maxRetriesForRenderEngine;
@@ -74,7 +93,14 @@ Renderer::~Renderer()
                 return S_FALSE;
             }
 
-            const auto hr = _PaintFrameForEngine(pEngine);
+#if 0
+            _pData->LockConsole();
+            const auto hr = _PaintFrameForEngine(pEngine, _pData);
+            _pData->UnlockConsole();
+#else
+            const auto hr = _PaintFrameForEngine(pEngine, &_snapshot);
+#endif
+
             if (E_PENDING == hr)
             {
                 if (--tries == 0)
@@ -104,18 +130,13 @@ Renderer::~Renderer()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept
+[[nodiscard]] HRESULT BaseRenderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine, IRenderData* _pData) noexcept
 try
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
-    _pData->LockConsole();
-    auto unlock = wil::scope_exit([&]() {
-        _pData->UnlockConsole();
-    });
-
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
-    _CheckViewportAndScroll();
+    _CheckViewportAndScroll(_pData);
 
     // Try to start painting a frame
     const auto hr = pEngine->StartPaint();
@@ -142,37 +163,34 @@ try
     });
 
     // A. Prep Colors
-    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, {}, false, true));
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData, {}, false, true));
 
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
     // C. Prepare the engine with additional information before we start drawing.
-    RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
+    RETURN_IF_FAILED(_PrepareRenderInfo(pEngine, _pData));
 
     // 1. Paint Background
     RETURN_IF_FAILED(_PaintBackground(pEngine));
 
     // 2. Paint Rows of Text
-    _PaintBufferOutput(pEngine);
+    _PaintBufferOutput(pEngine, _pData);
 
     // 3. Paint overlays that reside above the text buffer
-    _PaintOverlays(pEngine);
+    _PaintOverlays(pEngine, _pData);
 
     // 4. Paint Selection
-    _PaintSelection(pEngine);
+    _PaintSelection(pEngine, _pData);
 
     // 5. Paint Cursor
-    _PaintCursor(pEngine);
+    _PaintCursor(pEngine, _pData);
 
     // 6. Paint window title
-    RETURN_IF_FAILED(_PaintTitle(pEngine));
+    RETURN_IF_FAILED(_PaintTitle(pEngine, _pData));
 
     // Force scope exit end paint to finish up collecting information and possibly painting
     endPaint.reset();
-
-    // Force scope exit unlock to let go of global lock so other threads can run
-    unlock.reset();
 
     // Trigger out-of-lock presentation for renderers that can support it
     RETURN_IF_FAILED(pEngine->Present());
@@ -182,7 +200,7 @@ try
 }
 CATCH_RETURN()
 
-void Renderer::NotifyPaintFrame() noexcept
+void BaseRenderer::NotifyPaintFrame() const noexcept
 {
     // If we're running in the unittests, we might not have a render thread.
     if (_pThread)
@@ -343,7 +361,9 @@ void Renderer::TriggerTeardown() noexcept
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
         {
-            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+            _pData->LockConsole();
+            LOG_IF_FAILED(_PaintFrameForEngine(pEngine, _pData));
+            _pData->UnlockConsole();
         }
     }
 }
@@ -359,7 +379,7 @@ void Renderer::TriggerSelection()
     try
     {
         // Get selection rectangles
-        auto rects = _GetSelectionRects();
+        auto rects = _GetSelectionRects(_pData);
 
         // Make a viewport representing the coordinates that are currently presentable.
         const til::rect viewport{ _pData->GetViewport().Dimensions() };
@@ -389,7 +409,7 @@ void Renderer::TriggerSelection()
 // - <none>
 // Return Value:
 // - True if something changed and we scrolled. False otherwise.
-bool Renderer::_CheckViewportAndScroll()
+bool BaseRenderer::_CheckViewportAndScroll(IRenderData* _pData)
 {
     const auto srOldViewport = _viewport.ToInclusive();
     const auto srNewViewport = _pData->GetViewport().ToInclusive();
@@ -425,7 +445,7 @@ bool Renderer::_CheckViewportAndScroll()
 // - <none>
 void Renderer::TriggerScroll()
 {
-    if (_CheckViewportAndScroll())
+    if (_CheckViewportAndScroll(_pData))
     {
         NotifyPaintFrame();
     }
@@ -461,7 +481,7 @@ void Renderer::TriggerScroll(const til::point* const pcoordDelta)
 // - <none>
 void Renderer::TriggerFlush(const bool circling)
 {
-    const auto rects = _GetSelectionRects();
+    const auto rects = _GetSelectionRects(_pData);
 
     FOREACH_ENGINE(pEngine)
     {
@@ -473,7 +493,9 @@ void Renderer::TriggerFlush(const bool circling)
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
         {
-            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+            _pData->LockConsole();
+            LOG_IF_FAILED(_PaintFrameForEngine(pEngine, _pData));
+            _pData->UnlockConsole();
         }
     }
 }
@@ -509,7 +531,7 @@ void Renderer::TriggerNewTextNotification(const std::wstring_view newText)
 // - pEngine: the engine to update the title for.
 // Return Value:
 // - the HRESULT of the underlying engine's UpdateTitle call.
-HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
+HRESULT BaseRenderer::_PaintTitle(IRenderEngine* const pEngine, IRenderData* _pData)
 {
     const auto newTitle = _pData->GetConsoleTitle();
     return pEngine->UpdateTitle(newTitle);
@@ -561,7 +583,7 @@ void Renderer::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const 
 // We initially tried to have a "_isSoftFontChar" member function, but MSVC
 // failed to inline it at _all_ call sites (check invocations inside loops).
 // This issue strangely doesn't occur with static functions.
-bool Renderer::s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar)
+bool BaseRenderer::s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar)
 {
     return v.size() == 1 && v[0] >= firstSoftFontChar && v[0] <= lastSoftFontChar;
 }
@@ -663,7 +685,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 // - <none>
 // Return Value:
 // - <none>
-[[nodiscard]] HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT BaseRenderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->PaintBackground();
 }
@@ -676,7 +698,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
+void BaseRenderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine, IRenderData* _pData)
 {
     // This is the subsection of the entire screen buffer that is currently being presented.
     // It can move left/right or top/bottom depending on how the viewport is scrolled
@@ -747,7 +769,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.Y, view.Left()));
 
             // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
+            _PaintBufferOutputHelper(pEngine, _pData, it, screenPosition, lineWrapped);
         }
     }
 }
@@ -758,11 +780,21 @@ static bool _IsAllSpaces(const std::wstring_view v)
     return v.find_first_not_of(L' ') == decltype(v)::npos;
 }
 
-void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
-                                        TextBufferCellIterator it,
-                                        const til::point target,
-                                        const bool lineWrapped)
+void BaseRenderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
+                                            IRenderData* _pData,
+                                            TextBufferCellIterator it,
+                                            const til::point target,
+                                            const bool lineWrapped)
 {
+    const auto& referenceBuffer = _pDataRef->GetTextBuffer();
+    const auto& actualBuffer = _pData->GetTextBuffer();
+    const auto reference = referenceBuffer.GetRowByOffset(0).GetText();
+    const auto actual = actualBuffer.GetRowByOffset(0).GetText();
+    if (reference != actual)
+    {
+        __debugbreak();
+    }
+
     auto globalInvert{ _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) };
 
     // If we have valid data, let's figure out how to draw it.
@@ -797,7 +829,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             const auto currentPatternId = patternIds;
 
             // Update the drawing brushes with our color and font usage.
-            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, usingSoftFont, false));
+            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData, currentRunColor, usingSoftFont, false));
 
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += cols;
@@ -897,13 +929,13 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     for (til::CoordType colsPainted = 0; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
                     {
                         auto lines = lineIt->TextAttr();
-                        _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
+                        _PaintBufferOutputGridLineHelper(pEngine, _pData, lines, 1, lineTarget);
                     }
                 }
                 else
                 {
                     // If nothing exciting is going on, draw the lines in bulk.
-                    _PaintBufferOutputGridLineHelper(pEngine, currentRunColor, cols, screenPoint);
+                    _PaintBufferOutputGridLineHelper(pEngine, _pData, currentRunColor, cols, screenPoint);
                 }
             }
         }
@@ -917,7 +949,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
 // - a GridLineSet containing all the gridline info from the TextAttribute
-IRenderEngine::GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
+IRenderEngine::GridLineSet BaseRenderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLineSet lines;
@@ -974,13 +1006,14 @@ IRenderEngine::GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAtt
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
-                                                const TextAttribute textAttribute,
-                                                const size_t cchLine,
-                                                const til::point coordTarget)
+void BaseRenderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
+                                                    IRenderData* _pData,
+                                                    const TextAttribute textAttribute,
+                                                    const size_t cchLine,
+                                                    const til::point coordTarget)
 {
     // Convert console grid line representations into rendering engine enum representations.
-    auto lines = Renderer::s_GetGridlines(textAttribute);
+    auto lines = s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
     // Since we're only rendering pattern links on *hover*, there's no point in checking
@@ -1018,7 +1051,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 // - <none>
 // Return Value:
 // - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
-[[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
+[[nodiscard]] std::optional<CursorOptions> BaseRenderer::_GetCursorInfo(IRenderData* _pData)
 {
     if (_pData->IsCursorVisible())
     {
@@ -1078,9 +1111,9 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 // - engine - The render engine that we're targeting.
 // Return Value:
 // - <none>
-void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
+void BaseRenderer::_PaintCursor(_In_ IRenderEngine* const pEngine, IRenderData* _pData)
 {
-    const auto cursorInfo = _GetCursorInfo();
+    const auto cursorInfo = _GetCursorInfo(_pData);
     if (cursorInfo.has_value())
     {
         LOG_IF_FAILED(pEngine->PaintCursor(cursorInfo.value()));
@@ -1098,10 +1131,10 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - engine - The render engine that we're targeting.
 // Return Value:
 // - S_OK if the engine prepared successfully, or a relevant error via HRESULT.
-[[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT BaseRenderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine, IRenderData* _pData)
 {
     RenderFrameInfo info;
-    info.cursorInfo = _GetCursorInfo();
+    info.cursorInfo = _GetCursorInfo(_pData);
     return pEngine->PrepareRenderInfo(info);
 }
 
@@ -1113,8 +1146,9 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - overlay - The overlay to draw.
 // Return Value:
 // - <none>
-void Renderer::_PaintOverlay(IRenderEngine& engine,
-                             const RenderOverlay& overlay)
+void BaseRenderer::_PaintOverlay(IRenderEngine& engine,
+                                 IRenderData* _pData,
+                                 const RenderOverlay& overlay)
 {
     try
     {
@@ -1137,9 +1171,9 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
                     const til::point target{ viewDirty.Left, iRow };
                     const auto source = target - overlay.origin;
 
-                    auto it = overlay.buffer.GetCellLineDataAt(source);
+                    auto it = overlay.buffer->GetCellLineDataAt(source);
 
-                    _PaintBufferOutputHelper(&engine, it, target, false);
+                    _PaintBufferOutputHelper(&engine, _pData, it, target, false);
                 }
             }
         }
@@ -1155,7 +1189,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::_PaintOverlays(_In_ IRenderEngine* const pEngine)
+void BaseRenderer::_PaintOverlays(_In_ IRenderEngine* const pEngine, IRenderData* _pData)
 {
     try
     {
@@ -1163,7 +1197,7 @@ void Renderer::_PaintOverlays(_In_ IRenderEngine* const pEngine)
 
         for (const auto& overlay : overlays)
         {
-            _PaintOverlay(*pEngine, overlay);
+            _PaintOverlay(*pEngine, _pData, overlay);
         }
     }
     CATCH_LOG();
@@ -1175,7 +1209,7 @@ void Renderer::_PaintOverlays(_In_ IRenderEngine* const pEngine)
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
+void BaseRenderer::_PaintSelection(_In_ IRenderEngine* const pEngine, IRenderData* _pData)
 {
     try
     {
@@ -1183,7 +1217,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
         // Get selection rectangles
-        const auto rectangles = _GetSelectionRects();
+        const auto rectangles = _GetSelectionRects(_pData);
         for (const auto& rect : rectangles)
         {
             for (auto& dirtyRect : dirtyAreas)
@@ -1210,10 +1244,11 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 //                             (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
-[[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine,
-                                                      const TextAttribute textAttributes,
-                                                      const bool usingSoftFont,
-                                                      const bool isSettingDefaultBrushes)
+[[nodiscard]] HRESULT BaseRenderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine,
+                                                          IRenderData* _pData,
+                                                          const TextAttribute textAttributes,
+                                                          const bool usingSoftFont,
+                                                          const bool isSettingDefaultBrushes)
 {
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
@@ -1228,7 +1263,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - <none>
 // Return Value:
 // - <none>
-[[nodiscard]] HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT BaseRenderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->ScrollFrame();
 }
@@ -1237,7 +1272,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - Helper to determine the selected region of the buffer.
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line.
-std::vector<til::rect> Renderer::_GetSelectionRects() const
+std::vector<til::rect> BaseRenderer::_GetSelectionRects(IRenderData* _pData) const
 {
     const auto& buffer = _pData->GetTextBuffer();
     auto rects = _pData->GetSelectionRects();
@@ -1268,7 +1303,7 @@ std::vector<til::rect> Renderer::_GetSelectionRects() const
 // - delta - The scroll delta
 // Return Value:
 // - <none> - Updates internal state instead.
-void Renderer::_ScrollPreviousSelection(const til::point delta)
+void BaseRenderer::_ScrollPreviousSelection(const til::point delta)
 {
     if (delta != til::point{ 0, 0 })
     {
@@ -1291,17 +1326,7 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
-
-    for (auto& p : _engines)
-    {
-        if (!p)
-        {
-            p = pEngine;
-            return;
-        }
-    }
-
-    THROW_HR_MSG(E_UNEXPECTED, "engines array is full");
+    _engines.push_back(pEngine);
 }
 
 // Method Description:

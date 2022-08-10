@@ -68,6 +68,7 @@ namespace Microsoft::Console::Render
 class TextBuffer final
 {
 public:
+    TextBuffer() noexcept = default;
     TextBuffer(const til::size screenBufferSize,
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
@@ -76,6 +77,7 @@ public:
     TextBuffer(const TextBuffer& a) = delete;
 
     // Used for duplicating properties to another text buffer
+    void CopyViewport(const TextBuffer& OtherBuffer, const Microsoft::Console::Types::Viewport& viewport);
     void CopyProperties(const TextBuffer& OtherBuffer) noexcept;
 
     // row manipulation
@@ -220,19 +222,19 @@ private:
     std::vector<ROW> _storage;
     Cursor _cursor;
 
-    til::CoordType _firstRow; // indexes top row (not necessarily 0)
+    til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)
 
     TextAttribute _currentAttributes;
 
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
-    bool _isActiveBuffer;
-    Microsoft::Console::Render::Renderer& _renderer;
+    bool _isActiveBuffer = false;
+    Microsoft::Console::Render::Renderer* _renderer = nullptr;
 
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
-    uint16_t _currentHyperlinkId;
+    uint16_t _currentHyperlinkId = 1;
 
     void _RefreshRowIDs(std::optional<til::CoordType> newRowWidth);
 
@@ -263,7 +265,7 @@ private:
     static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
 
     std::unordered_map<size_t, std::wstring> _idsAndPatterns;
-    size_t _currentPatternId;
+    size_t _currentPatternId = 0;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

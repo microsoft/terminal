@@ -26,6 +26,7 @@ static constexpr wchar_t DEFAULT_RASTER_FONT_FACENAME[]{ L"Terminal" };
 class FontInfoBase
 {
 public:
+    FontInfoBase() = default;
     FontInfoBase(const std::wstring_view& faceName,
                  const unsigned char family,
                  const unsigned int weight,
@@ -55,8 +56,8 @@ protected:
 
 private:
     std::wstring _faceName;
-    unsigned int _weight;
-    unsigned char _family;
-    unsigned int _codePage;
-    bool _fDefaultRasterSetFromEngine;
+    unsigned int _weight = 0;
+    unsigned char _family = 0;
+    unsigned int _codePage = 0;
+    bool _fDefaultRasterSetFromEngine = false;
 };

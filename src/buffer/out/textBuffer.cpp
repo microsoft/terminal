@@ -35,16 +35,10 @@ TextBuffer::TextBuffer(const til::size screenBufferSize,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
                        Microsoft::Console::Render::Renderer& renderer) :
-    _firstRow{ 0 },
-    _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
-    _storage{},
-    _unicodeStorage{},
+    _currentAttributes{ defaultAttributes },
     _isActiveBuffer{ isActiveBuffer },
-    _renderer{ renderer },
-    _size{},
-    _currentHyperlinkId{ 1 },
-    _currentPatternId{ 0 }
+    _renderer{ &renderer }
 {
     // initialize ROWs
     _storage.reserve(gsl::narrow<size_t>(screenBufferSize.Y));
@@ -54,6 +48,40 @@ TextBuffer::TextBuffer(const til::size screenBufferSize,
     }
 
     _UpdateSize();
+}
+
+// Routine Description:
+// - Copies the viewport from another text buffer into this one.
+// Arguments:
+// - OtherBuffer - The text buffer to copy from
+// Return Value:
+// - <none>
+void TextBuffer::CopyViewport(const TextBuffer& other, const Viewport& viewport)
+{
+    const auto top = viewport.Top();
+    const auto dimensions = viewport.Dimensions();
+    auto self = this;
+
+    if (self->_size.Dimensions() != dimensions)
+    {
+        self->~TextBuffer();
+        try
+        {
+            self = new (this) TextBuffer{ dimensions, other.GetCurrentAttributes(), 0, true, *other._renderer };
+        }
+        catch (...)
+        {
+            self = new (this) TextBuffer{};
+            throw;
+        }
+    }
+
+    for (til::CoordType i = 0; i < dimensions.height; ++i)
+    {
+        self->GetRowByOffset(i) = other.GetRowByOffset(top + i);
+    }
+
+    self->CopyProperties(other);
 }
 
 // Routine Description:
@@ -558,7 +586,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     if (_isActiveBuffer)
     {
-        _renderer.TriggerFlush(true);
+        _renderer->TriggerFlush(true);
     }
 
     // Prune hyperlinks to delete obsolete references
@@ -968,14 +996,14 @@ bool TextBuffer::IsActiveBuffer() const noexcept
 
 Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
 {
-    return _renderer;
+    return *_renderer;
 }
 
 void TextBuffer::TriggerRedraw(const Viewport& viewport)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerRedraw(viewport);
+        _renderer->TriggerRedraw(viewport);
     }
 }
 
@@ -983,7 +1011,7 @@ void TextBuffer::TriggerRedrawCursor(const til::point position)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerRedrawCursor(&position);
+        _renderer->TriggerRedrawCursor(&position);
     }
 }
 
@@ -991,7 +1019,7 @@ void TextBuffer::TriggerRedrawAll()
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerRedrawAll();
+        _renderer->TriggerRedrawAll();
     }
 }
 
@@ -999,7 +1027,7 @@ void TextBuffer::TriggerScroll()
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerScroll();
+        _renderer->TriggerScroll();
     }
 }
 
@@ -1007,7 +1035,7 @@ void TextBuffer::TriggerScroll(const til::point delta)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerScroll(&delta);
+        _renderer->TriggerScroll(&delta);
     }
 }
 
@@ -1015,7 +1043,7 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 {
     if (_isActiveBuffer)
     {
-        _renderer.TriggerNewTextNotification(newText);
+        _renderer->TriggerNewTextNotification(newText);
     }
 }
 

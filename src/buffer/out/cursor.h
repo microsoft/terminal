@@ -27,6 +27,7 @@ public:
     // the following values are used to create the textmode cursor.
     static constexpr unsigned int CURSOR_SMALL_SIZE = 25; // large enough to be one pixel on a six pixel font
 
+    Cursor() noexcept = default;
     Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept;
 
     ~Cursor();
@@ -84,7 +85,7 @@ public:
     void SetType(const CursorType type) noexcept;
 
 private:
-    TextBuffer& _parentBuffer;
+    TextBuffer* _parentBuffer = nullptr;
 
     //TODO: separate the rendering and text placement
 
@@ -92,25 +93,25 @@ private:
 
     til::point _cPosition; // current position on screen (in screen buffer coords).
 
-    bool _fHasMoved;
-    bool _fIsVisible; // whether cursor is visible (set only through the API)
-    bool _fIsOn; // whether blinking cursor is on or not
-    bool _fIsDouble; // whether the cursor size should be doubled
-    bool _fBlinkingAllowed; //Whether or not the cursor is allowed to blink at all. only set through VT (^[[?12h/l)
-    bool _fDelay; // don't blink scursor on next timer message
-    bool _fIsConversionArea; // is attached to a conversion area so it doesn't actually need to display the cursor.
-    bool _fIsPopupShown; // if a popup is being shown, turn off, stop blinking.
+    bool _fHasMoved = false;
+    bool _fIsVisible = true; // whether cursor is visible (set only through the API)
+    bool _fIsOn = true; // whether blinking cursor is on or not
+    bool _fIsDouble = false; // whether the cursor size should be doubled
+    bool _fBlinkingAllowed = true; //Whether or not the cursor is allowed to blink at all. only set through VT (^[[?12h/l)
+    bool _fDelay = false; // don't blink scursor on next timer message
+    bool _fIsConversionArea = false; // is attached to a conversion area so it doesn't actually need to display the cursor.
+    bool _fIsPopupShown = false; // if a popup is being shown, turn off, stop blinking.
 
-    bool _fDelayedEolWrap; // don't wrap at EOL till the next char comes in.
+    bool _fDelayedEolWrap = false; // don't wrap at EOL till the next char comes in.
     til::point _coordDelayedAt; // coordinate the EOL wrap was delayed at.
 
-    bool _fDeferCursorRedraw; // whether we should defer redrawing the cursor or not
-    bool _fHaveDeferredCursorRedraw; // have we been asked to redraw the cursor while it was being deferred?
+    bool _fDeferCursorRedraw = false; // whether we should defer redrawing the cursor or not
+    bool _fHaveDeferredCursorRedraw = false; // have we been asked to redraw the cursor while it was being deferred?
 
-    ULONG _ulSize;
+    ULONG _ulSize = 0;
 
     void _RedrawCursor() noexcept;
     void _RedrawCursorAlways() noexcept;
 
-    CursorType _cursorType;
+    CursorType _cursorType = CursorType::Legacy;
 };

@@ -986,7 +986,7 @@ namespace Microsoft::Console::Render
             // This structure is loosely sorted in chunks from "very often accessed together"
             // to seldom accessed and/or usually not together.
 
-            std::vector<wchar_t> bufferLine;
+            std::wstring bufferLine;
             std::vector<u16> bufferLineColumn;
             Buffer<BufferLineMetadata> bufferLineMetadata;
             std::vector<TextAnalysisSinkResult> analysisResults;

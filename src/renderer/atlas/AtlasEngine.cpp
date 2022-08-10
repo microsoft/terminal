@@ -370,14 +370,14 @@ try
         {
             for (const auto& ch : cluster.GetText())
             {
-                _api.bufferLine.emplace_back(ch);
-                _api.bufferLineColumn.emplace_back(column);
+                _api.bufferLine.push_back(ch);
+                _api.bufferLineColumn.push_back(column);
             }
 
             column += gsl::narrow_cast<u16>(cluster.GetColumns());
         }
 
-        _api.bufferLineColumn.emplace_back(column);
+        _api.bufferLineColumn.push_back(column);
 
         const BufferLineMetadata metadata{ _api.currentColor, _api.flags };
         std::fill_n(_api.bufferLineMetadata.data() + x, column - x, metadata);

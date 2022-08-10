@@ -28,6 +28,7 @@ Author(s):
 class FontInfo : public FontInfoBase
 {
 public:
+    FontInfo() = default;
     FontInfo(const std::wstring_view& faceName,
              const unsigned char family,
              const unsigned int weight,
@@ -54,5 +55,5 @@ private:
 
     til::size _coordSize;
     til::size _coordSizeUnscaled;
-    bool _didFallback;
+    bool _didFallback = false;
 };
