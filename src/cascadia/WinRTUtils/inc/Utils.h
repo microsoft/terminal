@@ -55,7 +55,19 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> SaveFilePicker(HWND 
 winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND parentHwnd);
 
 #ifdef WINRT_Windows_UI_Xaml_H
-
+// Only compile me if Windows.UI.Xaml is already included.
+//
+// XAML Hacks:
+//
+// the App is always in the OS theme, so the
+// App::Current().Resources() lookup will always get the value for the
+// OS theme, not the requested theme.
+//
+// This helper allows us to instead lookup the value of a resource
+// specified by `key` for the given `requestedTheme`, from the
+// dictionaries in App.xaml. Make sure the value is actually there!
+// Otherwise this'll throw like any other Lookup for a resource that
+// isn't there.
 winrt::Windows::Foundation::IInspectable ThemeLookup(const auto& res,
                                                      const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme,
                                                      const winrt::Windows::Foundation::IInspectable& key)

@@ -4105,62 +4105,6 @@ namespace winrt::TerminalApp::implementation
 
         const auto res = Application::Current().Resources();
 
-        // XAML Hacks:
-        //
-        // the App is always in the OS theme, so the
-        // App::Current().Resources() lookup will always get the value for the
-        // OS theme, not the requested theme.
-        //
-        // This helper allows us to instead lookup the value of a resource
-        // specified by `key` for the given `requestedTheme`, from the
-        // dictionaries in App.xaml. Make sure the value is actually there!
-        // Otherwise this'll throw like any other Lookup for a resource that
-        // isn't there.
-        // static const auto lookup = [](auto& res, auto& requestedTheme, auto& key) {
-        //     // You want the Default version of the resource? Great, the App is
-        //     // always in the OS theme. Just look it up and be done.
-        //     if (requestedTheme == ElementTheme::Default)
-        //     {
-        //         return res.Lookup(key);
-        //     }
-        //     static const auto lightKey = winrt::box_value(L"Light");
-        //     static const auto darkKey = winrt::box_value(L"Dark");
-        //     // There isn't an ElementTheme::HighContrast.
-
-        //     auto requestedThemeKey = requestedTheme == ElementTheme::Dark ? darkKey : lightKey;
-        //     for (const auto& dictionary : res.MergedDictionaries())
-        //     {
-        //         // Don't look in the MUX resources. They come first. A person
-        //         // with more patience than me may find a way to look through our
-        //         // dictionaries first, then the MUX ones, but that's not needed
-        //         // currently
-        //         if (dictionary.Source())
-        //         {
-        //             continue;
-        //         }
-        //         // Look through the theme dictionaries we defined:
-        //         for (const auto& [dictionaryKey, dict] : dictionary.ThemeDictionaries())
-        //         {
-        //             // Does the key for this dict match the theme we're looking for?
-        //             if (winrt::unbox_value<winrt::hstring>(dictionaryKey) !=
-        //                 winrt::unbox_value<winrt::hstring>(requestedThemeKey))
-        //             {
-        //                 // No? skip it.
-        //                 continue;
-        //             }
-        //             // Look for the requested resource in this dict.
-        //             const auto themeDictionary = dict.as<winrt::Windows::UI::Xaml::ResourceDictionary>();
-        //             if (themeDictionary.HasKey(key))
-        //             {
-        //                 return themeDictionary.Lookup(key);
-        //             }
-        //         }
-        //     }
-
-        //     // We didn't find it in the requested dict, fall back to the default dictionary.
-        //     return res.Lookup(key);
-        // };
-
         // Use our helper to lookup the theme-aware version of the resource.
         const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
         const auto backgroundSolidBrush = ThemeLookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
@@ -4210,7 +4154,10 @@ namespace winrt::TerminalApp::implementation
             _tabRow.Background(TitlebarBrush());
         }
 
-        // Second: Update the colors of our individual TabViewItems. This applies tab.background to the tabs via TerminalTab::ThemeColor
+        // Second: Update the colors of our individual TabViewItems. This
+        // applies tab.background to the tabs via TerminalTab::ThemeColor.
+        //
+        // Do this second, so that we already know the bgColor of the titlebar.
         {
             auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
             auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
@@ -4218,10 +4165,7 @@ namespace winrt::TerminalApp::implementation
             {
                 winrt::com_ptr<TabBase> tabImpl;
                 tabImpl.copy_from(winrt::get_self<TabBase>(tab));
-                // if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
-                // {
                 tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
-                // }
             }
         }
 

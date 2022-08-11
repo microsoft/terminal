@@ -37,6 +37,8 @@ namespace winrt::TerminalApp::implementation
         auto settingsUI{ Content().as<MainPage>() };
         settingsUI.UpdateSettings(settings);
 
+        // Stash away the current requested theme of the app. We'll need that in
+        // _BackgroundBrush() to do a theme-aware resource lookup
         _requestedTheme = settings.GlobalSettings().CurrentTheme().RequestedTheme();
     }
 
@@ -110,12 +112,13 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::Media::Brush SettingsTab::_BackgroundBrush()
     {
-        // // TODO! convert to a resource lookup
-        // static Media::SolidColorBrush campbellBg{ winrt::Windows::UI::Color{ 0xff, 0x0c, 0x0c, 0x0c } };
-        // return campbellBg;
-
+        // Look up the color we should use for the settings tab item from our
+        // resources. This should only be used for when "terminalBackground" is
+        // requested.
         static const auto key = winrt::box_value(L"SettingsUiTabBrush");
-        // return Application::Current().Resources().TryLookup(key).try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+        // You can't just do a Application::Current().Resources().TryLookup
+        // lookup, cause the app theme never changes! Do the hacky version
+        // instead.
         return ThemeLookup(Application::Current().Resources(), _requestedTheme, key).try_as<winrt::Windows::UI::Xaml::Media::Brush>();
     }
 }
