@@ -102,9 +102,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _inputBuffer.clear();
             _selection = {};
             _activeTextStart = 0;
-            _editContext.NotifyFocusLeave();
             _editContext.NotifyTextChanged({ 0, INT32_MAX }, 0, _selection);
-            _editContext.NotifyFocusEnter();
             TextBlock().Text({});
         }
     }
@@ -375,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 incomingText);
             _selection = args.NewSelection();
             // GH#5054: Pressing backspace might move the caret before the _activeTextStart.
-            _activeTextStart = ::base::ClampMin(_activeTextStart, ::base::ClampedNumeric<size_t>(range.StartCaretPosition));
+            _activeTextStart = std::min(_activeTextStart, _inputBuffer.size());
 
             // Emojis/Kaomojis/Symbols chosen through the IME without starting composition
             // will be sent straight through to the terminal.

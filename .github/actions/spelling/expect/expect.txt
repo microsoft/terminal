@@ -233,6 +233,7 @@ CFuzz
 cgscrn
 chafa
 changelist
+chaof
 charinfo
 charlespetzold
 charset
@@ -2892,6 +2893,9 @@ xff
 xfg
 XFile
 XFORM
+xin
+xinchaof
+xinxinchaof
 XManifest
 XMath
 XMFLOAT
