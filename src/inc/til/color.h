@@ -134,6 +134,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
+        // Do a simple linear blend with `other`, taking a% of us and (1-a)% of
+        // other. The result will retain our original alpha channel value
         constexpr color blend_with(const color& other)
         {
             auto result = *this;

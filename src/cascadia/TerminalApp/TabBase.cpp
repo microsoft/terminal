@@ -407,6 +407,14 @@ namespace winrt::TerminalApp::implementation
         hoverTabBrush.Color(color);
         hoverTabBrush.Opacity(0.6);
 
+        // Account for the color of the tab row when setting the color of text
+        // on inactive tabs. Consider:
+        // * black active tabs
+        // * on a white tab row
+        // * with a transparent inactive tab color
+        //
+        // We don't want that to result in white text on a white tab row for
+        // inactive tabs.
         auto deselectedActualColor = deselectedTabColor.blend_with(_tabRowColor);
         if (TerminalApp::ColorHelper::IsBrightColor(deselectedActualColor))
         {
@@ -431,10 +439,10 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
 
-        // TabViewItem().Foreground() unfortunately does not work for us. It
-        // sets the color for the text when the TabViewItem isn't selected, but
-        // not when it is hovered, pressed, dragged, or selected, so we'll need
-        // to just set them all anyways.
+        // Similarly, TabViewItem().Foreground()  sets the color for the text
+        // when the TabViewItem isn't selected, but not when it is hovered,
+        // pressed, dragged, or selected, so we'll need to just set them all
+        // anyways.
         TabViewItem().Foreground(deselectedFontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
