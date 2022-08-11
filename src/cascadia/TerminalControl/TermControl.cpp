@@ -638,8 +638,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool TermControl::_isColorLight(til::color bg) noexcept
     {
-        // GH#13450 function to check if the current background color is light
-        // enough to need a dark version of the visual bell indicator
+        // Checks if the current background color is light enough
+        // to need a dark version of the visual bell indicator
         // This is a poor man's Rec. 601 luma.
         const auto l = 30 * bg.r + 59 * bg.g + 11 * bg.b;
         return l > 12750;

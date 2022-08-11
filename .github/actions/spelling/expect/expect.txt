@@ -1332,6 +1332,7 @@ LTLTLTLTL
 ltrim
 ltype
 LUID
+luma
 lval
 LVB
 LVERTICAL
