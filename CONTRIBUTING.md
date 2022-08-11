@@ -81,7 +81,7 @@ When you hit "New Issue", select the type of issue closest to what you want to r
   Microsoft Windows [Version 10.0.18900.1001]
   ```
 
-* What tools and apps you're using (e.g. VS 2019, VSCode, etc.)
+* What tools and apps you're using (e.g. VS 2022, VSCode, etc.)
 * Don't assume we're experts in setting up YOUR environment and don't assume we are experts in `<your distro/tool of choice>`. Teach us to help you!
 * **We LOVE detailed repro steps!** What steps do we need to take to reproduce the issue? Assume we love to read repro steps. As much detail as you can stand is probably _barely_ enough detail for us!
 * If you're reporting a particular character/glyph not rendering correctly, the specific Unicode codepoint would be MOST welcome (e.g. U+1F4AF, U+4382)
