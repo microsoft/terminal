@@ -260,10 +260,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TabBase::ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
-                             const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused)
+                             const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
+                             const til::color& tabRowColor)
     {
         _themeColor = focused;
         _unfocusedThemeColor = unfocused;
+        _tabRowColor = tabRowColor;
         _RecalculateAndApplyTabColor();
     }
 
@@ -335,6 +337,7 @@ namespace winrt::TerminalApp::implementation
         Media::SolidColorBrush selectedTabBrush{};
         Media::SolidColorBrush deselectedTabBrush{};
         Media::SolidColorBrush fontBrush{};
+        Media::SolidColorBrush deselectedFontBrush{};
         Media::SolidColorBrush secondaryFontBrush{};
         Media::SolidColorBrush hoverTabBrush{};
         Media::SolidColorBrush subtleFillColorSecondaryBrush;
@@ -395,6 +398,7 @@ namespace winrt::TerminalApp::implementation
                 deselectedTabColor = til::color{ ThemeColor::ColorFromBrush(themeBrush) }.with_alpha(_unfocusedThemeColor.UnfocusedTabOpacity());
             }
         }
+
         // currently if a tab has a custom color, a deselected state is
         // signified by using the same color with a bit of transparency
         deselectedTabBrush.Color(deselectedTabColor.with_alpha(255));
@@ -402,6 +406,16 @@ namespace winrt::TerminalApp::implementation
 
         hoverTabBrush.Color(color);
         hoverTabBrush.Opacity(0.6);
+
+        auto deselectedActualColor = deselectedTabColor.blend_with(_tabRowColor);
+        if (TerminalApp::ColorHelper::IsBrightColor(deselectedActualColor))
+        {
+            deselectedFontBrush.Color(winrt::Windows::UI::Colors::Black());
+        }
+        else
+        {
+            deselectedFontBrush.Color(winrt::Windows::UI::Colors::White());
+        }
 
         // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
         // use TabViewItem().Background() for that. HOWEVER,
@@ -421,11 +435,13 @@ namespace winrt::TerminalApp::implementation
         // sets the color for the text when the TabViewItem isn't selected, but
         // not when it is hovered, pressed, dragged, or selected, so we'll need
         // to just set them all anyways.
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
+        TabViewItem().Foreground(deselectedFontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), fontBrush);
+
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), deselectedFontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPressed"), secondaryFontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPointerOver"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderPressedCloseButtonForeground"), fontBrush);
@@ -433,6 +449,7 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderSelectedCloseButtonForeground"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPressed"), subtleFillColorTertiaryBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPointerOver"), subtleFillColorSecondaryBrush);
+
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);

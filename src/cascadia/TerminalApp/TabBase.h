@@ -27,7 +27,8 @@ namespace winrt::TerminalApp::implementation
 
         virtual std::optional<winrt::Windows::UI::Color> GetTabColor();
         void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
-                        const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused);
+                        const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
+                        const til::color& tabRowColor);
 
         WINRT_CALLBACK(RequestFocusActiveControl, winrt::delegate<void()>);
 
@@ -57,6 +58,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::ThemeColor _unfocusedThemeColor{ nullptr };
+        til::color _tabRowColor;
 
         virtual void _CreateContextMenu();
         virtual winrt::hstring _CreateToolTipTitle();

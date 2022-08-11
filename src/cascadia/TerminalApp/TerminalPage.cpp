@@ -4102,21 +4102,6 @@ namespace winrt::TerminalApp::implementation
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         auto requestedTheme{ theme.RequestedTheme() };
 
-        // First: Update the colors of our individual TabViewItems. This applies tab.background to the tabs via TerminalTab::ThemeColor
-        {
-            auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
-            auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
-            for (const auto& tab : _tabs)
-            {
-                winrt::com_ptr<TabBase> tabImpl;
-                tabImpl.copy_from(winrt::get_self<TabBase>(tab));
-                // if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
-                // {
-                tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground);
-                // }
-            }
-        }
-
         const auto res = Application::Current().Resources();
 
         // XAML Hacks:
@@ -4222,6 +4207,21 @@ namespace winrt::TerminalApp::implementation
         if (!_settings.GlobalSettings().ShowTabsInTitlebar())
         {
             _tabRow.Background(TitlebarBrush());
+        }
+
+        // Second: Update the colors of our individual TabViewItems. This applies tab.background to the tabs via TerminalTab::ThemeColor
+        {
+            auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
+            auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
+            for (const auto& tab : _tabs)
+            {
+                winrt::com_ptr<TabBase> tabImpl;
+                tabImpl.copy_from(winrt::get_self<TabBase>(tab));
+                // if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
+                // {
+                tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
+                // }
+            }
         }
 
         // Update the new tab button to have better contrast with the new color.
