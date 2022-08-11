@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
 #include "TabRowControl.h"
+#include "Utils.h"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -4115,54 +4116,54 @@ namespace winrt::TerminalApp::implementation
         // dictionaries in App.xaml. Make sure the value is actually there!
         // Otherwise this'll throw like any other Lookup for a resource that
         // isn't there.
-        static const auto lookup = [](auto& res, auto& requestedTheme, auto& key) {
-            // You want the Default version of the resource? Great, the App is
-            // always in the OS theme. Just look it up and be done.
-            if (requestedTheme == ElementTheme::Default)
-            {
-                return res.Lookup(key);
-            }
-            static const auto lightKey = winrt::box_value(L"Light");
-            static const auto darkKey = winrt::box_value(L"Dark");
-            // There isn't an ElementTheme::HighContrast.
+        // static const auto lookup = [](auto& res, auto& requestedTheme, auto& key) {
+        //     // You want the Default version of the resource? Great, the App is
+        //     // always in the OS theme. Just look it up and be done.
+        //     if (requestedTheme == ElementTheme::Default)
+        //     {
+        //         return res.Lookup(key);
+        //     }
+        //     static const auto lightKey = winrt::box_value(L"Light");
+        //     static const auto darkKey = winrt::box_value(L"Dark");
+        //     // There isn't an ElementTheme::HighContrast.
 
-            auto requestedThemeKey = requestedTheme == ElementTheme::Dark ? darkKey : lightKey;
-            for (const auto& dictionary : res.MergedDictionaries())
-            {
-                // Don't look in the MUX resources. They come first. A person
-                // with more patience than me may find a way to look through our
-                // dictionaries first, then the MUX ones, but that's not needed
-                // currently
-                if (dictionary.Source())
-                {
-                    continue;
-                }
-                // Look through the theme dictionaries we defined:
-                for (const auto& [dictionaryKey, dict] : dictionary.ThemeDictionaries())
-                {
-                    // Does the key for this dict match the theme we're looking for?
-                    if (winrt::unbox_value<winrt::hstring>(dictionaryKey) !=
-                        winrt::unbox_value<winrt::hstring>(requestedThemeKey))
-                    {
-                        // No? skip it.
-                        continue;
-                    }
-                    // Look for the requested resource in this dict.
-                    const auto themeDictionary = dict.as<winrt::Windows::UI::Xaml::ResourceDictionary>();
-                    if (themeDictionary.HasKey(key))
-                    {
-                        return themeDictionary.Lookup(key);
-                    }
-                }
-            }
+        //     auto requestedThemeKey = requestedTheme == ElementTheme::Dark ? darkKey : lightKey;
+        //     for (const auto& dictionary : res.MergedDictionaries())
+        //     {
+        //         // Don't look in the MUX resources. They come first. A person
+        //         // with more patience than me may find a way to look through our
+        //         // dictionaries first, then the MUX ones, but that's not needed
+        //         // currently
+        //         if (dictionary.Source())
+        //         {
+        //             continue;
+        //         }
+        //         // Look through the theme dictionaries we defined:
+        //         for (const auto& [dictionaryKey, dict] : dictionary.ThemeDictionaries())
+        //         {
+        //             // Does the key for this dict match the theme we're looking for?
+        //             if (winrt::unbox_value<winrt::hstring>(dictionaryKey) !=
+        //                 winrt::unbox_value<winrt::hstring>(requestedThemeKey))
+        //             {
+        //                 // No? skip it.
+        //                 continue;
+        //             }
+        //             // Look for the requested resource in this dict.
+        //             const auto themeDictionary = dict.as<winrt::Windows::UI::Xaml::ResourceDictionary>();
+        //             if (themeDictionary.HasKey(key))
+        //             {
+        //                 return themeDictionary.Lookup(key);
+        //             }
+        //         }
+        //     }
 
-            // We didn't find it in the requested dict, fall back to the default dictionary.
-            return res.Lookup(key);
-        };
+        //     // We didn't find it in the requested dict, fall back to the default dictionary.
+        //     return res.Lookup(key);
+        // };
 
         // Use our helper to lookup the theme-aware version of the resource.
         const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-        const auto backgroundSolidBrush = lookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
+        const auto backgroundSolidBrush = ThemeLookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
 
         til::color bgColor = backgroundSolidBrush.Color();
 

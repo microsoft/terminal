@@ -153,6 +153,9 @@
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+                            <SolidColorBrush x:Key="SettingsUiTabBrush"
+                                             Color="#0c0c0c" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -166,6 +169,9 @@
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+                            <SolidColorBrush x:Key="SettingsUiTabBrush"
+                                             Color="#ffffff" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
@@ -183,6 +189,9 @@
                             -->
                             <StaticResource x:Key="TabViewBackground"
                                             ResourceKey="SystemColorButtonFaceColorBrush" />
+
+                            <StaticResource x:Key="SettingsUiTabBrush"
+                                            ResourceKey="SystemControlBackgroundBaseLowBrush" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

@@ -36,6 +36,8 @@ namespace winrt::TerminalApp::implementation
     {
         auto settingsUI{ Content().as<MainPage>() };
         settingsUI.UpdateSettings(settings);
+
+        _requestedTheme = settings.GlobalSettings().CurrentTheme().RequestedTheme();
     }
 
     // Method Description:
@@ -108,8 +110,12 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::Media::Brush SettingsTab::_BackgroundBrush()
     {
-        // TODO! convert to a resource lookup
-        static Media::SolidColorBrush campbellBg{ winrt::Windows::UI::Color{ 0xff, 0x0c, 0x0c, 0x0c } };
-        return campbellBg;
+        // // TODO! convert to a resource lookup
+        // static Media::SolidColorBrush campbellBg{ winrt::Windows::UI::Color{ 0xff, 0x0c, 0x0c, 0x0c } };
+        // return campbellBg;
+
+        static const auto key = winrt::box_value(L"SettingsUiTabBrush");
+        // return Application::Current().Resources().TryLookup(key).try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+        return ThemeLookup(Application::Current().Resources(), _requestedTheme, key).try_as<winrt::Windows::UI::Xaml::Media::Brush>();
     }
 }
