@@ -224,6 +224,7 @@ CFuzz
 cgscrn
 chafa
 changelist
+chaof
 charinfo
 charset
 CHARSETINFO
@@ -2763,6 +2764,9 @@ xes
 xff
 XFile
 XFORM
+xin
+xinchaof
+xinxinchaof
 XManifest
 XMath
 XMFLOAT

@@ -932,6 +932,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        // GH#11479: TSF wants to be notified of any character input via ICoreTextEditContext::NotifyTextChanged().
+        // TSF is built and tested around the idea that you inform it of any text changes that happen
+        // when it doesn't currently compose characters. For instance writing "xin chaof" with the
+        // Vietnamese IME should produce "xin chào". After writing "xin" it'll emit a composition
+        // completion event and we'll write "xin" to the shell. It now has no input focus and won't know
+        // about the whitespace. If you then write "chaof", it'll emit another composition completion
+        // event for "xinchaof" and the resulting output in the shell will finally read "xinxinchaof".
+        // A composition completion event technically doesn't mean that the completed text is now
+        // immutable after all. We could (and probably should) inform TSF of any input changes,
+        // but we technically aren't a text input field. The immediate solution was
+        // to simply force TSF to clear its text whenever we have input focus.
+        TSFInputControl().ClearBuffer();
+
         _HidePointerCursorHandlers(*this, nullptr);
 
         const auto ch = e.Character();
@@ -1192,12 +1205,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        const bool keyDown)
     {
         const auto window = CoreWindow::GetForCurrentThread();
-
-        if (vkey == VK_ESCAPE ||
-            vkey == VK_RETURN)
-        {
-            TSFInputControl().ClearBuffer();
-        }
 
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
