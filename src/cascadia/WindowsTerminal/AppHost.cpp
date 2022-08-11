@@ -406,6 +406,12 @@ void AppHost::Initialize()
         }
     });
 
+    _window->AutomaticShutdownRequested([this]() {
+        // Raised when the OS is beginning an update of the app. We will quit,
+        // to save our state, before the OS manually kills us.
+        _windowManager.RequestQuitAll();
+    });
+
     // Load bearing: make sure the PropertyChanged handler is added before we
     // call Create, so that when the app sets up the titlebar brush, we're
     // already prepared to listen for the change notification

@@ -109,7 +109,10 @@ public:
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
 
-    ExtendedAttributes GetExtendedAttributes() const noexcept;
+    constexpr ExtendedAttributes GetExtendedAttributes() const noexcept
+    {
+        return _extendedAttrs;
+    }
 
     bool IsHyperlink() const noexcept;
 
@@ -160,6 +163,13 @@ public:
     constexpr bool IsAnyGridLineEnabled() const noexcept
     {
         return WI_IsAnyFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE);
+    }
+    constexpr bool HasAnyExtendedAttributes() const noexcept
+    {
+        return GetExtendedAttributes() != ExtendedAttributes::Normal ||
+               IsAnyGridLineEnabled() ||
+               GetHyperlinkId() != 0 ||
+               IsReverseVideo();
     }
 
 private:

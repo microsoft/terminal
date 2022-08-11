@@ -136,10 +136,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "always", ValueType::Always },
         pair_type{ "graceful", ValueType::Graceful },
         pair_type{ "never", ValueType::Never },
+        pair_type{ "automatic", ValueType::Automatic },
     };
 
     // Override mapping parser to add boolean parsing
@@ -240,7 +241,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
 {
     JSON_MAPPINGS(2) = {
-        pair_type{ "atTheEnd", ValueType::AtTheEnd },
+        pair_type{ "afterLastTab", ValueType::AfterLastTab },
         pair_type{ "afterCurrentTab", ValueType::AfterCurrentTab },
     };
 };
@@ -657,6 +658,15 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
     {
         return "ThemeColor (#rrggbb, #rgb, #rrggbbaa, accent, terminalBackground)";
     }
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "hover", ValueType::Hover },
+        pair_type{ "never", ValueType::Never },
+    };
 };
 
 // Possible ScrollToMarkDirection values

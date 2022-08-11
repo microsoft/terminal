@@ -1,0 +1,24 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorSchemeViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ColorSchemesPageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ColorSchemesPageViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        void AddNew_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs e);
+
+        void RequestEnterRename();
+        Boolean RequestExitRename(Boolean saveChanges, String newName);
+        void RequestDeleteCurrentScheme();
+
+        ColorSchemeViewModel CurrentScheme;
+        Boolean CanDeleteCurrentScheme { get; };
+        Boolean InRenameMode { get; };
+        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
+    }
+}

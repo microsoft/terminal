@@ -20,138 +20,11 @@
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
 using namespace Microsoft::Console::Render;
-
-struct TextAnalyzer final : IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
-{
-    constexpr TextAnalyzer(const std::vector<wchar_t>& text, std::vector<AtlasEngine::TextAnalyzerResult>& results) noexcept :
-        _text{ text }, _results{ results }
-    {
-        Ensures(_text.size() <= UINT32_MAX);
-    }
-
-    // TextAnalyzer will be allocated on the stack and reference counting is pointless because of that.
-    // The debug version will assert that we don't leak any references though.
-#ifdef NDEBUG
-    ULONG __stdcall AddRef() noexcept override
-    {
-        return 1;
-    }
-
-    ULONG __stdcall Release() noexcept override
-    {
-        return 1;
-    }
-#else
-    ULONG _refCount = 1;
-
-    ~TextAnalyzer()
-    {
-        assert(_refCount == 1);
-    }
-
-    ULONG __stdcall AddRef() noexcept override
-    {
-        return ++_refCount;
-    }
-
-    ULONG __stdcall Release() noexcept override
-    {
-        return --_refCount;
-    }
-#endif
-
-    HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObject) noexcept override
-    {
-        __assume(ppvObject != nullptr);
-
-        if (IsEqualGUID(riid, __uuidof(IDWriteTextAnalysisSource)) || IsEqualGUID(riid, __uuidof(IDWriteTextAnalysisSink)))
-        {
-            *ppvObject = this;
-            return S_OK;
-        }
-
-        *ppvObject = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    HRESULT __stdcall GetTextAtPosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textString != nullptr);
-        __assume(textLength != nullptr);
-
-        const auto size = gsl::narrow_cast<UINT32>(_text.size());
-        textPosition = std::min(textPosition, size);
-        *textString = _text.data() + textPosition;
-        *textLength = size - textPosition;
-        return S_OK;
-    }
-
-    HRESULT __stdcall GetTextBeforePosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textString != nullptr);
-        __assume(textLength != nullptr);
-
-        const auto size = gsl::narrow_cast<UINT32>(_text.size());
-        textPosition = std::min(textPosition, size);
-        *textString = _text.data();
-        *textLength = textPosition;
-        return S_OK;
-    }
-
-    DWRITE_READING_DIRECTION __stdcall GetParagraphReadingDirection() noexcept override
-    {
-        return DWRITE_READING_DIRECTION_LEFT_TO_RIGHT;
-    }
-
-    HRESULT __stdcall GetLocaleName(UINT32 textPosition, UINT32* textLength, const WCHAR** localeName) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textLength != nullptr);
-        __assume(localeName != nullptr);
-
-        *textLength = gsl::narrow_cast<UINT32>(_text.size()) - textPosition;
-        *localeName = nullptr;
-        return S_OK;
-    }
-
-    HRESULT __stdcall GetNumberSubstitution(UINT32 textPosition, UINT32* textLength, IDWriteNumberSubstitution** numberSubstitution) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetScriptAnalysis(UINT32 textPosition, UINT32 textLength, const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis) noexcept override
-    try
-    {
-        _results.emplace_back(AtlasEngine::TextAnalyzerResult{ textPosition, textLength, scriptAnalysis->script, static_cast<UINT8>(scriptAnalysis->shapes), 0 });
-        return S_OK;
-    }
-    CATCH_RETURN()
-
-    HRESULT __stdcall SetLineBreakpoints(UINT32 textPosition, UINT32 textLength, const DWRITE_LINE_BREAKPOINT* lineBreakpoints) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetBidiLevel(UINT32 textPosition, UINT32 textLength, UINT8 explicitLevel, UINT8 resolvedLevel) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetNumberSubstitution(UINT32 textPosition, UINT32 textLength, IDWriteNumberSubstitution* numberSubstitution) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-private:
-    const std::vector<wchar_t>& _text;
-    std::vector<AtlasEngine::TextAnalyzerResult>& _results;
-};
 
 #pragma warning(suppress : 26455) // Default constructor may not throw. Declare it 'noexcept' (f.6).
 AtlasEngine::AtlasEngine()
@@ -318,18 +191,15 @@ try
         {
             const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
             const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
-            const auto data = _r.cells.data();
             auto count = _r.cells.size();
-#pragma warning(suppress : 26494) // Variable 'dst' is uninitialized. Always initialize an object (type.5).
-            Cell* dst;
-#pragma warning(suppress : 26494) // Variable 'src' is uninitialized. Always initialize an object (type.5).
-            Cell* src;
+            ptrdiff_t srcOffset = 0;
+            ptrdiff_t dstOffset = 0;
 
             if (_api.scrollOffset < 0)
             {
                 // Scroll up (for instance when new text is being written at the end of the buffer).
-                dst = data;
-                src = data - offset;
+                srcOffset = -offset;
+                dstOffset = 0;
                 count += offset;
 
                 const u16 endRow = _api.cellCount.y + _api.scrollOffset;
@@ -339,15 +209,26 @@ try
             else
             {
                 // Scroll down.
-                dst = data + offset;
-                src = data;
+                srcOffset = 0;
+                dstOffset = offset;
                 count -= offset;
 
                 _api.invalidatedRows.x = 0;
                 _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
             }
 
-            memmove(dst, src, count * sizeof(Cell));
+            {
+                const auto beg = _r.cells.begin();
+                const auto src = beg + srcOffset;
+                const auto dst = beg + dstOffset;
+                std::move(src, src + count, dst);
+            }
+            {
+                const auto beg = _r.cellGlyphMapping.begin();
+                const auto src = beg + srcOffset;
+                const auto dst = beg + dstOffset;
+                std::move(src, src + count, dst);
+            }
         }
     }
 
@@ -423,17 +304,10 @@ void AtlasEngine::WaitUntilCanRender() noexcept
 {
     if constexpr (!debugGeneralPerformance)
     {
-        if (_r.frameLatencyWaitableObject)
-        {
-            WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
+        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
 #ifndef NDEBUG
-            _r.frameLatencyWaitableObjectUsed = true;
+        _r.frameLatencyWaitableObjectUsed = true;
 #endif
-        }
-        else
-        {
-            Sleep(8);
-        }
     }
 }
 
@@ -798,8 +672,6 @@ void AtlasEngine::_createSwapChain()
 
     // D3D swap chain setup (the thing that allows us to present frames on the screen)
     {
-        const auto supportsFrameLatencyWaitableObject = !debugGeneralPerformance && IsWindows8Point1OrGreater();
-
         // With C++20 we'll finally have designated initializers.
         DXGI_SWAP_CHAIN_DESC1 desc{};
         desc.Width = _api.sizeInPixel.x;
@@ -814,25 +686,17 @@ void AtlasEngine::_createSwapChain()
         // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
         //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
         desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
-        desc.Flags = supportsFrameLatencyWaitableObject ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
+        desc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
         THROW_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.addressof())));
 
         if (_api.hwnd)
         {
-            if (FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put())))
-            {
-                // Platform Update for Windows 7:
-                // DXGI_SCALING_NONE is not supported on Windows 7 or Windows Server 2008 R2 with the Platform Update for
-                // Windows 7 installed and causes CreateSwapChainForHwnd to return DXGI_ERROR_INVALID_CALL when called.
-                desc.Scaling = DXGI_SCALING_STRETCH;
-                THROW_IF_FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
-            }
+            THROW_IF_FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
         }
         else
         {
-            // We can't link with dcomp.lib as dcomp.dll doesn't exist on Windows 7.
             const wil::unique_hmodule module{ LoadLibraryExW(L"dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
             THROW_LAST_ERROR_IF(!module);
             const auto DCompositionCreateSurfaceHandle = GetProcAddressByFunctionDeclaration(module.get(), DCompositionCreateSurfaceHandle);
@@ -844,10 +708,8 @@ void AtlasEngine::_createSwapChain()
             THROW_IF_FAILED(dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_r.device.get(), _api.swapChainHandle.get(), &desc, nullptr, _r.swapChain.put()));
         }
 
-        if (supportsFrameLatencyWaitableObject)
         {
             const auto swapChain2 = _r.swapChain.query<IDXGISwapChain2>();
-            THROW_IF_FAILED(swapChain2->SetMaximumFrameLatency(1)); // TODO: 2?
             _r.frameLatencyWaitableObject.reset(swapChain2->GetFrameLatencyWaitableObject());
             THROW_LAST_ERROR_IF(!_r.frameLatencyWaitableObject);
         }
@@ -976,10 +838,13 @@ void AtlasEngine::_recreateFontDependentResources()
 
         _r.cellSizeDIP.x = static_cast<float>(_api.fontMetrics.cellSize.x) / scaling;
         _r.cellSizeDIP.y = static_cast<float>(_api.fontMetrics.cellSize.y) / scaling;
-        _r.cellSize = _api.fontMetrics.cellSize;
         _r.cellCount = _api.cellCount;
+        _r.dpi = _api.dpi;
+        _r.fontMetrics = _api.fontMetrics;
+        _r.dipPerPixel = static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi);
+        _r.pixelPerDIP = static_cast<float>(_r.dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         _r.atlasSizeInPixel = { 0, 0 };
-        _r.tileAllocator = TileAllocator{ _r.cellSize, _api.sizeInPixel };
+        _r.tileAllocator = TileAllocator{ _api.fontMetrics.cellSize, _api.sizeInPixel };
 
         _r.glyphs = {};
         _r.glyphQueue = {};
@@ -1000,12 +865,6 @@ void AtlasEngine::_recreateFontDependentResources()
     }
 
     // D2D
-    {
-        _r.underlinePos = _api.fontMetrics.underlinePos;
-        _r.strikethroughPos = _api.fontMetrics.strikethroughPos;
-        _r.lineThickness = _api.fontMetrics.lineThickness;
-        _r.dpi = _api.dpi;
-    }
     {
         // See AtlasEngine::UpdateFont.
         // It hardcodes indices 0/1/2 in fontAxisValues to the weight/italic/slant axes.
@@ -1036,9 +895,9 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
-                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.get(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
-                textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-                textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.c_str(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
+                THROW_IF_FAILED(textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER));
+                THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
                 // DWRITE_LINE_SPACING_METHOD_UNIFORM:
                 // > Lines are explicitly set to uniform spacing, regardless of contained font sizes.
@@ -1046,9 +905,11 @@ void AtlasEngine::_recreateFontDependentResources()
                 // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
                 THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
 
-                if (!_api.fontAxisValues.empty())
+                if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
                 {
-                    if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
+                    THROW_IF_FAILED(textFormat3->SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE));
+
+                    if (!_api.fontAxisValues.empty())
                     {
                         // The wght axis defaults to the font weight.
                         _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
@@ -1181,7 +1042,8 @@ void AtlasEngine::_flushBufferLine()
     const auto textFormat = _getTextFormat(_api.attributes.bold, _api.attributes.italic);
     const auto& textFormatAxis = _getTextFormatAxis(_api.attributes.bold, _api.attributes.italic);
 
-    TextAnalyzer atlasAnalyzer{ _api.bufferLine, _api.analysisResults };
+    TextAnalysisSource analysisSource{ _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSink analysisSink{ _api.analysisResults };
 
     wil::com_ptr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
@@ -1200,11 +1062,11 @@ void AtlasEngine::_flushBufferLine()
             {
                 wil::com_ptr<IDWriteFontFace5> fontFace5;
                 THROW_IF_FAILED(_sr.systemFontFallback.query<IDWriteFontFallback1>()->MapCharacters(
-                    /* analysisSource */ &atlasAnalyzer,
+                    /* analysisSource */ &analysisSource,
                     /* textPosition */ idx,
                     /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
-                    /* baseFamilyName */ _api.fontMetrics.fontName.get(),
+                    /* baseFamilyName */ _api.fontMetrics.fontName.c_str(),
                     /* fontAxisValues */ textFormatAxis.data(),
                     /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
                     /* mappedLength */ &mappedLength,
@@ -1219,11 +1081,11 @@ void AtlasEngine::_flushBufferLine()
                 wil::com_ptr<IDWriteFont> font;
 
                 THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
-                    /* analysisSource     */ &atlasAnalyzer,
+                    /* analysisSource     */ &analysisSource,
                     /* textPosition       */ idx,
                     /* textLength         */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
-                    /* baseFamilyName     */ _api.fontMetrics.fontName.get(),
+                    /* baseFamilyName     */ _api.fontMetrics.fontName.c_str(),
                     /* baseWeight         */ baseWeight,
                     /* baseStyle          */ baseStyle,
                     /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
@@ -1305,7 +1167,7 @@ void AtlasEngine::_flushBufferLine()
             else
             {
                 _api.analysisResults.clear();
-                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer));
+                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&analysisSource, idx, complexityLength, &analysisSink));
                 //_sr.textAnalyzer->AnalyzeBidi(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer);
 
                 for (const auto& a : _api.analysisResults)

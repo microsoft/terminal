@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _InitializeProfilesList();
 
-        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
+        _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -130,7 +130,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Repopulate profile-related menu items
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
-        _colorSchemesNavState.Settings(_settingsClone);
+        _colorSchemesPageVM.UpdateSettings(_settingsClone);
+
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
         // now that the menuItems are repopulated,
@@ -389,7 +390,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesPageVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!--
     We're explicitly telling our references to be non-private so that they won't
     be copied into our folder. In the case of Microsoft.Ui.Xaml, it seems to copy
@@ -79,6 +79,14 @@
     </ClInclude>
     <ClInclude Include="ProfileViewModel.h">
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ColorSchemeViewModel.h">
+      <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ColorSchemesPageViewModel.h">
+      <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="RenderingViewModel.h">
@@ -209,6 +217,14 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="ColorSchemeViewModel.cpp">
+      <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ColorSchemesPageViewModel.cpp">
+      <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="RenderingViewModel.cpp">
       <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -295,6 +311,8 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="ColorSchemeViewModel.idl" />
+    <Midl Include="ColorSchemesPageViewModel.idl" />
     <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
