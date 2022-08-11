@@ -169,4 +169,9 @@ class StringTests
             VERIFY_ARE_EQUAL("", s);
         }
     }
+
+    TEST_METHOD(CleanPathAndFilename)
+    {
+        VERIFY_ARE_EQUAL(LR"(CUsersGeddyMusicAnalog Man)", til::clean_filename(LR"(C:\Users\Geddy\Music\"Analog Man")"));
+    }
 };
