@@ -108,6 +108,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::Media::Brush SettingsTab::_BackgroundBrush()
     {
+        // TODO! convert to a resource lookup
         static Media::SolidColorBrush campbellBg{ winrt::Windows::UI::Color{ 0xff, 0x0c, 0x0c, 0x0c } };
         return campbellBg;
     }
