@@ -632,6 +632,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Firing it manually makes sure it does.
         _BackgroundBrush = RootGrid().Background();
         _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
+
+        _isBackgroundLight = _isColorLight(bg);
+    }
+
+    bool TermControl::_isColorLight(til::color bg) noexcept
+    {
+        // Checks if the current background color is light enough
+        // to need a dark version of the visual bell indicator
+        // This is a poor man's Rec. 601 luma.
+        const auto l = 30 * bg.r + 59 * bg.g + 11 * bg.b;
+        return l > 12750;
     }
 
     // Method Description:
@@ -2699,13 +2710,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Initialize the animation if it does not exist
         // We only initialize here instead of in the ctor because depending on the bell style setting,
         // we may never need this animation
-        if (!_bellLightAnimation)
+        if (!_bellLightAnimation && !_isBackgroundLight)
         {
             _bellLightAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // Add key frames and a duration to our bell light animation
-            _bellLightAnimation.InsertKeyFrame(0.0, 2.0);
-            _bellLightAnimation.InsertKeyFrame(1.0, 1.0);
+            _bellLightAnimation.InsertKeyFrame(0.0, 4.0);
+            _bellLightAnimation.InsertKeyFrame(1.0, 1.9);
             _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
+        }
+
+        // Likewise, initialize the dark version of the animation only if required
+        if (!_bellDarkAnimation && _isBackgroundLight)
+        {
+            _bellDarkAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
+            // reversing the order of the intensity values produces a similar effect as the light version
+            _bellDarkAnimation.InsertKeyFrame(0.0, 1.0);
+            _bellDarkAnimation.InsertKeyFrame(1.0, 2.0);
+            _bellDarkAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 
         // Similar to the animation, only initialize the timer here
@@ -2726,7 +2747,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Switch on the light and animate the intensity to fade out
             VisualBellLight::SetIsTarget(RootGrid(), true);
-            BellLight().CompositionLight().StartAnimation(L"Intensity", _bellLightAnimation);
+
+            if (_isBackgroundLight)
+            {
+                BellLight().CompositionLight().StartAnimation(L"Intensity", _bellDarkAnimation);
+            }
+            else
+            {
+                BellLight().CompositionLight().StartAnimation(L"Intensity", _bellLightAnimation);
+            }
         }
     }
 
