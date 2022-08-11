@@ -34,5 +34,7 @@ namespace winrt::TerminalApp::implementation
     private:
         void _MakeTabViewItem() override;
         winrt::fire_and_forget _CreateIcon();
+
+        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
     };
 }

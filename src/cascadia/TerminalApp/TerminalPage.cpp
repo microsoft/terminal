@@ -4108,10 +4108,12 @@ namespace winrt::TerminalApp::implementation
             auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
             for (const auto& tab : _tabs)
             {
-                if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
-                {
-                    terminalTabImpl->ThemeColor(tabBackground, tabUnfocusedBackground);
-                }
+                winrt::com_ptr<TabBase> tabImpl;
+                tabImpl.copy_from(winrt::get_self<TabBase>(tab));
+                // if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
+                // {
+                tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground);
+                // }
             }
         }
 
@@ -4200,6 +4202,8 @@ namespace winrt::TerminalApp::implementation
                 }
                 else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
                 {
+                    // static Media::SolidColorBrush campbellBg{ winrt::Windows::UI::Color{ 0x0c, 0x0c, 0x0c } };
+                    // return campbellBg; //
                     return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
                 }
                 return nullptr;

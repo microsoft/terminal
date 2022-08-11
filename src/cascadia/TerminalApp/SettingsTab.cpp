@@ -105,4 +105,10 @@ namespace winrt::TerminalApp::implementation
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(glyph));
         }
     }
+
+    winrt::Windows::UI::Xaml::Media::Brush SettingsTab::_BackgroundBrush()
+    {
+        static Media::SolidColorBrush campbellBg{ winrt::Windows::UI::Color{ 0xff, 0x0c, 0x0c, 0x0c } };
+        return campbellBg;
+    }
 }

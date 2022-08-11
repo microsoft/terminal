@@ -25,6 +25,10 @@ namespace winrt::TerminalApp::implementation
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
         virtual std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const = 0;
 
+        virtual std::optional<winrt::Windows::UI::Color> GetTabColor();
+        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
+                        const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused);
+
         WINRT_CALLBACK(RequestFocusActiveControl, winrt::delegate<void()>);
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
@@ -51,6 +55,9 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
         winrt::hstring _keyChord{};
 
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _unfocusedThemeColor{ nullptr };
+
         virtual void _CreateContextMenu();
         virtual winrt::hstring _CreateToolTipTitle();
 
@@ -62,6 +69,12 @@ namespace winrt::TerminalApp::implementation
         void _CloseOtherTabs();
         winrt::fire_and_forget _UpdateSwitchToTabKeyChord();
         void _UpdateToolTip();
+
+        void _RecalculateAndApplyTabColor();
+        void _ApplyTabColor(const winrt::Windows::UI::Color& color);
+        void _ClearTabBackgroundColor();
+        void _RefreshVisualState();
+        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() = 0;
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
