@@ -621,7 +621,10 @@ namespace winrt::TerminalApp::implementation
             // Use the default profile to determine how big of a window we need.
             const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
-            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(),
+                                                              dpi,
+                                                              _appArgs.GetInitialRows(),
+                                                              _appArgs.GetInitialCols());
         }
 
         // GH#2061 - If the global setting "Always show tab bar" is
@@ -719,6 +722,12 @@ namespace winrt::TerminalApp::implementation
             {
                 initialPosition = layout.InitialPosition().Value();
             }
+        }
+
+        // Commandline args trump everything else
+        if (_appArgs.GetInitialPosition().has_value())
+        {
+            initialPosition = _appArgs.GetInitialPosition().value();
         }
 
         return {

@@ -41,6 +41,9 @@ public:
 
     std::optional<uint32_t> GetPersistedLayoutIdx() const noexcept;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> GetLaunchMode() const noexcept;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> GetInitialPosition() const noexcept;
+    int32_t GetInitialRows() const noexcept;
+    int32_t GetInitialCols() const noexcept;
 
     int ParseArgs(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
     void DisableHelpInExitMessage();
@@ -119,6 +122,9 @@ private:
 
     const Commandline* _currentCommandline{ nullptr };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> _initialPosition{ std::nullopt };
+    int _initialRows{};
+    int _initialCols{};
     bool _isHandoffListener{ false };
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;

@@ -2026,15 +2026,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - dpi: The DPI we should create the terminal at. This affects things such
     //   as font size, scrollbar and other control scaling, etc. Make sure the
     //   caller knows what monitor the control is about to appear on.
+    // - commandlineInitialRows: Number of initial rows specified on the
+    //   commandline
+    // - commandlineInitialCols: Number of initial cols specified on the
+    //   commandline
     // Return Value:
     // - a size containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi)
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings,
+                                                                        const uint32_t dpi,
+                                                                        int32_t commandlineInitialRows,
+                                                                        int32_t commandlineInitialCols)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
-        const auto cols = ::base::saturated_cast<float>(std::max(settings.InitialCols(), 1));
-        const auto rows = ::base::saturated_cast<float>(std::max(settings.InitialRows(), 1));
+        const auto cols = ::base::saturated_cast<float>(std::max(commandlineInitialCols > 0 ?
+                                                                     commandlineInitialCols :
+                                                                     settings.InitialCols(),
+                                                                 1));
+        const auto rows = ::base::saturated_cast<float>(std::max(commandlineInitialRows > 0 ?
+                                                                     commandlineInitialRows :
+                                                                     settings.InitialRows(),
+                                                                 1));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 

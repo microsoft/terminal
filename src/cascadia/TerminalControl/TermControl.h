@@ -111,7 +111,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
         const Windows::UI::Xaml::Thickness GetPadding();
 
-        static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings,
+                                                               const uint32_t dpi,
+                                                               int32_t commandlineInitialRows,
+                                                               int32_t commandlineInitialCols);
         static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars);
 
         void BellLightOn();
