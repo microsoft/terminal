@@ -3,15 +3,12 @@
 
 #pragma once
 
-#include <cassert>
-#include <span>
-
 #pragma warning(push)
 // small_vector::_data can reference both non-owned (&_buffer[0]) and owned (new[]) data.
 #pragma warning(disable : 26401) // Do not delete a raw pointer that is not an owner<T> (i.11).
 // small_vector::_data can reference both non-owned (&_buffer[0]) and owned (new[]) data.
 #pragma warning(disable : 26403) // Reset or explicitly delete an owner<T> pointer '...' (r.3).
-// small_vector::_data can reference both non-owned (&_buffer[0]) and owned (new[]) data.
+// small_vector manages a _capacity of potentially uninitialized data. We can't use regular new/delete.
 #pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
 // That's how the STL implemented their std::vector<>::iterator. I simply copied the concept.
 #pragma warning(disable : 26434) // Function '...' hides a non-virtual function '...'.
@@ -24,6 +21,7 @@
 
 namespace til
 {
+    // This class was adopted from std::span<>::iterator.
     template<typename T>
     struct small_vector_const_iterator
     {
@@ -33,6 +31,8 @@ namespace til
         using difference_type = ptrdiff_t;
         using pointer = const T*;
         using reference = const T&;
+
+        small_vector_const_iterator() = default;
 
 #if _ITERATOR_DEBUG_LEVEL == 0
         constexpr small_vector_const_iterator(pointer ptr) :
@@ -199,6 +199,7 @@ namespace til
 #endif // _ITERATOR_DEBUG_LEVEL >= 1
     };
 
+    // This class was adopted from std::vector<>::iterator.
     template<class T>
     class small_vector_iterator : public small_vector_const_iterator<T>
     {
@@ -289,7 +290,8 @@ namespace til
 
         [[nodiscard]] constexpr pointer _Unwrapped() const noexcept
         {
-            return operator->();
+#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
+            return const_cast<pointer>(this->_ptr);
         }
     };
 
@@ -298,8 +300,9 @@ namespace til
     {
     public:
         static_assert(N != 0, "A small_vector without a small buffer isn't very useful");
-        static_assert(std::is_nothrow_default_constructible_v<T>, "small_vector::_grow doesn't guard against exceptions");
-        static_assert(std::is_nothrow_move_constructible_v<T>, "small_vector::_grow doesn't guard against exceptions");
+        static_assert(std::is_nothrow_constructible_v<T>, "the copy/move operators don't guard against exceptions");
+        static_assert(std::is_nothrow_move_assignable_v<T>, "_generic_insert doesn't guard against exceptions");
+        static_assert(std::is_nothrow_move_constructible_v<T>, "_grow doesn't guard against exceptions");
 
         using value_type = T;
         using allocator_type = std::allocator<T>;
@@ -312,6 +315,7 @@ namespace til
 
         using iterator = small_vector_iterator<T>;
         using const_iterator = small_vector_const_iterator<T>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         small_vector() noexcept :
@@ -322,20 +326,20 @@ namespace til
         explicit small_vector(size_type count, const T& value = T{}) :
             small_vector{}
         {
-            insert(begin(), count, value);
+            insert(end(), count, value);
         }
 
         template<typename InputIt>
         small_vector(InputIt first, InputIt last) :
             small_vector{}
         {
-            insert(begin(), first, last);
+            insert(end(), first, last);
         }
 
         small_vector(std::initializer_list<T> list) :
             small_vector{}
         {
-            insert(begin(), list.begin(), list.end());
+            insert(end(), list.begin(), list.end());
         }
 
         small_vector(const small_vector& other) :
@@ -346,15 +350,24 @@ namespace til
 
         small_vector& operator=(const small_vector& other)
         {
-            std::destroy_n(_data, _size);
-            _size = 0;
-
+            auto data = _data;
             if (other._size > _capacity)
             {
-                _grow(other._size - _capacity);
+                const auto new_cap = _calculate_new_capacity(other._size);
+                data = _allocate(new_cap);
             }
 
-            std::uninitialized_copy(other.begin(), other.end(), _data);
+            std::destroy(begin(), end());
+            // The earlier static_assert(std::is_nothrow_constructible_v<T>)
+            // ensures that we don't exit in a weird state and leak `data`.
+            std::uninitialized_copy(other.begin(), other.end(), data);
+
+            if (data != _data && _data != &_buffer[0])
+            {
+                _deallocate(_data);
+            }
+
+            _data = data;
             _size = other._size;
             return *this;
         }
@@ -367,10 +380,10 @@ namespace til
 
         small_vector& operator=(small_vector&& other) noexcept
         {
-            std::destroy_n(_data, _size);
+            std::destroy(begin(), end());
             if (_capacity != N)
             {
-                delete[] _data;
+                _deallocate(_data);
             }
 
             if (other._capacity == N)
@@ -378,7 +391,11 @@ namespace til
                 _data = &_buffer[0];
                 _capacity = N;
                 _size = other._size;
-                std::move(other.begin(), other.end(), begin());
+                // The earlier static_assert(std::is_nothrow_constructible_v<T>)
+                // ensures that we don't exit in a weird state with invalid `_size`.
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
+                std::uninitialized_move(other.begin(), other.end(), _uninitialized_begin());
+                std::destroy(other.begin(), other.end());
             }
             else
             {
@@ -396,10 +413,10 @@ namespace til
 
         ~small_vector()
         {
-            std::destroy_n(_data, _size);
+            std::destroy(begin(), end());
             if (_capacity != N)
             {
-                delete[] _data;
+                _deallocate(_data);
             }
         }
 
@@ -409,7 +426,7 @@ namespace til
         constexpr const_pointer data() const noexcept { return _data; }
         constexpr size_type capacity() const noexcept { return _capacity; }
         constexpr size_type size() const noexcept { return _size; }
-        constexpr size_type empty() const noexcept { return !_data; }
+        constexpr size_type empty() const noexcept { return _size == 0; }
 
         constexpr iterator begin() noexcept
         {
@@ -419,6 +436,7 @@ namespace til
             return { _data };
 #endif
         }
+
         constexpr const_iterator begin() const noexcept
         {
 #if _ITERATOR_DEBUG_LEVEL >= 1
@@ -427,6 +445,7 @@ namespace til
             return { _data };
 #endif
         }
+
         constexpr const_iterator cbegin() const noexcept
         {
 #if _ITERATOR_DEBUG_LEVEL >= 1
@@ -435,9 +454,20 @@ namespace til
             return { _data };
 #endif
         }
+
+        constexpr reverse_iterator rbegin() noexcept
+        {
+            return std::make_reverse_iterator(end());
+        }
+
+        constexpr const_reverse_iterator rbegin() const noexcept
+        {
+            return std::make_reverse_iterator(end());
+        }
+
         constexpr const_reverse_iterator crbegin() const noexcept
         {
-            return const_reverse_iterator{ end() };
+            return std::make_reverse_iterator(end());
         }
 
         constexpr iterator end() noexcept
@@ -448,6 +478,7 @@ namespace til
             return { _data + _size };
 #endif
         }
+
         constexpr const_iterator end() const noexcept
         {
 #if _ITERATOR_DEBUG_LEVEL >= 1
@@ -456,6 +487,7 @@ namespace til
             return { _data + _size };
 #endif
         }
+
         constexpr const_iterator cend() const noexcept
         {
 #if _ITERATOR_DEBUG_LEVEL >= 1
@@ -464,9 +496,20 @@ namespace til
             return { _data + _size };
 #endif
         }
+
+        constexpr reverse_iterator rend() noexcept
+        {
+            return std::make_reverse_iterator(begin());
+        }
+
+        constexpr const_reverse_iterator rend() const noexcept
+        {
+            return std::make_reverse_iterator(begin());
+        }
+
         constexpr const_reverse_iterator crend() const noexcept
         {
-            return const_reverse_iterator{ begin() };
+            return std::make_reverse_iterator(begin());
         }
 
         bool operator==(const small_vector& other) const noexcept
@@ -496,13 +539,17 @@ namespace til
 
         reference operator[](size_type off) noexcept
         {
-            assert(off < _size);
+#if _CONTAINER_DEBUG_LEVEL > 0
+            _STL_VERIFY(off < _size, "subscript out of range");
+#endif // _CONTAINER_DEBUG_LEVEL > 0
             return _data[off];
         }
 
         const_reference operator[](size_type off) const noexcept
         {
-            assert(off < _size);
+#if _CONTAINER_DEBUG_LEVEL > 0
+            _STL_VERIFY(off < _size, "subscript out of range");
+#endif // _CONTAINER_DEBUG_LEVEL > 0
             return _data[off];
         }
 
@@ -526,54 +573,27 @@ namespace til
 
         void clear() noexcept
         {
-            std::destroy_n(begin(), _size);
-
-            if (_capacity != N)
-            {
-                delete[] _data;
-            }
-
-            _data = &_buffer[0];
-            _capacity = N;
+            std::destroy(begin(), end());
             _size = 0;
         }
 
-        void resize(size_type newSize)
+        void reserve(size_type capacity)
         {
-            if (newSize < _size)
-            {
-                std::destroy_n(_data + newSize, _size - newSize);
-            }
-            else if (newSize > _size)
-            {
-                if (newSize > _capacity)
-                {
-                    _grow(newSize - _capacity);
-                }
-
-                std::uninitialized_value_construct_n(_data + _size, newSize - _size);
-            }
-
-            _size = newSize;
+            _ensure_capacity(capacity);
         }
 
-        void resize(size_type newSize, const_reference value)
+        void resize(size_type new_size)
         {
-            if (newSize < _size)
-            {
-                std::destroy_n(_data + newSize, _size - newSize);
-            }
-            else if (newSize > _size)
-            {
-                if (newSize > _capacity)
-                {
-                    _grow(newSize - _capacity);
-                }
+            _generic_resize(new_size, [](auto&& beg, auto&& end) {
+                std::uninitialized_value_construct(beg, end);
+            });
+        }
 
-                std::uninitialized_fill_n(_data + _size, newSize - _size, value);
-            }
-
-            _size = newSize;
+        void resize(size_type new_size, const_reference value)
+        {
+            _generic_resize(new_size, [&](auto&& beg, auto&& end) {
+                std::uninitialized_fill(beg, end, value);
+            });
         }
 
         void shrink_to_fit()
@@ -584,103 +604,90 @@ namespace til
             }
 
             auto data = &_buffer[0];
+            auto capacity = N;
             if (_size > N)
             {
-                data = new T[_size];
+                data = _allocate(_size);
+                capacity = _size;
             }
 
-            std::uninitialized_move_n(begin(), _size, data);
-            std::free(_data);
+            std::uninitialized_move(begin(), end(), data);
+            std::destroy(begin(), end());
+            _deallocate(_data);
 
             _data = data;
-            _capacity = _size;
+            _capacity = capacity;
         }
 
         void push_back(const T& value)
         {
-            if (_size == _capacity)
-            {
-                _grow(1);
-            }
-
+            const auto new_size = _ensure_capacity(_size + 1);
             new (_data + _size) T(value);
-            _size++;
+            _size = new_size;
         }
 
         void push_back(T&& value)
         {
-            if (_size == _capacity)
-            {
-                _grow(1);
-            }
-
+            const auto new_size = _ensure_capacity(_size + 1);
             new (_data + _size) T(std::move(value));
-            _size++;
+            _size = new_size;
+        }
+
+        void pop_back()
+        {
+#if _ITERATOR_DEBUG_LEVEL == 2
+            _STL_VERIFY(_size != 0, "empty before pop");
+#endif // _ITERATOR_DEBUG_LEVEL == 2
+            std::destroy_at(_data + _size - 1);
+            _size--;
         }
 
         template<typename... Args>
         reference emplace_back(Args&&... args)
         {
-            if (_size == _capacity)
-            {
-                _grow(1);
-            }
-
+            const auto new_size = _ensure_capacity(_size + 1);
             const auto it = new (_data + _size) T(std::forward<Args>(args)...);
-            _size++;
+            _size = new_size;
             return *it;
+        }
+
+        iterator insert(const_iterator pos, const T& value)
+        {
+            return _generic_insert(pos, 1, [&](auto&& it) {
+                std::construct_at(&*it, value);
+            });
+        }
+
+        iterator insert(const_iterator pos, T&& value)
+        {
+            return _generic_insert(pos, 1, [&](auto&& it) {
+                std::construct_at(&*it, std::move(value));
+            });
         }
 
         iterator insert(const_iterator pos, size_type count, const T& value)
         {
-            assert(pos >= begin() && pos <= end());
-
-            const auto off = pos - begin();
-            const auto newSize = _size + count;
-
-            if (newSize > _capacity)
-            {
-                _grow(count);
-            }
-
-            const auto it = std::uninitialized_fill_n(_data + off, count, value);
-            _size = newSize;
-
-#if _ITERATOR_DEBUG_LEVEL >= 1
-            return { it, _data, _data + _size };
-#else
-            return { it };
-#endif
+            return _generic_insert(pos, count, [&](auto&& it) {
+                std::uninitialized_fill_n(it, count, value);
+            });
         }
 
         template<typename InputIt, std::enable_if_t<std::_Is_iterator_v<InputIt>, int> = 0>
         iterator insert(const_iterator pos, InputIt first, InputIt last)
         {
-            assert(pos >= begin() && pos <= end());
+            return _generic_insert(pos, std::distance(first, last), [&](auto&& it) {
+                std::uninitialized_copy(first, last, it);
+            });
+        }
 
-            const auto off = pos - begin();
-            const auto count = std::distance(first, last);
-            const auto newSize = _size + count;
-
-            if (newSize > _capacity)
-            {
-                _grow(count);
-            }
-
-            const auto it = std::uninitialized_copy_n(first, count, _data + off);
-            _size = newSize;
-
-#if _ITERATOR_DEBUG_LEVEL >= 1
-            return { it, _data, _data + _size };
-#else
-            return { it };
-#endif
+        iterator insert(const_iterator pos, std::initializer_list<T> list)
+        {
+            return insert(pos, list.begin(), list.end());
         }
 
         void erase(const_iterator pos)
         {
-            assert(pos >= begin() && pos < end());
-            std::destroy_at(begin() + pos);
+            erase(pos, pos + 1);
         }
 
         void erase(const_iterator first, const_iterator last)
@@ -691,11 +698,12 @@ namespace til
             }
 
             const auto beg = begin();
-            const auto it = beg + (first - cbegin());
-            const auto oldEnd = end();
-            const auto newEnd = std::move<const_iterator, iterator>(last, oldEnd, it);
-            std::destroy(newEnd, oldEnd);
-            _size = newEnd - beg;
+            const auto off = first - cbegin();
+            const auto it = beg + off;
+            const auto end_old = end();
+            const auto end_new = std::move<const_iterator, iterator>(last, end_old, it);
+            std::destroy(end_new, end_old);
+            _size = end_new - beg;
         }
 
     private:
@@ -704,37 +712,129 @@ namespace til
             throw std::out_of_range("invalid small_vector subscript");
         }
 
-        [[noreturn]] static void _throw_alloc()
-        {
-            throw std::bad_alloc();
-        }
-
         [[noreturn]] static void _throw_too_long()
         {
             throw std::length_error("small_vector too long");
         }
 
-        void _grow(size_type add)
+        static T* _allocate(size_t size)
         {
-            const auto cap = _capacity;
-            const auto newCap = cap + std::max(add, cap / 2);
+            if constexpr (alignof(T) <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+            {
+                return static_cast<T*>(::operator new(size * sizeof(T)));
+            }
+            else
+            {
+                return static_cast<T*>(::operator new(size * sizeof(T), static_cast<std::align_val_t>(alignof(T))));
+            }
+        }
 
-            if (newCap < cap || newCap > max_size())
+        static void _deallocate(T* data) noexcept
+        {
+            if constexpr (alignof(T) <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+            {
+                ::operator delete(data);
+            }
+            else
+            {
+                ::operator delete(data, static_cast<std::align_val_t>(alignof(T)));
+            }
+        }
+
+        iterator _uninitialized_begin() const noexcept
+        {
+#if _ITERATOR_DEBUG_LEVEL >= 1
+            return { _data, _data + _size, _data + _capacity };
+#else
+            return { _data };
+#endif
+        }
+
+        size_type _calculate_new_capacity(size_type min_cap) const
+        {
+            const auto new_cap = std::max(min_cap, _capacity + _capacity / 2);
+            // min_cap < _capacity indicates a overflow in the calling code.
+            // new_cap > max_size() indicates that our multiplication below would overflow.
+            if (min_cap < _capacity || new_cap > max_size())
             {
                 _throw_too_long();
             }
+            return new_cap;
+        }
 
-            const auto data = new T[newCap];
-            // We've asserted for std::is_nothrow_move_constructible_v<T> and thus won't leak `data`.
-            std::uninitialized_move_n(_data, _size, data);
+        size_type _ensure_capacity(size_type cap)
+        {
+            if (cap > _capacity) [[unlikely]]
+            {
+                _grow(cap);
+            }
+            return cap;
+        }
+
+        void _grow(size_type min_cap)
+        {
+            const auto new_cap = _calculate_new_capacity(min_cap);
+            const auto data = _allocate(new_cap);
+
+            // The earlier static_assert(std::is_nothrow_move_constructible_v<T>)
+            // ensures that we don't leak `data` here since no exceptions will be thrown.
+            std::uninitialized_move(begin(), end(), data);
+            std::destroy(begin(), end());
 
             if (_capacity != N)
             {
-                delete[] _data;
+                _deallocate(_data);
             }
 
             _data = data;
-            _capacity = newCap;
+            _capacity = new_cap;
+        }
+
+        template<typename F>
+        void _generic_resize(size_type new_size, F&& func)
+        {
+            if (new_size < _size)
+            {
+                std::destroy(begin() + new_size, end() - new_size);
+            }
+            else if (new_size > _size)
+            {
+                _ensure_capacity(new_size);
+                func(_uninitialized_begin() + _size, _uninitialized_begin() + new_size);
+            }
+
+            _size = new_size;
+        }
+
+        template<typename F>
+        iterator _generic_insert(const_iterator pos, size_type count, F&& func)
+        {
+            const auto offset = pos - cbegin();
+            const auto moveable = _size - offset;
+            const auto displacement = std::min(count, moveable);
+            const auto new_size = _ensure_capacity(_size + count);
+
+            // The earlier static_assert(std::is_nothrow_move_assignable_v<T>)
+            // ensures that we don't exit in a weird state with invalid `_size`.
+
+            // 1. We've resized the vector to fit an additional `count` items.
+            //    Initialize the `count` items at the end by moving existing items over.
+            std::uninitialized_move(end() - displacement, end(), _uninitialized_begin() + (_size + count - displacement));
+            _size = new_size;
+
+            // 2. Now that all `new_size` items are initialized we can move as many
+            //    items towards the end as we need to make space for `count` items.
+            const auto displacement_beg = begin() + offset;
+            std::move_backward(displacement_beg, displacement_beg + (moveable - displacement), end() - displacement);
+
+            // 3. Destroy the displaced existing items, so that we can use
+            //    std::uninitialized_*/std::construct_* functions inside `func`.
+            //    This isn't optimal, but better than nothing.
+            std::destroy(displacement_beg, displacement_beg + displacement);
+
+            func(displacement_beg);
+
+            return displacement_beg;
         }
 
         T* _data;

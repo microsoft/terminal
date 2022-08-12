@@ -22,7 +22,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using pointer = T*;
             using reference = T&;
             using size_type = S;
-            using difference_type = ptrdiff_t;
+            using difference_type = typename ParentIt::difference_type;
 
             // TODO GH#10135: Enable checked iterators for _ITERATOR_DEBUG_LEVEL != 0.
             explicit rle_iterator(ParentIt&& it) noexcept :
