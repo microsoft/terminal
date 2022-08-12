@@ -149,7 +149,7 @@
                                 See GH #12356 for more history on the subject.
                             -->
                             <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#2e2e2e" />
+                                             Color="#0a0a0a" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
@@ -165,7 +165,7 @@
                                 GH #12398 has more history on this value, as well as GH #12400
                             -->
                             <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#e8e8e8" />
+                                             Color="#dadada" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
