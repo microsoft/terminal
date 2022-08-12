@@ -145,6 +145,10 @@ AppHost::~AppHost()
 
     _showHideWindowThrottler.reset();
 
+    _app.UnhandledException([](auto&& /*sender*/, const UnhandledExceptionEventArgs& args) {
+        LOG_HR_MSG(args.Exception(), winrt::to_string(args.Message()).c_str());
+        std::exit(0);
+    });
     _window = nullptr;
     _app.Close();
     _app = nullptr;
