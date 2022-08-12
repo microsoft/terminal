@@ -32,7 +32,11 @@ namespace winrt::TerminalApp::implementation
         std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
 
     private:
+        winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
+
         void _MakeTabViewItem() override;
         winrt::fire_and_forget _CreateIcon();
+
+        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
     };
 }

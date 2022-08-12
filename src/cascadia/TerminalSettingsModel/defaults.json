@@ -26,7 +26,7 @@
     // Miscellaneous
     "confirmCloseAllTabs": true,
     "startOnUserLogin": false,
-    "theme": "system",
+    "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
@@ -283,20 +283,44 @@
     "themes": [
         {
             "name": "light",
-            "window":{
+            "window":
+            {
                 "applicationTheme": "light"
+            },
+            "tab":
+            {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            },
+            "tabRow":
+            {
+                "unfocusedBackground": "#FFFFFFFF"
             }
         },
         {
             "name": "dark",
-            "window":{
+            "window":
+            {
                 "applicationTheme": "dark"
+            },
+            "tab":
+            {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000",
+            },
+            "tabRow":
+            {
+                "unfocusedBackground": "#333333FF"
             }
         },
         {
             "name": "system",
             "window":{
                 "applicationTheme": "system"
+            },
+            "tab":{
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000",
             }
         }
     ],
