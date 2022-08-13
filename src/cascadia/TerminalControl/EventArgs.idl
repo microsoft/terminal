@@ -22,6 +22,15 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.IReference<CopyFormat> Formats { get; };
     }
 
+    runtimeclass ContextMenuRequestedEventArgs
+    {
+        String SelectedText { get; };
+        Windows.Foundation.Point Point { get; };
+        // Ideas:
+        // String CurrentDirectory { get; };
+        // Microsoft.Terminal.TerminalConnection.ConnectionState State { get; };
+    }
+
     runtimeclass TitleChangedEventArgs
     {
         String Title;

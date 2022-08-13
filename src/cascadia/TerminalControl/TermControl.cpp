@@ -1269,12 +1269,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            const auto cursorPosition = point.Position();
-            _interactivity.PointerPressed(TermControl::GetPressedMouseButtons(point),
-                                          TermControl::GetPointerUpdateKind(point),
-                                          point.Timestamp(),
-                                          ControlKeyStates{ args.KeyModifiers() },
-                                          _toTerminalOrigin(cursorPosition).to_core_point());
+            auto contextArgs = winrt::make_self<ContextMenuRequestedEventArgs>(L"foobar", point.Position());
+            ;
+            _ContextMenuRequestedHandlers(*this, *contextArgs);
+
+            // const auto cursorPosition = point.Position();
+            // _interactivity.PointerPressed(TermControl::GetPressedMouseButtons(point),
+            //                               TermControl::GetPointerUpdateKind(point),
+            //                               point.Timestamp(),
+            //                               ControlKeyStates{ args.KeyModifiers() },
+            //                               _toTerminalOrigin(cursorPosition).to_core_point());
         }
 
         args.Handled(true);

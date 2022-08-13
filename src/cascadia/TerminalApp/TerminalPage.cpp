@@ -1451,6 +1451,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+
+        term.ContextMenuRequested({ get_weak(), &TerminalPage::_ContextMenuRequestedHandler });
     }
 
     // Method Description:
@@ -4149,4 +4151,48 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
     }
+
+    void TerminalPage::_ContextMenuRequestedHandler(const IInspectable sender,
+                                                    const winrt::Microsoft::Terminal::Control::ContextMenuRequestedEventArgs& args)
+    {
+        auto text = args.SelectedText();
+        text;
+        // auto newTabFlyout = WUX::Controls::MenuFlyout{};
+        // {
+        //     auto menuItem = WUX::Controls::MenuFlyoutItem{};
+        //     menuItem.Text(L"Copy");
+        //     menuItem.Click([weakThis{ get_weak() }](auto&&, auto&&) {
+        //         if (auto page{ weakThis.get() })
+        //         {
+        //         }
+        //     });
+        //     newTabFlyout.Items().Append(menuItem);
+        // }
+
+        // auto separatorItem = WUX::Controls::MenuFlyoutSeparator{};
+        // newTabFlyout.Items().Append(separatorItem);
+
+        // {
+        //     auto menuItem = WUX::Controls::MenuFlyoutItem{};
+        //     menuItem.Text(L"Copy");
+        //     menuItem.Click([weakThis{ get_weak() }](auto&&, auto&&) {
+        //         if (auto page{ weakThis.get() })
+        //         {
+        //         }
+        //     });
+        //     newTabFlyout.Items().Append(menuItem);
+        // }
+
+        // ControlContextMenu().ShowAt(sender.try_as<WUX::FrameworkElement>());
+        auto fwe = sender.try_as<WUX::FrameworkElement>();
+        auto transform = fwe.TransformToVisual(*this);
+        auto absolute = CoreWindow::GetForCurrentThread().PointerPosition();
+        auto controlOrigin = transform.TransformPoint(til::point{0, 0}.to_winrt_point());
+        til::point relative = til::point{ til::math::rounding, absolute.X, absolute.Y } - til::point{ til::math::rounding, controlOrigin.X, absolute.Y };
+        auto flyout = ControlContextMenu();
+        ;
+        flyout.ShowAt(fwe, args.Point());
+
+    }
+
 }

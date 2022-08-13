@@ -153,6 +153,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
+        TYPED_EVENT(ContextMenuRequested,      IInspectable, Control::ContextMenuRequestedEventArgs);
+
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
