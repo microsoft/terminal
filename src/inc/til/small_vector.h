@@ -5,9 +5,7 @@
 
 #pragma warning(push)
 // small_vector::_data can reference both non-owned (&_buffer[0]) and owned (new[]) data.
-#pragma warning(disable : 26401) // Do not delete a raw pointer that is not an owner<T> (i.11).
-// small_vector::_data can reference both non-owned (&_buffer[0]) and owned (new[]) data.
-#pragma warning(disable : 26403) // Reset or explicitly delete an owner<T> pointer '...' (r.3).
+#pragma warning(disable : 26402) // Return a scoped object instead of a heap-allocated if it has a move constructor (r.3).
 // small_vector manages a _capacity of potentially uninitialized data. We can't use regular new/delete.
 #pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
 // That's how the STL implemented their std::vector<>::iterator. I simply copied the concept.

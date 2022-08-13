@@ -11,6 +11,8 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
 // This test code was taken from our STL's tests/tr1/tests/vector/test.cpp.
+// Some minor parts were removed or rewritten to fit our spell checker as well as the
+// slightly more minimalistic small_vector API which doesn't implement all of std::vector.
 
 struct Copyable_int
 {
@@ -110,73 +112,73 @@ class SmallVectorTests
         char ch = '\0';
         char carr[] = "abc";
 
-        typedef til::small_vector<char, 3> Mycont;
-        Mycont::pointer p_ptr = (char*)nullptr;
-        Mycont::const_pointer p_cptr = (const char*)nullptr;
-        Mycont::reference p_ref = ch;
-        Mycont::const_reference p_cref = (const char&)ch;
-        Mycont::value_type* p_val = (char*)nullptr;
-        Mycont::size_type* p_size = (std::size_t*)nullptr;
-        Mycont::difference_type* p_diff = (std::ptrdiff_t*)nullptr;
+        typedef til::small_vector<char, 3> container;
+        container::pointer p_ptr = (char*)nullptr;
+        container::const_pointer p_const_ptr = (const char*)nullptr;
+        container::reference p_ref = ch;
+        container::const_reference p_cref = (const char&)ch;
+        container::value_type* p_val = (char*)nullptr;
+        container::size_type* p_size = (std::size_t*)nullptr;
+        container::difference_type* p_diff = (std::ptrdiff_t*)nullptr;
 
         p_ptr = p_ptr;
-        p_cptr = p_cptr;
+        p_const_ptr = p_const_ptr;
         p_ref = p_cref;
         p_size = p_size;
         p_diff = p_diff;
         p_val = p_val;
 
-        Mycont v0;
+        container v0;
         VERIFY_IS_TRUE(v0.empty());
-        VERIFY_ARE_EQUAL(v0.size(), 0);
+        VERIFY_ARE_EQUAL(v0.size(), 0u);
 
-        Mycont v1(5), v1a(6, 'x'), v1b(7, 'y');
-        VERIFY_ARE_EQUAL(v1.size(), 5);
+        container v1(5), v1a(6, 'x'), v1b(7, 'y');
+        VERIFY_ARE_EQUAL(v1.size(), 5u);
         VERIFY_ARE_EQUAL(v1.back(), '\0');
-        VERIFY_ARE_EQUAL(v1a.size(), 6);
+        VERIFY_ARE_EQUAL(v1a.size(), 6u);
         VERIFY_ARE_EQUAL(v1a.back(), 'x');
-        VERIFY_ARE_EQUAL(v1b.size(), 7);
+        VERIFY_ARE_EQUAL(v1b.size(), 7u);
         VERIFY_ARE_EQUAL(v1b.back(), 'y');
 
-        Mycont v2(v1a);
-        VERIFY_ARE_EQUAL(v2.size(), 6);
+        container v2(v1a);
+        VERIFY_ARE_EQUAL(v2.size(), 6u);
         VERIFY_ARE_EQUAL(v2.front(), 'x');
 
-        Mycont v2a(v2);
-        VERIFY_ARE_EQUAL(v2a.size(), 6);
+        container v2a(v2);
+        VERIFY_ARE_EQUAL(v2a.size(), 6u);
         VERIFY_ARE_EQUAL(v2a.front(), 'x');
 
-        Mycont v3(v1a.begin(), v1a.end());
-        VERIFY_ARE_EQUAL(v3.size(), 6);
+        container v3(v1a.begin(), v1a.end());
+        VERIFY_ARE_EQUAL(v3.size(), 6u);
         VERIFY_ARE_EQUAL(v3.front(), 'x');
 
-        const Mycont v4(v1a.begin(), v1a.end());
-        VERIFY_ARE_EQUAL(v4.size(), 6);
+        const container v4(v1a.begin(), v1a.end());
+        VERIFY_ARE_EQUAL(v4.size(), 6u);
         VERIFY_ARE_EQUAL(v4.front(), 'x');
         v0 = v4;
-        VERIFY_ARE_EQUAL(v0.size(), 6);
+        VERIFY_ARE_EQUAL(v0.size(), 6u);
         VERIFY_ARE_EQUAL(v0.front(), 'x');
         VERIFY_ARE_EQUAL(v0[0], 'x');
         VERIFY_ARE_EQUAL(v0.at(5), 'x');
 
         v0.reserve(12);
-        VERIFY_IS_LESS_THAN_OR_EQUAL(12, v0.capacity());
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(v0.capacity(), 12u);
         v0.resize(8);
-        VERIFY_ARE_EQUAL(v0.size(), 8);
+        VERIFY_ARE_EQUAL(v0.size(), 8u);
         VERIFY_ARE_EQUAL(v0.back(), '\0');
         v0.resize(10, 'z');
-        VERIFY_ARE_EQUAL(v0.size(), 10);
+        VERIFY_ARE_EQUAL(v0.size(), 10u);
         VERIFY_ARE_EQUAL(v0.back(), 'z');
         VERIFY_IS_LESS_THAN_OR_EQUAL(v0.size(), v0.max_size());
 
-        Mycont* p_cont = &v0;
+        container* p_cont = &v0;
         p_cont = p_cont; // to quiet diagnostics
 
         { // check iterator generators
-            Mycont::iterator p_it(v0.begin());
-            Mycont::const_iterator p_cit(v4.begin());
-            Mycont::reverse_iterator p_rit(v0.rbegin());
-            Mycont::const_reverse_iterator p_crit(v4.rbegin());
+            container::iterator p_it(v0.begin());
+            container::const_iterator p_cit(v4.begin());
+            container::reverse_iterator p_rit(v0.rbegin());
+            container::const_reverse_iterator p_crit(v4.rbegin());
             VERIFY_ARE_EQUAL(*p_it, 'x');
             VERIFY_ARE_EQUAL(*--(p_it = v0.end()), 'z');
             VERIFY_ARE_EQUAL(*p_cit, 'x');
@@ -186,16 +188,16 @@ class SmallVectorTests
             VERIFY_ARE_EQUAL(*p_crit, 'x');
             VERIFY_ARE_EQUAL(*--(p_crit = v4.rend()), 'x');
 
-            Mycont::const_iterator p_it1 = Mycont::const_iterator();
-            Mycont::const_iterator p_it2 = Mycont::const_iterator();
+            container::const_iterator p_it1 = container::const_iterator();
+            container::const_iterator p_it2 = container::const_iterator();
             VERIFY_ARE_EQUAL(p_it1, p_it2); // check null forward iterator comparisons
         }
 
         { // check const iterators generators
-            Mycont::const_iterator p_it(v0.cbegin());
-            Mycont::const_iterator p_cit(v4.cbegin());
-            Mycont::const_reverse_iterator p_rit(v0.crbegin());
-            Mycont::const_reverse_iterator p_crit(v4.crbegin());
+            container::const_iterator p_it(v0.cbegin());
+            container::const_iterator p_cit(v4.cbegin());
+            container::const_reverse_iterator p_rit(v0.crbegin());
+            container::const_reverse_iterator p_crit(v4.crbegin());
             VERIFY_ARE_EQUAL(*p_it, 'x');
             VERIFY_ARE_EQUAL(*--(p_it = v0.cend()), 'z');
             VERIFY_ARE_EQUAL(*p_cit, 'x');
@@ -205,8 +207,8 @@ class SmallVectorTests
             VERIFY_ARE_EQUAL(*p_crit, 'x');
             VERIFY_ARE_EQUAL(*--(p_crit = v4.crend()), 'x');
 
-            Mycont::const_iterator p_it1 = Mycont::const_iterator();
-            Mycont::const_iterator p_it2 = Mycont::const_iterator();
+            container::const_iterator p_it1 = container::const_iterator();
+            container::const_iterator p_it2 = container::const_iterator();
             VERIFY_ARE_EQUAL(p_it1, p_it2); // check null forward iterator comparisons
         }
 
@@ -220,24 +222,24 @@ class SmallVectorTests
         VERIFY_ARE_EQUAL(v4.back(), 'x');
 
         {
-            Mycont v5;
+            container v5;
             v5.resize(10);
-            VERIFY_ARE_EQUAL(v5.size(), 10);
+            VERIFY_ARE_EQUAL(v5.size(), 10u);
             VERIFY_ARE_EQUAL(v5[9], 0);
 
-            Mycont v6(20, 'x');
-            Mycont v7(std::move(v6));
-            VERIFY_ARE_EQUAL(v6.size(), 0);
-            VERIFY_ARE_EQUAL(v7.size(), 20);
+            container v6(20, 'x');
+            container v7(std::move(v6));
+            VERIFY_ARE_EQUAL(v6.size(), 0u);
+            VERIFY_ARE_EQUAL(v7.size(), 20u);
 
-            Mycont v8;
+            container v8;
             v8 = std::move(v7);
-            VERIFY_ARE_EQUAL(v7.size(), 0);
-            VERIFY_ARE_EQUAL(v8.size(), 20);
+            VERIFY_ARE_EQUAL(v7.size(), 0u);
+            VERIFY_ARE_EQUAL(v8.size(), 20u);
 
             til::small_vector<Movable_int, 3> v9;
             v9.resize(10);
-            VERIFY_ARE_EQUAL(v9.size(), 10);
+            VERIFY_ARE_EQUAL(v9.size(), 10u);
             VERIFY_ARE_EQUAL(v9[9].val, 0);
 
             til::small_vector<Movable_int, 3> v10;
@@ -286,14 +288,14 @@ class SmallVectorTests
         }
 
         { // check front/back
-            Mycont::iterator p_it;
+            container::iterator p_it;
             v0.clear();
             v0.insert(v0.begin(), v4.begin(), v4.end());
             VERIFY_ARE_EQUAL(v0.size(), v4.size());
             VERIFY_ARE_EQUAL(v0.front(), v4.front());
             v0.clear();
             v0.insert(v0.begin(), 4, 'w');
-            VERIFY_ARE_EQUAL(v0.size(), 4);
+            VERIFY_ARE_EQUAL(v0.size(), 4u);
             VERIFY_ARE_EQUAL(v0.front(), 'w');
             VERIFY_ARE_EQUAL(*v0.insert(v0.begin(), 'a'), 'a');
             VERIFY_ARE_EQUAL(v0.front(), 'a');
@@ -314,7 +316,7 @@ class SmallVectorTests
         }
 
         { // test added C++11 functionality
-            Mycont v0x;
+            container v0x;
 
             v0x.push_back('a');
             VERIFY_ARE_EQUAL(*v0x.data(), 'a');
@@ -325,22 +327,22 @@ class SmallVectorTests
 
         {
             std::initializer_list<char> init{ 'a', 'b', 'c' };
-            Mycont v11(init);
-            VERIFY_ARE_EQUAL(v11.size(), 3);
+            container v11(init);
+            VERIFY_ARE_EQUAL(v11.size(), 3u);
             VERIFY_ARE_EQUAL(v11[2], 'c');
 
             v11.clear();
             v11 = init;
-            VERIFY_ARE_EQUAL(v11.size(), 3);
+            VERIFY_ARE_EQUAL(v11.size(), 3u);
             VERIFY_ARE_EQUAL(v11[2], 'c');
 
             v11.insert(v11.begin() + 1, init);
-            VERIFY_ARE_EQUAL(v11.size(), 6);
+            VERIFY_ARE_EQUAL(v11.size(), 6u);
             VERIFY_ARE_EQUAL(v11[2], 'b');
 
             v11.clear();
             v11.insert(v11.begin(), init);
-            VERIFY_ARE_EQUAL(v11.size(), 3);
+            VERIFY_ARE_EQUAL(v11.size(), 3u);
             VERIFY_ARE_EQUAL(v11[2], 'c');
         }
 
