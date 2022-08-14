@@ -805,7 +805,7 @@ namespace til
         {
             if (new_size < _size)
             {
-                std::destroy(begin() + new_size, end() - new_size);
+                std::destroy(begin() + new_size, end());
             }
             else if (new_size > _size)
             {
