@@ -1269,7 +1269,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            auto contextArgs = winrt::make_self<ContextMenuRequestedEventArgs>(L"foobar", point.Position());
+            auto bufferText = _core.SelectedText(true);
+            std::wstring singleString = L"";
+            for (const auto& line : bufferText)
+            {
+                if (!singleString.empty())
+                {
+                    singleString += L"\r\n";
+                }
+                singleString += line;
+            };
+            auto contextArgs = winrt::make_self<ContextMenuRequestedEventArgs>(winrt::hstring{ singleString }, point.Position());
             ;
             _ContextMenuRequestedHandlers(*this, *contextArgs);
 

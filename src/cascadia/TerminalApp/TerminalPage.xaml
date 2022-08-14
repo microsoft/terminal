@@ -227,59 +227,6 @@
         </mux:TeachingTip>
 
 
-        <FlyoutBase.AttachedFlyout>
-            <MenuFlyout x:Name="ControlContextMenu">
-                <MenuFlyoutItem Text="Paste">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xe77f;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-
-                <MenuFlyoutSeparator />
-
-                <MenuFlyoutItem Text="Copy">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xe8c8;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-                <MenuFlyoutItem Text="Search for selected text">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xF78B;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-                <MenuFlyoutItem Text="Search the web...">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xf6fa;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-
-                <MenuFlyoutSeparator />
-
-                <MenuFlyoutItem Text="Split pane">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xF246;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-                <MenuFlyoutItem Text="Duplicate tab">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xF5ED;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-
-                <MenuFlyoutSeparator />
-
-                <MenuFlyoutItem Text="Close pane">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xe89f;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-                <MenuFlyoutItem Text="Close tab">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xE711;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-
-            </MenuFlyout>
-        </FlyoutBase.AttachedFlyout>
+        <FlyoutBase.AttachedFlyout />
     </Grid>
 </Page>

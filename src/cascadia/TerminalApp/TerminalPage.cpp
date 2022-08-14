@@ -4157,42 +4157,57 @@ namespace winrt::TerminalApp::implementation
     {
         auto text = args.SelectedText();
         text;
-        // auto newTabFlyout = WUX::Controls::MenuFlyout{};
-        // {
-        //     auto menuItem = WUX::Controls::MenuFlyoutItem{};
-        //     menuItem.Text(L"Copy");
-        //     menuItem.Click([weakThis{ get_weak() }](auto&&, auto&&) {
-        //         if (auto page{ weakThis.get() })
-        //         {
-        //         }
-        //     });
-        //     newTabFlyout.Items().Append(menuItem);
-        // }
 
-        // auto separatorItem = WUX::Controls::MenuFlyoutSeparator{};
-        // newTabFlyout.Items().Append(separatorItem);
-
-        // {
-        //     auto menuItem = WUX::Controls::MenuFlyoutItem{};
-        //     menuItem.Text(L"Copy");
-        //     menuItem.Click([weakThis{ get_weak() }](auto&&, auto&&) {
-        //         if (auto page{ weakThis.get() })
-        //         {
-        //         }
-        //     });
-        //     newTabFlyout.Items().Append(menuItem);
-        // }
-
-        // ControlContextMenu().ShowAt(sender.try_as<WUX::FrameworkElement>());
         auto fwe = sender.try_as<WUX::FrameworkElement>();
-        auto transform = fwe.TransformToVisual(*this);
-        auto absolute = CoreWindow::GetForCurrentThread().PointerPosition();
-        auto controlOrigin = transform.TransformPoint(til::point{0, 0}.to_winrt_point());
-        til::point relative = til::point{ til::math::rounding, absolute.X, absolute.Y } - til::point{ til::math::rounding, controlOrigin.X, absolute.Y };
-        auto flyout = ControlContextMenu();
-        ;
-        flyout.ShowAt(fwe, args.Point());
 
+        auto flyout = TerminalApp::ControlContextMenu();
+
+        auto weak = get_weak();
+        auto makeCallback = [weak](const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs) {
+            return [weak, actionAndArgs](auto&&, auto&&) {
+                if (auto page{ weak.get() })
+                {
+                    page->_actionDispatch->DoAction(actionAndArgs);
+                }
+            };
+        };
+
+        flyout.PasteItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::PasteText,
+                                                             nullptr }));
+
+        if (text.empty())
+        {
+            flyout.CopyItem().IsEnabled(false);
+            flyout.FindItem().Visibility(Visibility::Collapsed);
+            flyout.SearchWebItem().Visibility(Visibility::Collapsed);
+        }
+        else
+        {
+            flyout.CopyItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText,
+                                                                CopyTextArgs{} }));
+            flyout.FindItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::Find,
+                                                                nullptr }));
+            // flyout.SearchWebItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText, nullptr }));
+        }
+
+        flyout.SplitPaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::SplitPane,
+                                                                 SplitPaneArgs{ SplitType::Duplicate } }));
+        flyout.DuplicateTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::DuplicateTab,
+                                                                    nullptr }));
+        if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
+        {
+            flyout.ClosePaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::ClosePane,
+                                                                     nullptr }));
+        }
+        else
+        {
+            flyout.ClosePaneItem().Visibility(Visibility::Collapsed);
+        }
+        flyout.CloseTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CloseTab,
+                                                                CloseTabArgs{ _GetFocusedTabIndex().value() } }));
+
+        WUX::Controls::Primitives::FlyoutBase::SetAttachedFlyout(*this, flyout);
+        flyout.ShowAt(fwe, args.Point());
     }
 
 }

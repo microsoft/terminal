@@ -1,0 +1,16 @@
+namespace TerminalApp
+{
+    [default_interface] runtimeclass ControlContextMenu : Windows.UI.Xaml.Controls.MenuFlyout
+    {
+        ControlContextMenu();
+
+        Windows.UI.Xaml.Controls.MenuFlyoutItem PasteItem{ get; };
+        Windows.UI.Xaml.Controls.MenuFlyoutItem CopyItem{ get; };
+        Windows.UI.Xaml.Controls.MenuFlyoutItem FindItem{ get; };
+        Windows.UI.Xaml.Controls.MenuFlyoutItem SearchWebItem{ get; };
+        Windows.UI.Xaml.Controls.MenuFlyoutItem SplitPaneItem{ get; };
+        Windows.UI.Xaml.Controls.MenuFlyoutItem DuplicateTabItem{ get; };
+        Windows.UI.Xaml.Controls.MenuFlyoutItem ClosePaneItem{ get; };
+        Windows.UI.Xaml.Controls.MenuFlyoutItem CloseTabItem{ get; };
+    }
+}

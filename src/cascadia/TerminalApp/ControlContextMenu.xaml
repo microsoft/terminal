@@ -1,0 +1,70 @@
+<MenuFlyout x:Class="TerminalApp.ControlContextMenu"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:local="using:TerminalApp"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+            Placement="Bottom"
+            ShouldConstrainToRootBounds="False"
+            mc:Ignorable="d">
+
+    <MenuFlyoutItem x:Name="PasteItem"
+                    Text="Paste">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xe77f;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+
+    <!-- <MenuFlyoutSeparator /> -->
+
+    <MenuFlyoutItem x:Name="CopyItem"
+                    Text="Copy">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xe8c8;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+    <MenuFlyoutItem x:Name="FindItem"
+                    Text="Find selected text">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xF78B;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+    <MenuFlyoutItem x:Name="SearchWebItem"
+                    Text="Search the web...">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xf6fa;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+
+    <MenuFlyoutSeparator />
+
+    <MenuFlyoutItem x:Name="SplitPaneItem"
+                    Text="Split pane">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xF246;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+    <MenuFlyoutItem x:Name="DuplicateTabItem"
+                    Text="Duplicate tab">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xF5ED;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+
+    <MenuFlyoutSeparator />
+
+    <MenuFlyoutItem x:Name="ClosePaneItem"
+                    Text="Close pane">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xe89f;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+    <MenuFlyoutItem x:Name="CloseTabItem"
+                    Text="Close tab">
+        <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xE711;" />
+        </MenuFlyoutItem.Icon>
+    </MenuFlyoutItem>
+
+</MenuFlyout>
