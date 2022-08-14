@@ -25,7 +25,7 @@ namespace til
     {
         using iterator_concept = std::contiguous_iterator_tag;
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = std::remove_cv_t<T>;
+        using value_type = T;
         using difference_type = std::ptrdiff_t;
         using pointer = const T*;
         using reference = const T&;
@@ -310,9 +310,8 @@ namespace til
     {
     public:
         static_assert(N != 0, "A small_vector without a small buffer isn't very useful");
-        static_assert(std::is_nothrow_constructible_v<T>, "the copy/move operators don't guard against exceptions");
         static_assert(std::is_nothrow_move_assignable_v<T>, "_generic_insert doesn't guard against exceptions");
-        static_assert(std::is_nothrow_move_constructible_v<T>, "_grow doesn't guard against exceptions");
+        static_assert(std::is_nothrow_move_constructible_v<T>, "_grow/_generic_insert don't guard against exceptions");
 
         using value_type = T;
         using allocator_type = std::allocator<T>;
@@ -352,33 +351,22 @@ namespace til
             insert(end(), list.begin(), list.end());
         }
 
+        // NOTE: If an exception is thrown while copying, the vector is left empty.
         small_vector(const small_vector& other) :
             small_vector{}
         {
             operator=(other);
         }
 
+        // NOTE: If an exception is thrown while copying, the vector is left empty.
         small_vector& operator=(const small_vector& other)
         {
-            auto data = _data;
-            if (other._size > _capacity)
-            {
-                const auto new_cap = _calculate_new_capacity(other._size);
-                data = _allocate(new_cap);
-            }
+            clear();
+            _ensure_capacity(other._capacity);
 
-            std::destroy(begin(), end());
-            // The earlier static_assert(std::is_nothrow_constructible_v<T>)
-            // ensures that we don't exit in a weird state and leak `data`.
-            std::uninitialized_copy(other.begin(), other.end(), data);
-
-            if (data != _data && _data != &_buffer[0])
-            {
-                _deallocate(_data);
-            }
-
-            _data = data;
+            std::uninitialized_copy(other.begin(), other.end(), _uninitialized_begin());
             _size = other._size;
+
             return *this;
         }
 
@@ -401,7 +389,7 @@ namespace til
                 _data = &_buffer[0];
                 _capacity = N;
                 _size = other._size;
-                // The earlier static_assert(std::is_nothrow_constructible_v<T>)
+                // The earlier static_assert(std::is_nothrow_move_constructible_v<T>)
                 // ensures that we don't exit in a weird state with invalid `_size`.
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
                 std::uninitialized_move(other.begin(), other.end(), _uninitialized_begin());
@@ -661,6 +649,7 @@ namespace til
             return *it;
         }
 
+        // NOTE: If the copy constructor throws, the range [pos, end()) is erased.
         iterator insert(const_iterator pos, const T& value)
         {
             return _generic_insert(pos, 1, [&](auto&& it) {
@@ -668,6 +657,7 @@ namespace til
             });
         }
 
+        // NOTE: If the move constructor throws, the range [pos, end()) is erased.
         iterator insert(const_iterator pos, T&& value)
         {
             return _generic_insert(pos, 1, [&](auto&& it) {
@@ -675,6 +665,7 @@ namespace til
             });
         }
 
+        // NOTE: If the copy constructor throws, the range [pos, end()) is erased.
         iterator insert(const_iterator pos, size_type count, const T& value)
         {
             return _generic_insert(pos, count, [&](auto&& it) {
@@ -682,6 +673,7 @@ namespace til
             });
         }
 
+        // NOTE: If the copy/move constructor throws, the range [pos, end()) is erased.
         template<std::input_iterator InputIt>
         iterator insert(const_iterator pos, InputIt first, InputIt last)
         {
@@ -690,6 +682,7 @@ namespace til
             });
         }
 
+        // NOTE: If the copy constructor throws, the range [pos, end()) is erased.
         iterator insert(const_iterator pos, std::initializer_list<T> list)
         {
             return insert(pos, list.begin(), list.end());
@@ -829,20 +822,36 @@ namespace til
 
             // 1. We've resized the vector to fit an additional `count` items.
             //    Initialize the `count` items at the end by moving existing items over.
-            std::uninitialized_move(end() - displacement, end(), _uninitialized_begin() + (_size + count - displacement));
+            //
+            // This line is noexcept:
+            // It can't throw because of the earlier static_assert(std::is_nothrow_move_assignable_v<T>).
+            std::uninitialized_move(end() - displacement, end(), _uninitialized_begin() + (new_size - displacement));
             _size = new_size;
 
             // 2. Now that all `new_size` items are initialized we can move as many
             //    items towards the end as we need to make space for `count` items.
+            //
+            // This line is noexcept:
+            // It can't throw because of the earlier static_assert(std::is_nothrow_move_assignable_v<T>).
             const auto displacement_beg = begin() + offset;
+            const auto displacement_end = displacement_beg + displacement;
             std::move_backward(displacement_beg, displacement_beg + (moveable - displacement), end() - displacement);
 
             // 3. Destroy the displaced existing items, so that we can use
             //    std::uninitialized_*/std::construct_* functions inside `func`.
             //    This isn't optimal, but better than nothing.
-            std::destroy(displacement_beg, displacement_beg + displacement);
+            std::destroy(displacement_beg, displacement_end);
 
-            func(displacement_beg);
+            try
+            {
+                func(displacement_beg);
+            }
+            catch (...)
+            {
+                std::destroy(displacement_end, end());
+                _size = offset;
+                throw;
+            }
 
             return displacement_beg;
         }
