@@ -362,7 +362,7 @@ namespace til
         small_vector& operator=(const small_vector& other)
         {
             clear();
-            _ensure_capacity(other._capacity);
+            reserve(other._size);
 
             std::uninitialized_copy(other.begin(), other.end(), _uninitialized_begin());
             _size = other._size;
@@ -577,7 +577,10 @@ namespace til
 
         void reserve(size_type capacity)
         {
-            _ensure_capacity(capacity);
+            if (capacity > _capacity)
+            {
+                _grow(capacity);
+            }
         }
 
         void resize(size_type new_size)
@@ -619,16 +622,21 @@ namespace til
 
         void push_back(const T& value)
         {
-            const auto new_size = _ensure_capacity(_size + 1);
-            new (_data + _size) T(value);
-            _size = new_size;
+            emplace_back(value);
         }
 
         void push_back(T&& value)
         {
-            const auto new_size = _ensure_capacity(_size + 1);
-            new (_data + _size) T(std::move(value));
+            emplace_back(std::move(value));
+        }
+
+        template<typename... Args>
+        reference emplace_back(Args&&... args)
+        {
+            const auto new_size = _ensure_fits(1);
+            const auto it = new (_data + _size) T(std::forward<Args>(args)...);
             _size = new_size;
+            return *it;
         }
 
         void pop_back()
@@ -638,15 +646,6 @@ namespace til
 #endif // _ITERATOR_DEBUG_LEVEL == 2
             std::destroy_at(_data + _size - 1);
             _size--;
-        }
-
-        template<typename... Args>
-        reference emplace_back(Args&&... args)
-        {
-            const auto new_size = _ensure_capacity(_size + 1);
-            const auto it = new (_data + _size) T(std::forward<Args>(args)...);
-            _size = new_size;
-            return *it;
         }
 
         // NOTE: If the copy constructor throws, the range [pos, end()) is erased.
@@ -753,30 +752,29 @@ namespace til
 #endif
         }
 
-        size_type _calculate_new_capacity(size_type min_cap) const
+        size_type _ensure_fits(size_type add)
         {
-            const auto new_cap = std::max(min_cap, _capacity + _capacity / 2);
-            // min_cap < _capacity indicates a overflow in the calling code.
-            // new_cap > max_size() indicates that our multiplication below would overflow.
-            if (min_cap < _capacity || new_cap > max_size())
+            const auto new_size = _size + add;
+            if (new_size < _size)
             {
                 _throw_too_long();
             }
-            return new_cap;
-        }
-
-        size_type _ensure_capacity(size_type cap)
-        {
-            if (cap > _capacity) [[unlikely]]
+            if (new_size > _capacity)
             {
-                _grow(cap);
+                _grow(new_size);
             }
-            return cap;
+            return new_size;
         }
 
         void _grow(size_type min_cap)
         {
-            const auto new_cap = _calculate_new_capacity(min_cap);
+            const auto new_cap = std::max(min_cap, _capacity + _capacity / 2);
+            // Protect against overflow in the multiplication in _allocate.
+            if (new_cap > max_size())
+            {
+                _throw_too_long();
+            }
+
             const auto data = _allocate(new_cap);
 
             // The earlier static_assert(std::is_nothrow_move_constructible_v<T>)
@@ -802,7 +800,7 @@ namespace til
             }
             else if (new_size > _size)
             {
-                _ensure_capacity(new_size);
+                reserve(new_size);
                 func(_uninitialized_begin() + _size, _uninitialized_begin() + new_size);
             }
 
@@ -815,7 +813,7 @@ namespace til
             const auto offset = pos - cbegin();
             const auto moveable = _size - offset;
             const auto displacement = std::min(count, moveable);
-            const auto new_size = _ensure_capacity(_size + count);
+            const auto new_size = _ensure_fits(count);
 
             // The earlier static_assert(std::is_nothrow_move_assignable_v<T>)
             // ensures that we don't exit in a weird state with invalid `_size`.
