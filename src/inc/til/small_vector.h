@@ -682,8 +682,8 @@ namespace til
             });
         }
 
-        template<typename InputIt>
-        iterator insert(const_iterator pos, InputIt first, InputIt last) requires std::input_iterator<InputIt>
+        template<std::input_iterator InputIt>
+        iterator insert(const_iterator pos, InputIt first, InputIt last)
         {
             return _generic_insert(pos, std::distance(first, last), [&](auto&& it) {
                 std::uninitialized_copy(first, last, it);
