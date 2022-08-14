@@ -25,8 +25,8 @@ namespace til
     {
         using iterator_concept = std::contiguous_iterator_tag;
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = T;
-        using difference_type = ptrdiff_t;
+        using value_type = std::remove_cv_t<T>;
+        using difference_type = std::ptrdiff_t;
         using pointer = const T*;
         using reference = const T&;
 
@@ -76,9 +76,9 @@ namespace til
 
         constexpr small_vector_const_iterator operator++(int) noexcept
         {
-            small_vector_const_iterator _Tmp{ *this };
+            small_vector_const_iterator tmp{ *this };
             ++*this;
-            return _Tmp;
+            return tmp;
         }
 
         constexpr small_vector_const_iterator& operator--() noexcept
@@ -93,88 +93,101 @@ namespace til
 
         constexpr small_vector_const_iterator operator--(int) noexcept
         {
-            small_vector_const_iterator _Tmp{ *this };
+            small_vector_const_iterator tmp{ *this };
             --*this;
-            return _Tmp;
+            return tmp;
         }
 
-        constexpr void _Verify_offset([[maybe_unused]] const difference_type _Off) const noexcept
+        constexpr void _Verify_offset([[maybe_unused]] const difference_type off) const noexcept
         {
 #if _ITERATOR_DEBUG_LEVEL >= 1
-            if (_Off != 0)
+            if (off != 0)
             {
                 _STL_VERIFY(_begin, "cannot seek value-initialized iterator");
             }
 
-            if (_Off < 0)
+            if (off < 0)
             {
-                _STL_VERIFY(_ptr - _begin >= -_Off, "cannot seek iterator before begin");
+                _STL_VERIFY(_ptr - _begin >= -off, "cannot seek iterator before begin");
             }
 
-            if (_Off > 0)
+            if (off > 0)
             {
-                _STL_VERIFY(_end - _ptr >= _Off, "cannot seek iterator after end");
+                _STL_VERIFY(_end - _ptr >= off, "cannot seek iterator after end");
             }
 #endif // _ITERATOR_DEBUG_LEVEL >= 1
         }
 
-        constexpr small_vector_const_iterator& operator+=(const difference_type _Off) noexcept
+        constexpr small_vector_const_iterator& operator+=(const difference_type off) noexcept
         {
-            _Verify_offset(_Off);
-            _ptr += _Off;
+            _Verify_offset(off);
+            _ptr += off;
             return *this;
         }
 
-        [[nodiscard]] constexpr small_vector_const_iterator operator+(const difference_type _Off) const noexcept
+        [[nodiscard]] constexpr small_vector_const_iterator operator+(const difference_type off) const noexcept
         {
-            small_vector_const_iterator _Tmp{ *this };
-            _Tmp += _Off;
-            return _Tmp;
+            small_vector_const_iterator tmp{ *this };
+            tmp += off;
+            return tmp;
         }
 
-        constexpr small_vector_const_iterator& operator-=(const difference_type _Off) noexcept
+        [[nodiscard]] friend constexpr small_vector_const_iterator operator+(const difference_type off, small_vector_const_iterator next) noexcept
         {
-            _Verify_offset(-_Off);
-            _ptr -= _Off;
+            next += off;
+            return next;
+        }
+
+        constexpr small_vector_const_iterator& operator-=(const difference_type off) noexcept
+        {
+            _Verify_offset(-off);
+            _ptr -= off;
             return *this;
         }
 
-        [[nodiscard]] constexpr small_vector_const_iterator operator-(const difference_type _Off) const noexcept
+        [[nodiscard]] constexpr small_vector_const_iterator operator-(const difference_type off) const noexcept
         {
-            small_vector_const_iterator _Tmp{ *this };
-            _Tmp -= _Off;
-            return _Tmp;
+            small_vector_const_iterator tmp{ *this };
+            tmp -= off;
+            return tmp;
         }
 
-        [[nodiscard]] constexpr difference_type operator-(const small_vector_const_iterator& _Right) const noexcept
+        [[nodiscard]] constexpr difference_type operator-(const small_vector_const_iterator& right) const noexcept
         {
 #if _ITERATOR_DEBUG_LEVEL >= 1
-            _STL_VERIFY(_begin == _Right._begin && _end == _Right._end, "cannot subtract incompatible iterators");
+            _STL_VERIFY(_begin == right._begin && _end == right._end, "cannot subtract incompatible iterators");
 #endif // _ITERATOR_DEBUG_LEVEL >= 1
-            return _ptr - _Right._ptr;
+            return _ptr - right._ptr;
         }
 
-        [[nodiscard]] constexpr reference operator[](const difference_type _Off) const noexcept
+        [[nodiscard]] constexpr reference operator[](const difference_type off) const noexcept
         {
-            return *(*this + _Off);
+            return *(*this + off);
         }
 
-        [[nodiscard]] constexpr bool operator==(const small_vector_const_iterator& _Right) const noexcept
-        {
-#if _ITERATOR_DEBUG_LEVEL >= 1
-            _STL_VERIFY(_begin == _Right._begin && _end == _Right._end, "cannot compare incompatible iterators for equality");
-#endif // _ITERATOR_DEBUG_LEVEL >= 1
-            return _ptr == _Right._ptr;
-        }
-
-        [[nodiscard]] constexpr std::strong_ordering operator<=>(const small_vector_const_iterator& _Right) const noexcept
+        [[nodiscard]] constexpr bool operator==(const small_vector_const_iterator& right) const noexcept
         {
 #if _ITERATOR_DEBUG_LEVEL >= 1
-            _STL_VERIFY(
-                _begin == _Right._begin && _end == _Right._end, "cannot compare incompatible iterators");
+            _STL_VERIFY(_begin == right._begin && _end == right._end, "cannot compare incompatible iterators for equality");
 #endif // _ITERATOR_DEBUG_LEVEL >= 1
-            return _ptr <=> _Right._ptr;
+            return _ptr == right._ptr;
         }
+
+        [[nodiscard]] constexpr std::strong_ordering operator<=>(const small_vector_const_iterator& right) const noexcept
+        {
+#if _ITERATOR_DEBUG_LEVEL >= 1
+            _STL_VERIFY(_begin == right._begin && _end == right._end, "cannot compare incompatible iterators");
+#endif // _ITERATOR_DEBUG_LEVEL >= 1
+            return _ptr <=> right._ptr;
+        }
+
+#if _ITERATOR_DEBUG_LEVEL >= 1
+        friend constexpr void _Verify_range(const small_vector_const_iterator& first, const small_vector_const_iterator& last) noexcept
+        {
+            _STL_VERIFY(first._begin == last._begin && first._end == last._end, "iterators from different views do not form a range");
+            _STL_VERIFY(first._ptr <= last._ptr, "iterator range transposed");
+        }
+#endif // _ITERATOR_DEBUG_LEVEL >= 1
 
         using _Prevent_inheriting_unwrap = small_vector_const_iterator;
 
@@ -185,9 +198,9 @@ namespace til
 
         static constexpr bool _Unwrap_when_unverified = _ITERATOR_DEBUG_LEVEL == 0;
 
-        constexpr void _Seek_to(const pointer _It) noexcept
+        constexpr void _Seek_to(const pointer it) noexcept
         {
-            _ptr = _It;
+            _ptr = it;
         }
 
         pointer _ptr = nullptr;
@@ -197,17 +210,16 @@ namespace til
 #endif // _ITERATOR_DEBUG_LEVEL >= 1
     };
 
-    // This class was adopted from std::vector<>::iterator.
-    template<class T>
-    class small_vector_iterator : public small_vector_const_iterator<T>
+    // This class was adopted from std::array<>::iterator.
+    template<typename T>
+    struct small_vector_iterator : small_vector_const_iterator<T>
     {
-    public:
         using base = small_vector_const_iterator<T>;
 
         using iterator_concept = std::contiguous_iterator_tag;
         using iterator_category = std::random_access_iterator_tag;
         using value_type = T;
-        using difference_type = ptrdiff_t;
+        using difference_type = std::ptrdiff_t;
         using pointer = T*;
         using reference = T&;
 
@@ -233,9 +245,9 @@ namespace til
 
         constexpr small_vector_iterator operator++(int) noexcept
         {
-            small_vector_iterator _Tmp = *this;
+            small_vector_iterator tmp = *this;
             base::operator++();
-            return _Tmp;
+            return tmp;
         }
 
         constexpr small_vector_iterator& operator--() noexcept
@@ -246,42 +258,42 @@ namespace til
 
         constexpr small_vector_iterator operator--(int) noexcept
         {
-            small_vector_iterator _Tmp = *this;
+            small_vector_iterator tmp = *this;
             base::operator--();
-            return _Tmp;
+            return tmp;
         }
 
-        constexpr small_vector_iterator& operator+=(const difference_type _Off) noexcept
+        constexpr small_vector_iterator& operator+=(const difference_type off) noexcept
         {
-            base::operator+=(_Off);
+            base::operator+=(off);
             return *this;
         }
 
-        [[nodiscard]] constexpr small_vector_iterator operator+(const difference_type _Off) const noexcept
+        [[nodiscard]] constexpr small_vector_iterator operator+(const difference_type off) const noexcept
         {
-            small_vector_iterator _Tmp = *this;
-            _Tmp += _Off;
-            return _Tmp;
+            small_vector_iterator tmp = *this;
+            tmp += off;
+            return tmp;
         }
 
-        constexpr small_vector_iterator& operator-=(const difference_type _Off) noexcept
+        constexpr small_vector_iterator& operator-=(const difference_type off) noexcept
         {
-            base::operator-=(_Off);
+            base::operator-=(off);
             return *this;
         }
 
         using base::operator-;
 
-        [[nodiscard]] constexpr small_vector_iterator operator-(const difference_type _Off) const noexcept
+        [[nodiscard]] constexpr small_vector_iterator operator-(const difference_type off) const noexcept
         {
-            small_vector_iterator _Tmp = *this;
-            _Tmp -= _Off;
-            return _Tmp;
+            small_vector_iterator tmp = *this;
+            tmp -= off;
+            return tmp;
         }
 
-        [[nodiscard]] constexpr reference operator[](const difference_type _Off) const noexcept
+        [[nodiscard]] constexpr reference operator[](const difference_type off) const noexcept
         {
-            return const_cast<reference>(base::operator[](_Off));
+            return const_cast<reference>(base::operator[](off));
         }
 
         using _Prevent_inheriting_unwrap = small_vector_iterator;
@@ -289,7 +301,7 @@ namespace til
         [[nodiscard]] constexpr pointer _Unwrapped() const noexcept
         {
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-            return const_cast<pointer>(this->_ptr);
+            return const_cast<pointer>(base::_Unwrapped());
         }
     };
 
