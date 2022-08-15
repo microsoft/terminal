@@ -183,6 +183,9 @@ float4 main(float4 pos: SV_Position): SV_Target
         [flatten] if (cursorColor == INVALID_COLOR && glyphs[cellPos].a != 0)
         {
             color = float4(1 - color.rgb, 1);
+
+            // Make sure the cursor is always readable (see gh-3647)
+            color = float4((((uint3(color.rgb * 255) ^ 0x3f) & 0xff) / 255.0).rgb, 1);
         }
     }
 
