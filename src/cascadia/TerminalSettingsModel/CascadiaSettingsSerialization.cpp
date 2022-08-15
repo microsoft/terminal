@@ -793,7 +793,8 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
-    auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
+    FILETIME lastWriteTime{};
+    auto settingsString = ReadUTF8FileIfExists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
     auto firstTimeSetup = settingsString.empty();
 
     // If it's the firstTimeSetup and a preview build, then try to
@@ -873,6 +874,12 @@ try
             LOG_CAUGHT_EXCEPTION();
             settings->_warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
         }
+    }
+    else
+    {
+        // lastWriteTime is only valid if mustWriteToDisk is false.
+        // Additionally WriteSettingsToDisk() updates the _hash for us already.
+        settings->_hash = _calculateHash(settingsString, lastWriteTime);
     }
 
     return *settings;
@@ -1015,6 +1022,15 @@ const std::filesystem::path& CascadiaSettings::_releaseSettingsPath()
     return path;
 }
 
+// Returns a has (approximately) uniquely identifying the settings.json contents on disk.
+winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const FILETIME& lastWriteTime)
+{
+    const auto fileHash = til::hash(settings);
+    const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
+    const auto hash = fmt::format(L"{:016x}-{:016x}", fileHash, fileTime.QuadPart);
+    return winrt::hstring{ hash };
+}
+
 // function Description:
 // - Returns the full path to the settings file, either within the application
 //   package, or in its unpackaged location. This path is under the "Local
@@ -1058,7 +1074,7 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::WriteSettingsToDisk() const
+void CascadiaSettings::WriteSettingsToDisk()
 {
     const auto settingsPath = _settingsPath();
 
@@ -1067,8 +1083,11 @@ void CascadiaSettings::WriteSettingsToDisk() const
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
+    FILETIME lastWriteTime{};
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    WriteUTF8FileAtomic(settingsPath, styledString);
+    WriteUTF8FileAtomic(settingsPath, styledString, &lastWriteTime);
+
+    _hash = _calculateHash(styledString, lastWriteTime);
 
     // Persists the default terminal choice
     // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.
