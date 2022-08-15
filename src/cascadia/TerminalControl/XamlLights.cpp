@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!CompositionLight())
         {
             auto spotLight{ Window::Current().Compositor().CreateAmbientLight() };
-            spotLight.Color(Windows::UI::Colors::White());
+            spotLight.Color(Windows::UI::Colors::Gray());
             CompositionLight(spotLight);
         }
     }
