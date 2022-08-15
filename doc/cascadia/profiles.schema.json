@@ -207,8 +207,14 @@
           "type": "string"
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
@@ -1727,16 +1733,6 @@
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
           "type": "boolean"
         },
-        "experimental.autoMarkPrompts": {
-          "default": false,
-          "description": "When set to true, prompts will automatically be marked.",
-          "type": "boolean"
-        },
-        "experimental.showMarksOnScrollbar": {
-          "default": false,
-          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
-          "type": "boolean"
-        },
         "disableAnimations": {
           "default": false,
           "description": "When set to `true`, visual animations will be disabled across the application.",
@@ -1968,6 +1964,20 @@
             "useAnyExisting"
           ],
           "type": "string"
+        },
+        "newTabPosition": {
+          "default": "afterLastTab",
+          "description": "Position of newly created tabs. Possible values are \"afterLastTab\" and \"afterCurrentTab\".",
+          "enum": [
+            "afterLastTab",
+            "afterCurrentTab"
+          ],
+          "type": "string"        
+        },
+        "autoHideWindow": {
+          "default": false,
+          "description": "If enabled, Terminal window will be hidden as soon as it loses focus.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -2086,14 +2096,15 @@
           "$ref": "#/$defs/BellSound"
         },
         "closeOnExit": {
-          "default": "graceful",
-          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+          "default": "automatic",
+          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"automatic\" (behave as \"graceful\" only for processes launched by terminal, behave as \"always\" otherwise)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
           "oneOf": [
             {
               "enum": [
                 "never",
                 "graceful",
-                "always"
+                "always",
+                "automatic"
               ],
               "type": "string"
             },
@@ -2150,12 +2161,22 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "experimental.autoMarkPrompts": {
+          "default": false,
+          "description": "When set to true, prompts will automatically be marked.",
+          "type": "boolean"
+        },
         "experimental.connection.passthroughMode": {
           "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
+        "experimental.showMarksOnScrollbar": {
+          "default": false,
+          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
         "experimental.pixelShaderPath": {
@@ -2261,8 +2282,14 @@
           ]
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "scrollbarState": {
           "default": "visible",

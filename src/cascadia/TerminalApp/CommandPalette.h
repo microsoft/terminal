@@ -96,6 +96,8 @@ namespace winrt::TerminalApp::implementation
 
         void _updateFilteredActions();
 
+        void _updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand);
+
         std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
 
         void _close();

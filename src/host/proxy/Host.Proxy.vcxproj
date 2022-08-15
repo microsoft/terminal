@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -21,7 +21,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl">
-      <!-- 
+      <!--
         In Razzle, IDL files generate %FileName%.h
         In Visual Studio, IDL files generate %FileName%_h.h
         Visual Studio is easier to override than Razzle.

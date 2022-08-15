@@ -627,6 +627,7 @@ void Terminal::SelectAll()
     _selection->pivot = _selection->end;
     _selectionMode = SelectionInteractionMode::Keyboard;
     _selectionIsTargetingUrl = false;
+    _ScrollToPoint(_selection->start);
 }
 
 void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
