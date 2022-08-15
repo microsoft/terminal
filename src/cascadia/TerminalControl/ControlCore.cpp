@@ -418,7 +418,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             keyDown)
         {
             // (if applicable) handle mark mode non-configurable keybindings first
-            if(_tryHandleMarkModeKey(vkey, modifiers))
+            if (_tryHandleMarkModeKey(vkey, modifiers))
             {
                 return true;
             }
