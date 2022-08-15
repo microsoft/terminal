@@ -1348,17 +1348,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto& midiAudio = _getMidiAudio();
         midiAudio.Lock();
 
-        // We then unlock the terminal, so the UI doesn't hang while we're busy.
-        auto& terminalLock = _terminal->GetReadWriteLock();
-        terminalLock.unlock();
+        {
+            // We then unlock the terminal, so the UI doesn't hang while we're busy.
+            const auto suspension = _terminal->SuspendLock();
 
-        // This call will block for the duration, unless shutdown early.
-        midiAudio.PlayNote(noteNumber, velocity, duration);
+            // This call will block for the duration, unless shutdown early.
+            midiAudio.PlayNote(noteNumber, velocity, duration);
+        }
 
         // Once complete, we reacquire the terminal lock and unlock the audio.
         // If the terminal has shutdown in the meantime, the Unlock call
         // will throw an exception, forcing the thread to exit ASAP.
-        terminalLock.lock();
         midiAudio.Unlock();
     }
 

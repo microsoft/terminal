@@ -53,4 +53,89 @@ namespace til
         std::atomic<uint32_t> _next_ticket{ 0 };
         std::atomic<uint32_t> _now_serving{ 0 };
     };
+
+    struct recursive_ticket_lock
+    {
+        struct recursive_ticket_lock_suspension
+        {
+            constexpr recursive_ticket_lock_suspension(recursive_ticket_lock& lock) noexcept :
+                _lock{ lock }
+            {
+            }
+
+            ~recursive_ticket_lock_suspension()
+            {
+                if (_owner)
+                {
+                    _lock._lock.lock(); // lock-lock-lock lol
+                    _lock._owner.store(_owner, std::memory_order_relaxed);
+                    _lock._recursion = _recursion;
+                }
+            }
+
+        private:
+            friend struct recursive_ticket_lock;
+
+            recursive_ticket_lock& _lock;
+            uint32_t _owner = 0;
+            uint32_t _recursion = 0;
+        };
+
+        void lock() noexcept
+        {
+            const auto id = GetCurrentThreadId();
+
+            if (_owner.load(std::memory_order_relaxed) != id)
+            {
+                _lock.lock();
+                _owner.store(id, std::memory_order_relaxed);
+            }
+
+            _recursion++;
+        }
+
+        void unlock() noexcept
+        {
+            if (--_recursion == 0)
+            {
+                _owner.store(0, std::memory_order_relaxed);
+                _lock.unlock();
+            }
+        }
+
+        [[nodiscard]] recursive_ticket_lock_suspension suspend() noexcept
+        {
+            const auto id = GetCurrentThreadId();
+            recursive_ticket_lock_suspension guard{ *this };
+
+            if (_owner.load(std::memory_order_relaxed) == id)
+            {
+                guard._owner = id;
+                guard._recursion = _recursion;
+                _owner.store(0, std::memory_order_relaxed);
+                _recursion = 0;
+                _lock.unlock();
+            }
+
+            return guard;
+        }
+
+        uint32_t is_locked() const noexcept
+        {
+            const auto id = GetCurrentThreadId();
+            return _owner.load(std::memory_order_relaxed) == id;
+        }
+
+        uint32_t recursion_depth() const noexcept
+        {
+            return is_locked() ? _recursion : 0;
+        }
+
+    private:
+        ticket_lock _lock;
+        std::atomic<uint32_t> _owner = 0;
+        uint32_t _recursion = 0;
+    };
+
+    using recursive_ticket_lock_suspension = recursive_ticket_lock::recursive_ticket_lock_suspension;
 }

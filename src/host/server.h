@@ -30,6 +30,8 @@ Revision History:
 #include "../host/RenderData.hpp"
 #include "../audio/midi/MidiAudio.hpp"
 
+#include <til/ticket_lock.h>
+
 // clang-format off
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
@@ -103,10 +105,10 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    static void LockConsole();
-    static void UnlockConsole();
-    static bool IsConsoleLocked();
-    static ULONG GetCSRecursionCount();
+    void LockConsole() noexcept;
+    void UnlockConsole() noexcept;
+    bool IsConsoleLocked() const noexcept;
+    ULONG GetCSRecursionCount() const noexcept;
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
 
@@ -147,6 +149,8 @@ public:
     RenderData renderData;
 
 private:
+    til::recursive_ticket_lock _lock;
+
     std::wstring _Title;
     std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _TitleAndPrefix;

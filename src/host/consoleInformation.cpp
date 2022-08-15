@@ -11,8 +11,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
 
-#include <til/ticket_lock.h>
-
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
@@ -47,50 +45,26 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
 }
 
-// Access to thread-local variables is thread-safe, because each thread
-// gets its own copy of this variable with a default value of 0.
-//
-// Whenever we want to acquire the lock we increment recursionCount and on
-// each release we decrement it again. We can then make the lock safe for
-// reentrancy by only acquiring/releasing the lock if the recursionCount is 0.
-// In a sense, recursionCount is counting the actual function
-// call recursion depth of the caller. This works as long as
-// the caller makes sure to properly call Unlock() once for each Lock().
-static thread_local ULONG recursionCount = 0;
-static til::ticket_lock lock;
-
-bool CONSOLE_INFORMATION::IsConsoleLocked()
+bool CONSOLE_INFORMATION::IsConsoleLocked() const noexcept
 {
-    return recursionCount != 0;
+    return _lock.is_locked();
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-void CONSOLE_INFORMATION::LockConsole()
+void CONSOLE_INFORMATION::LockConsole() noexcept
 {
-    // See description of recursionCount a few lines above.
-    const auto rc = ++recursionCount;
-    FAIL_FAST_IF(rc == 0);
-    if (rc == 1)
-    {
-        lock.lock();
-    }
+    _lock.lock();
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
-void CONSOLE_INFORMATION::UnlockConsole()
+void CONSOLE_INFORMATION::UnlockConsole() noexcept
 {
-    // See description of recursionCount a few lines above.
-    const auto rc = --recursionCount;
-    FAIL_FAST_IF(rc == ULONG_MAX);
-    if (rc == 0)
-    {
-        lock.unlock();
-    }
+    _lock.unlock();
 }
 
-ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
+ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 {
-    return recursionCount;
+    return _lock.recursion_depth();
 }
 
 // Routine Description:
