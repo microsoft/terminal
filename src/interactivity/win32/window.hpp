@@ -116,9 +116,7 @@ namespace Microsoft::Console::Interactivity::Win32
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
         Render::DxEngine* pDxEngine = nullptr;
 #endif
-#if TIL_FEATURE_ATLASENGINE_ENABLED
         Render::AtlasEngine* pAtlasEngine = nullptr;
-#endif
 
         [[nodiscard]] NTSTATUS _InternalSetWindowSize();
         void _UpdateWindowSize(const til::size sizeNew);

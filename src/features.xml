@@ -59,7 +59,7 @@
 
     <feature>
         <name>Feature_AtlasEngine</name>
-        <description>If enabled, AtlasEngine and the experimental.useAtlasEngine setting are compiled into the project</description>
+        <description>If enabled, AtlasEngine is used by default</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledBrandingTokens>
             <brandingToken>Release</brandingToken>
@@ -117,17 +117,6 @@
     <feature>
         <name>Feature_ScrollbarMarks</name>
         <description>Enables the experimental scrollbar marks feature.</description>
-        <stage>AlwaysDisabled</stage>
-        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
-        <alwaysEnabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-            <brandingToken>Preview</brandingToken>
-        </alwaysEnabledBrandingTokens>
-    </feature>
-
-    <feature>
-        <name>Feature_AtlasEngineByDefault</name>
-        <description>Enables the atlas rendering engine on profiles by default.</description>
         <stage>AlwaysDisabled</stage>
         <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
         <alwaysEnabledBrandingTokens>

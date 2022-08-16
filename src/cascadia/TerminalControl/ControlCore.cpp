@@ -256,7 +256,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            if (Feature_AtlasEngine::IsEnabled() && _settings->UseAtlasEngine())
+            if (_settings->UseAtlasEngine())
             {
                 _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             }

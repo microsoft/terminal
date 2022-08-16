@@ -25,10 +25,7 @@
 
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/gdi/gdirenderer.hpp"
-
-#if TIL_FEATURE_ATLASENGINE_ENABLED
 #include "../../renderer/atlas/AtlasEngine.h"
-#endif
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
 #endif
@@ -74,9 +71,7 @@ Window::~Window()
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     delete pDxEngine;
 #endif
-#if TIL_FEATURE_ATLASENGINE_ENABLED
     delete pAtlasEngine;
-#endif
 #endif
 }
 
@@ -231,12 +226,10 @@ void Window::_UpdateSystemMetrics() const
             g.pRender->AddRenderEngine(pDxEngine);
             break;
 #endif
-#if TIL_FEATURE_ATLASENGINE_ENABLED
         case UseDx::AtlasEngine:
             pAtlasEngine = new AtlasEngine();
             g.pRender->AddRenderEngine(pAtlasEngine);
             break;
-#endif
         default:
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
@@ -344,13 +337,11 @@ void Window::_UpdateSystemMetrics() const
             }
             else
 #endif
-#if TIL_FEATURE_ATLASENGINE_ENABLED
                 if (pAtlasEngine)
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pAtlasEngine->SetHwnd(hWnd))));
             }
             else
-#endif
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }
