@@ -58,18 +58,32 @@ namespace til
     {
         struct recursive_ticket_lock_suspension
         {
-            constexpr recursive_ticket_lock_suspension(recursive_ticket_lock& lock) noexcept :
-                _lock{ lock }
+            constexpr recursive_ticket_lock_suspension(recursive_ticket_lock& lock, uint32_t owner, uint32_t recursion) noexcept :
+                _lock{ lock },
+                _owner{ owner },
+                _recursion{ recursion }
             {
             }
+
+            // When this class is destroyed it restores the recursive_ticket_lock state.
+            // This of course only works if the lock wasn't moved to another thread or something.
+            recursive_ticket_lock_suspension(const recursive_ticket_lock_suspension&) = delete;
+            recursive_ticket_lock_suspension& operator=(const recursive_ticket_lock_suspension&) = delete;
+            recursive_ticket_lock_suspension(recursive_ticket_lock_suspension&&) = delete;
+            recursive_ticket_lock_suspension& operator=(recursive_ticket_lock_suspension&&) = delete;
 
             ~recursive_ticket_lock_suspension()
             {
                 if (_owner)
                 {
-                    _lock._lock.lock(); // lock-lock-lock lol
-                    _lock._owner.store(_owner, std::memory_order_relaxed);
-                    _lock._recursion = _recursion;
+                    // If someone reacquired the lock on the current thread, we shouldn't lock it again.
+                    if (_lock._owner.load(std::memory_order_relaxed) != _owner)
+                    {
+                        _lock._lock.lock(); // lock-lock-lock lol
+                        _lock._owner.store(_owner, std::memory_order_relaxed);
+                    }
+                    // ...but we should restore the original recursion count.
+                    _lock._recursion += _recursion;
                 }
             }
 
@@ -106,18 +120,19 @@ namespace til
         [[nodiscard]] recursive_ticket_lock_suspension suspend() noexcept
         {
             const auto id = GetCurrentThreadId();
-            recursive_ticket_lock_suspension guard{ *this };
+            uint32_t owner = 0;
+            uint32_t recursion = 0;
 
             if (_owner.load(std::memory_order_relaxed) == id)
             {
-                guard._owner = id;
-                guard._recursion = _recursion;
+                owner = id;
+                recursion = _recursion;
                 _owner.store(0, std::memory_order_relaxed);
                 _recursion = 0;
                 _lock.unlock();
             }
 
-            return guard;
+            return { *this, owner, recursion };
         }
 
         uint32_t is_locked() const noexcept
