@@ -1377,74 +1377,54 @@ try
 {
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
-    auto hr = S_OK;
+    _isPainting = false;
 
-    if (_haveDeviceResources)
+    if (_invalidScroll != til::point{ 0, 0 })
     {
-        _isPainting = false;
+        // Copy `til::rects` into RECT map.
+        _presentDirty.assign(_invalidMap.begin(), _invalidMap.end());
 
-        // If there's still a clip hanging around, remove it. We're all done.
-        LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+        // Scale all dirty rectangles into pixels
+        std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](const til::rect& rc) {
+            return rc.scale_up(_fontRenderData->GlyphCell());
+        });
 
-        hr = _d2dDeviceContext->EndDraw();
+        // Invalid scroll is in characters, convert it to pixels.
+        const auto scrollPixels = (_invalidScroll * _fontRenderData->GlyphCell());
 
-        if (SUCCEEDED(hr))
-        {
-            if (_invalidScroll != til::point{ 0, 0 })
-            {
-                // Copy `til::rects` into RECT map.
-                _presentDirty.assign(_invalidMap.begin(), _invalidMap.end());
+        // The scroll rect is the entire field of cells, but in pixels.
+        til::rect scrollArea{ _invalidMap.size() * _fontRenderData->GlyphCell() };
 
-                // Scale all dirty rectangles into pixels
-                std::transform(_presentDirty.begin(), _presentDirty.end(), _presentDirty.begin(), [&](const til::rect& rc) {
-                    return rc.scale_up(_fontRenderData->GlyphCell());
-                });
+        // Reduce the size of the rectangle by the scroll.
+        scrollArea.left = std::clamp(scrollArea.left + scrollPixels.x, scrollArea.left, scrollArea.right);
+        scrollArea.top = std::clamp(scrollArea.top + scrollPixels.y, scrollArea.top, scrollArea.bottom);
+        scrollArea.right = std::clamp(scrollArea.right + scrollPixels.x, scrollArea.left, scrollArea.right);
+        scrollArea.bottom = std::clamp(scrollArea.bottom + scrollPixels.y, scrollArea.top, scrollArea.bottom);
 
-                // Invalid scroll is in characters, convert it to pixels.
-                const auto scrollPixels = (_invalidScroll * _fontRenderData->GlyphCell());
+        // Assign the area to the present storage
+        _presentScroll = scrollArea.to_win32_rect();
 
-                // The scroll rect is the entire field of cells, but in pixels.
-                til::rect scrollArea{ _invalidMap.size() * _fontRenderData->GlyphCell() };
+        // Pass the offset.
+        _presentOffset = scrollPixels.to_win32_point();
 
-                // Reduce the size of the rectangle by the scroll.
-                scrollArea.left = std::clamp(scrollArea.left + scrollPixels.x, scrollArea.left, scrollArea.right);
-                scrollArea.top = std::clamp(scrollArea.top + scrollPixels.y, scrollArea.top, scrollArea.bottom);
-                scrollArea.right = std::clamp(scrollArea.right + scrollPixels.x, scrollArea.left, scrollArea.right);
-                scrollArea.bottom = std::clamp(scrollArea.bottom + scrollPixels.y, scrollArea.top, scrollArea.bottom);
+        // Now fill up the parameters structure from the member variables.
+        _presentParams.DirtyRectsCount = gsl::narrow<UINT>(_presentDirty.size());
 
-                // Assign the area to the present storage
-                _presentScroll = scrollArea.to_win32_rect();
-
-                // Pass the offset.
-                _presentOffset = scrollPixels.to_win32_point();
-
-                // Now fill up the parameters structure from the member variables.
-                _presentParams.DirtyRectsCount = gsl::narrow<UINT>(_presentDirty.size());
-
-                // It's not nice to use reinterpret_cast between til::rect and RECT,
-                // but to be honest... it does save a ton of type juggling.
-                static_assert(sizeof(decltype(_presentDirty)::value_type) == sizeof(RECT));
+        // It's not nice to use reinterpret_cast between til::rect and RECT,
+        // but to be honest... it does save a ton of type juggling.
+        static_assert(sizeof(decltype(_presentDirty)::value_type) == sizeof(RECT));
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                _presentParams.pDirtyRects = reinterpret_cast<RECT*>(_presentDirty.data());
+        _presentParams.pDirtyRects = reinterpret_cast<RECT*>(_presentDirty.data());
 
-                _presentParams.pScrollOffset = &_presentOffset;
-                _presentParams.pScrollRect = &_presentScroll;
+        _presentParams.pScrollOffset = &_presentOffset;
+        _presentParams.pScrollRect = &_presentScroll;
 
-                // The scroll rect will be empty if we scrolled >= 1 full screen size.
-                // Present1 doesn't like that. So clear it out. Everything will be dirty anyway.
-                if (IsRectEmpty(&_presentScroll))
-                {
-                    _presentParams.pScrollRect = nullptr;
-                    _presentParams.pScrollOffset = nullptr;
-                }
-            }
-
-            _presentReady = true;
-        }
-        else
+        // The scroll rect will be empty if we scrolled >= 1 full screen size.
+        // Present1 doesn't like that. So clear it out. Everything will be dirty anyway.
+        if (IsRectEmpty(&_presentScroll))
         {
-            _presentReady = false;
-            _ReleaseDeviceResources();
+            _presentParams.pScrollRect = nullptr;
+            _presentParams.pScrollOffset = nullptr;
         }
     }
 
@@ -1453,7 +1433,7 @@ try
 
     _invalidScroll = {};
 
-    return hr;
+    return S_OK;
 }
 CATCH_RETURN()
 
@@ -1528,6 +1508,21 @@ void DxEngine::WaitUntilCanRender() noexcept
 // - S_OK on success, E_PENDING to indicate a retry or a relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::Present() noexcept
 {
+    if (_haveDeviceResources)
+    {
+        // If there's still a clip hanging around, remove it. We're all done.
+        LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+        if (SUCCEEDED(_d2dDeviceContext->EndDraw()))
+        {
+            _presentReady = true;
+        }
+        else
+        {
+            _presentReady = false;
+            _ReleaseDeviceResources();
+        }
+    }
+
     if (_presentReady)
     {
         if (_HasTerminalEffects() && _pixelShaderLoaded)
