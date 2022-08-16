@@ -111,11 +111,27 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
     // If no item was selected when the context menu was opened and Explorer
     // is not at a valid path (e.g. This PC or Quick Access), we should hide
     // the verb from the context menu.
-    if (psiItemArray == nullptr)
+
+    const auto isEmpty = [psiItemArray]() { DWORD count = 0; LOG_IF_FAILED(psiItemArray->GetCount(&count)); return count == 0; };
+    // const bool useExplorerLookup = psiItemArray == nullptr ||
+    //                                isEmpty();
+
+    // Seemingly, desktop BG lands in psiItemArray == nullptr, as well as the
+    // "My PC" background case. So we'd need some other way to differentiate
+    // them.
+    if (psiItemArray == nullptr
+        /*|| isEmpty()*/
+    )
     {
-        const auto path = this->_GetPathFromExplorer();
-        *pCmdState = path.empty() ? ECS_HIDDEN : ECS_ENABLED;
+        // const auto path = this->_GetPathFromExplorer();
+        // *pCmdState = path.empty() ? ECS_HIDDEN : ECS_ENABLED;
+
+        *pCmdState = ECS_ENABLED;
     }
+    // else if (isEmpty())
+    // {
+    //     *pCmdState = ECS_ENABLED;
+    // }
     else
     {
         winrt::com_ptr<IShellItem> psi;
