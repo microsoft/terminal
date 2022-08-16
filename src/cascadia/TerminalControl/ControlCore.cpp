@@ -195,11 +195,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
-            _dispatcher,
+        // NOTE: Calling UpdatePatternLocations from a background
+        // thread is a workaround for us to hit GH#12607 less often.
+        _updatePatternLocations = std::make_unique<til::throttled_func_trailing<>>(
             UpdatePatternLocationsInterval,
             [weakThis = get_weak()]() {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                if (auto core{ weakThis.get() })
                 {
                     core->UpdatePatternLocations();
                 }
@@ -479,7 +480,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(viewTop);
 
-        _updatePatternLocations->Run();
+        (*_updatePatternLocations)();
     }
 
     void ControlCore::AdjustOpacity(const double adjustment)
@@ -1281,7 +1282,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Additionally, start the throttled update of where our links are.
-        _updatePatternLocations->Run();
+        (*_updatePatternLocations)();
     }
 
     void ControlCore::_terminalCursorPositionChanged()
@@ -1675,7 +1676,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Write(hstr);
 
             // Start the throttled update of where our hyperlinks are.
-            _updatePatternLocations->Run();
+            (*_updatePatternLocations)();
         }
         catch (...)
         {
