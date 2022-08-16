@@ -116,7 +116,6 @@
     <Midl Include="ApplicationState.idl" />
   </ItemGroup>
     <Midl Include="NewTabMenuEntry.idl" />
-    <Midl Include="SeparatorEntry.idl" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="profileGeneration">

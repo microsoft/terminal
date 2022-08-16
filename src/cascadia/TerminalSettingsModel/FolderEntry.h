@@ -3,10 +3,10 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- SeparatorEntry.h
+- FolderEntry.h
 
 Abstract:
-- A separator entry in the "new tab" dropdown menu
+- A folder entry in the "new tab" dropdown menu, 
 
 Author(s):
 - Floris Westerman - August 2022
@@ -16,22 +16,26 @@ Author(s):
 
 #include "pch.h"
 #include "NewTabMenuEntry.h"
-#include "SeparatorEntry.g.h"
-#include "JsonUtils.h"
+#include "FolderEntry.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct SeparatorEntry : SeparatorEntryT<SeparatorEntry, NewTabMenuEntry>
+    struct FolderEntry : FolderEntryT<FolderEntry, NewTabMenuEntry>
     {
     public:
-        SeparatorEntry() noexcept;
+        FolderEntry() noexcept;
+        explicit FolderEntry(const winrt::hstring& name) noexcept;
 
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
+
+        WINRT_PROPERTY(winrt::hstring, Name);
+        WINRT_PROPERTY(winrt::hstring, Icon);
+        WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::NewTabMenuEntry>, Entries);
     };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
-    BASIC_FACTORY(SeparatorEntry);
+    BASIC_FACTORY(FolderEntry);
 }

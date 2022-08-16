@@ -39,6 +39,7 @@
     <ClInclude Include="../IconPathConverter.h" />
     <ClInclude Include="../NewTabMenuEntry.h" />
     <ClInclude Include="../SeparatorEntry.h" />
+    <ClInclude Include="../FolderEntry.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->

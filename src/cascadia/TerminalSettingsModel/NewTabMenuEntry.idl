@@ -17,6 +17,11 @@ namespace Microsoft.Terminal.Settings.Model
         NewTabMenuEntryType Type;
     }
 
+    [default_interface] runtimeclass SeparatorEntry : NewTabMenuEntry
+    {
+        SeparatorEntry();
+    }
+
     //[default_interface] runtimeclass ProfileEntry : NewTabMenuEntry
     //{
         //ProfileEntry();
@@ -25,13 +30,13 @@ namespace Microsoft.Terminal.Settings.Model
         //String Profile;
     //}
 
-    //[default_interface] runtimeclass FolderEntry : NewTabMenuEntry 
-    //{
-        //FolderEntry();
-        //FolderEntry(String name);
+    [default_interface] runtimeclass FolderEntry : NewTabMenuEntry 
+    {
+        FolderEntry();
+        FolderEntry(String name);
 
-        //String Name;
-        //String Icon;
-        //IVector<NewTabMenuEntry> Entries;
-    //}
+        String Name;
+        String Icon;
+        IVector<NewTabMenuEntry> Entries;
+    }
 }

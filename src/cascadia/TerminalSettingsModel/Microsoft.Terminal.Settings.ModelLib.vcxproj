@@ -24,7 +24,10 @@
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SeparatorEntry.h">
-      <DependentUpon>SeparatorEntry.idl</DependentUpon>
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FolderEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="VisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
@@ -166,12 +169,15 @@
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
-    <ClInclude Include="NewTabMenuEntry.cpp">
+    <ClCompile Include="NewTabMenuEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="SeparatorEntry.cpp">
-      <DependentUpon>SeparatorEntry.idl</DependentUpon>
-    </ClInclude>
+    </ClCompile>
+    <ClCompile Include="SeparatorEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FolderEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="VsDevCmdGenerator.cpp" />
     <ClCompile Include="VsDevShellGenerator.cpp" />
     <ClCompile Include="VsSetupConfiguration.cpp" />
@@ -191,7 +197,6 @@
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="NewTabMenuEntry.idl" />
-    <Midl Include="SeparatorEntry.idl" />
     <Midl Include="Theme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="DefaultTerminal.idl" />

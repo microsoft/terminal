@@ -908,17 +908,10 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(subFlyoutItem);
 
         auto entries = _settings.GlobalSettings().NewTabMenu();
-        if (entries != nullptr && entries.Size() > 0)
+        auto items = _CreateNewTabFlyoutItems(entries);
+        for (const auto& item : items)
         {
-            const auto entryCount = gsl::narrow_cast<int>(entries.Size());
-            for (auto entryIndex = 0; entryIndex < entryCount; entryIndex++)
-            {
-                const auto entry = entries.GetAt(entryIndex);
-                
-            }
-
-            auto secondSeparatorItem = WUX::Controls::MenuFlyoutSeparator{};
-            newTabFlyout.Items().Append(secondSeparatorItem);
+            newTabFlyout.Items().Append(item);
         }
 
         // add menu separator
@@ -999,6 +992,66 @@ namespace winrt::TerminalApp::implementation
             _FocusCurrentTab(true);
         });
         _newTabButton.Flyout(newTabFlyout);
+    }
+
+    std::vector<WUX::Controls::MenuFlyoutItemBase> TerminalPage::_CreateNewTabFlyoutItems(IVector<NewTabMenuEntry> entries)
+    {
+        std::vector<WUX::Controls::MenuFlyoutItemBase> items;
+
+        if (entries == nullptr || entries.Size() == 0)
+            return items;
+
+        //const auto entryCount = gsl::narrow_cast<int>(entries.Size());
+        for (const auto& entry : entries)
+        {
+            //const auto entry = entries.GetAt(entryIndex);
+            if (entry == nullptr)
+                continue;
+
+            switch (entry.Type())
+            {
+                case NewTabMenuEntryType::Separator:
+                {
+                    items.push_back(WUX::Controls::MenuFlyoutSeparator{});
+                    break;
+                }
+                case NewTabMenuEntryType::Folder:
+                {
+                    const auto folderEntry = entry.as<FolderEntry>();
+
+                    auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
+                    folderItem.Text(folderEntry.Name());
+
+                    auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
+                    folderItem.Icon(icon);
+
+                    auto folderEntries = _CreateNewTabFlyoutItems(folderEntry.Entries());
+                    for (auto const &folderEntry : folderEntries)
+                    {
+                        folderItem.Items().Append(folderEntry);
+                    }
+
+                    items.push_back(folderItem);
+                    break;
+                }
+            }
+        }
+
+        return items;
+    }
+
+    IconElement TerminalPage::_CreateNewTabFlyoutIcon(const winrt::hstring& icon)
+    {
+        if (icon.empty())
+            return nullptr;
+
+        const auto iconSource{ IconPathConverter().IconSourceWUX(icon) };
+
+        WUX::Controls::IconSourceElement iconElement;
+        iconElement.IconSource(iconSource);
+        Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+
+        return iconElement;
     }
 
     // Function Description:
