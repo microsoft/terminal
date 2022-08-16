@@ -152,6 +152,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
+        void _resolveNewTabMenuProfiles() const;
+        void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries, winrt::Windows::Foundation::Collections::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
 
         void _validateSettings();
         void _validateAllSchemesExist();

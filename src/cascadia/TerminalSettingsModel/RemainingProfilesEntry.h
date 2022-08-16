@@ -19,6 +19,7 @@ Author(s):
 #include "NewTabMenuEntry.h"
 #include "RemainingProfilesEntry.g.h"
 #include "JsonUtils.h"
+#include "Profile.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -29,6 +30,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
+
+        #define COMMA ,
+        WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IMap<int COMMA Model::Profile>, Profiles);
+        #undef COMMA
     };
 }
 

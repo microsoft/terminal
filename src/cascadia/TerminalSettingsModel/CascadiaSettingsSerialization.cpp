@@ -27,6 +27,8 @@
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
 
+#include "ProfileEntry.h"
+
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -988,6 +990,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _warnings = winrt::single_threaded_vector(std::move(warnings));
 
     _resolveDefaultProfile();
+    _resolveNewTabMenuProfiles();
     _validateSettings();
 }
 
@@ -1152,4 +1155,88 @@ void CascadiaSettings::_resolveDefaultProfile() const
 
     // Use the first profile as the new default.
     GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
+}
+
+// Method Description:
+// - Iterates through the "newTabMenu" entries and resolves the "profile" fields,
+//   which can be a profile name, to a GUID and stores it back.
+// - It also finds any "remainingProfiles" entries and stores which profiles they
+//   represent. It adds a warning when multiple of these entries are found.
+void CascadiaSettings::_resolveNewTabMenuProfiles() const
+{
+    Model::RemainingProfilesEntry remainingProfilesEntry = nullptr;
+
+    // Transform the IVector into IMap
+    auto remainingProfilesMap = std::map<int, Model::Profile>{};
+    auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+    for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
+    {
+        remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+    }
+
+    auto remainingProfiles = single_threaded_map(std::move(remainingProfilesMap));
+
+    auto entries = _globals->NewTabMenu();
+    _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
+
+    if (remainingProfilesEntry != nullptr)
+    {
+        remainingProfilesEntry.Profiles(remainingProfiles);
+    }
+
+    if (!_globals->HasNewTabMenu())
+    {
+        _globals->NewTabMenu(entries);
+    }
+}
+
+void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const
+{
+    if (entries == nullptr || entries.Size() == 0)
+        return;
+
+    for (const auto& entry : entries)
+    {
+        if (entry == nullptr)
+            continue;
+
+        switch (entry.Type())
+        {
+            case NewTabMenuEntryType::Profile:
+            {
+                const auto profileEntry{ winrt::get_self<implementation::ProfileEntry>(entry.as<Model::ProfileEntry>()) };
+                const auto profile = GetProfileByName(profileEntry->ProfileName());
+
+                uint32_t profileIndex;
+                _activeProfiles.IndexOf(profile, profileIndex);
+
+                profileEntry->Profile(profile);
+                profileEntry->ProfileIndex(profileIndex);
+
+                // Remove from IVector
+                remainingProfiles.TryRemove(profileIndex);
+
+                break;
+            }
+            case NewTabMenuEntryType::RemainingProfiles:
+            {
+                if (remainingProfilesEntry != nullptr)
+                {
+                    _warnings.Append(SettingsLoadWarnings::DuplicateRemainingProfilesEntry);
+                }
+                else
+                {
+                    remainingProfilesEntry = entry.as<Model::RemainingProfilesEntry>();
+                }
+                break;
+            }
+            case NewTabMenuEntryType::Folder:
+            {
+                const auto folderEntry = entry.as<Model::FolderEntry>();
+                auto folderEntries = folderEntry.Entries();
+                _resolveNewTabMenuProfilesSet(folderEntries, remainingProfiles, remainingProfilesEntry);
+                break;
+            }
+        }
+    }
 }

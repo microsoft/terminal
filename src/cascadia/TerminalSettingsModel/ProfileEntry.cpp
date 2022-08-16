@@ -16,7 +16,7 @@ implementation::ProfileEntry::ProfileEntry() noexcept :
 
 implementation::ProfileEntry::ProfileEntry(const winrt::hstring& profile) noexcept :
     ProfileEntryT<implementation::ProfileEntry, implementation::NewTabMenuEntry>(NewTabMenuEntryType::Profile),
-    _Profile{ profile }
+    _ProfileName { profile }
 {
 }
 
@@ -24,7 +24,7 @@ Json::Value implementation::ProfileEntry::ToJson() const
 {
     auto json = implementation::NewTabMenuEntry::ToJson();
 
-    JsonUtils::SetValueForKey(json, ProfileKey, _Profile);
+    JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
 
     return json;
 }
@@ -33,7 +33,7 @@ winrt::com_ptr<implementation::NewTabMenuEntry> implementation::ProfileEntry::Fr
 {
     auto entry = winrt::make_self<implementation::ProfileEntry>();
 
-    JsonUtils::GetValueForKey(json, ProfileKey, entry->_Profile);
+    JsonUtils::GetValueForKey(json, ProfileKey, entry->_ProfileName);
 
     return entry;
 }

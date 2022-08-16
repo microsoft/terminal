@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Profile.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     enum NewTabMenuEntryType
@@ -27,12 +29,15 @@ namespace Microsoft.Terminal.Settings.Model
         ProfileEntry();
         ProfileEntry(String profile);
 
-        String Profile;
+        Profile Profile;
+        Int32 ProfileIndex;
     }
 
     [default_interface] runtimeclass RemainingProfilesEntry : NewTabMenuEntry
     {
         RemainingProfilesEntry();
+
+        IMap<Int32, Profile> Profiles;
     }
 
     [default_interface] runtimeclass FolderEntry : NewTabMenuEntry 

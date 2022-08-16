@@ -819,94 +819,6 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
         newTabFlyout.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
 
-        auto actionMap = _settings.ActionMap();
-        const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
-        // the number of profiles should not change in the loop for this to work
-        const auto profileCount = gsl::narrow_cast<int>(_settings.ActiveProfiles().Size());
-        for (auto profileIndex = 0; profileIndex < profileCount; profileIndex++)
-        {
-            const auto profile = _settings.ActiveProfiles().GetAt(profileIndex);
-            auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
-
-            // Add the keyboard shortcuts based on the number of profiles defined
-            // Look for a keychord that is bound to the equivalent
-            // NewTab(ProfileIndex=N) action
-            NewTerminalArgs newTerminalArgs{ profileIndex };
-            NewTabArgs newTabArgs{ newTerminalArgs };
-            auto profileKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
-
-            // make sure we find one to display
-            if (profileKeyChord)
-            {
-                _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
-            }
-
-            auto profileName = profile.Name();
-            profileMenuItem.Text(profileName);
-
-            // If there's an icon set for this profile, set it as the icon for
-            // this flyout item.
-            if (!profile.Icon().empty())
-            {
-                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.Icon()) };
-
-                WUX::Controls::IconSourceElement iconElement;
-                iconElement.IconSource(iconSource);
-                profileMenuItem.Icon(iconElement);
-                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
-            }
-
-            if (profile.Guid() == defaultProfileGuid)
-            {
-                // Contrast the default profile with others in font weight.
-                profileMenuItem.FontWeight(FontWeights::Bold());
-            }
-
-            auto newTabRun = WUX::Documents::Run();
-            newTabRun.Text(RS_(L"NewTabRun/Text"));
-            auto newPaneRun = WUX::Documents::Run();
-            newPaneRun.Text(RS_(L"NewPaneRun/Text"));
-            newPaneRun.FontStyle(FontStyle::Italic);
-            auto newWindowRun = WUX::Documents::Run();
-            newWindowRun.Text(RS_(L"NewWindowRun/Text"));
-            newWindowRun.FontStyle(FontStyle::Italic);
-            auto elevatedRun = WUX::Documents::Run();
-            elevatedRun.Text(RS_(L"ElevatedRun/Text"));
-            elevatedRun.FontStyle(FontStyle::Italic);
-
-            auto textBlock = WUX::Controls::TextBlock{};
-            textBlock.Inlines().Append(newTabRun);
-            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
-            textBlock.Inlines().Append(newPaneRun);
-            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
-            textBlock.Inlines().Append(newWindowRun);
-            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
-            textBlock.Inlines().Append(elevatedRun);
-
-            auto toolTip = WUX::Controls::ToolTip{};
-            toolTip.Content(textBlock);
-            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
-
-            profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
-                if (auto page{ weakThis.get() })
-                {
-                    NewTerminalArgs newTerminalArgs{ profileIndex };
-                    page->_OpenNewTerminalViaDropdown(newTerminalArgs);
-                }
-            });
-            newTabFlyout.Items().Append(profileMenuItem);
-        }
-
-        // try to add a flyout
-        auto subFlyoutItem = WUX::Controls::MenuFlyoutSubItem{};
-        subFlyoutItem.Text(L"Test nested");
-
-        auto subsubitem = WUX::Controls::MenuFlyoutItem{};
-        subsubitem.Text(L"This is nested");
-        subFlyoutItem.Items().Append(subsubitem);
-
-        newTabFlyout.Items().Append(subFlyoutItem);
-
         auto entries = _settings.GlobalSettings().NewTabMenu();
         auto items = _CreateNewTabFlyoutItems(entries);
         for (const auto& item : items)
@@ -943,6 +855,7 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
+                auto actionMap = _settings.ActionMap();
                 const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
                 if (settingsKeyChord)
                 {
@@ -1034,16 +947,99 @@ namespace winrt::TerminalApp::implementation
                 }
                 case NewTabMenuEntryType::RemainingProfiles:
                 {
-                    auto tempItem = WUX::Controls::MenuFlyoutItem{};
-                    tempItem.Text(L"Remaining profiles");
+                    const auto remainingProfilesEntry = entry.as<RemainingProfilesEntry>();
+                    if (remainingProfilesEntry.Profiles() == nullptr)
+                        break;
 
-                    items.push_back(tempItem);
+                    for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
+                    {
+                        items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex));
+                    }
+
+                    break;
+                }
+                case NewTabMenuEntryType::Profile:
+                {
+                    const auto profileEntry = entry.as<ProfileEntry>();
+
+                    auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex());
+                    items.push_back(profileItem);
                     break;
                 }
             }
         }
 
         return items;
+    }
+
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex)
+    {
+        auto profileMenuItem = WUX::Controls::MenuFlyoutItem {};
+
+        // Add the keyboard shortcuts based on the number of profiles defined
+        // Look for a keychord that is bound to the equivalent
+        // NewTab(ProfileIndex=N) action
+        NewTerminalArgs newTerminalArgs{ profileIndex };
+        NewTabArgs newTabArgs{ newTerminalArgs };
+        auto profileKeyChord{ _settings.ActionMap().GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+
+        // make sure we find one to display
+        if (profileKeyChord)
+        {
+            _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
+        }
+
+        auto profileName = profile.Name();
+        profileMenuItem.Text(profileName);
+
+        // If there's an icon set for this profile, set it as the icon for
+        // this flyout item
+        if (!profile.Icon().empty())
+        {
+            const auto icon = _CreateNewTabFlyoutIcon(profile.Icon());
+            profileMenuItem.Icon(icon);
+        }
+
+        if (profile.Guid() == _settings.GlobalSettings().DefaultProfile())
+        {
+            // Contrast the default profile with others in font weight.
+            profileMenuItem.FontWeight(FontWeights::Bold());
+        }
+
+        auto newTabRun = WUX::Documents::Run();
+        newTabRun.Text(RS_(L"NewTabRun/Text"));
+        auto newPaneRun = WUX::Documents::Run();
+        newPaneRun.Text(RS_(L"NewPaneRun/Text"));
+        newPaneRun.FontStyle(FontStyle::Italic);
+        auto newWindowRun = WUX::Documents::Run();
+        newWindowRun.Text(RS_(L"NewWindowRun/Text"));
+        newWindowRun.FontStyle(FontStyle::Italic);
+        auto elevatedRun = WUX::Documents::Run();
+        elevatedRun.Text(RS_(L"ElevatedRun/Text"));
+        elevatedRun.FontStyle(FontStyle::Italic);
+
+        auto textBlock = WUX::Controls::TextBlock{};
+        textBlock.Inlines().Append(newTabRun);
+        textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+        textBlock.Inlines().Append(newPaneRun);
+        textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+        textBlock.Inlines().Append(newWindowRun);
+        textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+        textBlock.Inlines().Append(elevatedRun);
+
+        auto toolTip = WUX::Controls::ToolTip{};
+        toolTip.Content(textBlock);
+        WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
+
+        profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() }) 
+            {
+                NewTerminalArgs newTerminalArgs{ profileIndex };
+                page->_OpenNewTerminalViaDropdown(newTerminalArgs);
+            }
+        });
+
+        return profileMenuItem;
     }
 
     IconElement TerminalPage::_CreateNewTabFlyoutIcon(const winrt::hstring& icon)

@@ -18,6 +18,8 @@ Author(s):
 #include "NewTabMenuEntry.h"
 #include "ProfileEntry.g.h"
 
+#include "Profile.h"
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ProfileEntry : ProfileEntryT<ProfileEntry, NewTabMenuEntry>
@@ -29,7 +31,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 
-        WINRT_PROPERTY(winrt::hstring, Profile);
+        winrt::hstring ProfileName() const noexcept { return _ProfileName; };
+
+        WINRT_PROPERTY(Model::Profile, Profile);
+        WINRT_PROPERTY(int, ProfileIndex);
+
+    private:
+        winrt::hstring _ProfileName;
     };
 }
 
