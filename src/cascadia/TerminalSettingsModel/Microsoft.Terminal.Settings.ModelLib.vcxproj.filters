@@ -116,7 +116,7 @@
     <Midl Include="ApplicationState.idl" />
   </ItemGroup>
     <Midl Include="NewTabMenuEntry.idl" />
-    <None Include="packages.config" />
+    <Midl Include="SeparatorEntry.idl" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="profileGeneration">

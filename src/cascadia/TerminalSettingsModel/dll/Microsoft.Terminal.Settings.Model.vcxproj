@@ -37,6 +37,8 @@
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="../IconPathConverter.h" />
+    <ClInclude Include="../NewTabMenuEntry.h" />
+    <ClInclude Include="../SeparatorEntry.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->

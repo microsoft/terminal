@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "NewTabMenuEntry.h"
-//#include "SeparatorEntry.h"
 
 #include "NewTabMenuEntry.g.cpp"
 

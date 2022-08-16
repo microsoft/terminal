@@ -25,11 +25,6 @@ namespace Microsoft.Terminal.Settings.Model
         //String Profile;
     //}
 
-    //[default_interface] runtimeclass SeparatorEntry : NewTabMenuEntry 
-    //{
-        //SeparatorEntry();
-    //}
-
     //[default_interface] runtimeclass FolderEntry : NewTabMenuEntry 
     //{
         //FolderEntry();

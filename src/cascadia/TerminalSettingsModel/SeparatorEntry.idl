@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+//import "NewTabMenuEntry.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass SeparatorEntry
+    {
+        SeparatorEntry();
+    }
+}
