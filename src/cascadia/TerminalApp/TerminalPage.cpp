@@ -897,6 +897,30 @@ namespace winrt::TerminalApp::implementation
             newTabFlyout.Items().Append(profileMenuItem);
         }
 
+        // try to add a flyout
+        auto subFlyoutItem = WUX::Controls::MenuFlyoutSubItem{};
+        subFlyoutItem.Text(L"Test nested");
+
+        auto subsubitem = WUX::Controls::MenuFlyoutItem{};
+        subsubitem.Text(L"This is nested");
+        subFlyoutItem.Items().Append(subsubitem);
+
+        newTabFlyout.Items().Append(subFlyoutItem);
+
+        auto entries = _settings.GlobalSettings().NewTabMenu();
+        if (entries != nullptr && entries.Size() > 0)
+        {
+            const auto entryCount = gsl::narrow_cast<int>(entries.Size());
+            for (auto entryIndex = 0; entryIndex < entryCount; entryIndex++)
+            {
+                const auto entry = entries.GetAt(entryIndex);
+                
+            }
+
+            auto secondSeparatorItem = WUX::Controls::MenuFlyoutSeparator{};
+            newTabFlyout.Items().Append(secondSeparatorItem);
+        }
+
         // add menu separator
         auto separatorItem = WUX::Controls::MenuFlyoutSeparator{};
         newTabFlyout.Items().Append(separatorItem);

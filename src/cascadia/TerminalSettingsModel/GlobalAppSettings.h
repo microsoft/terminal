@@ -23,6 +23,7 @@ Author(s):
 #include "Command.h"
 #include "ColorScheme.h"
 #include "Theme.h"
+#include "NewTabMenuEntry.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests

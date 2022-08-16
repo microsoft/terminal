@@ -1,0 +1,42 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum NewTabMenuEntryType
+    {
+        Invalid = 0,
+        Profile,
+        Separator,
+        Folder,
+        RemainingProfiles
+    };
+
+    [default_interface] unsealed runtimeclass NewTabMenuEntry
+    {
+        NewTabMenuEntryType Type;
+    }
+
+    //[default_interface] runtimeclass ProfileEntry : NewTabMenuEntry
+    //{
+        //ProfileEntry();
+        //ProfileEntry(String profile);
+
+        //String Profile;
+    //}
+
+    //[default_interface] runtimeclass SeparatorEntry : NewTabMenuEntry 
+    //{
+        //SeparatorEntry();
+    //}
+
+    //[default_interface] runtimeclass FolderEntry : NewTabMenuEntry 
+    //{
+        //FolderEntry();
+        //FolderEntry(String name);
+
+        //String Name;
+        //String Icon;
+        //IVector<NewTabMenuEntry> Entries;
+    //}
+}

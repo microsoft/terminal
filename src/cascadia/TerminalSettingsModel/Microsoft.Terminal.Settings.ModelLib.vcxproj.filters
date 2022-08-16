@@ -94,6 +94,7 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="ActionArgsMagic.h" />
+    <ClInclude Include="NewTabMenuEntry.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
@@ -114,7 +115,7 @@
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="ApplicationState.idl" />
   </ItemGroup>
-  <ItemGroup>
+    <Midl Include="NewTabMenuEntry.idl" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
