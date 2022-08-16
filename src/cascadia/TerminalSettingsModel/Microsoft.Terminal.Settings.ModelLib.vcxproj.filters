@@ -114,7 +114,6 @@
     <Midl Include="FontConfig.idl" />
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="ApplicationState.idl" />
-  </ItemGroup>
     <Midl Include="NewTabMenuEntry.idl" />
   </ItemGroup>
   <ItemGroup>

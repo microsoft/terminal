@@ -24,6 +24,7 @@ Author(s):
 #include "ColorScheme.h"
 #include "Theme.h"
 #include "NewTabMenuEntry.h"
+#include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests

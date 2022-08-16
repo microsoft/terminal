@@ -4,6 +4,8 @@
 #include "TerminalSettingsSerializationHelpers.h"
 #include "SeparatorEntry.h"
 #include "FolderEntry.h"
+#include "ProfileEntry.h"
+#include "RemainingProfilesEntry.h"
 
 #include "NewTabMenuEntry.g.cpp"
 
@@ -15,7 +17,9 @@ static constexpr std::string_view TypeKey{ "type" };
 // This is a map of NewTabMenuEntryType->function<Json::Value, NewTabMenuEntry>
 static const std::unordered_map<NewTabMenuEntryType, std::function<winrt::com_ptr<implementation::NewTabMenuEntry>(const Json::Value&)>> typeDeserializerMap{
     { NewTabMenuEntryType::Separator, implementation::SeparatorEntry::FromJson },
-    { NewTabMenuEntryType::Folder, implementation::FolderEntry::FromJson }
+    { NewTabMenuEntryType::Folder, implementation::FolderEntry::FromJson },
+    { NewTabMenuEntryType::Profile, implementation::ProfileEntry::FromJson },
+    { NewTabMenuEntryType::RemainingProfiles, implementation::RemainingProfilesEntry::FromJson }
 };
 
 implementation::NewTabMenuEntry::NewTabMenuEntry(const NewTabMenuEntryType type) noexcept :

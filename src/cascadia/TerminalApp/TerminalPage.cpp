@@ -1001,10 +1001,8 @@ namespace winrt::TerminalApp::implementation
         if (entries == nullptr || entries.Size() == 0)
             return items;
 
-        //const auto entryCount = gsl::narrow_cast<int>(entries.Size());
         for (const auto& entry : entries)
         {
-            //const auto entry = entries.GetAt(entryIndex);
             if (entry == nullptr)
                 continue;
 
@@ -1032,6 +1030,14 @@ namespace winrt::TerminalApp::implementation
                     }
 
                     items.push_back(folderItem);
+                    break;
+                }
+                case NewTabMenuEntryType::RemainingProfiles:
+                {
+                    auto tempItem = WUX::Controls::MenuFlyoutItem{};
+                    tempItem.Text(L"Remaining profiles");
+
+                    items.push_back(tempItem);
                     break;
                 }
             }

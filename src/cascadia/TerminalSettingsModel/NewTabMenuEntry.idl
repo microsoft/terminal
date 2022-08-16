@@ -22,13 +22,18 @@ namespace Microsoft.Terminal.Settings.Model
         SeparatorEntry();
     }
 
-    //[default_interface] runtimeclass ProfileEntry : NewTabMenuEntry
-    //{
-        //ProfileEntry();
-        //ProfileEntry(String profile);
+    [default_interface] runtimeclass ProfileEntry : NewTabMenuEntry
+    {
+        ProfileEntry();
+        ProfileEntry(String profile);
 
-        //String Profile;
-    //}
+        String Profile;
+    }
+
+    [default_interface] runtimeclass RemainingProfilesEntry : NewTabMenuEntry
+    {
+        RemainingProfilesEntry();
+    }
 
     [default_interface] runtimeclass FolderEntry : NewTabMenuEntry 
     {
