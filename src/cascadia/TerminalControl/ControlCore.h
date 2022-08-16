@@ -251,7 +251,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
         winrt::fire_and_forget _asyncCloseConnection();
