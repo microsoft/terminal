@@ -1385,7 +1385,7 @@ void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, 
     _pfnPlayMidiNote.swap(pfn);
 }
 
-void Terminal::SetTriggerCallback(std::function<void(const size_t, std::wstring_view)> pfn) noexcept
+void Terminal::SetTriggerCallback(std::function<void(const size_t, const std::wsmatch&)> pfn) noexcept
 {
     _pfnTriggerCallback.swap(pfn);
 }
@@ -1667,10 +1667,13 @@ void Terminal::_runTriggers()
     for (auto i = 0u; i < _triggers.size(); i++)
     {
         const std::wregex& trigger = _triggers[i];
-        if (std::regex_search(text, trigger))
+
+        std::wsmatch matches;
+
+        if (std::regex_search(text, matches, trigger))
         {
             // That regex matched. Bubble it up to the handler.
-            _pfnTriggerCallback(i, text);
+            _pfnTriggerCallback(i, matches);
         }
     }
 }

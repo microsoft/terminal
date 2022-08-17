@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
 
-        void _terminalTrigger(size_t index, std::wstring_view line);
+        void _terminalTrigger(size_t index, const std::wsmatch& matches);
 #pragma endregion
 
         std::unique_ptr<MidiAudio> _midiAudio;

@@ -175,11 +175,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     public:
         TriggerHitArgs() = default;
-        TriggerHitArgs(size_t index, std::wstring_view line)
+        TriggerHitArgs(size_t index, const std::wsmatch& matches)
         {
             _Index = ::base::saturated_cast<uint32_t>(index);
             _Matches = winrt::single_threaded_vector<winrt::hstring>();
-            _Matches.Append(winrt::hstring{ line });
+            for (const auto& match : matches) 
+                _Matches.Append(winrt::hstring{ match.str() });
         };
 
         WINRT_PROPERTY(uint32_t, Index);

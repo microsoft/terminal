@@ -217,7 +217,7 @@ public:
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
-    void SetTriggerCallback(std::function<void(const size_t, std::wstring_view)> pfn) noexcept;
+    void SetTriggerCallback(std::function<void(const size_t, const std::wsmatch&)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -315,7 +315,7 @@ private:
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
-    std::function<void(const size_t, std::wstring_view)> _pfnTriggerCallback;
+    std::function<void(const size_t, const std::wsmatch&)> _pfnTriggerCallback;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

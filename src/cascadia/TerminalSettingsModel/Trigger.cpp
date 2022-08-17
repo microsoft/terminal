@@ -248,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto newNeedle = fmt::format(MatchToken, i);
             auto escapedMatch = _escapeForJson(til::u16u8(matches.GetAt(i)));
 
-            til::replace_needle_in_haystack(newJsonString,
+            newJsonString = til::replace_needle_in_haystack(newJsonString,
                                             newNeedle,
                                             escapedMatch);
         }

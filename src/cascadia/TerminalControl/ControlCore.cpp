@@ -2141,13 +2141,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_terminalTrigger(size_t index, std::wstring_view line)
+    void ControlCore::_terminalTrigger(size_t index, const std::wsmatch& matches)
     {
         if (index > _settings->Triggers().Size())
             return;
 
         auto pattern = _settings->Triggers().GetAt(base::saturated_cast<uint32_t>(index));
 
-        _TriggerHitHandlers(*this, *winrt::make_self<implementation::TriggerHitArgs>(index, line));
+        _TriggerHitHandlers(*this, *winrt::make_self<implementation::TriggerHitArgs>(index, matches));
     }
 }
