@@ -29,6 +29,18 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    TermControl TerminalPage::_senderOrActiveControl(const IInspectable& sender)
+    {
+        if (auto arg{ sender.try_as<TermControl>() })
+        {
+            return arg;
+        }
+        else
+        {
+            return _GetActiveControl();
+        }
+    }
+
     void TerminalPage::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
                                                  const ActionEventArgs& args)
     {
@@ -149,7 +161,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSendInput(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
         if (args == nullptr)
@@ -158,7 +170,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SendInputArgs>())
         {
-            if (const auto termControl{ _GetActiveControl() })
+            if (const auto termControl{ _senderOrActiveControl(sender) })
             {
                 termControl.SendInput(realArgs.Input());
                 args.Handled(true);
@@ -1083,40 +1095,40 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleSelectAll(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSelectAll(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& control{ _senderOrActiveControl(sender) })
         {
             control.SelectAll();
             args.Handled(true);
         }
     }
 
-    void TerminalPage::_HandleMarkMode(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleMarkMode(const IInspectable& sender,
                                        const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& control{ _senderOrActiveControl(sender) })
         {
             control.ToggleMarkMode();
             args.Handled(true);
         }
     }
 
-    void TerminalPage::_HandleToggleBlockSelection(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleToggleBlockSelection(const IInspectable& sender,
                                                    const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& control{ _senderOrActiveControl(sender) })
         {
             const auto handled = control.ToggleBlockSelection();
             args.Handled(handled);
         }
     }
 
-    void TerminalPage::_HandleSwitchSelectionEndpoint(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSwitchSelectionEndpoint(const IInspectable& sender,
                                                       const ActionEventArgs& args)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& control{ _senderOrActiveControl(sender) })
         {
             const auto handled = control.SwitchSelectionEndpoint();
             args.Handled(handled);

@@ -1150,7 +1150,7 @@ void Pane::_ControlTriggerHitHandler(const winrt::Windows::Foundation::IInspecta
     {
         auto triggers = _profile.Triggers();
         auto trigger = triggers.GetAt(eventArgs.Index());
-        auto action = trigger.EvaluateMatch(eventArgs.Matches(), nullptr);
+        // auto action = trigger.EvaluateMatch(eventArgs.Matches(), nullptr);
     }
 }
 
