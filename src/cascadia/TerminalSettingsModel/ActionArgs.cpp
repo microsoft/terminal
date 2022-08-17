@@ -955,7 +955,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto matchMode = this->MatchMode();
 
         auto matchModeStr = winrt::hstring{};
-        if (matchMode == MatchMode::All)
+        if (matchMode == Core::MatchMode::All)
         {
             matchModeStr = RS_(L"ColorSelection_allMatches"); // ", all matches"
         }

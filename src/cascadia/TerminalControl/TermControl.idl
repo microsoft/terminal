@@ -93,6 +93,6 @@ namespace Microsoft.Terminal.Control
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
-        void ColorSelection(SelectionColor fg, SelectionColor bg, MatchMode matchMode);
+        void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
     }
 }

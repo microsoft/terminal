@@ -382,6 +382,6 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Microsoft.Terminal.Control.SelectionColor Foreground;
         Microsoft.Terminal.Control.SelectionColor Background;
-        Microsoft.Terminal.Control.MatchMode MatchMode { get; };
+        Microsoft.Terminal.Core.MatchMode MatchMode { get; };
     };
 }

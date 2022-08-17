@@ -1640,18 +1640,18 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
     }
 }
 
-void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Control::MatchMode matchMode)
+void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
     for (const auto [start, end] : _GetSelectionSpans())
     {
         try
         {
-            if (matchMode == winrt::Microsoft::Terminal::Control::MatchMode::None)
+            if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::None)
             {
                 const auto length = _activeBuffer().SpanLength(start, end);
                 _activeBuffer().Write(OutputCellIterator(attr, length), start);
             }
-            else if (matchMode == winrt::Microsoft::Terminal::Control::MatchMode::All)
+            else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
             {
                 const auto text = _activeBuffer().GetPlainText(/*trimTrailingWhitespace*/ IsBlockSelection(), start, end);
 

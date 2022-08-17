@@ -2138,7 +2138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Control::MatchMode matchMode)
+    void ControlCore::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
     {
         if (HasSelection())
         {
@@ -2164,7 +2164,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->ColorSelection(attr, matchMode);
             _terminal->ClearSelection();
-            if (matchMode != MatchMode::None)
+            if (matchMode != Core::MatchMode::None)
             {
                 // ClearSelection will invalidate the selection area... but if we are
                 // coloring other matches, then we need to make sure those get redrawn,

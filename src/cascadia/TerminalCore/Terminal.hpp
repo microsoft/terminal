@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::Core
     struct ICoreSettings;
     struct ICoreAppearance;
     struct Scheme;
+    enum class MatchMode;
 }
 
 namespace Microsoft::Console::VirtualTerminal
@@ -40,11 +41,6 @@ namespace Microsoft::Console::VirtualTerminal
 namespace Microsoft::Terminal::Core
 {
     class Terminal;
-}
-
-namespace winrt::Microsoft::Terminal::Control
-{
-    enum class MatchMode;
 }
 
 // fwdecl unittest classes
@@ -237,7 +233,7 @@ public:
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
-    void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Control::MatchMode matchMode);
+    void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

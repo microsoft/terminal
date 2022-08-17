@@ -60,12 +60,6 @@ namespace Microsoft.Terminal.Control
         UInt32 TextColor;
     };
 
-    enum MatchMode
-    {
-        None,
-        All
-    };
-
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -145,7 +139,7 @@ namespace Microsoft.Terminal.Control
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
 
-        void ColorSelection(SelectionColor fg, SelectionColor bg, MatchMode matchMode);
+        void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 
