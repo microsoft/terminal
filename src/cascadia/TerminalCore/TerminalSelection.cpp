@@ -339,6 +339,16 @@ void Terminal::SwitchSelectionEndpoint()
     }
 }
 
+void Terminal::ExpandSelectionToWord()
+{
+    if (IsSelectionActive())
+    {
+        const auto& buffer = _activeBuffer();
+        _selection->start = buffer.GetWordStart(_selection->start, _wordDelimiters);
+        _selection->end = buffer.GetWordEnd(_selection->end, _wordDelimiters);
+    }
+}
+
 // Method Description:
 // - selects the next/previous hyperlink, if one is available
 // Arguments:

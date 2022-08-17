@@ -408,6 +408,7 @@
         { "command": "markMode", "keys": "ctrl+shift+m" },
         { "command": "toggleBlockSelection" },
         { "command": "switchSelectionEndpoint" },
+        { "command": "expandSelectionToWord" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

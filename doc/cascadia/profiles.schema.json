@@ -314,6 +314,7 @@
         "commandPalette",
         "copy",
         "duplicateTab",
+        "expandSelectionToWord",
         "exportBuffer",
         "find",
         "findMatch",

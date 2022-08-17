@@ -567,4 +567,7 @@
   <data name="SwitchSelectionEndpointCommandKey" xml:space="preserve">
     <value>Switch selection endpoint</value>
   </data>
+  <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
+    <value>Expand selection to word</value>
+  </data>
 </root>
