@@ -290,23 +290,23 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleScrollToMark(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleScrollToMark(const IInspectable& sender,
                                            const ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ScrollToMarkArgs>())
         {
-            _ApplyToActiveControls([&realArgs](auto& control) {
+            _ApplyToSenderOrActiveControls(sender, [&realArgs](auto& control) {
                 control.ScrollToMark(realArgs.Direction());
             });
         }
         args.Handled(true);
     }
-    void TerminalPage::_HandleAddMark(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleAddMark(const IInspectable& sender,
                                       const ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<AddMarkArgs>())
         {
-            _ApplyToActiveControls([realArgs](auto& control) {
+            _ApplyToSenderOrActiveControls(sender, [realArgs](auto& control) {
                 Control::ScrollMark mark;
                 if (realArgs.Color())
                 {
@@ -322,18 +322,18 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
-    void TerminalPage::_HandleClearMark(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleClearMark(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
-        _ApplyToActiveControls([](auto& control) {
+        _ApplyToSenderOrActiveControls(sender, [](auto& control) {
             control.ClearMark();
         });
         args.Handled(true);
     }
-    void TerminalPage::_HandleClearAllMarks(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleClearAllMarks(const IInspectable& sender,
                                             const ActionEventArgs& args)
     {
-        _ApplyToActiveControls([](auto& control) {
+        _ApplyToSenderOrActiveControls(sender, [](auto& control) {
             control.ClearAllMarks();
         });
         args.Handled(true);
@@ -1048,14 +1048,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleClearBuffer(const IInspectable& sender,
                                           const ActionEventArgs& args)
     {
         if (args)
         {
             if (const auto& realArgs = args.ActionArgs().try_as<ClearBufferArgs>())
             {
-                const auto res = _ApplyToActiveControls([&](auto& control) {
+                const auto res = _ApplyToSenderOrActiveControls(sender, [&](auto& control) {
                     control.ClearBuffer(realArgs.Clear());
                 });
                 args.Handled(res);
@@ -1080,14 +1080,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleAdjustOpacity(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleAdjustOpacity(const IInspectable& sender,
                                             const ActionEventArgs& args)
     {
         if (args)
         {
             if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
             {
-                const auto res = _ApplyToActiveControls([&](auto& control) {
+                const auto res = _ApplyToSenderOrActiveControls(sender, [&](auto& control) {
                     control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
                 });
                 args.Handled(res);

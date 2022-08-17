@@ -519,6 +519,8 @@ void Terminal::Write(std::wstring_view stringView)
     {
         _NotifyTerminalCursorPositionChanged();
     }
+
+    _runTriggers();
 }
 
 void Terminal::WritePastedText(std::wstring_view stringView)

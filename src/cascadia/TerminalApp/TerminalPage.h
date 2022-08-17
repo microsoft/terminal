@@ -300,6 +300,18 @@ namespace winrt::TerminalApp::implementation
         bool _MovePane(const uint32_t tabIdx);
 
         template<typename F>
+        bool _ApplyToSenderOrActiveControls(const IInspectable& sender, const F f)
+        {
+            if (auto control{ sender.try_as<Microsoft::Terminal::Control::TermControl>() })
+            {
+                f(control);
+                return true;
+            }
+            else
+                return _ApplyToActiveControls(f);
+        }
+
+        template<typename F>
         bool _ApplyToActiveControls(F f)
         {
             if (const auto tab{ _GetFocusedTabImpl() })
