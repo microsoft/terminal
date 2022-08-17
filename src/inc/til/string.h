@@ -88,11 +88,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
-    inline constexpr unsigned long from_wchars_error = ULONG_MAX;
+    inline constexpr unsigned long to_ulong_error = ULONG_MAX;
 
     // Just like std::wcstoul, but without annoying locales and null-terminating strings.
     // It has been fuzz-tested against clang's strtoul implementation.
-    _TIL_INLINEPREFIX unsigned long from_wchars(const std::wstring_view& str) noexcept
+    template<typename T, typename Traits>
+    _TIL_INLINEPREFIX constexpr unsigned long to_ulong(const std::basic_string_view<T, Traits>& str, unsigned long base = 0) noexcept
     {
         static constexpr unsigned long maximumValue = ULONG_MAX / 16;
 
@@ -104,51 +105,55 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
         auto ptr = str.data();
         const auto end = ptr + str.length();
-        unsigned long base = 10;
         unsigned long accumulator = 0;
         unsigned long value = ULONG_MAX;
 
-        if (str.length() > 1 && *ptr == L'0')
+        if (!base)
         {
-            base = 8;
-            ptr++;
+            base = 10;
 
-            if (str.length() > 2 && (*ptr == L'x' || *ptr == L'X'))
+            if (str.length() > 1 && *ptr == '0')
             {
-                base = 16;
-                ptr++;
+                base = 8;
+                ++ptr;
+
+                if (str.length() > 2 && (*ptr == 'x' || *ptr == 'X'))
+                {
+                    base = 16;
+                    ++ptr;
+                }
             }
         }
 
         if (ptr == end)
         {
-            return from_wchars_error;
+            return to_ulong_error;
         }
 
         for (;; accumulator *= base)
         {
             value = ULONG_MAX;
-            if (*ptr >= L'0' && *ptr <= L'9')
+            if (*ptr >= '0' && *ptr <= '9')
             {
-                value = *ptr - L'0';
+                value = *ptr - '0';
             }
-            else if (*ptr >= L'A' && *ptr <= L'F')
+            else if (*ptr >= 'A' && *ptr <= 'F')
             {
-                value = *ptr - L'A' + 10;
+                value = *ptr - 'A' + 10;
             }
-            else if (*ptr >= L'a' && *ptr <= L'f')
+            else if (*ptr >= 'a' && *ptr <= 'f')
             {
-                value = *ptr - L'a' + 10;
+                value = *ptr - 'a' + 10;
             }
             else
             {
-                return from_wchars_error;
+                return to_ulong_error;
             }
 
             accumulator += value;
             if (accumulator >= maximumValue)
             {
-                return from_wchars_error;
+                return to_ulong_error;
             }
 
             if (++ptr == end)
@@ -157,6 +162,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 #pragma warning(pop)
+    }
+
+    constexpr unsigned long to_ulong(const std::string_view& str, unsigned long base = 0) noexcept
+    {
+        return to_ulong<>(str, base);
+    }
+
+    constexpr unsigned long to_ulong(const std::wstring_view& str, unsigned long base = 0) noexcept
+    {
+        return to_ulong<>(str, base);
     }
 
     // Just like std::tolower, but without annoying locales.
