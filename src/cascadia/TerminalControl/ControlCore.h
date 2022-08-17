@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include "SelectionColor.g.h"
 #include "ControlCore.g.h"
+#include "SelectionColor.g.h"
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
@@ -44,26 +44,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct SelectionColor : SelectionColorT<SelectionColor>
     {
-        SelectionColor() = default;
-        WINRT_PROPERTY(uint32_t, TextColor);
+        TextColor AsTextColor() const noexcept;
 
-    public:
-        ::TextColor Color() const
-        {
-            ::TextColor asTextColor;
-
-            // High bits set indicate an indexed color.
-            if (_TextColor & 0xff000000)
-            {
-                asTextColor.SetIndex(_TextColor & 0xff, false);
-            }
-            else
-            {
-                asTextColor.SetColor(_TextColor);
-            }
-
-            return asTextColor;
-        };
+        WINRT_PROPERTY(til::color, Color);
+        WINRT_PROPERTY(bool, IsIndex16);
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
@@ -130,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
-        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode);
+        void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
 
@@ -365,6 +349,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    BASIC_FACTORY(SelectionColor);
     BASIC_FACTORY(ControlCore);
+    BASIC_FACTORY(SelectionColor);
 }

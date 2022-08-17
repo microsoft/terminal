@@ -67,9 +67,9 @@ std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 // - Identical to GetTextRects if it's a block selection, else returns a single span for the whole selection.
 // Return Value:
 // - A vector of one or more spans representing the selection. They are absolute coordinates relative to the buffer origin.
-std::vector<std::tuple<til::point, til::point>> Terminal::_GetSelectionSpans() const noexcept
+std::vector<til::point_span> Terminal::_GetSelectionSpans() const noexcept
 {
-    std::vector<std::tuple<til::point, til::point>> result;
+    std::vector<til::point_span> result;
 
     if (!IsSelectionActive())
     {

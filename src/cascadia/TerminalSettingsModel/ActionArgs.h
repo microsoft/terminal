@@ -400,13 +400,8 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Control::SelectionColor>
     {
         if (value)
         {
-            h.write(value.TextColor());
-        }
-        else
-        {
-            // N.B. it is important even for a non-value to contribute to the hash, else
-            // it is easier to have hash collisions.
-            h.write(-1);
+            h.write(value.Color());
+            h.write(value.IsIndex16());
         }
     }
 };

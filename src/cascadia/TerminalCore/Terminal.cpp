@@ -1648,12 +1648,17 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
         {
             if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::None)
             {
-                const auto length = _activeBuffer().SpanLength(start, end);
-                _activeBuffer().Write(OutputCellIterator(attr, length), start);
+                ColorSelection(start, end, attr);
             }
             else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
             {
-                const auto text = _activeBuffer().GetPlainText(/*trimTrailingWhitespace*/ IsBlockSelection(), start, end);
+                const auto textBuffer = _activeBuffer().GetPlainText(start, end);
+                std::wstring_view text{ textBuffer };
+
+                if (IsBlockSelection())
+                {
+                    text = Utils::TrimPaste(text);
+                }
 
                 if (!text.empty())
                 {

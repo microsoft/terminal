@@ -56,8 +56,10 @@ namespace Microsoft.Terminal.Control
     [default_interface] runtimeclass SelectionColor
     {
         SelectionColor();
-        // Will be converted to a TextColor (from buffer/out/TextColor.h)
-        UInt32 TextColor;
+        Microsoft.Terminal.Core.Color Color;
+        // If true, color.R is a value between 0 and 15, indicating an indexed color.
+        // This mirrors how TextColor works internally, which is the primary target of this interface.
+        Boolean IsIndex16;
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState

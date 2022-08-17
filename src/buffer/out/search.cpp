@@ -23,7 +23,7 @@ using namespace Microsoft::Console::Types;
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 Search::Search(IUiaData& uiaData,
-               const std::wstring& str,
+               const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
@@ -47,7 +47,7 @@ Search::Search(IUiaData& uiaData,
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
 Search::Search(IUiaData& uiaData,
-               const std::wstring& str,
+               const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity,
                const til::point anchor) :
@@ -111,9 +111,11 @@ void Search::Select() const
 // - attr - The attribute to apply to the result
 void Search::Color(const TextAttribute attr) const
 {
-    // Note that _coordSelStart may be equal to _coordSelEnd (but it's an inclusive
-    // selection: if they are equal, it means we are applying to a single character).
-    _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
+    // Only select if we've found something.
+    if (_coordSelStart >= _coordSelEnd)
+    {
+        _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
+    }
 }
 
 // Routine Description:
@@ -327,7 +329,7 @@ void Search::_UpdateNextPosition()
 // - wstr - String that will be our search term
 // Return Value:
 // - Structured text data for comparison to screen buffer text data.
-std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring& wstr)
+std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring_view wstr)
 {
     const auto charData = Utf16Parser::Parse(wstr);
     std::vector<std::vector<wchar_t>> cells;

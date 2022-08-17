@@ -16,8 +16,8 @@
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/dx/DxRenderer.hpp"
 
-#include "SelectionColor.g.cpp"
 #include "ControlCore.g.cpp"
+#include "SelectionColor.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -77,6 +77,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }();
         return initialized;
+    }
+
+    TextColor SelectionColor::AsTextColor() const noexcept
+    {
+        if (_IsIndex16)
+        {
+            return { _Color.r, false };
+        }
+        else
+        {
+            return { static_cast<COLORREF>(_Color) };
+        }
     }
 
     ControlCore::ControlCore(Control::IControlSettings settings,
@@ -2139,7 +2151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
+    void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
     {
         if (HasSelection())
         {
@@ -2151,12 +2163,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (pForeground)
             {
-                foregroundAsTextColor = pForeground->Color();
+                foregroundAsTextColor = pForeground->AsTextColor();
             }
 
             if (pBackground)
             {
-                backgroundAsTextColor = pBackground->Color();
+                backgroundAsTextColor = pBackground->AsTextColor();
             }
 
             TextAttribute attr;

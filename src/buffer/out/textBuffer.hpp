@@ -166,7 +166,7 @@ public:
     bool MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
 
     const std::vector<til::inclusive_rect> GetTextRects(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
-    const std::vector<std::tuple<til::point, til::point>> GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
+    std::vector<til::point_span> GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
 
     void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
     std::wstring GetHyperlinkUriFromId(uint16_t id) const;
@@ -191,9 +191,7 @@ public:
                                std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
                                const bool formatWrappedRows = false) const;
 
-    const std::wstring GetPlainText(const bool trimTrailingWhitespace,
-                                    const til::point& start,
-                                    const til::point& end) const;
+    std::wstring GetPlainText(const til::point& start, const til::point& end) const;
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
