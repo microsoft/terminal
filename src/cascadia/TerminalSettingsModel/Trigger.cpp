@@ -24,7 +24,7 @@ static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view MatchKey{ "match" };
 
 static constexpr std::string_view sure{ "%d" };
-static constexpr std::string_view MatchToken{ "${match[{}]}" };
+static constexpr std::string_view MatchToken{ "${{match[{}]}}" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto trigger{ winrt::make_self<Trigger>() };
 
-        trigger->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
+        // trigger->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         trigger->_originalActionJson = _originalActionJson;
         trigger->_Type = _Type;
         trigger->_Match = _Match;
@@ -213,8 +213,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   appended to this vector.
     // Return Value:
     // - <none>
-    Model::ActionAndArgs Trigger::EvaluateMatch(Windows::Foundation::Collections::IVectorView<winrt::hstring> matches,
-                                                Windows::Foundation::Collections::IVector<SettingsLoadWarnings> warnings)
+    Model::ActionAndArgs Trigger::EvaluateMatch(const Windows::Foundation::Collections::IVectorView<winrt::hstring>& matches /*,
+                                                Windows::Foundation::Collections::IVector<SettingsLoadWarnings> warnings*/
+    )
     {
         std::string errs; // This string will receive any error text from failing to parse.
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
@@ -229,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto actualDataEnd = newJsonString.data() + newJsonString.size();
             if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
             {
-                warnings.Append(SettingsLoadWarnings::FailedToParseCommandJson);
+                // warnings.Append(SettingsLoadWarnings::FailedToParseCommandJson);
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.
                 return false;
             }
@@ -237,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Pass the new json back though FromJson, to get the new expanded value.
             std::vector<SettingsLoadWarnings> newWarnings;
             auto result = ActionAndArgs::FromJson(newJsonValue, newWarnings);
-            std::for_each(newWarnings.begin(), newWarnings.end(), [warnings](auto& warn) { warnings.Append(warn); });
+            // std::for_each(newWarnings.begin(), newWarnings.end(), [warnings](auto& warn) { warnings.Append(warn); });
             return *result;
         };
 

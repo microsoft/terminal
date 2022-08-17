@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "TaskbarState.idl";
+import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
@@ -47,6 +48,8 @@ namespace TerminalApp
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
+
+        ShortcutActionDispatch ActionDispatch { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;

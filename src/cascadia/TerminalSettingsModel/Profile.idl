@@ -26,7 +26,8 @@ namespace Microsoft.Terminal.Settings.Model
         Trigger();
         TriggerType Type { get; };
         String Match { get; };
-        ActionAndArgs ActionAndArgs { get; };
+        // ActionAndArgs ActionAndArgs { get; };
+        ActionAndArgs EvaluateMatch(IVectorView<String> matches);
     }
 
     // This tag is used to identify the context in which the Profile was created

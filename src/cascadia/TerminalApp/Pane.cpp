@@ -1150,7 +1150,17 @@ void Pane::_ControlTriggerHitHandler(const winrt::Windows::Foundation::IInspecta
     {
         auto triggers = _profile.Triggers();
         auto trigger = triggers.GetAt(eventArgs.Index());
-        // auto action = trigger.EvaluateMatch(eventArgs.Matches(), nullptr);
+        auto action = trigger.EvaluateMatch(eventArgs.Matches().GetView());
+
+        // TODO! this is a horrible layering violation
+        if (auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            auto appLogic{ currentXamlApp.Logic() };
+            if (auto page{ appLogic.GetRoot().try_as<winrt::TerminalApp::TerminalPage>() })
+            {
+                page.ActionDispatch().DoAction(_control, action);
+            }
+        }
     }
 }
 

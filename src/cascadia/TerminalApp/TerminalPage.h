@@ -136,6 +136,8 @@ namespace winrt::TerminalApp::implementation
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
 
+        TerminalApp::ShortcutActionDispatch ActionDispatch() { return *_actionDispatch; }
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------

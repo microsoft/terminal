@@ -40,8 +40,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static winrt::com_ptr<Trigger> FromJson(const Json::Value& json);
 
-        Model::ActionAndArgs EvaluateMatch(Windows::Foundation::Collections::IVectorView<winrt::hstring> matches,
-                                           Windows::Foundation::Collections::IVector<SettingsLoadWarnings> warnings);
+        Model::ActionAndArgs EvaluateMatch(const Windows::Foundation::Collections::IVectorView<winrt::hstring>& matches /*,
+                                           Windows::Foundation::Collections::IVector<SettingsLoadWarnings> warnings*/
+        );
 
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IVector<Model::Trigger>& triggers,
                                                            const Json::Value& json);
@@ -53,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(TriggerType, Type, TriggerType::MatchRegex);
         WINRT_PROPERTY(winrt::hstring, Match, L"");
-        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
+        // WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
 
     private:
         Json::Value _originalActionJson;
