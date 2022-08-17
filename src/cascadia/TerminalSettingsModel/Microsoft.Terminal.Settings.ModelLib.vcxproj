@@ -35,6 +35,12 @@
     <ClInclude Include="RemainingProfilesEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ProfilesSourceEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ProfileCollectionEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="VisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
@@ -184,10 +190,16 @@
     <ClCompile Include="FolderEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ProfileEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ProfileCollectionEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="RemainingProfilesEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="ProfileEntry.cpp">
+    <ClCompile Include="ProfilesSourceEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="VsDevCmdGenerator.cpp" />

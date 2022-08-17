@@ -1237,6 +1237,23 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
                 _resolveNewTabMenuProfilesSet(folderEntries, remainingProfiles, remainingProfilesEntry);
                 break;
             }
+            case NewTabMenuEntryType::Source:
+            {
+                const auto sourceEntry = entry.as<Model::ProfilesSourceEntry>();
+                sourceEntry.Profiles(single_threaded_map<int, Model::Profile>());
+
+                auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+                for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
+                {
+                    const auto profile = _activeProfiles.GetAt(profileIndex);
+                    if (profile.Source() == sourceEntry.Source()) {
+                        sourceEntry.Profiles().Insert(profileIndex, profile);
+                        remainingProfiles.TryRemove(profileIndex);
+                    }
+                }
+
+                break;
+            }
         }
     }
 }

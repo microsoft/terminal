@@ -6,6 +6,7 @@
 #include "FolderEntry.h"
 #include "ProfileEntry.h"
 #include "RemainingProfilesEntry.h"
+#include "ProfilesSourceEntry.h"
 
 #include "NewTabMenuEntry.g.cpp"
 
@@ -19,7 +20,8 @@ static const std::unordered_map<NewTabMenuEntryType, std::function<winrt::com_pt
     { NewTabMenuEntryType::Separator, implementation::SeparatorEntry::FromJson },
     { NewTabMenuEntryType::Folder, implementation::FolderEntry::FromJson },
     { NewTabMenuEntryType::Profile, implementation::ProfileEntry::FromJson },
-    { NewTabMenuEntryType::RemainingProfiles, implementation::RemainingProfilesEntry::FromJson }
+    { NewTabMenuEntryType::RemainingProfiles, implementation::RemainingProfilesEntry::FromJson },
+    { NewTabMenuEntryType::Source, implementation::ProfilesSourceEntry::FromJson }
 };
 
 implementation::NewTabMenuEntry::NewTabMenuEntry(const NewTabMenuEntryType type) noexcept :

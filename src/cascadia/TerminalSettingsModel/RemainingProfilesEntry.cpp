@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "RemainingProfilesEntry.h"
+#include "NewTabMenuEntry.h"
 #include "JsonUtils.h"
 
 #include "RemainingProfilesEntry.g.cpp"
@@ -8,7 +9,7 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 implementation::RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
-    RemainingProfilesEntryT<implementation::RemainingProfilesEntry, implementation::NewTabMenuEntry>(NewTabMenuEntryType::RemainingProfiles)
+    RemainingProfilesEntryT<implementation::RemainingProfilesEntry, implementation::ProfileCollectionEntry>(NewTabMenuEntryType::RemainingProfiles)
 {
 }
 

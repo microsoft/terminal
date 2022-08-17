@@ -16,28 +16,20 @@ Author(s):
 #pragma once
 
 #include "pch.h"
-#include "ProfileCollectionEntry.h"
-#include "RemainingProfilesEntry.g.h"
-#include "JsonUtils.h"
+#include "NewTabMenuEntry.h"
+#include "ProfileCollectionEntry.g.h"
 #include "Profile.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct RemainingProfilesEntry : RemainingProfilesEntryT<RemainingProfilesEntry, ProfileCollectionEntry>
+    struct ProfileCollectionEntry : ProfileCollectionEntryT<ProfileCollectionEntry, NewTabMenuEntry>
     {
     public:
-        RemainingProfilesEntry() noexcept;
-
-        Json::Value ToJson() const override;
-        static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
-
-        #define COMMA ,
+#define COMMA ,
         WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IMap<int COMMA Model::Profile>, Profiles);
-        #undef COMMA
-    };
-}
+#undef COMMA
 
-namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
-{
-    BASIC_FACTORY(RemainingProfilesEntry);
+    protected:
+        explicit ProfileCollectionEntry(const NewTabMenuEntryType type) noexcept;
+    };
 }

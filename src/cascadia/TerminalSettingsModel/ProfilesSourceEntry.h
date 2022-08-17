@@ -17,27 +17,29 @@ Author(s):
 
 #include "pch.h"
 #include "ProfileCollectionEntry.h"
-#include "RemainingProfilesEntry.g.h"
+#include "ProfilesSourceEntry.g.h"
 #include "JsonUtils.h"
 #include "Profile.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct RemainingProfilesEntry : RemainingProfilesEntryT<RemainingProfilesEntry, ProfileCollectionEntry>
+    struct ProfilesSourceEntry : ProfilesSourceEntryT<ProfilesSourceEntry, ProfileCollectionEntry>
     {
     public:
-        RemainingProfilesEntry() noexcept;
+        ProfilesSourceEntry() noexcept;
+        explicit ProfilesSourceEntry(const winrt::hstring& source) noexcept;
 
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 
-        #define COMMA ,
+        WINRT_PROPERTY(winrt::hstring, Source);
+#define COMMA ,
         WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IMap<int COMMA Model::Profile>, Profiles);
-        #undef COMMA
+#undef COMMA
     };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
-    BASIC_FACTORY(RemainingProfilesEntry);
+    BASIC_FACTORY(ProfilesSourceEntry);
 }

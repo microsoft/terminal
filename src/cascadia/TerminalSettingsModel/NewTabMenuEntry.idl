@@ -11,7 +11,8 @@ namespace Microsoft.Terminal.Settings.Model
         Profile,
         Separator,
         Folder,
-        RemainingProfiles
+        RemainingProfiles,
+        Source
     };
 
     [default_interface] unsealed runtimeclass NewTabMenuEntry
@@ -33,13 +34,6 @@ namespace Microsoft.Terminal.Settings.Model
         Int32 ProfileIndex;
     }
 
-    [default_interface] runtimeclass RemainingProfilesEntry : NewTabMenuEntry
-    {
-        RemainingProfilesEntry();
-
-        IMap<Int32, Profile> Profiles;
-    }
-
     [default_interface] runtimeclass FolderEntry : NewTabMenuEntry 
     {
         FolderEntry();
@@ -48,5 +42,23 @@ namespace Microsoft.Terminal.Settings.Model
         String Name;
         String Icon;
         IVector<NewTabMenuEntry> Entries;
+    }
+
+    [default_interface] unsealed runtimeclass ProfileCollectionEntry : NewTabMenuEntry
+    {
+        IMap<Int32, Profile> Profiles;
+    }
+
+    [default_interface] runtimeclass RemainingProfilesEntry : ProfileCollectionEntry
+    {
+        RemainingProfilesEntry();
+    }
+
+    [default_interface] runtimeclass ProfilesSourceEntry : ProfileCollectionEntry
+    {
+        ProfilesSourceEntry();
+        ProfilesSourceEntry(String source);
+
+        String Source;
     }
 }

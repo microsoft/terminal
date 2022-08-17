@@ -946,8 +946,9 @@ namespace winrt::TerminalApp::implementation
                     break;
                 }
                 case NewTabMenuEntryType::RemainingProfiles:
+                case NewTabMenuEntryType::Source:
                 {
-                    const auto remainingProfilesEntry = entry.as<RemainingProfilesEntry>();
+                    const auto remainingProfilesEntry = entry.as<ProfileCollectionEntry>();
                     if (remainingProfilesEntry.Profiles() == nullptr)
                         break;
 
