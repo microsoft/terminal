@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_PROPERTY(winrt::hstring, Name);
         WINRT_PROPERTY(winrt::hstring, Icon);
-        WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::NewTabMenuEntry>, Entries);
+        WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, Entries);
     };
 }
 

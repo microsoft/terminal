@@ -30,10 +30,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
-
-        #define COMMA ,
-        WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IMap<int COMMA Model::Profile>, Profiles);
-        #undef COMMA
     };
 }
 

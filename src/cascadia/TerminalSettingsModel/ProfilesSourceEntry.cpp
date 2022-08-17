@@ -6,33 +6,33 @@
 #include "ProfilesSourceEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view SourceKey{ "source" };
 
-implementation::ProfilesSourceEntry::ProfilesSourceEntry() noexcept :
-    implementation::ProfilesSourceEntry{ winrt::hstring{} }
+ProfilesSourceEntry::ProfilesSourceEntry() noexcept :
+    ProfilesSourceEntry{ winrt::hstring{} }
 {
 }
 
-implementation::ProfilesSourceEntry::ProfilesSourceEntry(const winrt::hstring& source) noexcept :
-    ProfilesSourceEntryT<implementation::ProfilesSourceEntry, implementation::ProfileCollectionEntry>(NewTabMenuEntryType::Source),
+ProfilesSourceEntry::ProfilesSourceEntry(const winrt::hstring& source) noexcept :
+    ProfilesSourceEntryT<ProfilesSourceEntry, ProfileCollectionEntry>(NewTabMenuEntryType::Source),
     _Source { source }
 {
 }
 
-Json::Value implementation::ProfilesSourceEntry::ToJson() const
+Json::Value ProfilesSourceEntry::ToJson() const
 {
-    auto json = implementation::NewTabMenuEntry::ToJson();
+    auto json = NewTabMenuEntry::ToJson();
 
     JsonUtils::SetValueForKey(json, SourceKey, _Source);
 
     return json;
 }
 
-winrt::com_ptr<implementation::NewTabMenuEntry> implementation::ProfilesSourceEntry::FromJson(const Json::Value& json)
+winrt::com_ptr<NewTabMenuEntry> ProfilesSourceEntry::FromJson(const Json::Value& json)
 {
-    auto entry = winrt::make_self<implementation::ProfilesSourceEntry>();
+    auto entry = winrt::make_self<ProfilesSourceEntry>();
 
     JsonUtils::GetValueForKey(json, SourceKey, entry->_Source);
 

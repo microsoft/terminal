@@ -6,7 +6,8 @@ Module Name:
 - FolderEntry.h
 
 Abstract:
-- A profile entry in the "new tab" dropdown menu, referring
+- A profile entry in the "new tab" dropdown menu, referring to
+    a single profile.
 
 Author(s):
 - Floris Westerman - August 2022
@@ -31,6 +32,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 
+        // In JSON, only a profile name (guid or string) can be set;
+        // but the consumers of this class would like to have direct access
+        // to the appropriate Model::Profile. Therefore, we have a read-only
+        // property ProfileName that corresponds to the JSON value, and
+        // then CascadiaSettings::_resolveNewTabMenuProfiles() will populate
+        // the Profile and ProfileIndex properties appropriately
         winrt::hstring ProfileName() const noexcept { return _ProfileName; };
 
         WINRT_PROPERTY(Model::Profile, Profile);

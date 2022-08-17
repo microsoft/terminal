@@ -819,6 +819,9 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
         newTabFlyout.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
 
+        // Create profile entries from the NewTabMenu configuration using a
+        // recursive helper function. This returns a std::vector of FlyoutItemBases,
+        // that we then add to our Flyout.
         auto entries = _settings.GlobalSettings().NewTabMenu();
         auto items = _CreateNewTabFlyoutItems(entries);
         for (const auto& item : items)
@@ -907,17 +910,25 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout(newTabFlyout);
     }
 
+    // Method Description:
+    // - For a given list of tabmenu entries, this method will create the corresponding
+    //   list of flyout items. This is a recursive method that calls itself when it comes
+    //   across a folder entry.
     std::vector<WUX::Controls::MenuFlyoutItemBase> TerminalPage::_CreateNewTabFlyoutItems(IVector<NewTabMenuEntry> entries)
     {
         std::vector<WUX::Controls::MenuFlyoutItemBase> items;
 
         if (entries == nullptr || entries.Size() == 0)
+        {
             return items;
+        }
 
         for (const auto& entry : entries)
         {
             if (entry == nullptr)
+            {
                 continue;
+            }
 
             switch (entry.Type())
             {
@@ -926,6 +937,8 @@ namespace winrt::TerminalApp::implementation
                     items.push_back(WUX::Controls::MenuFlyoutSeparator{});
                     break;
                 }
+                // A folder has a custom name and icon, and has a number of entries that require
+                // us to call this method recursively.
                 case NewTabMenuEntryType::Folder:
                 {
                     const auto folderEntry = entry.as<FolderEntry>();
@@ -936,6 +949,7 @@ namespace winrt::TerminalApp::implementation
                     auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
                     folderItem.Icon(icon);
 
+                    // Recursively generate flyout items
                     auto folderEntries = _CreateNewTabFlyoutItems(folderEntry.Entries());
                     for (auto const &folderEntry : folderEntries)
                     {
@@ -945,12 +959,17 @@ namespace winrt::TerminalApp::implementation
                     items.push_back(folderItem);
                     break;
                 }
+                // Any "collection entry" will simply make us add each profile in the collection
+                // separately. This collection is stored as a map <int, Profile>, so the correct
+                // profile index is already known.
                 case NewTabMenuEntryType::RemainingProfiles:
                 case NewTabMenuEntryType::Source:
                 {
                     const auto remainingProfilesEntry = entry.as<ProfileCollectionEntry>();
                     if (remainingProfilesEntry.Profiles() == nullptr)
+                    {
                         break;
+                    }
 
                     for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
                     {
@@ -959,9 +978,14 @@ namespace winrt::TerminalApp::implementation
 
                     break;
                 }
+                // A single profile, the profile index is also given in the entry
                 case NewTabMenuEntryType::Profile:
                 {
                     const auto profileEntry = entry.as<ProfileEntry>();
+                    if (profileEntry.Profile() == nullptr)
+                    {
+                        break;
+                    }
 
                     auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex());
                     items.push_back(profileItem);
@@ -973,6 +997,9 @@ namespace winrt::TerminalApp::implementation
         return items;
     }
 
+    // Method Description:
+    // - This method creates a flyout menu item for a given profile with the given index.
+    //   It makes sure to set the correct icon, keybinding, and click-action.
     WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex)
     {
         auto profileMenuItem = WUX::Controls::MenuFlyoutItem {};
@@ -1043,6 +1070,9 @@ namespace winrt::TerminalApp::implementation
         return profileMenuItem;
     }
 
+    // Method Description:
+    // - Helper method to create an IconElement that can be passed to MenuFlyoutItems and
+    //   MenuFlyoutSubItems
     IconElement TerminalPage::_CreateNewTabFlyoutIcon(const winrt::hstring& icon)
     {
         if (icon.empty())

@@ -11,25 +11,30 @@
 #include "NewTabMenuEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using NewTabMenuEntryType = winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType;
 
 static constexpr std::string_view TypeKey{ "type" };
 
-// This is a map of NewTabMenuEntryType->function<Json::Value, NewTabMenuEntry>
-static const std::unordered_map<NewTabMenuEntryType, std::function<winrt::com_ptr<implementation::NewTabMenuEntry>(const Json::Value&)>> typeDeserializerMap{
-    { NewTabMenuEntryType::Separator, implementation::SeparatorEntry::FromJson },
-    { NewTabMenuEntryType::Folder, implementation::FolderEntry::FromJson },
-    { NewTabMenuEntryType::Profile, implementation::ProfileEntry::FromJson },
-    { NewTabMenuEntryType::RemainingProfiles, implementation::RemainingProfilesEntry::FromJson },
-    { NewTabMenuEntryType::Source, implementation::ProfilesSourceEntry::FromJson }
+// This is a map of NewTabMenuEntryType->function<NewTabMenuEntry(Json::Value)>,
+// it allows us to choose the correct deserialisation function for a given entry type
+using MenuEntryParser = std::function<winrt::com_ptr<NewTabMenuEntry>(const Json::Value&)>;
+static const std::unordered_map<NewTabMenuEntryType, MenuEntryParser> typeDeserializerMap{
+    { NewTabMenuEntryType::Separator, SeparatorEntry::FromJson },
+    { NewTabMenuEntryType::Folder, FolderEntry::FromJson },
+    { NewTabMenuEntryType::Profile, ProfileEntry::FromJson },
+    { NewTabMenuEntryType::RemainingProfiles, RemainingProfilesEntry::FromJson },
+    { NewTabMenuEntryType::Source, ProfilesSourceEntry::FromJson }
 };
 
-implementation::NewTabMenuEntry::NewTabMenuEntry(const NewTabMenuEntryType type) noexcept :
+NewTabMenuEntry::NewTabMenuEntry(const NewTabMenuEntryType type) noexcept :
     _Type{ type }
 {
 }
 
-Json::Value implementation::NewTabMenuEntry::ToJson() const
+// This method will be overriden by the subclasses, which will then call this
+// parent implementation for a "base" json object.
+Json::Value NewTabMenuEntry::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 
@@ -38,9 +43,11 @@ Json::Value implementation::NewTabMenuEntry::ToJson() const
     return json;
 }
 
-winrt::com_ptr<implementation::NewTabMenuEntry> implementation::NewTabMenuEntry::FromJson(const Json::Value& json)
+// Deserialise the JSON object based on the given type. We use the map from above for that.
+winrt::com_ptr<NewTabMenuEntry> NewTabMenuEntry::FromJson(const Json::Value& json)
 {
     auto type = JsonUtils::GetValueForKey<NewTabMenuEntryType>(json, TypeKey);
+
     const auto deserializer = typeDeserializerMap.find(type);
     if (deserializer == typeDeserializerMap.end() || !deserializer->second)
     {

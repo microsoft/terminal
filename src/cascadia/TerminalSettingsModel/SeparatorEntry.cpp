@@ -5,20 +5,20 @@
 #include "SeparatorEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
-implementation::SeparatorEntry::SeparatorEntry() noexcept :
-    SeparatorEntryT<implementation::SeparatorEntry, implementation::NewTabMenuEntry>(NewTabMenuEntryType::Separator)
+SeparatorEntry::SeparatorEntry() noexcept :
+    SeparatorEntryT<SeparatorEntry, NewTabMenuEntry>(NewTabMenuEntryType::Separator)
 {
 }
 
-Json::Value implementation::SeparatorEntry::ToJson() const
+Json::Value SeparatorEntry::ToJson() const
 {
-    auto json = implementation::NewTabMenuEntry::ToJson();
+    auto json = NewTabMenuEntry::ToJson();
     return json;
 }
 
-winrt::com_ptr<implementation::NewTabMenuEntry> implementation::SeparatorEntry::FromJson(const Json::Value&)
+winrt::com_ptr<NewTabMenuEntry> SeparatorEntry::FromJson(const Json::Value&)
 {
-    return winrt::make_self<implementation::SeparatorEntry>();
+    return winrt::make_self<SeparatorEntry>();
 }

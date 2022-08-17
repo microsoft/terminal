@@ -24,13 +24,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NewTabMenuEntry : NewTabMenuEntryT<NewTabMenuEntry>
     {
     public:
-        //virtual com_ptr<NewTabMenuEntry> Copy() const = 0;
-
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
         virtual Json::Value ToJson() const;
 
         WINRT_PROPERTY(NewTabMenuEntryType, Type, NewTabMenuEntryType::Invalid);
 
+        // We have a protected/hidden constructor so consumers cannot instantiate
+        // this base class directly and need to go through either FromJson
+        // or one of the subclasses.
     protected:
         explicit NewTabMenuEntry(const NewTabMenuEntryType type) noexcept;
     };
@@ -41,9 +42,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     using namespace winrt::Microsoft::Terminal::Settings::Model;
 
     template<>
-    struct ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntry>
+    struct ConversionTrait<NewTabMenuEntry>
     {
-        winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntry FromJson(const Json::Value& json)
+        NewTabMenuEntry FromJson(const Json::Value& json)
         {
             return *implementation::NewTabMenuEntry::FromJson(json);
         }
@@ -53,7 +54,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isObject();
         }
 
-        Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntry& val)
+        Json::Value ToJson(const NewTabMenuEntry& val)
         {
             return winrt::get_self<implementation::NewTabMenuEntry>(val)->ToJson();
         }

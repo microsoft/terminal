@@ -117,6 +117,9 @@
     <Midl Include="NewTabMenuEntry.idl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
     <Filter Include="profileGeneration">
       <UniqueIdentifier>{c81be61b-0d58-4277-8fd1-fcc888c3da9c}</UniqueIdentifier>
     </Filter>

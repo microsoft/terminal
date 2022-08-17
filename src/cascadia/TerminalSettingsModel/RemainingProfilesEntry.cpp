@@ -6,20 +6,20 @@
 #include "RemainingProfilesEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
-implementation::RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
-    RemainingProfilesEntryT<implementation::RemainingProfilesEntry, implementation::ProfileCollectionEntry>(NewTabMenuEntryType::RemainingProfiles)
+RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
+    RemainingProfilesEntryT<RemainingProfilesEntry, ProfileCollectionEntry>(NewTabMenuEntryType::RemainingProfiles)
 {
 }
 
-Json::Value implementation::RemainingProfilesEntry::ToJson() const
+Json::Value RemainingProfilesEntry::ToJson() const
 {
-    auto json = implementation::NewTabMenuEntry::ToJson();
+    auto json = NewTabMenuEntry::ToJson();
     return json;
 }
 
-winrt::com_ptr<implementation::NewTabMenuEntry> implementation::RemainingProfilesEntry::FromJson(const Json::Value&)
+winrt::com_ptr<NewTabMenuEntry> RemainingProfilesEntry::FromJson(const Json::Value&)
 {
-    return winrt::make_self<implementation::RemainingProfilesEntry>();
+    return winrt::make_self<RemainingProfilesEntry>();
 }
