@@ -203,6 +203,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _pointerPressedInBounds{ false };
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
+        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
@@ -210,6 +211,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         bool _showMarksInScrollbar{ false };
+
+        bool _isBackgroundLight{ false };
 
         inline bool _IsClosing() const noexcept
         {
@@ -232,6 +235,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
         void _changeBackgroundColor(til::color bg);
+        static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
         bool _InitializeTerminal();

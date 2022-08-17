@@ -37,6 +37,8 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> DetachPane();
         void AttachPane(std::shared_ptr<Pane> pane);
 
+        void AttachColorPicker(winrt::TerminalApp::ColorPickupFlyout& colorPicker);
+
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                        const float splitSize,
                        std::shared_ptr<Pane> newPane);
@@ -74,7 +76,7 @@ namespace winrt::TerminalApp::implementation
         void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color);
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
-        void ActivateColorPicker();
+        void RequestColorPicker();
 
         void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
@@ -105,6 +107,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
         WINRT_CALLBACK(FindRequested, winrt::delegate<>);
         WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
+        WINRT_CALLBACK(ColorPickerRequested, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
@@ -113,11 +116,15 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
 
         winrt::hstring _lastIconPath{};
-        winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
         winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
+
+        winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{ nullptr };
+        winrt::event_token _colorSelectedToken;
+        winrt::event_token _colorClearedToken;
+        winrt::event_token _pickerClosedToken;
 
         struct ControlEventTokens
         {

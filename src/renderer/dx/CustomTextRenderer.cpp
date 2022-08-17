@@ -395,8 +395,8 @@ try
         if (firstPass)
         {
             // Draw a backplate behind the cursor in the *background* color so that we can invert it later.
-            // We're going to draw the exact same color as the background behind the cursor
-            const til::color color{ drawingContext.backgroundBrush->GetColor() };
+            // Make sure the cursor is always readable (see gh-3647)
+            const til::color color{ til::color{ drawingContext.backgroundBrush->GetColor() } ^ RGB(63, 63, 63) };
             RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(color.with_alpha(255),
                                                                &brush));
         }

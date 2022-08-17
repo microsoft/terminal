@@ -606,7 +606,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            activeTab->ActivateColorPicker();
+            activeTab->RequestColorPicker();
         }
         args.Handled(true);
     }

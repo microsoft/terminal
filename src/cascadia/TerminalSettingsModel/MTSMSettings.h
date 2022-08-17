@@ -78,7 +78,7 @@ Author(s):
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
-    X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)                                                                                              \
+    X(bool, UseAtlasEngine, "experimental.useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                   \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \

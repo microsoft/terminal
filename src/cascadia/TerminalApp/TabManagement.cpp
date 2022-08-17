@@ -12,6 +12,7 @@
 #include "TerminalPage.h"
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
+#include "../../inc/til/string.h"
 
 #include <LibraryResources.h>
 
@@ -433,7 +434,9 @@ namespace winrt::TerminalApp::implementation
                         THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
 
                         // Default to using the tab title as the file name
-                        THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
+                        std::wstring filename{ control.Title() };
+                        filename = til::clean_filename(filename);
+                        THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
                     });
                 }
                 else
