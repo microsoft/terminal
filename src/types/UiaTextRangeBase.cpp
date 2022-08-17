@@ -326,6 +326,47 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
             _end.Y = _start.Y + 1;
         }
     }
+    else if (unit <= TextUnit_Page)
+    {
+        // expand to page (viewport)
+        const auto viewport = _pData->GetViewport();
+        if (viewport.IsInBounds(_start))
+        {
+            // return current viewport
+            _start = viewport.Origin();
+            _end = std::min(documentEnd, viewport.EndExclusive());
+        }
+        else if (_start < viewport.Origin())
+        {
+            // return "previous" viewport
+            auto returnedViewport = viewport;
+            while (!returnedViewport.IsInBounds(_start))
+            {
+                const til::point newOrigin{ returnedViewport.Left(), std::max(returnedViewport.Top() - returnedViewport.Height(), bufferSize.Top()) };
+                returnedViewport = Viewport::FromDimensions(newOrigin, returnedViewport.Dimensions());
+            }
+            _start = returnedViewport.Origin();
+            _end = returnedViewport.EndExclusive();
+        }
+        else if (_start == documentEnd)
+        {
+            // return "last" viewport
+            _start = { bufferSize.Left(), std::max(documentEnd.y - viewport.Height(), bufferSize.Top()) };
+            _end = documentEnd;
+        }
+        else
+        {
+            // return "next" viewport
+            auto returnedViewport = viewport;
+            while (!returnedViewport.IsInBounds(_start))
+            {
+                const til::point newOrigin{ returnedViewport.EndExclusive() };
+                returnedViewport = Viewport::FromDimensions(newOrigin, returnedViewport.Dimensions());
+            }
+            _start = returnedViewport.Origin();
+            _end = std::min(returnedViewport.EndExclusive(), documentEnd);
+        }
+    }
     else
     {
         // expand to document
