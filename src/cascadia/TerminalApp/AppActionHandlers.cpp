@@ -176,26 +176,27 @@ namespace winrt::TerminalApp::implementation
             {
                 _UnZoomIfNeeded();
 
-                // Accumulate list of all unfocused leaf panes
+                // Accumulate list of all unfocused leaf panes, ignore read-only panes
                 std::vector<uint32_t> unfocusedPaneIds;
                 const auto activePaneId = activePane->Id();
                 terminalTab->GetRootPane()->WalkTree([&](auto&& p) {
                     const auto id = p->Id();
-                    if (id.has_value() && id != activePaneId)
+                    if (id.has_value() && id != activePaneId && !p->ContainsReadOnly())
                     {
                         unfocusedPaneIds.push_back(id.value());
                     }
                 });
 
-                // Start by removing the panes that were least recently added
-                sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
-                _ClosePanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
-                args.Handled(true);
+                if (!empty(unfocusedPaneIds))
+                {
+                    // Start by removing the panes that were least recently added
+                    sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
+                    _ClosePanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+                    args.Handled(true);
+                    return;
+                }
             }
-            else
-            {
-                args.Handled(false);
-            }
+            args.Handled(false);
         }
     }
 

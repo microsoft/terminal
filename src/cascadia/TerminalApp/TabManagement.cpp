@@ -845,7 +845,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - weakTab: weak reference to the tab that the pane belongs to.
     // - paneIds: collection of the IDs of the panes that are marked for removal.
-    winrt::fire_and_forget TerminalPage::_ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds)
+    void TerminalPage::_ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds)
     {
         if (auto strongTab{ weakTab.get() })
         {
@@ -857,19 +857,16 @@ namespace winrt::TerminalApp::implementation
 
                 if (const auto pane{ strongTab->GetRootPane()->FindPane(id) })
                 {
-                    if (co_await _PaneConfirmCloseReadOnly(pane))
-                    {
-                        pane->ClosedByParent([ids{ std::move(paneIds) }, weakThis{ get_weak() }, weakTab]() {
-                            if (auto strongThis{ weakThis.get() })
-                            {
-                                strongThis->_ClosePanes(weakTab, std::move(ids));
-                            }
-                        });
+                    pane->ClosedByParent([ids{ std::move(paneIds) }, weakThis{ get_weak() }, weakTab]() {
+                        if (auto strongThis{ weakThis.get() })
+                        {
+                            strongThis->_ClosePanes(weakTab, std::move(ids));
+                        }
+                    });
 
-                        // Close the pane which will eventually trigger the closed by parent event
-                        _HandleClosePaneRequested(pane);
-                        break;
-                    }
+                    // Close the pane which will eventually trigger the closed by parent event
+                    _HandleClosePaneRequested(pane);
+                    break;
                 }
             }
         }

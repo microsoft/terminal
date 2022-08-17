@@ -325,7 +325,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
         winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
-        winrt::fire_and_forget _ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds);
+        void _ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds);
         winrt::Windows::Foundation::IAsyncOperation<bool> _PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane);
         void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
