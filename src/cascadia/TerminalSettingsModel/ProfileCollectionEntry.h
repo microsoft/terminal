@@ -26,7 +26,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ProfileCollectionEntry : ProfileCollectionEntryT<ProfileCollectionEntry, NewTabMenuEntry>
     {
     public:
-
         // Since a comma does not work very nicely in a macro and we need one
         // for our map definition, we use a macro te define a comma.
 #define COMMA ,

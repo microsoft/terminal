@@ -932,65 +932,65 @@ namespace winrt::TerminalApp::implementation
 
             switch (entry.Type())
             {
-                case NewTabMenuEntryType::Separator:
+            case NewTabMenuEntryType::Separator:
+            {
+                items.push_back(WUX::Controls::MenuFlyoutSeparator{});
+                break;
+            }
+            // A folder has a custom name and icon, and has a number of entries that require
+            // us to call this method recursively.
+            case NewTabMenuEntryType::Folder:
+            {
+                const auto folderEntry = entry.as<FolderEntry>();
+
+                auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
+                folderItem.Text(folderEntry.Name());
+
+                auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
+                folderItem.Icon(icon);
+
+                // Recursively generate flyout items
+                auto folderEntries = _CreateNewTabFlyoutItems(folderEntry.Entries());
+                for (auto const& folderEntry : folderEntries)
                 {
-                    items.push_back(WUX::Controls::MenuFlyoutSeparator{});
+                    folderItem.Items().Append(folderEntry);
+                }
+
+                items.push_back(folderItem);
+                break;
+            }
+            // Any "collection entry" will simply make us add each profile in the collection
+            // separately. This collection is stored as a map <int, Profile>, so the correct
+            // profile index is already known.
+            case NewTabMenuEntryType::RemainingProfiles:
+            case NewTabMenuEntryType::Source:
+            {
+                const auto remainingProfilesEntry = entry.as<ProfileCollectionEntry>();
+                if (remainingProfilesEntry.Profiles() == nullptr)
+                {
                     break;
                 }
-                // A folder has a custom name and icon, and has a number of entries that require
-                // us to call this method recursively.
-                case NewTabMenuEntryType::Folder:
+
+                for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
                 {
-                    const auto folderEntry = entry.as<FolderEntry>();
+                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex));
+                }
 
-                    auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
-                    folderItem.Text(folderEntry.Name());
-
-                    auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
-                    folderItem.Icon(icon);
-
-                    // Recursively generate flyout items
-                    auto folderEntries = _CreateNewTabFlyoutItems(folderEntry.Entries());
-                    for (auto const &folderEntry : folderEntries)
-                    {
-                        folderItem.Items().Append(folderEntry);
-                    }
-
-                    items.push_back(folderItem);
+                break;
+            }
+            // A single profile, the profile index is also given in the entry
+            case NewTabMenuEntryType::Profile:
+            {
+                const auto profileEntry = entry.as<ProfileEntry>();
+                if (profileEntry.Profile() == nullptr)
+                {
                     break;
                 }
-                // Any "collection entry" will simply make us add each profile in the collection
-                // separately. This collection is stored as a map <int, Profile>, so the correct
-                // profile index is already known.
-                case NewTabMenuEntryType::RemainingProfiles:
-                case NewTabMenuEntryType::Source:
-                {
-                    const auto remainingProfilesEntry = entry.as<ProfileCollectionEntry>();
-                    if (remainingProfilesEntry.Profiles() == nullptr)
-                    {
-                        break;
-                    }
 
-                    for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
-                    {
-                        items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex));
-                    }
-
-                    break;
-                }
-                // A single profile, the profile index is also given in the entry
-                case NewTabMenuEntryType::Profile:
-                {
-                    const auto profileEntry = entry.as<ProfileEntry>();
-                    if (profileEntry.Profile() == nullptr)
-                    {
-                        break;
-                    }
-
-                    auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex());
-                    items.push_back(profileItem);
-                    break;
-                }
+                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex());
+                items.push_back(profileItem);
+                break;
+            }
             }
         }
 
@@ -1002,7 +1002,7 @@ namespace winrt::TerminalApp::implementation
     //   It makes sure to set the correct icon, keybinding, and click-action.
     WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex)
     {
-        auto profileMenuItem = WUX::Controls::MenuFlyoutItem {};
+        auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
         // Add the keyboard shortcuts based on the number of profiles defined
         // Look for a keychord that is bound to the equivalent
@@ -1060,7 +1060,7 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
 
         profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
-            if (auto page{ weakThis.get() }) 
+            if (auto page{ weakThis.get() })
             {
                 NewTerminalArgs newTerminalArgs{ profileIndex };
                 page->_OpenNewTerminalViaDropdown(newTerminalArgs);

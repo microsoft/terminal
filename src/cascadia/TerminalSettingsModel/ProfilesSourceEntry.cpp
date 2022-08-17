@@ -17,7 +17,7 @@ ProfilesSourceEntry::ProfilesSourceEntry() noexcept :
 
 ProfilesSourceEntry::ProfilesSourceEntry(const winrt::hstring& source) noexcept :
     ProfilesSourceEntryT<ProfilesSourceEntry, ProfileCollectionEntry>(NewTabMenuEntryType::Source),
-    _Source { source }
+    _Source{ source }
 {
 }
 

@@ -16,7 +16,7 @@ ProfileEntry::ProfileEntry() noexcept :
 
 ProfileEntry::ProfileEntry(const winrt::hstring& profile) noexcept :
     ProfileEntryT<ProfileEntry, NewTabMenuEntry>(NewTabMenuEntryType::Profile),
-    _ProfileName { profile }
+    _ProfileName{ profile }
 {
 }
 

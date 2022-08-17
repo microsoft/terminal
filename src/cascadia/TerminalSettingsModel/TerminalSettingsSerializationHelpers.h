@@ -681,7 +681,8 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
 };
 
 // Possible NewTabMenuEntryType values
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType){
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType)
+{
     JSON_MAPPINGS(5) = {
         pair_type{ "profile", ValueType::Profile },
         pair_type{ "separator", ValueType::Separator },
