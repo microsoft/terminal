@@ -179,7 +179,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 // default fg and bg (i07 and i00)
             },
             "keys": "alt+shift+1"
@@ -188,7 +188,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i08"
             },
             "keys": "alt+shift+2"
@@ -197,7 +197,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i0c"
             },
             "keys": "alt+shift+3"
@@ -206,7 +206,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i0a"
             },
             "keys": "alt+shift+4"
@@ -215,7 +215,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i0e"
             },
             "keys": "alt+shift+5"
@@ -224,7 +224,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i09"
             },
             "keys": "alt+shift+6"
@@ -233,7 +233,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i0d"
             },
             "keys": "alt+shift+7"
@@ -242,7 +242,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i0b"
             },
             "keys": "alt+shift+8"
@@ -251,7 +251,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i0f"
             },
             "keys": "alt+shift+9"
@@ -260,7 +260,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i03"
             },
             "keys": "alt+shift+0"
@@ -270,7 +270,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i07"
             },
@@ -280,7 +280,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i08"
             },
@@ -290,7 +290,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i0c"
             },
@@ -300,7 +300,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i0a"
             },
@@ -310,7 +310,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i0e"
             },
@@ -320,7 +320,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i09"
             },
@@ -330,7 +330,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i0d"
             },
@@ -340,7 +340,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i0b"
             },
@@ -350,7 +350,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i0f"
             },
@@ -360,7 +360,7 @@
             "command":
             {
                 "action": "experimental.colorSelection",
-                "matchMode": "All",
+                "matchMode": "all",
                 "foreground": "i00",
                 "background": "i03"
             },
