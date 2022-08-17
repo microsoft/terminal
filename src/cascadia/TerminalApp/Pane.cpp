@@ -44,6 +44,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    _triggerHitToken = _control.TriggerHit({ this, &Pane::_ControlTriggerHitHandler });
 
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
@@ -1138,6 +1139,21 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     }
 }
 
+void Pane::_ControlTriggerHitHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Microsoft::Terminal::Control::TriggerHitArgs& eventArgs)
+{
+    if (!_IsLeaf())
+    {
+        return;
+    }
+    if (_profile)
+    {
+        auto triggers = _profile.Triggers();
+        auto trigger = triggers.GetAt(eventArgs.Index());
+        auto action = trigger.EvaluateMatch(eventArgs.Matches(), nullptr);
+    }
+}
+
 // Event Description:
 // - Called when our control gains focus. We'll use this to trigger our GotFocus
 //   callback. The tab that's hosting us should have registered a callback which
@@ -1586,6 +1602,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        _triggerHitToken = _control.TriggerHit({ this, &Pane::_ControlTriggerHitHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1601,6 +1618,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.TriggerHit(p->_triggerHitToken);
                 }
             });
         }
@@ -1609,6 +1627,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->Closed(remainingChildClosedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
+        remainingChild->_control.TriggerHit(remainingChild->_triggerHitToken);
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1690,6 +1709,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.TriggerHit(p->_triggerHitToken);
                 }
             });
         }
@@ -2445,6 +2465,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _connectionStateChangedToken.value = 0;
         _control.WarningBell(_warningBellToken);
         _warningBellToken.value = 0;
+        _control.TriggerHit(_triggerHitToken);
+        _triggerHitToken.value = 0;
 
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new

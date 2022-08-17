@@ -203,6 +203,7 @@ public:
     WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
     WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
     WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
+    WINRT_CALLBACK(TriggerAction, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct PanePoint;
@@ -236,6 +237,7 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
     winrt::event_token _warningBellToken{ 0 };
+    winrt::event_token _triggerHitToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -289,6 +291,8 @@ private:
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+    void _ControlTriggerHitHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                   const winrt::Microsoft::Terminal::Control::TriggerHitArgs& e);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
