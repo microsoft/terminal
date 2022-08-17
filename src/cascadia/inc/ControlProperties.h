@@ -47,7 +47,8 @@
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, VtPassthrough, false)                                                                                 \
-    X(bool, AutoMarkPrompts)
+    X(bool, AutoMarkPrompts)                                                                                      \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, Triggers, nullptr)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.

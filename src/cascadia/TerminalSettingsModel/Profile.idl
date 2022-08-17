@@ -3,6 +3,11 @@
 
 import "IAppearanceConfig.idl";
 import "FontConfig.idl";
+
+// For triggers, TODO! move to my own file
+import "ActionArgs.idl";
+
+
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_PROFILE_SETTING(Type, Name) \
@@ -11,6 +16,19 @@ import "FontConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+
+    enum TriggerType
+    {
+        MatchRegex = 0,
+    };
+
+    [default_interface] runtimeclass Trigger {
+        Trigger();
+        TriggerType Type { get; };
+        String Match { get; };
+        ActionAndArgs ActionAndArgs { get; };
+    }
+
     // This tag is used to identify the context in which the Profile was created
     enum OriginTag
     {
@@ -87,5 +105,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
         INHERITABLE_PROFILE_SETTING(Boolean, AutoMarkPrompts);
         INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
+
+        INHERITABLE_PROFILE_SETTING(IVector<Trigger>, Triggers);
     }
 }

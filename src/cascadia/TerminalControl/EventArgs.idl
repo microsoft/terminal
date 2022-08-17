@@ -83,4 +83,10 @@ namespace Microsoft.Terminal.Control
     {
         Boolean ClearMarkers { get; };
     }
+
+    runtimeclass TriggerHitArgs
+    {
+        UInt32 Index { get; };
+        IVector<String> Matches { get; };
+    }
 }

@@ -8,6 +8,7 @@
 #define BLOCK_TIL
 #include <LibraryIncludes.h>
 #include "winrt/Windows.Foundation.h"
+#include "winrt/Windows.Foundation.Collections.h"
 
 #include "winrt/Microsoft.Terminal.Core.h"
 #include <til.h>

@@ -84,6 +84,8 @@ void Terminal::LineFeed(const bool withReturn)
     // row we just came from
     _activeBuffer().GetRowByOffset(cursorPos.Y).SetWrapForced(false);
 
+    _runTriggers();
+
     cursorPos.Y++;
     if (withReturn)
     {

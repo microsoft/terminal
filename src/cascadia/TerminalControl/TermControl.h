@@ -142,8 +142,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(TriggerHit,             IInspectable, Control::TriggerHitArgs, _core, TriggerHit);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
+        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard,     IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);

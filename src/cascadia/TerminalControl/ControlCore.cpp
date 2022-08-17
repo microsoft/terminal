@@ -130,6 +130,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
+        auto pfnTrigger = std::bind(&ControlCore::_terminalTrigger, this, std::placeholders::_1, std::placeholders::_2);
+        _terminal->SetTriggerCallback(pfnTrigger);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -2136,5 +2139,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
         }
+    }
+
+    void ControlCore::_terminalTrigger(size_t index, std::wstring_view line)
+    {
+        if (index > _settings->Triggers().Size())
+            return;
+
+        auto pattern = _settings->Triggers().GetAt(base::saturated_cast<uint32_t>(index));
+
+        _TriggerHitHandlers(*this, *winrt::make_self<implementation::TriggerHitArgs>(index, line));
     }
 }

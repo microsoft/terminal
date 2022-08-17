@@ -112,6 +112,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, Core::AdjustTextMode::Never);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::Collections::IVector<winrt::hstring>, Triggers, nullptr);
+
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);

@@ -9,6 +9,7 @@
 #include "TerminalSettingsSerializationHelpers.h"
 #include "AppearanceConfig.h"
 #include "FontConfig.h"
+#include "Trigger.h"
 
 #include "Profile.g.cpp"
 

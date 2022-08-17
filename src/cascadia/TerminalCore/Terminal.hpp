@@ -217,6 +217,7 @@ public:
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
+    void SetTriggerCallback(std::function<void(const size_t, std::wstring_view)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -314,6 +315,7 @@ private:
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
+    std::function<void(const size_t, std::wstring_view)> _pfnTriggerCallback;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
@@ -401,6 +403,7 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
+    std::vector<std::wregex> _triggers;
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;
@@ -427,6 +430,8 @@ private:
     bool _inAltBuffer() const noexcept;
     TextBuffer& _activeBuffer() const noexcept;
     void _updateUrlDetection();
+
+    void _runTriggers();
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

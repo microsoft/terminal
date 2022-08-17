@@ -283,6 +283,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _Elevate = profile.Elevate();
         _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
+
+        _Triggers = winrt::single_threaded_vector<winrt::hstring>();
+        for (const auto& trigger : profile.Triggers())
+        {
+            _Triggers->Append(trigger.Match());
+        }
     }
 
     // Method Description:

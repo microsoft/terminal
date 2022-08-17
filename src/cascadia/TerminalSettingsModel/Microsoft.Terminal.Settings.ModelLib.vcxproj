@@ -92,6 +92,7 @@
     <ClInclude Include="VsDevShellGenerator.h" />
     <ClInclude Include="VsSetupConfiguration.h" />
     <ClInclude Include="WslDistroGenerator.h" />
+    <ClInclude Include="Trigger.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -165,6 +166,9 @@
     <ClCompile Include="VsDevShellGenerator.cpp" />
     <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
+    <ClCompile Include="Trigger.cpp">
+      <DependentUpon>Profile.idl</DependentUpon>
+    </ClCompile>
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">

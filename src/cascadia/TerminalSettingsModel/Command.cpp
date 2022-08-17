@@ -451,7 +451,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - input: the string to JSON escape.
     // Return Value:
     // - the input string escaped properly to be inserted into another json blob.
-    std::string _escapeForJson(const std::string& input)
+    static std::string _escapeForJson(const std::string& input)
     {
         Json::Value inJson{ input };
         Json::StreamWriterBuilder builder;

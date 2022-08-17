@@ -143,6 +143,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
         _startingTabColor = settings.StartingTabColor().Value();
     }
 
+    _triggers.clear();
+    for (const auto& trigger : settings.Triggers())
+    {
+        _triggers.emplace_back(std::wregex{ trigger.c_str() });
+    }
+
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
     // size is smaller than where the mutable viewport currently is, we'll want
@@ -1377,6 +1383,11 @@ void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, 
     _pfnPlayMidiNote.swap(pfn);
 }
 
+void Terminal::SetTriggerCallback(std::function<void(const size_t, std::wstring_view)> pfn) noexcept
+{
+    _pfnTriggerCallback.swap(pfn);
+}
+
 // Method Description:
 // - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor
@@ -1636,5 +1647,28 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
+    }
+}
+
+void Terminal::_runTriggers()
+{
+    if (!_pfnTriggerCallback || _triggers.size() == 0)
+    {
+        return;
+    }
+
+    const auto cursorPos = _activeBuffer().GetCursor().GetPosition();
+    // const auto bufferRow = cursorPos.Y;
+    const auto& row = _activeBuffer().GetRowByOffset(cursorPos.Y);
+    const auto text = row.GetText();
+
+    for (auto i = 0u; i < _triggers.size(); i++)
+    {
+        const std::wregex& trigger = _triggers[i];
+        if (std::regex_search(text, trigger))
+        {
+            // That regex matched. Bubble it up to the handler.
+            _pfnTriggerCallback(i, text);
+        }
     }
 }

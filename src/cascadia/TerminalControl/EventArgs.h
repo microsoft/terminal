@@ -14,6 +14,7 @@
 #include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
+#include "TriggerHitArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -168,5 +169,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(bool, ClearMarkers, false);
+    };
+
+    struct TriggerHitArgs : public TriggerHitArgsT<TriggerHitArgs>
+    {
+    public:
+        TriggerHitArgs() = default;
+        TriggerHitArgs(size_t index, std::wstring_view line)
+        {
+            _Index = ::base::saturated_cast<uint32_t>(index);
+            _Matches = winrt::single_threaded_vector<winrt::hstring>();
+            _Matches.Append(winrt::hstring{ line });
+        };
+
+        WINRT_PROPERTY(uint32_t, Index);
+        WINRT_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, Matches);
     };
 }

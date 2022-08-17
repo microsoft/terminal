@@ -14,3 +14,4 @@
 #include "FoundResultsArgs.g.cpp"
 #include "ShowWindowArgs.g.cpp"
 #include "UpdateSelectionMarkersEventArgs.g.cpp"
+#include "TriggerHitArgs.g.cpp"

@@ -29,6 +29,7 @@ namespace Microsoft.Terminal.Core
 
         Boolean AutoMarkPrompts;
 
+        IVector<String> Triggers;
     };
 
 }
