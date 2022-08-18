@@ -112,7 +112,7 @@ void Search::Select() const
 void Search::Color(const TextAttribute attr) const
 {
     // Only select if we've found something.
-    if (_coordSelStart >= _coordSelEnd)
+    if (_coordSelEnd >= _coordSelStart)
     {
         _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
