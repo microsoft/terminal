@@ -474,7 +474,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
+        auto root = this->XamlRoot();
+        if (root == nullptr)
+        {
+            return;
+        }
+
+        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(root).try_as<DependencyObject>();
         while (focusedElementOrAncestor)
         {
             if (focusedElementOrAncestor == *this)
