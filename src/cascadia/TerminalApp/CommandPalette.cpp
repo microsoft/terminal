@@ -475,7 +475,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         auto root = this->XamlRoot();
-        if (root == nullptr)
+        if (!root)
         {
             return;
         }
