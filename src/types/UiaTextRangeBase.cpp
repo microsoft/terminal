@@ -1013,7 +1013,9 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         }
     }
 
-    if (maxLength >= 0)
+    // if the caller asked for INT_MAX,
+    // they probably just want the whole thing
+    if (maxLength >= 0 && maxLength != INT_MAX)
     {
         textData.resize(maxLength);
     }
