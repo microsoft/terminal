@@ -1009,7 +1009,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         else if (textRects.size() == 1)
         {
             const auto rect = textRects.front();
-            textData.reserve(rect.right - rect.left + 1);
+            textData.reserve(base::ClampedNumeric<size_t>(rect.right) - rect.left + 1);
         }
         else
         {
@@ -1019,7 +1019,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
             const auto lastRect = textRects.back();
             const auto lastWidth = lastRect.right - lastRect.left + 1;
 
-            const auto otherWidth = textRects.size() - 2 * bufferSize.Width();
+            const auto otherWidth = base::ClampedNumeric<size_t>(textRects.size()) - 2 * bufferSize.Width();
             textData.reserve(firstWidth + otherWidth + lastWidth);
         }
 
@@ -1037,7 +1037,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
                 textData.push_back(UNICODE_LINEFEED);
             }
 
-            if (textData.size() >= maxLength)
+            if (maxLength > 0 && textData.size() >= gsl::narrow_cast<size_t>(maxLength))
             {
                 textData.resize(maxLength);
                 break;
