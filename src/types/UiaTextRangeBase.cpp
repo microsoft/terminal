@@ -1023,7 +1023,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
     //     they probably just want the whole thing (so don't resize)
     if (const auto s = gsl::narrow_cast<size_t>(maxLength); s < textData.size())
     {
-        textData.resize(maxLength);
+        textData.resize(s);
     }
 
     return textData;
