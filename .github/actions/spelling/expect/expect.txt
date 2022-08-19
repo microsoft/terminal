@@ -224,6 +224,7 @@ CFuzz
 cgscrn
 chafa
 changelist
+chaof
 charinfo
 charset
 CHARSETINFO
@@ -1333,6 +1334,7 @@ LTLTLTLTL
 ltrim
 ltype
 LUID
+luma
 lval
 LVB
 LVERTICAL
@@ -2762,6 +2764,9 @@ xes
 xff
 XFile
 XFORM
+xin
+xinchaof
+xinxinchaof
 XManifest
 XMath
 XMFLOAT
