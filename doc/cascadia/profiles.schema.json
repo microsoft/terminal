@@ -1782,7 +1782,7 @@
         },
         "experimental.enableColorSelection": {
           "default": false,
-          "description": "When set to true, adds 40 preset \"Color Selection\" actions (keybindings) to allow colorizing selected text via keystroke, similar to the legacy conhost EnableColorSelection feature (such as alt+6 to color the selection red).",
+          "description": "When set to true, adds preset \"Color Selection\" actions (keybindings) to allow colorizing selected text via keystroke, similar to the legacy conhost EnableColorSelection feature (such as alt+6 to color the selection red).",
           "type": "boolean"
         },
         "disableAnimations": {

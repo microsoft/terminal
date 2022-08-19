@@ -568,7 +568,7 @@
     <value>Switch selection endpoint</value>
   </data>
   <data name="ColorSelection_allMatches" xml:space="preserve">
-    <value>, all matches</value>
+    <value>all matches</value>
     <comment>This is used in the description of an action which changes the color of selected text, to indicate that not only the selected text will be colored, but also all matching text.</comment>
   </data>
   <data name="ColorSelection_fg_action" xml:space="preserve">
