@@ -563,6 +563,8 @@ void AppHost::_HandleCreateWindow(const HWND /* hwnd */, const til::rect& propos
     // GH#11561: Hide the window until we're totally done being initialized.
     // More commentary in TerminalPage::_CompleteInitialization
     _proposedRect = proposedRect;
+    LaunchMode launchMode{};
+    _initialResizeAndRepositionWindow(_window->GetHandle(), _proposedRect, launchMode);
 }
 
 // Method Description:
@@ -1663,7 +1665,7 @@ void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspecta
     // visible.
 
     LaunchMode launchMode{};
-    _initialResizeAndRepositionWindow(_window->GetHandle(), _proposedRect, launchMode);
+    // _initialResizeAndRepositionWindow(_window->GetHandle(), _proposedRect, launchMode);
 
     auto nCmdShow = SW_SHOWDEFAULT;
     if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
