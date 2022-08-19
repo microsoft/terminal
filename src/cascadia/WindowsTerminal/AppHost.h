@@ -31,7 +31,7 @@ private:
 
     bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
-    til::rect _proposedRect{};
+    winrt::Microsoft::Terminal::Settings::Model::LaunchMode _launchMode{};
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
