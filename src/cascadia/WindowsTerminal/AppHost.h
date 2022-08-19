@@ -31,6 +31,7 @@ private:
 
     bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
+    til::rect _proposedRect{};
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
@@ -40,7 +41,8 @@ private:
     void _HandleCommandlineArgs();
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
-    void _HandleCreateWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+    void _HandleCreateWindow(const HWND hwnd, const til::rect& proposedRect);
+
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
@@ -53,6 +55,9 @@ private:
                                   const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
+    void _AppInitializedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                const winrt::Windows::Foundation::IInspectable& arg);
+
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
@@ -128,7 +133,7 @@ private:
     void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                  const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
-    void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+    void _initialResizeAndRepositionWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;
@@ -156,6 +161,7 @@ private:
         winrt::TerminalApp::AppLogic::FullscreenChanged_revoker FullscreenChanged;
         winrt::TerminalApp::AppLogic::FocusModeChanged_revoker FocusModeChanged;
         winrt::TerminalApp::AppLogic::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
+        winrt::TerminalApp::AppLogic::Initialized_revoker Initialized;
         winrt::TerminalApp::AppLogic::RaiseVisualBell_revoker RaiseVisualBell;
         winrt::TerminalApp::AppLogic::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
         winrt::TerminalApp::AppLogic::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;
