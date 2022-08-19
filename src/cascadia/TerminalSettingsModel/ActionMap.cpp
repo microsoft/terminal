@@ -514,7 +514,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (maskingActionPair == _MaskingActions.end())
         {
             // Check if we need to add this to our list of masking commands.
-            FAIL_FAST_IF(_parents.size() > 1);
             for (const auto& parent : _parents)
             {
                 // NOTE: This only checks the layer above us, but that's ok.
