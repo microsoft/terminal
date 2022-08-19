@@ -1009,13 +1009,19 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         textData.reserve(textDataSize);
         for (const auto& text : bufferData.text)
         {
+            if (textData.size() >= maxLength)
+            {
+                // early exit; we're already at/past max length
+                break;
+            }
             textData += text;
         }
     }
 
-    // if the caller asked for INT_MAX,
-    // they probably just want the whole thing
-    if (maxLength >= 0 && maxLength != INT_MAX)
+    // - size_t(-1) gets converted to 0xffff...
+    // - if the maxLength is more than what we have,
+    //     they probably just want the whole thing (so don't resize)
+    if (const auto s = gsl::narrow_cast<size_t>(maxLength); s < textData.size())
     {
         textData.resize(maxLength);
     }
