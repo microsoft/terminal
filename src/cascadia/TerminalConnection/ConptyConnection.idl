@@ -12,7 +12,7 @@ namespace Microsoft.Terminal.TerminalConnection
         ConptyConnection();
         Guid Guid { get; };
         String Commandline { get; };
-        String Title { get; };
+        String StartingTitle { get; };
 
         void ClearBuffer();
 

@@ -8,10 +8,10 @@ import "ocidl.idl";
 typedef struct _TERMINAL_STARTUP_INFO
 {
     // In STARTUPINFO
-    LPCWSTR pszTitle;
+    BSTR pszTitle;
 
     // Also wanted
-    LPCWSTR pszIconPath;
+    BSTR pszIconPath;
     LONG iconIndex;
 
     // The rest of STARTUPINFO
@@ -24,10 +24,6 @@ typedef struct _TERMINAL_STARTUP_INFO
     DWORD dwFillAttribute;
     DWORD dwFlags;
     WORD wShowWindow;
-
-    // Something else we may be interested in?
-    LPCWSTR fontFace;
-    LONG fontSize;
 } TERMINAL_STARTUP_INFO;
 
 // LOAD BEARING!

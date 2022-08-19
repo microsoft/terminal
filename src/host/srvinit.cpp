@@ -576,9 +576,11 @@ try
     // END code from SetUpConsole
 
     // Take what we've collected, and bundle it up for handoff.
+    auto title = wil::make_bstr(Cac.Title);
+    auto iconPath = wil::make_bstr(icon.path.data());
     TERMINAL_STARTUP_INFO myStartupInfo{
-        Cac.Title,
-        icon.path.c_str(),
+        title.get(),
+        iconPath.get(),
         icon.index
     };
 

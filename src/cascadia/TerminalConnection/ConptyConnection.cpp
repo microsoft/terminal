@@ -214,8 +214,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         _piClient.hProcess = hClientProcess;
 
-        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle };
-        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath };
+        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
+        SysFreeString(startupInfo.pszTitle);
+        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
+        SysFreeString(startupInfo.pszIconPath);
         _startupInfo.iconIndex = startupInfo.iconIndex;
 
         try
@@ -293,7 +295,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return _commandline;
     }
 
-    winrt::hstring ConptyConnection::Title() const
+    winrt::hstring ConptyConnection::StartingTitle() const
     {
         return _startupInfo.title;
     }
