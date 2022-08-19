@@ -226,6 +226,10 @@ If($DumpOutput) {
 	Return
 }
 
+$sentinelFile = New-TemporaryFile -Confirm:$false -WhatIf:$false
+$directory = New-Item -Type Directory "$($sentinelFile.FullName)_PackageUploads" -Confirm:$false -WhatIf:$false
+Remove-Item $sentinelFile -Force -EA:Ignore -Confirm:$false -WhatIf:$false
+
 ForEach($c in $ReleaseConfigs) {
 	$releaseName = "{0} v{1}" -f ($c.Release.Name, $c.Release.DisplayVersion)
 	if($PSCmdlet.ShouldProcess("Release $releaseName", "Publish")) {
@@ -254,8 +258,10 @@ ForEach($c in $ReleaseConfigs) {
 		$GitHubRelease = New-GitHubRelease @releaseParams -Draft:$true
 
 		ForEach($a in $c.Release.Assets) {
-			Write-Verbose "Uploading $($a.Path) to Release $($GitHubRelease.id)"
-			New-GitHubReleaseAsset -UploadUrl $GitHubRelease.UploadUrl -Path $a.Path -Label $a.IdealFilename()
+			$idealPath = (Join-Path $directory $a.IdealFilename())
+			Copy-Item $a.Path $idealPath
+			Write-Verbose "Uploading $idealPath to Release $($GitHubRelease.id)"
+			New-GitHubReleaseAsset -UploadUrl $GitHubRelease.UploadUrl -Path $idealPath
 		}
 	}
 }
