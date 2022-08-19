@@ -1462,3 +1462,12 @@ void Terminal::_updateUrlDetection()
         ClearPatternTree();
     }
 }
+
+// Method Description:
+// - Returns the position of the cursor relative to the active viewport
+til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
+{
+    const til::point absoluteCursorPosition{ GetCursorPosition() };
+    const auto viewport{ _GetMutableViewport() };
+    return absoluteCursorPosition - til::point{ viewport.Origin() };
+}
