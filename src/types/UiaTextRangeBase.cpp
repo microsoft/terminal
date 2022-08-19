@@ -1000,30 +1000,49 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
+        // reserve size in accordance to extracted text
         const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
-        const auto bufferData = buffer.GetText(true,
-                                               false,
-                                               textRects);
-
-        const size_t textDataSize = bufferData.text.size() * bufferSize.Width();
-        textData.reserve(textDataSize);
-        for (const auto& text : bufferData.text)
+        if (maxLength > 0)
         {
+            textData.reserve(gsl::narrow<size_t>(maxLength));
+        }
+        else if (textRects.size() == 1)
+        {
+            const auto rect = textRects.front();
+            textData.reserve(rect.right - rect.left + 1);
+        }
+        else
+        {
+            const auto firstRect = textRects.front();
+            const auto firstWidth = firstRect.right - firstRect.left + 1;
+
+            const auto lastRect = textRects.back();
+            const auto lastWidth = lastRect.right - lastRect.left + 1;
+
+            const auto otherWidth = textRects.size() - 2 * bufferSize.Width();
+            textData.reserve(firstWidth + otherWidth + lastWidth);
+        }
+
+        // actually add the text
+        for (const auto& rect : textRects)
+        {
+            const auto bufferData = buffer.GetText(true,
+                                                   false,
+                                                   { rect });
+            const auto& text = bufferData.text.front();
+            textData += text;
+            if (rect != textRects.back())
+            {
+                textData.push_back(UNICODE_CARRIAGERETURN);
+                textData.push_back(UNICODE_LINEFEED);
+            }
+
             if (textData.size() >= maxLength)
             {
-                // early exit; we're already at/past max length
+                textData.resize(maxLength);
                 break;
             }
-            textData += text;
         }
-    }
-
-    // - size_t(-1) gets converted to 0xffff...
-    // - if the maxLength is more than what we have,
-    //     they probably just want the whole thing (so don't resize)
-    if (const auto s = gsl::narrow_cast<size_t>(maxLength); s < textData.size())
-    {
-        textData.resize(s);
     }
 
     return textData;
