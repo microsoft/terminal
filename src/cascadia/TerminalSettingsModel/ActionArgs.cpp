@@ -910,7 +910,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto matchModeStr = winrt::hstring{};
         if (MatchMode() == Core::MatchMode::All)
         {
-            matchModeStr = fmt::format(std::wstring_view{ L", {}" }, RS_(L"ColorSelection_allMatches")); // ", all matches"
+            matchModeStr = fmt::format(L", {}", RS_(L"ColorSelection_allMatches")); // ", all matches"
         }
 
         const auto foreground = Foreground();

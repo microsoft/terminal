@@ -1674,17 +1674,52 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
 // - one or more sets of start-end coordinates, representing spans of text in the buffer
 std::vector<til::point_span> TextBuffer::GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const
 {
-    // This is effectively the same operation as GetTextRects,
-    // but expressed in til::point coordinates.
     std::vector<til::point_span> textSpans;
-    const auto rects = GetTextRects(start, end, blockSelection, bufferCoordinates);
-    textSpans.reserve(rects.size());
-    for (const auto rect : rects)
+    if (blockSelection)
     {
-        const til::point first{ rect.Left, rect.Top };
-        const til::point second{ rect.Right, rect.Bottom };
-        textSpans.emplace_back(first, second);
+        // If blockSelection, this is effectively the same operation as GetTextRects, but
+        // expressed in til::point coordinates.
+        const auto rects = GetTextRects(start, end, /*blockSelection*/ true, bufferCoordinates);
+        textSpans.reserve(rects.size());
+
+        for (auto rect : rects)
+        {
+            const til::point first = { rect.Left, rect.Top };
+            const til::point second = { rect.Right, rect.Bottom };
+            textSpans.emplace_back(first, second);
+        }
     }
+    else
+    {
+        const auto bufferSize = GetSize();
+
+        // (0,0) is the top-left of the screen
+        // the physically "higher" coordinate is closer to the top-left
+        // the physically "lower" coordinate is closer to the bottom-right
+        auto [higherCoord, lowerCoord] = start <= end ?
+                                             std::make_tuple(start, end) :
+                                             std::make_tuple(end, start);
+
+        textSpans.reserve(1);
+
+        // If we were passed screen coordinates, convert the given range into
+        // equivalent buffer offsets, taking line rendition into account.
+        if (!bufferCoordinates)
+        {
+            higherCoord = ScreenToBufferLine(higherCoord, GetLineRendition(higherCoord.Y));
+            lowerCoord = ScreenToBufferLine(lowerCoord, GetLineRendition(lowerCoord.Y));
+        }
+
+        til::inclusive_rect asRect = { higherCoord.X, higherCoord.Y, lowerCoord.X, lowerCoord.Y };
+        _ExpandTextRow(asRect);
+        higherCoord.X = asRect.Left;
+        higherCoord.Y = asRect.Top;
+        lowerCoord.X = asRect.Right;
+        lowerCoord.Y = asRect.Bottom;
+
+        textSpans.emplace_back(higherCoord, lowerCoord);
+    }
+
     return textSpans;
 }
 
@@ -1877,10 +1912,23 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
 // - Just the text.
 std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point& end) const
 {
-    const auto& buffer = _activeBuffer();
-    const auto rects = buffer.GetTextRects(start, end, false, true);
-    const auto textData = buffer.GetText(false, false, rects, nullptr, false);
-    return textData.text;
+    std::wstring text;
+    auto spanLength = SpanLength(start, end);
+    text.reserve(spanLength);
+
+    auto it = GetCellDataAt(start);
+
+    for (; it && spanLength > 0; ++it, --spanLength)
+    {
+        const auto& cell = *it;
+        if (!cell.DbcsAttr().IsTrailing())
+        {
+            const auto chars = cell.Chars();
+            text.append(chars);
+        }
+    }
+
+    return text;
 }
 
 // Routine Description:
