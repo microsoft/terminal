@@ -454,12 +454,10 @@ using namespace Microsoft::Console::Types;
     // we trimmed the spaces off here, we'd print all the "~"s one after another
     // on the same line.
     static const TextAttribute defaultAttrs{};
-    const bool removeSpaces = !lineWrapped && (useEraseChar // we determined earlier that ECH is optimal
+    const auto removeSpaces = !lineWrapped && (useEraseChar // we determined earlier that ECH is optimal
                                                || (_clearedAllThisFrame && _lastTextAttributes == defaultAttrs) // OR we cleared the last frame to the default attributes (specifically)
                                                || (_newBottomLine && printingBottomLine && bgMatched)); // OR we just scrolled a new line onto the bottom of the screen with the correct attributes
-    const size_t cchActual = removeSpaces ?
-                                 (cchLine - numSpaces) :
-                                 cchLine;
+    const auto cchActual = removeSpaces ? nonSpaceLength : cchLine;
 
     const auto columnsActual = removeSpaces ?
                                    (totalWidth - numSpaces) :

@@ -1667,3 +1667,12 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
     }
     }
 }
+
+// Method Description:
+// - Returns the position of the cursor relative to the active viewport
+til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
+{
+    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto viewport{ _GetMutableViewport() };
+    return absoluteCursorPosition - viewport.Origin();
+}

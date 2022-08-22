@@ -258,8 +258,20 @@ bool VtIo::IsUsingVt() const
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
             ServiceLocator::SetPseudoWindowCallback([&](bool showOrHide) -> void {
-                // Set the remote window visibility to the request
-                LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
+                // MSFT:40853556 Grab the shutdown lock here, so that another
+                // thread can't trigger a CloseOutput and release the
+                // _pVtRenderEngine out from underneath us.
+                //
+                // I'm doing this instead of just
+                // SetPseudoWindowCallback(nullptr), so that we don't just move
+                // the A/V race to in between checking
+                // _pseudoWindowMessageCallback and actually calling it.
+                std::lock_guard<std::mutex> lk(_shutdownLock);
+                if (_pVtRenderEngine)
+                {
+                    // Set the remote window visibility to the request
+                    LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
+                }
             });
         }
         CATCH_RETURN();

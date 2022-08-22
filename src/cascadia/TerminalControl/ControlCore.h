@@ -87,6 +87,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleMarkMode();
         Control::SelectionInteractionMode SelectionMode() const;
         bool SwitchSelectionEndpoint();
+        bool TryMarkModeKeybinding(const WORD vkey,
+                                   const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void GotFocus();
         void LostFocus();
@@ -266,7 +268,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
         winrt::fire_and_forget _asyncCloseConnection();
@@ -275,7 +277,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
-        bool _tryHandleMarkModeKey(const WORD vkey, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _shouldTryUpdateSelection(const WORD vkey);
 
         void _sendInputToConnection(std::wstring_view wstr);
 

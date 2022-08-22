@@ -1109,7 +1109,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // keybindings on the keyUp, then we'll still send the keydown to the
         // connected terminal application, and something like ctrl+shift+T will
         // emit a ^T to the pipe.
-        if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, scanCode, modifiers))
+        if (!modifiers.IsAltGrPressed() &&
+            keyDown &&
+            _TryHandleKeyBinding(vkey, scanCode, modifiers))
         {
             e.Handled(true);
             return;
@@ -1135,6 +1137,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The ControlKeyStates representing the modifier key states.
     bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
+        // Mark mode has a specific set of pre-defined key bindings.
+        // If we're in mark mode, we should be prioritizing those over
+        // the custom defined key bindings.
+        if (_core.TryMarkModeKeybinding(vkey, modifiers))
+        {
+            return true;
+        }
+
         // TODO: GH#5000
         // The Core owning the keybindings is weird. That's for sure. In the
         // future, we may want to pass the keybindings into the control
@@ -2087,7 +2097,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
         double scale;
-        if (Feature_AtlasEngine::IsEnabled() && settings.UseAtlasEngine())
+        if (settings.UseAtlasEngine())
         {
             auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             LOG_IF_FAILED(engine->UpdateDpi(dpi));
