@@ -88,6 +88,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::SelectionInteractionMode SelectionMode() const;
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
+        bool TryMarkModeKeybinding(const WORD vkey,
+                                   const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void GotFocus();
         void LostFocus();
@@ -276,6 +278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
+        bool _shouldTryUpdateSelection(const WORD vkey);
 
         void _sendInputToConnection(std::wstring_view wstr);
 

@@ -732,7 +732,11 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SendFeedbackOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& /*eventArgs*/)
     {
-        ShellExecute(nullptr, nullptr, L"https://github.com/microsoft/terminal/issues", nullptr, nullptr, SW_SHOW);
+#if defined(WT_BRANDING_RELEASE)
+        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2125419", nullptr, nullptr, SW_SHOW);
+#else
+        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2204904", nullptr, nullptr, SW_SHOW);
+#endif
     }
 
     void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
@@ -2163,17 +2167,11 @@ namespace winrt::TerminalApp::implementation
 
             if (_settings.GlobalSettings().TrimPaste())
             {
-                std::wstring_view textView{ text };
-                const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
-                if (pos == textView.npos)
+                text = { Utils::TrimPaste(text) };
+                if (text.empty())
                 {
                     // Text is all white space, nothing to paste
                     co_return;
-                }
-                else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
-                {
-                    textView.remove_suffix(toRemove);
-                    text = { textView };
                 }
             }
 

@@ -390,6 +390,72 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
 
+    bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
+    {
+        // GH#6423 - don't update selection if the key that was pressed was a
+        // modifier key. We'll wait for a real keystroke to dismiss the
+        // GH #7395 - don't update selection when taking PrintScreen
+        // selection.
+        return HasSelection() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT;
+    }
+
+    bool ControlCore::TryMarkModeKeybinding(const WORD vkey,
+                                            const ::Microsoft::Terminal::Core::ControlKeyStates mods)
+    {
+        if (_shouldTryUpdateSelection(vkey) && _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark)
+        {
+            if (vkey == 'A' && !mods.IsAltPressed() && !mods.IsShiftPressed() && mods.IsCtrlPressed())
+            {
+                // Ctrl + A --> Select all
+                auto lock = _terminal->LockForWriting();
+                _terminal->SelectAll();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_TAB && !mods.IsAltPressed() && !mods.IsCtrlPressed() && _settings->DetectURLs())
+            {
+                // [Shift +] Tab --> next/previous hyperlink
+                auto lock = _terminal->LockForWriting();
+                const auto direction = mods.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
+                _terminal->SelectHyperlink(direction);
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && _terminal->IsTargetingUrl())
+            {
+                // Ctrl + Enter --> Open URL
+                auto lock = _terminal->LockForReading();
+                const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
+                _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                return true;
+            }
+            else if (vkey == VK_RETURN && !mods.IsCtrlPressed() && !mods.IsAltPressed())
+            {
+                // [Shift +] Enter --> copy text
+                // Don't lock here! CopySelectionToClipboard already locks for you!
+                CopySelectionToClipboard(mods.IsShiftPressed(), nullptr);
+                _terminal->ClearSelection();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_ESCAPE)
+            {
+                _terminal->ClearSelection();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(mods, vkey) })
+            {
+                // try to update the selection
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, mods);
+                _updateSelectionUI();
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
@@ -406,57 +472,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const bool keyDown)
     {
         // Update the selection, if it's present
-        // GH#6423 - don't dismiss selection if the key that was pressed was a
-        // modifier key. We'll wait for a real keystroke to dismiss the
-        // GH #7395 - don't dismiss selection when taking PrintScreen
-        // selection.
         // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
         // modify on key up, then there's chance that we'll immediately dismiss
         // a selection created by an action bound to a keydown.
-        if (HasSelection() &&
-            !KeyEvent::IsModifierKey(vkey) &&
-            vkey != VK_SNAPSHOT &&
-            keyDown)
+        if (_shouldTryUpdateSelection(vkey) && keyDown)
         {
-            const auto isInMarkMode = _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark;
-            if (isInMarkMode)
-            {
-                if (modifiers.IsCtrlPressed() && vkey == 'A')
-                {
-                    // Ctrl + A --> Select all
-                    auto lock = _terminal->LockForWriting();
-                    _terminal->SelectAll();
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_TAB && _settings->DetectURLs())
-                {
-                    // [Shift +] Tab --> next/previous hyperlink
-                    auto lock = _terminal->LockForWriting();
-                    const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
-                    _terminal->SelectHyperlink(direction);
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->IsTargetingUrl())
-                {
-                    // Ctrl + Enter --> Open URL
-                    auto lock = _terminal->LockForReading();
-                    const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
-                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
-                    return true;
-                }
-                else if (vkey == VK_RETURN)
-                {
-                    // [Shift +] Enter --> copy text
-                    // Don't lock here! CopySelectionToClipboard already locks for you!
-                    CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
-                    _terminal->ClearSelection();
-                    _updateSelectionUI();
-                    return true;
-                }
-            }
-
             // try to update the selection
             if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
             {
@@ -1613,7 +1633,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForReading();
-        return _terminal->GetCursorPosition().to_core_point();
+        return _terminal->GetViewportRelativeCursorPosition().to_core_point();
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
