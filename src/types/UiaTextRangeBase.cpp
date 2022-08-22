@@ -991,9 +991,12 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         const auto& buffer = _pData->GetTextBuffer();
         const auto bufferSize = buffer.GetSize();
 
+        // -1 is supposed to be interpreted as "no limit",
+        // so leverage size_t(-1) being converted to 0xffff...
+        const auto maxLengthAsSize = gsl::narrow_cast<size_t>(maxLength);
+
         // TODO GH#5406: create a different UIA parent object for each TextBuffer
         // nvaccess/nvda#11428: Ensure our endpoints are in bounds
-        // otherwise, we'll FailFast catastrophically
         THROW_HR_IF(E_FAIL, !bufferSize.IsInBounds(_start) || !bufferSize.IsInBounds(_end));
 
         // convert _end to be inclusive
@@ -1002,46 +1005,26 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 
         // reserve size in accordance to extracted text
         const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
-        if (maxLength > 0)
+        const auto bufferData = buffer.GetText(true,
+                                               false,
+                                               textRects);
+        const size_t textDataSize = bufferData.text.size() * bufferSize.Width();
+        textData.reserve(textDataSize);
+        for (const auto& text : bufferData.text)
         {
-            textData.reserve(gsl::narrow<size_t>(maxLength));
-        }
-        else if (textRects.size() == 1)
-        {
-            const auto rect = textRects.front();
-            textData.reserve(base::ClampedNumeric<size_t>(rect.right) - rect.left + 1);
-        }
-        else
-        {
-            const auto firstRect = textRects.front();
-            const auto firstWidth = firstRect.right - firstRect.left + 1;
-
-            const auto lastRect = textRects.back();
-            const auto lastWidth = lastRect.right - lastRect.left + 1;
-
-            const auto otherWidth = base::ClampedNumeric<size_t>(textRects.size()) - 2 * bufferSize.Width();
-            textData.reserve(firstWidth + otherWidth + lastWidth);
-        }
-
-        // actually add the text
-        for (const auto& rect : textRects)
-        {
-            const auto bufferData = buffer.GetText(true,
-                                                   false,
-                                                   { rect });
-            const auto& text = bufferData.text.front();
-            textData += text;
-            if (rect != textRects.back())
+            if (textData.size() >= maxLengthAsSize)
             {
-                textData.push_back(UNICODE_CARRIAGERETURN);
-                textData.push_back(UNICODE_LINEFEED);
-            }
-
-            if (maxLength > 0 && textData.size() >= gsl::narrow_cast<size_t>(maxLength))
-            {
-                textData.resize(maxLength);
+                // early exit; we're already at/past max length
                 break;
             }
+            textData += text;
+        }
+
+        // only use maxLength to resize down.
+        // if maxLength > size, we don't want to resize and append unnecessary L'\0'.
+        if (textData.size() > maxLengthAsSize)
+        {
+            textData.resize(maxLengthAsSize);
         }
     }
 
